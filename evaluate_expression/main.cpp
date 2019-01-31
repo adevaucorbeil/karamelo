@@ -6,6 +6,8 @@
 
 using namespace std; 
 
+map<string, int> variables;
+
 // Function to find precedence of  
 // operators. 
 int precedence(char op){ 
@@ -36,11 +38,11 @@ void extract_lhs(char *str, char *&lhs, char *&rhs)
 {
   size_t size;
 
-  size =  strcspn(str,"+-*/()");
+  size =  strcspn(str,"+-*/()=");
   //if (size == strlen(str)) return double()
   lhs = NULL;
   if (size > 0) lhs = (char*) malloc(size+1);
-  rhs = strpbrk(str,"+-*/()");
+  rhs = strpbrk(str,"+-*/()=");
   if (rhs != NULL) {
     //rhs++;
     rhs = &rhs[strspn(rhs," ")];
@@ -52,13 +54,16 @@ void extract_lhs(char *str, char *&lhs, char *&rhs)
   printf("extract_lhs: str=%s, lhs=%s, rhs=%s\n", str, lhs, rhs);
 }
 
-// bool is_operator(char *str){
-//   if (str[0]=='+') return true;
-//   if (str[0]=='-') return true;
-//   if (str[0]=='*') return true;
-//   if (str[0]=='/') return true;
-//   return false;
-// }
+bool is_operator(char op){
+  if (op=='+') return true;
+  if (op=='-') return true;
+  if (op=='*') return true;
+  if (op=='/') return true;
+  return false;
+}
+
+
+
 
 int evaluate(char *str)
 {
@@ -67,7 +72,8 @@ int evaluate(char *str)
       
   // stack to store operators. 
   stack <char> ops; 
-  
+
+  string returnvar;
   
   char *e, *lhs, *rhs;
   e = NULL;
@@ -126,7 +132,7 @@ int evaluate(char *str)
       printf(") lhs=%s, rhs=%s\n", lhs, rhs);
     } 
 
-    else {
+    else if (is_operator(rhs[0])){
       printf("found operator %c\n", rhs[0]);
       // While top of 'ops' has same or greater  
       // precedence to current token, which 
@@ -152,6 +158,33 @@ int evaluate(char *str)
       rhs++;
       rhs = &rhs[strspn(rhs," ")]; // Remove whitespace
     }
+
+    else {
+      e = rhs;
+      rhs = NULL;
+      extract_lhs(e, lhs, rhs);
+
+      
+      printf("lhs=%s, rhs=%s\n", lhs, rhs);
+
+      // Check if lhs is a variable:
+      map<string, int>::iterator it;
+      it = variables.find(lhs);
+      if (it != variables.end()){
+	values.push(variables[(string) lhs]);
+	printf("push %s=%d to values\n", lhs, values.top());
+      } else {
+	if (rhs[0]=='=' && values.empty() && ops.empty()){
+	  returnvar = string(lhs);
+	  rhs++;
+	  rhs = &rhs[strspn(rhs," ")]; // Remove whitespace
+	  cout << "The computed value will be stored in " <<  returnvar << endl;
+	} else {
+	  printf("%s is unknown\n", lhs);
+	  exit(1);
+	}
+      }
+    }
   }
 
   // Entire expression has been parsed at this 
@@ -171,7 +204,11 @@ int evaluate(char *str)
     values.push(applyOp(val1, val2, op)); 
   } 
       
-  // Top of 'values' contains result, return it. 
+  // Top of 'values' contains result, return it.
+  if (!returnvar.empty()) {
+    variables[returnvar] = values.top();
+    cout << returnvar << "=" <<  variables[returnvar] << endl;
+  }
   return values.top(); 
 }
 
@@ -181,10 +218,10 @@ int evaluate(char *str)
 
 
 int main(){
-  double a = 10.5;
+  variables["ab"] = 10;
+  
   double result;
-  char *expr = "2 + (11*4) + 10";
-  //char *lhs, *rhs;
+  char *expr = "x= 2 + (11*ab) + 10";
 
   printf("%s = %d\n", expr, evaluate(expr));
 }
