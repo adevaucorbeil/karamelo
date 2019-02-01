@@ -391,23 +391,16 @@ double Input::parse(string str)
 
 
 int Input::dimension(string arg){
-  if (arg.size() > 1) {
-    cout << "Error: illegal dimension argument: " << arg << endl;
+
+  int dim = (int) parse(arg);
+
+
+  if (dim != 2 && dim != 3) {
+    cout << "Error: dimension argument: " << dim << endl;
     exit(1);
   }
-  else if (arg[0] == '2') {
-    domain->dimension = 2;
-    return 0;
-  }
+  else domain->dimension = dim;
 
-  else if (arg[0] == '3') {
-    domain->dimension = 3;
-    return 0;
-  }
-  else {
-    cout << "Error: dimension argument: " << arg << endl;
-    exit(1);
-  }
-
-  
+  cout << "Set dimension to " << dim << endl;
+  return 0;
 }
