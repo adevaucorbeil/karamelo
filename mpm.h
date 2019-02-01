@@ -5,6 +5,11 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <iostream>
+#include <string>
+#include <fstream>
+
+using namespace std;
 
 class MPM {
 
@@ -13,8 +18,8 @@ class MPM {
   class Input *input;            // input script processing
   class Solid *solid;            // solid list
   //class *settings; // settings
-  FILE *infile;                  // infile
-  FILE *logfile;                 // logfile
+  filebuf infile;                // infile
+  filebuf logfile;               // logfile
 
   MPM(int, char **);
   ~MPM();

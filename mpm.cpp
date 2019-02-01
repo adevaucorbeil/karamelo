@@ -11,9 +11,6 @@ MPM::MPM(int narg, char **arg)
   solid = new Solid(this);
   //settings = new Settings(this);
 
-  infile = NULL;
-  logfile = NULL;
-
   // parse input switches
 
   int inflag = 0;
@@ -32,10 +29,11 @@ MPM::MPM(int narg, char **arg)
     }
   }
 
-  if (inflag != 0) infile = fopen(arg[inflag],"r");
-  if (infile == NULL) {
+  if (inflag != 0) infile.open(arg[inflag], ios_base::in); // open in read only
+
+  if (!infile.is_open()) {
     printf("Cannot open input script %s\n",arg[inflag]);
-    exit(1);
+    exit(1); 
   }
 }
 
@@ -44,6 +42,6 @@ MPM::~MPM()
   delete input;
   delete solid;
 
-  if (logfile) fclose(infile);
-  if (logfile) fclose(logfile);
+  if (infile.is_open()) infile.close();
+  if (logfile.is_open()) logfile.close();
 }

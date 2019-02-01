@@ -13,13 +13,13 @@ public:
   // functions
   Input(class MPM *, int, char **);
   ~Input();
-  void file();                   // process all input
+  void file();                 // process all input
 
 
 private:
   char *command;               // ptr to current command
-  char *line,*copy;      // input line string
-  int maxline, maxcopy;     // max lengths of char strings
+  string line,copy;            // input line string
+  int maxline, maxcopy;        // max lengths of char strings
   int maxarg;                  // max # of args in arg
 
   void reallocate(char *&, int &, int);  // reallocate a char string

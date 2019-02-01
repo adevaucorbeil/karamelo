@@ -5,6 +5,7 @@
 
 #include "mpm.h"
 
+using namespace std;
 
 class Pointers {
  public:
@@ -12,16 +13,16 @@ class Pointers {
    mpm(ptr),
    solid(ptr->solid),
    input(ptr->input), 
-   infile(ptr->infile),
-   logfile(ptr->logfile) {}
+   infile(&ptr->infile),
+   logfile(&ptr->logfile) {}
   virtual ~Pointers() {}
  protected:
   MPM *mpm;
   Solid *&solid;
   Input *&input;
 
-  FILE *&infile;
-  FILE *&logfile;
+  filebuf *infile;
+  filebuf *logfile;
 };
 
   

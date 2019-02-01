@@ -7,6 +7,9 @@
 #define DELTALINE 256
 #define DELTA 4
 
+using namespace std;
+
+
 Input::Input(MPM *mpm, int argc, char **argv) : Pointers(mpm)
 {
   maxline = maxcopy = 0;
@@ -26,53 +29,22 @@ Input::~Input()
 
 void Input::file()
 {
-  int m,n;
+  bool ignore = false;
 
-  while (1) {
+  istream is(infile);
+  while (is) {
+    char c = char(is.get());
+    if (c != '\n') {
+      if (c == '#') ignore = true; // ignore everything after #
 
-    // read a line from input script
-    // n = length of line including str terminator, 0 if end of file
-    // if line ends in continuation char '&', concatenate next line
-
-    m = 0;
-    while (1) {
-      if (maxline-m < 2) reallocate(line,maxline,0);
-
-      // end of file reached, so break
-      // n == 0 if nothing read, else n = line with str terminator
-
-      if (fgets(&line[m],maxline-m,infile) == NULL) {
-	if (m) n = strlen(line) + 1;
-	else n = 0;
-	break;
-      }
-
-      // continue if last char read was not a newline
-      // could happen if line is very long
-
-      m = strlen(line);
-      if (line[m-1] != '\n') continue;
-
-      // continue reading if final printable char is & char
-      // or if odd number of triple quotes
-      // else break with n = line with str terminator
-
-      m--;
-      while (m >= 0 && isspace(line[m])) m--;
-      if (m < 0 || line[m] != '&') {
-	if (numtriple(line) % 2) {
-	  m += 2;
-	  continue;
-	}
-	line[m+1] = '\0';
-	n = m+2;
-	break;
-      }
+      if (!ignore)
+	line.append(&c,1);
+    } else {
+      ignore = false;
+      cout << line << endl;
+      line.clear();
     }
-    if (n==0) break;
-    parse();
-    if (command == NULL) continue;
-  }
+  }  
 }
 
 
@@ -109,50 +81,50 @@ int Input::numtriple(char *line)
 
 void Input::parse()
 {
-  // duplicate line into copy string to break into words
+  // // duplicate line into copy string to break into words
 
-  int n = strlen(line) + 1;
-  if (n > maxcopy) reallocate(copy,maxcopy,n);
-  strcpy(copy,line);
+  // int n = strlen(line) + 1;
+  // if (n > maxcopy) reallocate(copy,maxcopy,n);
+  // strcpy(copy,line);
 
-  int id_last_space = -1;
-  int id_space = -1;
-  int nword = 0;
+  // int id_last_space = -1;
+  // int id_space = -1;
+  // int nword = 0;
 
-  for (int i=0; i<n; i++){
-    if (copy[i] == '#') {
-      copy[i] = '\0';
-      break;
-    }
-  }
+  // for (int i=0; i<n; i++){
+  //   if (copy[i] == '#') {
+  //     copy[i] = '\0';
+  //     break;
+  //   }
+  // }
 
-  char *next;
-  command = nextword(copy,&next);
-  printf("command = %s\n", command);
-  if (command == NULL) return;
+  // char *next;
+  // command = nextword(copy,&next);
+  // printf("command = %s\n", command);
+  // if (command == NULL) return;
 
-  narg = 0;
-  char *ptr;
-  ptr = next;
-  while (ptr) {
-    if (narg == maxarg) {
-      maxarg += DELTA;
-      //printf("realloc\n");
-      arg = (char **) realloc(arg,maxarg*sizeof(char *));
-      if (arg == NULL) {
-	printf("arg == NULL\n");
-	exit(1);
-      }
-    }
-    arg[narg] = nextword(ptr,&next);
-    if (!arg[narg]) break;
-    narg++;
-    ptr = next;
-  }
-  for (int i=0; i<narg; i++) {
-    printf("%s\n",arg[i]);
-  }
-  printf("\n");
+  // narg = 0;
+  // char *ptr;
+  // ptr = next;
+  // while (ptr) {
+  //   if (narg == maxarg) {
+  //     maxarg += DELTA;
+  //     //printf("realloc\n");
+  //     arg = (char **) realloc(arg,maxarg*sizeof(char *));
+  //     if (arg == NULL) {
+  // 	printf("arg == NULL\n");
+  // 	exit(1);
+  //     }
+  //   }
+  //   arg[narg] = nextword(ptr,&next);
+  //   if (!arg[narg]) break;
+  //   narg++;
+  //   ptr = next;
+  // }
+  // for (int i=0; i<narg; i++) {
+  //   printf("%s\n",arg[i]);
+  // }
+  // printf("\n");
 }
 
 /* ----------------------------------------------------------------------
