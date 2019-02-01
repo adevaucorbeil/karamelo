@@ -22,10 +22,14 @@ private:
   int maxline, maxcopy;        // max lengths of char strings
   int maxarg;                  // max # of args in arg
 
-  void reallocate(char *&, int &, int);  // reallocate a char string
-  int numtriple(char *);                 // count number of triple quotes
-  void parse();                          // parse an input text line
-  char *nextword(char *, char **);       // find next word in string with quotes
+  int numtriple(char *);                     // count number of triple quotes
+  double parse(string);                      // parse an input text line
+  double precedence(char);                   // find precedence of operators.
+  double applyOp(double , double , char );   // perform arithmetic operations.
+  bool is_operator(char);                    // check if is an operator
+  bool is_math_char(char);                   // check if the character is either of +-/*()
+  double evaluate_function(string , string); // evaluate function with argument
+  string remove_whitespace(string);          // remove white spaces from string
 };
 
 #endif

@@ -8,6 +8,7 @@
 #include <iostream>
 #include <string>
 #include <fstream>
+#include <map>
 
 using namespace std;
 
@@ -20,6 +21,7 @@ class MPM {
   //class *settings; // settings
   filebuf infile;                // infile
   filebuf logfile;               // logfile
+  map<string, double> variables; // global variables
 
   MPM(int, char **);
   ~MPM();

@@ -14,7 +14,8 @@ class Pointers {
    solid(ptr->solid),
    input(ptr->input), 
    infile(&ptr->infile),
-   logfile(&ptr->logfile) {}
+   logfile(&ptr->logfile),
+   variables(&ptr->variables) {}
   virtual ~Pointers() {}
  protected:
   MPM *mpm;
@@ -23,6 +24,8 @@ class Pointers {
 
   filebuf *infile;
   filebuf *logfile;
+
+  map<string, double> *variables;
 };
 
   
