@@ -106,6 +106,7 @@ double Input::evaluate_function(string func, string arg){
 
 
   if (func.compare("dimension") == 0) return (double) dimension(arg);
+  if (func.compare("region") == 0) return (double) region(arg);
   else if (func.compare("exp") == 0) return (double) exp(parse(arg));
   cout << "Error: Unknown function " << func << endl;
   exit(1);
@@ -402,5 +403,30 @@ int Input::dimension(string arg){
   else domain->dimension = dim;
 
   cout << "Set dimension to " << dim << endl;
+  return 0;
+}
+
+
+int Input::region(string str){
+  // Separate arguments:
+  string args[8]; // region takes a total of 8 arguments.
+
+  int j = 0;
+  int start = 0;
+  for (int i=0; i<str.length(); i++) {
+    // Locate comas.
+    if (str[i] == ',')  {
+      if (i==start) {
+	cout << "Error: missing argument" << endl;
+	exit(1);
+      }
+      args[j].append(&str[start], i-start);
+      cout << "Received argument " << j+1 << " :" << args[j] << endl;
+      start = i+1;
+      j++;
+    }
+  }
+
+
   return 0;
 }

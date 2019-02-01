@@ -5,6 +5,7 @@
 # 'make clean'  removes all .o and executable files
 #
 
+SHELL = /bin/bash
 # define the C compiler to use
 CC = g++
 
@@ -29,17 +30,10 @@ LIBS =
 #-lmylib -lm
 
 # define the C source files
-SRCS = main.cpp  mpm.cpp  solid.cpp input.cpp domain.cpp
+SRC :=	$(wildcard *.cpp)
+INC :=	$(wildcard *.h)
+OBJ := 	$(SRC:.cpp=.o)
 
-# define the C object files 
-#
-# This uses Suffix Replacement within a macro:
-#   $(name:string1=string2)
-#         For each word in 'name' replace 'string1' with 'string2'
-# Below we are replacing the suffix .c of all words in the macro SRCS
-# with the .o suffix
-#
-OBJS = $(SRCS:.c=.o)
 
 # define the executable file 
 MAIN = mpm
@@ -55,20 +49,21 @@ MAIN = mpm
 all:    $(MAIN)
 	@echo  Simple compiler named mpm has been compiled
 
-$(MAIN): $(OBJS) 
-	$(CC) $(CFLAGS) $(INCLUDES) -o $(MAIN) $(OBJS) $(LFLAGS) $(LIBS)
+$(MAIN): $(OBJ)
+	echo $(OBJ)
+	$(CC) $(CFLAGS) $(INCLUDES) $(OBJ) $(LFLAGS) $(LIBS) -o $(MAIN) 
 
 # this is a suffix replacement rule for building .o's from .c's
 # it uses automatic variables $<: the name of the prerequisite of
 # the rule(a .c file) and $@: the name of the target of the rule (a .o file) 
 # (see the gnu make manual section about automatic variables)
-.c.o:
+%.o:%.cpp
 	$(CC) $(CFLAGS) $(INCLUDES) -c $<  -o $@
 
 clean:
 	$(RM) *.o *~ $(MAIN)
 
-depend: $(SRCS)
+depend: $(SRC)
 	makedepend $(INCLUDES) $^
 
 # DO NOT DELETE THIS LINE -- make depend needs it

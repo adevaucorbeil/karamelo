@@ -31,6 +31,8 @@ private:
   double evaluate_function(string , string); // evaluate function with argument
   string remove_whitespace(string);          // remove white spaces from string
   int dimension(string);                     // set the dimension of the simulation domain
+  int region(string);
+
 };
 
 #endif
