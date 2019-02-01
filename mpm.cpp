@@ -3,11 +3,14 @@
 #include <string.h>
 #include "mpm.h"
 #include "solid.h"
+#include "domain.h"
 #include "input.h"
 
 MPM::MPM(int narg, char **arg)
 {
   input = new Input(this, narg, arg);
+
+  domain = new Domain(this);
   solid = new Solid(this);
   //settings = new Settings(this);
 

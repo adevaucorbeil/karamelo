@@ -1,5 +1,6 @@
 #include "mpm.h"
 #include "input.h"
+#include "domain.h"
 #include <iostream>
 #include <fstream>
 #include <string.h>
@@ -102,7 +103,10 @@ bool Input::is_math_char(char op){
 // evaluate function func with argument arg:
 double Input::evaluate_function(string func, string arg){
   cout << "Evaluate function " << func << " with argument: " << arg << endl;
-  if (func.compare("exp") == 0) return (double) exp(parse(arg));
+
+
+  if (func.compare("dimension") == 0) return (double) dimension(arg);
+  else if (func.compare("exp") == 0) return (double) exp(parse(arg));
   cout << "Error: Unknown function " << func << endl;
   exit(1);
 }
@@ -383,4 +387,27 @@ double Input::parse(string str)
     }
     return values.top();
   }
+}
+
+
+int Input::dimension(string arg){
+  if (arg.size() > 1) {
+    cout << "Error: illegal dimension argument: " << arg << endl;
+    exit(1);
+  }
+  else if (arg[0] == '2') {
+    domain->dimension = 2;
+    return 0;
+  }
+
+  else if (arg[0] == '3') {
+    domain->dimension = 3;
+    return 0;
+  }
+  else {
+    cout << "Error: dimension argument: " << arg << endl;
+    exit(1);
+  }
+
+  
 }

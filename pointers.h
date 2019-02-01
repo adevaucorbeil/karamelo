@@ -15,12 +15,16 @@ class Pointers {
    input(ptr->input), 
    infile(&ptr->infile),
    logfile(&ptr->logfile),
+   domain(ptr->domain),
    variables(&ptr->variables) {}
   virtual ~Pointers() {}
  protected:
   MPM *mpm;
-  Solid *&solid;
   Input *&input;
+
+  
+  Domain *&domain;
+  Solid *&solid;
 
   filebuf *infile;
   filebuf *logfile;

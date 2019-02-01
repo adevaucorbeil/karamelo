@@ -29,7 +29,7 @@ LIBS =
 #-lmylib -lm
 
 # define the C source files
-SRCS = main.cpp  mpm.cpp  solid.cpp input.cpp
+SRCS = main.cpp  mpm.cpp  solid.cpp input.cpp domain.cpp
 
 # define the C object files 
 #

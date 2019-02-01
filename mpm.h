@@ -17,10 +17,14 @@ class MPM {
  public:
 
   class Input *input;            // input script processing
+
+  class Domain *domain;          // simulation box
   class Solid *solid;            // solid list
   //class *settings; // settings
+
   filebuf infile;                // infile
   filebuf logfile;               // logfile
+
   map<string, double> variables; // global variables
 
   MPM(int, char **);
