@@ -4,11 +4,13 @@
 #define MPM_INPUT_H
 
 #include "pointers.h"
+#include <vector>
 
 class Input : protected Pointers {
 public:
   int narg;                    // # of command args
   char **arg;                  // parsed args for command
+  vector<string> args;
 
   // functions
   Input(class MPM *, int, char **);

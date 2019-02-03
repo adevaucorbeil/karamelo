@@ -4,7 +4,7 @@
 
 using namespace std;
 
-RegBlock::RegBlock(MPM *mpm, string *args) : Region(mpm, args)
+RegBlock::RegBlock(MPM *mpm, vector<string> args) : Region(mpm, args)
 {
   cout << "Initiate RegBlock" << endl; 
 }

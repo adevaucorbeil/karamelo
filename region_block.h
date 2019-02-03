@@ -15,7 +15,7 @@ RegionStyle(block,RegBlock)
 class RegBlock : public Region {
 
  public:
-  RegBlock(class MPM *, string*);
+  RegBlock(class MPM *, vector<string>);
   ~RegBlock();
 
  protected:

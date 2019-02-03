@@ -409,8 +409,7 @@ int Input::dimension(string arg){
 
 int Input::region(string str){
   // Separate arguments:
-  string args[8]; // region takes a total of 8 arguments.
-
+  
   int j = 0;
   int start = 0;
   for (int i=0; i<str.length(); i++) {
@@ -420,13 +419,15 @@ int Input::region(string str){
 	cout << "Error: missing argument" << endl;
 	exit(1);
       }
-      args[j].append(&str[start], i-start);
-      cout << "Received argument " << j+1 << " :" << args[j] << endl;
+
+      args.resize(args.size()+1);
+      args.back().append(&str[start], i-start);
+      cout << "Received argument " << j+1 << " :" << args.back() << endl;
       start = i+1;
       j++;
     }
   }
 
-
+  domain->add_region(args);
   return 0;
 }
