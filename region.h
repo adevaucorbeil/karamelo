@@ -13,7 +13,7 @@ class Region : protected Pointers {
   Region(class MPM *, vector<string>);
   virtual ~Region();
   virtual void init();
-
+  void options(vector<string> *, vector<string>::iterator);
   //protected:
 };
 

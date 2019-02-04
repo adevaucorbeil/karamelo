@@ -414,14 +414,14 @@ int Input::region(string str){
   int start = 0;
   for (int i=0; i<str.length(); i++) {
     // Locate comas.
-    if (str[i] == ',')  {
+    if (str[i] == ',' || i==str.length()-1)  {
       if (i==start) {
 	cout << "Error: missing argument" << endl;
 	exit(1);
       }
 
       args.resize(args.size()+1);
-      args.back().append(&str[start], i-start);
+      args.back().append(&str[start], i - start + (i==str.length()-1) );
       cout << "Received argument " << j+1 << " :" << args.back() << endl;
       start = i+1;
       j++;

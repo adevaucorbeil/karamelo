@@ -16,6 +16,7 @@ public:
   Input(class MPM *, int, char **);
   ~Input();
   void file();                 // process all input
+  double parse(string);        // parse an input text line
 
 
 private:
@@ -25,7 +26,6 @@ private:
   int maxarg;                  // max # of args in arg
 
   int numtriple(char *);                     // count number of triple quotes
-  double parse(string);                      // parse an input text line
   double precedence(char);                   // find precedence of operators.
   double applyOp(double , double , char );   // perform arithmetic operations.
   bool is_operator(char);                    // check if is an operator
