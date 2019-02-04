@@ -17,6 +17,8 @@ class RegBlock : public Region {
  public:
   RegBlock(class MPM *, vector<string>);
   ~RegBlock();
+  int inside(double, double, double);
+  vector<double> limits();
 
  protected:
   double xlo,xhi,ylo,yhi,zlo,zhi;

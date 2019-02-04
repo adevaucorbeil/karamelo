@@ -14,6 +14,11 @@ class Region : protected Pointers {
   virtual ~Region();
   virtual void init();
   void options(vector<string> *, vector<string>::iterator);
+
+  // implemented by each region
+
+  virtual vector<double> limits();
+  virtual int inside(double, double, double) = 0;
   //protected:
 };
 

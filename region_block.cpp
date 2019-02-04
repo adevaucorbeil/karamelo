@@ -34,3 +34,30 @@ RegBlock::~RegBlock()
 {
 
 }
+
+/* ----------------------------------------------------------------------
+   inside = 1 if x,y,z is inside or on surface
+   inside = 0 if x,y,z is outside and not on surface
+------------------------------------------------------------------------- */
+
+int RegBlock::inside(double x, double y, double z)
+{
+  cout << "Check if point (" << x << ", " << y << ", " << z << ") is inside the region" << endl;
+  if (x >= xlo && x <= xhi && y >= ylo && y <= yhi && z >= zlo && z <= zhi)
+    return 1;
+  return 0;
+}
+
+/* ----------------------------------------------------------------------
+   return a vector that contains the limits of the box
+------------------------------------------------------------------------- */
+vector<double> RegBlock::limits(){
+  vector<double> lim;
+  lim.push_back(xlo);
+  lim.push_back(xhi);
+  lim.push_back(ylo);
+  lim.push_back(yhi);
+  lim.push_back(zlo);
+  lim.push_back(zhi);
+  return lim;
+}

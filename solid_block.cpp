@@ -24,7 +24,29 @@ SolBlock::SolBlock(MPM *mpm, vector<string> args) : Solid(mpm, args)
     cout << "Error: region ID " << args[2] << " not does not exist" << endl;
     exit(1);
   }
-  
+
+  int np, nx, ny, nz;
+  nx = input->parse(args[3]);
+  ny = input->parse(args[4]);
+  nz = input->parse(args[5]);
+  np = nx*ny*nz;
+
+  grow(np);
+
+  vector<double> limits = domain->regions[iregion]->limits();
+  double delta_x, delta_y, delta_z;
+  delta_x = (limits[1]-limits[0])/((float) nx);
+  delta_y = (limits[3]-limits[2])/((float) ny);
+  delta_z = (limits[5]-limits[4])/((float) nz);
+
+  cout << "deltas = " << delta_x << "\t"<< delta_y << "\t"<< delta_z << "\t" << endl;
+  for (int i=0; i<nx; i++){
+    for (int j=0; j<ny; j++){
+      for (int k=0; k<nz; k++){
+	
+      }
+    }
+  }
 }
 
 

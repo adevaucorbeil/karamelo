@@ -36,3 +36,8 @@ void Solid::options(vector<string> *args, vector<string>::iterator it)
     cout << endl;
   }
 }
+
+
+void Solid::grow(int np){
+  x.reserve(np);
+}
