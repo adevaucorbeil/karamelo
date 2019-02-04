@@ -7,7 +7,8 @@ using namespace std;
 Region::Region(MPM *mpm, vector<string> args) :
   Pointers(mpm)
 {
-  
+  cout << "Creating new region with ID: " << args[0] << endl;
+  id = args[0];
 }
 
 Region::~Region()

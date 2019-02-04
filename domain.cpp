@@ -48,15 +48,13 @@ void Domain::add_region(vector<string> args){
 
     // create the Region
 
-  string *estyle = &args[1];
-
-  if (region_map->find(*estyle) != region_map->end()) {
-    RegionCreator region_creator = (*region_map)[*estyle];
+  if (region_map->find(args[1]) != region_map->end()) {
+    RegionCreator region_creator = (*region_map)[args[1]];
     regions.push_back(region_creator(mpm, args));
     regions.back()->init();
   }
   else {
-    cout << "Unknown region style " << *estyle << endl;
+    cout << "Unknown region style " << args[1] << endl;
     exit(1);
   }
   
@@ -64,8 +62,10 @@ void Domain::add_region(vector<string> args){
 
 int Domain::find_region(string name)
 {
-  for (int iregion = 0; iregion < regions.size(); iregion++)
+  for (int iregion = 0; iregion < regions.size(); iregion++) {
+    cout << "regions["<< iregion <<"]->id=" << regions[iregion]->id << endl;
     if (name.compare(regions[iregion]->id) == 0) return iregion;
+  }
   return -1;
 }
 

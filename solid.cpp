@@ -8,7 +8,8 @@ using namespace std;
 Solid::Solid(MPM *mpm, vector<string> args) :
   Pointers(mpm)
 {
-  
+  cout << "Creating new solid with ID: " << args[0] << endl;
+  id = args[0];
 }
 
 Solid::~Solid()
