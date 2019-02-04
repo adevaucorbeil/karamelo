@@ -39,5 +39,9 @@ void Solid::options(vector<string> *args, vector<string>::iterator it)
 
 
 void Solid::grow(int np){
+  x0.reserve(np);
   x.reserve(np);
+  vol0.reserve(np);
+  vol.reserve(np);
+  mass.reserve(np);
 }

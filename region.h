@@ -17,7 +17,7 @@ class Region : protected Pointers {
 
   // implemented by each region
 
-  virtual vector<double> limits();
+  virtual vector<double> limits() {return vector<double>();};
   virtual int inside(double, double, double) = 0;
   //protected:
 };

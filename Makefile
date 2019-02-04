@@ -10,7 +10,8 @@ SHELL = /bin/bash
 CC = g++
 
 # define any compile-time flags
-CFLAGS = -g -O3 -std=c++11
+CFLAGS = -g std=c++11
+#-O3
 
 # define any directories containing header files other than /usr/include
 #
@@ -50,7 +51,6 @@ all:    $(MAIN)
 	@echo  Simple compiler named mpm has been compiled
 
 $(MAIN): $(OBJ)
-	echo $(OBJ)
 	$(CC) $(CFLAGS) $(INCLUDES) $(OBJ) $(LFLAGS) $(LIBS) -o $(MAIN) 
 
 # this is a suffix replacement rule for building .o's from .c's
