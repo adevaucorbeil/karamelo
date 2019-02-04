@@ -44,7 +44,10 @@ void Domain::add_region(vector<string> args){
     RegionCreator region_creator = (*region_map)[*estyle];
     regions.push_back(region_creator(mpm, args));
     regions.back()->init();
-    return;
+  }
+  else {
+    cout << "Unknown region style " << *estyle << endl;
+    exit(1);
   }
   
 }

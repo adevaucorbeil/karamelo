@@ -1,5 +1,6 @@
 #include "mpm.h"
 #include "input.h"
+#include "style_command.h"
 #include "domain.h"
 #include <iostream>
 #include <fstream>
@@ -18,6 +19,17 @@ Input::Input(MPM *mpm, int argc, char **argv) : Pointers(mpm)
   maxline = maxcopy = 0;
   maxarg = 0;
   arg = NULL;
+
+    // fill map with commands listed in style_command.h
+
+  command_map = new CommandCreatorMap();
+
+#define COMMAND_CLASS
+#define CommandStyle(key,Class)				\
+  (*command_map)[#key] = &command_creator<Class>;
+#include "style_command.h"
+#undef CommandStyle
+#undef COMMAND_CLASS
 }
 
 
@@ -104,9 +116,40 @@ bool Input::is_math_char(char op){
 double Input::evaluate_function(string func, string arg){
   cout << "Evaluate function " << func << " with argument: " << arg << endl;
 
+  // Separate arguments:
+  vector<string> args;
 
-  if (func.compare("dimension") == 0) return (double) dimension(arg);
-  if (func.compare("region") == 0) return (double) region(arg);
+  int j = 0;
+  int start = 0;
+  for (int i=0; i<arg.length(); i++) {
+    // Locate comas.
+    if (arg[i] == ',' || i==arg.length()-1)  {
+      if (i==start) {
+	cout << "Error: missing argument" << endl;
+	exit(1);
+      }
+
+      args.resize(args.size()+1);
+      args.back().append(&arg[start], i - start + (i==arg.length()-1) );
+      cout << "Received argument " << j+1 << " :" << args.back() << endl;
+      start = i+1;
+      j++;
+    }
+  }
+
+  if (func.compare("dimension") == 0) return (double) dimension(args);
+  if (func.compare("region") == 0) return (double) region(args);
+
+  // invoke commands added via style_command.h
+
+  if (command_map->find(func) != command_map->end()) {
+    CommandCreator command_creator = (*command_map)[func];
+    command_creator(mpm,args);
+    return 0;
+  }
+
+
+
   else if (func.compare("exp") == 0) return (double) exp(parse(arg));
   cout << "Error: Unknown function " << func << endl;
   exit(1);
@@ -391,9 +434,19 @@ double Input::parse(string str)
 }
 
 
-int Input::dimension(string arg){
+int Input::dimension(vector<string> args){
 
-  int dim = (int) parse(arg);
+  if (args.size()==0) {
+    cout << "Error: dimension did not receive enough arguments: 1 required" << endl;
+    exit(1);
+  }
+
+  if (args.size() > 1) {
+    cout << "Error: dimension received too many arguments: 1 required" << endl;
+    exit(1);
+  }
+
+  int dim = (int) parse(args[0]);
 
 
   if (dim != 2 && dim != 3) {
@@ -407,27 +460,18 @@ int Input::dimension(string arg){
 }
 
 
-int Input::region(string str){
-  // Separate arguments:
-  
-  int j = 0;
-  int start = 0;
-  for (int i=0; i<str.length(); i++) {
-    // Locate comas.
-    if (str[i] == ',' || i==str.length()-1)  {
-      if (i==start) {
-	cout << "Error: missing argument" << endl;
-	exit(1);
-      }
-
-      args.resize(args.size()+1);
-      args.back().append(&str[start], i - start + (i==str.length()-1) );
-      cout << "Received argument " << j+1 << " :" << args.back() << endl;
-      start = i+1;
-      j++;
-    }
-  }
-
+int Input::region(vector<string> args){
   domain->add_region(args);
   return 0;
+}
+
+/* ----------------------------------------------------------------------
+   one instance per command in style_command.h
+------------------------------------------------------------------------- */
+
+template <typename T>
+void Input::command_creator(MPM *mpm, vector<string> args)
+{
+  T cmd(mpm);
+  cmd.command(args);
 }

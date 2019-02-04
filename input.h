@@ -10,7 +10,6 @@ class Input : protected Pointers {
 public:
   int narg;                    // # of command args
   char **arg;                  // parsed args for command
-  vector<string> args;
 
   // functions
   Input(class MPM *, int, char **);
@@ -32,8 +31,16 @@ private:
   bool is_math_char(char);                   // check if the character is either of +-/*()
   double evaluate_function(string , string); // evaluate function with argument
   string remove_whitespace(string);          // remove white spaces from string
-  int dimension(string);                     // set the dimension of the simulation domain
-  int region(string);
+  int dimension(vector<string>);                     // set the dimension of the simulation domain
+  int region(vector<string>);
+
+ public:
+  typedef void (*CommandCreator)(MPM *,vector<string>);
+  typedef map<string,CommandCreator> CommandCreatorMap;
+  CommandCreatorMap *command_map;
+
+ protected:
+  template <typename T> static void command_creator(MPM *,vector<string>);
 
 };
 
