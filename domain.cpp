@@ -2,6 +2,7 @@
 #include "region.h"
 #include "style_region.h"
 #include "style_solid.h"
+#include "style_material.h"
 
 using namespace std;
 
@@ -11,6 +12,7 @@ Domain::Domain(MPM *mpm) : Pointers(mpm)
 
   region_map = new RegionCreatorMap();
   solid_map = new SolidCreatorMap();
+  material_map = new MaterialCreatorMap();
 
 #define REGION_CLASS
 #define RegionStyle(key,Class) \
@@ -25,13 +27,21 @@ Domain::Domain(MPM *mpm) : Pointers(mpm)
 #include "style_solid.h"
 #undef SolidStyle
 #undef SOLID_CLASS
-}
 
+
+#define MATERIAL_CLASS
+#define MaterialStyle(key,Class) \
+  (*material_map)[#key] = &material_creator<Class>;
+#include "style_material.h"
+#undef MaterialStyle
+#undef MATERIAL_CLASS
+}
 
 Domain::~Domain()
 {
   delete region_map;
   delete solid_map;
+  delete material_map;
 }
 
 /* ----------------------------------------------------------------------
@@ -119,6 +129,50 @@ int Domain::find_solid(string name)
 
 template <typename T>
 Solid *Domain::solid_creator(MPM *mpm, vector<string> args)
+{
+  return new T(mpm, args);
+}
+
+/* ----------------------------------------------------------------------
+   create a new material
+------------------------------------------------------------------------- */
+
+void Domain::add_material(vector<string> args){
+  cout << "In add_material" << endl;
+
+  if (find_material(args[0]) >= 0) {
+    cout << "Error: reuse of material ID" << endl;
+    exit(1);
+  }
+
+    // create the Material
+
+  string *estyle = &args[1];
+
+  if (material_map->find(*estyle) != material_map->end()) {
+    MaterialCreator material_creator = (*material_map)[*estyle];
+    materials.push_back(material_creator(mpm, args));
+    //materials.back()->init();
+  }
+  else {
+    cout << "Unknown material style " << *estyle << endl;
+    exit(1);
+  }
+  
+}
+
+int Domain::find_material(string name)
+{
+  for (int imaterial = 0; imaterial < materials.size(); imaterial++)
+    if (name.compare(materials[imaterial]->id) == 0) return imaterial;
+  return -1;
+}
+/* ----------------------------------------------------------------------
+   one instance per material style in style_material.h
+------------------------------------------------------------------------- */
+
+template <typename T>
+Material *Domain::material_creator(MPM *mpm, vector<string> args)
 {
   return new T(mpm, args);
 }
