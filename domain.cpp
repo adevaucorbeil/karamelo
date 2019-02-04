@@ -1,6 +1,7 @@
 #include "domain.h"
 #include "region.h"
 #include "style_region.h"
+#include "style_solid.h"
 
 using namespace std;
 
@@ -9,6 +10,7 @@ Domain::Domain(MPM *mpm) : Pointers(mpm)
   dimension = 3;
 
   region_map = new RegionCreatorMap();
+  solid_map = new SolidCreatorMap();
 
 #define REGION_CLASS
 #define RegionStyle(key,Class) \
@@ -16,12 +18,20 @@ Domain::Domain(MPM *mpm) : Pointers(mpm)
 #include "style_region.h"
 #undef RegionStyle
 #undef REGION_CLASS
+
+#define SOLID_CLASS
+#define SolidStyle(key,Class) \
+  (*solid_map)[#key] = &solid_creator<Class>;
+#include "style_solid.h"
+#undef SolidStyle
+#undef SOLID_CLASS
 }
 
 
 Domain::~Domain()
 {
   delete region_map;
+  delete solid_map;
 }
 
 /* ----------------------------------------------------------------------
@@ -65,6 +75,16 @@ int Domain::find_region(string name)
 
 template <typename T>
 Region *Domain::region_creator(MPM *mpm, vector<string> args)
+{
+  return new T(mpm, args);
+}
+
+/* ----------------------------------------------------------------------
+   one instance per solid style in style_solid.h
+------------------------------------------------------------------------- */
+
+template <typename T>
+Solid *Domain::solid_creator(MPM *mpm, vector<string> args)
 {
   return new T(mpm, args);
 }
