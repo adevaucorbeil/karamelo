@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include "mpm.h"
-#include "solid.h"
 #include "domain.h"
 #include "input.h"
 
@@ -11,7 +10,6 @@ MPM::MPM(int narg, char **arg)
   input = new Input(this, narg, arg);
 
   domain = new Domain(this);
-  solid = new Solid(this);
   //settings = new Settings(this);
 
   // parse input switches
@@ -43,7 +41,6 @@ MPM::MPM(int narg, char **arg)
 MPM::~MPM()
 {
   delete input;
-  delete solid;
 
   if (infile.is_open()) infile.close();
   if (logfile.is_open()) logfile.close();

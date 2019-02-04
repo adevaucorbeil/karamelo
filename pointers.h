@@ -11,7 +11,6 @@ class Pointers {
  public:
  Pointers(MPM *ptr) :
    mpm(ptr),
-   solid(ptr->solid),
    input(ptr->input), 
    infile(&ptr->infile),
    logfile(&ptr->logfile),
@@ -21,10 +20,8 @@ class Pointers {
  protected:
   MPM *mpm;
   Input *&input;
-
   
   Domain *&domain;
-  Solid *&solid;
 
   filebuf *infile;
   filebuf *logfile;

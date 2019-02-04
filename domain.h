@@ -7,6 +7,7 @@
 #include <math.h>
 #include "pointers.h"
 #include "region.h"
+#include "solid.h"
 #include <map>
 #include <string>
 #include <vector>
@@ -17,6 +18,7 @@ class Domain : protected Pointers {
  public:
   int dimension;                         // 2 = 2d, 3 = 3d
   vector<class Region *> regions;         // list of defined Regions
+  vector<class Solid *> solids;         // list of defined Regions
 
   Domain(class MPM *);
   virtual ~Domain();

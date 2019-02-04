@@ -4,15 +4,16 @@
 #define MPM_SOLID_H
 
 #include "pointers.h"
+#include <vector>
 
 class Solid : protected Pointers {
  public:
-  int np;
+  string id;
 
-  // functions
-  Solid(class MPM *);
-  ~Solid();
-
+  Solid(class MPM *, vector<string>);
+  virtual ~Solid();
+  virtual void init();
+  void options(vector<string> *, vector<string>::iterator);
 };
 
 #endif
