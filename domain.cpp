@@ -80,6 +80,40 @@ Region *Domain::region_creator(MPM *mpm, vector<string> args)
 }
 
 /* ----------------------------------------------------------------------
+   create a new solid
+------------------------------------------------------------------------- */
+
+void Domain::add_solid(vector<string> args){
+  cout << "In add_solid" << endl;
+
+  if (find_solid(args[0]) >= 0) {
+    cout << "Error: reuse of solid ID" << endl;
+    exit(1);
+  }
+
+    // create the Solid
+
+  string *estyle = &args[1];
+
+  if (solid_map->find(*estyle) != solid_map->end()) {
+    SolidCreator solid_creator = (*solid_map)[*estyle];
+    solids.push_back(solid_creator(mpm, args));
+    solids.back()->init();
+  }
+  else {
+    cout << "Unknown solid style " << *estyle << endl;
+    exit(1);
+  }
+  
+}
+
+int Domain::find_solid(string name)
+{
+  for (int isolid = 0; isolid < solids.size(); isolid++)
+    if (name.compare(solids[isolid]->id) == 0) return isolid;
+  return -1;
+}
+/* ----------------------------------------------------------------------
    one instance per solid style in style_solid.h
 ------------------------------------------------------------------------- */
 

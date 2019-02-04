@@ -25,6 +25,8 @@ class Domain : protected Pointers {
 
   void add_region(vector<string>);
   int find_region(string);
+  void add_solid(vector<string>);
+  int find_solid(string);
 
   typedef Region *(*RegionCreator)(MPM *,vector<string>);
   typedef map<string,RegionCreator> RegionCreatorMap;

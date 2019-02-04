@@ -124,7 +124,7 @@ double Input::evaluate_function(string func, string arg){
   for (int i=0; i<arg.length(); i++) {
     // Locate comas.
     if (arg[i] == ',' || i==arg.length()-1)  {
-      if (i==start) {
+      if (i==start && i!=arg.length()-1) {
 	cout << "Error: missing argument" << endl;
 	exit(1);
       }
@@ -139,6 +139,7 @@ double Input::evaluate_function(string func, string arg){
 
   if (func.compare("dimension") == 0) return (double) dimension(args);
   if (func.compare("region") == 0) return (double) region(args);
+  if (func.compare("solid") == 0) return (double) solid(args);
 
   // invoke commands added via style_command.h
 
@@ -465,6 +466,10 @@ int Input::region(vector<string> args){
   return 0;
 }
 
+int Input::solid(vector<string> args){
+  domain->add_solid(args);
+  return 0;
+}
 /* ----------------------------------------------------------------------
    one instance per command in style_command.h
 ------------------------------------------------------------------------- */
