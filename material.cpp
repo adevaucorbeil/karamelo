@@ -65,6 +65,7 @@ void Material::add_EOS(vector<string> args){
     // create the EOS
 
   if (EOS_map->find(args[1]) != EOS_map->end()) {
+    cout << "Create EOS\n";
     EOSCreator EOS_creator = (*EOS_map)[args[1]];
     EOSs.push_back(EOS_creator(mpm, args));
     EOSs.back()->init();
@@ -82,6 +83,7 @@ void Material::set_EOS(vector<string> args){
 
 int Material::find_EOS(string name)
 {
+  cout << "In find_EOS\n";
   for (int iEOS = 0; iEOS < EOSs.size(); iEOS++) {
     cout << "EOSs["<< iEOS <<"]->id=" << EOSs[iEOS]->id << endl;
     if (name.compare(EOSs[iEOS]->id) == 0) return iEOS;

@@ -57,7 +57,7 @@ $(MAIN): $(OBJ)
 # it uses automatic variables $<: the name of the prerequisite of
 # the rule(a .c file) and $@: the name of the target of the rule (a .o file) 
 # (see the gnu make manual section about automatic variables)
-%.o:%.cpp
+%.o:%.cpp %.h
 	$(CC) $(CFLAGS) $(INCLUDES) -c $<  -o $@
 
 clean:
