@@ -13,7 +13,7 @@ Solid::Solid(MPM *mpm, vector<string> args) :
   id = args[0];
 
   eos = NULL;
-  grid = NULL;
+  grid = new Grid(mpm);
 }
 
 Solid::~Solid()
