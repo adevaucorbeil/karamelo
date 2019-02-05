@@ -16,6 +16,9 @@ class EOS : protected Pointers {
   void options(vector<string> *, vector<string>::iterator);
 
   // implemented by each EOS
+  //virtual compute_pressure()
+  virtual double rho0() = 0;
+  virtual double K() = 0;
 
   //protected:
 };

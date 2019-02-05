@@ -25,14 +25,17 @@ SolBlock::SolBlock(MPM *mpm, vector<string> args) : Solid(mpm, args)
     exit(1);
   }
 
+  // Calculate total number of particles np:
   int np, nx, ny, nz;
   nx = input->parse(args[3]);
   ny = input->parse(args[4]);
   nz = input->parse(args[5]);
   np = nx*ny*nz;
 
+  // Allocate the space in the vectors for np particles:
   grow(np);
 
+  // Create particles:
   vector<double> limits = domain->regions[iregion]->limits();
   double delta_x, delta_y, delta_z;
   delta_x = (limits[1]-limits[0])/((float) nx);
@@ -43,6 +46,7 @@ SolBlock::SolBlock(MPM *mpm, vector<string> args) : Solid(mpm, args)
 
   int l=0;
   double vol_ = delta_x*delta_y*delta_z;
+  double mass_ = eos->rho0() * vol_;
 
   for (int i=0; i<nx; i++){
     for (int j=0; j<ny; j++){
@@ -51,7 +55,7 @@ SolBlock::SolBlock(MPM *mpm, vector<string> args) : Solid(mpm, args)
 	x0[l][1] = x[l][1] = delta_y*(j+0.5);
 	x0[l][2] = x[l][2] = delta_z*(k+0.5);
 	vol0[l] = vol[l] = vol_;
-	//mass[l] = 
+	mass[l] = mass_;
       }
     }
   }
