@@ -17,7 +17,8 @@ class Pointers {
    logfile(&ptr->logfile),
    domain(ptr->domain),
    material(ptr->material),
-   variables(&ptr->variables) {}
+   variables(&ptr->variables),
+   update(ptr->update){}
   virtual ~Pointers() {}
  protected:
   MPM *mpm;
@@ -25,6 +26,7 @@ class Pointers {
   
   Domain *&domain;
   Material *&material;
+  Update *&update;
 
   filebuf *infile;
   filebuf *logfile;

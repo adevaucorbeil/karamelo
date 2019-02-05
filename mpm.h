@@ -20,6 +20,7 @@ class MPM {
 
   class Domain *domain;          // simulation box
   class Material *material;      // material
+  class Update *update;          // 
   //class *settings; // settings
 
   filebuf infile;                // infile
