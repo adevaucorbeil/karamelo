@@ -51,17 +51,22 @@ void Input::file()
   while (is) {
     char c = char(is.get());
     if (c != '\n') {
-      if (c == '#') ignore = true; // ignore everything after #
 
-      if (!ignore)
-	line.append(&c,1);
+      if (c == '#') ignore = true; // ignore everything after #
+      if (!ignore) line.append(&c,1);
+
     } else {
+
       ignore = false;
       cout << line << endl;
       cout << "gives: " << parse(line) << endl;
       line.clear();
+
     }
-  }  
+  }
+  // Treat the last line of the file:
+  if (line.size() != 0) parse(line);
+  line.clear();
 }
 
 // Function to find precedence of  
