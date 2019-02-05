@@ -13,6 +13,7 @@ class Pointers {
  Pointers(MPM *ptr) :
    mpm(ptr),
    input(ptr->input), 
+   output(ptr->output),
    infile(&ptr->infile),
    logfile(&ptr->logfile),
    domain(ptr->domain),
@@ -23,6 +24,7 @@ class Pointers {
  protected:
   MPM *mpm;
   Input *&input;
+  Output *&output;
   
   Domain *&domain;
   Material *&material;

@@ -17,6 +17,7 @@ class MPM {
  public:
 
   class Input *input;            // input script processing
+  class Output *output;          // thermo/dump/restart
 
   class Domain *domain;          // simulation box
   class Material *material;      // material

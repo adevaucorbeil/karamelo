@@ -5,10 +5,12 @@
 #include "domain.h"
 #include "material.h"
 #include "input.h"
+#include "output.h"
 
 MPM::MPM(int narg, char **arg)
 {
   input = new Input(this, narg, arg);
+  output = new Output(this, narg, arg);
 
   domain = new Domain(this);
   material = new Material(this);
@@ -43,6 +45,9 @@ MPM::MPM(int narg, char **arg)
 MPM::~MPM()
 {
   delete input;
+  delete output;
+  delete domain;
+  delete material;
 
   if (infile.is_open()) infile.close();
   if (logfile.is_open()) logfile.close();
