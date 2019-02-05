@@ -5,18 +5,21 @@
 
 #include "pointers.h"
 #include "eos.h"
+#include "grid.h"
 #include <vector>
 
 class Solid : protected Pointers {
  public:
-  string id;
-  vector< array<double, 3> > x;
-  vector< array<double, 3> > x0;
-  vector< double > vol0;
-  vector< double > vol;
-  vector< double > mass;
+  string id;                          // solid id
+  vector< array<double, 3> > x;       // particles' current position
+  vector< array<double, 3> > x0;      // particles' reference position
+  vector< double > vol0;              // particles' reference volume
+  vector< double > vol;               // particles' current volume
+  vector< double > mass;              // particles' current mass
 
-  class EOS *eos;
+  class EOS *eos;                     // Equation-of-State
+
+  class Grid *grid;                    // background grid
 
   Solid(class MPM *, vector<string>);
   virtual ~Solid();

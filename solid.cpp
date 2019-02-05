@@ -11,10 +11,15 @@ Solid::Solid(MPM *mpm, vector<string> args) :
 {
   cout << "Creating new solid with ID: " << args[0] << endl;
   id = args[0];
+
+  eos = NULL;
+  grid = NULL;
 }
 
 Solid::~Solid()
 {
+  delete eos;
+  delete grid;
 }
 
 
@@ -50,9 +55,10 @@ void Solid::options(vector<string> *args, vector<string>::iterator it)
 
 
 void Solid::grow(int np){
-  x0.reserve(np);
-  x.reserve(np);
-  vol0.reserve(np);
-  vol.reserve(np);
-  mass.reserve(np);
+  nparticles = np;
+  x0.reserve(nparticles);
+  x.reserve(nparticles);
+  vol0.reserve(nparticles);
+  vol.reserve(nparticles);
+  mass.reserve(nparticles);
 }

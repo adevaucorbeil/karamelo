@@ -19,6 +19,7 @@ class EOS : protected Pointers {
   //virtual compute_pressure()
   virtual double rho0() = 0;
   virtual double K() = 0;
+  virtual double compute_pressure(double) = 0;
 
   //protected:
 };

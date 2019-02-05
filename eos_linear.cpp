@@ -5,7 +5,6 @@
 using namespace std;
 
 
-
 EOSLinear::EOSLinear(MPM *mpm, vector<string> args) : EOS(mpm, args)
 {
   cout << "Initiate EOSLinear" << endl;
@@ -33,4 +32,8 @@ double EOSLinear::rho0(){
 
 double EOSLinear::K(){
   return K_;
+}
+
+double EOSLinear::compute_pressure(double mu){
+  return mu;
 }

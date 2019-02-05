@@ -11,6 +11,7 @@ EOSStyle(linear,EOSLinear)
 #define MPM_EOS_BLOCK_H
 
 #include "eos.h"
+#include <stdarg.h>
 
 class EOSLinear : public EOS {
 
@@ -20,6 +21,7 @@ class EOSLinear : public EOS {
 
   double rho0();
   double K();
+  double compute_pressure(double);
 
  protected:
   double rho0_, K_;
