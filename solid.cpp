@@ -30,7 +30,7 @@ void Solid::init()
 void Solid::options(vector<string> *args, vector<string>::iterator it)
 {
   cout << "In solid::options()" << endl;
-  if (args->end() < it+1) {
+  if (args->end() < it+2) {
     cout << "Error: not enough arguments" << endl;
     exit(1);
   }
@@ -43,6 +43,10 @@ void Solid::options(vector<string> *args, vector<string>::iterator it)
     }
 
     eos = material->EOSs[iEOS]; // point eos to the right EOS class
+
+    it++;
+
+    grid->init(*it); // set the grid cellsize
 
     it++;
 
