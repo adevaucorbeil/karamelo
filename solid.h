@@ -4,6 +4,7 @@
 #define MPM_SOLID_H
 
 #include "pointers.h"
+#include "eos.h"
 #include <vector>
 
 class Solid : protected Pointers {
@@ -14,6 +15,8 @@ class Solid : protected Pointers {
   vector< double > vol0;
   vector< double > vol;
   vector< double > mass;
+
+  class EOS *eos;
 
   Solid(class MPM *, vector<string>);
   virtual ~Solid();

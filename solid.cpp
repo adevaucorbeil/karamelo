@@ -1,5 +1,6 @@
 #include "mpm.h"
 #include "solid.h"
+#include "material.h"
 #include <vector>
 
 using namespace std;
@@ -24,16 +25,26 @@ void Solid::init()
 void Solid::options(vector<string> *args, vector<string>::iterator it)
 {
   cout << "In solid::options()" << endl;
-  if (args->end() < it) {
+  if (args->end() < it+1) {
     cout << "Error: not enough arguments" << endl;
     exit(1);
   }
   if (args->end() > it) {
-    cout << "Ignoring optional arguments: ";
-    for (it; it != args->end(); ++it){
-      cout << *it << "\t";
+    int iEOS = material->find_EOS(*it);
+
+    if (iEOS == -1){
+      cout << "Error: could not find EOS named " << *it << endl;
+      exit(1);
     }
-    cout << endl;
+
+    eos = material->EOSs[iEOS]; // point eos to the right EOS class
+
+    it++;
+
+    if (it != args->end()) {
+      cout << "Error: too many arguments" << endl;
+      exit(1);
+    }
   }
 }
 

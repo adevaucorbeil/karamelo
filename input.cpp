@@ -70,6 +70,7 @@ double Input::precedence(char op){
     if(op == '+'||op == '-') return 1;
     if(op == '*'||op == '/') return 2;
     if(op == '^') return 3;
+    if(op == 'e'|| op == 'E') return 4;
     return 0;
 } 
   
@@ -81,6 +82,8 @@ double Input::applyOp(double a, double b, char op){
     case '*': return a * b;
     case '/': return a / b;
     case '^': return pow(a,b);
+    case 'e': return a*pow(10,b);
+    case 'E': return a*pow(10,b);
     case '(':
       printf("Error: unmatched parenthesis (\n");
       exit(1);
@@ -257,7 +260,6 @@ double Input::parse(string str)
       ops.pop();
     }
 
-
     else if (is_operator(str[i])){
       char new_op = str[i];
       printf("found operator %c\n", new_op);
@@ -332,6 +334,23 @@ double Input::parse(string str)
       i += j-1; 
 
       cout << "Found keyword: " << word << endl;
+
+      if (word == "E" || word == "e") { // E or e have to be followed by + or - to indicate that it is 10^+xx
+      	if (!values.empty() && i+1 < str.length() && (str[i+1] == '+' || str[i+1] == '-')) {
+      	  // Push current token to 'ops'. 
+      	  ops.push('e');
+
+      	  if (str[i+1] == '-') {
+      	    negative = true;
+      	    i++;
+      	  }
+
+      	  if (str[i+1] == '+') {
+      	    i++;
+      	  }
+      	  continue;
+      	}
+      }
 
       // Check if word is a variable:
       map<string, double>::iterator it;
