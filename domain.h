@@ -8,7 +8,6 @@
 #include "pointers.h"
 #include "region.h"
 #include "solid.h"
-#include "material.h"
 #include <map>
 #include <string>
 #include <vector>
@@ -20,7 +19,6 @@ class Domain : protected Pointers {
   int dimension;                         // 2 = 2d, 3 = 3d
   vector<class Region *> regions;        // list of defined Regions
   vector<class Solid *> solids;          // list of defined Solids
-  vector<class Material *> materials;    // list of defined Materials
 
   Domain(class MPM *);
   virtual ~Domain();
@@ -29,8 +27,6 @@ class Domain : protected Pointers {
   int find_region(string);
   void add_solid(vector<string>);
   int find_solid(string);
-  void add_material(vector<string>);
-  int find_material(string);
 
   typedef Region *(*RegionCreator)(MPM *,vector<string>);
   typedef map<string,RegionCreator> RegionCreatorMap;
@@ -40,15 +36,11 @@ class Domain : protected Pointers {
   typedef map<string,SolidCreator> SolidCreatorMap;
   SolidCreatorMap *solid_map;
 
-  typedef Material *(*MaterialCreator)(MPM *,vector<string>);
-  typedef map<string,MaterialCreator> MaterialCreatorMap;
-  MaterialCreatorMap *material_map;
 
 
  private:
   template <typename T> static Region *region_creator(MPM *,vector<string>);
   template <typename T> static Solid *solid_creator(MPM *,vector<string>);
-  template <typename T> static Material *material_creator(MPM *,vector<string>);
 };
 
 #endif

@@ -3,6 +3,7 @@
 #include <string.h>
 #include "mpm.h"
 #include "domain.h"
+#include "material.h"
 #include "input.h"
 
 MPM::MPM(int narg, char **arg)
@@ -10,6 +11,7 @@ MPM::MPM(int narg, char **arg)
   input = new Input(this, narg, arg);
 
   domain = new Domain(this);
+  material = new Material(this);
   //settings = new Settings(this);
 
   // parse input switches

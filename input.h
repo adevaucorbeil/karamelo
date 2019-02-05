@@ -34,6 +34,7 @@ private:
   int dimension(vector<string>);                     // set the dimension of the simulation domain
   int region(vector<string>);
   int solid(vector<string>);
+  int EOS(vector<string>);
 
  public:
   typedef void (*CommandCreator)(MPM *,vector<string>);

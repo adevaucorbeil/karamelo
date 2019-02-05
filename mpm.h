@@ -19,6 +19,7 @@ class MPM {
   class Input *input;            // input script processing
 
   class Domain *domain;          // simulation box
+  class Material *material;      // material
   //class *settings; // settings
 
   filebuf infile;                // infile

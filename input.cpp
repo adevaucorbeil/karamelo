@@ -2,6 +2,7 @@
 #include "input.h"
 #include "style_command.h"
 #include "domain.h"
+#include "material.h"
 #include <iostream>
 #include <fstream>
 #include <string.h>
@@ -140,6 +141,7 @@ double Input::evaluate_function(string func, string arg){
   if (func.compare("dimension") == 0) return (double) dimension(args);
   if (func.compare("region") == 0) return (double) region(args);
   if (func.compare("solid") == 0) return (double) solid(args);
+  if (func.compare("eos") == 0) return (double) EOS(args);
 
   // invoke commands added via style_command.h
 
@@ -468,6 +470,11 @@ int Input::region(vector<string> args){
 
 int Input::solid(vector<string> args){
   domain->add_solid(args);
+  return 0;
+}
+
+int Input::EOS(vector<string> args){
+  material->add_EOS(args);
   return 0;
 }
 /* ----------------------------------------------------------------------

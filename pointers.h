@@ -16,6 +16,7 @@ class Pointers {
    infile(&ptr->infile),
    logfile(&ptr->logfile),
    domain(ptr->domain),
+   material(ptr->material),
    variables(&ptr->variables) {}
   virtual ~Pointers() {}
  protected:
@@ -23,6 +24,7 @@ class Pointers {
   Input *&input;
   
   Domain *&domain;
+  Material *&material;
 
   filebuf *infile;
   filebuf *logfile;
