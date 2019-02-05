@@ -336,7 +336,7 @@ double Input::parse(string str)
       cout << "Found keyword: " << word << endl;
 
       if (word == "E" || word == "e") { // E or e have to be followed by + or - to indicate that it is 10^+xx
-      	if (!values.empty() && i+1 < str.length() && (str[i+1] == '+' || str[i+1] == '-')) {
+      	if (!values.empty() && isdigit(str[i-1]) && i+1 < str.length() && (str[i+1] == '+' || str[i+1] == '-')) {
       	  // Push current token to 'ops'. 
       	  ops.push('e');
 
