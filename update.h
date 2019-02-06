@@ -4,6 +4,7 @@
 #define MPM_UPDATE_H
 
 #include "pointers.h"
+#include <vector>
 
 class Update : protected Pointers {
  public:
@@ -18,9 +19,21 @@ class Update : protected Pointers {
   bigint beginstep,endstep;       // 1st and last step of multiple runs
   int first_update;               // 0 before initial update, 1 after
 
+  class Scheme *scheme;
+  string scheme_style;
+
+  class Method *method;
+  string method_style;
+
   Update(class MPM *);
   ~Update();
+  void create_scheme(vector<string>);
+  void new_scheme(vector<string>);
+  void create_method(vector<string>);
+  void new_method(vector<string>);
 
+protected:
+  
 };
 
 

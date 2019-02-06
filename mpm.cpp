@@ -6,11 +6,13 @@
 #include "material.h"
 #include "input.h"
 #include "output.h"
+#include "update.h"
 
 MPM::MPM(int narg, char **arg)
 {
   input = new Input(this, narg, arg);
   output = new Output(this);
+  update = new Update(this);
 
   domain = new Domain(this);
   material = new Material(this);
@@ -46,6 +48,8 @@ MPM::~MPM()
 {
   delete input;
   delete output;
+  delete update;
+
   delete domain;
   delete material;
 

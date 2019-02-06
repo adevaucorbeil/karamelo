@@ -19,7 +19,7 @@ class Pointers {
    domain(ptr->domain),
    material(ptr->material),
    variables(&ptr->variables),
-   update(ptr->update){}
+   update(ptr->update) {}
   virtual ~Pointers() {}
  protected:
   MPM *mpm;
