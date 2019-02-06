@@ -5,9 +5,6 @@
 
 using namespace std;
 
-#define BIG 1.0e20
-
-
 RegBlock::RegBlock(MPM *mpm, vector<string> args) : Region(mpm, args)
 {
   cout << "Initiate RegBlock" << endl;

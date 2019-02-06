@@ -10,7 +10,7 @@
 MPM::MPM(int narg, char **arg)
 {
   input = new Input(this, narg, arg);
-  output = new Output(this, narg, arg);
+  output = new Output(this);
 
   domain = new Domain(this);
   material = new Material(this);

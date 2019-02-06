@@ -9,7 +9,7 @@
 class Output : protected Pointers {
 public:
   bigint next_dump_any;        // next timestep for any Dump
-  int *every_dump;             // write freq for each Dump, 0 if var
+  vector<int> every_dump;      // write freq for each Dump, 0 if var
   bigint *next_dump;           // next timestep to do each Dump
   bigint *last_dump;           // last timestep each snapshot was output
   char **var_dump;             // variable name for dump frequency
@@ -24,3 +24,5 @@ public:
   void modify_dump(vector<string>);    // modify a Dump
   void delete_dump(string);            // delete a Dump from Dump list
 };
+
+#endif

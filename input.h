@@ -31,10 +31,11 @@ private:
   bool is_math_char(char);                   // check if the character is either of +-/*()
   double evaluate_function(string , string); // evaluate function with argument
   string remove_whitespace(string);          // remove white spaces from string
-  int dimension(vector<string>);                     // set the dimension of the simulation domain
+  int dimension(vector<string>);             // set the dimension of the simulation domain
   int region(vector<string>);
   int solid(vector<string>);
   int EOS(vector<string>);
+  int dump(vector<string>);
 
  public:
   typedef void (*CommandCreator)(MPM *,vector<string>);

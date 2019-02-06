@@ -1,5 +1,6 @@
 #include "mpm.h"
 #include "input.h"
+#include "output.h"
 #include "style_command.h"
 #include "domain.h"
 #include "material.h"
@@ -53,7 +54,12 @@ void Input::file()
     if (c != '\n') {
 
       if (c == '#') ignore = true; // ignore everything after #
-      if (!ignore) line.append(&c,1);
+      if (c == '\377') {
+	cout << line << endl;
+	cout << "gives: " << parse(line) << endl;
+      } else {
+	if (!ignore) line.append(&c,1);
+      }
 
     } else {
 
@@ -64,9 +70,6 @@ void Input::file()
 
     }
   }
-  // Treat the last line of the file:
-  if (line.size() != 0) parse(line);
-  line.clear();
 }
 
 // Function to find precedence of  
@@ -150,6 +153,7 @@ double Input::evaluate_function(string func, string arg){
   if (func.compare("region") == 0) return (double) region(args);
   if (func.compare("solid") == 0) return (double) solid(args);
   if (func.compare("eos") == 0) return (double) EOS(args);
+  if (func.compare("dump") == 0) return (double) dump(args);
 
   // invoke commands added via style_command.h
 
@@ -499,6 +503,11 @@ int Input::solid(vector<string> args){
 
 int Input::EOS(vector<string> args){
   material->add_EOS(args);
+  return 0;
+}
+
+int Input::dump(vector<string> args){
+  output->add_dump(args);
   return 0;
 }
 /* ----------------------------------------------------------------------

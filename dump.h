@@ -9,6 +9,9 @@
 class Dump : protected Pointers {
  public:
   string id;
+  string style;
+  //int group; //groups are not supported yet: default all
+  
 
   Dump(class MPM *, vector<string>);
   virtual ~Dump();
@@ -16,7 +19,8 @@ class Dump : protected Pointers {
 
   // implemented by each dump
 
-  //protected:
+ protected:
+  string filename;
 };
 
 #endif
