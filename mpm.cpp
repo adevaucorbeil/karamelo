@@ -7,6 +7,7 @@
 #include "input.h"
 #include "output.h"
 #include "update.h"
+#include "modify.h"
 
 MPM::MPM(int narg, char **arg)
 {
@@ -16,7 +17,7 @@ MPM::MPM(int narg, char **arg)
 
   domain = new Domain(this);
   material = new Material(this);
-  //settings = new Settings(this);
+  modify = new Modify(this);
 
   // parse input switches
 
