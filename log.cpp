@@ -9,7 +9,7 @@ Log::Log(MPM *mpm, vector<string> args) : Pointers(mpm)
 
   style = args[0];
 
-  if (style.compare("default")){
+  if (style.compare("default") == 0){
     
   } else {
     cout << "Unknown log style " << style << endl;

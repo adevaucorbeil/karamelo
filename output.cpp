@@ -33,7 +33,7 @@ void Output::setup(){
 
   if (ndumps != 0) {
 
-    if (next_dump.size() != ndumps)
+    if (next_dump.size() != ndumps) next_dump.reserve(ndumps);
     
     for (int idump=0; idump<ndumps; idump++){
       if (every_dump[idump]){
