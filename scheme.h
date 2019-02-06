@@ -9,6 +9,7 @@ class Scheme : protected Pointers {
  public:
   Scheme(class MPM *);
   virtual ~Scheme();
+  virtual void setup() = 0;
   virtual void run(int) = 0;
 };
 

@@ -1,22 +1,93 @@
 #include "output.h"
 #include "dump.h"
 #include "input.h"
+#include "update.h"
+#include "log.h"
 #include "style_dump.h"
 
+#define MIN(A,B) ((A) < (B) ? (A) : (B))
 
 using namespace std;
 
 Output::Output(MPM *mpm) : Pointers(mpm)
 {
-  next_dump = NULL;
-  last_dump = NULL;
-  var_dump = NULL;
-  ivar_dump = NULL;
+  ndumps = 0;
+
+  // create default Log class
+
+  vector<string> log_args;
+  log_args.push_back("default");
+  log = new Log(mpm, log_args);
+
+  every_log = 1;
 }
 
 
 Output::~Output()
 {
+}
+
+void Output::setup(){
+
+  bigint ntimestep = update->ntimestep;
+
+  if (ndumps != 0) {
+
+    if (next_dump.size() != ndumps)
+    
+    for (int idump=0; idump<ndumps; idump++){
+      if (every_dump[idump]){
+	next_dump[idump] =
+          (ntimestep/every_dump[idump])*every_dump[idump] + every_dump[idump];
+      } else {
+	cout << "Error every_dump = 0 does not make sense" << endl;
+      }
+
+      if (idump) next_dump_any = MIN(next_dump_any,next_dump[idump]);
+      else next_dump_any = next_dump[0];
+    }
+  }
+
+
+  if (every_log) {
+    next_log = (ntimestep/every_log)*every_log + every_log;
+    next_log = MIN(next_log,update->laststep);
+  } else
+  next = MIN(next_dump_any,next_log);
+}
+
+void Output::write(bigint ntimestep){
+
+  // If there is at least one dump that requested output at the current step:
+  if (next_dump_any == ntimestep) {
+    for (int idump = 0; idump < ndumps; idump++) {
+      // Which dump requested output:
+      if (next_dump[idump] == ntimestep) {
+	cout << "Should dump .... function to write" << endl;
+      }
+
+      if (every_dump[idump]) next_dump[idump] += every_dump[idump];
+
+      if (idump) next_dump_any = MIN(next_dump_any,next_dump[idump]);
+      else next_dump_any = next_dump[0];
+    }
+  }
+
+  if (next_log == ntimestep) {
+    log->write();
+
+    next_log += every_log;
+  }
+  
+  next = MIN(next_dump_any,next_log);
+}
+
+void Output::set_log(vector<string> args){
+  if (args.size()!=1) {
+    cout << "Illegal log command: too many variables" << endl;
+    exit(1);
+  }
+  every_log = (int) input->parse(args[0]);
 }
 
 void Output::add_dump(vector<string> args){
@@ -46,6 +117,8 @@ void Output::add_dump(vector<string> args){
   }
 
   every_dump.push_back((int) input->parse(args[3]));
+  last_dump.push_back(-1);
+  ndumps++;
 }
 
 void Output::modify_dump(vector<string> args){

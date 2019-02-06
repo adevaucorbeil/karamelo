@@ -11,6 +11,10 @@ using namespace std;
 Update::Update(MPM *mpm) : Pointers(mpm)
 {
   cout << "In Update::Update()" << endl;
+
+  ntimestep = 0; // set the current timestep to 0
+  dt = 1e-16;
+
   // Default scheme is MUSL:
   vector<string> scheme_args;
   scheme_args.push_back("musl");

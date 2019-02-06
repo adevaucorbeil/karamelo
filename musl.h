@@ -16,6 +16,7 @@ class MUSL : public Scheme {
  public:
   MUSL(class MPM *, vector<string>);
   ~MUSL() {}
+  void setup();
   void run(int);
 
  protected:
