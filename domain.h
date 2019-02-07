@@ -17,6 +17,9 @@ using namespace std;
 class Domain : protected Pointers {
  public:
   int dimension;                         // 2 = 2d, 3 = 3d
+
+  double boxlo[3],boxhi[3];              // orthogonal box global bounds
+
   vector<class Region *> regions;        // list of defined Regions
   vector<class Solid *> solids;          // list of defined Solids
 

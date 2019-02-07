@@ -9,6 +9,9 @@ Domain::Domain(MPM *mpm) : Pointers(mpm)
 {
   dimension = 3;
 
+  boxlo[0] = boxlo[1] = boxlo[2] = -0.5;
+  boxhi[0] = boxhi[1] = boxhi[2] = 0.5;
+
   region_map = new RegionCreatorMap();
   solid_map = new SolidCreatorMap();
 
@@ -51,12 +54,14 @@ void Domain::add_region(vector<string> args){
     RegionCreator region_creator = (*region_map)[args[1]];
     regions.push_back(region_creator(mpm, args));
     regions.back()->init();
+
   }
   else {
     cout << "Unknown region style " << args[1] << endl;
     exit(1);
   }
   
+
 }
 
 int Domain::find_region(string name)
