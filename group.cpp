@@ -36,7 +36,11 @@ Group::~Group()
 
 void Group::assign(vector<string> args)
 {
-  
+  if (args.size() < 4) {
+    cout << "Error: too few arguments for group: requires at least 4 arguments. " << args.size() << " received" << endl;
+    exit(1);
+  }
+
   // style = region
   // add to group if atom is in region
 
@@ -62,21 +66,44 @@ void Group::assign(vector<string> args)
       ngroup++;
     }
 
-
     int bit = bitmask[igroup];
 
-    /* For all particles of all solids, check if they are in the region.
-       If so asign them the right mask */
-    for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
+    if (args[3].compare("all") == 0) {
 
-      double **x = domain->solids[isolid]->x;
-      int *mask = domain->solids[isolid]->mask;
+      /* For all particles of all solids, check if they are in the region.
+	 If so asign them the right mask */
+      for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
 
-      for (int ip = 0; ip < domain->solids[isolid]->np; ip++) {
-	if (domain->regions[iregion]->match(x[ip][0],x[ip][1],x[ip][2]))
-	  mask[ip] |= bit;
+	double **x = domain->solids[isolid]->x;
+	int *mask = domain->solids[isolid]->mask;
+
+	for (int ip = 0; ip < domain->solids[isolid]->np; ip++) {
+	  if (domain->regions[iregion]->match(x[ip][0],x[ip][1],x[ip][2]))
+	    mask[ip] |= bit;
+	}
+
+      }
+    } else if (args[3].compare("solid") == 0) {
+
+      for (int i=4; i<args.size(); i++) {
+	int isolid = domain->find_solid(args[i]);
+	if (isolid == -1) {
+	  cout << "Error: cannot find solid with ID " << args[i] << endl;
+	  exit(1);
+	}
+
+	double **x = domain->solids[isolid]->x;
+	int *mask = domain->solids[isolid]->mask;
+
+	for (int ip = 0; ip < domain->solids[isolid]->np; ip++) {
+	  if (domain->regions[iregion]->match(x[ip][0],x[ip][1],x[ip][2]))
+	    mask[ip] |= bit;
+	}
       }
 
+    } else {
+      cout << "Error: unknown keyword in group command: " << args[3] << endl;
+      exit(1);
     }
   }
 }

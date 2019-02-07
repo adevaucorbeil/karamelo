@@ -4,6 +4,7 @@
 #include "style_command.h"
 #include "domain.h"
 #include "material.h"
+#include "group.h"
 #include <iostream>
 #include <fstream>
 #include <string.h>
@@ -154,6 +155,7 @@ double Input::evaluate_function(string func, string arg){
   if (func.compare("solid") == 0) return (double) solid(args);
   if (func.compare("eos") == 0) return (double) EOS(args);
   if (func.compare("dump") == 0) return (double) dump(args);
+  if (func.compare("group") == 0) return (double) group_command(args);
 
   // invoke commands added via style_command.h
 
@@ -508,6 +510,11 @@ int Input::EOS(vector<string> args){
 
 int Input::dump(vector<string> args){
   output->add_dump(args);
+  return 0;
+}
+
+int Input::group_command(vector<string> args){
+  group->assign(args);
   return 0;
 }
 /* ----------------------------------------------------------------------
