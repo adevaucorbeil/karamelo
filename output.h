@@ -19,8 +19,6 @@ public:
   vector<int> every_dump;      // write freq for each Dump, 0 if var
   vector<bigint> next_dump;    // next timestep to do each Dump
   vector<bigint> last_dump;    // last timestep each snapshot was output
-  char **var_dump;             // variable name for dump frequency
-  int *ivar_dump;              // variable index for dump frequency
   int ndumps;                  // number of defined Dumps, should always be equal to dumps.size()
   vector<class Dump *> dumps;  // list of defined Dumps
 
