@@ -56,6 +56,7 @@ SolBlock::SolBlock(MPM *mpm, vector<string> args) : Solid(mpm, args)
 	x0[l][2] = x[l][2] = delta_z*(k+0.5);
 	vol0[l] = vol[l] = vol_;
 	mass[l] = mass_;
+	l++;
       }
     }
   }
