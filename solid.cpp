@@ -101,4 +101,6 @@ void Solid::grow(int nparticles){
   str = "solid-" + id + ":mask";
   cout << "Growing " << str << endl;
   mask = memory->grow(mask, np, str);
+
+  for (int i=0; i<np; i++) mask[i] = 1;
 }

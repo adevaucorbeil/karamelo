@@ -10,16 +10,18 @@
 
 class Solid : protected Pointers {
  public:
-  string id;                          // solid id
-  vector< array<double, 3> > x;       // particles' current position
-  vector< array<double, 3> > x0;      // particles' reference position
-  vector< double > vol0;              // particles' reference volume
-  vector< double > vol;               // particles' current volume
-  vector< double > mass;              // particles' current mass
+  string id;                 // solid id
+  bigint np;                 // number of particles
+  double **x;                // particles' current position
+  double **x0;               // particles' reference position
+  double *vol0;              // particles' reference volume
+  double *vol;               // particles' current volume
+  double *mass;              // particles' current mass
+  int *mask;                 // particles' group mask
 
   class EOS *eos;                     // Equation-of-State
 
-  class Grid *grid;                    // background grid
+  class Grid *grid;                   // background grid
 
   Solid(class MPM *, vector<string>);
   virtual ~Solid();
@@ -27,8 +29,6 @@ class Solid : protected Pointers {
   void options(vector<string> *, vector<string>::iterator);
   void grow(int);
 
-protected:
-  bigint nparticles; // number of particles
 };
 
 #endif
