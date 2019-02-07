@@ -9,6 +9,7 @@
 class Compute : protected Pointers {
  public:
   string id;
+  int igroup;
 
   Compute(class MPM *, vector<string>);
   virtual ~Compute() {};

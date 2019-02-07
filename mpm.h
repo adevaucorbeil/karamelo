@@ -16,6 +16,7 @@ class MPM {
 
  public:
 
+  class Memory *memory;          // memory allocation functions
   class Input *input;            // input script processing
   class Output *output;          // thermo/dump/restart
 
@@ -23,6 +24,7 @@ class MPM {
   class Material *material;      // material
   class Update *update;          //
   class Modify *modify;          // fixes and computes
+  class Group *group;            // groups of particles
 
   filebuf infile;                // infile
   filebuf logfile;               // logfile

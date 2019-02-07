@@ -8,9 +8,12 @@
 #include "output.h"
 #include "update.h"
 #include "modify.h"
+#include "memory.h"
+#include "group.h"
 
 MPM::MPM(int narg, char **arg)
 {
+  memory = new Memory(this);
   input = new Input(this, narg, arg);
   output = new Output(this);
   update = new Update(this);
@@ -18,6 +21,7 @@ MPM::MPM(int narg, char **arg)
   domain = new Domain(this);
   material = new Material(this);
   modify = new Modify(this);
+  group = new Group(this);
 
   // parse input switches
 
@@ -53,6 +57,8 @@ MPM::~MPM()
 
   delete domain;
   delete material;
+  delete modify;
+  delete group;
 
   if (infile.is_open()) infile.close();
   if (logfile.is_open()) logfile.close();

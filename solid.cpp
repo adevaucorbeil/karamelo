@@ -1,6 +1,7 @@
 #include "mpm.h"
 #include "solid.h"
 #include "material.h"
+#include "memory.h"
 #include <vector>
 
 using namespace std;
@@ -12,12 +13,27 @@ Solid::Solid(MPM *mpm, vector<string> args) :
   cout << "Creating new solid with ID: " << args[0] << endl;
   id = args[0];
 
+  np = 0;
+
+  x = x0 = NULL;
+
+  vol = vol0 = NULL;
+  mass = NULL;
+  mask = NULL;
+
   eos = NULL;
   grid = new Grid(mpm);
 }
 
 Solid::~Solid()
 {
+  memory->destroy(x0);
+  memory->destroy(x);
+  memory->destroy(vol);
+  memory->destroy(vol0);
+  memory->destroy(mass);
+  memory->destroy(mask);
+
   delete eos;
   delete grid;
 }
@@ -58,11 +74,31 @@ void Solid::options(vector<string> *args, vector<string>::iterator it)
 }
 
 
-void Solid::grow(int np){
-  nparticles = np;
-  x0.reserve(nparticles);
-  x.reserve(nparticles);
-  vol0.reserve(nparticles);
-  vol.reserve(nparticles);
-  mass.reserve(nparticles);
+void Solid::grow(int nparticles){
+  np = nparticles;
+
+  string str;
+  str = "solid-" + id + ":x0";
+  cout << "Growing " << str << endl;
+  x0 = memory->grow(x0, np, 3, str);
+
+  str = "solid-" + id + ":x";
+  cout << "Growing " << str << endl;
+  x = memory->grow(x, np, 3, str);
+
+  str = "solid-" + id + ":vol0";
+  cout << "Growing " << str << endl;
+  vol0 = memory->grow(vol0, np, str);
+
+  str = "solid-" + id + ":vol";
+  cout << "Growing " << str << endl;
+  vol = memory->grow(vol, np, str);
+
+  str = "solid-" + id + ":mass";
+  cout << "Growing " << str << endl;
+  mass = memory->grow(mass, np, str);
+
+  str = "solid-" + id + ":mask";
+  cout << "Growing " << str << endl;
+  mask = memory->grow(mask, np, str);
 }

@@ -12,6 +12,7 @@ class Pointers {
  public:
  Pointers(MPM *ptr) :
    mpm(ptr),
+   memory(ptr->memory), 
    input(ptr->input), 
    output(ptr->output),
    infile(&ptr->infile),
@@ -20,10 +21,12 @@ class Pointers {
    material(ptr->material),
    variables(&ptr->variables),
    update(ptr->update),
-   modify(ptr->modify) {}
+   modify(ptr->modify),
+   group(ptr->group) {}
   virtual ~Pointers() {}
  protected:
   MPM *mpm;
+  Memory *&memory;
   Input *&input;
   Output *&output;
   
@@ -31,6 +34,7 @@ class Pointers {
   Material *&material;
   Update *&update;
   Modify *&modify;
+  Group *&group;
 
   filebuf *infile;
   filebuf *logfile;

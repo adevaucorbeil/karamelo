@@ -9,6 +9,7 @@
 class Fix : protected Pointers {
  public:
   string id;
+  int igroup;
 
   Fix(class MPM *, vector<string>);
   virtual ~Fix() {};

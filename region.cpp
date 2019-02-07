@@ -22,6 +22,8 @@ void Region::init()
 
 void Region::options(vector<string> *args, vector<string>::iterator it)
 {
+  interior = 1; // Interior by default
+
   cout << "In region::options()" << endl;
   if (args->end() < it) {
     cout << "Error: not enough arguments" << endl;
@@ -36,3 +38,7 @@ void Region::options(vector<string> *args, vector<string>::iterator it)
   }
 }
 
+int Region::match(double x, double y, double z)
+{
+  return !(inside(x,y,z) ^ interior);
+}
