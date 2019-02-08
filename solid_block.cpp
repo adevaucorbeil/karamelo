@@ -51,9 +51,9 @@ SolBlock::SolBlock(MPM *mpm, vector<string> args) : Solid(mpm, args)
   for (int i=0; i<nx; i++){
     for (int j=0; j<ny; j++){
       for (int k=0; k<nz; k++){
-	x0[l][0] = x[l][0] = delta_x*(i+0.5);
-	x0[l][1] = x[l][1] = delta_y*(j+0.5);
-	x0[l][2] = x[l][2] = delta_z*(k+0.5);
+	x0[l][0] = x[l][0] = limits[0] + delta_x*(i+0.5);
+	x0[l][1] = x[l][1] = limits[2] + delta_y*(j+0.5);
+	x0[l][2] = x[l][2] = limits[4] + delta_z*(k+0.5);
 	vol0[l] = vol[l] = vol_;
 	mass[l] = mass_;
 	l++;
