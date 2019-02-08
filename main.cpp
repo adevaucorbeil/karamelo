@@ -10,4 +10,6 @@ int main(int argc, char **argv) {
 
   MPM *mpm = new MPM(argc,argv);
   mpm->input->file();
+
+  delete mpm;
 }

@@ -37,6 +37,7 @@ private:
   int EOS(vector<string>);
   int dump(vector<string>);
   int group_command(vector<string>);
+  int log(vector<string>);
 
  public:
   typedef void (*CommandCreator)(MPM *,vector<string>);

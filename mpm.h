@@ -28,6 +28,7 @@ class MPM {
 
   filebuf infile;                // infile
   filebuf logfile;               // logfile
+  ofstream *wlogfile;
 
   map<string, double> variables; // global variables
 

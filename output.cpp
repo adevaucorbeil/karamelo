@@ -48,6 +48,8 @@ void Output::setup(){
     }
   }
 
+  log->init();
+  log->header();
 
   if (every_log) {
     next_log = (ntimestep/every_log)*every_log + every_log;

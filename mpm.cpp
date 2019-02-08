@@ -42,7 +42,13 @@ MPM::MPM(int narg, char **arg)
   }
 
   if (inflag != 0) infile.open(arg[inflag], ios_base::in); // open in read only
+  //logfile.open("log.mpm", ios_base::out); // open in write only
+  wlogfile = new ofstream("log.mpm", ios_base::out);
 
+  if (!wlogfile->is_open()){
+    printf("Cannot open file log.mpm\n");
+    exit(1); 
+  }
   if (!infile.is_open()) {
     printf("Cannot open input script %s\n",arg[inflag]);
     exit(1); 
@@ -61,5 +67,5 @@ MPM::~MPM()
   delete group;
 
   if (infile.is_open()) infile.close();
-  if (logfile.is_open()) logfile.close();
+  if (wlogfile->is_open()) wlogfile->close();
 }

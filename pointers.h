@@ -17,6 +17,7 @@ class Pointers {
    output(ptr->output),
    infile(&ptr->infile),
    logfile(&ptr->logfile),
+   wlogfile(ptr->wlogfile),
    domain(ptr->domain),
    material(ptr->material),
    variables(&ptr->variables),
@@ -38,6 +39,7 @@ class Pointers {
 
   filebuf *infile;
   filebuf *logfile;
+  ofstream *&wlogfile;
 
   map<string, double> *variables;
 };

@@ -156,6 +156,7 @@ double Input::evaluate_function(string func, string arg){
   if (func.compare("eos") == 0) return (double) EOS(args);
   if (func.compare("dump") == 0) return (double) dump(args);
   if (func.compare("group") == 0) return (double) group_command(args);
+  if (func.compare("log") == 0) return (double) log(args);
 
   // invoke commands added via style_command.h
 
@@ -517,6 +518,12 @@ int Input::group_command(vector<string> args){
   group->assign(args);
   return 0;
 }
+
+int Input::log(vector<string> args){
+  output->set_log(args);
+  return 0;
+}
+
 /* ----------------------------------------------------------------------
    one instance per command in style_command.h
 ------------------------------------------------------------------------- */
