@@ -21,6 +21,7 @@ class Grid : protected Pointers {
   Eigen::Vector3d *b;            // nodes' external forces
   Eigen::Vector3d *f;            // nodes' internal forces
 
+
   Grid(class MPM *);
   virtual ~Grid();
   void grow(int);
