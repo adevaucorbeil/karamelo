@@ -15,7 +15,7 @@ CFLAGS = -g -std=c++11
 
 # define any directories containing header files other than /usr/include
 #
-INCLUDES =
+INCLUDES = -I/usr/include/eigen3/
 #-I/home/newhall/include  -I../include
 
 # define library paths in addition to /usr/lib

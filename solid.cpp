@@ -3,9 +3,10 @@
 #include "material.h"
 #include "memory.h"
 #include <vector>
+#include <Eigen/Eigen>
 
 using namespace std;
-
+using namespace Eigen;
 
 Solid::Solid(MPM *mpm, vector<string> args) :
   Pointers(mpm)
@@ -16,7 +17,9 @@ Solid::Solid(MPM *mpm, vector<string> args) :
   np = 0;
 
   x = x0 = NULL;
-  v = NULL;
+  v = v_update = NULL;
+
+  b = f = NULL;
 
   vol = vol0 = NULL;
   mass = NULL;
@@ -28,9 +31,13 @@ Solid::Solid(MPM *mpm, vector<string> args) :
 
 Solid::~Solid()
 {
-  memory->destroy(x0);
-  memory->destroy(x);
-  memory->destroy(v);
+  delete [] x0;
+  delete [] x;
+  delete [] v;
+  delete [] v_update;
+  delete [] b;
+  delete [] f;
+
   memory->destroy(vol);
   memory->destroy(vol0);
   memory->destroy(mass);
@@ -82,15 +89,57 @@ void Solid::grow(int nparticles){
   string str;
   str = "solid-" + id + ":x0";
   cout << "Growing " << str << endl;
-  x0 = memory->grow(x0, np, 3, str);
+  if (x0 == NULL)
+    x0 = new Eigen::Vector3d[np];
+  else {
+    cout << "Error: x0 already exists, I don't know how to grow it!\n";
+    exit(1);
+  }
 
   str = "solid-" + id + ":x";
   cout << "Growing " << str << endl;
-  x = memory->grow(x, np, 3, str);
+  if (x == NULL)
+    x = new Eigen::Vector3d[np];
+  else {
+    cout << "Error: x already exists, I don't know how to grow it!\n";
+    exit(1);
+  }
 
-  str = "solid-" + id + ":x";
+  str = "solid-" + id + ":v";
   cout << "Growing " << str << endl;
-  v = memory->grow(v, np, 3, str);
+  if (v == NULL)
+    v = new Eigen::Vector3d[np];
+  else {
+    cout << "Error: v already exists, I don't know how to grow it!\n";
+    exit(1);
+  }
+
+  str = "solid-" + id + ":v_update";
+  cout << "Growing " << str << endl;
+  if (v_update == NULL)
+    v_update = new Eigen::Vector3d[np];
+  else {
+    cout << "Error: v_update already exists, I don't know how to grow it!\n";
+    exit(1);
+  }
+
+  str = "solid-" + id + ":b";
+  cout << "Growing " << str << endl;
+  if (b == NULL)
+    b = new Eigen::Vector3d[np];
+  else {
+    cout << "Error: b already exists, I don't know how to grow it!\n";
+    exit(1);
+  }
+
+  str = "solid-" + id + ":f";
+  cout << "Growing " << str << endl;
+  if (f == NULL)
+    f = new Eigen::Vector3d[np];
+  else {
+    cout << "Error: f already exists, I don't know how to grow it!\n";
+    exit(1);
+  }
 
   str = "solid-" + id + ":vol0";
   cout << "Growing " << str << endl;

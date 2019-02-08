@@ -7,15 +7,19 @@
 #include "grid.h"
 #include "grid.h"
 #include <vector>
+#include <Eigen/Eigen>
+
+using namespace Eigen;
 
 class Grid : protected Pointers {
  public:
   double cellsize;       // size of the square cells forming the grid
-  double **x;            // nodes' current position
-  double **v;            // nodes' velocity at time t
-  double **v_update;     // nodes' velocity at time t+dt
-  double **b;            // nodes' external forces
-  double **f;            // nodes' internal forces
+
+  Eigen::Vector3d *x;            // nodes' current position
+  Eigen::Vector3d *v;            // nodes' velocity at time t
+  Eigen::Vector3d *v_update;     // nodes' velocity at time t+dt
+  Eigen::Vector3d *b;            // nodes' external forces
+  Eigen::Vector3d *f;            // nodes' internal forces
 
   Grid(class MPM *);
   virtual ~Grid();

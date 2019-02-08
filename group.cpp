@@ -2,10 +2,12 @@
 #include "domain.h"
 #include "region.h"
 #include "solid.h"
+#include <Eigen/Eigen>
 
 #define MAX_GROUP 32
 
 using namespace std;
+using namespace Eigen;
 
 Group::Group(MPM *mpm) : Pointers(mpm)
 {
@@ -74,7 +76,7 @@ void Group::assign(vector<string> args)
 	 If so asign them the right mask */
       for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
 
-	double **x = domain->solids[isolid]->x;
+	Eigen::Vector3d *x = domain->solids[isolid]->x;
 	int *mask = domain->solids[isolid]->mask;
 
 	for (int ip = 0; ip < domain->solids[isolid]->np; ip++) {
@@ -92,7 +94,7 @@ void Group::assign(vector<string> args)
 	  exit(1);
 	}
 
-	double **x = domain->solids[isolid]->x;
+	Eigen::Vector3d *x = domain->solids[isolid]->x;
 	int *mask = domain->solids[isolid]->mask;
 
 	for (int ip = 0; ip < domain->solids[isolid]->np; ip++) {

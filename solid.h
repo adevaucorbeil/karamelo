@@ -7,20 +7,24 @@
 #include "eos.h"
 #include "grid.h"
 #include <vector>
+#include <Eigen/Eigen>
+
+
+using namespace Eigen;
 
 class Solid : protected Pointers {
  public:
   string id;                 // solid id
   bigint np;                 // number of particles
 
-  double **x;                // particles' current position
-  double **x0;               // particles' reference position
+  Eigen::Vector3d *x;        // particles' current position
+  Eigen::Vector3d *x0;       // particles' reference position
 
-  double **v;                // particles' current position
-  double **v_update;         // particles' velocity at time t+dt
+  Eigen::Vector3d *v;        // particles' current position
+  Eigen::Vector3d *v_update; // particles' velocity at time t+dt
 
-  double **b;                // particles' external forces
-  double **f;                // particles' internal forces
+  Eigen::Vector3d *b;        // particles' external forces
+  Eigen::Vector3d *f;        // particles' internal forces
 
   double *vol0;              // particles' reference volume
   double *vol;               // particles' current volume

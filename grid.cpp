@@ -35,9 +35,33 @@ void Grid::init(string cs){
 void Grid::grow(int nn){
   nnodes = nn;
 
-  x = memory->grow(x, nn, 3, "grid:x");
-  v = memory->grow(x, nn, 3, "grid:v");
-  v_update = memory->grow(x, nn, 3, "grid:v_update");
-  b = memory->grow(x, nn, 3, "grid:b");
-  f = memory->grow(x, nn, 3, "grid:f");
+  if (x == NULL) x = new Eigen::Vector3d[nn];
+  else {
+    cout << "Error: x already exists, I don't know how to grow it!\n";
+    exit(1);
+  }
+
+  if (v == NULL) v = new Eigen::Vector3d[nn];
+  else {
+    cout << "Error: v already exists, I don't know how to grow it!\n";
+    exit(1);
+  }
+
+  if (v_update == NULL) v_update = new Eigen::Vector3d[nn];
+  else {
+    cout << "Error: v_update already exists, I don't know how to grow it!\n";
+    exit(1);
+  }
+
+  if (b == NULL) b = new Eigen::Vector3d[nn];
+  else {
+    cout << "Error: b already exists, I don't know how to grow it!\n";
+    exit(1);
+  }
+
+  if (f == NULL) f = new Eigen::Vector3d[nn];
+  else {
+    cout << "Error: f already exists, I don't know how to grow it!\n";
+    exit(1);
+  }
 }
