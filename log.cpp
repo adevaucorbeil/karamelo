@@ -3,6 +3,7 @@
 #include "log.h"
 #include "mpmtype.h"
 #include "update.h"
+#include <sstream>
 
 using namespace std;
 
@@ -29,15 +30,31 @@ Log::Log(MPM *mpm, vector<string> args) : Pointers(mpm)
 
 void Log::write()
 {
-  cout << "Writing output ... function to write" << endl;
+  stringstream soutput;
+  string output = "";
+
+  for (int i=0; i<field.size(); i++){
+    (this->*field[i].vfunc)(); // Compute the output field
+
+    if (field[i].typeflag==INT) soutput << ivalue << "\t";
+    if (field[i].typeflag==FLOAT) soutput << dvalue << "\t";
+    if (field[i].typeflag==BIGINT) soutput << bivalue << "\t";
+  }
+
+  soutput << "\n";
+  cout << soutput.str();
+
+  if (wlogfile->is_open()) {
+    (*wlogfile) << soutput.str();
+  }
 }
 
 void Log::parse_keywords(vector<string> keyword)
 {
   for (int i=0; i<keyword.size();i++){
     if (keyword[i].compare("step")==0)      addfield("Step", &Log::compute_step, BIGINT);
-    else if (keyword[i].compare("dt")==0)   addfield("dt", &Log::compute_dt, BIGINT);
-    else if (keyword[i].compare("time")==0) addfield("Time", &Log::compute_time, BIGINT);
+    else if (keyword[i].compare("dt")==0)   addfield("dt", &Log::compute_dt, FLOAT);
+    else if (keyword[i].compare("time")==0) addfield("Time", &Log::compute_time, FLOAT);
     else {
       cout << "Error: unknown log keyword " << keyword[i] << endl;
       exit(1);
