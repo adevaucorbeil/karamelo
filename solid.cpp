@@ -16,6 +16,7 @@ Solid::Solid(MPM *mpm, vector<string> args) :
   np = 0;
 
   x = x0 = NULL;
+  v = NULL;
 
   vol = vol0 = NULL;
   mass = NULL;
@@ -29,6 +30,7 @@ Solid::~Solid()
 {
   memory->destroy(x0);
   memory->destroy(x);
+  memory->destroy(v);
   memory->destroy(vol);
   memory->destroy(vol0);
   memory->destroy(mass);
@@ -85,6 +87,10 @@ void Solid::grow(int nparticles){
   str = "solid-" + id + ":x";
   cout << "Growing " << str << endl;
   x = memory->grow(x, np, 3, str);
+
+  str = "solid-" + id + ":x";
+  cout << "Growing " << str << endl;
+  v = memory->grow(v, np, 3, str);
 
   str = "solid-" + id + ":vol0";
   cout << "Growing " << str << endl;

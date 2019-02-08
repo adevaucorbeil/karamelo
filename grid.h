@@ -10,8 +10,12 @@
 
 class Grid : protected Pointers {
  public:
-  double cellsize;                    // size of the square cells forming the grid
-  vector< array<double, 3> > x;       // nodes' current position
+  double cellsize;       // size of the square cells forming the grid
+  double **x;            // nodes' current position
+  double **v;            // nodes' velocity at time t
+  double **v_update;     // nodes' velocity at time t+dt
+  double **b;            // nodes' external forces
+  double **f;            // nodes' internal forces
 
   Grid(class MPM *);
   virtual ~Grid();

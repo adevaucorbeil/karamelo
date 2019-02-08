@@ -12,8 +12,16 @@ class Solid : protected Pointers {
  public:
   string id;                 // solid id
   bigint np;                 // number of particles
+
   double **x;                // particles' current position
   double **x0;               // particles' reference position
+
+  double **v;                // particles' current position
+  double **v_update;         // particles' velocity at time t+dt
+
+  double **b;                // particles' external forces
+  double **f;                // particles' internal forces
+
   double *vol0;              // particles' reference volume
   double *vol;               // particles' current volume
   double *mass;              // particles' current mass
