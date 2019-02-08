@@ -53,9 +53,12 @@ void Output::setup(){
 
   if (every_log) {
     next_log = (ntimestep/every_log)*every_log + every_log;
-    next_log = MIN(next_log,update->laststep);
-  } else
+    if (update->laststep != 0) next_log = MIN(next_log,update->laststep);
+  } else next_log = update->laststep;
+
   next = MIN(next_dump_any,next_log);
+
+  cout << "Next = " << next << endl;
 }
 
 void Output::write(bigint ntimestep){

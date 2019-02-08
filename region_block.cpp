@@ -101,7 +101,7 @@ RegBlock::~RegBlock()
 
 int RegBlock::inside(double x, double y, double z)
 {
-  cout << "Check if point (" << x << ", " << y << ", " << z << ") is inside the region" << endl;
+  //cout << "Check if point (" << x << ", " << y << ", " << z << ") is inside the region" << endl;
   if (x >= xlo && x <= xhi && y >= ylo && y <= yhi && z >= zlo && z <= zhi)
     return 1;
   return 0;

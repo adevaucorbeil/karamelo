@@ -8,7 +8,7 @@ using namespace std;
 
 enum{INT,FLOAT,BIGINT};
 
-  Log::Log(MPM *mpm, vector<string> args) : Pointers(mpm)
+Log::Log(MPM *mpm, vector<string> args) : Pointers(mpm)
 {
   cout << "In Log::Log" << endl;
 
