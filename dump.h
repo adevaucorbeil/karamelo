@@ -19,6 +19,8 @@ class Dump : protected Pointers {
 
   // implemented by each dump
 
+  virtual void write() = 0;
+
  protected:
   string filename;
 };

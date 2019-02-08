@@ -17,7 +17,7 @@ Dump::Dump(MPM *mpm, vector<string> args) :
 
   style = args[2];
   
-  filename = args[3];
+  filename = args[4];
 }
 
 Dump::~Dump()

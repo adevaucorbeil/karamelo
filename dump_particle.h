@@ -14,6 +14,7 @@ class DumpParticle : public Dump {
   DumpParticle(MPM *, vector<string>);
   ~DumpParticle();
 
+  void write();
   //protected:
 };
 

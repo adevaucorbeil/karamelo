@@ -23,7 +23,7 @@ RegBlock::RegBlock(MPM *mpm, vector<string> args) : Region(mpm, args)
       cout << "Cannot use region INF or EDGE when box does not exist" << endl;
       exit(1);
     }
-    if (args[2].compare("INF") == 0) xlo = -BIG;
+    xlo = -BIG;
   } else xlo = input->parse(args[2]);
 
   if (args[3].compare("INF") == 0 || args[3].compare("EDGE") == 0) {
@@ -31,7 +31,7 @@ RegBlock::RegBlock(MPM *mpm, vector<string> args) : Region(mpm, args)
       cout << "Cannot use region INF or EDGE when box does not exist" << endl;
       exit(1);
     }
-    if (args[3].compare("INF") == 0) xhi = BIG;
+    xhi = BIG;
   } else xhi = input->parse(args[3]);
 
   cout << "xlo xhi = " << xlo << "\t" << xhi << endl;
@@ -41,7 +41,7 @@ RegBlock::RegBlock(MPM *mpm, vector<string> args) : Region(mpm, args)
       cout << "Cannot use region INF or EDGE when box does not exist" << endl;
       exit(1);
     }
-    if (args[4].compare("INF") == 0) ylo = -BIG;
+    ylo = -BIG;
   } else ylo = input->parse(args[4]);
 
   if (args[5].compare("INF") == 0 || args[5].compare("EDGE") == 0) {
@@ -49,7 +49,7 @@ RegBlock::RegBlock(MPM *mpm, vector<string> args) : Region(mpm, args)
       cout << "Cannot use region INF or EDGE when box does not exist" << endl;
       exit(1);
     }
-    if (args[5].compare("INF") == 0) yhi = BIG;
+    yhi = BIG;
   } else yhi = input->parse(args[5]);
 
   cout << "ylo yhi = " << ylo << "\t" << yhi << endl;
@@ -59,7 +59,7 @@ RegBlock::RegBlock(MPM *mpm, vector<string> args) : Region(mpm, args)
       cout << "Cannot use region INF or EDGE when box does not exist" << endl;
       exit(1);
     }
-    if (args[6].compare("INF") == 0) zlo = -BIG;
+    zlo = -BIG;
   } else zlo = input->parse(args[6]);
 
   if (args[7].compare("INF") == 0 || args[7].compare("EDGE") == 0) {
@@ -67,8 +67,8 @@ RegBlock::RegBlock(MPM *mpm, vector<string> args) : Region(mpm, args)
       cout << "Cannot use region INF or EDGE when box does not exist" << endl;
       exit(1);
     }
-    if (args[7].compare("INF") == 0) zhi = BIG;
-  } else yhi = input->parse(args[7]);
+    zhi = BIG;
+  } else zhi = input->parse(args[7]);
 
   cout << "zlo zhi = " << zlo << "\t" << zhi << endl;
 
@@ -79,13 +79,19 @@ RegBlock::RegBlock(MPM *mpm, vector<string> args) : Region(mpm, args)
     exit(1);
   }
 
-  if (domain->boxlo[0] > xlo) domain->boxlo[0] = xlo;
-  if (domain->boxlo[1] > ylo) domain->boxlo[1] = ylo;
-  if (domain->boxlo[2] > zlo) domain->boxlo[2] = zlo;
+  if (args[2].compare("INF") != 0 && args[2].compare("EDGE") != 0)
+    if (domain->boxlo[0] > xlo) domain->boxlo[0] = xlo;
+  if (args[4].compare("INF") != 0 && args[4].compare("EDGE") != 0)
+    if (domain->boxlo[1] > ylo) domain->boxlo[1] = ylo;
+  if (args[6].compare("INF") != 0 && args[6].compare("EDGE") != 0)
+    if (domain->boxlo[2] > zlo) domain->boxlo[2] = zlo;
 
-  if (domain->boxhi[0] < xhi) domain->boxhi[0] = xhi;
-  if (domain->boxhi[1] < yhi) domain->boxhi[1] = yhi;
-  if (domain->boxhi[2] < zhi) domain->boxhi[2] = zhi;
+  if (args[3].compare("INF") != 0 && args[3].compare("EDGE") != 0)
+    if (domain->boxhi[0] < xhi) domain->boxhi[0] = xhi;
+  if (args[5].compare("INF") != 0 && args[5].compare("EDGE") != 0)
+    if (domain->boxhi[1] < yhi) domain->boxhi[1] = yhi;
+  if (args[7].compare("INF") != 0 && args[7].compare("EDGE") != 0)
+    if (domain->boxhi[2] < zhi) domain->boxhi[2] = zhi;
 }
 
 

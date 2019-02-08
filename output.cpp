@@ -68,7 +68,7 @@ void Output::write(bigint ntimestep){
     for (int idump = 0; idump < ndumps; idump++) {
       // Which dump requested output:
       if (next_dump[idump] == ntimestep) {
-	cout << "Should dump .... function to write" << endl;
+	dumps[idump]->write();
       }
 
       if (every_dump[idump]) next_dump[idump] += every_dump[idump];
