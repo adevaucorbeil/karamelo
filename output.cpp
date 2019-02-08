@@ -117,7 +117,7 @@ void Output::add_dump(vector<string> args){
 #undef DUMP_CLASS
 
   else {
-    cout << "Unknown dump style " << args[1] << endl;
+    cout << "Unknown dump style " << args[2] << endl;
     exit(1);
   }
 

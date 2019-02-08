@@ -27,7 +27,29 @@ Grid::~Grid()
   memory->destroy(f);
 }
 
-void Grid::init(string cs){
+void Grid::init(double *solidlo, double *solidhi){
+  int nx = (int) (solidhi[0]-solidlo[0])/cellsize + 2;
+  int ny = (int) (solidhi[1]-solidlo[1])/cellsize + 2;
+  int nz = (int) (solidhi[2]-solidlo[2])/cellsize + 2;
+
+  int nn = nx*ny*nz;
+  grow(nn);
+
+
+  int l=0;
+  for (int i=0; i<nx; i++){
+    for (int j=0; j<ny; j++){
+      for (int k=0; k<nz; k++){
+	x[l][0] = solidlo[0] + cellsize*i;
+	x[l][1] = solidlo[1] + cellsize*j;
+	x[l][2] = solidlo[2] + cellsize*k;
+	l++;
+      }
+    }
+  }
+}
+
+void Grid::setup(string cs){
   cellsize = input->parse(cs);
   cout << "Set grid cellsize to " << cellsize << endl;
 }

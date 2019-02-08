@@ -16,6 +16,7 @@ class Solid : protected Pointers {
  public:
   string id;                 // solid id
   bigint np;                 // number of particles
+  double solidlo[3], solidhi[3]; // solid bounds
 
   Eigen::Vector3d *x;        // particles' current position
   Eigen::Vector3d *x0;       // particles' reference position
@@ -49,7 +50,8 @@ class Solid : protected Pointers {
 
   Solid(class MPM *, vector<string>);
   virtual ~Solid();
-  virtual void init();
+
+  void init();
   void options(vector<string> *, vector<string>::iterator);
   void grow(int);
 

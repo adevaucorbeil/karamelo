@@ -13,6 +13,7 @@ using namespace Eigen;
 
 class Grid : protected Pointers {
  public:
+  bigint nnodes;         // number of particles
   double cellsize;       // size of the square cells forming the grid
 
   Eigen::Vector3d *x;            // nodes' current position
@@ -25,10 +26,9 @@ class Grid : protected Pointers {
   Grid(class MPM *);
   virtual ~Grid();
   void grow(int);
-  void init(string);
+  void setup(string);
+  void init(double*, double*);
 
-protected:
-  bigint nnodes; // number of particles
 };
 
 #endif

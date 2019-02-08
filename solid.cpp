@@ -65,6 +65,12 @@ Solid::~Solid()
 
 void Solid::init()
 {
+  cout << "Bounds for " << id << ":\n";
+  cout << "xlo xhi: " << solidlo[0] << " " << solidhi[0] << endl;
+  cout << "ylo yhi: " << solidlo[1] << " " << solidhi[1] << endl;
+  cout << "zlo zhi: " << solidlo[2] << " " << solidhi[2] << endl;
+
+  grid->init(solidlo, solidhi);
 }
 
 void Solid::options(vector<string> *args, vector<string>::iterator it)
@@ -86,7 +92,7 @@ void Solid::options(vector<string> *args, vector<string>::iterator it)
 
     it++;
 
-    grid->init(*it); // set the grid cellsize
+    grid->setup(*it); // set the grid cellsize
 
     it++;
 

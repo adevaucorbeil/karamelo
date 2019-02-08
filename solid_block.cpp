@@ -37,10 +37,24 @@ SolBlock::SolBlock(MPM *mpm, vector<string> args) : Solid(mpm, args)
 
   // Create particles:
   vector<double> limits = domain->regions[iregion]->limits();
+
+  solidlo[0] = limits[0];
+  solidhi[0] = limits[1];
+  solidlo[1] = limits[2];
+  solidhi[1] = limits[3];
+  solidlo[2] = limits[4];
+  solidhi[2] = limits[5];
+
   double delta_x, delta_y, delta_z;
-  delta_x = (limits[1]-limits[0])/((float) nx);
-  delta_y = (limits[3]-limits[2])/((float) ny);
-  delta_z = (limits[5]-limits[4])/((float) nz);
+  double hdelta_x, hdelta_y, hdelta_z;
+
+  delta_x = (solidhi[0]-solidlo[0])/((float) nx);
+  delta_y = (solidhi[1]-solidlo[1])/((float) ny);
+  delta_z = (solidhi[2]-solidlo[2])/((float) nz);
+
+  hdelta_x = 0.5*delta_x;
+  hdelta_y = 0.5*delta_y;
+  hdelta_z = 0.5*delta_z;
 
   cout << "deltas = " << delta_x << "\t"<< delta_y << "\t"<< delta_z << "\t" << endl;
 
@@ -51,12 +65,14 @@ SolBlock::SolBlock(MPM *mpm, vector<string> args) : Solid(mpm, args)
   for (int i=0; i<nx; i++){
     for (int j=0; j<ny; j++){
       for (int k=0; k<nz; k++){
-	x0[l][0] = x[l][0] = limits[0] + delta_x*(i+0.5);
-	x0[l][1] = x[l][1] = limits[2] + delta_y*(j+0.5);
-	x0[l][2] = x[l][2] = limits[4] + delta_z*(k+0.5);
+	x0[l][0] = x[l][0] = solidlo[0] + delta_x*(i+0.5);
+	x0[l][1] = x[l][1] = solidlo[1] + delta_y*(j+0.5);
+	x0[l][2] = x[l][2] = solidlo[2] + delta_z*(k+0.5);
+
 	v[l][0] = v[l][1] = v[l][2] = 0;
 	vol0[l] = vol[l] = vol_;
 	mass[l] = mass_;
+
 	l++;
       }
     }
