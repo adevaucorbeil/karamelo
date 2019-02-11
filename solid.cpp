@@ -33,6 +33,13 @@ Solid::Solid(MPM *mpm, vector<string> args) :
 
   eos = NULL;
   grid = new Grid(mpm);
+
+  numneigh_pn = numneigh_np = NULL;
+
+  neigh_pn = neigh_np = NULL;
+
+  wf_pn = wf_np = NULL;
+  wfd_pn = wfd_np = NULL;
 }
 
 Solid::~Solid()
@@ -61,6 +68,18 @@ Solid::~Solid()
 
   delete eos;
   delete grid;
+
+  delete [] numneigh_pn;
+  delete [] numneigh_np;
+
+  delete [] neigh_pn;
+  delete [] neigh_np;
+
+  delete [] wf_pn;
+  delete [] wf_np;
+
+  delete [] wfd_pn;
+  delete [] wfd_np;
 }
 
 
@@ -72,6 +91,24 @@ void Solid::init()
   cout << "zlo zhi: " << solidlo[2] << " " << solidhi[2] << endl;
 
   grid->init(solidlo, solidhi);
+
+  if (np == 0) {
+    cout << "Error: solid does not have any particles" << endl;
+  } else {
+      bigint nnodes = grid->nnodes;
+
+      numneigh_pn = new int[np]();
+      neigh_pn = new vector<int>[np];
+      wf_pn = new vector<double>[np];
+      wfd_pn = new vector< array<double,3> >[np];
+
+      if (nnodes) {
+	numneigh_np = new int[nnodes]();
+	neigh_np = new vector<int>[nnodes];
+	wf_np = new vector<double>[nnodes];
+	wfd_np = new vector< array<double,3> >[nnodes];
+      }
+  }
 }
 
 void Solid::options(vector<string> *args, vector<string>::iterator it)

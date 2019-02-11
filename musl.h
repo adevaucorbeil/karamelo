@@ -18,8 +18,6 @@ class MUSL : public Scheme {
   ~MUSL() {}
   void setup();
   void run(int);
-
- protected:
 };
 
 #endif

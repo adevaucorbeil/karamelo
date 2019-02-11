@@ -1,52 +1,121 @@
 #include "tlmpm.h"
+#include "domain.h"
+#include "solid.h"
+#include "grid.h"
 #include <iostream>
 #include <vector>
-#include "domain.h"
+#include <Eigen/Eigen>
+#include <math.h>
 
 using namespace std;
 
 TLMPM::TLMPM(MPM *mpm, vector<string> args) : Method(mpm) {
   cout << "In TLMPM::TLMPM()" << endl;
-  neigh_pn = NULL;
-  neigh_np = NULL;
+
+  update_wf = 1;
 }
 
-TLMPM::~TLMPM(){
-  int nsolids = domain->solids.size();
-
-  if (nsolids) {
-    for (int isolid=0; isolid<nsolids; isolid++){
-      if (neigh_pn[isolid] != NULL) delete [] neigh_pn[isolid];
-      if (neigh_np[isolid] != NULL) delete [] neigh_np[isolid];
-    }
-    if (neigh_pn != NULL) delete [] neigh_pn;
-    if (neigh_np != NULL) delete [] neigh_np;
-  }
+TLMPM::~TLMPM()
+{
 }
 
 void TLMPM::setup()
 {
   cout << "np = " << domain->solids[0]->np << ", nn = " << domain->solids[0]->grid->nnodes << endl;
-  int nsolids, np, nnodes;
-
-  nsolids = domain->solids.size();
-
-  if (nsolids) {
-    neigh_pn = new map<int,int>* [nsolids];
-    neigh_np = new map<int,int>* [nsolids];
-
-    for (int isolid=0; isolid<nsolids; isolid++){
-      np = domain->solids[isolid]->np;
-      nnodes = domain->solids[isolid]->grid->nnodes;
-      if (np) neigh_pn[isolid] = new map<int,int>[np];
-      if (nnodes) neigh_np[isolid] = new map<int,int>[nnodes];
-    }
-  }
+  //compute_grid_weight_functions_and_gradients();
 }
 
 void TLMPM::compute_grid_weight_functions_and_gradients()
 {
+  if (!update_wf) return;
 
+  bigint nsolids, np, nnodes;
+
+  nsolids = domain->solids.size();
+
+  if (nsolids) {
+    for (int isolid=0; isolid<nsolids; isolid++){
+
+      np = domain->solids[isolid]->np;
+      nnodes = domain->solids[isolid]->grid->nnodes;
+
+      int *numneigh_pn = domain->solids[isolid]->numneigh_pn;
+      int *numneigh_np = domain->solids[isolid]->numneigh_np;
+
+      vector<int> *neigh_pn = domain->solids[isolid]->neigh_pn;
+      vector<int> *neigh_np = domain->solids[isolid]->neigh_np;
+
+      vector< double > *wf_pn = domain->solids[isolid]->wf_pn;
+      vector< double > *wf_np = domain->solids[isolid]->wf_np;
+
+      vector< array<double,3> > *wfd_pn = domain->solids[isolid]->wfd_pn;
+      vector< array<double,3> > *wfd_np = domain->solids[isolid]->wfd_np;
+
+      Eigen::Vector3d r;
+      double s[3], sd[3];
+      Eigen::Vector3d *xp = domain->solids[isolid]->x0;
+      Eigen::Vector3d *xn = domain->solids[isolid]->grid->x;
+      double inv_cellsize = 1.0 / domain->solids[isolid]->grid->cellsize;
+      double wf;
+      array<double,3> wfd;
+
+      if (np && nnodes) {
+	for (int ip=0; ip<np; ip++) {
+	  for (int in=0; in<nnodes; in++) {
+	    // Calculate the distance between each pair of particle/node:
+	    r = (xp[ip] - xn[in]) * inv_cellsize;
+
+	    s[0] = spline(r[0]);
+	    s[1] = spline(r[1]);
+	    s[2] = spline(r[2]);
+
+	    if (s[0] != 0 && s[1] != 0 && s[2] != 0) {
+
+	      sd[0] = derivative_spline(r[0], inv_cellsize);
+	      sd[1] = derivative_spline(r[1], inv_cellsize);
+	      sd[2] = derivative_spline(r[2], inv_cellsize);
+
+	      neigh_pn[ip].push_back(in);
+	      neigh_np[in].push_back(ip);
+	      numneigh_pn[ip]++;
+	      numneigh_np[in]++;
+
+	      wf = s[0]*s[1]*s[2];
+	      wf_pn[ip].push_back(wf);
+	      wf_np[in].push_back(wf);
+
+	      wfd[0] = sd[0]*s[1]*s[2];
+	      wfd[1] = s[0]*sd[1]*s[2];
+	      wfd[2] = s[0]*s[1]*sd[2];
+	      wfd_pn[ip].push_back(wfd);
+	      wfd_pn[ip].push_back(wfd);
+	    }
+	  } 
+	}
+      }
+    }
+  }
+
+  update_wf = 0;
+}
+
+double TLMPM::spline(double r_)
+{
+  double r = fabs(r_);
+  if (r >= 1.0)
+    return 0.0;
+  else
+    return 1.0 - r;
+}
+
+double TLMPM::derivative_spline(double r, double inv_cellsize)
+{
+  if (r >= 1.0 || r <= -1.0 || r == 0)
+    return 0.0;
+  else if (r > 0.0)
+    return -inv_cellsize;
+  else
+    return inv_cellsize;
 }
 
 void TLMPM::particles_to_grid()

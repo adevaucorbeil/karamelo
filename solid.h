@@ -44,6 +44,17 @@ class Solid : protected Pointers {
   double *mass;              // particles' current mass
   int *mask;                 // particles' group mask
 
+  
+  int *numneigh_pn;   // number of nodes neighbouring a given particle
+  int *numneigh_np;   // number of nodes neighbouring a given node
+  vector<int> *neigh_pn;     // List of the nodes neighbouring a given particle
+  vector<int> *neigh_np;     // List of the particles neighbouring a given node
+
+  vector< double > *wf_pn;
+  vector< double > *wf_np;
+  vector< array<double,3> > *wfd_pn;
+  vector< array<double,3> > *wfd_np;
+
   class EOS *eos;                     // Equation-of-State
 
   class Grid *grid;                   // background grid
