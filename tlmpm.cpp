@@ -7,17 +7,21 @@ using namespace std;
 
 TLMPM::TLMPM(MPM *mpm, vector<string> args) : Method(mpm) {
   cout << "In TLMPM::TLMPM()" << endl;
+  neigh_pn = NULL;
+  neigh_np = NULL;
 }
 
 TLMPM::~TLMPM(){
-  // int nsolids = domain->solids.size();
+  int nsolids = domain->solids.size();
 
-  // for (int isolid=0; isolid<nsolids; isolid++){
-  //   delete neigh_pn[nsolids];
-  //   delete neigh_np[nsolids];
-  // }
-  // delete neigh_pn;
-  // delete neigh_np;
+  if (nsolids) {
+    for (int isolid=0; isolid<nsolids; isolid++){
+      if (neigh_pn[isolid] != NULL) delete [] neigh_pn[isolid];
+      if (neigh_np[isolid] != NULL) delete [] neigh_np[isolid];
+    }
+    if (neigh_pn != NULL) delete [] neigh_pn;
+    if (neigh_np != NULL) delete [] neigh_np;
+  }
 }
 
 void TLMPM::setup()
@@ -27,15 +31,17 @@ void TLMPM::setup()
 
   nsolids = domain->solids.size();
 
-  // neigh_pn = new map<int, int>*[nsolids];
-  // neigh_np = new map<int, int>*[nsolids];
+  if (nsolids) {
+    neigh_pn = new map<int,int>* [nsolids];
+    neigh_np = new map<int,int>* [nsolids];
 
-  // for (int isolid=0; isolid<nsolids; isolid++){
-  //   np = domain->solids[isolid]->np;
-  //   nnodes = domain->solids[isolid]->grid->nnodes;
-  //   neigh_pn[nsolids] = new map<int, int>[np];
-  //   neigh_np[nsolids] = new map<int, int>[nnodes];
-  // }
+    for (int isolid=0; isolid<nsolids; isolid++){
+      np = domain->solids[isolid]->np;
+      nnodes = domain->solids[isolid]->grid->nnodes;
+      if (np) neigh_pn[isolid] = new map<int,int>[np];
+      if (nnodes) neigh_np[isolid] = new map<int,int>[nnodes];
+    }
+  }
 }
 
 void TLMPM::compute_grid_weight_functions_and_gradients()
