@@ -272,3 +272,16 @@ void Solid::grow(int nparticles){
   cout << "Growing " << str << endl;
   J = memory->grow(J, np, str);
 }
+
+void Solid::compute_mass_nodes()
+{
+  int ip;
+  for (int in=0; in<grid->nnodes; in++){
+    grid->mass[in] = 0;
+    for (int j=0; j<numneigh_np[in];j++){
+      ip = neigh_np[in][j];
+      grid->mass[in] += wf_np[in][j] * mass[ip];
+    }
+  }
+  return;
+}

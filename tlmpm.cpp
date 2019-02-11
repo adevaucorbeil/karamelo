@@ -67,26 +67,36 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
 
 	    s[0] = spline(r[0]);
 	    s[1] = spline(r[1]);
-	    s[2] = spline(r[2]);
+	    if (domain->dimension == 3) s[2] = spline(r[2]);
 
 	    if (s[0] != 0 && s[1] != 0 && s[2] != 0) {
 
 	      sd[0] = derivative_spline(r[0], inv_cellsize);
 	      sd[1] = derivative_spline(r[1], inv_cellsize);
-	      sd[2] = derivative_spline(r[2], inv_cellsize);
+	      if (domain->dimension == 3) sd[2] = derivative_spline(r[2], inv_cellsize);
 
 	      neigh_pn[ip].push_back(in);
 	      neigh_np[in].push_back(ip);
 	      numneigh_pn[ip]++;
 	      numneigh_np[in]++;
 
-	      wf = s[0]*s[1]*s[2];
+	      if (domain->dimension == 2) wf = s[0]*s[1];
+	      if (domain->dimension == 3) wf = s[0]*s[1]*s[2];
+
 	      wf_pn[ip].push_back(wf);
 	      wf_np[in].push_back(wf);
 
-	      wfd[0] = sd[0]*s[1]*s[2];
-	      wfd[1] = s[0]*sd[1]*s[2];
-	      wfd[2] = s[0]*s[1]*sd[2];
+	      if (domain->dimension == 2)
+		{
+		  wfd[0] = sd[0]*s[1];
+		  wfd[1] = s[0]*sd[1];
+		}
+	      else if (domain->dimension == 3)
+		{
+		  wfd[0] = sd[0]*s[1]*s[2];
+		  wfd[1] = s[0]*sd[1]*s[2];
+		  wfd[2] = s[0]*s[1]*sd[2];
+		}
 	      wfd_pn[ip].push_back(wfd);
 	      wfd_pn[ip].push_back(wfd);
 	    }
@@ -120,11 +130,13 @@ double TLMPM::derivative_spline(double r, double inv_cellsize)
 
 void TLMPM::particles_to_grid()
 {
-  /*compute_mass_nodes();
-  compute_thermal_energy_nodes();
-  compute_velocity_nodes();
-  compute_external_forces_nodes();
-  compute_internal_forces_nodes();*/
+  for (int isolid=0; isolid<domain->solids.size(); isolid++){
+      domain->solids[isolid]->compute_mass_nodes();
+      /*compute_thermal_energy_nodes();
+	compute_velocity_nodes();
+	compute_external_forces_nodes();
+	compute_internal_forces_nodes();*/
+    }
 }
 
 void TLMPM::update_grid_state()

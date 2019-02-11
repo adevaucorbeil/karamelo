@@ -66,6 +66,8 @@ class Solid : protected Pointers {
   void options(vector<string> *, vector<string>::iterator);
   void grow(int);
 
+  void compute_mass_nodes();
+
 };
 
 #endif

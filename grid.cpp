@@ -16,6 +16,8 @@ Grid::Grid(MPM *mpm) :
   x= NULL;
   v = v_update = NULL;
   b = f = NULL;
+
+  mass = NULL;
 }
 
 Grid::~Grid()
@@ -25,6 +27,7 @@ Grid::~Grid()
   memory->destroy(v_update);
   memory->destroy(b);
   memory->destroy(f);
+  memory->destroy(mass);
 }
 
 void Grid::init(double *solidlo, double *solidhi){
@@ -88,4 +91,8 @@ void Grid::grow(int nn){
     cout << "Error: f already exists, I don't know how to grow it!\n";
     exit(1);
   }
+
+  string str = "grid-mass";
+  cout << "Growing " << str << endl;
+  mass = memory->grow(mass, nn, str);
 }
