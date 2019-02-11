@@ -14,9 +14,15 @@ MethodStyle(tlmpm,TLMPM)
 
 class TLMPM : public Method {
  public:
-  TLMPM(class MPM *, vector<string>);
-  ~TLMPM() {}
 
+  map<int, int> **neigh_pn; // List of the nodes neighbouring a given particle for each solid
+  map<int, int> **neigh_np; // List of the particles neighbouring a given node for each solid
+
+  TLMPM(class MPM *, vector<string>);
+  ~TLMPM();
+
+  void setup();
+  void compute_grid_weight_functions_and_gradients();
   void particles_to_grid();
   void update_grid_state();
   void grid_to_points();

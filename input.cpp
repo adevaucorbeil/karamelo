@@ -38,6 +38,7 @@ Input::Input(MPM *mpm, int argc, char **argv) : Pointers(mpm)
 
 Input::~Input()
 {
+  delete command_map;
 }
 
 /* ----------------------------------------------------------------------

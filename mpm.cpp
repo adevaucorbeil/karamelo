@@ -57,6 +57,7 @@ MPM::MPM(int narg, char **arg)
 
 MPM::~MPM()
 {
+  delete memory;
   delete input;
   delete output;
   delete update;
@@ -68,4 +69,6 @@ MPM::~MPM()
 
   if (infile.is_open()) infile.close();
   if (wlogfile->is_open()) wlogfile->close();
+
+  if (wlogfile) delete wlogfile;
 }

@@ -11,6 +11,10 @@ enum{INT,FLOAT,BIGINT};
 
 Log::Log(MPM *mpm, vector<string> args) : Pointers(mpm)
 {
+  ivalue = 0;
+  dvalue = 0;
+  bivalue = 0;
+
   cout << "In Log::Log" << endl;
 
   style = args[0];
@@ -36,9 +40,12 @@ void Log::write()
   for (int i=0; i<field.size(); i++){
     (this->*field[i].vfunc)(); // Compute the output field
 
-    if (field[i].typeflag==INT) soutput << ivalue << "\t";
-    if (field[i].typeflag==FLOAT) soutput << dvalue << "\t";
-    if (field[i].typeflag==BIGINT) soutput << bivalue << "\t";
+    //if (field[i].typeflag==INT) cout << to_string(ivalue) << "\t";
+    //if (field[i].typeflag==FLOAT) cout << to_string(dvalue) << "\t";
+    //if (field[i].typeflag==BIGINT) cout << to_string(bivalue) << "\t";
+    soutput << ivalue << "\t";
+    soutput << dvalue << "\t";
+    soutput << bivalue << "\t";
   }
 
   soutput << "\n";
@@ -68,7 +75,7 @@ void Log::parse_keywords(vector<string> keyword)
 
 void Log::addfield(string key, FnPtr func, int typeflag)
 {
-  Field f;
+  Field f = {};
   f.name = key;
   f.vfunc = func;
   f.typeflag = typeflag;

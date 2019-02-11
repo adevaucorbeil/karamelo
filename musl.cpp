@@ -14,6 +14,7 @@ MUSL::MUSL(MPM *mpm, vector<string> args) : Scheme(mpm) {
 
 void MUSL::setup(){
   output->setup();
+  update->method->setup();
 }
 
 void MUSL::run(int n){
@@ -25,6 +26,7 @@ void MUSL::run(int n){
   for (int i=0; i<n; i++){
     ntimestep = ++update->ntimestep;
 
+    update->method->compute_grid_weight_functions_and_gradients();
     update->method->particles_to_grid();
     update->method->update_grid_state();
     update->method->grid_to_points();

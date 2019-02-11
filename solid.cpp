@@ -37,20 +37,21 @@ Solid::Solid(MPM *mpm, vector<string> args) :
 
 Solid::~Solid()
 {
-  delete [] x0;
-  delete [] x;
-  delete [] v;
-  delete [] v_update;
-  delete [] a;
-  delete [] b;
-  delete [] f;
-  delete [] sigma;
-  delete [] PK1;
-  delete [] L;
-  delete [] R;
-  delete [] U;
-  delete [] Fdot;
-  delete [] strain_increment;
+  if (x0!=NULL) delete x0;
+  if (x!=NULL) delete x;
+  if (v!=NULL) delete v;
+  if (v_update!=NULL) delete v_update;
+  if (a!=NULL) delete a;
+  if (b!=NULL) delete b;
+  if (f!=NULL) delete f;
+  if (sigma!=NULL) delete sigma;
+  if (PK1!=NULL) delete PK1;
+  if (L!=NULL) delete L;
+  if (F!=NULL) delete F;
+  if (R!=NULL) delete R;
+  if (U!=NULL) delete U;
+  if (Fdot!=NULL) delete Fdot;
+  if (strain_increment!=NULL) delete strain_increment;
 
   memory->destroy(J);
   memory->destroy(vol);
@@ -229,4 +230,8 @@ void Solid::grow(int nparticles){
   mask = memory->grow(mask, np, str);
 
   for (int i=0; i<np; i++) mask[i] = 1;
+
+  str = "solid-" + id + ":J";
+  cout << "Growing " << str << endl;
+  J = memory->grow(J, np, str);
 }

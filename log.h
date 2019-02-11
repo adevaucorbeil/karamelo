@@ -13,7 +13,7 @@ typedef void (Log::*FnPtr)();
 struct Field {
   string name = "";
   FnPtr vfunc = NULL;
-  int typeflag;
+  int typeflag = -1;
 };
 
 class Log : protected Pointers {

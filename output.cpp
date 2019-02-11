@@ -13,6 +13,8 @@ Output::Output(MPM *mpm) : Pointers(mpm)
 {
   ndumps = 0;
 
+  next_dump_any = 0;
+
   // create default Log class
 
   vector<string> log_args;
@@ -25,6 +27,8 @@ Output::Output(MPM *mpm) : Pointers(mpm)
 
 Output::~Output()
 {
+  for (int i=0; i<dumps.size();i++) delete dumps[i];
+  delete log;
 }
 
 void Output::setup(){
@@ -123,6 +127,7 @@ void Output::add_dump(vector<string> args){
 
   every_dump.push_back((int) input->parse(args[3]));
   last_dump.push_back(-1);
+  next_dump.push_back(0);
   ndumps++;
 }
 

@@ -1,5 +1,6 @@
 #include "domain.h"
 #include "region.h"
+#include "memory.h"
 #include "style_region.h"
 #include "style_solid.h"
 
@@ -32,6 +33,9 @@ Domain::Domain(MPM *mpm) : Pointers(mpm)
 
 Domain::~Domain()
 {
+  for (int i = 0; i < regions.size(); i++) delete regions[i];
+  for (int i = 0; i < solids.size(); i++) delete solids[i];
+
   delete region_map;
   delete solid_map;
 }

@@ -43,6 +43,8 @@ void Grid::init(double *solidlo, double *solidhi){
 	x[l][0] = solidlo[0] + cellsize*i;
 	x[l][1] = solidlo[1] + cellsize*j;
 	x[l][2] = solidlo[2] + cellsize*k;
+
+	v[l][0] = v[l][1] = v[l][2] = 0;
 	l++;
       }
     }

@@ -12,7 +12,12 @@ Update::Update(MPM *mpm) : Pointers(mpm)
 {
   cout << "In Update::Update()" << endl;
 
+  atime = 0;
+  atimestep = 0;
   ntimestep = 0; // set the current timestep to 0
+  firststep = laststep = 0;
+  beginstep = endstep = 0;
+  first_update = 0;
   dt = 1e-16;
 
   // Default scheme is MUSL:
@@ -27,6 +32,8 @@ Update::Update(MPM *mpm) : Pointers(mpm)
 
 Update::~Update()
 {
+  delete scheme;
+  delete method;
 }
 
 void Update::create_scheme(vector<string> args){
