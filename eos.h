@@ -5,6 +5,7 @@
 
 #include "pointers.h"
 #include <vector>
+#include <Eigen/Eigen>
 
 class EOS : protected Pointers {
  public:
@@ -19,8 +20,7 @@ class EOS : protected Pointers {
   //virtual compute_pressure()
   virtual double rho0() = 0;
   virtual double K() = 0;
-  virtual double compute_pressure(double) = 0;
-
+  virtual void update_stress(Eigen::Matrix3d&, Eigen::Matrix3d, double) = 0;
   //protected:
 };
 

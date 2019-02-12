@@ -31,6 +31,7 @@ class Grid : protected Pointers {
   void setup(string);
   void init(double*, double*);
 
+  void update_grid_velocities();
 };
 
 #endif

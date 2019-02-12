@@ -2,11 +2,15 @@
 #include "solid.h"
 #include "material.h"
 #include "memory.h"
+#include "update.h"
+#include "domain.h"
 #include <vector>
 #include <Eigen/Eigen>
+#include "mpm_math.h"
 
 using namespace std;
 using namespace Eigen;
+using namespace MPM_Math;
 
 Solid::Solid(MPM *mpm, vector<string> args) :
   Pointers(mpm)
@@ -21,13 +25,14 @@ Solid::Solid(MPM *mpm, vector<string> args) :
 
   a = NULL;
 
-  sigma = PK1 = L = F = R = U = Fdot = strain_increment = NULL;
+  sigma = PK1 = L = F = R = U = Finv = Fdot = strain_increment = NULL;
 
   b = f = NULL;
 
   J = NULL;
 
   vol = vol0 = NULL;
+  rho = rho0 = NULL;
   mass = NULL;
   mask = NULL;
 
@@ -57,12 +62,15 @@ Solid::~Solid()
   if (F!=NULL) delete F;
   if (R!=NULL) delete R;
   if (U!=NULL) delete U;
+  if (Finv!=NULL) delete Finv;
   if (Fdot!=NULL) delete Fdot;
   if (strain_increment!=NULL) delete strain_increment;
 
   memory->destroy(J);
   memory->destroy(vol);
   memory->destroy(vol0);
+  memory->destroy(rho);
+  memory->destroy(rho0);
   memory->destroy(mass);
   memory->destroy(mask);
 
@@ -238,6 +246,12 @@ void Solid::grow(int nparticles){
     exit(1);
   }
 
+  if (Finv == NULL) Finv = new Eigen::Matrix3d[np];
+  else {
+    cout << "Error: Finv already exists, I don't know how to grow it!\n";
+    exit(1);
+  }
+
   if (Fdot == NULL) Fdot = new Eigen::Matrix3d[np];
   else {
     cout << "Error: Fdot already exists, I don't know how to grow it!\n";
@@ -257,6 +271,14 @@ void Solid::grow(int nparticles){
   str = "solid-" + id + ":vol";
   cout << "Growing " << str << endl;
   vol = memory->grow(vol, np, str);
+
+  str = "solid-" + id + ":rho0";
+  cout << "Growing " << str << endl;
+  rho0 = memory->grow(rho0, np, str);
+
+  str = "solid-" + id + ":rho";
+  cout << "Growing " << str << endl;
+  rho = memory->grow(rho, np, str);
 
   str = "solid-" + id + ":mass";
   cout << "Growing " << str << endl;
@@ -284,4 +306,170 @@ void Solid::compute_mass_nodes()
     }
   }
   return;
+}
+
+void Solid::compute_velocity_nodes()
+{
+  Eigen::Vector3d *vn = grid->v;
+  double *massn = grid->mass;
+  int ip;
+  
+  for (int in=0; in<grid->nnodes; in++) {
+    vn[in].fill(0);
+    if (massn[in] > 0) {
+      for (int j=0; j<numneigh_np[in];j++){
+	ip = neigh_np[in][j];
+	vn[in] += (wf_np[in][j] * mass[ip] / massn[in]) * v[ip];
+      }
+    }
+  }
+}
+
+void Solid::compute_external_forces_nodes()
+{
+  Eigen::Vector3d *bn = grid->b;
+  double *massn = grid->mass;
+  int ip;
+  
+  for (int in=0; in<grid->nnodes; in++) {
+    bn[in].fill(0);
+    if (massn[in] > 0) {
+      for (int j=0; j<numneigh_np[in];j++){
+	ip = neigh_np[in][j];
+	bn[in] += (wf_np[in][j] * mass[ip] / massn[in]) * b[ip];
+      }
+    }
+  }
+}
+
+void Solid::compute_internal_forces_nodes()
+{
+  Eigen::Vector3d *fn = grid->f;
+  double *massn = grid->mass;
+  int ip;
+  
+  for (int in=0; in<grid->nnodes; in++) {
+    fn[in].fill(0);
+    if (massn[in] > 0) {
+      for (int j=0; j<numneigh_np[in];j++){
+	ip = neigh_np[in][j];
+	fn[in] += (wf_np[in][j] * mass[ip] / massn[in]) * f[ip];
+      }
+    }
+  }
+}
+
+void Solid::compute_particle_velocities()
+{
+  Eigen::Vector3d *vn_update = grid->v_update;
+  int in;
+
+  for (int ip=0; ip<np; ip++){
+    v_update[ip].fill(0);
+    for (int j=0; j<numneigh_pn[ip]; j++){
+      in = neigh_pn[ip][j];
+      v_update[ip] += wf_pn[ip][j] * vn_update[in];
+    }
+  }
+}
+
+void Solid::compute_particle_acceleration()
+{
+  double inv_dt = 1.0/update->dt;
+  
+  Eigen::Vector3d *vn_update = grid->v_update;
+  Eigen::Vector3d *vn = grid->v;
+
+  int in;
+
+  for (int ip=0; ip<np; ip++){
+    a[ip].fill(0);
+    for (int j=0; j<numneigh_pn[ip]; j++){
+      in = neigh_pn[ip][j];
+      a[ip] +=inv_dt * wf_pn[ip][j] * (vn_update[in] - vn[j]);
+    }
+    f[ip] = a[ip] / mass[ip];
+  }
+}
+
+void Solid::update_particle_position()
+{
+  for (int ip=0; ip<np; ip++) {
+    x[ip] += update->dt*v_update[ip];
+  }
+}
+
+void Solid::update_particle_velocities(double FLIP)
+{
+  for (int ip=0; ip<np; ip++) {
+    v[ip] = (1 - FLIP) * v_update[ip] + FLIP*(v[ip] + update->dt*a[ip]);
+  }
+}
+
+void Solid::compute_rate_deformation_gradient()
+{
+  int in;
+  Eigen::Vector3d *vn = grid->v;
+
+  if (domain->dimension == 2) {
+    for (int ip=0; ip<np; ip++){
+      Fdot[ip].fill(0);
+      for (int j=0; j<numneigh_pn[ip]; j++){
+	in = neigh_pn[ip][j];
+	Fdot[ip](0,0) += vn[in][0]*wfd_pn[ip][j][0];
+	Fdot[ip](0,1) += vn[in][0]*wfd_pn[ip][j][1];
+	Fdot[ip](1,0) += vn[in][1]*wfd_pn[ip][j][0];
+	Fdot[ip](1,1) += vn[in][1]*wfd_pn[ip][j][1];
+      }
+    }
+  } else if (domain->dimension == 3) {
+    for (int ip=0; ip<np; ip++){
+      Fdot[ip].fill(0);
+      for (int j=0; j<numneigh_pn[ip]; j++){
+	in = neigh_pn[ip][j];
+	Fdot[ip](0,0) += vn[in][0]*wfd_pn[ip][j][0];
+	Fdot[ip](0,1) += vn[in][0]*wfd_pn[ip][j][1];
+	Fdot[ip](0,2) += vn[in][0]*wfd_pn[ip][j][2];
+	Fdot[ip](1,0) += vn[in][1]*wfd_pn[ip][j][0];
+	Fdot[ip](1,1) += vn[in][1]*wfd_pn[ip][j][1];
+	Fdot[ip](1,2) += vn[in][1]*wfd_pn[ip][j][2];
+	Fdot[ip](2,0) += vn[in][2]*wfd_pn[ip][j][0];
+	Fdot[ip](2,1) += vn[in][2]*wfd_pn[ip][j][1];
+	Fdot[ip](2,2) += vn[in][2]*wfd_pn[ip][j][2];
+      }
+    }
+  }
+}
+
+void Solid::update_deformation_gradient()
+{
+  bool status;
+  Eigen::Matrix3d U;
+
+  for (int ip=0; ip<np; ip++){
+    F[ip] += update->dt * Fdot[ip];
+    J[ip] = F[ip].determinant();
+    vol[ip] = J[ip] * vol0[ip];
+    rho[ip] = rho0[ip] / J[ip];
+    Finv[ip] = F[ip].inverse();
+    L[ip] = Fdot[ip] * Finv[ip];
+
+    status = PolDec(F[ip], R[ip], U, false); // polar decomposition of the deformation gradient, F = R * U
+
+    if (!status) {
+      cout << "Polar decomposition of deformation gradient failed for particle " << ip << ".\n";
+      exit(1);
+    }
+
+    strain_increment[ip] = 0.5*update->dt * R[ip].transpose() * (L[ip] + L[ip].transpose()) * R[ip];
+  }
+}
+
+void Solid::update_stress()
+{
+  for (int ip=0; ip<np; ip++){
+    eos->update_stress(sigma[ip], strain_increment[ip], J[ip]);
+    PK1[ip] = J[ip] * (R[ip] * sigma[ip] * R[ip].transpose()) * Finv[ip].transpose();
+  }
+
 }

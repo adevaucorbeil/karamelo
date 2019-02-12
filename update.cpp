@@ -95,3 +95,12 @@ void Update::new_method(vector<string> args){
     exit(1);
   }
 }
+
+void Update::modify_method(vector<string> args){
+  if (args.size() < 1) {
+    cout << "Illegal run_method command: not enough arguments" << endl;
+    exit(1);
+  }
+
+  method->modify(args);
+}

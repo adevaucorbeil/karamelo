@@ -35,12 +35,15 @@ class Solid : protected Pointers {
   Eigen::Matrix3d *F;                // deformation gradient matrix
   Eigen::Matrix3d *R;                // Rotation matrix
   Eigen::Matrix3d *U;
+  Eigen::Matrix3d *Finv;             // inverse of the deformation gradient matrix
   Eigen::Matrix3d *Fdot;             // rate of deformation gradient matrix
   Eigen::Matrix3d *strain_increment; // strain increment matrix
 
   double *J;                 // determinant of the deformation matrix
   double *vol0;              // particles' reference volume
   double *vol;               // particles' current volume
+  double *rho0;              // particles' reference density
+  double *rho;               // particles' current density
   double *mass;              // particles' current mass
   int *mask;                 // particles' group mask
 
@@ -67,7 +70,16 @@ class Solid : protected Pointers {
   void grow(int);
 
   void compute_mass_nodes();
-
+  void compute_velocity_nodes();
+  void compute_external_forces_nodes();
+  void compute_internal_forces_nodes();
+  void compute_particle_velocities();
+  void compute_particle_acceleration();
+  void update_particle_position();
+  void update_particle_velocities(double);
+  void compute_rate_deformation_gradient();
+  void update_deformation_gradient();
+  void update_stress();
 };
 
 #endif

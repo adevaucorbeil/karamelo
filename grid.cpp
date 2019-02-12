@@ -4,6 +4,7 @@
 #include "input.h"
 #include <vector>
 #include "memory.h"
+#include "update.h"
 
 using namespace std;
 
@@ -95,4 +96,12 @@ void Grid::grow(int nn){
   string str = "grid-mass";
   cout << "Growing " << str << endl;
   mass = memory->grow(mass, nn, str);
+}
+
+void Grid::update_grid_velocities()
+{
+  for (int i=0; i<nnodes; i++){
+    v_update[i] = v[i];
+    if (mass[i] > 0) v_update[i] += update->dt/mass[i] * (f[i] + b[i]);
+  }
 }

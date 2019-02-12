@@ -5,6 +5,7 @@
 #include "domain.h"
 #include "material.h"
 #include "group.h"
+#include "update.h"
 #include <iostream>
 #include <fstream>
 #include <string.h>
@@ -158,6 +159,7 @@ double Input::evaluate_function(string func, string arg){
   if (func.compare("dump") == 0) return (double) dump(args);
   if (func.compare("group") == 0) return (double) group_command(args);
   if (func.compare("log") == 0) return (double) log(args);
+  if (func.compare("method_modify") == 0) return (double) method_modify(args);
 
   // invoke commands added via style_command.h
 
@@ -522,6 +524,11 @@ int Input::group_command(vector<string> args){
 
 int Input::log(vector<string> args){
   output->set_log(args);
+  return 0;
+}
+
+int Input::method_modify(vector<string> args){
+  update->modify_method(args);
   return 0;
 }
 

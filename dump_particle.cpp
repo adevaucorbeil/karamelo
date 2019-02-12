@@ -38,8 +38,7 @@ void DumpParticle::write()
   cout << "Filemame for dump: " << fdump << endl;
 
   // Open the file fdump:
-  ofstream dumpstream;
-  dumpstream.open(fdump, ios_base::out);
+  ofstream dumpstream(fdump, ios_base::out);
 
   if (dumpstream.is_open()) {
     dumpstream << "ITEM: TIMESTEP\n0\nITEM: NUMBER OF ATOMS\n";
@@ -59,7 +58,16 @@ void DumpParticle::write()
       Solid *s = domain->solids[isolid];
       for (bigint i=0; i<s->np;i++) {
 	ID++;
-	dumpstream << ID << " " << isolid+1 << " " << s->x[i][0] << " " << s->x[i][1] << " " << s->x[i][2] << " " << s->v[i][0] << " " << s->v[i][1] << " " << s->v[i][2] << " " << s->vol[i] << " " << s->mass[i] << endl;
+	dumpstream << ID << " ";
+	dumpstream << isolid+1 << " ";
+	dumpstream << s->x[i][0] << " ";
+	dumpstream << s->x[i][1] << " ";
+	dumpstream << s->x[i][2] << " ";
+	dumpstream << s->v[i][0] << " ";
+	dumpstream << s->v[i][1] << " ";
+	dumpstream << s->v[i][2] << " ";
+	dumpstream << s->vol[i] << " ";
+	dumpstream << s->mass[i] << endl;
       }
     }
     dumpstream.close();

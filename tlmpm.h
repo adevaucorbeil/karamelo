@@ -15,9 +15,12 @@ MethodStyle(tlmpm,TLMPM)
 
 class TLMPM : public Method {
  public:
+  double FLIP;
 
   TLMPM(class MPM *, vector<string>);
   ~TLMPM();
+
+  void modify(vector<string>);
 
   void setup();
   void compute_grid_weight_functions_and_gradients();

@@ -2,6 +2,7 @@
 #include "domain.h"
 #include "solid.h"
 #include "grid.h"
+#include "input.h"
 #include <iostream>
 #include <vector>
 #include <Eigen/Eigen>
@@ -13,10 +14,16 @@ TLMPM::TLMPM(MPM *mpm, vector<string> args) : Method(mpm) {
   cout << "In TLMPM::TLMPM()" << endl;
 
   update_wf = 1;
+  FLIP = 0.99;
 }
 
 TLMPM::~TLMPM()
 {
+}
+
+void TLMPM::modify(vector<string> args)
+{
+  FLIP = input->parse(args[0]);
 }
 
 void TLMPM::setup()
@@ -132,37 +139,62 @@ void TLMPM::particles_to_grid()
 {
   for (int isolid=0; isolid<domain->solids.size(); isolid++){
       domain->solids[isolid]->compute_mass_nodes();
-      /*compute_thermal_energy_nodes();
-	compute_velocity_nodes();
-	compute_external_forces_nodes();
-	compute_internal_forces_nodes();*/
+      domain->solids[isolid]->compute_velocity_nodes();
+      domain->solids[isolid]->compute_external_forces_nodes();
+      domain->solids[isolid]->compute_internal_forces_nodes();
+      /*compute_thermal_energy_nodes();*/
     }
 }
 
 void TLMPM::update_grid_state()
 {
+  for (int isolid=0; isolid<domain->solids.size(); isolid++) {
+    domain->solids[isolid]->grid->update_grid_velocities();
+  }
 }
 
 void TLMPM::grid_to_points()
 {
+  for (int isolid=0; isolid<domain->solids.size(); isolid++) {
+    domain->solids[isolid]->compute_particle_velocities();
+    domain->solids[isolid]->compute_particle_acceleration();
+  }
 }
 
 void TLMPM::advance_particles()
 {
+  for (int isolid=0; isolid<domain->solids.size(); isolid++) {
+    domain->solids[isolid]->update_particle_position();
+    domain->solids[isolid]->update_particle_velocities(FLIP);
+  }
 }
 
 void TLMPM::velocities_to_grid()
 {
+  for (int isolid=0; isolid<domain->solids.size(); isolid++) {
+    domain->solids[isolid]->compute_mass_nodes();
+    domain->solids[isolid]->compute_velocity_nodes();
+  }
 }
 
 void TLMPM::compute_rate_deformation_gradient()
 {
+  for (int isolid=0; isolid<domain->solids.size(); isolid++) {
+    domain->solids[isolid]->compute_rate_deformation_gradient();
+  }
 }
 
 void TLMPM::update_deformation_gradient()
 {
+  for (int isolid=0; isolid<domain->solids.size(); isolid++) {
+    domain->solids[isolid]->update_deformation_gradient();
+  }
 }
 
 void TLMPM::update_stress()
 {
+  for (int isolid=0; isolid<domain->solids.size(); isolid++) {
+    domain->solids[isolid]->update_stress();
+  }
 }
+

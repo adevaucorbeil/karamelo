@@ -71,7 +71,11 @@ SolBlock::SolBlock(MPM *mpm, vector<string> args) : Solid(mpm, args)
 
 	v[l][0] = v[l][1] = v[l][2] = 0;
 	vol0[l] = vol[l] = vol_;
+	rho0[l] = rho[l] = eos->rho0();
 	mass[l] = mass_;
+	sigma[l].fill(0);
+	Fdot[l].fill(0);
+	F[l].setIdentity();
 
 	l++;
       }
