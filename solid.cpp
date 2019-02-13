@@ -315,7 +315,7 @@ void Solid::compute_velocity_nodes()
   int ip;
   
   for (int in=0; in<grid->nnodes; in++) {
-    vn[in].fill(0);
+    vn[in].setZero();
     if (massn[in] > 0) {
       for (int j=0; j<numneigh_np[in];j++){
 	ip = neigh_np[in][j];
@@ -413,7 +413,7 @@ void Solid::compute_rate_deformation_gradient()
 
   if (domain->dimension == 2) {
     for (int ip=0; ip<np; ip++){
-      Fdot[ip].fill(0);
+      Fdot[ip].setZero();
       for (int j=0; j<numneigh_pn[ip]; j++){
 	in = neigh_pn[ip][j];
 	Fdot[ip](0,0) += vn[in][0]*wfd_pn[ip][j][0];
@@ -424,7 +424,7 @@ void Solid::compute_rate_deformation_gradient()
     }
   } else if (domain->dimension == 3) {
     for (int ip=0; ip<np; ip++){
-      Fdot[ip].fill(0);
+      Fdot[ip].setZero();
       for (int j=0; j<numneigh_pn[ip]; j++){
 	in = neigh_pn[ip][j];
 	Fdot[ip](0,0) += vn[in][0]*wfd_pn[ip][j][0];

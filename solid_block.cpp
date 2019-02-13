@@ -69,17 +69,36 @@ SolBlock::SolBlock(MPM *mpm, vector<string> args) : Solid(mpm, args)
 	x0[l][1] = x[l][1] = solidlo[1] + delta_y*(j+0.5);
 	x0[l][2] = x[l][2] = solidlo[2] + delta_z*(k+0.5);
 
-	v[l][0] = v[l][1] = v[l][2] = 0;
-	vol0[l] = vol[l] = vol_;
-	rho0[l] = rho[l] = eos->rho0();
-	mass[l] = mass_;
-	sigma[l].fill(0);
-	Fdot[l].fill(0);
-	F[l].setIdentity();
 
 	l++;
       }
     }
+  }
+
+  for (int i=0; i<np;i++) {
+    v[i].setZero();
+    f[i].setZero();
+    b[i].setZero();
+    v_update[i].setZero();
+    vol0[i] = vol[i] = vol_;
+    rho0[i] = rho[i] = eos->rho0();
+    mass[i] = mass_;
+    sigma[i].setZero();
+    PK1[i].setZero();
+    L[i].setZero();
+    F[i].setIdentity();
+    R[i].setZero();
+    U[i].setZero();
+    Finv[i].setZero();
+    Fdot[i].setZero();
+    strain_increment[i].setZero();
+
+    J[i] = 1;
+  }
+
+  if (l!=np) {
+    cout << "Error l=" << l << " != np=" << np << endl;
+    exit(1);
   }
 }
 

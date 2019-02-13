@@ -48,7 +48,12 @@ void Grid::init(double *solidlo, double *solidhi){
 	x[l][1] = solidlo[1] + cellsize*j;
 	x[l][2] = solidlo[2] + cellsize*k;
 
-	v[l][0] = v[l][1] = v[l][2] = 0;
+	v[l].setZero();
+	v_update[l].setZero();
+	f[l].setZero();
+	b[l].setZero();
+	mass[l] = 0;
+
 	l++;
       }
     }
@@ -101,7 +106,7 @@ void Grid::grow(int nn){
 void Grid::update_grid_velocities()
 {
   for (int i=0; i<nnodes; i++){
-    v_update[i] = v[i];
-    if (mass[i] > 0) v_update[i] += update->dt/mass[i] * (f[i] + b[i]);
+    if (mass[i] > 0) v_update[i] = v[i] + update->dt/mass[i] * (f[i] + b[i]);
+    else v_update[i] = v[i];
   }
 }
