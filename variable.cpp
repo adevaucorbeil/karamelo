@@ -37,7 +37,7 @@ void Variable::evaluate()
   if (constant) return;
 
   cout << "Evaluate equation: " <<  equation << endl;
-  value = parse(known_var, equation).value;
+  value = parsev(known_var, equation).value;
   if (constant) equation = to_string(value);
 }
 
@@ -326,7 +326,7 @@ Variable evaluate_function(map<string, Variable> *known_var, string func, string
 
 
   //else
-    if (func.compare("exp") == 0) return expv(parse(known_var, arg));
+    if (func.compare("exp") == 0) return expv(parsev(known_var, arg));
   cout << "Error: Unknown function " << func << endl;
   exit(1);
 }
@@ -342,7 +342,7 @@ string remove_whitespace(string str){
 }
 
 
-Variable parse(map<string, Variable> *known_var, string str)
+Variable parsev(map<string, Variable> *known_var, string str)
 {
   // stack to store integer values. 
   stack <Variable> values; 

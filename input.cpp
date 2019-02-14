@@ -6,6 +6,7 @@
 #include "material.h"
 #include "group.h"
 #include "update.h"
+#include "variable.h"
 #include <iostream>
 #include <fstream>
 #include <string.h>
@@ -172,8 +173,7 @@ double Input::evaluate_function(string func, string arg){
 
 
   else if (func.compare("exp") == 0) return (double) exp(parse(arg));
-  cout << "Error: Unknown function " << func << endl;
-  exit(1);
+  return -1;
 }
 
 // remove white spaces from string
@@ -189,8 +189,37 @@ string Input::remove_whitespace(string str){
 
 double Input::parse(string str)
 {
-  cout << "Error input->parse is deprecated, use parse instead." << endl;
-  exit(1);
+  // Check if the function is know:
+  
+  str = remove_whitespace(str);
+
+  string func, args;  
+
+  for (int i=0; i<str.length(); i++) {
+    if (str[i]=='(') {
+      if (i==str.length()-1) {
+	cout << "Error: unbalanced parenthesis!" << endl;
+	exit(1);
+      }
+      if (i==0) {
+	parsev(variables, str);
+	return 0;
+      }
+
+      func.append(&str[0], i);
+
+      for (int j=1; j+i<str.length();j++) {
+	if (str[i+j]==')') {
+	  args.append(&str[i+1], j-1);
+	  int eval = evaluate_function(func, args);
+	  if (eval==-1) return parsev(variables, str).result();
+	  else return eval; 
+	}
+      }
+    }
+  }
+
+  return parsev(variables, str).result();
 }
 
 

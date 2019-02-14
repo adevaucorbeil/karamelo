@@ -49,7 +49,7 @@ bool is_operator(char);
 bool is_math_char(char);
 Variable evaluate_function(map<string, Variable> *, string, string);
 string remove_whitespace(string);
-Variable parse(map<string, Variable> *, string);
+Variable parsev(map<string, Variable> *, string);
 Variable powv(int, Variable);
 Variable powv(Variable, Variable);
 Variable expv(Variable);
