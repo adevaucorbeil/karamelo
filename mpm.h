@@ -9,6 +9,7 @@
 #include <string>
 #include <fstream>
 #include <map>
+#include "variable.h"
 
 using namespace std;
 
@@ -30,7 +31,7 @@ class MPM {
   filebuf logfile;               // logfile
   ofstream *wlogfile;
 
-  map<string, double> variables; // global variables
+  map<string, class Variable> *variables; // global variables
 
   MPM(int, char **);
   ~MPM();

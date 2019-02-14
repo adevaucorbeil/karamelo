@@ -10,6 +10,7 @@
 #include "modify.h"
 #include "memory.h"
 #include "group.h"
+#include "variable.h"
 
 MPM::MPM(int narg, char **arg)
 {
@@ -47,12 +48,15 @@ MPM::MPM(int narg, char **arg)
 
   if (!wlogfile->is_open()){
     printf("Cannot open file log.mpm\n");
-    exit(1); 
+    exit(1);
   }
   if (!infile.is_open()) {
     printf("Cannot open input script %s\n",arg[inflag]);
-    exit(1); 
+    exit(1);
   }
+
+  
+  variables = new map<string, Variable>;
 }
 
 MPM::~MPM()
@@ -71,4 +75,6 @@ MPM::~MPM()
   if (wlogfile->is_open()) wlogfile->close();
 
   if (wlogfile) delete wlogfile;
+
+  delete variables;
 }

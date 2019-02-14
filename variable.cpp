@@ -11,15 +11,18 @@
 
 using namespace std;
 
-Variable::Variable(double v, bool c)
+
+Variable::Variable(map<string, Variable> * ptr, double v, bool c)
 {
+  known_var = ptr;
   equation = to_string(v);
   value = v;
   constant = c;
 }
 
-Variable::Variable(string eq, double v, bool c)
+Variable::Variable(map<string, Variable> * ptr, string eq, double v, bool c)
 {
+  known_var = ptr;
   equation = eq;
   value = v;
   constant = c;
@@ -34,7 +37,7 @@ void Variable::evaluate()
   if (constant) return;
 
   cout << "Evaluate equation: " <<  equation << endl;
-  value = parse(equation).value;
+  value = parse(known_var, equation).value;
   if (constant) equation = to_string(value);
 }
 
@@ -67,22 +70,31 @@ string Variable::eq() const
 
 Variable Variable::operator+(const Variable& right)
 {
+  if (this->known_var != right.known_var) {
+    cout << "Error: this->known_var != right.known_var, I don't know how to deal with this" << endl;
+    exit(1);
+  }
   if (this->constant && right.constant) {
-    Variable result(this->value + right.value);
+    Variable result(this->known_var, this->value + right.value);
     return result;
   } else {
-    Variable result("(" + this->str() + "+" + right.str() + ")", this->value + right.value, this->constant && right.constant);
+    Variable result(this->known_var, "(" + this->str() + "+" + right.str() + ")", this->value + right.value, this->constant && right.constant);
     return result;
   }
 }
 
 Variable Variable::operator-(const Variable& right)
 {
+  if (this->known_var != right.known_var) {
+    cout << "Error: this->known_var != right.known_var, I don't know how to deal with this" << endl;
+    exit(1);
+  }
+
   if (this->constant && right.constant) {
-    Variable result(this->value - right.value);
+    Variable result(this->known_var, this->value - right.value);
     return result;
   } else {
-    Variable result("(" + this->str() + "-" + right.str() + ")", this->value - right.value, this->constant && right.constant);
+    Variable result(this->known_var, "(" + this->str() + "-" + right.str() + ")", this->value - right.value, this->constant && right.constant);
     return result;
   }
 }
@@ -90,21 +102,26 @@ Variable Variable::operator-(const Variable& right)
 Variable Variable::operator-()
 {
   if (this->constant) {
-    Variable result(-this->value);
+    Variable result(this->known_var, -this->value);
     return result;
   } else {
-    Variable result("(-" + this->str() + ")", -this->value, this->constant);
+    Variable result(this->known_var, "(-" + this->str() + ")", -this->value, this->constant);
     return result;
   }
 }
 
 Variable Variable::operator*(const Variable& right)
 {
+  if (this->known_var != right.known_var) {
+    cout << "Error: this->known_var != right.known_var, I don't know how to deal with this" << endl;
+    exit(1);
+  }
+
   if (this->constant && right.constant) {
-    Variable result(this->value * right.value);
+    Variable result(this->known_var, this->value * right.value);
     return result;
   } else {
-    Variable result("(" + this->str() + "*" + right.str() + ")", this->value * right.value, this->constant && right.constant);
+    Variable result(this->known_var, "(" + this->str() + "*" + right.str() + ")", this->value * right.value, this->constant && right.constant);
     return result;
   }
 }
@@ -112,11 +129,16 @@ Variable Variable::operator*(const Variable& right)
 
 Variable Variable::operator/(const Variable& right)
 {
+  if (this->known_var != right.known_var) {
+    cout << "Error: this->known_var != right.known_var, I don't know how to deal with this" << endl;
+    exit(1);
+  }
+
   if (this->constant && right.constant) {
-    Variable result(this->value / right.value);
+    Variable result(this->known_var, this->value / right.value);
     return result;
   } else {
-    Variable result("(" + this->str() + "/" + right.str() + ")", this->value / right.value, this->constant && right.constant);
+    Variable result(this->known_var, "(" + this->str() + "/" + right.str() + ")", this->value / right.value, this->constant && right.constant);
     return result;
   }
 }
@@ -124,57 +146,66 @@ Variable Variable::operator/(const Variable& right)
 
 Variable Variable::operator^(const Variable& right)
 {
+  if (this->known_var != right.known_var) {
+    cout << "Error: this->known_var != right.known_var, I don't know how to deal with this" << endl;
+    exit(1);
+  }
+
   if (this->constant && right.constant) {
-    Variable result(pow(this->value, right.value));
+    Variable result(this->known_var, pow(this->value, right.value));
     return result;
   } else {
-    Variable result("(" + this->str() + "^" + right.str() + ")", pow(this->value, right.value), this->constant && right.constant);
+    Variable result(this->known_var, "(" + this->str() + "^" + right.str() + ")", pow(this->value, right.value), this->constant && right.constant);
     return result;
   }
 }
 
 Variable operator*(int left, Variable right){
-  if (right.is_constant()) return left*right.result();
-  else {
-    Variable result("(" + to_string(left) + "*" + right.str() + ")", left*right.result(), right.is_constant());
+  if (right.is_constant()) {
+    Variable result(right.known_var, left*right.result());
+    return result;
+  } else {
+    Variable result(right.known_var, "(" + to_string(left) + "*" + right.str() + ")", left*right.result(), right.is_constant());
     return result;
   }
 }
 
 Variable operator*(Variable left, int right){
-  if (left.is_constant()) return left.result()*right;
-  else {
-    Variable result("(" + left.str() + "*" + to_string(right) + ")", left.result()*right, left.is_constant());
+  if (left.is_constant()) {
+    Variable result(left.known_var, left.result()*right);
+    return result;
+  } else {
+    Variable result(left.known_var, "(" + left.str() + "*" + to_string(right) + ")", left.result()*right, left.is_constant());
     return result;
   }
 }
 
 Variable powv(int base, Variable p){
   if (p.is_constant()) {
-    Variable result(pow(base, p.result()));
+    Variable result(p.known_var, pow(base, p.result()));
     return result;
   } else {
-    Variable result("pow(" + to_string(base) + "," + p.str() + ")", pow(base, p.result()), p.is_constant());
+    Variable result(p.known_var, "pow(" + to_string(base) + "," + p.str() + ")", pow(base, p.result()), p.is_constant());
     return result;
   }
 }
 
 Variable powv(Variable base, Variable p){
   if (base.is_constant() && p.is_constant()) {
-    Variable result(pow(base.result(), p.result()));
+    Variable result(base.known_var, pow(base.result(), p.result()));
     return result;
   } else {
-    Variable result("pow(" + base.str() + "," + p.str() + ")", pow(base.result(), p.result()), base.is_constant() && p.is_constant());
+    Variable result(base.known_var, "pow(" + base.str() + "," + p.str() + ")", pow(base.result(), p.result()), base.is_constant() && p.is_constant());
     return result;
   }
 }
 
 Variable expv(Variable x){
   if (x.is_constant()) {
-    Variable result(exp(x.result()));
+    Variable result(x.known_var, exp(x.result()));
     return result;
   } else {
-    Variable result("exp(" + x.str() + ")", exp(x.result()), x.is_constant());
+    Variable result(x.known_var, "exp(" + x.str() + ")", exp(x.result()), x.is_constant());
     return result;
   }
 }
@@ -250,7 +281,7 @@ bool is_math_char(char op){
 }
 
 // evaluate function func with argument arg:
-Variable evaluate_function(string func, string arg){
+Variable evaluate_function(map<string, Variable> *known_var, string func, string arg){
   //cout << "Evaluate function " << func << " with argument: " << arg << endl;
 
   // Separate arguments:
@@ -272,11 +303,30 @@ Variable evaluate_function(string func, string arg){
       start = i+1;
       j++;
     }
-  
   }
 
-  if (func.compare("exp") == 0) return expv(parse(arg));
+  // if (func.compare("dimension") == 0) return dimension(known_var, args);
+  // if (func.compare("region") == 0) return (double) region(args);
+  // if (func.compare("solid") == 0) return (double) solid(args);
+  // if (func.compare("eos") == 0) return (double) EOS(args);
+  // if (func.compare("dump") == 0) return (double) dump(args);
+  // if (func.compare("group") == 0) return (double) group_command(args);
+  // if (func.compare("log") == 0) return (double) log(args);
+  // if (func.compare("method_modify") == 0) return (double) method_modify(args);
+  // if (func.compare("fix") == 0) return (double) fix(args);
 
+  // invoke commands added via style_command.h
+
+  // if (command_map->find(func) != command_map->end()) {
+  //   CommandCreator command_creator = (*command_map)[func];
+  //   command_creator(mpm,args);
+  //   return 0;
+  // }
+
+
+
+  //else
+    if (func.compare("exp") == 0) return expv(parse(known_var, arg));
   cout << "Error: Unknown function " << func << endl;
   exit(1);
 }
@@ -292,7 +342,7 @@ string remove_whitespace(string str){
 }
 
 
-Variable parse(string str)
+Variable parse(map<string, Variable> *known_var, string str)
 {
   // stack to store integer values. 
   stack <Variable> values; 
@@ -325,10 +375,12 @@ Variable parse(string str)
       i += j-1; 
 
       if (negative) {
-      	values.push((-1)*stof(number));
+	Variable result(known_var, (-1)*stof(number));
+      	values.push(result);
       	negative = false;
       } else {
-      	values.push(stof(number));
+	Variable result(known_var, stof(number));
+      	values.push(result);
       }
       
       //cout << "Pushed number: " << values.top() << " to values stack" << endl;
@@ -474,9 +526,9 @@ Variable parse(string str)
 
       // Check if word is a variable:
       map<string, Variable>::iterator it;
-      it = variables.find(word);
+      it = known_var->find(word);
 
-      if (it != variables.end()){
+      if (it != known_var->end()){
 	// word is a variable
 	//cout << "word is a variable\n";
 	if (i+1 < str.length() && str[i+1] == '=') {
@@ -495,19 +547,20 @@ Variable parse(string str)
 
 	else if (i+1 >= str.length() && values.empty() && ops.empty() ) {
 	  if (negative) {
-	    return -variables[word];
+	    Variable result = -(*known_var)[word];
+	    return result;
 	  }
 	  else {
-	    return variables[word];
+	    return (*known_var)[word];
 	  }
 	}
 	
 	else {
 	  if (negative) {
-	    values.push((-1)*variables[word]);
+	    values.push((-1)*(*known_var)[word]);
 	    negative = false;
 	  } else {
-	    values.push(variables[word]);
+	    values.push((*known_var)[word]);
 	  }
 	  //cout << "push " << word << "=" << values.top() << " to values\n";
 	}
@@ -543,7 +596,7 @@ Variable parse(string str)
 	arg.append(&str[i],k);
 	//cout << "Found function " << word << " with argument: " << arg << endl;
 	i += k;
-	values.push(evaluate_function(word, arg));
+	values.push(evaluate_function(known_var, word, arg));
       }
 
       else {
@@ -570,11 +623,13 @@ Variable parse(string str)
   }
 
   // Top of 'values' contains result, return it.
-  if (values.empty()) return -1;
+  if (values.empty()) {
+    return Variable(known_var, -1);
+  }
   else {
     //cout << "value = " << values.top() << endl;
     if (!returnvar.empty()) {
-      variables[returnvar] = values.top();
+      (*known_var)[returnvar] = values.top();
     }
     return values.top();
   }

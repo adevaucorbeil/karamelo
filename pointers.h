@@ -20,7 +20,7 @@ class Pointers {
    wlogfile(ptr->wlogfile),
    domain(ptr->domain),
    material(ptr->material),
-   variables(&ptr->variables),
+   variables(ptr->variables),
    update(ptr->update),
    modify(ptr->modify),
    group(ptr->group) {}
@@ -41,7 +41,7 @@ class Pointers {
   filebuf *logfile;
   ofstream *&wlogfile;
 
-  map<string, double> *variables;
+  map<string, Variable> *&variables;
 };
 
   

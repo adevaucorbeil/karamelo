@@ -1,22 +1,25 @@
 /* -*- c++ -*- ----------------------------------------------------------*/
 
+#ifndef MPM_VARIABLE_H
+#define MPM_VARIABLE_H
+
 #include <iostream>
 #include <string>
 #include <vector>
 
+#include <iostream>
+#include <string>
+#include <vector>
+#include <map>
+
 using namespace std;
-
-class Variable;
-
-map<string, Variable> variables; // global variables
-
 class Variable {
 public:
+  map<string, class Variable> *known_var;
 
-  
   Variable() {};
-  Variable(double, bool c = true);
-  Variable(string, double, bool c = false);
+  Variable(map<string, class Variable> *, double, bool c = true);
+  Variable(map<string, class Variable> *, string, double, bool c = false);
   ~Variable() {};
 
   void evaluate();
@@ -39,17 +42,19 @@ protected:
 
 };
 
-double precedence(char op);
-double applyOp(double a, double b, char op);
-Variable applyOp(Variable a, Variable b, char op);
-bool is_operator(char op);
-bool is_math_char(char op);
-Variable evaluate_function(string func, string arg);
-string remove_whitespace(string str);
-Variable parse(string str);
+double precedence(char);
+double applyOp(double, double, char);
+Variable applyOp(Variable, Variable, char);
+bool is_operator(char);
+bool is_math_char(char);
+Variable evaluate_function(map<string, Variable> *, string, string);
+string remove_whitespace(string);
+Variable parse(map<string, Variable> *, string);
 Variable powv(int, Variable);
 Variable powv(Variable, Variable);
 Variable expv(Variable);
 
 Variable operator*(int, Variable);
 Variable operator*(Variable, int);
+
+#endif
