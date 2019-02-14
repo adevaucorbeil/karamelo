@@ -5,11 +5,14 @@
 
 #include "pointers.h"
 #include <vector>
+#include <map>
 
 class Input : protected Pointers {
 public:
   int narg;                    // # of command args
   char **arg;                  // parsed args for command
+
+  map<string, class Var> *vars; // List of global variables.
 
   // functions
   Input(class MPM *, int, char **);

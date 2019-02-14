@@ -12,6 +12,7 @@
 #include <string.h>
 #include <math.h>
 #include <stack>
+#include "var.h"
 
 #define DELTALINE 256
 #define DELTA 4
@@ -50,6 +51,10 @@ Input::~Input()
 
 void Input::file()
 {
+  // Test to create a Var:
+
+  Var v(mpm);
+
   bool ignore = false;
 
   istream is(infile);
