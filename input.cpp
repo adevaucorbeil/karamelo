@@ -65,7 +65,7 @@ void Input::file()
       if (c == '#') ignore = true; // ignore everything after #
       if (c == '\377') {
 	cout << line << endl;
-	cout << "gives: " << parse(line) << endl;
+	cout << "gives: " << parsev(line).result() << endl;
       } else {
 	if (!ignore) line.append(&c,1);
       }
@@ -74,7 +74,7 @@ void Input::file()
 
       ignore = false;
       cout << line << endl;
-      cout << "gives: " << parse(line) << endl;
+      cout << "gives: " << parsev(line).result() << endl;
       line.clear();
 
     }
@@ -134,51 +134,7 @@ bool Input::is_math_char(char op){
 }
 
 // evaluate function func with argument arg:
-double Input::evaluate_function(string func, string arg){
-  cout << "Evaluate function " << func << " with argument: " << arg << endl;
-
-  // Separate arguments:
-  vector<string> args;
-
-  int j = 0;
-  int start = 0;
-  for (int i=0; i<arg.length(); i++) {
-    // Locate comas.
-    if (arg[i] == ',' || i==arg.length()-1)  {
-      if (i==start && i!=arg.length()-1) {
-	cout << "Error: missing argument" << endl;
-	exit(1);
-      }
-
-      args.resize(args.size()+1);
-      args.back().append(&arg[start], i - start + (i==arg.length()-1) );
-      cout << "Received argument " << j+1 << " :" << args.back() << endl;
-      start = i+1;
-      j++;
-    }
-  }
-
-  if (func.compare("dimension") == 0) return (double) dimension(args);
-  if (func.compare("region") == 0) return (double) region(args);
-  if (func.compare("solid") == 0) return (double) solid(args);
-  if (func.compare("eos") == 0) return (double) EOS(args);
-  if (func.compare("dump") == 0) return (double) dump(args);
-  if (func.compare("group") == 0) return (double) group_command(args);
-  if (func.compare("log") == 0) return (double) log(args);
-  if (func.compare("method_modify") == 0) return (double) method_modify(args);
-
-  // invoke commands added via style_command.h
-
-  if (command_map->find(func) != command_map->end()) {
-    CommandCreator command_creator = (*command_map)[func];
-    command_creator(mpm,args);
-    return 0;
-  }
-
-
-
-  else if (func.compare("exp") == 0) return (double) exp(parse(arg));
-  return -1;
+Var Input::evaluate_function(string func, string arg){
 }
 
 // remove white spaces from string
@@ -191,40 +147,13 @@ string Input::remove_whitespace(string str){
   return str_;
 }
 
+double Input::parse(string str){
+  cout << "Error: deprecated function" << endl;
+  exit(1);
+}
 
-double Input::parse(string str)
+Var Input::parsev(string str)
 {
-  // Check if the function is know:
-  
-  str = remove_whitespace(str);
-
-  string func, args;  
-
-  for (int i=0; i<str.length(); i++) {
-    if (str[i]=='(') {
-      if (i==str.length()-1) {
-	cout << "Error: unbalanced parenthesis!" << endl;
-	exit(1);
-      }
-      if (i==0) {
-	parsev(variables, str);
-	return 0;
-      }
-
-      func.append(&str[0], i);
-
-      for (int j=1; j+i<str.length();j++) {
-	if (str[i+j]==')') {
-	  args.append(&str[i+1], j-1);
-	  int eval = evaluate_function(func, args);
-	  if (eval==-1) return parsev(variables, str).result();
-	  else return eval; 
-	}
-      }
-    }
-  }
-
-  return parsev(variables, str).result();
 }
 
 

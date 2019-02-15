@@ -18,7 +18,8 @@ public:
   Input(class MPM *, int, char **);
   ~Input();
   void file();                 // process all input
-  double parse(string);        // parse an input text line
+  class Var parsev(string);    // parse an input text line
+  double parse(string);        // deprecated function
 
 
 private:
@@ -32,7 +33,7 @@ private:
   double applyOp(double , double , char );   // perform arithmetic operations.
   bool is_operator(char);                    // check if is an operator
   bool is_math_char(char);                   // check if the character is either of +-/*()
-  double evaluate_function(string , string); // evaluate function with argument
+  class Var evaluate_function(string , string); // evaluate function with argument
   string remove_whitespace(string);          // remove white spaces from string
   int dimension(vector<string>);             // set the dimension of the simulation domain
   int region(vector<string>);

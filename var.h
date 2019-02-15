@@ -15,6 +15,18 @@ class Var : protected Input {
   Var(class MPM*, string, double, bool c = false);
   ~Var() {};
 
+  void evaluate();
+  double result();
+  double result() const {return value;};
+  string str() const;
+  string eq() const;
+  bool is_constant() const {return constant;};
+  Var operator+(const Var&);
+  Var operator-(const Var&);
+  Var operator-();
+  Var operator*(const Var&);
+  Var operator/(const Var&);
+  Var operator^(const Var&);
   Var operator=(const Var&);
 
 protected:

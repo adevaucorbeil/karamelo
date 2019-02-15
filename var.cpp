@@ -18,6 +18,23 @@ Var::Var(MPM *mpm, string eq, double v, bool c) : Input(mpm, 0, NULL)
   constant = c;
 }
 
+void Var::evaluate()
+{
+  if (constant) return;
+  value = input->parsev(equation).value;
+  if (constant) equation = to_string(value);
+}
+
+
+double Var::result()
+{
+  if (constant) return value;
+  else {
+    evaluate();
+    return value;
+  }
+}
+
 Var Var::operator=(const Var& right){
   Var result(right.mpm);
   return result;
