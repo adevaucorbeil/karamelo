@@ -167,3 +167,13 @@ Var powv(int base, Var p){
     return result;
   }
 }
+
+Var expv(Var x){
+  if (x.is_constant()) {
+    Var result(x.mpm(), exp(x.result()));
+    return result;
+  } else {
+    Var result(x.mpm(), "exp(" + x.str() + ")", exp(x.result()), x.is_constant());
+    return result;
+  }
+}

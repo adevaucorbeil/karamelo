@@ -30,12 +30,10 @@ private:
 
   int numtriple(char *);                     // count number of triple quotes
   double precedence(char);                   // find precedence of operators.
-  double applyOp(double , double , char );   // perform arithmetic operations.
-  class Var applyOp(class Var, class Var, char);              // perform arithmetic operations.
-  class Var powv(int, class Var);            // power function
+  Var applyOp(Var, Var, char);              // perform arithmetic operations.
   bool is_operator(char);                    // check if is an operator
   bool is_math_char(char);                   // check if the character is either of +-/*()
-  class Var evaluate_function(string , string); // evaluate function with argument
+  Var evaluate_function(string , string); // evaluate function with argument
   string remove_whitespace(string);          // remove white spaces from string
   int dimension(vector<string>);             // set the dimension of the simulation domain
   int region(vector<string>);
