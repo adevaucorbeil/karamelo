@@ -110,6 +110,24 @@ double Input::applyOp(double a, double b, char op){
     } 
 }
 
+// Function to perform arithmetic operations. 
+Var applyOp(Var a, Var b, char op){
+  switch(op){ 
+  case '+': return a + b;
+  case '-': return a - b;
+  case '*': return a * b;
+  case '/': return a / b;
+  case '^': return a ^ b;
+  case 'e': return powv(10,b);
+  case 'E': return powv(10,b);
+  case '(':
+    printf("Error: unmatched parenthesis (\n");
+    exit(1);
+  default:
+    printf("Error: unknown operator %c\n", op);
+    exit(1);
+  } 
+}
 
 bool Input::is_operator(char op){
   if (op=='+') return true;

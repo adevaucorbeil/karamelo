@@ -9,8 +9,8 @@
 class Var : protected Input {
  public:
   // functions
-  Var(class MPM *) : Input(mpm, 0, NULL) {};
-  Var() : Input(NULL, 0, NULL) {};
+  Var();
+  Var(class MPM *);
   Var(class MPM*, double, bool c = true);
   Var(class MPM*, string, double, bool c = false);
   ~Var() {};
@@ -19,8 +19,9 @@ class Var : protected Input {
   double result();
   double result() const {return value;};
   string str() const;
-  string eq() const;
+  string eq() const {return equation;};
   bool is_constant() const {return constant;};
+  MPM* mpm() const;
   Var operator+(const Var&);
   Var operator-(const Var&);
   Var operator-();
@@ -30,9 +31,13 @@ class Var : protected Input {
   Var operator=(const Var&);
 
 protected:
-  string equation;
-  double value;
-  bool constant;
+  class MPM* mpm_ptr;          // Keep the pointer to mpm
+  string equation;             // formula
+  double value;                // current value
+  bool constant;               // is the variables constant?
 };
+
+
+Var powv(int, Var);            // power function
 
 #endif
