@@ -13,6 +13,7 @@
 #include <math.h>
 #include <stack>
 #include "var.h"
+#include <map>
 
 #define DELTALINE 256
 #define DELTA 4
@@ -25,8 +26,12 @@ Input::Input(MPM *mpm, int argc, char **argv) : Pointers(mpm)
   maxline = maxcopy = 0;
   maxarg = 0;
   arg = NULL;
+  vars = new map<string, Var>;
 
-    // fill map with commands listed in style_command.h
+  (*vars)["time"] = Var("time", 12.5); // test
+
+
+  // fill map with commands listed in style_command.h
 
   command_map = new CommandCreatorMap();
 
@@ -51,10 +56,6 @@ Input::~Input()
 
 void Input::file()
 {
-  // Test to create a Var:
-
-  Var v(mpm);
-
   bool ignore = false;
 
   istream is(infile);
@@ -79,6 +80,12 @@ void Input::file()
 
     }
   }
+  cout << "t.constant()" << (*vars)["t"].is_constant() << endl;
+  (*vars)["time"] = Var("time", 2, false);
+  cout << "t=" << (*vars)["t"].result() << endl;
+  cout << "t=" << (*vars)["t"].eq() << endl;
+  cout << "t=" << (*vars)["t"].result(mpm) << endl;
+  
 }
 
 // Function to find precedence of  
@@ -93,6 +100,7 @@ double Input::precedence(char op){
 
 // Function to perform arithmetic operations.
 Var Input::applyOp(Var a, Var b, char op){
+  cout << "in applyOp with a=" << a.eq() << "=" << a.result() << "b=" << b.eq() << "=" << b.result() << endl; 
   switch(op){
   case '+': return a + b;
   case '-': return a - b;
@@ -157,14 +165,14 @@ Var Input::evaluate_function(string func, string arg){
     }
   }
 
-  if (func.compare("dimension") == 0) return Var(mpm, dimension(args));
-  if (func.compare("region") == 0) return Var(mpm, region(args));
-  if (func.compare("solid") == 0) return Var(mpm, solid(args));
-  if (func.compare("eos") == 0) return Var(mpm, EOS(args));
-  if (func.compare("dump") == 0) return Var(mpm, dump(args));
-  if (func.compare("group") == 0) return Var(mpm, group_command(args));
-  if (func.compare("log") == 0) return Var(mpm, log(args));
-  if (func.compare("method_modify") == 0) return Var(mpm, method_modify(args));
+  if (func.compare("dimension") == 0) return Var(dimension(args));
+  if (func.compare("region") == 0) return Var(region(args));
+  if (func.compare("solid") == 0) return Var(solid(args));
+  if (func.compare("eos") == 0) return Var(EOS(args));
+  if (func.compare("dump") == 0) return Var(dump(args));
+  if (func.compare("group") == 0) return Var(group_command(args));
+  if (func.compare("log") == 0) return Var(log(args));
+  if (func.compare("method_modify") == 0) return Var(method_modify(args));
   //if (func.compare("fix") == 0) return Var(mpm, fix(args));
 
   // invoke commands added via style_command.h
@@ -172,7 +180,7 @@ Var Input::evaluate_function(string func, string arg){
   if (command_map->find(func) != command_map->end()) {
     CommandCreator command_creator = (*command_map)[func];
     command_creator(mpm,args);
-    return Var(mpm, 0);
+    return Var(0);
   }
 
   else if (func.compare("exp") == 0) return expv(parsev(arg));
@@ -228,11 +236,11 @@ Var Input::parsev(string str)
       i += j-1;
 
       if (negative) {
-	Var result(mpm, (-1)*stof(number));
+	Var result((-1)*stof(number));
 	values.push(result);
 	negative = false;
       } else {
-	values.push(Var (mpm, stof(number)));
+	values.push(Var (stof(number)));
       }
 
       //cout << "Pushed number: " << values.top() << " to values stack" << endl;
@@ -473,7 +481,7 @@ Var Input::parsev(string str)
 
   // Top of 'values' contains result, return it.
   if (values.empty()) {
-    return Var(mpm, -1);
+    return Var(-1);
   }
   else {
     //cout << "value = " << values.top() << endl;
