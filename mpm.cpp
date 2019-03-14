@@ -40,6 +40,7 @@ MPM::MPM(int narg, char **arg)
       inflag = iarg + 1;
       iarg += 2;
     }
+    iarg++;
   }
 
   if (inflag != 0) infile.open(arg[inflag], ios_base::in); // open in read only

@@ -199,7 +199,7 @@ string Input::remove_whitespace(string str){
 }
 
 double Input::parse(string str){
-  cout << "Error: deprecated function" << endl;
+  cout << "Error: Input::parse deprecated function" << endl;
   exit(1);
 }
 
@@ -505,7 +505,7 @@ int Input::dimension(vector<string> args){
     exit(1);
   }
 
-  int dim = (int) parse(args[0]);
+  int dim = (int) parsev(args[0]);
 
 
   if (dim != 2 && dim != 3) {
