@@ -43,6 +43,7 @@ private:
   int group_command(vector<string>);
   int log(vector<string>);
   int method_modify(vector<string>);
+  int fix(vector<string>);
 
  public:
   typedef void (*CommandCreator)(MPM *,vector<string>);

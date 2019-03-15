@@ -6,6 +6,7 @@
 #include "input.h"
 #include "update.h"
 #include "scheme.h"
+#include "var.h"
 
 /* ---------------------------------------------------------------------- */
 
@@ -24,7 +25,7 @@ void Run::command(vector<string> args)
 
   update->scheme->setup();
 
-  int nsteps = (int) input->parse(args[0]);
+  int nsteps = (int) input->parsev(args[0]);
   update->nsteps = nsteps;
   update->firststep = update->ntimestep + 1;
   update->laststep = update->firststep + nsteps;

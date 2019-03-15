@@ -78,12 +78,15 @@ void Group::assign(vector<string> args)
 
 	Eigen::Vector3d *x = domain->solids[isolid]->x;
 	int *mask = domain->solids[isolid]->mask;
+	int n = 0;
 
 	for (int ip = 0; ip < domain->solids[isolid]->np; ip++) {
-	  if (domain->regions[iregion]->match(x[ip][0],x[ip][1],x[ip][2]))
+	  if (domain->regions[iregion]->match(x[ip][0],x[ip][1],x[ip][2])) {
 	    mask[ip] |= bit;
+	    n++;
+	  }
 	}
-
+	cout << n << " particles from solid " << domain->solids[isolid]->id << " found" << endl;
       }
     } else if (args[3].compare("solid") == 0) {
 
@@ -96,11 +99,14 @@ void Group::assign(vector<string> args)
 
 	Eigen::Vector3d *x = domain->solids[isolid]->x;
 	int *mask = domain->solids[isolid]->mask;
+	int n = 0;
 
 	for (int ip = 0; ip < domain->solids[isolid]->np; ip++) {
 	  if (domain->regions[iregion]->match(x[ip][0],x[ip][1],x[ip][2]))
 	    mask[ip] |= bit;
+	    n++;
 	}
+	cout << n << " particles from solid " << domain->solids[isolid]->id << " found" << endl;
       }
 
     } else {

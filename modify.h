@@ -36,12 +36,14 @@ class Modify : protected Pointers {
   void add_fix(vector<string>);
   void modify_fix(vector<string>);
   void delete_fix(string);
+  void delete_fix(int);
   int find_fix(string);
   //int check_package(const char *);
 
   void add_compute(vector<string>);
   void modify_compute(vector<string>);
   void delete_compute(string);
+  void delete_compute(int);
   int find_compute(string);
 
   void clearstep_compute();

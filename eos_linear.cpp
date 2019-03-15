@@ -4,6 +4,7 @@
 #include "domain.h"
 #include "mpm_math.h"
 #include <Eigen/Eigen>
+#include "var.h"
 
 using namespace std;
 using namespace Eigen;
@@ -19,11 +20,11 @@ EOSLinear::EOSLinear(MPM *mpm, vector<string> args) : EOS(mpm, args)
     exit(1);
   }
   //options(&args, args.begin()+3);
-  rho0_ = input->parse(args[2]);
+  rho0_ = input->parsev(args[2]);
   cout << "Set rho0 to " << rho0_ << endl;
-  K_ = input->parse(args[3]);
+  K_ = input->parsev(args[3]);
   cout << "Set K to " << K_ << endl;
-  G_ = input->parse(args[4]);
+  G_ = input->parsev(args[4]);
   cout << "Set G to " << G_ << endl;
 }
 

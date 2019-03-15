@@ -7,6 +7,7 @@
 #include <vector>
 #include <Eigen/Eigen>
 #include <math.h>
+#include "var.h"
 
 using namespace std;
 
@@ -23,7 +24,7 @@ TLMPM::~TLMPM()
 
 void TLMPM::modify(vector<string> args)
 {
-  FLIP = input->parse(args[0]);
+  FLIP = input->parsev(args[0]);
 }
 
 void TLMPM::setup()

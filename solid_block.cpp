@@ -2,6 +2,7 @@
 #include "domain.h"
 #include "solid_block.h"
 #include "input.h"
+#include "var.h"
 
 using namespace std;
 
@@ -27,9 +28,9 @@ SolBlock::SolBlock(MPM *mpm, vector<string> args) : Solid(mpm, args)
 
   // Calculate total number of particles np:
   int np, nx, ny, nz;
-  nx = input->parse(args[3]);
-  ny = input->parse(args[4]);
-  nz = input->parse(args[5]);
+  nx = input->parsev(args[3]);
+  ny = input->parsev(args[4]);
+  nz = input->parsev(args[5]);
   np = nx*ny*nz;
 
   // Allocate the space in the vectors for np particles:

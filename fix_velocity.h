@@ -10,6 +10,7 @@ FixStyle(velocity,FixVelocity)
 #define MPM_FIX_VELOCITY_H
 
 #include "fix.h"
+#include "var.h"
 #include <vector>
 
 class FixVelocity : public Fix {
@@ -23,20 +24,11 @@ class FixVelocity : public Fix {
   // void initial_integrate(int);
   // void post_force(int);
   // double compute_vector(int);
-  // double memory_usage();
+  // double memory_usage(); 
 
- private:
-  // double xvalue,yvalue,zvalue;
-  // int varflag,iregion;
-  // char *xstr,*ystr,*zstr;
-  // char *idregion;
-  // int xvar,yvar,zvar,xstyle,ystyle,zstyle;
-  // double foriginal[3],foriginal_all[3];
-  // int force_flag;
-  // int nlevels_respa;
-
-  // int maxatom;
-  // double **sforce;
+private:
+  class Var xvalue, yvalue, zvalue;    // Set velocities in x, y, and z directions.
+  bool xset, yset, zset;               // Does the fix set the x, y, and z velocities of the group?
 };
 
 #endif

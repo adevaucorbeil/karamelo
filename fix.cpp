@@ -13,7 +13,7 @@ Fix::Fix(MPM *mpm, vector<string> args) :
 
   igroup = group->find(args[2]);
   if (igroup == -1) {
-    cout << "Could not find fix group ID " << args[2] << endl;
+    cout << "Could not find group ID " << args[2] << endl;
   }
   groupbit = group->bitmask[igroup];
 

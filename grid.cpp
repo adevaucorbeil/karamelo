@@ -5,6 +5,7 @@
 #include <vector>
 #include "memory.h"
 #include "update.h"
+#include "var.h"
 
 using namespace std;
 
@@ -61,7 +62,7 @@ void Grid::init(double *solidlo, double *solidhi){
 }
 
 void Grid::setup(string cs){
-  cellsize = input->parse(cs);
+  cellsize = input->parsev(cs);
   cout << "Set grid cellsize to " << cellsize << endl;
 }
 

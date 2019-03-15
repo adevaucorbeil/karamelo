@@ -90,6 +90,10 @@ Modify::~Modify()
 
   delete compute_map;
   delete fix_map;
+
+  while (fix.size()) delete_fix(0);
+
+  while (compute.size()) delete_compute(0);
 }
 
 /* ----------------------------------------------------------------------
@@ -159,6 +163,26 @@ Fix *Modify::fix_creator(MPM *mpm, vector<string> args)
 }
 
 /* ----------------------------------------------------------------------
+   delete a Fix from list of Fixes
+------------------------------------------------------------------------- */
+
+void Modify::delete_fix(string id)
+{
+  int ifix = find_fix(id);
+  if (ifix < 0) {
+    cout << "Could not find fix ID to delete" << endl;
+    exit(1);
+  }
+  delete_fix(ifix);
+}
+
+void Modify::delete_fix(int ifix)
+{
+  if (fix[ifix]) delete fix[ifix];
+  fix.erase(fix.begin()+ifix);
+}
+
+/* ----------------------------------------------------------------------
    create a new compute
 ------------------------------------------------------------------------- */
 
@@ -201,4 +225,24 @@ template <typename T>
 Compute *Modify::compute_creator(MPM *mpm, vector<string> args)
 {
   return new T(mpm, args);
+}
+
+/* ----------------------------------------------------------------------
+   delete a Compute from list of Computes
+------------------------------------------------------------------------- */
+
+void Modify::delete_compute(string id)
+{
+  int icompute = find_compute(id);
+  if (icompute < 0) {
+    cout << "Could not find compute ID to delete" << endl;
+    exit(1);
+  }
+  delete_compute(icompute);
+}
+
+void Modify::delete_compute(int icompute)
+{
+  if (compute[icompute]) delete compute[icompute];
+  compute.erase(compute.begin()+icompute);
 }

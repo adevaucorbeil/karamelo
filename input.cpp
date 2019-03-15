@@ -6,7 +6,6 @@
 #include "material.h"
 #include "group.h"
 #include "update.h"
-#include "variable.h"
 #include <iostream>
 #include <fstream>
 #include <string.h>
@@ -14,6 +13,7 @@
 #include <stack>
 #include "var.h"
 #include <map>
+#include "modify.h"
 
 #define DELTALINE 256
 #define DELTA 4
@@ -28,7 +28,7 @@ Input::Input(MPM *mpm, int argc, char **argv) : Pointers(mpm)
   arg = NULL;
   vars = new map<string, Var>;
 
-  (*vars)["time"] = Var("time", 12.5); // test
+  (*vars)["time"] = Var("time", 0); // test
 
 
   // fill map with commands listed in style_command.h
@@ -47,6 +47,7 @@ Input::Input(MPM *mpm, int argc, char **argv) : Pointers(mpm)
 Input::~Input()
 {
   delete command_map;
+  delete vars;
 }
 
 /* ----------------------------------------------------------------------
@@ -80,11 +81,11 @@ void Input::file()
 
     }
   }
-  cout << "t.constant()" << (*vars)["t"].is_constant() << endl;
-  (*vars)["time"] = Var("time", 2, false);
-  cout << "t=" << (*vars)["t"].result() << endl;
-  cout << "t=" << (*vars)["t"].eq() << endl;
-  cout << "t=" << (*vars)["t"].result(mpm) << endl;
+  // cout << "t.constant()" << (*vars)["t"].is_constant() << endl;
+  // (*vars)["time"] = Var("time", 2, false);
+  // cout << "t=" << (*vars)["t"].result() << endl;
+  // cout << "t=" << (*vars)["t"].eq() << endl;
+  // cout << "t=" << (*vars)["t"].result(mpm) << endl;
   
 }
 
@@ -100,15 +101,15 @@ double Input::precedence(char op){
 
 // Function to perform arithmetic operations.
 Var Input::applyOp(Var a, Var b, char op){
-  cout << "in applyOp with a=" << a.eq() << "=" << a.result() << "b=" << b.eq() << "=" << b.result() << endl; 
+  cout << "in applyOp with a=" << a.eq() << "=" << a.result() << " b=" << b.eq() << "=" << b.result() << " op=" << op << endl; 
   switch(op){
   case '+': return a + b;
   case '-': return a - b;
   case '*': return a * b;
   case '/': return a / b;
   case '^': return a ^ b;
-  case 'e': return powv(10,b);
-  case 'E': return powv(10,b);
+  case 'e': return a*powv(10,b);
+  case 'E': return a*powv(10,b);
   case '(':
     printf("Error: unmatched parenthesis (\n");
     exit(1);
@@ -173,7 +174,7 @@ Var Input::evaluate_function(string func, string arg){
   if (func.compare("group") == 0) return Var(group_command(args));
   if (func.compare("log") == 0) return Var(log(args));
   if (func.compare("method_modify") == 0) return Var(method_modify(args));
-  //if (func.compare("fix") == 0) return Var(mpm, fix(args));
+  if (func.compare("fix") == 0) return Var(fix(args));
 
   // invoke commands added via style_command.h
 
@@ -551,6 +552,11 @@ int Input::log(vector<string> args){
 
 int Input::method_modify(vector<string> args){
   update->modify_method(args);
+  return 0;
+}
+
+int Input::fix(vector<string> args){
+  modify->add_fix(args);
   return 0;
 }
 

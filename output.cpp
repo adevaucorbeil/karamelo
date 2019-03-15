@@ -4,6 +4,7 @@
 #include "update.h"
 #include "log.h"
 #include "style_dump.h"
+#include "var.h"
 
 #define MIN(A,B) ((A) < (B) ? (A) : (B))
 
@@ -96,7 +97,7 @@ void Output::set_log(vector<string> args){
     cout << "Illegal log command: too many variables" << endl;
     exit(1);
   }
-  every_log = (int) input->parse(args[0]);
+  every_log = (int) input->parsev(args[0]);
 }
 
 void Output::add_dump(vector<string> args){
@@ -125,7 +126,7 @@ void Output::add_dump(vector<string> args){
     exit(1);
   }
 
-  every_dump.push_back((int) input->parse(args[3]));
+  every_dump.push_back((int) input->parsev(args[3]));
   last_dump.push_back(-1);
   next_dump.push_back(0);
   ndumps++;
