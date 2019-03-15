@@ -2,21 +2,21 @@
 
 #ifdef FIX_CLASS
 
-FixStyle(velocity,FixVelocity)
+FixStyle(velocity_nodes,FixVelocityNodes)
 
 #else
 
-#ifndef MPM_FIX_VELOCITY_H
-#define MPM_FIX_VELOCITY_H
+#ifndef MPM_FIX_VELOCITY_NODES_H
+#define MPM_FIX_VELOCITY_NODES_H
 
 #include "fix.h"
 #include "var.h"
 #include <vector>
 
-class FixVelocity : public Fix {
+class FixVelocityNodes : public Fix {
  public:
-  FixVelocity(class MPM *, vector<string>);
-  ~FixVelocity();
+  FixVelocityNodes(class MPM *, vector<string>);
+  ~FixVelocityNodes();
   void setmask();
   void init();
   void setup();

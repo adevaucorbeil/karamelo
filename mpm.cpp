@@ -79,3 +79,7 @@ MPM::~MPM()
 
   delete variables;
 }
+
+void MPM::init() {
+  modify->init();
+}

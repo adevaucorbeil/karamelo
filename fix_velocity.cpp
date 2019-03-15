@@ -4,7 +4,7 @@
 #include "input.h"
 
 using namespace std;
-
+using namespace FixConst;
 
 FixVelocity::FixVelocity(MPM *mpm, vector<string> args) : Fix(mpm, args)
 {
@@ -43,4 +43,21 @@ void FixVelocity::init()
 
 void FixVelocity::setup()
 {
+}
+
+void FixVelocity::setmask() {
+  mask = 0;
+  // mask |= POST_UPDATE_GRID_STATE;
+  // mask |= POST_VELOCITIES_TO_GRID;
+}
+
+
+void FixVelocity::post_update_grid_state() {
+  cout << "In FixVelocity::post_update_grid_state()" << endl;
+
+  // Go through all the particles in the group and set their velocities 
+}
+
+void FixVelocity::post_velocities_to_grid() {
+  cout << "In FixVelocity::post_velocities_to_grid()" << endl;
 }

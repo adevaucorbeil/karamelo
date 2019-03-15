@@ -14,6 +14,7 @@ Group::Group(MPM *mpm) : Pointers(mpm)
   names = new string[MAX_GROUP];
   bitmask = new int[MAX_GROUP];
   inversemask = new int[MAX_GROUP];
+  pon = new string[MAX_GROUP];
 
   for (int i = 0; i < MAX_GROUP; i++) names[i] = "";
   for (int i = 0; i < MAX_GROUP; i++) bitmask[i] = 1 << i;
@@ -43,40 +44,63 @@ void Group::assign(vector<string> args)
     exit(1);
   }
 
+  // find group in existing list
+  // add a new group if igroup = -1
+
+  int igroup = find(args[0]);
+
+  if (igroup == -1) {
+    if (ngroup == MAX_GROUP) {
+      cout << "Too many groups" << endl;
+    }
+    igroup = find_unused();
+    names[igroup] = args[0];
+    ngroup++;
+  }
+
+  int bit = bitmask[igroup];
+
+  // Operates on particles or nodes:
+  if (args[1].compare("particles") == 0) {
+    pon[igroup] = "particles";
+  } else if (args[1].compare("nodes") == 0 ) {
+    pon[igroup] = "nodes";
+  } else {
+    cout << "Error: do not understand keyword " << args[1] << ", \"particles\" or \"nodes\" expected" << endl;
+    exit(1);    
+  }
+  
   // style = region
   // add to group if atom is in region
 
-  if (args[1].compare("region") == 0) {
+  if (args[2].compare("region") == 0) {
     // Look for the region ID (if exists):
-    int iregion = domain->find_region(args[2]);
+    int iregion = domain->find_region(args[3]);
     if (iregion == -1) {
-      cout << "Error: could not find region " << args[2] << endl;
+      cout << "Error: could not find region " << args[3] << endl;
       exit(1);
     }
 
-    // find group in existing list
-    // add a new group if igroup = -1
 
-    int igroup = find(args[0]);
-
-    if (igroup == -1) {
-      if (ngroup == MAX_GROUP) {
-	cout << "Too many groups" << endl;
-      }
-      igroup = find_unused();
-      names[igroup] = args[0];
-      ngroup++;
-    }
-
-    int bit = bitmask[igroup];
-
-    if (args[3].compare("all") == 0) {
+    if (args[4].compare("all") == 0) {
 
       /* For all particles of all solids, check if they are in the region.
 	 If so asign them the right mask */
       for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
 
-	Eigen::Vector3d *x = domain->solids[isolid]->x;
+	Eigen::Vector3d *x;
+	int nmax;
+
+	if (pon[igroup].compare("particles") == 0) {
+	  x = domain->solids[isolid]->x;
+	  nmax = domain->solids[isolid]->np;
+	  cout << "Solid has " << domain->solids[isolid]->np << " particles" << endl;
+	} else {
+	  x = domain->solids[isolid]->grid->x;
+	  nmax = domain->solids[isolid]->grid->nnodes;
+	  cout << "Grid has " << domain->solids[isolid]->grid->nnodes << " nodes" << endl;
+	}
+
 	int *mask = domain->solids[isolid]->mask;
 	int n = 0;
 
@@ -86,27 +110,40 @@ void Group::assign(vector<string> args)
 	    n++;
 	  }
 	}
-	cout << n << " particles from solid " << domain->solids[isolid]->id << " found" << endl;
+	cout << n << " " << pon[igroup] << " from solid " << domain->solids[isolid]->id << " found" << endl;
       }
-    } else if (args[3].compare("solid") == 0) {
+    } else if (args[4].compare("solid") == 0) {
 
-      for (int i=4; i<args.size(); i++) {
+      for (int i=5; i<args.size(); i++) {
 	int isolid = domain->find_solid(args[i]);
 	if (isolid == -1) {
 	  cout << "Error: cannot find solid with ID " << args[i] << endl;
 	  exit(1);
 	}
 
-	Eigen::Vector3d *x = domain->solids[isolid]->x;
+	Eigen::Vector3d *x;
+	int nmax;
+
+	if (pon[igroup].compare("particles") == 0) {
+	  x = domain->solids[isolid]->x;
+	  nmax = domain->solids[isolid]->np;
+	  cout << "Solid has " << domain->solids[isolid]->np << " particles" << endl;
+	} else {
+	  x = domain->solids[isolid]->grid->x;
+	  nmax = domain->solids[isolid]->grid->nnodes;
+	  cout << "Grid has " << domain->solids[isolid]->grid->nnodes << " nodes" << endl;
+	}
+
 	int *mask = domain->solids[isolid]->mask;
 	int n = 0;
 
-	for (int ip = 0; ip < domain->solids[isolid]->np; ip++) {
-	  if (domain->regions[iregion]->match(x[ip][0],x[ip][1],x[ip][2]))
+	for (int ip = 0; ip < nmax; ip++) {
+	  if (domain->regions[iregion]->match(x[ip][0],x[ip][1],x[ip][2])) {
 	    mask[ip] |= bit;
 	    n++;
+	  }
 	}
-	cout << n << " particles from solid " << domain->solids[isolid]->id << " found" << endl;
+	cout << n << " " << pon[igroup] << " from solid " << domain->solids[isolid]->id << " found" << endl;
       }
 
     } else {

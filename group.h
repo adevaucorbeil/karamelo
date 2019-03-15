@@ -16,6 +16,7 @@ class Group : protected Pointers {
   string *names;               // name of each group
   int *bitmask;                // one-bit mask for each group
   int *inversemask;            // inverse mask for each group
+  string *pon;                 // group of particles if pon == "particles", or nodes if pon = "nodes"
 
   Group(class MPM *);
   virtual ~Group();

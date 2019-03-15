@@ -4,29 +4,10 @@
 #include "fix.h"
 #include "compute.h"
 
+using namespace FixConst;
 
 Modify::Modify(MPM *mpm) : Pointers(mpm)
 {
-  n_initial_integrate = n_post_integrate = 0;
-  n_pre_exchange = n_pre_neighbor = 0;
-  n_pre_force = n_post_force = 0;
-  n_final_integrate = n_end_of_step = n_thermo_energy = 0;
-  n_initial_integrate_respa = n_post_integrate_respa = 0;
-  n_pre_force_respa = n_post_force_respa = n_final_integrate_respa = 0;
-  n_min_pre_exchange = n_min_pre_force = n_min_post_force = n_min_energy = 0;
-
-  list_initial_integrate = list_post_integrate = NULL;
-  list_pre_exchange = list_pre_neighbor = NULL;
-  list_pre_force = list_post_force = NULL;
-  list_final_integrate = list_end_of_step = NULL;
-  list_thermo_energy = NULL;
-  list_initial_integrate_respa = list_post_integrate_respa = NULL;
-  list_pre_force_respa = list_post_force_respa = NULL;
-  list_final_integrate_respa = NULL;
-  list_min_pre_exchange = list_min_pre_neighbor = NULL;
-  list_min_pre_force = list_min_post_force = NULL;
-  list_min_energy = NULL;
-
   end_of_step_every = NULL;
 
   list_timeflag = NULL;
@@ -65,26 +46,6 @@ Modify::Modify(MPM *mpm) : Pointers(mpm)
 
 Modify::~Modify()
 {
-  delete [] list_initial_integrate;
-  delete [] list_post_integrate;
-  delete [] list_pre_exchange;
-  delete [] list_pre_neighbor;
-  delete [] list_pre_force;
-  delete [] list_post_force;
-  delete [] list_final_integrate;
-  delete [] list_end_of_step;
-  delete [] list_thermo_energy;
-  delete [] list_initial_integrate_respa;
-  delete [] list_post_integrate_respa;
-  delete [] list_pre_force_respa;
-  delete [] list_post_force_respa;
-  delete [] list_final_integrate_respa;
-  delete [] list_min_pre_exchange;
-  delete [] list_min_pre_neighbor;
-  delete [] list_min_pre_force;
-  delete [] list_min_post_force;
-  delete [] list_min_energy;
-
   delete [] end_of_step_every;
   delete [] list_timeflag;
 
@@ -104,6 +65,13 @@ void Modify::init()
 {
   for (int i = 0; i < fix.size(); i++) fix[i]->init();
   for (int i = 0; i < compute.size(); i++) compute[i]->init();
+
+  list_init(INITIAL_INTEGRATE, list_initial_integrate);
+  list_init(POST_UPDATE_GRID_STATE, list_post_update_grid_state);
+  list_init(POST_GRID_TO_POINT, list_post_grid_to_point);
+  list_init(POST_ADVANCE_PARTICLES, list_post_advance_particles);
+  list_init(POST_VELOCITIES_TO_GRID, list_post_velocities_to_grid);
+  list_init(FINAL_INTEGRATE, list_final_integrate);
 }
 
 /* ----------------------------------------------------------------------
@@ -124,14 +92,16 @@ void Modify::setup()
 void Modify::add_fix(vector<string> args){
   cout << "In add_fix" << endl;
 
-  if (find_fix(args[0]) >= 0) {
-    cout << "Error: reuse of fix ID" << endl;
-    exit(1);
+  int ifix = find_fix(args[0]);
+
+  if (ifix >= 0) {
+    delete fix[ifix];
+    FixCreator fix_creator = (*fix_map)[args[1]];
+    fix[ifix] = fix_creator(mpm, args);
+    fix[ifix]->init();
   }
-
-    // create the Fix
-
-  if (fix_map->find(args[1]) != fix_map->end()) {
+  else if (fix_map->find(args[1]) != fix_map->end()) {
+    ifix = fix.size();
     FixCreator fix_creator = (*fix_map)[args[1]];
     fix.push_back(fix_creator(mpm, args));
     fix.back()->init();
@@ -140,7 +110,8 @@ void Modify::add_fix(vector<string> args){
     cout << "Unknown fix style " << args[1] << endl;
     exit(1);
   }
-  
+
+  fix[ifix]->setmask();
 }
 
 int Modify::find_fix(string name)
@@ -245,4 +216,65 @@ void Modify::delete_compute(int icompute)
 {
   if (compute[icompute]) delete compute[icompute];
   compute.erase(compute.begin()+icompute);
+}
+
+void Modify::list_init(int mask, vector<int> &list) {
+
+  list.clear();
+  for (int i = 0; i < fix.size(); i++) if (fix[i]->mask & mask) list.push_back(i);
+}
+
+/* ----------------------------------------------------------------------
+   1st half of integrate call, only for relevant fixes
+------------------------------------------------------------------------- */
+
+void Modify::initial_integrate()
+{
+  for (int i = 0; i < list_initial_integrate.size(); i++)
+    fix[list_initial_integrate[i]]->initial_integrate();
+}
+
+/* ----------------------------------------------------------------------
+   after update_grid_state(), only for relevant fixes
+------------------------------------------------------------------------- */
+
+void Modify::post_update_grid_state(){
+  for (int i = 0; i < list_post_update_grid_state.size(); i++)
+    fix[list_post_update_grid_state[i]]->post_update_grid_state();
+}
+
+/* ----------------------------------------------------------------------
+   after grid_to_point(), only for relevant fixes
+------------------------------------------------------------------------- */
+
+void Modify::post_grid_to_point(){
+  for (int i = 0; i < list_post_grid_to_point.size(); i++)
+    fix[list_post_grid_to_point[i]]->post_grid_to_point();
+}
+
+/* ----------------------------------------------------------------------
+   after advance_particles(), only for relevant fixes
+------------------------------------------------------------------------- */
+
+void Modify::post_advance_particles(){
+  for (int i = 0; i < list_post_advance_particles.size(); i++)
+    fix[list_post_advance_particles[i]]->post_advance_particles();
+}
+
+/* ----------------------------------------------------------------------
+   after velocities_to_grid(), only for relevant fixes
+------------------------------------------------------------------------- */
+
+void Modify::post_velocities_to_grid(){
+  for (int i = 0; i < list_post_velocities_to_grid.size(); i++)
+    fix[list_post_velocities_to_grid[i]]->post_velocities_to_grid();
+}
+
+/* ----------------------------------------------------------------------
+   final_integrate, only for relevant fixes
+------------------------------------------------------------------------- */
+
+void Modify::final_integrate(){
+  for (int i = 0; i < list_final_integrate.size(); i++)
+    fix[list_final_integrate[i]]->final_integrate();
 }

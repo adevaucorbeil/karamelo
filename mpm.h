@@ -35,6 +35,7 @@ class MPM {
 
   MPM(int, char **);
   ~MPM();
+  void init();
 };
 
 #endif

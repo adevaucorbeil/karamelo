@@ -23,6 +23,8 @@ void Run::command(vector<string> args)
     exit(1);
   }
 
+  mpm->init();
+
   update->scheme->setup();
 
   int nsteps = (int) input->parsev(args[0]);

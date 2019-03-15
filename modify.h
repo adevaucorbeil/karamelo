@@ -12,14 +12,6 @@ using namespace std;
 
 class Modify : protected Pointers {
  public:
-  int n_initial_integrate,n_post_integrate,n_pre_exchange,n_pre_neighbor;
-  int n_pre_force,n_post_force;
-  int n_final_integrate,n_end_of_step,n_thermo_energy;
-  int n_initial_integrate_respa,n_post_integrate_respa;
-  int n_pre_force_respa,n_post_force_respa,n_final_integrate_respa;
-  int n_min_pre_exchange,n_min_pre_neighbor;
-  int n_min_pre_force,n_min_post_force,n_min_energy;
-
   int restart_pbc_any;            // 1 if any fix sets restart_pbc
   int nfix_restart_global;        // stored fix global info from restart file
   int nfix_restart_peratom;       // stored fix peratom info from restart file
@@ -50,21 +42,23 @@ class Modify : protected Pointers {
   void addstep_compute(bigint);
   void addstep_compute_all(bigint);
 
+  void initial_integrate();
+  void post_update_grid_state();
+  void post_grid_to_point();
+  void post_advance_particles();
+  void post_velocities_to_grid();
+  void final_integrate();
+
 
  protected:
 
   // lists of fixes to apply at different stages of timestep
-
-  int *list_initial_integrate,*list_post_integrate;
-  int *list_pre_exchange,*list_pre_neighbor;
-  int *list_pre_force,*list_post_force;
-  int *list_final_integrate,*list_end_of_step,*list_thermo_energy;
-  int *list_initial_integrate_respa,*list_post_integrate_respa;
-  int *list_pre_force_respa,*list_post_force_respa;
-  int *list_final_integrate_respa;
-  int *list_min_pre_exchange,*list_min_pre_neighbor;
-  int *list_min_pre_force,*list_min_post_force;
-  int *list_min_energy;
+  vector<int> list_initial_integrate;
+  vector<int> list_post_update_grid_state;
+  vector<int> list_post_grid_to_point;
+  vector<int> list_post_advance_particles;
+  vector<int> list_post_velocities_to_grid;
+  vector<int> list_final_integrate;
 
   int *end_of_step_every;
 
@@ -81,11 +75,7 @@ class Modify : protected Pointers {
 
   int index_permanent;        // fix/compute index returned to library call
 
-  void list_init(int, int &, int *&);
-  void list_init_end_of_step(int, int &, int *&);
-  void list_init_thermo_energy(int, int &, int *&);
-  void list_init_dofflag(int &, int *&);
-  void list_init_compute();
+  void list_init(int, vector<int> &);
 
  private:
   typedef Compute *(*ComputeCreator)(MPM *, vector<string>);
