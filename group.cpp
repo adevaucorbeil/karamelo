@@ -15,6 +15,7 @@ Group::Group(MPM *mpm) : Pointers(mpm)
   bitmask = new int[MAX_GROUP];
   inversemask = new int[MAX_GROUP];
   pon = new string[MAX_GROUP];
+  solid = new int[MAX_GROUP];
 
   for (int i = 0; i < MAX_GROUP; i++) names[i] = "";
   for (int i = 0; i < MAX_GROUP; i++) bitmask[i] = 1 << i;
@@ -31,6 +32,8 @@ Group::~Group()
   delete [] names;
   delete [] bitmask;
   delete [] inversemask;
+  delete [] pon;
+  delete [] solid;
 }
 
 /* ----------------------------------------------------------------------
@@ -86,25 +89,29 @@ void Group::assign(vector<string> args)
 
       /* For all particles of all solids, check if they are in the region.
 	 If so asign them the right mask */
+      solid[igroup] = -1; // Consider all solids
+
       for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
 
 	Eigen::Vector3d *x;
 	int nmax;
+	int *mask;
 
 	if (pon[igroup].compare("particles") == 0) {
 	  x = domain->solids[isolid]->x;
 	  nmax = domain->solids[isolid]->np;
+	  mask = domain->solids[isolid]->mask;
 	  cout << "Solid has " << domain->solids[isolid]->np << " particles" << endl;
 	} else {
 	  x = domain->solids[isolid]->grid->x;
 	  nmax = domain->solids[isolid]->grid->nnodes;
+	  mask = domain->solids[isolid]->grid->mask;
 	  cout << "Grid has " << domain->solids[isolid]->grid->nnodes << " nodes" << endl;
 	}
 
-	int *mask = domain->solids[isolid]->mask;
 	int n = 0;
 
-	for (int ip = 0; ip < domain->solids[isolid]->np; ip++) {
+	for (int ip = 0; ip < nmax; ip++) {
 	  if (domain->regions[iregion]->match(x[ip][0],x[ip][1],x[ip][2])) {
 	    mask[ip] |= bit;
 	    n++;
@@ -115,26 +122,28 @@ void Group::assign(vector<string> args)
     } else if (args[4].compare("solid") == 0) {
 
       for (int i=5; i<args.size(); i++) {
-	int isolid = domain->find_solid(args[i]);
-	if (isolid == -1) {
+	solid[igroup] = domain->find_solid(args[i]);
+	if (solid[igroup] == -1) {
 	  cout << "Error: cannot find solid with ID " << args[i] << endl;
 	  exit(1);
 	}
 
 	Eigen::Vector3d *x;
 	int nmax;
+	int *mask;
 
 	if (pon[igroup].compare("particles") == 0) {
-	  x = domain->solids[isolid]->x;
-	  nmax = domain->solids[isolid]->np;
-	  cout << "Solid has " << domain->solids[isolid]->np << " particles" << endl;
+	  x = domain->solids[solid[igroup]]->x;
+	  nmax = domain->solids[solid[igroup]]->np;
+	  mask = domain->solids[solid[igroup]]->mask;
+	  cout << "Solid has " << domain->solids[solid[igroup]]->np << " particles" << endl;
 	} else {
-	  x = domain->solids[isolid]->grid->x;
-	  nmax = domain->solids[isolid]->grid->nnodes;
-	  cout << "Grid has " << domain->solids[isolid]->grid->nnodes << " nodes" << endl;
+	  x = domain->solids[solid[igroup]]->grid->x;
+	  nmax = domain->solids[solid[igroup]]->grid->nnodes;
+	  mask = domain->solids[solid[igroup]]->grid->mask;
+	  cout << "Grid has " << domain->solids[solid[igroup]]->grid->nnodes << " nodes" << endl;
 	}
 
-	int *mask = domain->solids[isolid]->mask;
 	int n = 0;
 
 	for (int ip = 0; ip < nmax; ip++) {
@@ -143,7 +152,7 @@ void Group::assign(vector<string> args)
 	    n++;
 	  }
 	}
-	cout << n << " " << pon[igroup] << " from solid " << domain->solids[isolid]->id << " found" << endl;
+	cout << n << " " << pon[igroup] << " from solid " << domain->solids[solid[igroup]]->id << " found" << endl;
       }
 
     } else {

@@ -23,6 +23,7 @@ class Grid : protected Pointers {
   Eigen::Vector3d *f;            // nodes' internal forces
 
   double *mass;              // nodes' current mass
+  int *mask;                 // nodes' group mask
 
 
   Grid(class MPM *);

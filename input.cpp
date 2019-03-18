@@ -218,7 +218,7 @@ Var Input::parsev(string str)
   string returnvar;
 
   str = remove_whitespace(str);
-  //cout << "New string: " << str << endl;
+  cout << "New string: " << str << endl;
 
   bool negative = false; // flag that indicates that the next value will have to be multiplied by -1
 
@@ -252,7 +252,7 @@ Var Input::parsev(string str)
       //cout << "Pushed \'(\' to ops stack" << endl;
       ops.push(str[i]);
 
-      if (i+1 < str.length() && str[i+1] == '-') {
+      if (i+1 < str.length() && str[i+1] == '-' && !(i+2 < str.length() && str[i+2] == '(')) {
 	negative = true;
 	i++;
       }
@@ -270,25 +270,42 @@ Var Input::parsev(string str)
 
       while(ops.top() != '(')
 	{
-	  Var val2 = values.top();
-	  values.pop();
-
-	  Var val1 = values.top();
-	  values.pop();
-
-	  char op = ops.top();
-	  ops.pop();
-	  //cout << val1 << " " << val2 << " " << op << endl;
-
-	  values.push(applyOp(val1, val2, op));
-
-	  //cout << "Pushed number: " << values.top() << " to values stack" << endl;
-	  if (ops.empty()) {
-	    printf("Error, unmatched parenthesis )\n");
+	  if (values.empty()) {
+	    cout << "Error: Ops is not empty with top element being " << ops.top() << ", while values is." << endl;
 	    exit(1);
+	  } else if (values.size() == 1) {
+	    if (ops.top() == '-') {
+	      Var val1 = values.top();
+	      values.pop();
+	      ops.pop();
+	      values.push(-val1);
+	    } else if (ops.top() == '+') {
+	      ops.pop();
+	    } else {
+	      Var val1 = values.top();
+	      cout << "Error: do not know how to apply " << ops.top() << ", to " << val1.eq() << endl;
+	      exit(1);
+	    }
+	  } else {
+	    Var val2 = values.top();
+	    values.pop();
+
+	    Var val1 = values.top();
+	    values.pop();
+
+	    char op = ops.top();
+	    ops.pop();
+	    //cout << val1 << " " << val2 << " " << op << endl;
+
+	    values.push(applyOp(val1, val2, op));
+
+	    //cout << "Pushed number: " << values.top() << " to values stack" << endl;
+	    if (ops.empty()) {
+	      printf("Error, unmatched parenthesis )\n");
+	      exit(1);
+	    }
 	  }
 	}
-
       // pop opening brace.
       ops.pop();
     }
@@ -297,7 +314,7 @@ Var Input::parsev(string str)
       char new_op = str[i];
       //printf("found operator %c\n", new_op);
 
-      if (values.empty()) {
+      if (values.empty() && !(i+1 < str.length() && str[i+1] == '(')) {
 	if (new_op == '-') {
 	  negative = true;
 	  continue;
@@ -468,16 +485,34 @@ Var Input::parsev(string str)
   // point, apply remaining ops to remaining
   // values.
   while(!ops.empty()){
-    Var val2 = values.top();
-    values.pop();
+    if (values.empty()) {
+      cout << "Error: Ops is not empty with top element being " << ops.top() << ", while values is." << endl;
+      exit(1);
+    } else if (values.size() == 1) {
+      if (ops.top() == '-') {
+	Var val1 = values.top();
+	values.pop();
+	ops.pop();
+	values.push(-val1);
+      } else if (ops.top() == '+') {
+	ops.pop();
+      } else {
+	Var val1 = values.top();
+	cout << "Error: do not know how to apply " << ops.top() << ", to " << val1.eq() << endl;
+	exit(1);
+      }
+    } else {
+      Var val2 = values.top();
+      values.pop();
 
-    Var val1 = values.top();
-    values.pop();
+      Var val1 = values.top();
+      values.pop();
 
-    char op = ops.top();
-    ops.pop();
+      char op = ops.top();
+      ops.pop();
 
-    values.push(applyOp(val1, val2, op));
+      values.push(applyOp(val1, val2, op));
+    }
   }
 
   // Top of 'values' contains result, return it.

@@ -20,6 +20,7 @@ Grid::Grid(MPM *mpm) :
   b = f = NULL;
 
   mass = NULL;
+  mask = NULL;
 }
 
 Grid::~Grid()
@@ -30,6 +31,7 @@ Grid::~Grid()
   memory->destroy(b);
   memory->destroy(f);
   memory->destroy(mass);
+  memory->destroy(mask);
 }
 
 void Grid::init(double *solidlo, double *solidhi){
@@ -102,6 +104,12 @@ void Grid::grow(int nn){
   string str = "grid-mass";
   cout << "Growing " << str << endl;
   mass = memory->grow(mass, nn, str);
+
+  str = "grid-mask";
+  cout << "Growing " << str << endl;
+  mask = memory->grow(mask, nn, str);
+
+  for (int i=0; i<nn; i++) mask[i] = 1;
 }
 
 void Grid::update_grid_velocities()
