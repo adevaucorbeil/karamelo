@@ -44,6 +44,7 @@ private:
   int log(vector<string>);
   int method_modify(vector<string>);
   int fix(vector<string>);
+  int set_dt_factor(vector<string>);
 
  public:
   typedef void (*CommandCreator)(MPM *,vector<string>);

@@ -2,6 +2,8 @@
 #include "update.h"
 #include "scheme.h"
 #include "method.h"
+#include "input.h"
+#include "var.h"
 #include "style_scheme.h"
 #include "style_method.h"
 #include <vector>
@@ -19,6 +21,7 @@ Update::Update(MPM *mpm) : Pointers(mpm)
   beginstep = endstep = 0;
   first_update = 0;
   dt = 1e-16;
+  dt_factor = 0.9;
 
   // Default scheme is MUSL:
   vector<string> scheme_args;
@@ -34,6 +37,14 @@ Update::~Update()
 {
   delete scheme;
   delete method;
+}
+
+void Update::set_dt_factor(vector<string> args){
+  if (args.size()!=1) {
+    cout << "Illegal dt_factor command: not enough arguments or too many arguments" << endl;
+    exit(1);
+  }
+  dt_factor = input->parsev(args[0]);
 }
 
 void Update::create_scheme(vector<string> args){
@@ -103,4 +114,16 @@ void Update::modify_method(vector<string> args){
   }
 
   method->modify(args);
+}
+
+/* ----------------------------------------------------------------------
+   update elapsed simulation time
+   called at end of runs or when timestep size changes
+------------------------------------------------------------------------- */
+
+void Update::update_time()
+{
+  atime += (ntimestep-atimestep) * dt;
+  atimestep = ntimestep;
+  (*input->vars)["time"] = Var("time", atime);
 }

@@ -22,6 +22,7 @@ class Method : protected Pointers {
   virtual void update_deformation_gradient() = 0;
   virtual void update_stress() = 0;
   virtual void modify(vector<string>) = 0;
+  virtual void adjust_dt() = 0;
 };
 
 #endif

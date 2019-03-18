@@ -47,6 +47,7 @@ class Solid : protected Pointers {
   double *mass;              // particles' current mass
   int *mask;                 // particles' group mask
 
+  double min_inv_p_wave_speed;   // minimum of the inverse of the particle wave speed
   
   int *numneigh_pn;   // number of nodes neighbouring a given particle
   int *numneigh_np;   // number of nodes neighbouring a given node

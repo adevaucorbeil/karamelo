@@ -7,6 +7,7 @@
 #include <vector>
 #include <Eigen/Eigen>
 #include "mpm_math.h"
+#include <math.h>
 
 using namespace std;
 using namespace Eigen;
@@ -332,7 +333,7 @@ void Solid::compute_external_forces_nodes()
   int ip;
   
   for (int in=0; in<grid->nnodes; in++) {
-    bn[in].fill(0);
+    bn[in].setZero();
     if (massn[in] > 0) {
       for (int j=0; j<numneigh_np[in];j++){
 	ip = neigh_np[in][j];
@@ -349,7 +350,7 @@ void Solid::compute_internal_forces_nodes()
   int ip;
   
   for (int in=0; in<grid->nnodes; in++) {
-    fn[in].fill(0);
+    fn[in].setZero();
     if (massn[in] > 0) {
       for (int j=0; j<numneigh_np[in];j++){
 	ip = neigh_np[in][j];
@@ -365,7 +366,7 @@ void Solid::compute_particle_velocities()
   int in;
 
   for (int ip=0; ip<np; ip++){
-    v_update[ip].fill(0);
+    v_update[ip].setZero();
     for (int j=0; j<numneigh_pn[ip]; j++){
       in = neigh_pn[ip][j];
       v_update[ip] += wf_pn[ip][j] * vn_update[in];
@@ -383,10 +384,10 @@ void Solid::compute_particle_acceleration()
   int in;
 
   for (int ip=0; ip<np; ip++){
-    a[ip].fill(0);
+    a[ip].setZero();
     for (int j=0; j<numneigh_pn[ip]; j++){
       in = neigh_pn[ip][j];
-      a[ip] +=inv_dt * wf_pn[ip][j] * (vn_update[in] - vn[j]);
+      a[ip] += inv_dt * wf_pn[ip][j] * (vn_update[in] - vn[j]);
     }
     f[ip] = a[ip] / mass[ip];
   }
@@ -467,9 +468,11 @@ void Solid::update_deformation_gradient()
 
 void Solid::update_stress()
 {
+  double inv_p_wave_speed_Sq = 1.0e22;
   for (int ip=0; ip<np; ip++){
     eos->update_stress(sigma[ip], strain_increment[ip], J[ip]);
     PK1[ip] = J[ip] * (R[ip] * sigma[ip] * R[ip].transpose()) * Finv[ip].transpose();
+    inv_p_wave_speed_Sq = MIN(inv_p_wave_speed_Sq, rho[ip] / (eos->K() + 4.0/3.0 * eos->G()));
   }
-
+  min_inv_p_wave_speed = sqrt(inv_p_wave_speed_Sq);
 }

@@ -77,6 +77,7 @@ SolBlock::SolBlock(MPM *mpm, vector<string> args) : Solid(mpm, args)
   }
 
   for (int i=0; i<np;i++) {
+    a[i].setZero();
     v[i].setZero();
     f[i].setZero();
     b[i].setZero();

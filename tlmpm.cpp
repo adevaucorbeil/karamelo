@@ -3,6 +3,7 @@
 #include "solid.h"
 #include "grid.h"
 #include "input.h"
+#include "update.h"
 #include <iostream>
 #include <vector>
 #include <Eigen/Eigen>
@@ -199,3 +200,14 @@ void TLMPM::update_stress()
   }
 }
 
+void TLMPM::adjust_dt()
+{
+  update->update_time();
+
+  double dtCFL = 1.0e22;
+
+  for (int isolid=0; isolid<domain->solids.size(); isolid++) {
+    dtCFL = MIN(dtCFL, domain->solids[isolid]->min_inv_p_wave_speed * domain->solids[isolid]->grid->cellsize);
+  }
+  update->dt = dtCFL * update->dt_factor;
+}

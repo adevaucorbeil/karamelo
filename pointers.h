@@ -6,6 +6,9 @@
 #include "mpm.h"
 #include "mpmtype.h"
 
+#define MIN(A,B) ((A) < (B) ? (A) : (B))
+#define MAX(A,B) ((A) > (B) ? (A) : (B))
+
 using namespace std;
 
 class Pointers {
