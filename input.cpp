@@ -66,8 +66,8 @@ void Input::file()
 
       if (c == '#') ignore = true; // ignore everything after #
       if (c == '\377') {
-	cout << line << endl;
-	cout << "gives: " << parsev(line).result() << endl;
+	// cout << line << endl;
+	parsev(line).result();
       } else {
 	if (!ignore) line.append(&c,1);
       }
@@ -75,8 +75,9 @@ void Input::file()
     } else {
 
       ignore = false;
-      cout << line << endl;
-      cout << "gives: " << parsev(line).result() << endl;
+      // cout << line << endl;
+      // cout << "gives: " << parsev(line).result() << endl;
+      parsev(line).result();
       line.clear();
 
     }
@@ -101,7 +102,7 @@ double Input::precedence(char op){
 
 // Function to perform arithmetic operations.
 Var Input::applyOp(Var a, Var b, char op){
-  cout << "in applyOp with a=" << a.eq() << "=" << a.result() << " b=" << b.eq() << "=" << b.result() << " op=" << op << endl; 
+  // cout << "in applyOp with a=" << a.eq() << "=" << a.result() << " b=" << b.eq() << "=" << b.result() << " op=" << op << endl;
   switch(op){
   case '+': return a + b;
   case '-': return a - b;
@@ -143,7 +144,7 @@ bool Input::is_math_char(char op){
 
 // evaluate function func with argument arg:
 Var Input::evaluate_function(string func, string arg){
-  cout << "Evaluate function " << func << " with argument: " << arg << endl;
+  // cout << "Evaluate function " << func << " with argument: " << arg << endl;
 
   // Separate arguments:
   vector<string> args;
@@ -219,7 +220,7 @@ Var Input::parsev(string str)
   string returnvar;
 
   str = remove_whitespace(str);
-  cout << "New string: " << str << endl;
+  // cout << "New string: " << str << endl;
 
   bool negative = false; // flag that indicates that the next value will have to be multiplied by -1
 

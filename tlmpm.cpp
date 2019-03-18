@@ -57,8 +57,8 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
       vector< double > *wf_pn = domain->solids[isolid]->wf_pn;
       vector< double > *wf_np = domain->solids[isolid]->wf_np;
 
-      vector< array<double,3> > *wfd_pn = domain->solids[isolid]->wfd_pn;
-      vector< array<double,3> > *wfd_np = domain->solids[isolid]->wfd_np;
+      vector< Eigen::Vector3d > *wfd_pn = domain->solids[isolid]->wfd_pn;
+      vector< Eigen::Vector3d > *wfd_np = domain->solids[isolid]->wfd_np;
 
       Eigen::Vector3d r;
       double s[3], sd[3];
@@ -66,7 +66,7 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
       Eigen::Vector3d *xn = domain->solids[isolid]->grid->x;
       double inv_cellsize = 1.0 / domain->solids[isolid]->grid->cellsize;
       double wf;
-      array<double,3> wfd;
+      Eigen::Vector3d wfd;
 
       if (np && nnodes) {
 	for (int ip=0; ip<np; ip++) {
@@ -107,7 +107,7 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
 		  wfd[2] = s[0]*s[1]*sd[2];
 		}
 	      wfd_pn[ip].push_back(wfd);
-	      wfd_pn[ip].push_back(wfd);
+	      wfd_np[in].push_back(wfd);
 	    }
 	  } 
 	}

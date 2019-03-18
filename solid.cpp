@@ -109,13 +109,13 @@ void Solid::init()
       numneigh_pn = new int[np]();
       neigh_pn = new vector<int>[np];
       wf_pn = new vector<double>[np];
-      wfd_pn = new vector< array<double,3> >[np];
+      wfd_pn = new vector< Vector3d >[np];
 
       if (nnodes) {
 	numneigh_np = new int[nnodes]();
 	neigh_np = new vector<int>[nnodes];
 	wf_np = new vector<double>[nnodes];
-	wfd_np = new vector< array<double,3> >[nnodes];
+	wfd_np = new vector< Vector3d >[nnodes];
       }
   }
 }
@@ -354,7 +354,7 @@ void Solid::compute_internal_forces_nodes()
     if (massn[in] > 0) {
       for (int j=0; j<numneigh_np[in];j++){
 	ip = neigh_np[in][j];
-	fn[in] += (wf_np[in][j] * mass[ip] / massn[in]) * f[ip];
+	fn[in] -= vol0[ip] * (PK1[ip] * wfd_np[in][j]);
       }
     }
   }
@@ -468,11 +468,11 @@ void Solid::update_deformation_gradient()
 
 void Solid::update_stress()
 {
-  double inv_p_wave_speed_Sq = 1.0e22;
+  min_inv_p_wave_speed = 1.0e22;
   for (int ip=0; ip<np; ip++){
     eos->update_stress(sigma[ip], strain_increment[ip], J[ip]);
     PK1[ip] = J[ip] * (R[ip] * sigma[ip] * R[ip].transpose()) * Finv[ip].transpose();
-    inv_p_wave_speed_Sq = MIN(inv_p_wave_speed_Sq, rho[ip] / (eos->K() + 4.0/3.0 * eos->G()));
+    min_inv_p_wave_speed = MIN(min_inv_p_wave_speed, rho[ip] / (eos->K() + 4.0/3.0 * eos->G()));
   }
-  min_inv_p_wave_speed = sqrt(inv_p_wave_speed_Sq);
+  min_inv_p_wave_speed = sqrt(min_inv_p_wave_speed);
 }

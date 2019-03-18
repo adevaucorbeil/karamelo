@@ -56,8 +56,8 @@ class Solid : protected Pointers {
 
   vector< double > *wf_pn;
   vector< double > *wf_np;
-  vector< array<double,3> > *wfd_pn;
-  vector< array<double,3> > *wfd_np;
+  vector< Eigen::Vector3d > *wfd_pn;
+  vector< Eigen::Vector3d > *wfd_np;
 
   class EOS *eos;                     // Equation-of-State
 
