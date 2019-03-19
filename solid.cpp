@@ -1,6 +1,5 @@
 #include "mpm.h"
 #include "solid.h"
-#include "material.h"
 #include "memory.h"
 #include "update.h"
 #include "domain.h"
@@ -37,8 +36,7 @@ Solid::Solid(MPM *mpm, vector<string> args) :
   mass = NULL;
   mask = NULL;
 
-  eos = NULL;
-  strength = NULL;
+  mat = NULL;
   grid = new Grid(mpm);
 
   numneigh_pn = numneigh_np = NULL;
@@ -76,8 +74,7 @@ Solid::~Solid()
   memory->destroy(mass);
   memory->destroy(mask);
 
-  delete eos;
-  delete strength;
+  delete mat;
   delete grid;
 
   delete [] numneigh_pn;
@@ -130,24 +127,15 @@ void Solid::options(vector<string> *args, vector<string>::iterator it)
     exit(1);
   }
   if (args->end() > it) {
-    int iEOS = material->find_EOS(*it);
+    int iMat = material->find_material(*it);
 
-    if (iEOS == -1){
-      cout << "Error: could not find EOS named " << *it << endl;
+    if (iMat == -1){
+      cout << "Error: could not find material named " << *it << endl;
       exit(1);
     }
 
-    eos = material->EOSs[iEOS]; // point eos to the right EOS class
+    mat = &material->materials[iMat]; // point mat to the right material
 
-    it++;
-    
-    int iStrength = material->find_strength(*it);
-    if (iStrength == -1) {
-      cout << "Error: could not find Strength named " << *it << endl;
-      exit(1);
-    }
-
-    strength = material->strengths[iStrength];
     it++;
 
     grid->setup(*it); // set the grid cellsize
@@ -491,12 +479,12 @@ void Solid::update_stress()
   eye.setIdentity();
 
   for (int ip=0; ip<np; ip++){
-    pH = eos->compute_pressure(J[ip], rho[ip], 0);
-    sigma_dev = strength->update_deviatoric_stress(strain_increment[ip], sigma[ip]);
+    pH = mat->eos->compute_pressure(J[ip], rho[ip], 0);
+    sigma_dev = mat->strength->update_deviatoric_stress(strain_increment[ip], sigma[ip]);
     sigma[ip] = -pH*eye + sigma_dev;
 
     PK1[ip] = J[ip] * (R[ip] * sigma[ip] * R[ip].transpose()) * Finv[ip].transpose();
-    min_inv_p_wave_speed = MIN(min_inv_p_wave_speed, rho[ip] / (eos->K() + 4.0/3.0 * strength->G()));
+    min_inv_p_wave_speed = MIN(min_inv_p_wave_speed, rho[ip] / (mat->eos->K() + 4.0/3.0 * mat->strength->G()));
   }
   min_inv_p_wave_speed = sqrt(min_inv_p_wave_speed);
 }

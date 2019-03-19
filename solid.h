@@ -4,8 +4,7 @@
 #define MPM_SOLID_H
 
 #include "pointers.h"
-#include "eos.h"
-#include "strength.h"
+#include "material.h"
 #include "grid.h"
 #include <vector>
 #include <Eigen/Eigen>
@@ -60,8 +59,7 @@ class Solid : protected Pointers {
   vector< Eigen::Vector3d > *wfd_pn;
   vector< Eigen::Vector3d > *wfd_np;
 
-  class EOS *eos;                     // Equation-of-State
-  class Strength *strength;           // Strength
+  struct Mat *mat;                     // Material
 
   class Grid *grid;                   // background grid
 

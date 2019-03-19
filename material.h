@@ -5,14 +5,19 @@
 
 #include "pointers.h"
 #include <vector>
-#include "mat.h"
 #include "strength.h"
 #include "eos.h"
+
+struct Mat{
+  string id;
+  class EOS* eos;
+  class Strength* strength;
+};
 
 class Material : protected Pointers {
  public:
   string id;
-  vector<class Mat *> materials;         // list of materials
+  vector<Mat> materials;                 // list of materials
   vector<class EOS *> EOSs;              // list of defined Equations of State
   vector<class Strength *> strengths;    // list of defined Strengths
   
@@ -25,6 +30,8 @@ class Material : protected Pointers {
   void add_EOS(vector<string>);
   void set_EOS(vector<string>);
   int find_EOS(string);
+  void add_material(vector<string>);
+  int find_material(string);
   
   typedef Strength *(*StrengthCreator)(MPM *,vector<string>);
   typedef map<string,StrengthCreator> StrengthCreatorMap;
@@ -38,5 +45,6 @@ private:
   template <typename T> static Strength *strength_creator(MPM *,vector<string>);
   template <typename T> static EOS *EOS_creator(MPM *,vector<string>);
 };
+
 
 #endif

@@ -126,6 +126,49 @@ int Material::find_strength(string name)
 }
 
 /* ----------------------------------------------------------------------
+   create a new material
+------------------------------------------------------------------------- */
+
+void Material::add_material(vector<string> args){
+  cout << "In add_material" << endl;
+
+  if (args.size()<3) {
+    cout << "Error: material command not enough arguments" << endl;
+    exit(1);
+  }
+
+  if (find_material(args[0]) >= 0) {
+    cout << "Error: reuse of material ID" << endl;
+    exit(1);
+  }
+
+  // create the Material
+  int iEOS = material->find_EOS(args[1]);
+
+  if (iEOS == -1) {
+    cout << "Error: could not find EOS named: " << args[1] << endl;
+    exit(1);
+  }
+
+  int iStrength = material->find_strength(args[2]);
+  if (iStrength == -1) {
+    cout << "Error: could not find strength named: " << args[2] << endl;
+    exit(1);
+  }
+  
+  cout << "Creating new mat with ID: " << args[0] << endl;
+  Mat new_material = {args[0], EOSs[iEOS], strengths[iStrength]};
+  materials.push_back(new_material);
+}
+
+int Material::find_material(string name)
+{
+  for (int imaterial = 0; imaterial < materials.size(); imaterial++)
+    if (name.compare(materials[imaterial].id) == 0) return imaterial;
+  return -1;
+}
+
+/* ----------------------------------------------------------------------
    one instance per strength style in style_strength.h
 ------------------------------------------------------------------------- */
 

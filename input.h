@@ -38,8 +38,9 @@ private:
   int dimension(vector<string>);             // set the dimension of the simulation domain
   int region(vector<string>);
   int solid(vector<string>);
-  int EOS(vector<string>);
-  int strength(vector<string>);
+  int add_EOS(vector<string>);
+  int add_strength(vector<string>);
+  int add_material(vector<string>);
   int dump(vector<string>);
   int group_command(vector<string>);
   int log(vector<string>);
