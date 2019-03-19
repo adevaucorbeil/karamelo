@@ -321,6 +321,8 @@ void Solid::compute_velocity_nodes()
       for (int j=0; j<numneigh_np[in];j++){
 	ip = neigh_np[in][j];
 	vn[in] += (wf_np[in][j] * mass[ip] / massn[in]) * v[ip];
+	// if (in==32)
+	//   cout << "compute_velocity_nodes: in=" << in << ", ip=" << ip << ", j= " << j << ", wf_np=" << wf_np[in][j] << ", vn=[" << vn[in][0] << "," << vn[in][1] << "," << vn[in][2] << "], vp=[" << v[ip][0] << "," << v[ip][1] << "," << v[ip][2] << "]" << endl;
       }
     }
   }
@@ -351,11 +353,9 @@ void Solid::compute_internal_forces_nodes()
   
   for (int in=0; in<grid->nnodes; in++) {
     fn[in].setZero();
-    if (massn[in] > 0) {
-      for (int j=0; j<numneigh_np[in];j++){
-	ip = neigh_np[in][j];
-	fn[in] -= vol0[ip] * (PK1[ip] * wfd_np[in][j]);
-      }
+    for (int j=0; j<numneigh_np[in];j++){
+      ip = neigh_np[in][j];
+      fn[in] -= vol0[ip] * (PK1[ip] * wfd_np[in][j]);
     }
   }
 }
@@ -370,6 +370,7 @@ void Solid::compute_particle_velocities()
     for (int j=0; j<numneigh_pn[ip]; j++){
       in = neigh_pn[ip][j];
       v_update[ip] += wf_pn[ip][j] * vn_update[in];
+      // if (ip==50) cout << "compute_particle_velocities: ip=" << ip << ", in=" << in << ", j= " << j << ", wf_pn=" << wf_pn[ip][j] << ", vp_update=[" << v_update[ip][0] << "," << v_update[ip][1] << "," << v_update[ip][2] << "], vn_update=[" << vn_update[in][0] << "," << vn_update[in][1] << "," << vn_update[in][2] << "]" << endl;
     }
   }
 }
@@ -387,7 +388,9 @@ void Solid::compute_particle_acceleration()
     a[ip].setZero();
     for (int j=0; j<numneigh_pn[ip]; j++){
       in = neigh_pn[ip][j];
-      a[ip] += inv_dt * wf_pn[ip][j] * (vn_update[in] - vn[j]);
+      a[ip] += inv_dt * wf_pn[ip][j] * (vn_update[in] - vn[in]);
+      // if (ip==50)
+      // 	cout << "compute_particle_acceleration: ip=" << ip  << ", in=" << in << ", ap = [" << a[ip][0]  << "," <<  a[ip][1] << "," <<  a[ip][2] << "], vn_update = [" <<  vn_update[in][0] << "," << vn_update[in][1]  << "," << vn_update[in][2] << "], vn = [" << vn[in][0]  << "," << vn[in][1]  << "," <<  vn[in][2] << "], wf=" <<  wf_pn[ip][j] << ", inv_dt=" << inv_dt << endl;
     }
     f[ip] = a[ip] / mass[ip];
   }
@@ -404,6 +407,7 @@ void Solid::update_particle_velocities(double FLIP)
 {
   for (int ip=0; ip<np; ip++) {
     v[ip] = (1 - FLIP) * v_update[ip] + FLIP*(v[ip] + update->dt*a[ip]);
+    // if (ip==50) cout << "update_particle_velocities: ip=" << ip << ", FLIP=" << FLIP << ", v[ip]=[" << v[ip][0] << "," << v[ip][1] << "," << v[ip][2] << "], dt=" << update->dt << ", ap=[" << a[ip][0] << "," << a[ip][1] << "," << a[ip][2] << "]" << endl;
   }
 }
 
@@ -437,6 +441,7 @@ void Solid::compute_rate_deformation_gradient()
 	Fdot[ip](2,0) += vn[in][2]*wfd_pn[ip][j][0];
 	Fdot[ip](2,1) += vn[in][2]*wfd_pn[ip][j][1];
 	Fdot[ip](2,2) += vn[in][2]*wfd_pn[ip][j][2];
+	// cout << "compute_rate_deformation_gradient: ip=" << ip << ", in=" << in << ", vn=[" << vn[in][0] << "," << vn[in][1] << "," << vn[in][2] << "], wfd_pn=[" << wfd_pn[ip][j][0] << "," << wfd_pn[ip][j][1] << "," << wfd_pn[ip][j][2] << "], Fdot=[[" << Fdot[ip](0,0) << "," << Fdot[ip](0,1) << "," << Fdot[ip](0,2) << "],[" << Fdot[ip](1,0) << "," << Fdot[ip](1,1) << "," << Fdot[ip](1,2) << "],[" << Fdot[ip](2,0) << "," << Fdot[ip](2,1) << "," << Fdot[ip](2,2) << "]]" << endl;
       }
     }
   }

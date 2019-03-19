@@ -40,9 +40,9 @@ void Log::write()
   for (int i=0; i<field.size(); i++){
     (this->*field[i].vfunc)(); // Compute the output field
 
-    if (field[i].typeflag==INT) soutput << to_string(ivalue) << "\t";
-    if (field[i].typeflag==FLOAT) soutput << to_string(dvalue) << "\t";
-    if (field[i].typeflag==BIGINT) soutput << to_string(bivalue) << "\t";
+    if (field[i].typeflag==INT) soutput << ivalue << "\t";
+    if (field[i].typeflag==FLOAT) soutput << dvalue << "\t";
+    if (field[i].typeflag==BIGINT) soutput << bivalue << "\t";
   }
 
   soutput << "\n";

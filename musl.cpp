@@ -24,12 +24,13 @@ void MUSL::run(int n){
 
   cout << "In MUSL::run" << endl;
 
+  update->method->compute_grid_weight_functions_and_gradients();
+
   for (int i=0; i<n; i++){
     ntimestep = ++update->ntimestep;
 
     modify->initial_integrate();
 
-    update->method->compute_grid_weight_functions_and_gradients();
     update->method->particles_to_grid();
     update->method->update_grid_state();
 
@@ -51,7 +52,6 @@ void MUSL::run(int n){
     update->method->update_deformation_gradient();
     update->method->update_stress();
 
-    update->method->adjust_dt();
 
     modify->final_integrate();
 
@@ -59,6 +59,7 @@ void MUSL::run(int n){
       output->write(ntimestep);
     }
     
+    update->method->adjust_dt();
   }
 }
 
