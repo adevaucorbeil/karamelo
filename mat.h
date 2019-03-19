@@ -5,12 +5,14 @@
 
 #include "pointers.h"
 #include "eos.h"
+#include "strength.h"
 #include <vector>
 
 class Mat : protected Pointers {
  public:
   string id;
   class EOS * eos;
+  class Strength * strength;
 
   Mat(class MPM *, vector<string>);
   virtual ~Mat();

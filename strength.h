@@ -1,26 +1,25 @@
 /* -*- c++ -*- ----------------------------------------------------------*/
 
-#ifndef MPM_EOS_H
-#define MPM_EOS_H
+#ifndef MPM_STRENGTH_H
+#define MPM_STRENGTH_H
 
 #include "pointers.h"
 #include <vector>
 #include <Eigen/Eigen>
 
-class EOS : protected Pointers {
+class Strength : protected Pointers {
  public:
   string id;
 
-  EOS(class MPM *, vector<string>);
-  virtual ~EOS();
+  Strength(MPM *, vector<string>);
+  virtual ~Strength();
   virtual void init();
   void options(vector<string> *, vector<string>::iterator);
 
-  // implemented by each EOS
+  // implemented by each Strength
   //virtual compute_pressure()
-  virtual double rho0() = 0;
-  virtual double K() = 0;
-  virtual double compute_pressure(const double J, const double rho, const double e) = 0;
+  virtual double G() = 0;
+  virtual Eigen::Matrix3d update_deviatoric_stress(const Eigen::Matrix3d, const Eigen::Matrix3d) = 0;
   //protected:
 };
 

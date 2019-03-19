@@ -62,24 +62,24 @@ void FixVelocityNodes::setmask() {
 
 
 void FixVelocityNodes::post_update_grid_state() {
-  cout << "In FixVelocityNodes::post_update_grid_state()" << endl;
+  // cout << "In FixVelocityNodes::post_update_grid_state()" << endl;
 
   // Go through all the particles in the group and set v_update to the right value:
   double vx, vy, vz;
 
   if (xset) {
     vx = xvalue.result(mpm);
-    cout << "Set v_update[0] to " << xvalue.eq() << "=" << vx << endl;
+    // cout << "Set v_update[0] to " << xvalue.eq() << "=" << vx << endl;
   }
 
   if (yset) {
     vy = yvalue.result(mpm);
-    cout << "Set v_update[1] to " << "=" <<  vy << endl;
+    // cout << "Set v_update[1] to " << "=" <<  vy << endl;
   }
 
   if (zset) {
     vz = zvalue.result(mpm);
-    cout << "Set v_update[2] to " << "=" <<  vz << endl;
+    // cout << "Set v_update[2] to " << "=" <<  vz << endl;
   }
 
   
@@ -105,7 +105,7 @@ void FixVelocityNodes::post_update_grid_state() {
 	  n++;
 	}
       }
-      cout << "v_update for " << n << " nodes from solid " << domain->solids[isolid]->id << " set." << endl;
+      // cout << "v_update for " << n << " nodes from solid " << domain->solids[isolid]->id << " set." << endl;
     }
   } else {
 
@@ -121,29 +121,29 @@ void FixVelocityNodes::post_update_grid_state() {
 	n++;
       }
     }
-    cout << "v_update for " << n << " nodes from solid " << domain->solids[solid]->id << " set." << endl;
+    // cout << "v_update for " << n << " nodes from solid " << domain->solids[solid]->id << " set." << endl;
   }
 }
 
 void FixVelocityNodes::post_velocities_to_grid() {
-  cout << "In FixVelocityNodes::post_velocities_to_grid()" << endl;
+  // cout << "In FixVelocityNodes::post_velocities_to_grid()" << endl;
 
   // Go through all the particles in the group and set v to the right value:
   double vx, vy, vz;
 
   if (xset) {
     vx = xvalue.result(mpm);
-    cout << "Set v[0] to " << xvalue.eq() << "=" << vx << endl;
+    // cout << "Set v[0] to " << xvalue.eq() << "=" << vx << endl;
   }
 
   if (yset) {
     vy = yvalue.result(mpm);
-    cout << "Set v[1] to " << "=" <<  vy << endl;
+    // cout << "Set v[1] to " << "=" <<  vy << endl;
   }
 
   if (zset) {
     vz = zvalue.result(mpm);
-    cout << "Set v[2] to " << "=" <<  vz << endl;
+    // cout << "Set v[2] to " << "=" <<  vz << endl;
   }
 
   
@@ -169,7 +169,7 @@ void FixVelocityNodes::post_velocities_to_grid() {
 	  n++;
 	}
       }
-      cout << "v for " << n << " nodes from solid " << domain->solids[isolid]->id << " set." << endl;
+      // cout << "v for " << n << " nodes from solid " << domain->solids[isolid]->id << " set." << endl;
     }
   } else {
 
@@ -185,6 +185,6 @@ void FixVelocityNodes::post_velocities_to_grid() {
 	n++;
       }
     }
-    cout << "v for " << n << " nodes from solid " << domain->solids[solid]->id << " set." << endl;
+    // cout << "v for " << n << " nodes from solid " << domain->solids[solid]->id << " set." << endl;
   }
 }

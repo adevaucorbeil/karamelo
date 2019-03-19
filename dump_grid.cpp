@@ -35,7 +35,7 @@ void DumpGrid::write()
     }
   else fdump = filename;
 
-  cout << "Filemame for dump: " << fdump << endl;
+  // cout << "Filemame for dump: " << fdump << endl;
 
   // Open the file fdump:
   ofstream dumpstream;
@@ -52,14 +52,14 @@ void DumpGrid::write()
     dumpstream << domain->boxlo[0] << " " << domain->boxhi[0] << endl;
     dumpstream << domain->boxlo[1] << " " << domain->boxhi[1] << endl;
     dumpstream << domain->boxlo[2] << " " << domain->boxhi[2] << endl;
-    dumpstream << "ITEM: ATOMS id type x y z vx vy vz\n";
+    dumpstream << "ITEM: ATOMS id type x y z vx vy vz mass\n";
 
     bigint ID = 0;
     for (int isolid=0; isolid < domain->solids.size(); isolid++) {
       Grid *g = domain->solids[isolid]->grid;
       for (bigint i=0; i<g->nnodes;i++) {
 	ID++;
-	dumpstream << ID << " " << isolid+1 << " " << g->x[i][0] << " " << g->x[i][1] << " " << g->x[i][2] << " " << g->v[i][0] << " " << g->v[i][1] << " " << g->v[i][2] << endl;
+	dumpstream << ID << " " << isolid+1 << " " << g->x[i][0] << " " << g->x[i][1] << " " << g->x[i][2] << " " << g->v[i][0] << " " << g->v[i][1] << " " << g->v[i][2] << " " << g->mass[i] << endl;
       }
     }
     dumpstream.close();

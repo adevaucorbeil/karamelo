@@ -35,7 +35,7 @@ void DumpParticle::write()
     }
   else fdump = filename;
 
-  cout << "Filemame for dump: " << fdump << endl;
+  // cout << "Filemame for dump: " << fdump << endl;
 
   // Open the file fdump:
   ofstream dumpstream(fdump, ios_base::out);

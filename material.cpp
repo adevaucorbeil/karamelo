@@ -1,6 +1,6 @@
 #include "mpm.h"
 #include "material.h"
-#include "style_mat.h"
+#include "style_strength.h"
 #include "style_eos.h"
 #include <vector>
 
@@ -9,15 +9,15 @@ using namespace std;
 
 Material::Material(MPM *mpm) : Pointers(mpm)
 {
-  mat_map = new MatCreatorMap;
+  strength_map = new StrengthCreatorMap;
   EOS_map = new EOSCreatorMap;
 
-#define MAT_CLASS
-#define MatStyle(key,Class) \
-  (*ma_map)[#key] = &mat_creator<Class>;
-#include "style_mat.h"
-#undef MatStyle
-#undef MAT_CLASS
+#define STRENGTH_CLASS
+#define StrengthStyle(key,Class) \
+  (*strength_map)[#key] = &strength_creator<Class>;
+#include "style_strength.h"
+#undef StrengthStyle
+#undef STRENGTH_CLASS
 
 #define EOS_CLASS
 #define EOSStyle(key,Class) \
@@ -29,7 +29,7 @@ Material::Material(MPM *mpm) : Pointers(mpm)
 
 Material::~Material()
 {
-  delete mat_map;
+  delete strength_map;
   delete EOS_map;
 }
 
@@ -92,46 +92,45 @@ int Material::find_EOS(string name)
 }
 
 /* ----------------------------------------------------------------------
-   create a new material
+   create a new strength
 ------------------------------------------------------------------------- */
 
-void Material::add_mat(vector<string> args){
-  cout << "In add_mat" << endl;
+void Material::add_strength(vector<string> args){
+  cout << "In add_strength" << endl;
 
-  if (find_mat(args[0]) >= 0) {
-    cout << "Error: reuse of material ID" << endl;
+  if (find_strength(args[0]) >= 0) {
+    cout << "Error: reuse of strength ID" << endl;
     exit(1);
   }
 
-    // create the Material
+    // create the Strength
 
   string *estyle = &args[1];
 
-  if (mat_map->find(*estyle) != mat_map->end()) {
-    MatCreator mat_creator = (*mat_map)[*estyle];
-    materials.push_back(mat_creator(mpm, args));
+  if (strength_map->find(*estyle) != strength_map->end()) {
+    StrengthCreator strength_creator = (*strength_map)[*estyle];
+    strengths.push_back(strength_creator(mpm, args));
     //materials.back()->init();
   }
   else {
-    cout << "Unknown mat style " << *estyle << endl;
+    cout << "Unknown strength style " << *estyle << endl;
     exit(1);
   }
-  
 }
 
-int Material::find_mat(string name)
+int Material::find_strength(string name)
 {
-  for (int imat = 0; imat < materials.size(); imat++)
-    if (name.compare(materials[imat]->id) == 0) return imat;
+  for (int istrength = 0; istrength < strengths.size(); istrength++)
+    if (name.compare(strengths[istrength]->id) == 0) return istrength;
   return -1;
 }
 
 /* ----------------------------------------------------------------------
-   one instance per mat style in style_mat.h
+   one instance per strength style in style_strength.h
 ------------------------------------------------------------------------- */
 
 template <typename T>
-Mat *Material::mat_creator(MPM *mpm, vector<string> args)
+Strength *Material::strength_creator(MPM *mpm, vector<string> args)
 {
   return new T(mpm, args);
 }

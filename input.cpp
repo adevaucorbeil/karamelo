@@ -171,6 +171,7 @@ Var Input::evaluate_function(string func, string arg){
   if (func.compare("region") == 0) return Var(region(args));
   if (func.compare("solid") == 0) return Var(solid(args));
   if (func.compare("eos") == 0) return Var(EOS(args));
+  if (func.compare("strength") == 0) return Var(strength(args));
   if (func.compare("dump") == 0) return Var(dump(args));
   if (func.compare("group") == 0) return Var(group_command(args));
   if (func.compare("log") == 0) return Var(log(args));
@@ -569,6 +570,11 @@ int Input::solid(vector<string> args){
 
 int Input::EOS(vector<string> args){
   material->add_EOS(args);
+  return 0;
+}
+
+int Input::strength(vector<string> args){
+  material->add_strength(args);
   return 0;
 }
 

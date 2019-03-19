@@ -5,6 +5,7 @@
 
 #include "pointers.h"
 #include "eos.h"
+#include "strength.h"
 #include "grid.h"
 #include <vector>
 #include <Eigen/Eigen>
@@ -60,6 +61,7 @@ class Solid : protected Pointers {
   vector< Eigen::Vector3d > *wfd_np;
 
   class EOS *eos;                     // Equation-of-State
+  class Strength *strength;           // Strength
 
   class Grid *grid;                   // background grid
 

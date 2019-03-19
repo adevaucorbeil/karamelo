@@ -7,8 +7,8 @@ EOSStyle(linear,EOSLinear)
 
 #else
 
-#ifndef MPM_EOS_BLOCK_H
-#define MPM_EOS_BLOCK_H
+#ifndef MPM_EOS_LINEAR_H
+#define MPM_EOS_LINEAR_H
 
 #include "eos.h"
 #include <Eigen/Eigen>
@@ -22,12 +22,10 @@ public:
   double rho0();
   double K();
   double G();
-  double compute_pressure(double);
-  Eigen::Matrix3d update_deviatoric_stress(Eigen::Matrix3d, Eigen::Matrix3d);
-  void update_stress(Eigen::Matrix3d&, Eigen::Matrix3d, double);
+  double compute_pressure(const double J, const double rho, const double e);
 
 protected:
-  double rho0_, K_, G_;
+  double rho0_, K_;
 };
 
 #endif

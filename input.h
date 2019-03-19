@@ -39,6 +39,7 @@ private:
   int region(vector<string>);
   int solid(vector<string>);
   int EOS(vector<string>);
+  int strength(vector<string>);
   int dump(vector<string>);
   int group_command(vector<string>);
   int log(vector<string>);

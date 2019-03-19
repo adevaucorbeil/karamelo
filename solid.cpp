@@ -38,6 +38,7 @@ Solid::Solid(MPM *mpm, vector<string> args) :
   mask = NULL;
 
   eos = NULL;
+  strength = NULL;
   grid = new Grid(mpm);
 
   numneigh_pn = numneigh_np = NULL;
@@ -76,6 +77,7 @@ Solid::~Solid()
   memory->destroy(mask);
 
   delete eos;
+  delete strength;
   delete grid;
 
   delete [] numneigh_pn;
@@ -137,6 +139,15 @@ void Solid::options(vector<string> *args, vector<string>::iterator it)
 
     eos = material->EOSs[iEOS]; // point eos to the right EOS class
 
+    it++;
+    
+    int iStrength = material->find_strength(*it);
+    if (iStrength == -1) {
+      cout << "Error: could not find Strength named " << *it << endl;
+      exit(1);
+    }
+
+    strength = material->strengths[iStrength];
     it++;
 
     grid->setup(*it); // set the grid cellsize
@@ -474,10 +485,18 @@ void Solid::update_deformation_gradient()
 void Solid::update_stress()
 {
   min_inv_p_wave_speed = 1.0e22;
+  double pH;
+  Matrix3d eye, sigma_dev;
+
+  eye.setIdentity();
+
   for (int ip=0; ip<np; ip++){
-    eos->update_stress(sigma[ip], strain_increment[ip], J[ip]);
+    pH = eos->compute_pressure(J[ip], rho[ip], 0);
+    sigma_dev = strength->update_deviatoric_stress(strain_increment[ip], sigma[ip]);
+    sigma[ip] = -pH*eye + sigma_dev;
+
     PK1[ip] = J[ip] * (R[ip] * sigma[ip] * R[ip].transpose()) * Finv[ip].transpose();
-    min_inv_p_wave_speed = MIN(min_inv_p_wave_speed, rho[ip] / (eos->K() + 4.0/3.0 * eos->G()));
+    min_inv_p_wave_speed = MIN(min_inv_p_wave_speed, rho[ip] / (eos->K() + 4.0/3.0 * strength->G()));
   }
   min_inv_p_wave_speed = sqrt(min_inv_p_wave_speed);
 }
