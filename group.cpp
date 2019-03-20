@@ -184,3 +184,65 @@ int Group::find_unused()
     if (names[igroup] == "") return igroup;
   return -1;
 }
+
+
+double Group::xcm(int igroup, int dir)
+{
+  
+  Eigen::Vector3d *x;
+  double *mass;
+  int nmax;
+  int *mask;
+  double com = 0;
+  double mass_tot = 0;
+  int groupbit = group->bitmask[igroup];
+
+  if (solid[igroup] == -1) {
+    // Consider all solids
+
+    for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
+      if (pon[igroup].compare("particles") == 0) {
+	x = domain->solids[solid[igroup]]->x;
+	mass = domain->solids[solid[igroup]]->mass;
+	nmax = domain->solids[solid[igroup]]->np;
+	mask = domain->solids[solid[igroup]]->mask;
+      } else {
+	x = domain->solids[solid[igroup]]->grid->x;
+	mass = domain->solids[solid[igroup]]->grid->mass;
+	nmax = domain->solids[solid[igroup]]->grid->nnodes;
+	mask = domain->solids[solid[igroup]]->grid->mask;
+      }
+    
+      for (int ip = 0; ip < nmax; ip++) {
+	if (mask[ip] & groupbit) {
+	  com += x[ip][dir] * mass[ip];
+	  mass_tot += mass[ip];
+	}
+      }
+    }
+  } else {
+    int isolid = solid[igroup];
+
+    if (pon[igroup].compare("particles") == 0) {
+      x = domain->solids[solid[igroup]]->x;
+      mass = domain->solids[solid[igroup]]->mass;
+      nmax = domain->solids[solid[igroup]]->np;
+      mask = domain->solids[solid[igroup]]->mask;
+    } else {
+      x = domain->solids[solid[igroup]]->grid->x;
+      mass = domain->solids[solid[igroup]]->grid->mass;
+      nmax = domain->solids[solid[igroup]]->grid->nnodes;
+      mask = domain->solids[solid[igroup]]->grid->mask;
+    }
+    
+    for (int ip = 0; ip < nmax; ip++) {
+      if (mask[ip] & groupbit) {
+	com += x[ip][dir] * mass[ip];
+	mass_tot += mass[ip];
+      }
+    }
+  }
+
+  if (mass_tot) return com/mass_tot;
+  else return 0;
+}

@@ -75,8 +75,8 @@ void Input::file()
     } else {
 
       ignore = false;
-      // cout << line << endl;
-      // cout << "gives: " << parsev(line).result() << endl;
+      cout << line << endl;
+      // cout << " gives: " << parsev(line).result() << endl;
       parsev(line).result();
       line.clear();
 
@@ -184,8 +184,7 @@ Var Input::evaluate_function(string func, string arg){
 
   if (command_map->find(func) != command_map->end()) {
     CommandCreator command_creator = (*command_map)[func];
-    command_creator(mpm,args);
-    return Var(0);
+    return command_creator(mpm,args);
   }
 
   else if (func.compare("exp") == 0) return expv(parsev(arg));
@@ -524,9 +523,9 @@ Var Input::parsev(string str)
     return Var(-1);
   }
   else {
-    //cout << "value = " << values.top() << endl;
     if (!returnvar.empty()) {
       (*vars)[returnvar] = values.top();
+      cout << returnvar << " = " << (*vars)[returnvar].result() << endl;
     }
     return values.top();
   }
@@ -619,8 +618,8 @@ int Input::set_dt_factor(vector<string> args){
 ------------------------------------------------------------------------- */
 
 template <typename T>
-void Input::command_creator(MPM *mpm, vector<string> args)
+Var Input::command_creator(MPM *mpm, vector<string> args)
 {
   T cmd(mpm);
-  cmd.command(args);
+  return cmd.command(args);
 }

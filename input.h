@@ -49,12 +49,12 @@ private:
   int set_dt_factor(vector<string>);
 
  public:
-  typedef void (*CommandCreator)(MPM *,vector<string>);
+  typedef class Var (*CommandCreator)(MPM *,vector<string>);
   typedef map<string,CommandCreator> CommandCreatorMap;
   CommandCreatorMap *command_map;
 
  protected:
-  template <typename T> static void command_creator(MPM *,vector<string>);
+  template <typename T> static class Var command_creator(MPM *,vector<string>);
 
 };
 

@@ -1,21 +1,23 @@
 /* -*- c++ -*- ----------------------------------------------------------*/
 
-
 #ifdef COMMAND_CLASS
 
-CommandStyle(run,Run)
+CommandStyle(xcm,CentreOfMass)
 
 #else
 
-#ifndef MPM_RUN_H
-#define MPM_RUN_H
+#ifndef LMP_CENTRE_OF_MASS_H
+#define LMP_CENTRE_OF_MASS_H
 
 #include "pointers.h"
 
-class Run : protected Pointers {
+class CentreOfMass : protected Pointers {
  public:
-  Run(class MPM *);
+  CentreOfMass(class MPM *);
   class Var command(vector<string>);
+
+ private:
+  int igroup, dir;
 };
 
 #endif

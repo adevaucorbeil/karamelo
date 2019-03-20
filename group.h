@@ -17,7 +17,7 @@ class Group : protected Pointers {
   int *bitmask;                // one-bit mask for each group
   int *inversemask;            // inverse mask for each group
   string *pon;                 // group of particles if pon == "particles", or nodes if pon = "nodes"
-  int *solid;                 // solids corresponding to each group, if -1, all solids are considered.
+  int *solid;                  // solids corresponding to each group, if -1, all solids are considered.
 
   Group(class MPM *);
   virtual ~Group();
@@ -25,6 +25,8 @@ class Group : protected Pointers {
   void assign(vector<string>); // assign atoms to a new or existing group
   int find(string);            // return group index
   int find_unused();           // return index of first available group
+
+  double xcm(int, int);        // determine the centre of mass of a group
 };
 
 #endif

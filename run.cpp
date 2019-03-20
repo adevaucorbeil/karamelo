@@ -14,7 +14,7 @@ Run::Run(MPM *mpm) : Pointers(mpm) {}
 
 /* ---------------------------------------------------------------------- */
 
-void Run::command(vector<string> args)
+Var Run::command(vector<string> args)
 {
   cout << "In Run::command()" << endl;
 
@@ -32,4 +32,6 @@ void Run::command(vector<string> args)
   update->firststep = update->ntimestep + 1;
   update->laststep = update->firststep + nsteps;
   update->scheme->run(nsteps);
+
+  return Var(0);
 }
