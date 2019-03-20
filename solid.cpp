@@ -74,7 +74,6 @@ Solid::~Solid()
   memory->destroy(mass);
   memory->destroy(mask);
 
-  delete mat;
   delete grid;
 
   delete [] numneigh_pn;

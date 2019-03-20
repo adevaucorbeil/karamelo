@@ -9,8 +9,8 @@ using namespace std;
 
 Material::Material(MPM *mpm) : Pointers(mpm)
 {
-  strength_map = new StrengthCreatorMap;
-  EOS_map = new EOSCreatorMap;
+  strength_map = new StrengthCreatorMap();
+  EOS_map = new EOSCreatorMap();
 
 #define STRENGTH_CLASS
 #define StrengthStyle(key,Class) \
@@ -29,6 +29,9 @@ Material::Material(MPM *mpm) : Pointers(mpm)
 
 Material::~Material()
 {
+  for (int i = 0; i < strengths.size(); i++) delete strengths[i];
+  for (int i = 0; i < EOSs.size(); i++) delete EOSs[i];
+
   delete strength_map;
   delete EOS_map;
 }
