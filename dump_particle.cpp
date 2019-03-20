@@ -5,8 +5,10 @@
 #include "domain.h"
 #include "solid.h"
 #include "mpmtype.h"
+#include "mpm_math.h"
 
 using namespace std;
+using namespace MPM_Math;
 
 
 DumpParticle::DumpParticle(MPM *mpm, vector<string> args) : Dump(mpm, args)
@@ -51,7 +53,7 @@ void DumpParticle::write()
     dumpstream << domain->boxlo[0] << " " << domain->boxhi[0] << endl;
     dumpstream << domain->boxlo[1] << " " << domain->boxhi[1] << endl;
     dumpstream << domain->boxlo[2] << " " << domain->boxhi[2] << endl;
-    dumpstream << "ITEM: ATOMS id type x y z vx vy vz s11 s22 s33 s12 s13 s23 volume mass\n";
+    dumpstream << "ITEM: ATOMS id type x y z vx vy vz s11 s22 s33 s12 s13 s23 seq volume mass\n";
 
     bigint ID = 0;
     for (int isolid=0; isolid < domain->solids.size(); isolid++) {
@@ -72,6 +74,7 @@ void DumpParticle::write()
 	dumpstream << s->sigma[i](0,1) << " ";
 	dumpstream << s->sigma[i](0,2) << " ";
 	dumpstream << s->sigma[i](1,2) << " ";
+	dumpstream << sqrt(3. / 2.) * Deviator(s->sigma[i]).norm() << " ";
 	dumpstream << s->vol[i] << " ";
 	dumpstream << s->mass[i] << endl;
       }

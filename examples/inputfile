@@ -3,6 +3,7 @@ nu = 0.33
 K = E/(3*(1-2*nu))
 G = E/(2*(1+nu))
 rho = 7.75e-06
+sigmay = 0.1
 
 FLIP=0.9
 
@@ -10,11 +11,13 @@ dimension(3)
 region(box, block, -10, 10, -1.2, 1.2, -1.2, 1.2, op, op2)
 eos(eosl, linear, rho, K)
 strength(strengthl, linear, G)
+strength(strengthp, plastic, G, sigmay)
 
 material(mat1, eosl, strengthl)
+material(mat2, eosl, strengthp)
 
 cellsize = 0.8
-solid(solid1, block, box, 50, 6, 6, mat1, cellsize)
+solid(solid1, block, box, 50, 6, 6, mat2, cellsize)
 
 
 region(region1, block, INF, -9, INF, INF, INF, INF)

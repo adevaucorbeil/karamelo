@@ -3,27 +3,27 @@
 
 #ifdef STRENGTH_CLASS
 
-StrengthStyle(linear,StrengthLinear)
+StrengthStyle(plastic,StrengthPlastic)
 
 #else
 
-#ifndef MPM_STRENGTH_LINEAR_H
-#define MPM_STRENGTH_LINEAR_H
+#ifndef MPM_STRENGTH_PLASTIC_H
+#define MPM_STRENGTH_PLASTIC_H
 
 #include "strength.h"
 #include <Eigen/Eigen>
 
-class StrengthLinear : public Strength {
+class StrengthPlastic : public Strength {
 
 public:
-  StrengthLinear(class MPM *, vector<string>);
-  ~StrengthLinear() {};
+  StrengthPlastic(class MPM *, vector<string>);
+  ~StrengthPlastic() {};
 
   double G();
   Eigen::Matrix3d update_deviatoric_stress(const Eigen::Matrix3d sigma, const Eigen::Matrix3d D, double &plastic_strain_increment);
 
 protected:
-  double G_;
+  double G_, yieldStress;
 };
 
 #endif

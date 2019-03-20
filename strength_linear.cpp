@@ -2,6 +2,7 @@
 #include "strength_linear.h"
 #include "input.h"
 #include "domain.h"
+#include "update.h"
 #include "mpm_math.h"
 #include <Eigen/Eigen>
 #include "var.h"
@@ -28,7 +29,10 @@ double StrengthLinear::G(){
   return G_;
 }
 
-Matrix3d StrengthLinear::update_deviatoric_stress(const Matrix3d strain_increment, const Matrix3d sigma)
+Matrix3d StrengthLinear::update_deviatoric_stress(const Matrix3d sigma, const Matrix3d D, double &plastic_strain_increment)
 {
-  return Deviator(sigma) + 2 * G_ * Deviator(strain_increment);
+  Matrix3d dev_rate;
+
+  dev_rate = 2.0 * G_ * Deviator(D);
+  return Deviator(sigma) + update->dt * dev_rate;
 }

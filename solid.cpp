@@ -25,7 +25,7 @@ Solid::Solid(MPM *mpm, vector<string> args) :
 
   a = NULL;
 
-  sigma = PK1 = L = F = R = U = Finv = Fdot = strain_increment = NULL;
+  sigma = PK1 = L = F = R = U = D = Finv = Fdot = NULL;
 
   b = f = NULL;
 
@@ -34,6 +34,7 @@ Solid::Solid(MPM *mpm, vector<string> args) :
   vol = vol0 = NULL;
   rho = rho0 = NULL;
   mass = NULL;
+  eff_plastic_strain = NULL;
   mask = NULL;
 
   mat = NULL;
@@ -62,9 +63,9 @@ Solid::~Solid()
   if (F!=NULL) delete F;
   if (R!=NULL) delete R;
   if (U!=NULL) delete U;
+  if (D!=NULL) delete D;
   if (Finv!=NULL) delete Finv;
   if (Fdot!=NULL) delete Fdot;
-  if (strain_increment!=NULL) delete strain_increment;
 
   memory->destroy(J);
   memory->destroy(vol);
@@ -72,6 +73,7 @@ Solid::~Solid()
   memory->destroy(rho);
   memory->destroy(rho0);
   memory->destroy(mass);
+  memory->destroy(eff_plastic_strain);
   memory->destroy(mask);
 
   delete grid;
@@ -245,6 +247,12 @@ void Solid::grow(int nparticles){
     exit(1);
   }
 
+  if (D == NULL) D = new Eigen::Matrix3d[np];
+  else {
+    cout << "Error: D already exists, I don't know how to grow it!\n";
+    exit(1);
+  }
+
   if (Finv == NULL) Finv = new Eigen::Matrix3d[np];
   else {
     cout << "Error: Finv already exists, I don't know how to grow it!\n";
@@ -257,11 +265,6 @@ void Solid::grow(int nparticles){
     exit(1);
   }
 
-  if (strain_increment == NULL) strain_increment = new Eigen::Matrix3d[np];
-  else {
-    cout << "Error: strain_increment already exists, I don't know how to grow it!\n";
-    exit(1);
-  }
 
   str = "solid-" + id + ":vol0";
   cout << "Growing " << str << endl;
@@ -282,6 +285,10 @@ void Solid::grow(int nparticles){
   str = "solid-" + id + ":mass";
   cout << "Growing " << str << endl;
   mass = memory->grow(mass, np, str);
+
+  str = "solid-" + id + ":eff_plastic_strain";
+  cout << "Growing " << str << endl;
+  eff_plastic_strain = memory->grow(eff_plastic_strain, np, str);
 
   str = "solid-" + id + ":mask";
   cout << "Growing " << str << endl;
@@ -459,28 +466,31 @@ void Solid::update_deformation_gradient()
     L[ip] = Fdot[ip] * Finv[ip];
 
     status = PolDec(F[ip], R[ip], U, false); // polar decomposition of the deformation gradient, F = R * U
+    D[ip] = 0.5 * (R[ip].transpose() * (L[ip] + L[ip].transpose()) * R[ip]);
 
     if (!status) {
       cout << "Polar decomposition of deformation gradient failed for particle " << ip << ".\n";
       exit(1);
     }
 
-    strain_increment[ip] = 0.5*update->dt * R[ip].transpose() * (L[ip] + L[ip].transpose()) * R[ip];
+    // strain_increment[ip] = update->dt * D[ip];
   }
 }
 
 void Solid::update_stress()
 {
   min_inv_p_wave_speed = 1.0e22;
-  double pH;
+  double pH, plastic_strain_increment;
   Matrix3d eye, sigma_dev;
 
   eye.setIdentity();
 
   for (int ip=0; ip<np; ip++){
     pH = mat->eos->compute_pressure(J[ip], rho[ip], 0);
-    sigma_dev = mat->strength->update_deviatoric_stress(strain_increment[ip], sigma[ip]);
+    sigma_dev = mat->strength->update_deviatoric_stress(sigma[ip], D[ip], plastic_strain_increment);
     sigma[ip] = -pH*eye + sigma_dev;
+
+    eff_plastic_strain[ip] += plastic_strain_increment;
 
     PK1[ip] = J[ip] * (R[ip] * sigma[ip] * R[ip].transpose()) * Finv[ip].transpose();
     min_inv_p_wave_speed = MIN(min_inv_p_wave_speed, rho[ip] / (mat->eos->K() + 4.0/3.0 * mat->strength->G()));

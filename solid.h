@@ -35,9 +35,9 @@ class Solid : protected Pointers {
   Eigen::Matrix3d *F;                // deformation gradient matrix
   Eigen::Matrix3d *R;                // Rotation matrix
   Eigen::Matrix3d *U;
+  Eigen::Matrix3d *D;                // symmetric part of L
   Eigen::Matrix3d *Finv;             // inverse of the deformation gradient matrix
   Eigen::Matrix3d *Fdot;             // rate of deformation gradient matrix
-  Eigen::Matrix3d *strain_increment; // strain increment matrix
 
   double *J;                 // determinant of the deformation matrix
   double *vol0;              // particles' reference volume
@@ -45,6 +45,7 @@ class Solid : protected Pointers {
   double *rho0;              // particles' reference density
   double *rho;               // particles' current density
   double *mass;              // particles' current mass
+  double *eff_plastic_strain;// particles' effective plastic strain
   int *mask;                 // particles' group mask
 
   double min_inv_p_wave_speed;   // minimum of the inverse of the particle wave speed
