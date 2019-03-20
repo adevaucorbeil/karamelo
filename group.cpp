@@ -246,3 +246,100 @@ double Group::xcm(int igroup, int dir)
   if (mass_tot) return com/mass_tot;
   else return 0;
 }
+
+double Group::internal_force(int igroup, int dir)
+{
+  
+  Eigen::Vector3d *f;
+  int nmax;
+  int *mask;
+  double resulting_force = 0;
+  int groupbit = group->bitmask[igroup];
+
+  if (solid[igroup] == -1) {
+    // Consider all solids
+
+    for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
+      if (pon[igroup].compare("particles") == 0) {
+	f = domain->solids[solid[igroup]]->f;
+	nmax = domain->solids[solid[igroup]]->np;
+	mask = domain->solids[solid[igroup]]->mask;
+      } else {
+	f = domain->solids[solid[igroup]]->grid->f;
+	nmax = domain->solids[solid[igroup]]->grid->nnodes;
+	mask = domain->solids[solid[igroup]]->grid->mask;
+      }
+    
+      for (int ip = 0; ip < nmax; ip++) {
+	if (mask[ip] & groupbit) {
+	  resulting_force += f[ip][dir];
+	}
+      }
+    }
+  } else {
+    int isolid = solid[igroup];
+
+    if (pon[igroup].compare("particles") == 0) {
+      f = domain->solids[solid[igroup]]->f;
+      nmax = domain->solids[solid[igroup]]->np;
+      mask = domain->solids[solid[igroup]]->mask;
+    } else {
+      f = domain->solids[solid[igroup]]->grid->f;
+      nmax = domain->solids[solid[igroup]]->grid->nnodes;
+      mask = domain->solids[solid[igroup]]->grid->mask;
+    }
+    
+    for (int ip = 0; ip < nmax; ip++) {
+      if (mask[ip] & groupbit) {
+	resulting_force += f[ip][dir];
+      }
+    }
+  }
+
+  return resulting_force;
+}
+
+double Group::external_force(int igroup, int dir)
+{
+  if (pon[igroup].compare("nodes") == 0) {
+    cout << "Error: cannot calculate the external forces applied to the node group " << names[igroup] << endl;
+    exit(1);
+  }
+  
+  Eigen::Vector3d *f;
+  int nmax;
+  int *mask;
+  double resulting_force = 0;
+  int groupbit = group->bitmask[igroup];
+
+  if (solid[igroup] == -1) {
+    // Consider all solids
+
+    for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
+      f = domain->solids[solid[igroup]]->f;
+      nmax = domain->solids[solid[igroup]]->np;
+      mask = domain->solids[solid[igroup]]->mask;
+    
+      for (int ip = 0; ip < nmax; ip++) {
+	if (mask[ip] & groupbit) {
+	  resulting_force += f[ip][dir];
+	}
+      }
+    }
+  } else {
+    int isolid = solid[igroup];
+
+    f = domain->solids[solid[igroup]]->f;
+    nmax = domain->solids[solid[igroup]]->np;
+    mask = domain->solids[solid[igroup]]->mask;
+    
+    for (int ip = 0; ip < nmax; ip++) {
+      if (mask[ip] & groupbit) {
+	resulting_force += f[ip][dir];
+      }
+    }
+  }
+
+  return resulting_force;
+}
+

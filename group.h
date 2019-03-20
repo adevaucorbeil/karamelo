@@ -26,7 +26,9 @@ class Group : protected Pointers {
   int find(string);            // return group index
   int find_unused();           // return index of first available group
 
-  double xcm(int, int);        // determine the centre of mass of a group
+  double xcm(int, int);                   // determine the centre of mass of a group
+  double internal_force(int, int);        // determine the resulting internal force applied onto the group
+  double external_force(int, int);        // determine the resulting internal force applied onto the group
 };
 
 #endif

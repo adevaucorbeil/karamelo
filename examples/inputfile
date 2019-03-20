@@ -4,11 +4,15 @@ K = E/(3*(1-2*nu))
 G = E/(2*(1+nu))
 rho = 7.75e-06
 sigmay = 0.1
+hLx = 10
+hLy = 1.2
+hLz = 1.2
+A_zy = (2*hLy)*(2*hLz)
 
 FLIP=0.9
 
 dimension(3)
-region(box, block, -10, 10, -1.2, 1.2, -1.2, 1.2, op, op2)
+region(box, block, -hLx, hLx, -hLy, hLy, -hLz, hLz, op, op2)
 eos(eosl, linear, rho, K)
 strength(strengthl, linear, G)
 strength(strengthp, plastic, G, sigmay)
@@ -25,16 +29,21 @@ group(group1, particles, region, region1, solid, solid1)
 group(groupn1, nodes, region, region1, solid, solid1)
 
 xb = xcm(group1, x)
+fb = internal_force(groupn1, x)
 
 region(region2, block, 9.1, INF, INF, INF, INF, INF)
 group(group2, particles, region, region2, solid, solid1)
 group(groupn2, nodes, region, region2, solid, solid1)
 
 xt = xcm(group2, x)
+ft = internal_force(groupn2, x)
 l = xt-xb
 l0 = value(l)
 eps = (l-l0)/l0
-v = 1.0#-exp(-time)
+stress = 0.5*(fb-ft)/A_zy
+
+
+v = 1.0-exp(-time)
 
 fix(BC_left, velocity_nodes, groupn1, -v, NULL, NULL)
 fix(BC_right, velocity_nodes, groupn2, v, NULL, NULL)
@@ -44,5 +53,5 @@ dump(dump2, all, grid, 1, dump_g.*.LAMMPS, x, y, z)
 
 method_modify(FLIP)
 
-log_modify(custom, step, dt, time, xt, xb, l, l0, eps)
+log_modify(custom, step, dt, time, ft, fb, eps, stress)
 run(100)

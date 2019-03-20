@@ -19,6 +19,7 @@ Var CentreOfMass::command(vector<string> args) {
 
   if (igroup == -1) {
     cout << "Error: could not find group named: " << args[0] << endl;
+    exit(1);
   }
 
   if (args[1].compare("x") == 0) dir = 0;
