@@ -63,7 +63,7 @@ void Output::setup(){
 
   next = MIN(next_dump_any,next_log);
 
-  cout << "Next = " << next << endl;
+  // cout << "Next = " << next << endl;
 }
 
 void Output::write(bigint ntimestep){

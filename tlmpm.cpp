@@ -30,8 +30,8 @@ void TLMPM::modify(vector<string> args)
 
 void TLMPM::setup()
 {
-  cout << "np = " << domain->solids[0]->np << ", nn = " << domain->solids[0]->grid->nnodes << endl;
-  //compute_grid_weight_functions_and_gradients();
+  // cout << "np = " << domain->solids[0]->np << ", nn = " << domain->solids[0]->grid->nnodes << endl;
+  // compute_grid_weight_functions_and_gradients();
 }
 
 void TLMPM::compute_grid_weight_functions_and_gradients()

@@ -44,9 +44,11 @@ private:
   int dump(vector<string>);
   int group_command(vector<string>);
   int log(vector<string>);
+  int log_modify(vector<string>);
   int method_modify(vector<string>);
   int fix(vector<string>);
   int set_dt_factor(vector<string>);
+  class Var value(vector<string>);
 
  public:
   typedef class Var (*CommandCreator)(MPM *,vector<string>);

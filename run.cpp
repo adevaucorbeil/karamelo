@@ -16,7 +16,7 @@ Run::Run(MPM *mpm) : Pointers(mpm) {}
 
 Var Run::command(vector<string> args)
 {
-  cout << "In Run::command()" << endl;
+  // cout << "In Run::command()" << endl;
 
   if (args.size() < 1) {
     cout << "Illegal run command" << endl;

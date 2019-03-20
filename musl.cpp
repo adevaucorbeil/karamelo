@@ -22,7 +22,7 @@ void MUSL::run(int n){
 
   bigint ntimestep;
 
-  cout << "In MUSL::run" << endl;
+  // cout << "In MUSL::run" << endl;
 
   update->method->compute_grid_weight_functions_and_gradients();
 

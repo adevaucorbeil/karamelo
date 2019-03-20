@@ -19,6 +19,7 @@ class Var{
   string str() const;
   string eq() const {return equation;};
   bool is_constant() const {return constant;};
+  void make_constant(class MPM * = NULL);
   Var operator+(const Var&);
   Var operator-(const Var&);
   Var operator-();

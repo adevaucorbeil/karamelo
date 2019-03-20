@@ -6,6 +6,7 @@
 #include "material.h"
 #include "group.h"
 #include "update.h"
+#include "log.h"
 #include <iostream>
 #include <fstream>
 #include <string.h>
@@ -176,9 +177,11 @@ Var Input::evaluate_function(string func, string arg){
   if (func.compare("dump") == 0) return Var(dump(args));
   if (func.compare("group") == 0) return Var(group_command(args));
   if (func.compare("log") == 0) return Var(log(args));
+  if (func.compare("log_modify") == 0) return Var(log_modify(args));
   if (func.compare("method_modify") == 0) return Var(method_modify(args));
   if (func.compare("fix") == 0) return Var(fix(args));
   if (func.compare("dt_factor") == 0) return Var(set_dt_factor(args));
+  if (func.compare("value") == 0) return value(args);
 
   // invoke commands added via style_command.h
 
@@ -598,6 +601,11 @@ int Input::log(vector<string> args){
   return 0;
 }
 
+int Input::log_modify(vector<string> args){
+  output->log->modify(args);
+  return 0;
+}
+
 int Input::method_modify(vector<string> args){
   update->modify_method(args);
   return 0;
@@ -611,6 +619,19 @@ int Input::fix(vector<string> args){
 int Input::set_dt_factor(vector<string> args){
   update->set_dt_factor(args);
   return 0;
+}
+
+Var Input::value(vector<string> args){
+  if (args.size() < 1) {
+    cout << "Error: too few arguments for command value()" << endl;
+    exit(1);
+  } else if (args.size() > 1) {
+    cout << "Error: too many arguments for command value()" << endl;
+    exit(1);
+  }
+  Var v = parsev(args[0]);
+  v.make_constant();
+  return v;
 }
 
 /* ----------------------------------------------------------------------

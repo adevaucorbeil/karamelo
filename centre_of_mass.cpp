@@ -8,7 +8,7 @@ using namespace std;
 CentreOfMass::CentreOfMass(MPM *mpm) : Pointers(mpm) {}
 
 Var CentreOfMass::command(vector<string> args) {
-  cout << "In CentreOfMass::command()" << endl;
+  // cout << "In CentreOfMass::command()" << endl;
 
   if (args.size() < 2) {
     cout << "Illegal run command" << endl;

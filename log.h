@@ -8,7 +8,7 @@
 
 class Log;
 
-typedef void (Log::*FnPtr)();
+typedef void (Log::*FnPtr)(string);
 
 struct Field {
   string name = "";
@@ -28,8 +28,11 @@ public:
   Log(class MPM*, vector<string>);
   ~Log() {};
 
+  void modify(vector<string>);
+
   void parse_keywords(vector<string>);
   void addfield(string, FnPtr, int);
+  void clearfields();
   void header();
   void init();
 
@@ -38,9 +41,10 @@ public:
   // functions that compute a single value
   // customize a new keyword by adding a method prototype
 
-  void compute_step();
-  void compute_dt();
-  void compute_time();
+  void compute_step(string); // Here the argument is not required, but prototype should be the same for all compute functions.
+  void compute_dt(string);   // Here the argument is not required, but prototype should be the same for all compute functions.
+  void compute_time(string); // Here the argument is not required, but prototype should be the same for all compute functions.
+  void compute_var(string);
 };
 
 #endif

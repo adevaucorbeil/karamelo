@@ -46,6 +46,15 @@ string Var::str() const
   else return to_string(value);
 }
 
+void Var::make_constant(MPM * mpm)
+{
+  if (!constant) {
+    if (mpm) value = mpm->input->parsev(equation).value;
+    equation = to_string(value);
+    constant = true;
+  }
+}
+
 // Var Var::operator=(const Var& right){
 //   return right;
 //}

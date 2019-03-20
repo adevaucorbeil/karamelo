@@ -28,7 +28,7 @@ public:
   void setup();
   void write(bigint);                  // output for current timestep
 
-  void set_log(vector<string>);        // set log output freqquency
+  void set_log(vector<string>);        // set log output frequency
 
   void add_dump(vector<string>);       // add a Dump to Dump list
   int find_dump(string);               // find a Dump in Dump list
