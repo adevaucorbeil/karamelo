@@ -17,19 +17,20 @@ StrengthLinear::StrengthLinear(MPM *mpm, vector<string> args) : Strength(mpm, ar
   cout << "Initiate StrengthLinear" << endl;
 
   if (args.size()<2) {
-    cout << "Error: region command not enough arguments" << endl;
+    cout << "Error: too few arguments for the strength command" << endl;
     exit(1);
   }
   //options(&args, args.begin()+3);
   G_ = input->parsev(args[2]);
-  cout << "Set G to " << G_ << endl;
+  cout << "Linear strength model:\n";
+  cout << "\tG: shear modulus " << G_ << endl;
 }
 
 double StrengthLinear::G(){
   return G_;
 }
 
-Matrix3d StrengthLinear::update_deviatoric_stress(const Matrix3d sigma, const Matrix3d D, double &plastic_strain_increment)
+Matrix3d StrengthLinear::update_deviatoric_stress(const Matrix3d sigma, const Matrix3d D, double &plastic_strain_increment, const double eff_plastic_strain, const double epsdot)
 {
   Matrix3d dev_rate;
 

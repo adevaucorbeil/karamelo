@@ -17,7 +17,7 @@ EOSShock::EOSShock(MPM *mpm, vector<string> args) : EOS(mpm, args)
 {
   cout << "Initiate EOSShock" << endl;
 
-  if (args.size()<7) {
+  if (args.size()<8) {
     cout << "Error: region command not enough arguments" << endl;
     exit(1);
   }
@@ -58,6 +58,6 @@ double EOSShock::K(){
 double EOSShock::compute_pressure(const double J, const double rho, const double e){
   double mu = rho / rho0_ - 1.0;
   double pH = rho0_ * square(c0) * mu * (1.0 + mu) / square(1.0 - (S - 1.0) * mu);
-  return -(pH + rho * Gamma * (e - e0));
+  return (pH + rho * Gamma * (e - e0));
 }
 

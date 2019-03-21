@@ -3,25 +3,35 @@ nu = 0.33
 K = E/(3*(1-2*nu))
 G = E/(2*(1+nu))
 rho = 7.75e-06
-sigmay = 0.1
+sigmay = 0.457
+B = 2.722
+n = 1
+
 hLx = 10
 hLy = 1.2
 hLz = 1.2
 A_zy = (2*hLy)*(2*hLz)
+
+S = 1.5
+c0 = 5030
 
 FLIP=0.9
 
 dimension(3)
 region(box, block, -hLx, hLx, -hLy, hLy, -hLz, hLz, op, op2)
 eos(eosl, linear, rho, K)
+eos(eoss, shock, rho, K, c0, 0, S, 0)
+
 strength(strengthl, linear, G)
 strength(strengthp, plastic, G, sigmay)
+strength(strengthjc, johnson_cook, G, sigmay, B, n, 0, 0)
 
 material(mat1, eosl, strengthl)
-material(mat2, eosl, strengthp)
+material(mat2, eoss, strengthp)
+material(mat3, eoss, strengthjc)
 
 cellsize = 0.8
-solid(solid1, block, box, 50, 6, 6, mat2, cellsize)
+solid(solid1, block, box, 50, 6, 6, mat3, cellsize)
 
 
 region(region1, block, INF, -9.1, INF, INF, INF, INF)
@@ -48,10 +58,11 @@ v = 1.0-exp(-time)
 fix(BC_left, velocity_nodes, groupn1, -v, NULL, NULL)
 fix(BC_right, velocity_nodes, groupn2, v, NULL, NULL)
 
-dump(dump1, all, particle, 1, dump_p.*.LAMMPS, x, y, z)
-dump(dump2, all, grid, 1, dump_g.*.LAMMPS, x, y, z)
+dump(dump1, all, particle, 10, dump_p.*.LAMMPS, x, y, z)
+dump(dump2, all, grid, 10, dump_g.*.LAMMPS, x, y, z)
 
 method_modify(FLIP)
-
+log(10)
 log_modify(custom, step, dt, time, ft, fb, eps, stress)
-run(100)
+#run(1)
+run(5000)

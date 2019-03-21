@@ -20,7 +20,7 @@ public:
   ~StrengthLinear() {};
 
   double G();
-  Eigen::Matrix3d update_deviatoric_stress(const Eigen::Matrix3d sigma, const Eigen::Matrix3d D, double &plastic_strain_increment);
+  Eigen::Matrix3d update_deviatoric_stress(const Eigen::Matrix3d sigma, const Eigen::Matrix3d D, double &plastic_strain_increment, const double eff_plastic_strain, const double epsdot);
 
 protected:
   double G_;

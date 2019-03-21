@@ -20,11 +20,12 @@ void MUSL::setup(){
 
 void MUSL::run(int n){
 
-  bigint ntimestep;
+  bigint ntimestep = update->ntimestep;
 
   // cout << "In MUSL::run" << endl;
 
   update->method->compute_grid_weight_functions_and_gradients();
+  output->write(ntimestep);
 
   for (int i=0; i<n; i++){
     ntimestep = ++update->ntimestep;

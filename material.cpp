@@ -160,7 +160,7 @@ void Material::add_material(vector<string> args){
   }
   
   cout << "Creating new mat with ID: " << args[0] << endl;
-  Mat new_material = {args[0], EOSs[iEOS], strengths[iStrength]};
+  Mat new_material(args[0], EOSs[iEOS], strengths[iStrength]);
   materials.push_back(new_material);
 }
 
@@ -189,4 +189,27 @@ template <typename T>
 EOS *Material::EOS_creator(MPM *mpm, vector<string> args)
 {
   return new T(mpm, args);
+}
+
+
+Mat::Mat(string id_, class EOS* eos_, class Strength* strength_){
+  id = id_;
+  eos = eos_;
+  strength = strength_;
+  rho0 = eos->rho0();
+  K = eos->K();
+  G = strength->G();
+  E = 9*K*G/(3*K+G);
+  nu = (3*K-2*G)/(2*(3*K+G));
+  lambda = K - 2*G/3;
+  signal_velocity = sqrt((lambda+2*G)/rho0);
+
+  cout << "Properties for material " << id << endl;
+  cout << "\tReference density: " << rho0 << endl;
+  cout << "\tYoung\'s modulus: " << E << endl;
+  cout << "\tPoisson\'s ratio: " << nu << endl;
+  cout << "\tShear modulus: " << G << endl;
+  cout << "\tBulk modulus: " << K << endl;
+  cout << "\tLame first parameter (Lambda): " << lambda << endl;
+  cout << "\tSignal velocity: " << signal_velocity << endl;
 }

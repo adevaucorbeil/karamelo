@@ -3,27 +3,27 @@
 
 #ifdef STRENGTH_CLASS
 
-StrengthStyle(plastic,StrengthPlastic)
+StrengthStyle(johnson_cook,StrengthJohnsonCook)
 
 #else
 
-#ifndef MPM_STRENGTH_PLASTIC_H
-#define MPM_STRENGTH_PLASTIC_H
+#ifndef MPM_STRENGTH_JOHNSON_COOK_H
+#define MPM_STRENGTH_JOHNSON_COOK_H
 
 #include "strength.h"
 #include <Eigen/Eigen>
 
-class StrengthPlastic : public Strength {
+class StrengthJohnsonCook : public Strength {
 
 public:
-  StrengthPlastic(class MPM *, vector<string>);
-  ~StrengthPlastic() {};
+  StrengthJohnsonCook(class MPM *, vector<string>);
+  ~StrengthJohnsonCook() {};
 
   double G();
   Eigen::Matrix3d update_deviatoric_stress(const Eigen::Matrix3d sigma, const Eigen::Matrix3d D, double &plastic_strain_increment, const double eff_plastic_strain, const double epsdot);
 
 protected:
-  double G_, yieldStress;
+  double G_, A, B, n, epsdot0, C;
 };
 
 #endif

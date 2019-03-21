@@ -87,6 +87,8 @@ void Output::write(bigint ntimestep){
     log->write();
 
     next_log += every_log;
+  } else if (ntimestep == 0) {
+    log->write();
   }
   
   next = MIN(next_dump_any,next_log);

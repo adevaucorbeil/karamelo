@@ -8,10 +8,13 @@
 #include "strength.h"
 #include "eos.h"
 
-struct Mat{
+class Mat{
+public:
   string id;
   class EOS* eos;
   class Strength* strength;
+  double rho0, E, nu, G, K, lambda, signal_velocity;
+  Mat(string, class EOS*, class Strength*);
 };
 
 class Material : protected Pointers {

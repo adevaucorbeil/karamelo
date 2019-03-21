@@ -35,6 +35,7 @@ Solid::Solid(MPM *mpm, vector<string> args) :
   rho = rho0 = NULL;
   mass = NULL;
   eff_plastic_strain = NULL;
+  eff_plastic_strain_rate = NULL;
   mask = NULL;
 
   mat = NULL;
@@ -74,6 +75,7 @@ Solid::~Solid()
   memory->destroy(rho0);
   memory->destroy(mass);
   memory->destroy(eff_plastic_strain);
+  memory->destroy(eff_plastic_strain_rate);
   memory->destroy(mask);
 
   delete grid;
@@ -290,6 +292,10 @@ void Solid::grow(int nparticles){
   cout << "Growing " << str << endl;
   eff_plastic_strain = memory->grow(eff_plastic_strain, np, str);
 
+  str = "solid-" + id + ":eff_plastic_strain_rate";
+  cout << "Growing " << str << endl;
+  eff_plastic_strain_rate = memory->grow(eff_plastic_strain_rate, np, str);
+
   str = "solid-" + id + ":mask";
   cout << "Growing " << str << endl;
   mask = memory->grow(mask, np, str);
@@ -487,13 +493,19 @@ void Solid::update_stress()
 
   for (int ip=0; ip<np; ip++){
     pH = mat->eos->compute_pressure(J[ip], rho[ip], 0);
-    sigma_dev = mat->strength->update_deviatoric_stress(sigma[ip], D[ip], plastic_strain_increment);
+    sigma_dev = mat->strength->update_deviatoric_stress(sigma[ip], D[ip], plastic_strain_increment, eff_plastic_strain[ip], eff_plastic_strain_rate[ip]);
     sigma[ip] = -pH*eye + sigma_dev;
 
     eff_plastic_strain[ip] += plastic_strain_increment;
 
+    // // compute a characteristic time over which to average the plastic strain
+    double tav = 1000 * grid->cellsize / mat->signal_velocity;
+    eff_plastic_strain_rate[ip] -= eff_plastic_strain_rate[ip] * update->dt / tav;
+    eff_plastic_strain_rate[ip] += plastic_strain_increment / tav;
+    eff_plastic_strain_rate[ip] = MAX(0.0, eff_plastic_strain_rate[ip]);
+
     PK1[ip] = J[ip] * (R[ip] * sigma[ip] * R[ip].transpose()) * Finv[ip].transpose();
-    min_inv_p_wave_speed = MIN(min_inv_p_wave_speed, rho[ip] / (mat->eos->K() + 4.0/3.0 * mat->strength->G()));
+    min_inv_p_wave_speed = MIN(min_inv_p_wave_speed, rho[ip] / (mat->K + 4.0/3.0 * mat->G));
   }
   min_inv_p_wave_speed = sqrt(min_inv_p_wave_speed);
 }

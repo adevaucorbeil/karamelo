@@ -1,5 +1,5 @@
 #include <iostream>
-#include "strength_plastic.h"
+#include "strength_jc.h"
 #include "input.h"
 #include "domain.h"
 #include "update.h"
@@ -12,32 +12,44 @@ using namespace Eigen;
 using namespace MPM_Math;
 
 
-StrengthPlastic::StrengthPlastic(MPM *mpm, vector<string> args) : Strength(mpm, args)
+StrengthJohnsonCook::StrengthJohnsonCook(MPM *mpm, vector<string> args) : Strength(mpm, args)
 {
-  cout << "Initiate StrengthPlastic" << endl;
+  cout << "Initiate StrengthJohnsonCook" << endl;
 
-  if (args.size()<3) {
+  if (args.size()<8) {
     cout << "Error: too few arguments for the strength command" << endl;
     exit(1);
   }
   //options(&args, args.begin()+3);
   G_ = input->parsev(args[2]);
-  yieldStress = input->parsev(args[3]);
-  cout << "Linear plastic strength model:\n";
-  cout << "\tG: shear modulus " << G_ << endl;
+  A = input->parsev(args[3]);
+  B = input->parsev(args[4]);
+  n = input->parsev(args[5]);
+  epsdot0 = input->parsev(args[6]);
+  C = input->parsev(args[7]);
 
-  cout << "\t yield stress: " << yieldStress << endl;
+  cout << "Johnson Cook material strength model:\n";
+  cout << "\tG: shear modulus " << G_ << endl;
+  cout << "\tA: initial yield stress " << A << endl;
+  cout << "\tB: proportionality factor for plastic strain dependency " << B << endl;
+  cout << "\tn: exponent for plastic strain dependency " << n << endl;
+  cout << "\tepsdot0: reference strain rate " << epsdot0 << endl;
+  cout << "\tC: proportionality factor for logarithmic plastic strain rate dependency " << C << endl;
 }
 
-double StrengthPlastic::G(){
+double StrengthJohnsonCook::G(){
   return G_;
 }
 
-Matrix3d StrengthPlastic::update_deviatoric_stress(const Matrix3d sigma, const Matrix3d D, double &plastic_strain_increment, const double eff_plastic_strain, const double epsdot)
+Matrix3d StrengthJohnsonCook::update_deviatoric_stress(const Matrix3d sigma, const Matrix3d D, double &plastic_strain_increment, const double eff_plastic_strain, const double epsdot)
 {
   Matrix3d sigmaInitial_dev, sigmaFinal_dev, sigmaTrial_dev, dev_rate;
-  double J2;
+  double J2, yieldStress;
 
+  double epsdot_ratio = epsdot / epsdot0;
+  epsdot_ratio = MAX(epsdot_ratio, 1.0);
+	
+  yieldStress = (A + B * pow(eff_plastic_strain, n)) * pow(1.0 + epsdot_ratio, C); // * (1.0 - pow(TH, M));
   /*
    * deviatoric rate of unrotated stress
    */
