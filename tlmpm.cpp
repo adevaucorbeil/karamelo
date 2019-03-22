@@ -63,7 +63,7 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
       Eigen::Vector3d r;
       double s[3], sd[3];
       Eigen::Vector3d *xp = domain->solids[isolid]->x0;
-      Eigen::Vector3d *xn = domain->solids[isolid]->grid->x;
+      Eigen::Vector3d *xn = domain->solids[isolid]->grid->x0;
       double inv_cellsize = 1.0 / domain->solids[isolid]->grid->cellsize;
       double wf;
       Eigen::Vector3d wfd;
@@ -177,6 +177,7 @@ void TLMPM::velocities_to_grid()
   for (int isolid=0; isolid<domain->solids.size(); isolid++) {
     domain->solids[isolid]->compute_mass_nodes();
     domain->solids[isolid]->compute_velocity_nodes();
+    domain->solids[isolid]->grid->update_grid_positions();
   }
 }
 

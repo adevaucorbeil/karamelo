@@ -17,6 +17,7 @@ class Grid : protected Pointers {
   double cellsize;       // size of the square cells forming the grid
 
   Eigen::Vector3d *x;            // nodes' current position
+  Eigen::Vector3d *x0;           // nodes' reference position
   Eigen::Vector3d *v;            // nodes' velocity at time t
   Eigen::Vector3d *v_update;     // nodes' velocity at time t+dt
   Eigen::Vector3d *b;            // nodes' external forces
@@ -33,6 +34,7 @@ class Grid : protected Pointers {
   void init(double*, double*);
 
   void update_grid_velocities();
+  void update_grid_positions();
 };
 
 #endif

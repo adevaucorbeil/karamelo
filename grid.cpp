@@ -15,7 +15,7 @@ Grid::Grid(MPM *mpm) :
 {
   cout << "Creating new grid" << endl;
 
-  x= NULL;
+  x = x0 = NULL;
   v = v_update = NULL;
   b = f = NULL;
 
@@ -26,6 +26,7 @@ Grid::Grid(MPM *mpm) :
 Grid::~Grid()
 {
   memory->destroy(x);
+  memory->destroy(x0);
   memory->destroy(v);
   memory->destroy(v_update);
   memory->destroy(b);
@@ -47,10 +48,11 @@ void Grid::init(double *solidlo, double *solidhi){
   for (int i=0; i<nx; i++){
     for (int j=0; j<ny; j++){
       for (int k=0; k<nz; k++){
-	x[l][0] = solidlo[0] + cellsize*i;
-	x[l][1] = solidlo[1] + cellsize*j;
-	x[l][2] = solidlo[2] + cellsize*k;
+	x0[l][0] = solidlo[0] + cellsize*i;
+	x0[l][1] = solidlo[1] + cellsize*j;
+	x0[l][2] = solidlo[2] + cellsize*k;
 
+	x[l] = x0[l];
 	v[l].setZero();
 	v_update[l].setZero();
 	f[l].setZero();
@@ -70,6 +72,12 @@ void Grid::setup(string cs){
 
 void Grid::grow(int nn){
   nnodes = nn;
+
+  if (x0 == NULL) x0 = new Eigen::Vector3d[nn];
+  else {
+    cout << "Error: x0 already exists, I don't know how to grow it!\n";
+    exit(1);
+  }
 
   if (x == NULL) x = new Eigen::Vector3d[nn];
   else {
@@ -117,5 +125,12 @@ void Grid::update_grid_velocities()
   for (int i=0; i<nnodes; i++){
     if (mass[i] > 0) v_update[i] = v[i] + update->dt/mass[i] * (f[i] + b[i]);
     else v_update[i] = v[i];
+  }
+}
+
+void Grid::update_grid_positions()
+{
+  for (int i=0; i<nnodes; i++){
+    x[i] += update->dt*v[i];
   }
 }
