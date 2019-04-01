@@ -22,7 +22,7 @@ public:
   double rho0();
   double K();
   double G();
-  double compute_pressure(const double, const double, const double);
+  double compute_pressure(const double, const double, const double, const double);
 
 protected:
   double rho0_, K_, e0, c0, S, Gamma;

@@ -41,19 +41,20 @@ double StrengthJohnsonCook::G(){
   return G_;
 }
 
-Matrix3d StrengthJohnsonCook::update_deviatoric_stress(const Matrix3d sigma, const Matrix3d D, double &plastic_strain_increment, const double eff_plastic_strain, const double epsdot)
+Matrix3d StrengthJohnsonCook::update_deviatoric_stress(const Matrix3d sigma, const Matrix3d D, double &plastic_strain_increment, const double eff_plastic_strain, const double epsdot, const double damage)
 {
   Matrix3d sigmaInitial_dev, sigmaFinal_dev, sigmaTrial_dev, dev_rate;
-  double J2, yieldStress;
+  double J2, Gd, yieldStress;
 
   double epsdot_ratio = epsdot / epsdot0;
   epsdot_ratio = MAX(epsdot_ratio, 1.0);
 	
-  yieldStress = (A + B * pow(eff_plastic_strain, n)) * pow(1.0 + epsdot_ratio, C); // * (1.0 - pow(TH, M));
+  yieldStress = (A + B * pow(eff_plastic_strain, n)) * pow(1.0 + epsdot_ratio, C) * (1.0 - damage); // * (1.0 - pow(TH, M));
   /*
    * deviatoric rate of unrotated stress
    */
-  dev_rate = 2.0 * G_ * Deviator(D);
+  Gd = G_ * (1-damage);
+  dev_rate = 2.0 * Gd * Deviator(D);
   sigmaInitial_dev = Deviator(sigma);
 
   /*
@@ -80,7 +81,7 @@ Matrix3d StrengthJohnsonCook::update_deviatoric_stress(const Matrix3d sigma, con
      * yielding has occured
      */
 
-    plastic_strain_increment = (J2 - yieldStress) / (3.0 * G_);
+    plastic_strain_increment = (J2 - yieldStress) / (3.0 * Gd);
     /*
      * new deviatoric stress:
      * obtain by scaling the trial stress deviator

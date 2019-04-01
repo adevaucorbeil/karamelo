@@ -55,9 +55,22 @@ double EOSShock::K(){
   return K_;
 }
 
-double EOSShock::compute_pressure(const double J, const double rho, const double e){
+double EOSShock::compute_pressure(const double J, const double rho, const double e, const double damage){
   double mu = rho / rho0_ - 1.0;
   double pH = rho0_ * square(c0) * mu * (1.0 + mu) / square(1.0 - (S - 1.0) * mu);
-  return (pH + rho * Gamma * (e - e0));
+  double pFinal = (pH + rho * Gamma * (e - e0));
+
+  if ( damage > 0.0 ) {
+    if ( pFinal < 0.0 ) {
+      if ( damage >= 1.0) {
+	pFinal = rho0_ * Gamma * (e - e0);
+      } else {
+	double mu_damaged = (1.0 - damage) * mu;
+	double pH_damaged = rho0_ * (1.0 - damage) * square(c0) * mu_damaged * (1.0 + mu_damaged) / square(1.0 - (S - 1.0) * mu_damaged);
+	pFinal = (pH_damaged + rho0_ * (1 + mu_damaged) * Gamma * (e - e0));;
+      }
+    }
+  }
+  return pFinal;
 }
 

@@ -87,6 +87,8 @@ SolBlock::SolBlock(MPM *mpm, vector<string> args) : Solid(mpm, args)
     mass[i] = mass_;
     eff_plastic_strain[i] = 0;
     eff_plastic_strain_rate[i] = 0;
+    damage[i] = 0;
+    damage_init[i] = 0;
     sigma[i].setZero();
     PK1[i].setZero();
     L[i].setZero();

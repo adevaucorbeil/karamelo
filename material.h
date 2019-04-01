@@ -7,14 +7,16 @@
 #include <vector>
 #include "strength.h"
 #include "eos.h"
+#include "damage.h"
 
 class Mat{
 public:
   string id;
   class EOS* eos;
   class Strength* strength;
+  class Damage* damage;
   double rho0, E, nu, G, K, lambda, signal_velocity;
-  Mat(string, class EOS*, class Strength*);
+  Mat(string, class EOS*, class Strength*, class Damage* = NULL);
 };
 
 class Material : protected Pointers {
@@ -23,6 +25,7 @@ class Material : protected Pointers {
   vector<Mat> materials;                 // list of materials
   vector<class EOS *> EOSs;              // list of defined Equations of State
   vector<class Strength *> strengths;    // list of defined Strengths
+  vector<class Damage *> damages;        // list of defined Damage laws
   
   Material(class MPM *);
   virtual ~Material();
@@ -35,6 +38,8 @@ class Material : protected Pointers {
   int find_EOS(string);
   void add_material(vector<string>);
   int find_material(string);
+  void add_damage(vector<string>);
+  int find_damage(string);
   
   typedef Strength *(*StrengthCreator)(MPM *,vector<string>);
   typedef map<string,StrengthCreator> StrengthCreatorMap;
@@ -44,9 +49,14 @@ class Material : protected Pointers {
   typedef map<string,EOSCreator> EOSCreatorMap;
   EOSCreatorMap *EOS_map;
 
+  typedef Damage *(*DamageCreator)(MPM *,vector<string>);
+  typedef map<string,DamageCreator> DamageCreatorMap;
+  DamageCreatorMap *damage_map;
+
 private:
   template <typename T> static Strength *strength_creator(MPM *,vector<string>);
   template <typename T> static EOS *EOS_creator(MPM *,vector<string>);
+  template <typename T> static Damage *damage_creator(MPM *,vector<string>);
 };
 
 

@@ -36,9 +36,9 @@ Grid::~Grid()
 }
 
 void Grid::init(double *solidlo, double *solidhi){
-  int nx = (int) (solidhi[0]-solidlo[0])/cellsize + 2;
-  int ny = (int) (solidhi[1]-solidlo[1])/cellsize + 2;
-  int nz = (int) (solidhi[2]-solidlo[2])/cellsize + 2;
+  int nx = (int) (solidhi[0]-solidlo[0])/cellsize + 3;
+  int ny = (int) (solidhi[1]-solidlo[1])/cellsize + 3;
+  int nz = (int) (solidhi[2]-solidlo[2])/cellsize + 3;
 
   int nn = nx*ny*nz;
   grow(nn);

@@ -296,6 +296,14 @@ void Solid::grow(int nparticles){
   cout << "Growing " << str << endl;
   eff_plastic_strain_rate = memory->grow(eff_plastic_strain_rate, np, str);
 
+  str = "solid-" + id + ":damage";
+  cout << "Growing " << str << endl;
+  damage = memory->grow(damage, np, str);
+
+  str = "solid-" + id + ":damage_init";
+  cout << "Growing " << str << endl;
+  damage_init = memory->grow(damage_init, np, str);
+
   str = "solid-" + id + ":mask";
   cout << "Growing " << str << endl;
   mask = memory->grow(mask, np, str);
@@ -492,9 +500,8 @@ void Solid::update_stress()
   eye.setIdentity();
 
   for (int ip=0; ip<np; ip++){
-    pH = mat->eos->compute_pressure(J[ip], rho[ip], 0);
-    sigma_dev = mat->strength->update_deviatoric_stress(sigma[ip], D[ip], plastic_strain_increment, eff_plastic_strain[ip], eff_plastic_strain_rate[ip]);
-    sigma[ip] = -pH*eye + sigma_dev;
+    pH = mat->eos->compute_pressure(J[ip], rho[ip], 0, damage[ip]);
+    sigma_dev = mat->strength->update_deviatoric_stress(sigma[ip], D[ip], plastic_strain_increment, eff_plastic_strain[ip], eff_plastic_strain_rate[ip], damage[ip]);
 
     eff_plastic_strain[ip] += plastic_strain_increment;
 
@@ -504,8 +511,14 @@ void Solid::update_stress()
     eff_plastic_strain_rate[ip] += plastic_strain_increment / tav;
     eff_plastic_strain_rate[ip] = MAX(0.0, eff_plastic_strain_rate[ip]);
 
+    mat->damage->compute_damage(damage_init[ip], damage[ip], pH, sigma_dev, eff_plastic_strain_rate[ip], plastic_strain_increment);
+    sigma[ip] = -pH*eye + sigma_dev;
+
     PK1[ip] = J[ip] * (R[ip] * sigma[ip] * R[ip].transpose()) * Finv[ip].transpose();
     min_inv_p_wave_speed = MIN(min_inv_p_wave_speed, rho[ip] / (mat->K + 4.0/3.0 * mat->G));
+    if (ip == 894) {
+      cout << "For ip= " << ip << ", -pH = " << -pH << ", J = " << J[ip] << ", F[" << ip << "]=" << endl << F[ip] << endl;
+    }
   }
   min_inv_p_wave_speed = sqrt(min_inv_p_wave_speed);
 }

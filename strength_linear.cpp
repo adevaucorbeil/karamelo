@@ -30,10 +30,10 @@ double StrengthLinear::G(){
   return G_;
 }
 
-Matrix3d StrengthLinear::update_deviatoric_stress(const Matrix3d sigma, const Matrix3d D, double &plastic_strain_increment, const double eff_plastic_strain, const double epsdot)
+Matrix3d StrengthLinear::update_deviatoric_stress(const Matrix3d sigma, const Matrix3d D, double &plastic_strain_increment, const double eff_plastic_strain, const double epsdot, const double damage)
 {
   Matrix3d dev_rate;
 
-  dev_rate = 2.0 * G_ * Deviator(D);
+  dev_rate = 2.0 * G_* (1-damage) * Deviator(D);
   return Deviator(sigma) + update->dt * dev_rate;
 }

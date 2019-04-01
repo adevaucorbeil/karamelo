@@ -33,15 +33,17 @@ double StrengthPlastic::G(){
   return G_;
 }
 
-Matrix3d StrengthPlastic::update_deviatoric_stress(const Matrix3d sigma, const Matrix3d D, double &plastic_strain_increment, const double eff_plastic_strain, const double epsdot)
+Matrix3d StrengthPlastic::update_deviatoric_stress(const Matrix3d sigma, const Matrix3d D, double &plastic_strain_increment, const double eff_plastic_strain, const double epsdot, const double damage)
 {
   Matrix3d sigmaInitial_dev, sigmaFinal_dev, sigmaTrial_dev, dev_rate;
-  double J2;
+  double J2, Gd, yieldStressD;
 
   /*
    * deviatoric rate of unrotated stress
    */
-  dev_rate = 2.0 * G_ * Deviator(D);
+  Gd = G_*(1-damage);
+  yieldStressD = yieldStress*(1-damage);
+  dev_rate = 2.0 * Gd * Deviator(D);
   sigmaInitial_dev = Deviator(sigma);
 
   /*
@@ -55,7 +57,7 @@ Matrix3d StrengthPlastic::update_deviatoric_stress(const Matrix3d sigma, const M
   J2 = sqrt(3. / 2.) * sigmaTrial_dev.norm();
   sigmaFinal_dev = sigmaTrial_dev;
 
-  if (J2 < yieldStress) {
+  if (J2 < yieldStressD) {
     /*
      * no yielding has occured.
      * final deviatoric stress is trial deviatoric stress
@@ -68,12 +70,12 @@ Matrix3d StrengthPlastic::update_deviatoric_stress(const Matrix3d sigma, const M
      * yielding has occured
      */
 
-    plastic_strain_increment = (J2 - yieldStress) / (3.0 * G_);
+    plastic_strain_increment = (J2 - yieldStressD) / (3.0 * Gd);
     /*
      * new deviatoric stress:
      * obtain by scaling the trial stress deviator
      */
-    sigmaFinal_dev *= (yieldStress / J2);
+    sigmaFinal_dev *= (yieldStressD / J2);
 
   }
 

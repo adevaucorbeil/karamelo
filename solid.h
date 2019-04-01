@@ -46,8 +46,10 @@ class Solid : protected Pointers {
   double *rho;                       // particles' current density
   double *mass;                      // particles' current mass
   double *eff_plastic_strain;        // particles' effective plastic strain
-  double *eff_plastic_strain_rate; // particles' effective plastic strain rate
-  int *mask;                 // particles' group mask
+  double *eff_plastic_strain_rate;   // particles' effective plastic strain rate
+  double *damage;                    // particles' damage variable
+  double *damage_init;               // particles' damage initiation variable
+  int *mask;                         // particles' group mask
 
   double min_inv_p_wave_speed;   // minimum of the inverse of the particle wave speed
   

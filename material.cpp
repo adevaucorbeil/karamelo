@@ -2,6 +2,7 @@
 #include "material.h"
 #include "style_strength.h"
 #include "style_eos.h"
+#include "style_damage.h"
 #include <vector>
 
 using namespace std;
@@ -25,6 +26,13 @@ Material::Material(MPM *mpm) : Pointers(mpm)
 #include "style_eos.h"
 #undef EOSStyle
 #undef EOS_CLASS
+
+#define DAMAGE_CLASS
+#define DamageStyle(key,Class) \
+  (*damage_map)[#key] = &damage_creator<Class>;
+#include "style_damage.h"
+#undef DamageStyle
+#undef DAMAGE_CLASS
 }
 
 Material::~Material()
@@ -128,6 +136,41 @@ int Material::find_strength(string name)
   return -1;
 }
 
+
+/* ----------------------------------------------------------------------
+   create a new damage
+------------------------------------------------------------------------- */
+
+void Material::add_damage(vector<string> args){
+  cout << "In add_damage" << endl;
+
+  if (find_damage(args[0]) >= 0) {
+    cout << "Error: reuse of damage ID" << endl;
+    exit(1);
+  }
+
+    // create the Damage
+
+  string *estyle = &args[1];
+
+  if (damage_map->find(*estyle) != damage_map->end()) {
+    DamageCreator damage_creator = (*damage_map)[*estyle];
+    damages.push_back(damage_creator(mpm, args));
+    //materials.back()->init();
+  }
+  else {
+    cout << "Unknown damage style " << *estyle << endl;
+    exit(1);
+  }
+}
+
+int Material::find_damage(string name)
+{
+  for (int idamage = 0; idamage < damages.size(); idamage++)
+    if (name.compare(damages[idamage]->id) == 0) return idamage;
+  return -1;
+}
+
 /* ----------------------------------------------------------------------
    create a new material
 ------------------------------------------------------------------------- */
@@ -158,10 +201,22 @@ void Material::add_material(vector<string> args){
     cout << "Error: could not find strength named: " << args[2] << endl;
     exit(1);
   }
-  
+
+  if (args.size() > 3) {
+    int iDamage = material->find_damage(args[3]);
+    if (iDamage == -1) {
+      cout << "Error: could not find damage named: " << args[3] << endl;
+      exit(1);
+    }
+    Mat new_material(args[0], EOSs[iEOS], strengths[iStrength], damages[iDamage]);
+    materials.push_back(new_material);
+  } else {
+    Mat new_material(args[0], EOSs[iEOS], strengths[iStrength]);
+    materials.push_back(new_material);
+  }
+
   cout << "Creating new mat with ID: " << args[0] << endl;
-  Mat new_material(args[0], EOSs[iEOS], strengths[iStrength]);
-  materials.push_back(new_material);
+  
 }
 
 int Material::find_material(string name)
@@ -191,11 +246,22 @@ EOS *Material::EOS_creator(MPM *mpm, vector<string> args)
   return new T(mpm, args);
 }
 
+/* ----------------------------------------------------------------------
+   one instance per damage style in style_damage.h
+------------------------------------------------------------------------- */
 
-Mat::Mat(string id_, class EOS* eos_, class Strength* strength_){
+template <typename T>
+Damage *Material::damage_creator(MPM *mpm, vector<string> args)
+{
+  return new T(mpm, args);
+}
+
+
+Mat::Mat(string id_, class EOS* eos_, class Strength* strength_, class Damage* damage_){
   id = id_;
   eos = eos_;
   strength = strength_;
+  damage = damage_;
   rho0 = eos->rho0();
   K = eos->K();
   G = strength->G();
