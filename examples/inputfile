@@ -30,18 +30,19 @@ material(mat1, eosl, strengthl)
 material(mat2, eoss, strengthp)
 material(mat3, eoss, strengthjc)
 
-cellsize = 0.8
+cellsize = 0.400001
 solid(solid1, block, box, 50, 6, 6, mat3, cellsize)
 
+xBC = 9.7
 
-region(region1, block, INF, -9.1, INF, INF, INF, INF)
+region(region1, block, INF, -xBC, INF, INF, INF, INF)
 group(group1, particles, region, region1, solid, solid1)
 group(groupn1, nodes, region, region1, solid, solid1)
 
 xb = xcm(group1, x)
 fb = internal_force(groupn1, x)
 
-region(region2, block, 9.1, INF, INF, INF, INF, INF)
+region(region2, block, xBC, INF, INF, INF, INF, INF)
 group(group2, particles, region, region2, solid, solid1)
 group(groupn2, nodes, region, region2, solid, solid1)
 
@@ -65,4 +66,4 @@ method_modify(FLIP)
 log(100)
 log_modify(custom, step, dt, time, ft, fb, eps, stress)
 #run(1)
-run(50000)
+run(100000)
