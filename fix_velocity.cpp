@@ -28,7 +28,7 @@ FixVelocity::FixVelocity(MPM *mpm, vector<string> args) : Fix(mpm, args)
   }
 
   if (args[5].compare("NULL") != 0) {
-    yvalue = input->parsev(args[5]);
+    zvalue = input->parsev(args[5]);
     zset = true;
   }
 }
