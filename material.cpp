@@ -12,6 +12,7 @@ Material::Material(MPM *mpm) : Pointers(mpm)
 {
   strength_map = new StrengthCreatorMap();
   EOS_map = new EOSCreatorMap();
+  damage_map = new DamageCreatorMap();
 
 #define STRENGTH_CLASS
 #define StrengthStyle(key,Class) \
@@ -39,9 +40,11 @@ Material::~Material()
 {
   for (int i = 0; i < strengths.size(); i++) delete strengths[i];
   for (int i = 0; i < EOSs.size(); i++) delete EOSs[i];
+  for (int i = 0; i < damages.size(); i++) delete damages[i];
 
   delete strength_map;
   delete EOS_map;
+  delete damage_map;
 }
 
 

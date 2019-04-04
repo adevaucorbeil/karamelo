@@ -41,6 +41,7 @@ private:
   int add_EOS(vector<string>);
   int add_strength(vector<string>);
   int add_material(vector<string>);
+  int add_damage(vector<string>);
   int dump(vector<string>);
   int group_command(vector<string>);
   int log(vector<string>);

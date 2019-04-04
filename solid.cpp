@@ -511,14 +511,15 @@ void Solid::update_stress()
     eff_plastic_strain_rate[ip] += plastic_strain_increment / tav;
     eff_plastic_strain_rate[ip] = MAX(0.0, eff_plastic_strain_rate[ip]);
 
-    mat->damage->compute_damage(damage_init[ip], damage[ip], pH, sigma_dev, eff_plastic_strain_rate[ip], plastic_strain_increment);
+    if (mat->damage != NULL)
+      mat->damage->compute_damage(damage_init[ip], damage[ip], pH, sigma_dev, eff_plastic_strain_rate[ip], plastic_strain_increment);
     sigma[ip] = -pH*eye + sigma_dev;
 
     PK1[ip] = J[ip] * (R[ip] * sigma[ip] * R[ip].transpose()) * Finv[ip].transpose();
     min_inv_p_wave_speed = MIN(min_inv_p_wave_speed, rho[ip] / (mat->K + 4.0/3.0 * mat->G));
-    if (ip == 894) {
-      cout << "For ip= " << ip << ", -pH = " << -pH << ", J = " << J[ip] << ", F[" << ip << "]=" << endl << F[ip] << endl;
-    }
+    // if (ip == 894) {
+    //   cout << "For ip= " << ip << ", -pH = " << -pH << ", J = " << J[ip] << ", F[" << ip << "]=" << endl << F[ip] << endl;
+    // }
   }
   min_inv_p_wave_speed = sqrt(min_inv_p_wave_speed);
 }

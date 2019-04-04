@@ -26,12 +26,21 @@ strength(strengthl, linear, G)
 strength(strengthp, plastic, G, sigmay)
 strength(strengthjc, johnson_cook, G, sigmay, B, n, 0, 0)
 
+d1 = 0.636
+d2 = 1.936
+d3 = -2.969
+d4 = 0
+epsdot0 = 1
+
+damage(damagejc, damage_johnson_cook, d1, d2, d3, d4, epsdot0)
+
 material(mat1, eosl, strengthl)
 material(mat2, eoss, strengthp)
 material(mat3, eoss, strengthjc)
+material(mat4, eoss, strengthjc, damagejc)
 
 cellsize = 0.400001
-solid(solid1, block, box, 50, 6, 6, mat3, cellsize)
+solid(solid1, block, box, 50, 6, 6, mat4, cellsize)
 
 xBC = 9.7
 
@@ -63,7 +72,6 @@ dump(dump1, all, particle, 100, dump_p.*.LAMMPS, x, y, z)
 dump(dump2, all, grid, 100, dump_g.*.LAMMPS, x, y, z)
 
 method_modify(FLIP)
-log(1)
+log(100)
 log_modify(custom, step, dt, time, ft, fb, eps, stress)
-#run(1)
 run(100000)

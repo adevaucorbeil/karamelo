@@ -53,7 +53,7 @@ void DumpParticle::write()
     dumpstream << domain->boxlo[0] << " " << domain->boxhi[0] << endl;
     dumpstream << domain->boxlo[1] << " " << domain->boxhi[1] << endl;
     dumpstream << domain->boxlo[2] << " " << domain->boxhi[2] << endl;
-    dumpstream << "ITEM: ATOMS id type x y z vx vy vz s11 s22 s33 s12 s13 s23 seq volume mass\n";
+    dumpstream << "ITEM: ATOMS id type x y z vx vy vz s11 s22 s33 s12 s13 s23 seq damage damage_init volume mass\n";
 
     bigint ID = 0;
     for (int isolid=0; isolid < domain->solids.size(); isolid++) {
@@ -75,6 +75,8 @@ void DumpParticle::write()
 	dumpstream << s->sigma[i](0,2) << " ";
 	dumpstream << s->sigma[i](1,2) << " ";
 	dumpstream << sqrt(3. / 2.) * Deviator(s->sigma[i]).norm() << " ";
+	dumpstream << s->damage[i] << " ";
+	dumpstream << s->damage_init[i] << " ";
 	dumpstream << s->vol[i] << " ";
 	dumpstream << s->mass[i] << endl;
       }
