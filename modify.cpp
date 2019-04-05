@@ -67,6 +67,7 @@ void Modify::init()
   for (int i = 0; i < compute.size(); i++) compute[i]->init();
 
   list_init(INITIAL_INTEGRATE, list_initial_integrate);
+  list_init(POST_PARTICLES_TO_GRID, list_post_particles_to_grid);
   list_init(POST_UPDATE_GRID_STATE, list_post_update_grid_state);
   list_init(POST_GRID_TO_POINT, list_post_grid_to_point);
   list_init(POST_ADVANCE_PARTICLES, list_post_advance_particles);
@@ -232,6 +233,16 @@ void Modify::initial_integrate()
 {
   for (int i = 0; i < list_initial_integrate.size(); i++)
     fix[list_initial_integrate[i]]->initial_integrate();
+}
+
+/* ----------------------------------------------------------------------
+   after post_particles_to_grid(), only for relevant fixes
+------------------------------------------------------------------------- */
+
+void Modify::post_particles_to_grid()
+{
+  for (int i = 0; i < list_post_particles_to_grid.size(); i++)
+    fix[list_post_particles_to_grid[i]]->post_particles_to_grid();
 }
 
 /* ----------------------------------------------------------------------

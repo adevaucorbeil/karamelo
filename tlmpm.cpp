@@ -209,7 +209,12 @@ void TLMPM::adjust_dt()
   double dtCFL = 1.0e22;
 
   for (int isolid=0; isolid<domain->solids.size(); isolid++) {
-    dtCFL = MIN(dtCFL, domain->solids[isolid]->min_inv_p_wave_speed * domain->solids[isolid]->grid->cellsize);
+    dtCFL = MIN(dtCFL, domain->solids[isolid]->dtCFL);
   }
   update->dt = dtCFL * update->dt_factor;
+}
+
+void TLMPM::reset_dtCFL()
+{
+  for (int isolid=0; isolid<domain->solids.size(); isolid++) domain->solids[isolid]->dtCFL = 1.0e22;
 }

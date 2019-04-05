@@ -47,6 +47,8 @@ Solid::Solid(MPM *mpm, vector<string> args) :
 
   wf_pn = wf_np = NULL;
   wfd_pn = wfd_np = NULL;
+
+  dtCFL = 1.0e22;
 }
 
 Solid::~Solid()
@@ -484,6 +486,7 @@ void Solid::update_deformation_gradient()
 
     if (!status) {
       cout << "Polar decomposition of deformation gradient failed for particle " << ip << ".\n";
+      cout << "F:" << endl << F[ip] << endl;
       exit(1);
     }
 
@@ -522,4 +525,5 @@ void Solid::update_stress()
     // }
   }
   min_inv_p_wave_speed = sqrt(min_inv_p_wave_speed);
+  dtCFL = MIN(dtCFL, min_inv_p_wave_speed * grid->cellsize);
 }

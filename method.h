@@ -23,6 +23,7 @@ class Method : protected Pointers {
   virtual void update_stress() = 0;
   virtual void modify(vector<string>) = 0;
   virtual void adjust_dt() = 0;
+  virtual void reset_dtCFL() = 0;
 };
 
 #endif

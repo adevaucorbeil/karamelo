@@ -39,5 +39,6 @@ protected:
 
 Var powv(int, Var);            // power function
 Var expv(Var);                 // exponential function
+Var sqrtv(Var);                // square root function
 
 #endif

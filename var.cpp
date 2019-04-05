@@ -147,3 +147,14 @@ Var expv(Var x){
     return result;
   }
 }
+
+
+Var sqrtv(Var x){
+  if (x.is_constant()) {
+    Var result(sqrt(x.result()));
+    return result;
+  } else {
+    Var result("sqrt(" + x.str() + ")", sqrt(x.result()), x.is_constant());
+    return result;
+  }
+}

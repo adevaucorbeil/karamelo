@@ -30,9 +30,13 @@ void MUSL::run(int n){
   for (int i=0; i<n; i++){
     ntimestep = ++update->ntimestep;
 
+    update->method->reset_dtCFL();
     modify->initial_integrate();
 
     update->method->particles_to_grid();
+
+    modify->post_particles_to_grid();
+
     update->method->update_grid_state();
 
     modify->post_update_grid_state();

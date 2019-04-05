@@ -35,6 +35,7 @@ class TLMPM : public Method {
   void update_deformation_gradient();
   void update_stress();
   void adjust_dt();
+  void reset_dtCFL();
 
   int update_wf;
 };

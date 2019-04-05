@@ -192,6 +192,7 @@ Var Input::evaluate_function(string func, string arg){
   }
 
   else if (func.compare("exp") == 0) return expv(parsev(arg));
+  else if (func.compare("sqrt") == 0) return sqrtv(parsev(arg));
   cout << "Error: Unknown function " << func << endl;
   exit(1);
 }

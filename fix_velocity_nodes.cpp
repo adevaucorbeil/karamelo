@@ -64,7 +64,7 @@ void FixVelocityNodes::setmask() {
 void FixVelocityNodes::post_update_grid_state() {
   // cout << "In FixVelocityNodes::post_update_grid_state()" << endl;
 
-  // Go through all the particles in the group and set v_update to the right value:
+  // Go through all the nodes in the group and set v_update to the right value:
   double vx, vy, vz;
 
   if (xset) {

@@ -20,6 +20,8 @@ Group::Group(MPM *mpm) : Pointers(mpm)
   for (int i = 0; i < MAX_GROUP; i++) names[i] = "";
   for (int i = 0; i < MAX_GROUP; i++) bitmask[i] = 1 << i;
   for (int i = 0; i < MAX_GROUP; i++) inversemask[i] = bitmask[i] ^ ~0;
+  for (int i = 0; i < MAX_GROUP; i++) pon[i] = "all";
+  for (int i = 0; i < MAX_GROUP; i++) solid[i] = -1;
 
   // create "all" group
   names[0] = "all";

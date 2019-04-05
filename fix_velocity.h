@@ -22,6 +22,7 @@ class FixVelocity : public Fix {
   void setup();
   
   void initial_integrate() {};
+  void post_particles_to_grid() {};
   void post_update_grid_state();
   void post_grid_to_point() {};
   void post_advance_particles() {};

@@ -43,6 +43,7 @@ class Modify : protected Pointers {
   void addstep_compute_all(bigint);
 
   void initial_integrate();
+  void post_particles_to_grid();
   void post_update_grid_state();
   void post_grid_to_point();
   void post_advance_particles();
@@ -54,6 +55,7 @@ class Modify : protected Pointers {
 
   // lists of fixes to apply at different stages of timestep
   vector<int> list_initial_integrate;
+  vector<int> list_post_particles_to_grid;
   vector<int> list_post_update_grid_state;
   vector<int> list_post_grid_to_point;
   vector<int> list_post_advance_particles;
