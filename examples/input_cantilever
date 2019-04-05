@@ -7,9 +7,9 @@ sigmay = 0.499
 B = 0.382
 n = 0.458
 
-hLx = 5
-hLy = 5
-hLz = 5
+hLx = 10
+hLy = 1.2
+hLz = 1.2
 A_zy = (2*hLy)*(2*hLz)
 
 S = 1.5
@@ -26,42 +26,41 @@ strength(strengthl, linear, G)
 strength(strengthp, plastic, G, sigmay)
 strength(strengthjc, johnson_cook, G, sigmay, B, n, 0, 0)
 
-d1 = 0.636
-d2 = 1.936
-d3 = -2.969
-d4 = 0
-epsdot0 = 1
-
-damage(damagejc, damage_johnson_cook, d1, d2, d3, d4, epsdot0)
-
 material(mat1, eosl, strengthl)
 material(mat2, eoss, strengthp)
-material(mat3, eoss, strengthjc)
-material(mat4, eoss, strengthjc, damagejc)
+material(mat3, eosl, strengthjc)
 
-cellsize = 0.2
-solid(solid1, block, box, 50, 50, 50, mat3, cellsize)
+cellsize = 0.4
+solid(solid1, block, box, 50, 6, 6, mat1, cellsize)
 
-region(region1, block, INF, INF, INF, -hLx+cellsize/2, INF, INF)
+x_wall = -9
+x_tip = 9
+
+region(region1, block, INF, x_wall, INF, INF, INF, INF)
 group(group1, particles, region, region1, solid, solid1)
 group(groupn1, nodes, region, region1, solid, solid1)
 
-region(region2, block, INF, INF, -(-hLx+cellsize/2), INF, INF, INF)
+#xb = xcm(group1, x)
+f_wall = internal_force(groupn1, y)
+
+region(region2, block, 9.9, INF, 1.19, INF, INF, INF)
 group(group2, particles, region, region2, solid, solid1)
 group(groupn2, nodes, region, region2, solid, solid1)
 
-R = 2
-K = 0.5
-v0 = 1
-y_indent = hLy + sqrt(R*R-2*0.2*0.2) - time*v0
+dy_tip = xcm(group2, y)
+f_tip = internal_force(groupn2, y)
 
-fix(Indent, indent, all, 0, y_indent, 0, R, K)
+v = 2.0-exp(-time)
+f = 1.0/70.0
+
+fix(BC_Wall, velocity_nodes, groupn1, 0, 0, 0)
+#fix(BC_Tip, velocity_nodes, groupn2, NULL, -v, NULL)
+fix(BC_Tip, force_nodes, groupn2, NULL, -f, NULL)
 
 dump(dump1, all, particle, 10, dump_p.*.LAMMPS, x, y, z)
 dump(dump2, all, grid, 10, dump_g.*.LAMMPS, x, y, z)
 
 method_modify(FLIP)
 log(10)
-yTip = y_indent-R
-log_modify(custom, step, dt, time, y_indent)
-run(1000)
+log_modify(custom, step, dt, time, dy_tip, f_tip)
+run(10000)
