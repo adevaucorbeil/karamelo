@@ -4,6 +4,7 @@
 #include "input.h"
 #include "group.h"
 #include "domain.h"
+#include "input.h"
 #include <Eigen/Eigen>
 
 using namespace std;
@@ -102,22 +103,32 @@ void FixForceNodes::post_particles_to_grid() {
       for (int in = 0; in < nmax; in++) {
 	if (mass[in] > 0) {
 	  if (mask[in] & groupbit) {
-	    if (xset) {
-	      b[in][0] += fx;
-	      ftot[0] += fx;
-	    }
-	    if (yset) {
-	      b[in][1] += fy;
-	      ftot[1] += fy;
-	    }
-	    if (zset) {
-	      b[in][2] += fz;
-	      ftot[2] += fz;
-	    }
 	    n++;
 	  }
 	}
       }
+	    
+      for (int in = 0; in < nmax; in++) {
+	if (mass[in] > 0) {
+	  if (mask[in] & groupbit) {
+	    if (xset) {
+	      b[in][0] += fx/((double) n);
+	      ftot[0] += fx/((double) n);
+	    }
+	    if (yset) {
+	      b[in][1] += fy/((double) n);
+	      ftot[1] += fy/((double) n);
+	    }
+	    if (zset) {
+	      b[in][2] += fz/((double) n);
+	      ftot[2] += fz/((double) n);
+	    }
+	  }
+	}
+      }
+      if (xset) (*input->vars)[id+"_x"]=Var(id+"_x", ftot[0]);
+      if (yset) (*input->vars)[id+"_y"]=Var(id+"_y", ftot[1]);
+      if (zset) (*input->vars)[id+"_z"]=Var(id+"_z", ftot[2]);
       // cout << "f for " << n << " nodes from solid " << domain->solids[isolid]->id << " set." << endl;
     }
   } else {
@@ -130,22 +141,32 @@ void FixForceNodes::post_particles_to_grid() {
     for (int in = 0; in < nmax; in++) {
       if (mass[in] > 0) {
 	if (mask[in] & groupbit) {
-	  if (xset) {
-	    b[in][0] += fx;
-	    ftot[0] += fx;
-	  }
-	  if (yset) {
-	    b[in][1] += fy;
-	    ftot[1] += fy;
-	  }
-	  if (zset) {
-	    b[in][2] += fz;
-	    ftot[2] += fz;
-	  }
 	  n++;
 	}
       }
     }
+
+    for (int in = 0; in < nmax; in++) {
+      if (mass[in] > 0) {
+	if (mask[in] & groupbit) {
+	  if (xset) {
+	    b[in][0] += fx/((double) n);
+	    ftot[0] += fx/((double) n);
+	  }
+	  if (yset) {
+	    b[in][1] += fy/((double) n);
+	    ftot[1] += fy/((double) n);
+	  }
+	  if (zset) {
+	    b[in][2] += fz/((double) n);
+	    ftot[2] += fz/((double) n);
+	  }
+	}
+      }
+    }
+    if (xset) (*input->vars)[id+"_x"]=Var(id+"_x", ftot[0]);
+    if (yset) (*input->vars)[id+"_y"]=Var(id+"_y", ftot[1]);
+    if (zset) (*input->vars)[id+"_z"]=Var(id+"_z", ftot[2]);
     // cout << "f for " << n << " nodes from solid " << domain->solids[solid]->id << " set." << endl;
   }
   // cout << "ftot = [" << ftot[0] << ", " << ftot[1] << ", " << ftot[2] << "]\n"; 
