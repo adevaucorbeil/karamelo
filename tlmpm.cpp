@@ -17,6 +17,10 @@ TLMPM::TLMPM(MPM *mpm, vector<string> args) : Method(mpm) {
 
   update_wf = 1;
   FLIP = 0.99;
+
+  // Default base function (linear):
+  basis_function = &linear_basis_function;
+  derivative_basis_function = &derivative_linear_basis_function;
 }
 
 TLMPM::~TLMPM()
@@ -26,6 +30,20 @@ TLMPM::~TLMPM()
 void TLMPM::modify(vector<string> args)
 {
   FLIP = input->parsev(args[0]);
+  if (args.size() > 1) {
+    if (args[1].compare("linear") == 0) {
+      cout << "Setting up linear basis functions\n";
+      basis_function = &linear_basis_function;
+      derivative_basis_function = &derivative_linear_basis_function;
+    } else if (args[1].compare("cubic-spline") == 0) {
+      cout << "Setting up cubic-spline basis functions\n";
+      basis_function = &cubic_spline_basis_function;
+      derivative_basis_function = &derivative_cubic_spline_basis_function;
+    } else {
+      cout << "Illegal run_method argument:" << args[1] << endl;
+      exit(1);
+    }
+  }
 }
 
 void TLMPM::setup()
@@ -74,15 +92,15 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
 	    // Calculate the distance between each pair of particle/node:
 	    r = (xp[ip] - xn[in]) * inv_cellsize;
 
-	    s[0] = spline(r[0]);
-	    s[1] = spline(r[1]);
-	    if (domain->dimension == 3) s[2] = spline(r[2]);
+	    s[0] = basis_function(r[0]);
+	    s[1] = basis_function(r[1]);
+	    if (domain->dimension == 3) s[2] = basis_function(r[2]);
 
 	    if (s[0] != 0 && s[1] != 0 && s[2] != 0) {
 
-	      sd[0] = derivative_spline(r[0], inv_cellsize);
-	      sd[1] = derivative_spline(r[1], inv_cellsize);
-	      if (domain->dimension == 3) sd[2] = derivative_spline(r[2], inv_cellsize);
+	      sd[0] = derivative_basis_function(r[0], inv_cellsize);
+	      sd[1] = derivative_basis_function(r[1], inv_cellsize);
+	      if (domain->dimension == 3) sd[2] = derivative_basis_function(r[2], inv_cellsize);
 
 	      neigh_pn[ip].push_back(in);
 	      neigh_np[in].push_back(ip);
@@ -119,7 +137,7 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
   update_wf = 0;
 }
 
-double TLMPM::spline(double r_)
+double linear_basis_function(double r_)
 {
   double r = fabs(r_);
   if (r >= 1.0)
@@ -128,7 +146,7 @@ double TLMPM::spline(double r_)
     return 1.0 - r;
 }
 
-double TLMPM::derivative_spline(double r, double inv_cellsize)
+double derivative_linear_basis_function(double r, double inv_cellsize)
 {
   if (r >= 1.0 || r <= -1.0 || r == 0)
     return 0.0;
@@ -137,6 +155,54 @@ double TLMPM::derivative_spline(double r, double inv_cellsize)
   else
     return inv_cellsize;
 }
+
+double cubic_spline_basis_function(double r_)
+{
+  double r = fabs(r_);
+  if (r >= 2.0) {
+    return 0;
+  }
+
+  if (r <= 1.0) {
+    return 0.5 * r * r * r - r * r + 2. / 3.;
+  } else {
+    return -r * r * r / 6. + r * r - 2 * r + 4. / 3.;
+  }
+}
+
+double derivative_cubic_spline_basis_function(double r_signed, double icellsize)
+{
+  if (r_signed >= 0.0) {
+    
+    /*
+     * no need to change the sign of r
+     */
+    
+    if (r_signed < 2.0) {
+      if (r_signed < 1.0) {
+	return icellsize * (1.5 * r_signed * r_signed - 2. * r_signed);
+      } else {
+	return icellsize * (-0.5 * r_signed * r_signed + 2. * r_signed - 2.);
+      }
+    } else {
+      return 0;
+    }
+    
+  } else {
+    double r = fabs(r_signed);
+    
+    if (r < 2.0) {
+      if (r < 1.0) {
+	return -icellsize * (1.5 * r * r - 2. * r);
+      } else {
+	return -icellsize * (-0.5 * r * r + 2. * r - 2.);
+      }
+    } else {
+      return 0;
+    }
+  }
+}
+
 
 void TLMPM::particles_to_grid()
 {

@@ -33,7 +33,7 @@ material(mat3, eosl, strengthjc)
 cellsize = 0.4
 solid(solid1, block, box, 50, 6, 6, mat1, cellsize)
 
-x_wall = -9
+x_wall = -9.7
 x_tip = 9
 
 region(region1, block, INF, x_wall, INF, INF, INF, INF)
@@ -43,11 +43,11 @@ group(groupn1, nodes, region, region1, solid, solid1)
 #xb = xcm(group1, x)
 f_wall = internal_force(groupn1, y)
 
-region(region2, block, 9.9, INF, 1.19, INF, INF, INF)
+region(region2, block, 9.7, INF, 0.81, INF, INF, INF)
 group(group2, particles, region, region2, solid, solid1)
 group(groupn2, nodes, region, region2, solid, solid1)
 
-dy_tip = xcm(group2, y)
+dy_tip = xcm(group2, y)-1
 f_tip = internal_force(groupn2, y)
 
 v = 2.0-exp(-time)
@@ -63,4 +63,4 @@ dump(dump2, all, grid, 10, dump_g.*.LAMMPS, x, y, z)
 method_modify(FLIP)
 log(10)
 log_modify(custom, step, dt, time, dy_tip, f_tip)
-run(10000)
+run(100000)

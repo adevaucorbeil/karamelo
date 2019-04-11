@@ -42,9 +42,9 @@ void Grid::init(double *solidlo, double *solidhi){
   int nx = (int) Lx/cellsize;
   int ny = (int) Ly/cellsize;
   int nz = (int) Lz/cellsize;
-  while ((nx-1)*cellsize <= Lx) nx++;
-  while ((ny-1)*cellsize <= Ly) ny++;
-  while ((nz-1)*cellsize <= Lz) nz++;
+  while ((nx-2)*cellsize <= Lx + 0.5*cellsize) nx++;
+  while ((ny-2)*cellsize <= Ly + 0.5*cellsize) ny++;
+  while ((nz-2)*cellsize <= Lz + 0.5*cellsize) nz++;
 
   int nn = nx*ny*nz;
   grow(nn);
@@ -54,9 +54,9 @@ void Grid::init(double *solidlo, double *solidhi){
   for (int i=0; i<nx; i++){
     for (int j=0; j<ny; j++){
       for (int k=0; k<nz; k++){
-	x0[l][0] = solidlo[0] + cellsize*i;
-	x0[l][1] = solidlo[1] + cellsize*j;
-	x0[l][2] = solidlo[2] + cellsize*k;
+	x0[l][0] = solidlo[0] + cellsize*(i-1);
+	x0[l][1] = solidlo[1] + cellsize*(j-1);
+	x0[l][2] = solidlo[2] + cellsize*(k-1);
 
 	x[l] = x0[l];
 	v[l].setZero();

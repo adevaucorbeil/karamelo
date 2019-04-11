@@ -13,6 +13,7 @@ MethodStyle(tlmpm,TLMPM)
 #include <vector>
 #include <Eigen/Eigen>
 
+
 class TLMPM : public Method {
  public:
   double FLIP;
@@ -24,8 +25,8 @@ class TLMPM : public Method {
 
   void setup();
   void compute_grid_weight_functions_and_gradients();
-  double spline(double);
-  double derivative_spline(double, double);
+  double (*basis_function)(double);
+  double (*derivative_basis_function)(double, double);
   void particles_to_grid();
   void update_grid_state();
   void grid_to_points();
@@ -39,6 +40,12 @@ class TLMPM : public Method {
 
   int update_wf;
 };
+
+double linear_basis_function(double);
+double derivative_linear_basis_function(double, double);
+double cubic_spline_basis_function(double);
+double derivative_cubic_spline_basis_function(double, double);
+
 
 #endif
 #endif
