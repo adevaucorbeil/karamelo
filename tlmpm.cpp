@@ -19,6 +19,7 @@ TLMPM::TLMPM(MPM *mpm, vector<string> args) : Method(mpm) {
   FLIP = 0.99;
 
   // Default base function (linear):
+  form_function = "linear";
   basis_function = &linear_basis_function;
   derivative_basis_function = &derivative_linear_basis_function;
 }
@@ -31,6 +32,7 @@ void TLMPM::modify(vector<string> args)
 {
   FLIP = input->parsev(args[0]);
   if (args.size() > 1) {
+    form_function = args[1];
     if (args[1].compare("linear") == 0) {
       cout << "Setting up linear basis functions\n";
       basis_function = &linear_basis_function;
@@ -131,6 +133,7 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
 	  } 
 	}
       }
+      domain->solids[isolid]->compute_inertia_tensor(form_function);
     }
   }
 
@@ -208,7 +211,8 @@ void TLMPM::particles_to_grid()
 {
   for (int isolid=0; isolid<domain->solids.size(); isolid++){
       domain->solids[isolid]->compute_mass_nodes();
-      domain->solids[isolid]->compute_velocity_nodes();
+      // domain->solids[isolid]->compute_velocity_nodes();
+      domain->solids[isolid]->compute_velocity_nodes_APIC();
       domain->solids[isolid]->compute_external_forces_nodes();
       domain->solids[isolid]->compute_internal_forces_nodes();
       /*compute_thermal_energy_nodes();*/
@@ -250,7 +254,8 @@ void TLMPM::velocities_to_grid()
 void TLMPM::compute_rate_deformation_gradient()
 {
   for (int isolid=0; isolid<domain->solids.size(); isolid++) {
-    domain->solids[isolid]->compute_rate_deformation_gradient();
+    // domain->solids[isolid]->compute_rate_deformation_gradient();
+    domain->solids[isolid]->compute_rate_deformation_gradient_APIC();
   }
 }
 

@@ -38,6 +38,7 @@ class Solid : protected Pointers {
   Eigen::Matrix3d *D;                // symmetric part of L
   Eigen::Matrix3d *Finv;             // inverse of the deformation gradient matrix
   Eigen::Matrix3d *Fdot;             // rate of deformation gradient matrix
+  Eigen::Matrix3d *Di;               // inertia tensor
 
   double *J;                         // determinant of the deformation matrix
   double *vol0;                      // particles' reference volume
@@ -77,6 +78,7 @@ class Solid : protected Pointers {
 
   void compute_mass_nodes();
   void compute_velocity_nodes();
+  void compute_velocity_nodes_APIC();
   void compute_external_forces_nodes();
   void compute_internal_forces_nodes();
   void compute_particle_velocities();
@@ -84,8 +86,10 @@ class Solid : protected Pointers {
   void update_particle_position();
   void update_particle_velocities(double);
   void compute_rate_deformation_gradient();
+  void compute_rate_deformation_gradient_APIC();
   void update_deformation_gradient();
   void update_stress();
+  void compute_inertia_tensor(string);
 };
 
 #endif

@@ -25,7 +25,7 @@ Solid::Solid(MPM *mpm, vector<string> args) :
 
   a = NULL;
 
-  sigma = PK1 = L = F = R = U = D = Finv = Fdot = NULL;
+  sigma = PK1 = L = F = R = U = D = Finv = Fdot = Di = NULL;
 
   b = f = NULL;
 
@@ -36,6 +36,8 @@ Solid::Solid(MPM *mpm, vector<string> args) :
   mass = NULL;
   eff_plastic_strain = NULL;
   eff_plastic_strain_rate = NULL;
+  damage = NULL;
+  damage_init = NULL;
   mask = NULL;
 
   mat = NULL;
@@ -69,6 +71,7 @@ Solid::~Solid()
   if (D!=NULL) delete D;
   if (Finv!=NULL) delete Finv;
   if (Fdot!=NULL) delete Fdot;
+  if (Di!=NULL) delete Di;
 
   memory->destroy(J);
   memory->destroy(vol);
@@ -78,6 +81,8 @@ Solid::~Solid()
   memory->destroy(mass);
   memory->destroy(eff_plastic_strain);
   memory->destroy(eff_plastic_strain_rate);
+  memory->destroy(damage);
+  memory->destroy(damage_init);
   memory->destroy(mask);
 
   delete grid;
@@ -269,6 +274,12 @@ void Solid::grow(int nparticles){
     exit(1);
   }
 
+  if (Di == NULL) Di = new Eigen::Matrix3d[np];
+  else {
+    cout << "Error: Di already exists, I don't know how to grow it!\n";
+    exit(1);
+  }
+
 
   str = "solid-" + id + ":vol0";
   cout << "Growing " << str << endl;
@@ -342,6 +353,26 @@ void Solid::compute_velocity_nodes()
       for (int j=0; j<numneigh_np[in];j++){
 	ip = neigh_np[in][j];
 	vn[in] += (wf_np[in][j] * mass[ip] / massn[in]) * v[ip];
+	// if (in==32)
+	//   cout << "compute_velocity_nodes: in=" << in << ", ip=" << ip << ", j= " << j << ", wf_np=" << wf_np[in][j] << ", vn=[" << vn[in][0] << "," << vn[in][1] << "," << vn[in][2] << "], vp=[" << v[ip][0] << "," << v[ip][1] << "," << v[ip][2] << "]" << endl;
+      }
+    }
+  }
+}
+
+void Solid::compute_velocity_nodes_APIC()
+{
+  Eigen::Vector3d *x0n = grid->x0;
+  Eigen::Vector3d *vn = grid->v;
+  double *massn = grid->mass;
+  int ip;
+  
+  for (int in=0; in<grid->nnodes; in++) {
+    vn[in].setZero();
+    if (massn[in] > 0) {
+      for (int j=0; j<numneigh_np[in];j++){
+	ip = neigh_np[in][j];
+	vn[in] += (wf_np[in][j] * mass[ip] / massn[in]) * (v[ip] + Fdot[ip]*(x0n[in] - x0[ip]));
 	// if (in==32)
 	//   cout << "compute_velocity_nodes: in=" << in << ", ip=" << ip << ", j= " << j << ", wf_np=" << wf_np[in][j] << ", vn=[" << vn[in][0] << "," << vn[in][1] << "," << vn[in][2] << "], vp=[" << v[ip][0] << "," << v[ip][1] << "," << v[ip][2] << "]" << endl;
       }
@@ -468,6 +499,50 @@ void Solid::compute_rate_deformation_gradient()
   }
 }
 
+
+void Solid::compute_rate_deformation_gradient_APIC()
+{
+  int in;
+  Eigen::Vector3d *x0n = grid->x0;
+  //Eigen::Vector3d *vn = grid->v;
+  Eigen::Vector3d *vn = grid->v_update;
+  Eigen::Vector3d dx;
+
+  if (domain->dimension == 2) {
+    for (int ip=0; ip<np; ip++){
+      Fdot[ip].setZero();
+      for (int j=0; j<numneigh_pn[ip]; j++){
+	in = neigh_pn[ip][j];
+	dx = x0n[in] - x0[ip];
+	Fdot[ip](0,0) += vn[in][0]*dx[0]*wf_pn[ip][j];
+	Fdot[ip](0,1) += vn[in][0]*dx[1]*wf_pn[ip][j];
+	Fdot[ip](1,0) += vn[in][1]*dx[0]*wf_pn[ip][j];
+	Fdot[ip](1,1) += vn[in][1]*dx[1]*wf_pn[ip][j];
+      }
+      Fdot[ip] *= Di[ip];
+    }
+  } else if (domain->dimension == 3) {
+    for (int ip=0; ip<np; ip++){
+      Fdot[ip].setZero();
+      for (int j=0; j<numneigh_pn[ip]; j++){
+	in = neigh_pn[ip][j];
+	dx = x0n[in] - x0[ip];
+	Fdot[ip](0,0) += vn[in][0]*dx[0]*wf_pn[ip][j];
+	Fdot[ip](0,1) += vn[in][0]*dx[1]*wf_pn[ip][j];
+	Fdot[ip](0,2) += vn[in][0]*dx[2]*wf_pn[ip][j];
+	Fdot[ip](1,0) += vn[in][1]*dx[0]*wf_pn[ip][j];
+	Fdot[ip](1,1) += vn[in][1]*dx[1]*wf_pn[ip][j];
+	Fdot[ip](1,2) += vn[in][1]*dx[2]*wf_pn[ip][j];
+	Fdot[ip](2,0) += vn[in][2]*dx[0]*wf_pn[ip][j];
+	Fdot[ip](2,1) += vn[in][2]*dx[1]*wf_pn[ip][j];
+	Fdot[ip](2,2) += vn[in][2]*dx[2]*wf_pn[ip][j];
+      }
+      Fdot[ip] *= Di[ip];
+	// cout << "compute_rate_deformation_gradient: ip=" << ip << ", in=" << in << ", vn=[" << vn[in][0] << "," << vn[in][1] << "," << vn[in][2] << "], wfd_pn=[" << wfd_pn[ip][j][0] << "," << wfd_pn[ip][j][1] << "," << wfd_pn[ip][j][2] << "], Fdot=[[" << Fdot[ip](0,0) << "," << Fdot[ip](0,1) << "," << Fdot[ip](0,2) << "],[" << Fdot[ip](1,0) << "," << Fdot[ip](1,1) << "," << Fdot[ip](1,2) << "],[" << Fdot[ip](2,0) << "," << Fdot[ip](2,1) << "," << Fdot[ip](2,2) << "]]" << endl;
+    }
+  }
+}
+
 void Solid::update_deformation_gradient()
 {
   bool status;
@@ -526,4 +601,63 @@ void Solid::update_stress()
   }
   min_inv_p_wave_speed = sqrt(min_inv_p_wave_speed);
   dtCFL = MIN(dtCFL, min_inv_p_wave_speed * grid->cellsize);
+}
+
+void Solid::compute_inertia_tensor(string form_function) {
+
+  // int in;
+  // Eigen::Vector3d *x0n = grid->x0;
+  // Eigen::Vector3d *vn_update = grid->v_update;
+  // Eigen::Vector3d dx;
+
+  // if (domain->dimension == 2) {
+  //   for (int ip=0; ip<np; ip++){
+  //     Di[ip].setZero();
+  //     for (int j=0; j<numneigh_pn[ip]; j++){
+  // 	in = neigh_pn[ip][j];
+  // 	dx = x0n[in] - x0[ip];
+  // 	Di[ip](0,0) += wf_pn[ip][j]*(dx[0]*dx[0]);
+  // 	Di[ip](0,1) += wf_pn[ip][j]*(dx[0]*dx[1]);
+  // 	Di[ip](1,1) += wf_pn[ip][j]*(dx[1]*dx[1]);
+  //     }
+  //     Di[ip](1,0) = Di[ip](0,1);
+  //   }
+  // } else if (domain->dimension == 3) {
+  //   for (int ip=0; ip<np; ip++){
+  //     Di[ip].setZero();
+  //     for (int j=0; j<numneigh_pn[ip]; j++){
+  // 	in = neigh_pn[ip][j];
+  // 	dx = x0n[in] - x0[ip];
+  // 	Di[ip](0,0) += wf_pn[ip][j]*(dx[0]*dx[0]);
+  // 	Di[ip](0,1) += wf_pn[ip][j]*(dx[0]*dx[1]);
+  // 	Di[ip](0,2) += wf_pn[ip][j]*(dx[0]*dx[2]);
+  // 	Di[ip](1,1) += wf_pn[ip][j]*(dx[1]*dx[1]);
+  // 	Di[ip](1,2) += wf_pn[ip][j]*(dx[1]*dx[2]);
+  // 	Di[ip](2,2) += wf_pn[ip][j]*(dx[2]*dx[2]);
+  //     }
+  //     Di[ip](1,0) = Di[ip](0,1);
+  //     Di[ip](2,1) = Di[ip](1,2);
+  //     Di[ip](2,0) = Di[ip](0,2);
+  //     cout << "Di[" << ip << "]=\n" << Di[ip] << endl;
+  //   }
+  // }
+
+  Eigen::Matrix3d eye;
+  eye.setIdentity();
+
+  double cellsizeSqInv = 1.0/(grid->cellsize*grid->cellsize);
+
+  for (int ip=0; ip<np; ip++){
+    if ( form_function.compare("linear") == 0) {
+      // If the form function is linear:
+      Di[ip] = 16.0 / 3.0 * cellsizeSqInv * eye;
+    } else if ( form_function.compare("quadratic-spline") == 0) {
+      // If the form function is a quadratic spline:
+      Di[ip] = 4.0 * cellsizeSqInv * eye;
+    } else if ( form_function.compare("cubic-spline") == 0) {
+      // If the form function is a cubic spline:
+      Di[ip] = 3.0 * cellsizeSqInv * eye;
+    }
+    //cout << "Di[" << ip << "]=\n" << Di[ip] << endl;
+  }
 }

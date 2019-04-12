@@ -17,6 +17,7 @@ MethodStyle(tlmpm,TLMPM)
 class TLMPM : public Method {
  public:
   double FLIP;
+  string form_function;
 
   TLMPM(class MPM *, vector<string>);
   ~TLMPM();
