@@ -538,7 +538,6 @@ void Solid::compute_rate_deformation_gradient_APIC()
 	Fdot[ip](2,2) += vn[in][2]*dx[2]*wf_pn[ip][j];
       }
       Fdot[ip] *= Di[ip];
-	// cout << "compute_rate_deformation_gradient: ip=" << ip << ", in=" << in << ", vn=[" << vn[in][0] << "," << vn[in][1] << "," << vn[in][2] << "], wfd_pn=[" << wfd_pn[ip][j][0] << "," << wfd_pn[ip][j][1] << "," << wfd_pn[ip][j][2] << "], Fdot=[[" << Fdot[ip](0,0) << "," << Fdot[ip](0,1) << "," << Fdot[ip](0,2) << "],[" << Fdot[ip](1,0) << "," << Fdot[ip](1,1) << "," << Fdot[ip](1,2) << "],[" << Fdot[ip](2,0) << "," << Fdot[ip](2,1) << "," << Fdot[ip](2,2) << "]]" << endl;
     }
   }
 }

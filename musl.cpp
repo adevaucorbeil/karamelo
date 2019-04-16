@@ -49,7 +49,7 @@ void MUSL::run(int n){
 
     modify->post_advance_particles();
     
-    // update->method->velocities_to_grid();
+    update->method->velocities_to_grid();
 
     modify->post_velocities_to_grid();
 

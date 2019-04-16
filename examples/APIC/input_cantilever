@@ -72,4 +72,4 @@ res = dy_tip/BC_Tip_y
 res_theory = 4*(hLx*2)*(hLx*2)*(hLx*2)/(E*(hLy*2)*(hLy*2)*(hLy*2)*(hLy*2))
 error = (res_theory-res)/res_theory
 log_modify(custom, step, dt, time, BC_Tip_y, dy_tip, res, res_theory, error)
-run(1000)
+run(10000)

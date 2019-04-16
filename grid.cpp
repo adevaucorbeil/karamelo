@@ -137,6 +137,6 @@ void Grid::update_grid_velocities()
 void Grid::update_grid_positions()
 {
   for (int i=0; i<nnodes; i++){
-    x[i] += update->dt*v[i];
+    x[i] += update->dt*v_update[i];
   }
 }

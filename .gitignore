@@ -2,3 +2,5 @@
 /mpm
 /*~
 /*.LAMMPS
+/examples/*/*.LAMMPS
+/examples/*/*/*.LAMMPS

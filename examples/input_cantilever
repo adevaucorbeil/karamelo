@@ -5,17 +5,17 @@ G = E/(2*(1+nu))
 rho = 7.75e-06
 sigmay = 0.499
 B = 0.382
-n = 0.458
+JC_n = 0.458
 
-hLx = 10
-hLy = 1.2
-hLz = 1.2
+hLx = 5
+hLy = 0.5
+hLz = 0.5
 A_zy = (2*hLy)*(2*hLz)
 
 S = 1.5
 c0 = 5030
 
-FLIP=0.9
+FLIP=0.99
 
 dimension(3)
 region(box, block, -hLx, hLx, -hLy, hLy, -hLz, hLz, op, op2)
@@ -24,17 +24,18 @@ eos(eoss, shock, rho, K, c0, 0, S, 0)
 
 strength(strengthl, linear, G)
 strength(strengthp, plastic, G, sigmay)
-strength(strengthjc, johnson_cook, G, sigmay, B, n, 0, 0)
+strength(strengthjc, johnson_cook, G, sigmay, B, JC_n, 0, 0)
 
 material(mat1, eosl, strengthl)
 material(mat2, eoss, strengthp)
 material(mat3, eosl, strengthjc)
 
-cellsize = 0.4
-solid(solid1, block, box, 50, 6, 6, mat1, cellsize)
+n = 4.0
 
-x_wall = -9.7
-x_tip = 9
+cellsize = 1.0/n
+solid(solid1, block, box, n*hLx*4, n*hLy*4, n*hLz*4, mat1, cellsize)
+
+x_wall = -4.7
 
 region(region1, block, INF, x_wall, INF, INF, INF, INF)
 group(group1, particles, region, region1, solid, solid1)
@@ -43,15 +44,17 @@ group(groupn1, nodes, region, region1, solid, solid1)
 #xb = xcm(group1, x)
 f_wall = internal_force(groupn1, y)
 
-region(region2, block, 9.7, INF, 0.81, INF, INF, INF)
+region(region2, block, 4.72, INF, 0.2, INF, INF, INF)
 group(group2, particles, region, region2, solid, solid1)
 group(groupn2, nodes, region, region2, solid, solid1)
 
-dy_tip = xcm(group2, y)-1
+y_tip = xcm(group2, y)
+y0_tip = value(y_tip)
+dy_tip = y_tip-y0_tip
 f_tip = internal_force(groupn2, y)
 
 v = 2.0-exp(-time)
-f = 1.0/70.0
+f = 1/200.0
 
 fix(BC_Wall, velocity_nodes, groupn1, 0, 0, 0)
 #fix(BC_Tip, velocity_nodes, groupn2, NULL, -v, NULL)
@@ -60,7 +63,11 @@ fix(BC_Tip, force_nodes, groupn2, NULL, -f, NULL)
 dump(dump1, all, particle, 10, dump_p.*.LAMMPS, x, y, z)
 dump(dump2, all, grid, 10, dump_g.*.LAMMPS, x, y, z)
 
-method_modify(FLIP)
+#method_modify(FLIP,cubic-spline)
 log(10)
-log_modify(custom, step, dt, time, dy_tip, f_tip)
-run(100000)
+dt_factor(0.9)
+res = dy_tip/BC_Tip_y
+res_theory = 4*(hLx*2)*(hLx*2)*(hLx*2)/(E*(hLy*2)*(hLy*2)*(hLy*2)*(hLy*2))
+error = (res_theory-res)/res_theory
+log_modify(custom, step, dt, time, BC_Tip_y, dy_tip, res, res_theory, error)
+run(2)
