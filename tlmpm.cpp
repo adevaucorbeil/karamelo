@@ -276,6 +276,15 @@ void TLMPM::adjust_dt()
 
   for (int isolid=0; isolid<domain->solids.size(); isolid++) {
     dtCFL = MIN(dtCFL, domain->solids[isolid]->dtCFL);
+    if (dtCFL == 0) {
+      cout << "Error: dtCFL == 0\n";
+      cout << "domain->solids[" << isolid << "]->dtCFL == 0\n";
+      exit(1);
+    } else if (isnan(dtCFL)) {
+      cout << "Error: dtCFL = " << dtCFL << "\n";
+      cout << "domain->solids[" << isolid << "]->dtCFL == " << domain->solids[isolid]->dtCFL << "\n";
+      exit(1);
+    }
   }
   update->dt = dtCFL * update->dt_factor;
 }

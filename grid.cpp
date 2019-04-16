@@ -131,6 +131,9 @@ void Grid::update_grid_velocities()
   for (int i=0; i<nnodes; i++){
     if (mass[i] > 0) v_update[i] = v[i] + update->dt/mass[i] * (f[i] + b[i]);
     else v_update[i] = v[i];
+    // if (update->ntimestep>450)
+    //   if (i==0)
+    // 	cout << "update_grid_velocities: in=" << i << ", vn=[" << v[i][0] << "," << v[i][1] << "," << v[i][2] << "], f=[" << f[i][0] << "," << f[i][1] << "," << f[i][2] << "], b=[" << b[i][0] << "," << b[i][1] << "," << b[i][2] << "], dt=" << update->dt << ", mass[i]=" << mass[i] << endl;
   }
 }
 

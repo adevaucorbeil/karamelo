@@ -342,8 +342,9 @@ void Solid::compute_velocity_nodes()
       for (int j=0; j<numneigh_np[in];j++){
 	ip = neigh_np[in][j];
 	vn[in] += (wf_np[in][j] * mass[ip] / massn[in]) * v[ip];
-	// if (in==32)
-	//   cout << "compute_velocity_nodes: in=" << in << ", ip=" << ip << ", j= " << j << ", wf_np=" << wf_np[in][j] << ", vn=[" << vn[in][0] << "," << vn[in][1] << "," << vn[in][2] << "], vp=[" << v[ip][0] << "," << v[ip][1] << "," << v[ip][2] << "]" << endl;
+	// if (update->ntimestep>450)
+	//   if (in==0)
+	//     cout << "compute_velocity_nodes: in=" << in << ", ip=" << ip << ", j= " << j << ", wf_np=" << wf_np[in][j] << ", vn=[" << vn[in][0] << "," << vn[in][1] << "," << vn[in][2] << "], vp=[" << v[ip][0] << "," << v[ip][1] << "," << v[ip][2] << "]" << endl;
       }
     }
   }
@@ -391,7 +392,9 @@ void Solid::compute_particle_velocities()
     for (int j=0; j<numneigh_pn[ip]; j++){
       in = neigh_pn[ip][j];
       v_update[ip] += wf_pn[ip][j] * vn_update[in];
-      // if (ip==50) cout << "compute_particle_velocities: ip=" << ip << ", in=" << in << ", j= " << j << ", wf_pn=" << wf_pn[ip][j] << ", vp_update=[" << v_update[ip][0] << "," << v_update[ip][1] << "," << v_update[ip][2] << "], vn_update=[" << vn_update[in][0] << "," << vn_update[in][1] << "," << vn_update[in][2] << "]" << endl;
+	// if (update->ntimestep>450)
+	//   if (ip==0)
+	//     cout << "compute_particle_velocities: ip=" << ip << ", in=" << in << ", j= " << j << ", wf_pn=" << wf_pn[ip][j] << ", vp_update=[" << v_update[ip][0] << "," << v_update[ip][1] << "," << v_update[ip][2] << "], vn_update=[" << vn_update[in][0] << "," << vn_update[in][1] << "," << vn_update[in][2] << "]" << endl;
     }
   }
 }
@@ -410,8 +413,9 @@ void Solid::compute_particle_acceleration()
     for (int j=0; j<numneigh_pn[ip]; j++){
       in = neigh_pn[ip][j];
       a[ip] += inv_dt * wf_pn[ip][j] * (vn_update[in] - vn[in]);
-      // if (ip==50)
-      // 	cout << "compute_particle_acceleration: ip=" << ip  << ", in=" << in << ", ap = [" << a[ip][0]  << "," <<  a[ip][1] << "," <<  a[ip][2] << "], vn_update = [" <<  vn_update[in][0] << "," << vn_update[in][1]  << "," << vn_update[in][2] << "], vn = [" << vn[in][0]  << "," << vn[in][1]  << "," <<  vn[in][2] << "], wf=" <<  wf_pn[ip][j] << ", inv_dt=" << inv_dt << endl;
+	// if (update->ntimestep>450)
+	//   if (ip==0)
+	//     cout << "compute_particle_acceleration: ip=" << ip  << ", in=" << in << ", ap = [" << a[ip][0]  << "," <<  a[ip][1] << "," <<  a[ip][2] << "], vn_update = [" <<  vn_update[in][0] << "," << vn_update[in][1]  << "," << vn_update[in][2] << "], vn = [" << vn[in][0]  << "," << vn[in][1]  << "," <<  vn[in][2] << "], wf=" <<  wf_pn[ip][j] << ", inv_dt=" << inv_dt << endl;
     }
     f[ip] = a[ip] / mass[ip];
   }
@@ -428,7 +432,9 @@ void Solid::update_particle_velocities(double FLIP)
 {
   for (int ip=0; ip<np; ip++) {
     v[ip] = (1 - FLIP) * v_update[ip] + FLIP*(v[ip] + update->dt*a[ip]);
-    // if (ip==50) cout << "update_particle_velocities: ip=" << ip << ", FLIP=" << FLIP << ", v[ip]=[" << v[ip][0] << "," << v[ip][1] << "," << v[ip][2] << "], dt=" << update->dt << ", ap=[" << a[ip][0] << "," << a[ip][1] << "," << a[ip][2] << "]" << endl;
+	// if (update->ntimestep>450)
+	//   if (ip==0)
+	//     cout << "update_particle_velocities: ip=" << ip << ", FLIP=" << FLIP << ", v[ip]=[" << v[ip][0] << "," << v[ip][1] << "," << v[ip][2] << "], dt=" << update->dt << ", ap=[" << a[ip][0] << "," << a[ip][1] << "," << a[ip][2] << "]" << endl;
   }
 }
 
@@ -462,7 +468,8 @@ void Solid::compute_rate_deformation_gradient()
 	Fdot[ip](2,0) += vn[in][2]*wfd_pn[ip][j][0];
 	Fdot[ip](2,1) += vn[in][2]*wfd_pn[ip][j][1];
 	Fdot[ip](2,2) += vn[in][2]*wfd_pn[ip][j][2];
-	// cout << "compute_rate_deformation_gradient: ip=" << ip << ", in=" << in << ", vn=[" << vn[in][0] << "," << vn[in][1] << "," << vn[in][2] << "], wfd_pn=[" << wfd_pn[ip][j][0] << "," << wfd_pn[ip][j][1] << "," << wfd_pn[ip][j][2] << "], Fdot=[[" << Fdot[ip](0,0) << "," << Fdot[ip](0,1) << "," << Fdot[ip](0,2) << "],[" << Fdot[ip](1,0) << "," << Fdot[ip](1,1) << "," << Fdot[ip](1,2) << "],[" << Fdot[ip](2,0) << "," << Fdot[ip](2,1) << "," << Fdot[ip](2,2) << "]]" << endl;
+	// if (update->ntimestep > 450)
+	//   if (ip==0) cout << "compute_rate_deformation_gradient: ip=" << ip << ", in=" << in << ", vn=[" << vn[in][0] << "," << vn[in][1] << "," << vn[in][2] << "], wfd_pn=[" << wfd_pn[ip][j][0] << "," << wfd_pn[ip][j][1] << "," << wfd_pn[ip][j][2] << "], Fdot=[[" << Fdot[ip](0,0) << "," << Fdot[ip](0,1) << "," << Fdot[ip](0,2) << "],[" << Fdot[ip](1,0) << "," << Fdot[ip](1,1) << "," << Fdot[ip](1,2) << "],[" << Fdot[ip](2,0) << "," << Fdot[ip](2,1) << "," << Fdot[ip](2,2) << "]]" << endl;
       }
     }
   }
@@ -476,6 +483,11 @@ void Solid::update_deformation_gradient()
   for (int ip=0; ip<np; ip++){
     F[ip] += update->dt * Fdot[ip];
     J[ip] = F[ip].determinant();
+    if (J[ip] < 0.0) {
+      cout << "Error: J[" << ip << "]<0.0 == " << J[ip] << endl;
+      cout << "F[" << ip << "]:" << endl << F[ip] << endl;
+	exit(1);
+    }
     vol[ip] = J[ip] * vol0[ip];
     rho[ip] = rho0[ip] / J[ip];
     Finv[ip] = F[ip].inverse();
@@ -487,6 +499,7 @@ void Solid::update_deformation_gradient()
     if (!status) {
       cout << "Polar decomposition of deformation gradient failed for particle " << ip << ".\n";
       cout << "F:" << endl << F[ip] << endl;
+      cout << "timestep" << endl << update->ntimestep << endl;
       exit(1);
     }
 
@@ -520,10 +533,19 @@ void Solid::update_stress()
 
     PK1[ip] = J[ip] * (R[ip] * sigma[ip] * R[ip].transpose()) * Finv[ip].transpose();
     min_inv_p_wave_speed = MIN(min_inv_p_wave_speed, rho[ip] / (mat->K + 4.0/3.0 * mat->G));
-    // if (ip == 894) {
-    //   cout << "For ip= " << ip << ", -pH = " << -pH << ", J = " << J[ip] << ", F[" << ip << "]=" << endl << F[ip] << endl;
-    // }
+    if (isnan(min_inv_p_wave_speed)) {
+      cout << "Error: min_inv_p_wave_speed is nan with ip=" << ip << ", rho[ip]=" << rho[ip] << ", K=" << mat->K << ", G=" << mat->G << endl;
+      exit(1);
+    } else if (min_inv_p_wave_speed < 0.0) {
+      cout << "Error: min_inv_p_wave_speed= " << min_inv_p_wave_speed << " with ip=" << ip << ", rho[ip]=" << rho[ip] << ", K=" << mat->K << ", G=" << mat->G << endl;
+      exit(1);
+    }
   }
   min_inv_p_wave_speed = sqrt(min_inv_p_wave_speed);
   dtCFL = MIN(dtCFL, min_inv_p_wave_speed * grid->cellsize);
+  if (isnan(dtCFL)) {
+      cout << "Error: dtCFL = " << dtCFL << "\n";
+      cout << "min_inv_p_wave_speed = " << min_inv_p_wave_speed << ", grid->cellsize=" << grid->cellsize << endl;
+      exit(1);
+  }
 }
