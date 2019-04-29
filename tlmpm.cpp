@@ -251,6 +251,7 @@ void TLMPM::compute_rate_deformation_gradient()
 {
   for (int isolid=0; isolid<domain->solids.size(); isolid++) {
     domain->solids[isolid]->compute_rate_deformation_gradient();
+    //domain->solids[isolid]->compute_deformation_gradient();
   }
 }
 

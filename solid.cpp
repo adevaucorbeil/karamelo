@@ -474,6 +474,49 @@ void Solid::compute_rate_deformation_gradient()
     }
   }
 }
+void Solid::compute_deformation_gradient()
+{
+  int in;
+  Eigen::Vector3d *xn = grid->x;
+  Eigen::Vector3d *x0n = grid->x0;
+  Eigen::Vector3d dx;
+  Eigen::Matrix3d eye;
+  eye.setIdentity();
+
+  if (domain->dimension == 2) {
+    for (int ip=0; ip<np; ip++){
+      F[ip].setZero();
+      for (int j=0; j<numneigh_pn[ip]; j++){
+	in = neigh_pn[ip][j];
+	dx = xn[in] - x0n[in];
+	F[ip](0,0) += dx[0]*wfd_pn[ip][j][0];
+	F[ip](0,1) += dx[0]*wfd_pn[ip][j][1];
+	F[ip](1,0) += dx[1]*wfd_pn[ip][j][0];
+	F[ip](1,1) += dx[1]*wfd_pn[ip][j][1];
+      }
+      F[ip].noalias() += eye;
+    }
+  } else if (domain->dimension == 3) {
+    for (int ip=0; ip<np; ip++){
+      F[ip].setZero();
+      for (int j=0; j<numneigh_pn[ip]; j++){
+	in = neigh_pn[ip][j];
+	dx = xn[in] - x0n[in];
+	F[ip](0,0) += dx[0]*wfd_pn[ip][j][0];
+	F[ip](0,1) += dx[0]*wfd_pn[ip][j][1];
+	F[ip](0,2) += dx[0]*wfd_pn[ip][j][2];
+	F[ip](1,0) += dx[1]*wfd_pn[ip][j][0];
+	F[ip](1,1) += dx[1]*wfd_pn[ip][j][1];
+	F[ip](1,2) += dx[1]*wfd_pn[ip][j][2];
+	F[ip](2,0) += dx[2]*wfd_pn[ip][j][0];
+	F[ip](2,1) += dx[2]*wfd_pn[ip][j][1];
+	F[ip](2,2) += dx[2]*wfd_pn[ip][j][2];
+      }
+      F[ip].noalias() += eye;
+
+    }
+  }
+}
 
 void Solid::update_deformation_gradient()
 {
