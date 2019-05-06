@@ -288,6 +288,7 @@ void TLMPM::adjust_dt()
     }
   }
   update->dt = dtCFL * update->dt_factor;
+  (*input->vars)["dt"] = Var("dt", update->dt);
 }
 
 void TLMPM::reset_dtCFL()

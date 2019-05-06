@@ -30,6 +30,7 @@ Input::Input(MPM *mpm, int argc, char **argv) : Pointers(mpm)
   vars = new map<string, Var>;
 
   (*vars)["time"] = Var("time", 0);
+  (*vars)["dt"] = Var("dt", 0);
   (*vars)["x"] = Var("x", 0);
   (*vars)["y"] = Var("y", 0);
   (*vars)["z"] = Var("z", 0);
