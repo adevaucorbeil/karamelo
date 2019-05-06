@@ -199,6 +199,7 @@ Var Input::evaluate_function(string func, string arg){
   if (func.compare("method_modify") == 0) return Var(method_modify(args));
   if (func.compare("fix") == 0) return Var(fix(args));
   if (func.compare("dt_factor") == 0) return Var(set_dt_factor(args));
+  if (func.compare("set_dt") == 0 ) return Var(set_dt(args));
   if (func.compare("value") == 0) return value(args);
 
   // invoke commands added via style_command.h
@@ -660,6 +661,11 @@ int Input::fix(vector<string> args){
 
 int Input::set_dt_factor(vector<string> args){
   update->set_dt_factor(args);
+  return 0;
+}
+
+int Input::set_dt(vector<string> args){
+  update->set_dt(args);
   return 0;
 }
 

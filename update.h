@@ -12,6 +12,7 @@ class Update : protected Pointers {
   double elapsed_time_in_run;	  // elapsed simulation time for a single run;
   double dt;                      // timestep
   double dt_factor;               // timestep factor
+  bool dt_constant;               // is dt constant?
   bigint ntimestep;               // current step
   int nsteps;                     // # of steps to run
   double atime;                   // simulation time at atime_step
@@ -29,6 +30,7 @@ class Update : protected Pointers {
   Update(class MPM *);
   ~Update();
   void set_dt_factor(vector<string>);
+  void set_dt(vector<string>);
   void create_scheme(vector<string>);
   void new_scheme(vector<string>);
   void create_method(vector<string>);

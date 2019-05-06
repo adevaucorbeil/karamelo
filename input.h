@@ -51,6 +51,7 @@ private:
   int method_modify(vector<string>);
   int fix(vector<string>);
   int set_dt_factor(vector<string>);
+  int set_dt(vector<string>);
   class Var value(vector<string>);
 
   bool protected_variable(string);
