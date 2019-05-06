@@ -17,6 +17,7 @@ public:
   class Damage* damage;
   double rho0, E, nu, G, K, lambda, signal_velocity;
   Mat(string, class EOS*, class Strength*, class Damage* = NULL);
+  Mat(string, double, double, double);
 };
 
 class Material : protected Pointers {

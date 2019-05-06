@@ -7,6 +7,8 @@
 #include <vector>
 #include <map>
 
+
+
 class Input : protected Pointers {
 public:
   int narg;                    // # of command args
@@ -50,6 +52,10 @@ private:
   int fix(vector<string>);
   int set_dt_factor(vector<string>);
   class Var value(vector<string>);
+
+  bool protected_variable(string);
+
+  vector<string> protected_vars;
 
  public:
   typedef class Var (*CommandCreator)(MPM *,vector<string>);

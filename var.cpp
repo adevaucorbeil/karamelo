@@ -180,3 +180,13 @@ Var sinv(Var x){
     return result;
   }
 }
+
+Var logv(Var x){
+  if (x.is_constant()) {
+    Var result(log(x.result()));
+    return result;
+  } else {
+    Var result("log(" + x.str() + ")", log(x.result()), x.is_constant());
+    return result;
+  }
+}

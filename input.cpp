@@ -30,6 +30,10 @@ Input::Input(MPM *mpm, int argc, char **argv) : Pointers(mpm)
   vars = new map<string, Var>;
 
   (*vars)["time"] = Var("time", 0);
+  (*vars)["x"] = Var("x", 0);
+  (*vars)["y"] = Var("y", 0);
+  (*vars)["z"] = Var("z", 0);
+  (*vars)["PI"] = Var("PI", M_PI);
 
 
   // fill map with commands listed in style_command.h
@@ -42,6 +46,14 @@ Input::Input(MPM *mpm, int argc, char **argv) : Pointers(mpm)
 #include "style_command.h"
 #undef CommandStyle
 #undef COMMAND_CLASS
+
+  // Protected variables:
+  string s = "x";
+  protected_vars.push_back(s);
+  s = "y";
+  protected_vars.push_back(s);
+  s = "z";
+  protected_vars.push_back(s);
 }
 
 
@@ -195,6 +207,7 @@ Var Input::evaluate_function(string func, string arg){
   else if (func.compare("sqrt") == 0) return sqrtv(parsev(arg));
   else if (func.compare("cos") == 0) return cosv(parsev(arg));
   else if (func.compare("sin") == 0) return sinv(parsev(arg));
+  else if (func.compare("log") == 0) return logv(parsev(arg));
   cout << "Error: Unknown function " << func << endl;
   exit(1);
 }
@@ -433,9 +446,17 @@ Var Input::parsev(string str)
 
 	else if (i+1 >= str.length() && values.empty() && ops.empty() ) {
 	  if (negative) {
+	    if (!returnvar.empty()) {
+	      (*vars)[returnvar] = -(*vars)[word];
+	      cout << returnvar << " = " << (*vars)[returnvar].result() << endl;
+	    }
 	    return -(*vars)[word];
 	  }
 	  else {
+	    if (!returnvar.empty()) {
+	      (*vars)[returnvar] = (*vars)[word];
+	      cout << returnvar << " = " << (*vars)[returnvar].result() << endl;
+	    }
 	    return (*vars)[word];
 	  }
 	}
@@ -456,6 +477,10 @@ Var Input::parsev(string str)
 	// Check if there is an '=':
 	//cout << "Check if there is an =\n";
 	returnvar = word;
+	if (protected_variable(returnvar)) {
+	  cout << "Error: " << returnvar << " is a protected variable: it cannot be modified!\n";
+	  exit(1);
+	}
 	//cout << "The computed value will be stored in " <<  returnvar << endl;
 	i++;
       }
@@ -527,6 +552,9 @@ Var Input::parsev(string str)
 
   // Top of 'values' contains result, return it.
   if (values.empty()) {
+    if (!returnvar.empty()) {
+      (*vars)[returnvar] = -1;
+    }
     return Var(-1);
   }
   else {
@@ -652,4 +680,11 @@ Var Input::command_creator(MPM *mpm, vector<string> args)
 {
   T cmd(mpm);
   return cmd.command(args);
+}
+
+bool Input::protected_variable(string variable) {
+  for (int i=0; i<protected_vars.size();i++) {
+    if (variable.compare(protected_vars[i])==0) return 1;
+  }
+  return 0;
 }

@@ -554,27 +554,37 @@ void Solid::update_stress()
 {
   min_inv_p_wave_speed = 1.0e22;
   double pH, plastic_strain_increment;
-  Matrix3d eye, sigma_dev;
+  Matrix3d eye, sigma_dev, FinvT;
 
   eye.setIdentity();
 
   for (int ip=0; ip<np; ip++){
-    pH = mat->eos->compute_pressure(J[ip], rho[ip], 0, damage[ip]);
-    sigma_dev = mat->strength->update_deviatoric_stress(sigma[ip], D[ip], plastic_strain_increment, eff_plastic_strain[ip], eff_plastic_strain_rate[ip], damage[ip]);
+    if ((mat->eos!=NULL) && (mat->strength!=NULL)) {
+      pH = mat->eos->compute_pressure(J[ip], rho[ip], 0, damage[ip]);
+      sigma_dev = mat->strength->update_deviatoric_stress(sigma[ip], D[ip], plastic_strain_increment, eff_plastic_strain[ip], eff_plastic_strain_rate[ip], damage[ip]);
 
-    eff_plastic_strain[ip] += plastic_strain_increment;
+      eff_plastic_strain[ip] += plastic_strain_increment;
 
-    // // compute a characteristic time over which to average the plastic strain
-    double tav = 1000 * grid->cellsize / mat->signal_velocity;
-    eff_plastic_strain_rate[ip] -= eff_plastic_strain_rate[ip] * update->dt / tav;
-    eff_plastic_strain_rate[ip] += plastic_strain_increment / tav;
-    eff_plastic_strain_rate[ip] = MAX(0.0, eff_plastic_strain_rate[ip]);
+      // // compute a characteristic time over which to average the plastic strain
+      double tav = 1000 * grid->cellsize / mat->signal_velocity;
+      eff_plastic_strain_rate[ip] -= eff_plastic_strain_rate[ip] * update->dt / tav;
+      eff_plastic_strain_rate[ip] += plastic_strain_increment / tav;
+      eff_plastic_strain_rate[ip] = MAX(0.0, eff_plastic_strain_rate[ip]);
 
-    if (mat->damage != NULL)
-      mat->damage->compute_damage(damage_init[ip], damage[ip], pH, sigma_dev, eff_plastic_strain_rate[ip], plastic_strain_increment);
-    sigma[ip] = -pH*eye + sigma_dev;
+      if (mat->damage != NULL)
+	mat->damage->compute_damage(damage_init[ip], damage[ip], pH, sigma_dev, eff_plastic_strain_rate[ip], plastic_strain_increment);
+      sigma[ip] = -pH*eye + sigma_dev;
 
-    PK1[ip] = J[ip] * (R[ip] * sigma[ip] * R[ip].transpose()) * Finv[ip].transpose();
+      PK1[ip] = J[ip] * (R[ip] * sigma[ip] * R[ip].transpose()) * Finv[ip].transpose();
+
+    } else {
+      // Neo-Hookean material:
+      FinvT = Finv[ip].transpose();
+      PK1[ip] = mat->G*(F[ip] - FinvT) + mat->lambda*log(J[ip])*FinvT;
+      sigma[ip] = 1.0/J[ip]*(PK1[ip]*F[ip].transpose());
+    }
+
+    
     min_inv_p_wave_speed = MIN(min_inv_p_wave_speed, rho[ip] / (mat->K + 4.0/3.0 * mat->G));
     if (isnan(min_inv_p_wave_speed)) {
       cout << "Error: min_inv_p_wave_speed is nan with ip=" << ip << ", rho[ip]=" << rho[ip] << ", K=" << mat->K << ", G=" << mat->G << endl;
@@ -583,6 +593,7 @@ void Solid::update_stress()
       cout << "Error: min_inv_p_wave_speed= " << min_inv_p_wave_speed << " with ip=" << ip << ", rho[ip]=" << rho[ip] << ", K=" << mat->K << ", G=" << mat->G << endl;
       exit(1);
     }
+
   }
   min_inv_p_wave_speed = sqrt(min_inv_p_wave_speed);
   dtCFL = MIN(dtCFL, min_inv_p_wave_speed * grid->cellsize);

@@ -42,5 +42,6 @@ Var expv(Var);                 // exponential function
 Var sqrtv(Var);                // square root function
 Var cosv(Var);                 // cosine function
 Var sinv(Var);                 // sine function
+Var logv(Var);                 // natural logarithmic function
 
 #endif

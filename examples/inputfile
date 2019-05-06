@@ -17,6 +17,7 @@ c0 = 5030
 
 FLIP=0.9
 
+
 dimension(3)
 region(box, block, -hLx, hLx, -hLy, hLy, -hLz, hLz, op, op2)
 eos(eosl, linear, rho, K)
@@ -63,7 +64,7 @@ eps = (l-l0)/l0
 stress = 0.5*(fb-ft)/A_zy
 
 
-v = 1.0-exp(-time)
+v = 1.0-exp(-time)+x
 
 fix(BC_left, velocity_nodes, groupn1, -v, NULL, NULL)
 fix(BC_right, velocity_nodes, groupn2, v, NULL, NULL)
