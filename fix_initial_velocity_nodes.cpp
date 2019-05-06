@@ -99,7 +99,7 @@ void FixInitialVelocityNodes::post_update_grid_state() {
 	    v_update[ip][1] = vy;
 	  }
 	  if (zset) {
-	    vy = zvalue.result(mpm);
+	    vz = zvalue.result(mpm);
 	    v_update[ip][2] = vz;
 	  }
 	  n++;
@@ -128,7 +128,7 @@ void FixInitialVelocityNodes::post_update_grid_state() {
 	  v_update[ip][1] = vy;
 	}
 	if (zset) {
-	  vy = zvalue.result(mpm);
+	  vz = zvalue.result(mpm);
 	  v_update[ip][2] = vz;
 	}
 	n++;
@@ -176,7 +176,7 @@ void FixInitialVelocityNodes::post_velocities_to_grid() {
 	    v[ip][1] = vy;
 	  }
 	  if (zset) {
-	    vy = zvalue.result(mpm);
+	    vz = zvalue.result(mpm);
 	    v[ip][2] = vz;
 	  }
 	  n++;
@@ -205,7 +205,7 @@ void FixInitialVelocityNodes::post_velocities_to_grid() {
 	  v[ip][1] = vy;
 	}
 	if (zset) {
-	  vy = zvalue.result(mpm);
+	  vz = zvalue.result(mpm);
 	  v[ip][2] = vz;
 	}
 	n++;
