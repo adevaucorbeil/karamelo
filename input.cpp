@@ -55,6 +55,10 @@ Input::Input(MPM *mpm, int argc, char **argv) : Pointers(mpm)
   protected_vars.push_back(s);
   s = "z";
   protected_vars.push_back(s);
+  s = "time";
+  protected_vars.push_back(s);
+  s = "dt";
+  protected_vars.push_back(s);
 }
 
 
