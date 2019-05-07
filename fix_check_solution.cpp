@@ -104,7 +104,7 @@ void FixChecksolution::final_integrate() {
 	  }
 	  if (zset) {
 	    uz = zvalue.result(mpm);
-	    error[2] += vol0[in]*square(uz-(x[in][2]-x[in][2]));
+	    error[2] += vol0[in]*square(uz-(x[in][2]-x0[in][2]));
 	  }
 	}
       }
@@ -139,7 +139,7 @@ void FixChecksolution::final_integrate() {
 	}
 	if (zset) {
 	  uz = zvalue.result(mpm);
-	  error[2] += vol0[in]*square(uz-(x[in][2]-x[in][2]));
+	  error[2] += vol0[in]*square(uz-(x[in][2]-x0[in][2]));
 	}
       }
     }
