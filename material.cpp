@@ -1,5 +1,7 @@
 #include "mpm.h"
 #include "material.h"
+#include "input.h"
+#include "var.h"
 #include "style_strength.h"
 #include "style_eos.h"
 #include "style_damage.h"
@@ -191,31 +193,41 @@ void Material::add_material(vector<string> args){
     exit(1);
   }
 
-  // create the Material
-  int iEOS = material->find_EOS(args[1]);
-
-  if (iEOS == -1) {
-    cout << "Error: could not find EOS named: " << args[1] << endl;
-    exit(1);
-  }
-
-  int iStrength = material->find_strength(args[2]);
-  if (iStrength == -1) {
-    cout << "Error: could not find strength named: " << args[2] << endl;
-    exit(1);
-  }
-
-  if (args.size() > 3) {
-    int iDamage = material->find_damage(args[3]);
-    if (iDamage == -1) {
-      cout << "Error: could not find damage named: " << args[3] << endl;
+  if (args[1].compare("neo-hookean")==0) {
+    if (args.size()<5) {
+      cout << "Error: material command not enough arguments" << endl;
       exit(1);
     }
-    Mat new_material(args[0], EOSs[iEOS], strengths[iStrength], damages[iDamage]);
-    materials.push_back(new_material);
+    Mat new_material(args[0], input->parsev(args[2]), input->parsev(args[3]), input->parsev(args[4]));
+      materials.push_back(new_material);
+    
   } else {
-    Mat new_material(args[0], EOSs[iEOS], strengths[iStrength]);
-    materials.push_back(new_material);
+    // create the Material
+    int iEOS = material->find_EOS(args[1]);
+
+    if (iEOS == -1) {
+      cout << "Error: could not find EOS named: " << args[1] << endl;
+      exit(1);
+    }
+
+    int iStrength = material->find_strength(args[2]);
+    if (iStrength == -1) {
+      cout << "Error: could not find strength named: " << args[2] << endl;
+      exit(1);
+    }
+
+    if (args.size() > 3) {
+      int iDamage = material->find_damage(args[3]);
+      if (iDamage == -1) {
+	cout << "Error: could not find damage named: " << args[3] << endl;
+	exit(1);
+      }
+      Mat new_material(args[0], EOSs[iEOS], strengths[iStrength], damages[iDamage]);
+      materials.push_back(new_material);
+    } else {
+      Mat new_material(args[0], EOSs[iEOS], strengths[iStrength]);
+      materials.push_back(new_material);
+    }
   }
 
   cout << "Creating new mat with ID: " << args[0] << endl;
@@ -281,4 +293,18 @@ Mat::Mat(string id_, class EOS* eos_, class Strength* strength_, class Damage* d
   cout << "\tBulk modulus: " << K << endl;
   cout << "\tLame first parameter (Lambda): " << lambda << endl;
   cout << "\tSignal velocity: " << signal_velocity << endl;
+}
+
+Mat::Mat(string id_, double rho0_, double E_, double nu_){
+  id = id_;
+  eos = NULL;
+  strength = NULL;
+  damage = NULL;
+  rho0 = rho0_;
+  E = E_;
+  nu = nu_;
+  G = E/(2*(1+nu));
+  lambda = E*nu/((1+nu)*(1-2*nu));
+  K = E/(3*(1-2*nu));
+  signal_velocity = sqrt(K/rho0);
 }

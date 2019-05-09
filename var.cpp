@@ -158,3 +158,35 @@ Var sqrtv(Var x){
     return result;
   }
 }
+
+
+Var cosv(Var x){
+  if (x.is_constant()) {
+    Var result(cos(x.result()));
+    return result;
+  } else {
+    Var result("cos(" + x.str() + ")", cos(x.result()), x.is_constant());
+    return result;
+  }
+}
+
+
+Var sinv(Var x){
+  if (x.is_constant()) {
+    Var result(sin(x.result()));
+    return result;
+  } else {
+    Var result("sin(" + x.str() + ")", sin(x.result()), x.is_constant());
+    return result;
+  }
+}
+
+Var logv(Var x){
+  if (x.is_constant()) {
+    Var result(log(x.result()));
+    return result;
+  } else {
+    Var result("log(" + x.str() + ")", log(x.result()), x.is_constant());
+    return result;
+  }
+}

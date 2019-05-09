@@ -90,6 +90,7 @@ class Solid : protected Pointers {
   void update_deformation_gradient();
   void update_stress();
   void compute_inertia_tensor(string);
+  void compute_deformation_gradient();
 };
 
 #endif

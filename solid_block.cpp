@@ -61,7 +61,7 @@ SolBlock::SolBlock(MPM *mpm, vector<string> args) : Solid(mpm, args)
 
   int l=0;
   double vol_ = delta_x*delta_y*delta_z;
-  double mass_ = mat->eos->rho0() * vol_;
+  double mass_ = mat->rho0 * vol_;
 
   for (int i=0; i<nx; i++){
     for (int j=0; j<ny; j++){
@@ -83,7 +83,7 @@ SolBlock::SolBlock(MPM *mpm, vector<string> args) : Solid(mpm, args)
     b[i].setZero();
     v_update[i].setZero();
     vol0[i] = vol[i] = vol_;
-    rho0[i] = rho[i] = mat->eos->rho0();
+    rho0[i] = rho[i] = mat->rho0;
     mass[i] = mass_;
     eff_plastic_strain[i] = 0;
     eff_plastic_strain_rate[i] = 0;

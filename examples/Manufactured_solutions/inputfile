@@ -1,0 +1,93 @@
+E = 211
+nu = 0.33
+K = E/(3*(1-2*nu))
+mu = E/(2*(1+nu))
+rho = 7.75e-06
+lambda = E*nu/((1+nu)*(1-2*nu))
+
+L = 1
+A_zy = L*L
+
+S = 1.5
+c0 = 5030
+
+FLIP=0.99
+
+dimension(3)
+region(box, block, 0, L, 0, L, 0, L, op, op2)
+#eos(eosl, linear, rho, K)
+#eos(eoss, shock, rho, K, c0, 0, S, 0)
+
+#strength(strengthl, linear, mu)
+
+material(mat1, neo-hookean, rho, E, nu)
+
+N = 20
+cellsize = L/N
+solid(solid1, block, box, N, N, N, mat1, cellsize)
+
+
+#--------- MANUFACTURED SOLUTIONS ----------#
+c = sqrt(E/rho)
+
+G = 0.0001
+phi2 = PI
+phi3 = PI
+
+u1 = G*sin(PI*x)*sin(c*PI*time)
+u2 = G*sin(PI*y)*sin(c*PI*time + phi2)
+u3 = G*sin(PI*z)*sin(c*PI*time + phi3)
+
+v01 = PI*c*G*sin(PI*x)
+v02 = PI*c*G*sin(PI*y)*cos(phi2)
+v03 = PI*c*G*sin(PI*z)*cos(phi3)
+
+F1 = 1 + PI*G*cos(PI*x)*sin(c*PI*time)
+F2 = 1 + PI*G*cos(PI*y)*sin(c*PI*time + phi2)
+F3 = 1 + PI*G*cos(PI*z)*sin(c*PI*time + phi3)
+
+fb1 = PI*PI*u1/rho*(lambda/(F1*F1)*(1-log(F1*F2*F3)) + mu*(1+1/(F1*F1))-E)
+fb2 = PI*PI*u2/rho*(lambda/(F2*F2)*(1-log(F1*F2*F3)) + mu*(1+1/(F2*F2))-E)
+fb3 = PI*PI*u3/rho*(lambda/(F3*F3)*(1-log(F1*F2*F3)) + mu*(1+1/(F3*F3))-E)
+
+#---------- IMPOSE BOUNDARY CONDITIONS --------------#
+
+region(rBCLX, block, INF, cellsize/4, INF, INF, INF, INF)
+region(rBCUX, block, L-cellsize/4, INF, INF, INF, INF, INF)
+region(rBCLY, block, INF, INF, INF, cellsize/4, INF, INF)
+region(rBCUY, block, INF, INF, L-cellsize/4, INF, INF, INF)
+region(rBCLZ, block, INF, INF, INF, INF, INF, cellsize/4)
+region(rBCUZ, block, INF, INF, INF, INF, L-cellsize/4, INF)
+group(gBCLX, nodes, region, rBCLX, solid, solid1)
+group(gBCLY, nodes, region, rBCLY, solid, solid1)
+group(gBCLZ, nodes, region, rBCLZ, solid, solid1)
+group(gBCUX, nodes, region, rBCUX, solid, solid1)
+group(gBCUY, nodes, region, rBCUY, solid, solid1)
+group(gBCUZ, nodes, region, rBCUZ, solid, solid1)
+
+
+fix(fBCLX, velocity_nodes, gBCLX, 0, NULL, NULL)
+fix(fBCUX, velocity_nodes, gBCUX, 0, NULL, NULL)
+fix(fBCLY, velocity_nodes, gBCLY, NULL, 0, NULL)
+fix(fBCUY, velocity_nodes, gBCUY, NULL, 0, NULL)
+fix(fBCLZ, velocity_nodes, gBCLZ, NULL, NULL, 0)
+fix(fBCUZ, velocity_nodes, gBCUZ, NULL, NULL, 0)
+
+#---------- IMPOSE INITIAL CONDITIONS --------------#
+
+dt_ = 0.2*cellsize/c
+T = 2.0/c
+Nmax = T/dt_
+
+fix(initial_vel, initial_velocity_nodes, all, v01, v02, v03)
+fix(fbody, body_force, all, fb1, fb2, fb3)
+fix(error, check_solution, all, u1, u2, u3)
+
+dump(dump1, all, particle, 1, dump_p.*.LAMMPS, x, y, z)
+dump(dump2, all, grid, 1, dump_g.*.LAMMPS, x, y, z)
+
+method_modify(FLIP, cubic-spline)
+set_dt(dt_)
+log_modify(custom, step, dt, time, fbody_x, fbody_y, fbody_z, error_x, error_y, error_z)
+log(1)
+run(Nmax+2)

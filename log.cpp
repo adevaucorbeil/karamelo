@@ -123,7 +123,7 @@ void Log::compute_dt(string name)
 
 void Log::compute_time(string name)
 {
-  dvalue = update->atime + (update->ntimestep-update->atimestep)*update->dt;
+  dvalue = update->atime;// + (update->ntimestep-update->atimestep)*update->dt;
 }
 
 void Log::compute_var(string name)

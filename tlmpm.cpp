@@ -290,6 +290,7 @@ void TLMPM::compute_rate_deformation_gradient()
   for (int isolid=0; isolid<domain->solids.size(); isolid++) {
     if (method_type.compare("APIC") == 0) domain->solids[isolid]->compute_rate_deformation_gradient_APIC();
     else domain->solids[isolid]->compute_rate_deformation_gradient();
+    //domain->solids[isolid]->compute_deformation_gradient();
   }
 }
 
@@ -310,13 +311,25 @@ void TLMPM::update_stress()
 void TLMPM::adjust_dt()
 {
   update->update_time();
+  if (update->dt_constant) return; // dt is set as a constant, do not update
+
 
   double dtCFL = 1.0e22;
 
   for (int isolid=0; isolid<domain->solids.size(); isolid++) {
     dtCFL = MIN(dtCFL, domain->solids[isolid]->dtCFL);
+    if (dtCFL == 0) {
+      cout << "Error: dtCFL == 0\n";
+      cout << "domain->solids[" << isolid << "]->dtCFL == 0\n";
+      exit(1);
+    } else if (isnan(dtCFL)) {
+      cout << "Error: dtCFL = " << dtCFL << "\n";
+      cout << "domain->solids[" << isolid << "]->dtCFL == " << domain->solids[isolid]->dtCFL << "\n";
+      exit(1);
+    }
   }
   update->dt = dtCFL * update->dt_factor;
+  (*input->vars)["dt"] = Var("dt", update->dt);
 }
 
 void TLMPM::reset_dtCFL()

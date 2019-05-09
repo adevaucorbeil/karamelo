@@ -21,6 +21,7 @@ Update::Update(MPM *mpm) : Pointers(mpm)
   beginstep = endstep = 0;
   first_update = 0;
   dt = 1e-16;
+  dt_constant = false;
   dt_factor = 0.9;
 
   // Default scheme is MUSL:
@@ -45,6 +46,16 @@ void Update::set_dt_factor(vector<string> args){
     exit(1);
   }
   dt_factor = input->parsev(args[0]);
+}
+
+void Update::set_dt(vector<string> args){
+  if (args.size()!=1) {
+    cout << "Illegal set_dt command: not enough arguments or too many arguments" << endl;
+    exit(1);
+  }
+  dt = input->parsev(args[0]);
+  dt_constant = true;
+  (*input->vars)["dt"] = Var("dt", dt);
 }
 
 void Update::create_scheme(vector<string> args){
