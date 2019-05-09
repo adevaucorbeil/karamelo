@@ -322,7 +322,7 @@ void TLMPM::adjust_dt()
       cout << "Error: dtCFL == 0\n";
       cout << "domain->solids[" << isolid << "]->dtCFL == 0\n";
       exit(1);
-    } else if (isnan(dtCFL)) {
+    } else if (std::isnan(dtCFL)) {
       cout << "Error: dtCFL = " << dtCFL << "\n";
       cout << "domain->solids[" << isolid << "]->dtCFL == " << domain->solids[isolid]->dtCFL << "\n";
       exit(1);

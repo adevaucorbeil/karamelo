@@ -660,7 +660,7 @@ void Solid::update_stress()
 
     
     min_inv_p_wave_speed = MIN(min_inv_p_wave_speed, rho[ip] / (mat->K + 4.0/3.0 * mat->G));
-    if (isnan(min_inv_p_wave_speed)) {
+    if (std::isnan(min_inv_p_wave_speed)) {
       cout << "Error: min_inv_p_wave_speed is nan with ip=" << ip << ", rho[ip]=" << rho[ip] << ", K=" << mat->K << ", G=" << mat->G << endl;
       exit(1);
     } else if (min_inv_p_wave_speed < 0.0) {
@@ -671,7 +671,7 @@ void Solid::update_stress()
   }
   min_inv_p_wave_speed = sqrt(min_inv_p_wave_speed);
   dtCFL = MIN(dtCFL, min_inv_p_wave_speed * grid->cellsize);
-  if (isnan(dtCFL)) {
+  if (std::isnan(dtCFL)) {
       cout << "Error: dtCFL = " << dtCFL << "\n";
       cout << "min_inv_p_wave_speed = " << min_inv_p_wave_speed << ", grid->cellsize=" << grid->cellsize << endl;
       exit(1);
