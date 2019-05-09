@@ -16,6 +16,7 @@ MethodStyle(tlmpm,TLMPM)
 
 class TLMPM : public Method {
  public:
+  string method_type;
   double FLIP;
   string form_function;
 

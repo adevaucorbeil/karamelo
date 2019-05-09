@@ -3,4 +3,6 @@
 /*~
 /*.LAMMPS
 /examples/*/*.LAMMPS
+/examples/*.LAMMPS
 /examples/*/*/*.LAMMPS
+/#*

@@ -16,6 +16,7 @@ TLMPM::TLMPM(MPM *mpm, vector<string> args) : Method(mpm) {
   cout << "In TLMPM::TLMPM()" << endl;
 
   update_wf = 1;
+  method_type = "FLIP";
   FLIP = 0.99;
 
   // Default base function (linear):
@@ -30,21 +31,52 @@ TLMPM::~TLMPM()
 
 void TLMPM::modify(vector<string> args)
 {
-  FLIP = input->parsev(args[0]);
-  if (args.size() > 1) {
-    form_function = args[1];
-    if (args[1].compare("linear") == 0) {
+  int n = 0;
+  bool isFLIP = false;
+  // Method used: PIC, FLIP or APIC:
+  if (args[n].compare("PIC") == 0) {
+    method_type = "PIC";
+    FLIP = 0;
+  } else if (args[n].compare("FLIP") == 0) {
+    method_type = "FLIP";
+    isFLIP = true;
+
+    if (args.size() < 2) {
+      cout << "Illegal modify_method command: not enough arguments." << endl;
+      exit(1);
+    }
+
+  } else if (args[n].compare("APIC") == 0) {
+    method_type = "APIC";
+  } else {
+    cout << "Error: method type " << args[n] << " not understood. Expect: PIC, FLIP or APIC\n";
+    exit(1);
+  }
+
+  n++;
+  
+  if (args.size() > 1 + isFLIP) {
+    if (args[n].compare("linear") == 0) {
+      form_function = "linear";
       cout << "Setting up linear basis functions\n";
       basis_function = &linear_basis_function;
       derivative_basis_function = &derivative_linear_basis_function;
-    } else if (args[1].compare("cubic-spline") == 0) {
+      n++;
+    } else if (args[n].compare("cubic-spline") == 0) {
+      form_function = "cubic-spline";
       cout << "Setting up cubic-spline basis functions\n";
       basis_function = &cubic_spline_basis_function;
       derivative_basis_function = &derivative_cubic_spline_basis_function;
+      n++;
     } else {
-      cout << "Illegal run_method argument:" << args[1] << endl;
+      cout << "Illegal method_method argument: form function of type " << args[n] << " is unknown." << endl;
       exit(1);
     }
+  }
+
+  if (args.size() > n + isFLIP) {
+    cout << "Illegal modify_method command: too many arguments: " << n + isFLIP << " expected, " << args.size() << " received." << endl;
+      exit(1);    
   }
 }
 
@@ -133,7 +165,7 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
 	  } 
 	}
       }
-      domain->solids[isolid]->compute_inertia_tensor(form_function);
+      if (method_type.compare("APIC") == 0) domain->solids[isolid]->compute_inertia_tensor(form_function);
     }
   }
 
@@ -211,8 +243,8 @@ void TLMPM::particles_to_grid()
 {
   for (int isolid=0; isolid<domain->solids.size(); isolid++){
       domain->solids[isolid]->compute_mass_nodes();
-      // domain->solids[isolid]->compute_velocity_nodes();
-      domain->solids[isolid]->compute_velocity_nodes_APIC();
+      if (method_type.compare("APIC") == 0) domain->solids[isolid]->compute_velocity_nodes_APIC();
+      else domain->solids[isolid]->compute_velocity_nodes();
       domain->solids[isolid]->compute_external_forces_nodes();
       domain->solids[isolid]->compute_internal_forces_nodes();
       /*compute_thermal_energy_nodes();*/
@@ -245,8 +277,10 @@ void TLMPM::advance_particles()
 void TLMPM::velocities_to_grid()
 {
   for (int isolid=0; isolid<domain->solids.size(); isolid++) {
-    // domain->solids[isolid]->compute_mass_nodes();
-    // domain->solids[isolid]->compute_velocity_nodes();
+    if (method_type.compare("APIC") != 0) { 
+      domain->solids[isolid]->compute_mass_nodes();
+      domain->solids[isolid]->compute_velocity_nodes();
+    }
     domain->solids[isolid]->grid->update_grid_positions();
   }
 }
@@ -254,8 +288,8 @@ void TLMPM::velocities_to_grid()
 void TLMPM::compute_rate_deformation_gradient()
 {
   for (int isolid=0; isolid<domain->solids.size(); isolid++) {
-    // domain->solids[isolid]->compute_rate_deformation_gradient();
-    domain->solids[isolid]->compute_rate_deformation_gradient_APIC();
+    if (method_type.compare("APIC") == 0) domain->solids[isolid]->compute_rate_deformation_gradient_APIC();
+    else domain->solids[isolid]->compute_rate_deformation_gradient();
   }
 }
 
