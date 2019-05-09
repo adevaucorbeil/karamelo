@@ -34,9 +34,13 @@ SRC :=	$(wildcard *.cpp)
 INC :=	$(wildcard *.h)
 OBJ := 	$(SRC:.cpp=.o)
 
+# Git branch
+ifndef BRANCH
+BRANCH := $(shell git rev-parse --short HEAD)
+endif
 
 # define the executable file 
-MAIN = mpm
+MAIN = mpm_${BRANCH}
 
 #
 # The following part of the makefile is generic; it can be used to 
