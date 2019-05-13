@@ -78,6 +78,11 @@ void TLMPM::modify(vector<string> args)
     cout << "Illegal modify_method command: too many arguments: " << n + isFLIP << " expected, " << args.size() << " received." << endl;
       exit(1);    
   }
+
+  if (isFLIP) FLIP = input->parsev(args[n]);
+  // cout << "form_function = " << form_function << endl;
+  // cout << "method_type = " << method_type << endl;
+  // cout << "FLIP = " << FLIP << endl;
 }
 
 void TLMPM::setup()
