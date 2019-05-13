@@ -73,6 +73,6 @@ dump(dump1, all, particle, 100, dump_p.*.LAMMPS, x, y, z)
 dump(dump2, all, grid, 100, dump_g.*.LAMMPS, x, y, z)
 
 method_modify(FLIP, cubic-spline, FLIP)
-log(100)
+log(1)
 log_modify(custom, step, dt, time, ft, fb, eps, stress)
 run(100000)

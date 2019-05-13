@@ -337,7 +337,13 @@ void TLMPM::adjust_dt()
   (*input->vars)["dt"] = Var("dt", update->dt);
 }
 
-void TLMPM::reset_dtCFL()
+void TLMPM::reset()
 {
-  for (int isolid=0; isolid<domain->solids.size(); isolid++) domain->solids[isolid]->dtCFL = 1.0e22;
+  int np;
+
+  for (int isolid=0; isolid<domain->solids.size(); isolid++) {
+    domain->solids[isolid]->dtCFL = 1.0e22;
+    np = domain->solids[isolid]->np;
+    for (int ip = 0; ip < np; ip++) domain->solids[isolid]->b[ip].setZero();
+  }
 }
