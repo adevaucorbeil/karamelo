@@ -54,7 +54,7 @@ MAIN = mpm_${BRANCH}
 .PHONY: depend clean
 
 all:    $(MAIN)
-	@echo  Simple compiler named mpm has been compiled
+	@echo  ${MAIN} has been compiled successfully
 
 $(MAIN): $(OBJ)
 	$(CC) $(CFLAGS) $(INCLUDES) $(OBJ) $(LFLAGS) $(LIBS) -o $(MAIN) 
