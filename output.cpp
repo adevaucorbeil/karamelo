@@ -6,6 +6,9 @@
 #include "style_dump.h"
 #include "var.h"
 #include "plot.h"
+#include <matplotlibcpp.h>
+
+namespace plt = matplotlibcpp;
 
 #define MIN(A,B) ((A) < (B) ? (A) : (B))
 
@@ -134,8 +137,15 @@ void Output::write(bigint ntimestep){
 
   if (ntimestep == nsteps) {
     for (int iplot = 0; iplot < nplots; iplot++) {
-      plots[iplot]->show();
+      plt::named_plot(plots[iplot]->id, plots[iplot]->x, plots[iplot]->y);
     }
+
+    //string fpng = "plot.png";
+    //cout << "Save plot as : " << fpng << endl;
+    //plt::save(fpng);
+    plt::grid(true);
+    plt::legend();
+    plt::show();
   }
   
   next = MIN(next,next_plot_any);

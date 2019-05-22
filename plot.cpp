@@ -95,9 +95,9 @@ void Plot::init()
 void Plot::compute_step(string name, int x_or_y)
 {
   if (x_or_y == 0) {
-    xbi.push_back(update->ntimestep);
+    x.push_back(update->ntimestep);
   } else if (x_or_y == 1) {
-    ybi.push_back(update->ntimestep);
+    y.push_back(update->ntimestep);
   } else {
     cout << "Error: in Plot::compute_step, x_or_y == " << x_or_y << ". Expected 0 or 1!" << endl;
     exit(1);
@@ -107,9 +107,9 @@ void Plot::compute_step(string name, int x_or_y)
 void Plot::compute_dt(string name, int x_or_y)
 {
   if (x_or_y == 0) {
-    xd.push_back(update->dt);
+    x.push_back(update->dt);
   } else if (x_or_y == 1) {
-    yd.push_back(update->dt);
+    y.push_back(update->dt);
   } else {
     cout << "Error: in Plot::compute_dt, x_or_y == " << x_or_y << ". Expected 0 or 1!" << endl;
     exit(1);
@@ -119,9 +119,9 @@ void Plot::compute_dt(string name, int x_or_y)
 void Plot::compute_time(string name, int x_or_y)
 {
   if (x_or_y == 0) {
-    xd.push_back(update->atime);
+    x.push_back(update->atime);
   } else if (x_or_y == 1) {
-    yd.push_back(update->atime);
+    y.push_back(update->atime);
   } else {
     cout << "Error: in Plot::compute_time, x_or_y == " << x_or_y << ". Expected 0 or 1!" << endl;
     exit(1);
@@ -131,9 +131,9 @@ void Plot::compute_time(string name, int x_or_y)
 void Plot::compute_var(string name, int x_or_y)
 {
   if (x_or_y == 0) {
-    xd.push_back((*input->vars)[name].result(mpm));
+    x.push_back((*input->vars)[name].result(mpm));
   } else if (x_or_y == 1) {
-    yd.push_back((*input->vars)[name].result(mpm));
+    y.push_back((*input->vars)[name].result(mpm));
   } else {
     cout << "Error: in Plot::compute_var, x_or_y == " << x_or_y << ". Expected 0 or 1!" << endl;
     exit(1);
@@ -157,33 +157,3 @@ void Plot::modify(vector<string> args)
   parse_keywords(keyword);
 }
 
-
-void Plot::show()
-{
-  if ((this->field[0].typeflag == INT) && (this->field[1].typeflag == INT)){
-    plt::plot(xi,yi);
-  } else if ((this->field[0].typeflag == FLOAT) && (this->field[1].typeflag == INT)){
-    plt::plot(xd,yi);
-  } else if ((this->field[0].typeflag == BIGINT) && (this->field[1].typeflag == INT)){
-    plt::plot(xbi,yi);
-  } else if ((this->field[0].typeflag == INT) && (this->field[1].typeflag == FLOAT)){
-    plt::plot(xi,yd);
-  } else if ((this->field[0].typeflag == FLOAT) && (this->field[1].typeflag == FLOAT)){
-    plt::plot(xd,yd);
-  } else if ((this->field[0].typeflag == BIGINT) && (this->field[1].typeflag == FLOAT)){
-    plt::plot(xbi,yd);
-  } else if ((this->field[0].typeflag == INT) && (this->field[1].typeflag == BIGINT)){
-    plt::plot(xi,ybi);
-  } else if ((this->field[0].typeflag == FLOAT) && (this->field[1].typeflag == BIGINT)){
-    plt::plot(xd,ybi);
-  } else if ((this->field[0].typeflag == BIGINT) && (this->field[1].typeflag == BIGINT)){
-    plt::plot(xbi,ybi);
-  }
-  plt::xlabel(this->field[0].name);
-  plt::ylabel(this->field[1].name);
-
-  string fpng = ("./" + id) + ".png";
-  cout << "Save plot as : " << fpng << endl;
-  plt::save(fpng);
-  plt::show();
-}

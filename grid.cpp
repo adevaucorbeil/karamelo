@@ -129,7 +129,7 @@ void Grid::grow(int nn){
 void Grid::update_grid_velocities()
 {
   for (int i=0; i<nnodes; i++){
-    if (mass[i] > 0) v_update[i] = v[i] + update->dt/mass[i] * (f[i] + b[i]);
+    if (mass[i] > 0) v_update[i] = v[i] + update->dt * (f[i]/mass[i] + b[i]);
     else v_update[i] = v[i];
     // if (update->ntimestep>450)
     //   if (i==0)
