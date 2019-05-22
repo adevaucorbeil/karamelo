@@ -93,7 +93,7 @@ SolBlock::SolBlock(MPM *mpm, vector<string> args) : Solid(mpm, args)
     PK1[i].setZero();
     L[i].setZero();
     F[i].setIdentity();
-    R[i].setZero();
+    R[i].setIdentity();
     U[i].setZero();
     D[i].setZero();
     Finv[i].setZero();
