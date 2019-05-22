@@ -81,6 +81,7 @@ SolRectangle::SolRectangle(MPM *mpm, vector<string> args) : Solid(mpm, args)
     // Quadratic elements:
 
     np *= 8;
+    mass_ /= 8;
     // Allocate the space in the vectors for np particles:
     grow(np);
 
