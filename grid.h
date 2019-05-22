@@ -14,6 +14,9 @@ using namespace Eigen;
 class Grid : protected Pointers {
  public:
   bigint nnodes;         // number of particles
+  int nx;                // number of particles along x
+  int ny;                // number of particles along y
+  int nz;                // number of particles along z
   double cellsize;       // size of the square cells forming the grid
 
   Eigen::Vector3d *x;            // nodes' current position

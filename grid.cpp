@@ -36,15 +36,15 @@ Grid::~Grid()
 }
 
 void Grid::init(double *solidlo, double *solidhi){
-  double Lx = solidhi[0]-solidlo[0];
-  double Ly = solidhi[1]-solidlo[1];
-  double Lz = solidhi[2]-solidlo[2];
-  int nx = (int) Lx/cellsize;
-  int ny = (int) Ly/cellsize;
-  int nz = (int) Lz/cellsize;
-  while ((nx-2)*cellsize <= Lx + 0.5*cellsize) nx++;
-  while ((ny-2)*cellsize <= Ly + 0.5*cellsize) ny++;
-  while ((nz-2)*cellsize <= Lz + 0.5*cellsize) nz++;
+  double Lx = solidhi[0]-solidlo[0]+2*cellsize;
+  double Ly = solidhi[1]-solidlo[1]+2*cellsize;
+  double Lz = solidhi[2]-solidlo[2]+2*cellsize;
+  nx = ((int) Lx/cellsize)+1;
+  ny = ((int) Ly/cellsize)+1;
+  nz = ((int) Lz/cellsize)+1;
+  while (nx*cellsize <= Lx+0.5*cellsize) nx++;
+  while (ny*cellsize <= Ly+0.5*cellsize) ny++;
+  while (nz*cellsize <= Lz+0.5*cellsize) nz++;
 
   int nn = nx*ny*nz;
   grow(nn);

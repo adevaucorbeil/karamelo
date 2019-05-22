@@ -22,9 +22,10 @@ region(box, block, 0, 4*L, 0, L, 0, L, op, op2)
 
 material(mat1, neo-hookean, rho, E, nu)
 
-N = 15
+N = 2
 cellsize = L/N
-solid(solid1, block, box, 4*N, N, N, mat1, cellsize)
+solid(solid1, rectangle, box, 2, mat1, cellsize)
+#solid(solid1, block, box, 4*N, N, N, mat1, cellsize)
 
 #---------- IMPOSE BOUNDARY CONDITIONS --------------#
 

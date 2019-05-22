@@ -108,7 +108,7 @@ void Solid::init()
   cout << "ylo yhi: " << solidlo[1] << " " << solidhi[1] << endl;
   cout << "zlo zhi: " << solidlo[2] << " " << solidhi[2] << endl;
 
-  grid->init(solidlo, solidhi);
+  if (grid->nnodes == 0) grid->init(solidlo, solidhi);
 
   if (np == 0) {
     cout << "Error: solid does not have any particles" << endl;
