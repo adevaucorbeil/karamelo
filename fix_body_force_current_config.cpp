@@ -99,9 +99,9 @@ void FixBodyforceCurrentConfig::initial_integrate() {
 	    if (yset) f[1] = yvalue.result(mpm);
 	    if (zset) f[2] = zvalue.result(mpm);
 
-	    F = mass[in]*(R[in].transpose()*f); // Rotate vector f from the current to the reference configuration
+	    F = (R[in].transpose()*f); // Rotate vector f from the current to the reference configuration
 	    b[in] += F;
-	    ftot += F;
+	    ftot += mass[in]*F;
 	  }
 	}
       }
@@ -130,9 +130,9 @@ void FixBodyforceCurrentConfig::initial_integrate() {
 	  if (yset) f[1] = yvalue.result(mpm);
 	  if (zset) f[2] = zvalue.result(mpm);
 
-	  F = mass[in]*(R[in].transpose()*f); // Rotate vector f from the current to the reference configuration
+	  F = (R[in].transpose()*f); // Rotate vector f from the current to the reference configuration
 	  b[in] += F;
-	  ftot += F;
+	  ftot += mass[in]*F;
 	}
       }
     }

@@ -94,17 +94,17 @@ void FixBodyforce::post_particles_to_grid() {
 	      (*input->vars)["z"] = Var("z", x0[in][2]);
 	    if (xset) {
 	      fx = xvalue.result(mpm);
-	      b[in][0] += mass[in]*fx;
+	      b[in][0] += fx;
 	      ftot[0] += mass[in]*fx;
 	    }
 	    if (yset) {
 	      fy = yvalue.result(mpm);
-	      b[in][1] += mass[in]*fy;
+	      b[in][1] += fy;
 	      ftot[1] += mass[in]*fy;
 	    }
 	    if (zset) {
 	      fz = zvalue.result(mpm);
-	      b[in][2] += mass[in]*fz;
+	      b[in][2] += fz;
 	      ftot[2] += mass[in]*fz;
 	    }
 	  }
@@ -132,17 +132,17 @@ void FixBodyforce::post_particles_to_grid() {
 	  (*input->vars)["z"] = Var("z", x0[in][2]);
 	  if (xset) {
 	    fx = xvalue.result(mpm);
-	    b[in][0] += mass[in]*fx;
+	    b[in][0] += fx;
 	    ftot[0] += mass[in]*fx;
 	  }
 	  if (yset) {
 	    fy = yvalue.result(mpm);
-	    b[in][1] += mass[in]*fy;
+	    b[in][1] += fy;
 	    ftot[1] += mass[in]*fy;
 	  }
 	  if (zset) {
 	    fz = zvalue.result(mpm);
-	    b[in][2] += mass[in]*fz;
+	    b[in][2] += fz;
 	    ftot[2] += mass[in]*fz;
 	  }
 	}
