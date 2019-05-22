@@ -5,6 +5,7 @@
 #include "log.h"
 #include "style_dump.h"
 #include "var.h"
+#include "plot.h"
 
 #define MIN(A,B) ((A) < (B) ? (A) : (B))
 
@@ -13,8 +14,10 @@ using namespace std;
 Output::Output(MPM *mpm) : Pointers(mpm)
 {
   ndumps = 0;
+  nplots = 0;
 
   next_dump_any = 0;
+  next_plot_any = 0;
 
   // create default Log class
 
@@ -29,6 +32,7 @@ Output::Output(MPM *mpm) : Pointers(mpm)
 Output::~Output()
 {
   for (int i=0; i<dumps.size();i++) delete dumps[i];
+  for (int i=0; i<plots.size();i++) delete plots[i];
   delete log;
 }
 
@@ -53,6 +57,25 @@ void Output::setup(){
     }
   }
 
+  if (nplots != 0) {
+
+    if (next_plot.size() != nplots) next_plot.reserve(nplots);
+    
+    for (int iplot=0; iplot<nplots; iplot++){
+      if (every_plot[iplot]){
+	next_plot[iplot] =
+          (ntimestep/every_plot[iplot])*every_plot[iplot] + every_plot[iplot];
+      } else {
+	cout << "Error every_plot = 0 does not make sense" << endl;
+      }
+
+      if (iplot) next_plot_any = MIN(next_plot_any,next_plot[iplot]);
+      else next_plot_any = next_plot[0];
+    }
+  }
+
+  next = MIN(next_dump_any,next_plot_any);
+
   log->init();
   log->header();
 
@@ -61,12 +84,14 @@ void Output::setup(){
     if (update->laststep != 0) next_log = MIN(next_log,update->laststep);
   } else next_log = update->laststep;
 
-  next = MIN(next_dump_any,next_log);
+  next = MIN(next,next_log);
 
   // cout << "Next = " << next << endl;
 }
 
 void Output::write(bigint ntimestep){
+
+  bigint nsteps = update->nsteps;
 
   // If there is at least one dump that requested output at the current step:
   if (next_dump_any == ntimestep) {
@@ -92,6 +117,28 @@ void Output::write(bigint ntimestep){
   }
   
   next = MIN(next_dump_any,next_log);
+
+  if (next_plot_any == ntimestep) {
+    for (int iplot = 0; iplot < nplots; iplot++) {
+      // Which plot requested output:
+      if (next_plot[iplot] == ntimestep) {
+	plots[iplot]->save();
+      }
+
+      if (every_plot[iplot]) next_plot[iplot] += every_plot[iplot];
+
+      if (iplot) next_plot_any = MIN(next_plot_any,next_plot[iplot]);
+      else next_plot_any = next_plot[0];
+    }
+  }
+
+  if (ntimestep == nsteps) {
+    for (int iplot = 0; iplot < nplots; iplot++) {
+      plots[iplot]->show();
+    }
+  }
+  
+  next = MIN(next,next_plot_any);
 }
 
 void Output::set_log(vector<string> args){
@@ -162,6 +209,58 @@ void Output::delete_dump(string name){
 int Output::find_dump(string name){
   for (int idump = 0; idump < dumps.size(); idump++){
     if (name.compare(dumps[idump]->id) == 0) return idump;
+  }
+  return -1;
+}
+
+void Output::add_plot(vector<string> args){
+  cout << "In add_plot" << endl;
+  if (args.size() < 4) {
+    cout << "Error: not enough arguments in plot command" << endl;
+  }
+
+  if (find_plot(args[0]) >= 0) {
+    cout << "Error: reuse of plot ID" << endl;
+    exit(1);
+  }
+
+  // create the Plot
+  plots.push_back(new Plot(mpm,args));
+
+  every_plot.push_back((int) input->parsev(args[1]));
+  last_dump.push_back(-1);
+  next_dump.push_back(0);
+  nplots++;
+}
+
+void Output::modify_plot(vector<string> args){
+  cout << "In modify_plot" << endl;
+
+  int iplot = find_plot(args[1]);
+  if (iplot == 0) {
+    cout << "Error: plot ID unknown" << endl;
+    exit(1);
+  }
+
+  cout << "Unfinished function" << endl;
+  exit(1);
+}
+
+void Output::delete_plot(string name){
+  cout << "In delete_plot" << endl;
+
+  int iplot = find_plot(name);
+  if (iplot == 0) {
+    cout << "Error: plot ID unknown" << endl;
+    exit(1);
+  }
+
+  plots.erase(plots.begin() + iplot);
+}
+
+int Output::find_plot(string name){
+  for (int iplot = 0; iplot < plots.size(); iplot++){
+    if (name.compare(plots[iplot]->id) == 0) return iplot;
   }
   return -1;
 }

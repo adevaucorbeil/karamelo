@@ -22,6 +22,13 @@ public:
   int ndumps;                  // number of defined Dumps, should always be equal to dumps.size()
   vector<class Dump *> dumps;  // list of defined Dumps
 
+  bigint next_plot_any;        // next timestep for any Plot
+  vector<int> every_plot;      // write freq for each Plot, 0 if var
+  vector<bigint> next_plot;    // next timestep for plot output
+  vector<bigint> last_plot;    // last timestep each snapshot was output
+  int nplots;                  // number of defined Plots, should always be equal to plots.size()
+  vector<class Plot *> plots;  // list of defined Plots
+
   Output(class MPM *);
   ~Output();
 
@@ -34,6 +41,11 @@ public:
   int find_dump(string);               // find a Dump in Dump list
   void modify_dump(vector<string>);    // modify a Dump
   void delete_dump(string);            // delete a Dump from Dump list
+
+  void add_plot(vector<string>);       // add a Plot to Plot list
+  int find_plot(string);               // find a Plot in Plot list
+  void modify_plot(vector<string>);    // modify a Plot
+  void delete_plot(string);            // delete a Plot from Plot list
 };
 
 #endif

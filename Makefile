@@ -15,8 +15,8 @@ CFLAGS = -g -std=c++11 -O3
 # define any directories containing header files other than /usr/include
 #
 
-#INCLUDES = -I/usr/include/eigen3/
-INCLUDES = -I/usr/local/eigen/3.3.0/include/eigen3/
+INCLUDES = -I/usr/include/eigen3/ -I/home/adev0002/matplotlib-cpp -I/usr/include/python2.7
+#INCLUDES = -I/usr/local/eigen/3.3.0/include/eigen3/ -I/home/adev0002/matplotlib-cpp -I/usr/include/python2.7
 
 #-I/home/newhall/include  -I../include
 
@@ -29,7 +29,7 @@ LFLAGS =
 # define any libraries to link into executable:
 #   if I want to link in libraries (libx.so or libx.a) I use the -llibname 
 #   option, something like (this will link in libmylib.so and libm.so:
-LIBS =
+LIBS = -lpython2.7
 #-lmylib -lm
 
 # define the C source files
@@ -54,7 +54,7 @@ MAIN = mpm_${BRANCH}
 .PHONY: depend clean
 
 all:    $(MAIN)
-	@echo  ${MAIN} has been compiled successfully
+	@echo  Simple compiler named mpm has been compiled
 
 $(MAIN): $(OBJ)
 	$(CC) $(CFLAGS) $(INCLUDES) $(OBJ) $(LFLAGS) $(LIBS) -o $(MAIN) 

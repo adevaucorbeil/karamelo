@@ -201,6 +201,7 @@ Var Input::evaluate_function(string func, string arg){
   if (func.compare("dt_factor") == 0) return Var(set_dt_factor(args));
   if (func.compare("set_dt") == 0 ) return Var(set_dt(args));
   if (func.compare("value") == 0) return value(args);
+  if (func.compare("plot") == 0) return Var(plot(args));
 
   // invoke commands added via style_command.h
 
@@ -682,6 +683,11 @@ Var Input::value(vector<string> args){
   return v;
 }
 
+
+int Input::plot(vector<string> args){
+  output->add_plot(args);
+  return 0;
+}
 /* ----------------------------------------------------------------------
    one instance per command in style_command.h
 ------------------------------------------------------------------------- */
