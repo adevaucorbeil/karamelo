@@ -22,7 +22,7 @@ region(box, block, 0, 4*L, 0, L, 0, L, op, op2)
 
 material(mat1, neo-hookean, rho, E, nu)
 
-N = 10
+N = 15
 cellsize = L/N
 solid(solid1, block, box, 4*N, N, N, mat1, cellsize)
 
@@ -52,14 +52,15 @@ y0_tip = value(y_tip)
 dy_tip = y_tip-y0_tip
 
 #---------- SET METHOD --------------#
-method_modify(FLIP, linear, FLIP)
-dt_factor(0.2)
+method_modify(FLIP, cubic-spline,FLIP)
+#dt_factor(0.2)
 
 #th = gravity*time*time/2
 
 #set_dt(2*cellsize/c)
-log_modify(custom, step, dt, time, fbody_x, fbody_y, dy_tip)
+f_ = sqrt(fbody_x*fbody_x+fbody_y*fbody_y+fbody_z*fbody_z)
+log_modify(custom, step, dt, time, fbody_x, fbody_y, fbody_z, f_, dy_tip)
 plot(dy_tip, N_log, time, dy_tip)
 #plot(theory, N_log, time, th)
 log(N_log)
-run(3000)
+run(1500)
