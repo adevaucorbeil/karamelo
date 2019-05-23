@@ -21,6 +21,8 @@ Grid::Grid(MPM *mpm) :
 
   mass = NULL;
   mask = NULL;
+
+  R = NULL;
 }
 
 Grid::~Grid()
@@ -33,6 +35,7 @@ Grid::~Grid()
   memory->destroy(f);
   memory->destroy(mass);
   memory->destroy(mask);
+  memory->destroy(R);
 }
 
 void Grid::init(double *solidlo, double *solidhi){
@@ -64,6 +67,7 @@ void Grid::init(double *solidlo, double *solidhi){
 	f[l].setZero();
 	b[l].setZero();
 	mass[l] = 0;
+	R[l].setIdentity();
 
 	l++;
       }
@@ -112,6 +116,12 @@ void Grid::grow(int nn){
   if (f == NULL) f = new Eigen::Vector3d[nn];
   else {
     cout << "Error: f already exists, I don't know how to grow it!\n";
+    exit(1);
+  }
+
+  if (R == NULL) R = new Eigen::Matrix3d[nn];
+  else {
+    cout << "Error: R already exists, I don't know how to grow it!\n";
     exit(1);
   }
 

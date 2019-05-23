@@ -65,7 +65,7 @@ void FixBodyforce::post_particles_to_grid() {
   // cout << "In FixBodyforce::post_particles_to_grid()\n";
 
   // Go through all the nodes in the group and set b to the right value:
-  double fx, fy, fz;
+  Eigen::Vector3d f, F;
     
   int solid = group->solid[igroup];
 
@@ -75,7 +75,9 @@ void FixBodyforce::post_particles_to_grid() {
   double *mass;
   Eigen::Vector3d ftot;
   Eigen::Vector3d *x0;
+  Eigen::Matrix3d *R;
 
+  double mtot = 0;
   ftot.setZero();
 
   if (solid == -1) {
@@ -85,6 +87,7 @@ void FixBodyforce::post_particles_to_grid() {
       nmax = domain->solids[isolid]->grid->nnodes;
       mask = domain->solids[isolid]->grid->mask;
       mass = domain->solids[isolid]->grid->mass;
+      R = domain->solids[isolid]->grid->R;
 
       for (int in = 0; in < nmax; in++) {
 	if (mass[in] > 0) {
@@ -92,21 +95,16 @@ void FixBodyforce::post_particles_to_grid() {
 	      (*input->vars)["x"] = Var("x", x0[in][0]);
 	      (*input->vars)["y"] = Var("y", x0[in][1]);
 	      (*input->vars)["z"] = Var("z", x0[in][2]);
-	    if (xset) {
-	      fx = xvalue.result(mpm);
-	      b[in][0] += fx;
-	      ftot[0] += mass[in]*fx;
-	    }
-	    if (yset) {
-	      fy = yvalue.result(mpm);
-	      b[in][1] += fy;
-	      ftot[1] += mass[in]*fy;
-	    }
-	    if (zset) {
-	      fz = zvalue.result(mpm);
-	      b[in][2] += fz;
-	      ftot[2] += mass[in]*fz;
-	    }
+
+	      f.setZero();
+	      if (xset) f[0] = xvalue.result(mpm);
+	      if (yset) f[1] = yvalue.result(mpm);
+	      if (zset) f[2] = zvalue.result(mpm);
+
+	      F = (R[in].transpose()*f); // Rotate vector f from the current to the reference configuration
+	      b[in] += F;
+	      ftot += mass[in]*F;
+	      mtot += mass[in];
 	  }
 	}
       }
@@ -122,6 +120,7 @@ void FixBodyforce::post_particles_to_grid() {
     nmax = domain->solids[solid]->grid->nnodes;
     mask = domain->solids[solid]->grid->mask;
     mass = domain->solids[solid]->grid->mass;
+    R = domain->solids[solid]->grid->R;
 
     
     for (int in = 0; in < nmax; in++) {
@@ -130,21 +129,16 @@ void FixBodyforce::post_particles_to_grid() {
 	  (*input->vars)["x"] = Var("x", x0[in][0]);
 	  (*input->vars)["y"] = Var("y", x0[in][1]);
 	  (*input->vars)["z"] = Var("z", x0[in][2]);
-	  if (xset) {
-	    fx = xvalue.result(mpm);
-	    b[in][0] += fx;
-	    ftot[0] += mass[in]*fx;
-	  }
-	  if (yset) {
-	    fy = yvalue.result(mpm);
-	    b[in][1] += fy;
-	    ftot[1] += mass[in]*fy;
-	  }
-	  if (zset) {
-	    fz = zvalue.result(mpm);
-	    b[in][2] += fz;
-	    ftot[2] += mass[in]*fz;
-	  }
+
+	  f.setZero();
+	  if (xset) f[0] = xvalue.result(mpm);
+	  if (yset) f[1] = yvalue.result(mpm);
+	  if (zset) f[2] = zvalue.result(mpm);
+
+	  F = (R[in].transpose()*f); // Rotate vector f from the current to the reference configuration
+	  b[in] += F;
+	  ftot += mass[in]*F;
+	  mtot += mass[in];
 	}
       }
     }
@@ -153,5 +147,5 @@ void FixBodyforce::post_particles_to_grid() {
     if (zset) (*input->vars)[id+"_z"]=Var(id+"_z", ftot[2]);
     // cout << "f for " << n << " nodes from solid " << domain->solids[solid]->id << " set." << endl;
   }
-  // cout << "ftot = [" << ftot[0] << ", " << ftot[1] << ", " << ftot[2] << "]\n"; 
+  // cout << "ftot = [" << ftot[0] << ", " << ftot[1] << ", " << ftot[2] << "], mass = " << mtot << "\n"; 
 }

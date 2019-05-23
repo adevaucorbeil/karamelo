@@ -94,7 +94,7 @@ void FixBodyforceCurrentConfig::initial_integrate() {
 	    (*input->vars)["x"] = Var("x", x0[in][0]);
 	    (*input->vars)["y"] = Var("y", x0[in][1]);
 	    (*input->vars)["z"] = Var("z", x0[in][2]);
-	    f.setZero();  
+	    f.setZero();
 	    if (xset) f[0] = xvalue.result(mpm);
 	    if (yset) f[1] = yvalue.result(mpm);
 	    if (zset) f[2] = zvalue.result(mpm);

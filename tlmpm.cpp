@@ -247,12 +247,13 @@ double derivative_cubic_spline_basis_function(double r_signed, double icellsize)
 void TLMPM::particles_to_grid()
 {
   for (int isolid=0; isolid<domain->solids.size(); isolid++){
-      domain->solids[isolid]->compute_mass_nodes();
-      if (method_type.compare("APIC") == 0) domain->solids[isolid]->compute_velocity_nodes_APIC();
-      else domain->solids[isolid]->compute_velocity_nodes();
-      domain->solids[isolid]->compute_external_forces_nodes();
-      domain->solids[isolid]->compute_internal_forces_nodes();
-      /*compute_thermal_energy_nodes();*/
+    domain->solids[isolid]->compute_mass_nodes();
+    domain->solids[isolid]->compute_node_rotation_matrix();
+    if (method_type.compare("APIC") == 0) domain->solids[isolid]->compute_velocity_nodes_APIC();
+    else domain->solids[isolid]->compute_velocity_nodes();
+    domain->solids[isolid]->compute_external_forces_nodes();
+    domain->solids[isolid]->compute_internal_forces_nodes();
+    /*compute_thermal_energy_nodes();*/
     }
 }
 

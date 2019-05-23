@@ -26,6 +26,8 @@ class Grid : protected Pointers {
   Eigen::Vector3d *b;            // nodes' external forces
   Eigen::Vector3d *f;            // nodes' internal forces
 
+  Eigen::Matrix3d *R;            // nodes' rotation matrix
+
   double *mass;              // nodes' current mass
   int *mask;                 // nodes' group mask
 
