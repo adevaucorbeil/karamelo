@@ -65,7 +65,7 @@ void FixBodyforceCurrentConfig::initial_integrate() {
   // cout << "In FixBodyforceCurrentConfig::initial_integrate()\n";
 
   // Go through all the nodes in the group and set b to the right value:
-  Eigen::Vector3d f, F;
+  Eigen::Vector3d f;
     
   int solid = group->solid[igroup];
 
@@ -99,9 +99,8 @@ void FixBodyforceCurrentConfig::initial_integrate() {
 	    if (yset) f[1] = yvalue.result(mpm);
 	    if (zset) f[2] = zvalue.result(mpm);
 
-	    F = (R[in].transpose()*f); // Rotate vector f from the current to the reference configuration
-	    b[in] += F;
-	    ftot += mass[in]*F;
+	    b[in] += f;
+	    ftot += mass[in]*f;
 	  }
 	}
       }
@@ -130,9 +129,8 @@ void FixBodyforceCurrentConfig::initial_integrate() {
 	  if (yset) f[1] = yvalue.result(mpm);
 	  if (zset) f[2] = zvalue.result(mpm);
 
-	  F = (R[in].transpose()*f); // Rotate vector f from the current to the reference configuration
-	  b[in] += F;
-	  ftot += mass[in]*F;
+	  b[in] += f;
+	  ftot += mass[in]*f;
 	}
       }
     }
