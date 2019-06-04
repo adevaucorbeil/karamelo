@@ -1,6 +1,6 @@
 #include <iostream>
 #include <vector>
-#include "run.h"
+#include "run_time.h"
 #include "domain.h"
 #include "output.h"
 #include "input.h"
@@ -10,13 +10,13 @@
 
 /* ---------------------------------------------------------------------- */
 
-Run::Run(MPM *mpm) : Pointers(mpm) {}
+RunTime::RunTime(MPM *mpm) : Pointers(mpm) {}
 
 /* ---------------------------------------------------------------------- */
 
-Var Run::command(vector<string> args)
+Var RunTime::command(vector<string> args)
 {
-  // cout << "In Run::command()" << endl;
+  // cout << "In RunTime::command()" << endl;
 
   if (args.size() < 1) {
     cout << "Illegal run command" << endl;
@@ -27,9 +27,9 @@ Var Run::command(vector<string> args)
 
   update->scheme->setup();
 
-  int nsteps = (int) input->parsev(args[0]);
-  update->nsteps = nsteps;
-  update->maxtime = -1;
+  double maxtime = (double) input->parsev(args[0]);
+  update->nsteps = 1e12;
+  update->maxtime = maxtime;
   update->firststep = update->ntimestep + 1;
   update->laststep = update->firststep + nsteps;
   update->scheme->run(nsteps);

@@ -67,6 +67,7 @@ void MUSL::run(int n){
     }
     
     update->method->adjust_dt();
+    if (update->maxtime != -1) if (update->atime >= update->maxtime) break;
   }
 }
 

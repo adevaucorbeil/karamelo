@@ -599,7 +599,7 @@ void Solid::update_deformation_gradient()
   Eigen::Matrix3d U;
 
   for (int ip=0; ip<np; ip++){
-    F[ip] += update->dt * Fdot[ip];
+    //F[ip] += update->dt * Fdot[ip];
     J[ip] = F[ip].determinant();
     if (J[ip] < 0.0) {
       cout << "Error: J[" << ip << "]<0.0 == " << J[ip] << endl;
