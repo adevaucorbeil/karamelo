@@ -62,12 +62,17 @@ void MUSL::run(int n){
 
     modify->final_integrate();
 
+    if ((update->maxtime != -1) && (update->atime > update->maxtime)) {
+      update->nsteps = ntimestep;
+      output->write(ntimestep);
+      break;
+    }
+
     if (ntimestep == output->next || ntimestep == nsteps) {
       output->write(ntimestep);
     }
     
     update->method->adjust_dt();
-    if (update->maxtime != -1) if (update->atime >= update->maxtime) break;
   }
 }
 

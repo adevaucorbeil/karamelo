@@ -28,11 +28,11 @@ Var RunTime::command(vector<string> args)
   update->scheme->setup();
 
   double maxtime = (double) input->parsev(args[0]);
-  update->nsteps = 1e12;
+  update->nsteps = INT_MAX;
   update->maxtime = maxtime;
   update->firststep = update->ntimestep + 1;
-  update->laststep = update->firststep + nsteps;
-  update->scheme->run(nsteps);
+  update->laststep = INT_MAX;
+  update->scheme->run(update->nsteps);
 
   return Var(0);
 }
