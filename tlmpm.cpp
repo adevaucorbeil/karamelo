@@ -284,7 +284,7 @@ void TLMPM::velocities_to_grid()
 {
   for (int isolid=0; isolid<domain->solids.size(); isolid++) {
     if (method_type.compare("APIC") != 0) { 
-      domain->solids[isolid]->compute_mass_nodes();
+      //domain->solids[isolid]->compute_mass_nodes();
       domain->solids[isolid]->compute_velocity_nodes();
     }
     domain->solids[isolid]->grid->update_grid_positions();

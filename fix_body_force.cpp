@@ -65,8 +65,8 @@ void FixBodyforce::post_particles_to_grid() {
   // cout << "In FixBodyforce::post_particles_to_grid()\n";
 
   // Go through all the nodes in the group and set b to the right value:
-  Eigen::Vector3d f, F;
-    
+  Eigen::Vector3d f;
+
   int solid = group->solid[igroup];
 
   Eigen::Vector3d *b;
@@ -101,9 +101,8 @@ void FixBodyforce::post_particles_to_grid() {
 	      if (yset) f[1] = yvalue.result(mpm);
 	      if (zset) f[2] = zvalue.result(mpm);
 
-	      F = (R[in].transpose()*f); // Rotate vector f from the current to the reference configuration
-	      b[in] += F;
-	      ftot += mass[in]*F;
+	      b[in] += f;
+	      ftot += mass[in]*f;
 	      mtot += mass[in];
 	  }
 	}
@@ -135,9 +134,7 @@ void FixBodyforce::post_particles_to_grid() {
 	  if (yset) f[1] = yvalue.result(mpm);
 	  if (zset) f[2] = zvalue.result(mpm);
 
-	  F = (R[in].transpose()*f); // Rotate vector f from the current to the reference configuration
-	  b[in] += F;
-	  ftot += mass[in]*F;
+	  ftot += mass[in]*f;
 	  mtot += mass[in];
 	}
       }

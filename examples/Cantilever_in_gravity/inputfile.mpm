@@ -22,7 +22,7 @@ region(box, block, 0, 4*L, 0, L, 0, L, op, op2)
 
 material(mat1, neo-hookean, rho, E, nu)
 
-N = 2
+N = 20
 cellsize = L/N
 solid(solid1, rectangle, box, 2, mat1, cellsize)
 #solid(solid1, block, box, 4*N, N, N, mat1, cellsize)
@@ -40,8 +40,8 @@ fix(fbody, body_force_current_config, all, 0, gravity, 0)
 
 N_log = 1
 
-dump(dump1, all, particle, N_log, dump_p.*.LAMMPS, x, y, z)
-dump(dump2, all, grid, N_log, dump_g.*.LAMMPS, x, y, z)
+dump(dump1, all, particle, N_log*20, dump_p.*.LAMMPS, x, y, z)
+dump(dump2, all, grid, N_log*20, dump_g.*.LAMMPS, x, y, z)
 
 #----------- TIP --------------------#
 
@@ -53,8 +53,8 @@ y0_tip = value(y_tip)
 dy_tip = y_tip-y0_tip
 
 #---------- SET METHOD --------------#
-method_modify(FLIP, cubic-spline,FLIP)
-#dt_factor(0.2)
+method_modify(APIC, cubic-spline)
+dt_factor(0.5)
 
 #th = gravity*time*time/2
 
@@ -64,4 +64,4 @@ log_modify(custom, step, dt, time, fbody_x, fbody_y, fbody_z, f_, dy_tip)
 plot(dy_tip, N_log, time, dy_tip)
 #plot(theory, N_log, time, th)
 log(N_log)
-run(1500)
+run(5500)

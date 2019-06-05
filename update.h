@@ -16,6 +16,7 @@ class Update : protected Pointers {
   bigint ntimestep;               // current step
   int nsteps;                     // # of steps to run
   double atime;                   // simulation time at atime_step
+  double maxtime;                 // maximum simulation time (infinite if -1)
   bigint atimestep;               // last timestep atime was updated
   bigint firststep,laststep;      // 1st & last step of this run
   bigint beginstep,endstep;       // 1st and last step of multiple runs
