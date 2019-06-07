@@ -87,9 +87,15 @@ void Output::setup(){
     if (update->laststep != 0) next_log = MIN(next_log,update->laststep);
   } else next_log = update->laststep;
 
-  next = MIN(next,next_log);
+  if (next!=0) next = MIN(next,next_log);
+  else next = next_log;
 
-  // cout << "Next = " << next << endl;
+  if (next==0) {
+    cout << "Error: next=0!\n";
+    exit(1);
+  }
+
+  // cout << "next = " << next << endl;
 }
 
 void Output::write(bigint ntimestep){
@@ -119,7 +125,12 @@ void Output::write(bigint ntimestep){
     log->write();
   }
   
-  next = MIN(next_dump_any,next_log);
+  if (next_dump_any!=0) next = MIN(next_dump_any,next_log);
+  else if (next_log!=0) next = next_log;
+  else {
+    cout << "Error: next=0!\n";
+    exit(1);
+  }
 
   if (next_plot_any == ntimestep) {
     for (int iplot = 0; iplot < nplots; iplot++) {
@@ -148,7 +159,7 @@ void Output::write(bigint ntimestep){
     plt::show();
   }
   
-  next = MIN(next,next_plot_any);
+  if (next_plot_any!=0) next = MIN(next,next_plot_any);
 }
 
 void Output::set_log(vector<string> args){
