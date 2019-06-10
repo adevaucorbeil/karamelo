@@ -39,21 +39,21 @@ RegCylinder::RegCylinder(MPM *mpm, vector<string> args) : Region(mpm, args)
 
   cout << "axis, c1, c2, R = " << axis << "\t" << c1 << "\t" << c2 << "\t" << R << endl;
 
-  if (args[7].compare("INF") == 0 || args[7].compare("EDGE") == 0) {
+  if (args[6].compare("INF") == 0 || args[6].compare("EDGE") == 0) {
     if (domain->regions.size() == 0) {
       cout << "Cannot use region INF or EDGE when box does not exist" << endl;
       exit(1);
     }
     lo = -BIG;
-  } else lo = input->parsev(args[7]);
+  } else lo = input->parsev(args[6]);
 
-  if (args[8].compare("INF") == 0 || args[8].compare("EDGE") == 0) {
+  if (args[7].compare("INF") == 0 || args[7].compare("EDGE") == 0) {
     if (domain->regions.size() == 0) {
       cout << "Cannot use region INF or EDGE when box does not exist" << endl;
       exit(1);
     }
     hi = BIG;
-  } else hi = input->parsev(args[8]);
+  } else hi = input->parsev(args[7]);
 
   cout << "lo hi = " << lo << "\t" << hi << endl;
 
@@ -90,6 +90,10 @@ RegCylinder::RegCylinder(MPM *mpm, vector<string> args) : Region(mpm, args)
   if (domain->boxlo[0] > xlo) domain->boxlo[0] = xlo;
   if (domain->boxlo[1] > ylo) domain->boxlo[1] = ylo;
   if (domain->boxlo[2] > zlo) domain->boxlo[2] = zlo;
+
+  if (domain->boxhi[0] < xhi) domain->boxhi[0] = xhi;
+  if (domain->boxhi[1] < yhi) domain->boxhi[1] = yhi;
+  if (domain->boxhi[2] < zhi) domain->boxhi[2] = zhi;
 }
 
 

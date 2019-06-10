@@ -112,6 +112,7 @@ void Solid::init()
 
   if (np == 0) {
     cout << "Error: solid does not have any particles" << endl;
+    exit(1);
   } else {
       bigint nnodes = grid->nnodes;
 

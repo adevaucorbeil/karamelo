@@ -38,7 +38,7 @@ SolCylinder::SolCylinder(MPM *mpm, vector<string> args) : Solid(mpm, args)
   grid->init(solidlo, solidhi);
 
   // Calculate total number of particles np:
-  int np, nx, ny, nz;
+  int nx, ny, nz;
   nx = grid->nx - 3;
   ny = grid->ny - 3;
   nz = grid->nz - 3;
@@ -106,7 +106,6 @@ SolCylinder::SolCylinder(MPM *mpm, vector<string> args) : Solid(mpm, args)
 	    x0[l][2] = x[l][2] = solidlo[2] + delta*(k+0.5+intpoints[ip][2]);
 	    // Check if the particle is inside cylinder:
 	    if (domain->regions[iregion]->inside(x0[l][0], x0[l][1], x0[l][2])==1) l++;
-	    l++;
 	  }
 	}
       }
@@ -117,6 +116,7 @@ SolCylinder::SolCylinder(MPM *mpm, vector<string> args) : Solid(mpm, args)
   }
 
   np = l; // Adjust np to account for the particles outside the domain
+  cout << "np=" << np << endl;
 
   for (int i=0; i<np;i++) {
     a[i].setZero();
