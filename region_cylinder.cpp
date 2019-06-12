@@ -66,25 +66,25 @@ RegCylinder::RegCylinder(MPM *mpm, vector<string> args) : Region(mpm, args)
 
   if (axis=='x') {
     xlo = lo;
-    yhi = hi;
+    xhi = hi;
     ylo = c1 - R;
     yhi = c1 + R;
     zlo = c2 - R;
     zhi = c2 + R;
   } else if (axis=='y') {
     xlo = c1 - R;
-    yhi = c1 + R;
+    xhi = c1 + R;
     ylo = lo;
     yhi = hi;
     zlo = c2 - R;
     zhi = c2 + R;
   } else if (axis=='z') {
     xlo = c1 - R;
-    yhi = c1 + R;
+    xhi = c1 + R;
     ylo = c2 - R;
     yhi = c2 + R;
     zlo = lo;
-    xhi = hi;
+    zhi = hi;
   }
 
   if (domain->boxlo[0] > xlo) domain->boxlo[0] = xlo;

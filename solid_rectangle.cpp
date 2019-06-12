@@ -42,7 +42,8 @@ SolRectangle::SolRectangle(MPM *mpm, vector<string> args) : Solid(mpm, args)
   int np, nx, ny, nz;
   nx = grid->nx - 3;
   ny = grid->ny - 3;
-  nz = grid->nz - 3;
+  if (domain->dimension == 3) nz = grid->nz - 3;
+  else nz = 1;
   np = nx*ny*nz;
 
 
@@ -72,7 +73,8 @@ SolRectangle::SolRectangle(MPM *mpm, vector<string> args) : Solid(mpm, args)
 	for (int k=0; k<nz; k++){
 	  x0[l][0] = x[l][0] = solidlo[0] + delta*(i+0.5);
 	  x0[l][1] = x[l][1] = solidlo[1] + delta*(j+0.5);
-	  x0[l][2] = x[l][2] = solidlo[2] + delta*(k+0.5);
+	  if (domain->dimension == 3) x0[l][2] = x[l][2] = solidlo[2] + delta*(k+0.5);
+	  else x0[l][2] = x[l][2] = 0;
 	  l++;
 	}
       }
@@ -103,7 +105,8 @@ SolRectangle::SolRectangle(MPM *mpm, vector<string> args) : Solid(mpm, args)
 	  for (int ip=0; ip<8; ip++) {
 	    x0[l][0] = x[l][0] = solidlo[0] + delta*(i+0.5+intpoints[ip][0]);
 	    x0[l][1] = x[l][1] = solidlo[1] + delta*(j+0.5+intpoints[ip][1]);
-	    x0[l][2] = x[l][2] = solidlo[2] + delta*(k+0.5+intpoints[ip][2]);
+	    if (domain->dimension == 3) x0[l][2] = x[l][2] = solidlo[2] + delta*(k+0.5+intpoints[ip][2]);
+	    else x0[l][2] = x[l][2] = 0;
 	    l++;
 	  }
 	}

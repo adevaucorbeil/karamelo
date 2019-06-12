@@ -6,6 +6,7 @@
 #include "memory.h"
 #include "update.h"
 #include "var.h"
+#include "domain.h"
 
 using namespace std;
 
@@ -41,13 +42,20 @@ Grid::~Grid()
 void Grid::init(double *solidlo, double *solidhi){
   double Lx = solidhi[0]-solidlo[0]+2*cellsize;
   double Ly = solidhi[1]-solidlo[1]+2*cellsize;
-  double Lz = solidhi[2]-solidlo[2]+2*cellsize;
+
   nx = ((int) Lx/cellsize)+1;
   ny = ((int) Ly/cellsize)+1;
-  nz = ((int) Lz/cellsize)+1;
+
   while (nx*cellsize <= Lx+0.5*cellsize) nx++;
   while (ny*cellsize <= Ly+0.5*cellsize) ny++;
-  while (nz*cellsize <= Lz+0.5*cellsize) nz++;
+
+  if (domain->dimension == 3) {
+    double Lz = solidhi[2]-solidlo[2]+2*cellsize;
+    nz = ((int) Lz/cellsize)+1;
+    while (nz*cellsize <= Lz+0.5*cellsize) nz++;    
+  } else {
+    nz = 1;
+  }
 
   int nn = nx*ny*nz;
   grow(nn);
@@ -59,7 +67,8 @@ void Grid::init(double *solidlo, double *solidhi){
       for (int k=0; k<nz; k++){
 	x0[l][0] = solidlo[0] + cellsize*(i-1);
 	x0[l][1] = solidlo[1] + cellsize*(j-1);
-	x0[l][2] = solidlo[2] + cellsize*(k-1);
+	if (domain->dimension == 3) x0[l][2] = solidlo[2] + cellsize*(k-1);
+	else x0[l][2] = 0;
 
 	x[l] = x0[l];
 	v[l].setZero();

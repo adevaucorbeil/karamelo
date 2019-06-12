@@ -12,7 +12,10 @@ using namespace Eigen;
 
 FixVelocityNodes::FixVelocityNodes(MPM *mpm, vector<string> args) : Fix(mpm, args)
 {
-  if (args.size() < 6) {
+  if (domain->dimension == 3 && args.size()<6) {
+    cout << "Error: too few arguments for fix_velocity_nodes: requires at least 6 arguments. " << args.size() << " received" << endl;
+    exit(1);
+  } else if (args.size()<5) {
     cout << "Error: too few arguments for fix_velocity_nodes: requires at least 6 arguments. " << args.size() << " received" << endl;
     exit(1);
   }
@@ -36,9 +39,11 @@ FixVelocityNodes::FixVelocityNodes(MPM *mpm, vector<string> args) : Fix(mpm, arg
     yset = true;
   }
 
-  if (args[5].compare("NULL") != 0) {
-    zvalue = input->parsev(args[5]);
-    zset = true;
+  if (domain->dimension == 3) {
+    if (args[5].compare("NULL") != 0) {
+      zvalue = input->parsev(args[5]);
+      zset = true;
+    }
   }
 }
 

@@ -156,6 +156,7 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
 		{
 		  wfd[0] = sd[0]*s[1];
 		  wfd[1] = s[0]*sd[1];
+		  wfd[2] = 0;
 		}
 	      else if (domain->dimension == 3)
 		{
