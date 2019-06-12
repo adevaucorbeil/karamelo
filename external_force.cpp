@@ -11,7 +11,7 @@ Var ExtForce::command(vector<string> args) {
   // cout << "In ExtForce::command()" << endl;
 
   if (args.size() < 2) {
-    cout << "Illegal run command" << endl;
+    cout << "Illegal external_force command" << endl;
     exit(1);
   }
 

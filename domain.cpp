@@ -121,6 +121,7 @@ int Domain::find_solid(string name)
     if (name.compare(solids[isolid]->id) == 0) return isolid;
   return -1;
 }
+
 /* ----------------------------------------------------------------------
    one instance per solid style in style_solid.h
 ------------------------------------------------------------------------- */

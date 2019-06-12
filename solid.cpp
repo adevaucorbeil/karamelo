@@ -738,3 +738,32 @@ void Solid::compute_inertia_tensor(string form_function) {
     //cout << "Di[" << ip << "]=\n" << Di[ip] << endl;
   }
 }
+
+void Solid::copy_particle(int i, int j) {
+  x0[j] = x0[i];
+  x[j] = x[i];
+  v[j] = v[i];
+  v_update[j] = v[i];
+  a[j] = a[i];
+  b[j] = b[i];
+  f[j] = b[i];
+  vol0[j] = vol0[i];
+  vol[j]= vol[i];
+  rho0[j] = rho0[i];
+  rho[j] = rho[i];
+  mass[j] = mass[i];
+  eff_plastic_strain[j] = eff_plastic_strain[i];
+  eff_plastic_strain_rate[j] = eff_plastic_strain_rate[i];
+  damage[j] = damage[i];
+  damage_init[j] = damage_init[i];
+  sigma[j] = sigma[i];
+  PK1[j] = PK1[i];
+  L[j] = L[i];
+  F[j] = F[i];
+  R[j] = R[i];
+  U[j] = U[i];
+  D[j] = D[i];
+  Finv[j] = Finv[i];
+  Fdot[j] = Fdot[i];
+  J[j] = J[i];
+}

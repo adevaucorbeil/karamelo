@@ -14,48 +14,66 @@ RegCylinder::RegCylinder(MPM *mpm, vector<string> args) : Region(mpm, args)
 {
   cout << "Initiate RegCylinder" << endl;
 
-  if (args.size()<8) {
+  if (domain->dimension == 3) {
+    if (args.size()<8) {
     cout << "Error: region command not enough arguments" << endl;
     exit(1);
-  }
+    }
 
-  options(&args, args.begin()+8);
-
-  if (args[2].compare("x") == 0) {
-    axis = 'x';
-  } else if (args[2].compare("y") == 0) {
-    axis = 'y';
-  } else if (args[2].compare("z") == 0) {
-    axis = 'z';
+    options(&args, args.begin()+8);
   } else {
-    cout << "Error: region cylinder axis not understood, expect x, y, or z, received " << args[2] << endl;
+    if (args.size()<5) {
+    cout << "Error: region command not enough arguments" << endl;
     exit(1);
+    }    
+
+    options(&args, args.begin()+5);
   }
 
-  c1 = input->parsev(args[3]);
-  c2 = input->parsev(args[4]);
-  R = input->parsev(args[5]);
+  if (domain->dimension == 3) {
+    if (args[2].compare("x") == 0) {
+      axis = 'x';
+    } else if (args[2].compare("y") == 0) {
+      axis = 'y';
+    } else if (args[2].compare("z") == 0) {
+      axis = 'z';
+    } else {
+      cout << "Error: region cylinder axis not understood, expect x, y, or z, received " << args[2] << endl;
+      exit(1);
+    }
+
+    c1 = input->parsev(args[3]);
+    c2 = input->parsev(args[4]);
+    R = input->parsev(args[5]);
+
+    if (args[6].compare("INF") == 0 || args[6].compare("EDGE") == 0) {
+      if (domain->regions.size() == 0) {
+	cout << "Cannot use region INF or EDGE when box does not exist" << endl;
+	exit(1);
+      }
+      lo = -BIG;
+    } else lo = input->parsev(args[6]);
+
+    if (args[7].compare("INF") == 0 || args[7].compare("EDGE") == 0) {
+      if (domain->regions.size() == 0) {
+	cout << "Cannot use region INF or EDGE when box does not exist" << endl;
+	exit(1);
+      }
+      hi = BIG;
+    } else hi = input->parsev(args[7]);
+
+    cout << "lo hi = " << lo << "\t" << hi << endl;
+  } else {
+    axis = 'z';
+
+    c1 = input->parsev(args[2]);
+    c2 = input->parsev(args[3]);
+    R = input->parsev(args[4]);
+    lo = hi = 0;
+  }
+
   RSq = R*R;
-
   cout << "axis, c1, c2, R = " << axis << "\t" << c1 << "\t" << c2 << "\t" << R << endl;
-
-  if (args[6].compare("INF") == 0 || args[6].compare("EDGE") == 0) {
-    if (domain->regions.size() == 0) {
-      cout << "Cannot use region INF or EDGE when box does not exist" << endl;
-      exit(1);
-    }
-    lo = -BIG;
-  } else lo = input->parsev(args[6]);
-
-  if (args[7].compare("INF") == 0 || args[7].compare("EDGE") == 0) {
-    if (domain->regions.size() == 0) {
-      cout << "Cannot use region INF or EDGE when box does not exist" << endl;
-      exit(1);
-    }
-    hi = BIG;
-  } else hi = input->parsev(args[7]);
-
-  cout << "lo hi = " << lo << "\t" << hi << endl;
 
   // error check
 
@@ -89,11 +107,11 @@ RegCylinder::RegCylinder(MPM *mpm, vector<string> args) : Region(mpm, args)
 
   if (domain->boxlo[0] > xlo) domain->boxlo[0] = xlo;
   if (domain->boxlo[1] > ylo) domain->boxlo[1] = ylo;
-  if (domain->boxlo[2] > zlo) domain->boxlo[2] = zlo;
+  if (domain->dimension == 3) if (domain->boxlo[2] > zlo) domain->boxlo[2] = zlo;
 
   if (domain->boxhi[0] < xhi) domain->boxhi[0] = xhi;
   if (domain->boxhi[1] < yhi) domain->boxhi[1] = yhi;
-  if (domain->boxhi[2] < zhi) domain->boxhi[2] = zhi;
+  if (domain->dimension == 3) if (domain->boxhi[2] < zhi) domain->boxhi[2] = zhi;
 }
 
 
