@@ -181,12 +181,32 @@ Var sinv(Var x){
   }
 }
 
+Var tanv(Var x){
+  if (x.is_constant()) {
+    Var result(tan(x.result()));
+    return result;
+  } else {
+    Var result("tan(" + x.str() + ")", tan(x.result()), x.is_constant());
+    return result;
+  }
+}
+
 Var logv(Var x){
   if (x.is_constant()) {
     Var result(log(x.result()));
     return result;
   } else {
     Var result("log(" + x.str() + ")", log(x.result()), x.is_constant());
+    return result;
+  }
+}
+
+Var atan2v(Var x, Var y){
+  if (x.is_constant() && y.is_constant()) {
+    Var result(atan2(x.result(), y.result()));
+    return result;
+  } else {
+    Var result("atan2(" + x.str() + ", " + y.str() + ")", atan2(x.result(), y.result()), false);
     return result;
   }
 }

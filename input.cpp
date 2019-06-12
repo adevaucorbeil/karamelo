@@ -214,6 +214,8 @@ Var Input::evaluate_function(string func, string arg){
   else if (func.compare("sqrt") == 0) return sqrtv(parsev(arg));
   else if (func.compare("cos") == 0) return cosv(parsev(arg));
   else if (func.compare("sin") == 0) return sinv(parsev(arg));
+  else if (func.compare("tan") == 0) return tanv(parsev(arg));
+  else if (func.compare("atan2") == 0) return atan2v(parsev(args[0]),parsev(args[1]));
   else if (func.compare("log") == 0) return logv(parsev(arg));
   cout << "Error: Unknown function " << func << endl;
   exit(1);

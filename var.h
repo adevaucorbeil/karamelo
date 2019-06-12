@@ -42,6 +42,8 @@ Var expv(Var);                 // exponential function
 Var sqrtv(Var);                // square root function
 Var cosv(Var);                 // cosine function
 Var sinv(Var);                 // sine function
+Var tanv(Var);                 // tangent function
 Var logv(Var);                 // natural logarithmic function
+Var atan2v(Var, Var);          // arc tangent function of two variables
 
 #endif

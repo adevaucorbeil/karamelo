@@ -147,16 +147,15 @@ void Output::write(bigint ntimestep){
   }
 
   if (ntimestep == nsteps) {
-    for (int iplot = 0; iplot < nplots; iplot++) {
-      plt::named_plot(plots[iplot]->id, plots[iplot]->x, plots[iplot]->y);
-    }
+    if (nplots !=0 ) {
+      for (int iplot = 0; iplot < nplots; iplot++) {
+	plt::named_plot(plots[iplot]->id, plots[iplot]->x, plots[iplot]->y);
+      }
 
-    //string fpng = "plot.png";
-    //cout << "Save plot as : " << fpng << endl;
-    //plt::save(fpng);
-    plt::grid(true);
-    plt::legend();
-    plt::show();
+      plt::grid(true);
+      plt::legend();
+      plt::show();
+    }
   }
   
   if (next_plot_any!=0) next = MIN(next,next_plot_any);
