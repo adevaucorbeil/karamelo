@@ -30,15 +30,24 @@ void Region::options(vector<string> *args, vector<string>::iterator it)
     exit(1);
   }
   if (args->end() > it) {
-    cout << "Ignoring optional arguments: ";
     for (it; it != args->end(); ++it){
-      cout << *it << "\t";
-    }
+      if ((*it).compare("exterior")==0) {
+	cout << "\nRecognized exterior argument\n";
+	interior = 0;
+      } else {
+	cout << "Ignoring optional arguments: ";
+	cout << *it << "\t";
+      }
     cout << endl;
+    }
   }
 }
 
 int Region::match(double x, double y, double z)
 {
-  return !(inside(x,y,z) ^ interior);
+  if (interior) return inside(x,y,z);
+  else {
+    return !(inside(x,y,z));
+  }
+  //return !(inside(x,y,z) ^ interior);
 }
