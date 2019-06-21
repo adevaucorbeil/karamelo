@@ -38,16 +38,20 @@ Var DeleteParticles::command(vector<string> args) {
   for (int i=0; i<ns; i++){
     if (dlist[i]!=NULL) {
       int np = domain->solids[i]->np;
+      double vtot = domain->solids[i]->vtot;
 
       int k = 0;
       while (k < np) {
 	if (dlist[i][k]) {
+	  vtot -= domain->solids[i]->vol[k];
 	  domain->solids[i]->copy_particle(np-1,k);
 	  dlist[i][k] = dlist[i][np-1];
 	  np--;
 	} else k++;
       }
+      domain->solids[i]->vtot = vtot;
       cout << "Deleting " << domain->solids[i]->np - np << " particles from solid " << domain->solids[i]->id << endl;
+      cout << "Solid " << domain->solids[i]->id << " new total volume = " << domain->solids[i]->vtot << endl;
       domain->solids[i]->np = np;
     }
   }

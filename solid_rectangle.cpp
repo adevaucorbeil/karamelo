@@ -59,7 +59,10 @@ SolRectangle::SolRectangle(MPM *mpm, vector<string> args) : Solid(mpm, args)
   cout << "delta = " << delta << endl;
 
   int l=0;
-  double vol_ = delta*delta*delta;
+  double vol_;
+  if (domain->dimension == 3) vol_ = delta*delta*delta;
+  else vol_ = delta*delta;
+
   double mass_ = mat->rho0 * vol_;
 
   if ((int) input->parsev(args[3]) == 1) {

@@ -43,6 +43,7 @@ class Solid : protected Pointers {
   double *J;                         // determinant of the deformation matrix
   double *vol0;                      // particles' reference volume
   double *vol;                       // particles' current volume
+  double vtot;                       // total volume
   double *rho0;                      // particles' reference density
   double *rho;                       // particles' current density
   double *mass;                      // particles' current mass

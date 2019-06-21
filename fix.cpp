@@ -22,5 +22,6 @@ Fix::Fix(MPM *mpm, vector<string> args) :
   (*input->vars)[id+"_x"]=Var(id+"_x", 0);
   (*input->vars)[id+"_y"]=Var(id+"_y", 0);
   (*input->vars)[id+"_z"]=Var(id+"_z", 0);
+  (*input->vars)[id]=Var(id, 0);
 
 }

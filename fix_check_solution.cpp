@@ -5,6 +5,8 @@
 #include "group.h"
 #include "domain.h"
 #include "input.h"
+#include "update.h"
+#include "output.h"
 #include "math_special.h"
 #include <Eigen/Eigen>
 
@@ -64,6 +66,7 @@ void FixChecksolution::setmask() {
 
 
 void FixChecksolution::final_integrate() {
+  if (update->ntimestep != output->next && update->ntimestep != update->nsteps) return;
   // cout << "In FixChecksolution::post_particles_to_grid()\n";
 
   // Go through all the nodes in the group and set b to the right value:
@@ -81,8 +84,12 @@ void FixChecksolution::final_integrate() {
 
   error.setZero();
 
+  double vtot;
+
   if (solid == -1) {
+    vtot = 0;
     for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
+      vtot += domain->solids[isolid]->vtot;
       x0 = domain->solids[isolid]->x0;
       x = domain->solids[isolid]->x;
       vol0 = domain->solids[isolid]->vol0;
@@ -108,16 +115,12 @@ void FixChecksolution::final_integrate() {
 	  }
 	}
       }
-      error[0] = sqrt(error[0]);
-      error[1] = sqrt(error[1]);
-      error[2] = sqrt(error[2]);
-      if (xset) (*input->vars)[id+"_x"]=Var(id+"_x", error[0]);
-      if (yset) (*input->vars)[id+"_y"]=Var(id+"_y", error[1]);
-      if (zset) (*input->vars)[id+"_z"]=Var(id+"_z", error[2]);
-      // cout << "f for " << n << " nodes from solid " << domain->solids[isolid]->id << " set." << endl;
     }
-  } else {
 
+    (*input->vars)[id]=Var(id, sqrt((error[0] + error[1] + error[2])/vtot));
+    // cout << "f for " << n << " nodes from solid " << domain->solids[isolid]->id << " set." << endl;
+  } else {
+    vtot = domain->solids[solid]->vtot;
     x0 = domain->solids[solid]->x0;
     x = domain->solids[solid]->x;
     vol0 = domain->solids[solid]->vol0;
@@ -144,12 +147,7 @@ void FixChecksolution::final_integrate() {
       }
     }
 
-    error[0] = sqrt(error[0]);
-    error[1] = sqrt(error[1]);
-    error[2] = sqrt(error[2]);
-    if (xset) (*input->vars)[id+"_x"]=Var(id+"_x", error[0]);
-    if (yset) (*input->vars)[id+"_y"]=Var(id+"_y", error[1]);
-    if (zset) (*input->vars)[id+"_z"]=Var(id+"_z", error[2]);
+    (*input->vars)[id]=Var(id, sqrt((error[0] + error[1] + error[2])/vtot));
     // cout << "f for " << n << " nodes from solid " << domain->solids[solid]->id << " set." << endl;
   }
   // cout << "ftot = [" << ftot[0] << ", " << ftot[1] << ", " << ftot[2] << "]\n"; 

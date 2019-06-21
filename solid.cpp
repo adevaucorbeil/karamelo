@@ -51,6 +51,7 @@ Solid::Solid(MPM *mpm, vector<string> args) :
   wfd_pn = wfd_np = NULL;
 
   dtCFL = 1.0e22;
+  vtot = 0;
 }
 
 Solid::~Solid()
@@ -107,6 +108,14 @@ void Solid::init()
   cout << "xlo xhi: " << solidlo[0] << " " << solidhi[0] << endl;
   cout << "ylo yhi: " << solidlo[1] << " " << solidhi[1] << endl;
   cout << "zlo zhi: " << solidlo[2] << " " << solidhi[2] << endl;
+
+  // Calculate total volume:
+  vtot = 0;
+  for (int ip=0; ip<np; ip++){
+    vtot += vol[ip];
+  }
+
+  cout << "Solid " << id << " total volume = " << vtot << endl;
 
   if (grid->nnodes == 0) grid->init(solidlo, solidhi);
 
