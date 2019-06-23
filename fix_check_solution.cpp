@@ -117,7 +117,7 @@ void FixChecksolution::final_integrate() {
       }
     }
 
-    (*input->vars)[id]=Var(id, sqrt((error[0] + error[1] + error[2])/vtot));
+    (*input->vars)[id+"_s"]=Var(id+"_s", sqrt((error[0] + error[1] + error[2])/vtot));
     // cout << "f for " << n << " nodes from solid " << domain->solids[isolid]->id << " set." << endl;
   } else {
     vtot = domain->solids[solid]->vtot;
@@ -147,7 +147,7 @@ void FixChecksolution::final_integrate() {
       }
     }
 
-    (*input->vars)[id]=Var(id, sqrt((error[0] + error[1] + error[2])/vtot));
+    (*input->vars)[id+"_s"]=Var(id+"_s", sqrt((error[0] + error[1] + error[2])/vtot));
     // cout << "f for " << n << " nodes from solid " << domain->solids[solid]->id << " set." << endl;
   }
   // cout << "ftot = [" << ftot[0] << ", " << ftot[1] << ", " << ftot[2] << "]\n"; 
