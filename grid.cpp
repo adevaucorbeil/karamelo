@@ -14,6 +14,12 @@ using namespace std;
 Grid::Grid(MPM *mpm) :
   Pointers(mpm)
 {
+  // Check that a method is available:
+  if (update->method == NULL) {
+    cout << "Error: a method should be defined before creating a solid!" << endl;
+    exit(1);
+  }
+
   cout << "Creating new grid" << endl;
 
   x = x0 = NULL;
@@ -22,8 +28,11 @@ Grid::Grid(MPM *mpm) :
 
   mass = NULL;
   mask = NULL;
+  ntype = NULL;
 
   R = NULL;
+
+  C = NULL;
 }
 
 Grid::~Grid()
@@ -36,26 +45,34 @@ Grid::~Grid()
   memory->destroy(f);
   memory->destroy(mass);
   memory->destroy(mask);
+  memory->destroy(ntype);
   memory->destroy(R);
+  memory->destroy(C);
 }
 
 void Grid::init(double *solidlo, double *solidhi){
   double Lx = solidhi[0]-solidlo[0]+2*cellsize;
   double Ly = solidhi[1]-solidlo[1]+2*cellsize;
 
-  nx = ((int) Lx/cellsize)+1;
-  ny = ((int) Ly/cellsize)+1;
+  double h = cellsize;
 
-  while (nx*cellsize <= Lx+0.5*cellsize) nx++;
-  while (ny*cellsize <= Ly+0.5*cellsize) ny++;
+  if (update->method_shape_function.compare("Bernstein-quadratic")==0)
+    h /= 2;
+
+  nx = ((int) Lx/h)+1;
+  ny = ((int) Ly/h)+1;
+
+  while (nx*h <= Lx+0.5*h) nx++;
+  while (ny*h <= Ly+0.5*h) ny++;
 
   if (domain->dimension == 3) {
-    double Lz = solidhi[2]-solidlo[2]+2*cellsize;
-    nz = ((int) Lz/cellsize)+1;
-    while (nz*cellsize <= Lz+0.5*cellsize) nz++;    
-  } else {
+    double Lz = solidhi[2]-solidlo[2]+2*h;
+    nz = ((int) Lz/h)+1;
+    while (nz*h <= Lz+0.5*h) nz++;   
+   } else {
     nz = 1;
-  }
+   }
+
 
   int nn = nx*ny*nz;
   grow(nn);
@@ -65,10 +82,14 @@ void Grid::init(double *solidlo, double *solidhi){
   for (int i=0; i<nx; i++){
     for (int j=0; j<ny; j++){
       for (int k=0; k<nz; k++){
-	x0[l][0] = solidlo[0] + cellsize*(i-1);
-	x0[l][1] = solidlo[1] + cellsize*(j-1);
-	if (domain->dimension == 3) x0[l][2] = solidlo[2] + cellsize*(k-1);
+	x0[l][0] = solidlo[0] + h*(i-1);
+	x0[l][1] = solidlo[1] + h*(j-1);
+	if (domain->dimension == 3) x0[l][2] = solidlo[2] + h*(k-1);
 	else x0[l][2] = 0;
+
+	ntype[l][0] = i % 2;
+	ntype[l][1] = j % 2;
+	ntype[l][2] = k % 2;
 
 	x[l] = x0[l];
 	v[l].setZero();
@@ -82,6 +103,8 @@ void Grid::init(double *solidlo, double *solidhi){
       }
     }
   }
+
+  
 }
 
 void Grid::setup(string cs){
@@ -134,6 +157,12 @@ void Grid::grow(int nn){
     exit(1);
   }
 
+  if (C == NULL) C = new Eigen::Vector3d[ncells];
+  else {
+    cout << "Error: C already exists, I don't know how to grow it!\n";
+    exit(1);
+  }
+
   string str = "grid-mass";
   cout << "Growing " << str << endl;
   mass = memory->grow(mass, nn, str);
@@ -143,6 +172,10 @@ void Grid::grow(int nn){
   mask = memory->grow(mask, nn, str);
 
   for (int i=0; i<nn; i++) mask[i] = 1;
+
+  str = "grid-ntype";
+  cout << "Growing " << str << endl;
+  ntype = memory->grow(ntype, nn, 3, str);
 }
 
 void Grid::update_grid_velocities()

@@ -15,7 +15,6 @@ MUSL::MUSL(MPM *mpm, vector<string> args) : Scheme(mpm) {
 
 void MUSL::setup(){
   output->setup();
-  update->method->setup();
 }
 
 void MUSL::run(int n){

@@ -27,6 +27,7 @@ class Update : protected Pointers {
 
   class Method *method;
   string method_style;
+  string method_shape_function;
 
   Update(class MPM *);
   ~Update();
@@ -36,7 +37,6 @@ class Update : protected Pointers {
   void new_scheme(vector<string>);
   void create_method(vector<string>);
   void new_method(vector<string>);
-  void modify_method(vector<string>);
   void update_time();
 protected:
   

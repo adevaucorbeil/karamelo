@@ -13,12 +13,14 @@ using namespace Eigen;
 
 class Grid : protected Pointers {
  public:
+  int ncells;            // number of cells
   bigint nnodes;         // number of particles
   int nx;                // number of particles along x
   int ny;                // number of particles along y
   int nz;                // number of particles along z
   double cellsize;       // size of the square cells forming the grid
 
+  Eigen::Vector3d *C;            // connectivity matrix
   Eigen::Vector3d *x;            // nodes' current position
   Eigen::Vector3d *x0;           // nodes' reference position
   Eigen::Vector3d *v;            // nodes' velocity at time t
@@ -30,7 +32,7 @@ class Grid : protected Pointers {
 
   double *mass;              // nodes' current mass
   int *mask;                 // nodes' group mask
-
+  bool **ntype;              // node type in x, y, and z directions (False for an edge, True otherwise)
 
   Grid(class MPM *);
   virtual ~Grid();

@@ -20,7 +20,7 @@ TLMPM::TLMPM(MPM *mpm, vector<string> args) : Method(mpm) {
   FLIP = 0.99;
 
   // Default base function (linear):
-  form_function = "linear";
+  shape_function = "linear";
   basis_function = &linear_basis_function;
   derivative_basis_function = &derivative_linear_basis_function;
 }
@@ -29,9 +29,9 @@ TLMPM::~TLMPM()
 {
 }
 
-void TLMPM::modify(vector<string> args)
+void TLMPM::setup(vector<string> args)
 {
-  int n = 0;
+  int n = 1;
   bool isFLIP = false;
   // Method used: PIC, FLIP or APIC:
   if (args[n].compare("PIC") == 0) {
@@ -57,16 +57,22 @@ void TLMPM::modify(vector<string> args)
   
   if (args.size() > 1 + isFLIP) {
     if (args[n].compare("linear") == 0) {
-      form_function = "linear";
+      shape_function = "linear";
       cout << "Setting up linear basis functions\n";
       basis_function = &linear_basis_function;
       derivative_basis_function = &derivative_linear_basis_function;
       n++;
     } else if (args[n].compare("cubic-spline") == 0) {
-      form_function = "cubic-spline";
+      shape_function = "cubic-spline";
       cout << "Setting up cubic-spline basis functions\n";
       basis_function = &cubic_spline_basis_function;
       derivative_basis_function = &derivative_cubic_spline_basis_function;
+      n++;
+    } else if (args[n].compare("Bernstein-quadratic") == 0) {
+      shape_function = "Bernstein-quadratic";
+      cout << "Setting up Bernstein-quadratic basis functions\n";
+      basis_function = &bernstein_quadratic_basis_function;
+      derivative_basis_function = &derivative_bernstein_quadratic_basis_function;
       n++;
     } else {
       cout << "Illegal method_method argument: form function of type " << args[n] << " is unknown." << endl;
@@ -80,15 +86,9 @@ void TLMPM::modify(vector<string> args)
   }
 
   if (isFLIP) FLIP = input->parsev(args[n]);
-  // cout << "form_function = " << form_function << endl;
+  // cout << "shape_function = " << shape_function << endl;
   // cout << "method_type = " << method_type << endl;
   // cout << "FLIP = " << FLIP << endl;
-}
-
-void TLMPM::setup()
-{
-  // cout << "np = " << domain->solids[0]->np << ", nn = " << domain->solids[0]->grid->nnodes << endl;
-  // compute_grid_weight_functions_and_gradients();
 }
 
 void TLMPM::compute_grid_weight_functions_and_gradients()
@@ -125,21 +125,23 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
       double wf;
       Eigen::Vector3d wfd;
 
+      bool **ntype = domain->solids[isolid]->grid->ntype;
+
       if (np && nnodes) {
 	for (int ip=0; ip<np; ip++) {
 	  for (int in=0; in<nnodes; in++) {
 	    // Calculate the distance between each pair of particle/node:
 	    r = (xp[ip] - xn[in]) * inv_cellsize;
 
-	    s[0] = basis_function(r[0]);
-	    s[1] = basis_function(r[1]);
-	    if (domain->dimension == 3) s[2] = basis_function(r[2]);
+	    s[0] = basis_function(r[0], ntype[in][0]);
+	    s[1] = basis_function(r[1], ntype[in][1]);
+	    if (domain->dimension == 3) s[2] = basis_function(r[2], ntype[in][2]);
 
 	    if (s[0] != 0 && s[1] != 0 && s[2] != 0) {
 
-	      sd[0] = derivative_basis_function(r[0], inv_cellsize);
-	      sd[1] = derivative_basis_function(r[1], inv_cellsize);
-	      if (domain->dimension == 3) sd[2] = derivative_basis_function(r[2], inv_cellsize);
+	      sd[0] = derivative_basis_function(r[0], ntype[in][0], inv_cellsize);
+	      sd[1] = derivative_basis_function(r[1], ntype[in][1], inv_cellsize);
+	      if (domain->dimension == 3) sd[2] = derivative_basis_function(r[2], ntype[in][2], inv_cellsize);
 
 	      neigh_pn[ip].push_back(in);
 	      neigh_np[in].push_back(ip);
@@ -171,14 +173,14 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
 	  } 
 	}
       }
-      if (method_type.compare("APIC") == 0) domain->solids[isolid]->compute_inertia_tensor(form_function);
+      if (method_type.compare("APIC") == 0) domain->solids[isolid]->compute_inertia_tensor(shape_function);
     }
   }
 
   update_wf = 0;
 }
 
-double linear_basis_function(double r_)
+double linear_basis_function(double r_, bool ntype)
 {
   double r = fabs(r_);
   if (r >= 1.0)
@@ -187,7 +189,7 @@ double linear_basis_function(double r_)
     return 1.0 - r;
 }
 
-double derivative_linear_basis_function(double r, double inv_cellsize)
+double derivative_linear_basis_function(double r, bool ntype, double inv_cellsize)
 {
   if (r >= 1.0 || r <= -1.0 || r == 0)
     return 0.0;
@@ -197,7 +199,7 @@ double derivative_linear_basis_function(double r, double inv_cellsize)
     return inv_cellsize;
 }
 
-double cubic_spline_basis_function(double r_)
+double cubic_spline_basis_function(double r_, bool ntype)
 {
   double r = fabs(r_);
   if (r >= 2.0) {
@@ -211,7 +213,7 @@ double cubic_spline_basis_function(double r_)
   }
 }
 
-double derivative_cubic_spline_basis_function(double r_signed, double icellsize)
+double derivative_cubic_spline_basis_function(double r_signed, bool ntype, double icellsize)
 {
   if (r_signed >= 0.0) {
     
@@ -240,6 +242,40 @@ double derivative_cubic_spline_basis_function(double r_signed, double icellsize)
       }
     } else {
       return 0;
+    }
+  }
+}
+
+double bernstein_quadratic_basis_function(double r_, bool ntype)
+{
+  double r = fabs(r_);
+  if (r >= 1.0) return 0;
+
+  if (ntype) {
+    // Inside node:
+    if (r >= 0.5) return 0;
+    return 0.5-2*r*r;
+  } else {
+    // Edge node:
+    return (1-r)*(1-r);
+  }
+}
+
+double derivative_bernstein_quadratic_basis_function(double r_signed, bool ntype, double icellsize)
+{
+  double r = fabs(r_signed);
+  if (r >= 1.0) return 0;
+  
+  if (ntype) {
+    // Inside node:
+    if (r >= 0.5) return 0;
+    return -4*r_signed*icellsize;
+  } else {
+    // Edge node:
+    if (r_signed>0) {
+      return -2*(1-r_signed)*icellsize;
+    } else {
+      return 2*(1-r_signed)*icellsize;
     }
   }
 }

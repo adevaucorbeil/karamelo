@@ -27,6 +27,12 @@ Var Run::command(vector<string> args)
 
   update->scheme->setup();
 
+  // Check that a method is available:
+  if (update->method == NULL) {
+    cout << "Error: no method was defined!" << endl;
+    exit(1);
+  }
+
   int nsteps = (int) input->parsev(args[0]);
   update->nsteps = nsteps;
   update->maxtime = -1;

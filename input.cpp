@@ -196,7 +196,7 @@ Var Input::evaluate_function(string func, string arg){
   if (func.compare("group") == 0) return Var(group_command(args));
   if (func.compare("log") == 0) return Var(log(args));
   if (func.compare("log_modify") == 0) return Var(log_modify(args));
-  if (func.compare("method_modify") == 0) return Var(method_modify(args));
+  if (func.compare("method") == 0) return Var(method(args));
   if (func.compare("fix") == 0) return Var(fix(args));
   if (func.compare("dt_factor") == 0) return Var(set_dt_factor(args));
   if (func.compare("set_dt") == 0 ) return Var(set_dt(args));
@@ -652,8 +652,8 @@ int Input::log_modify(vector<string> args){
   return 0;
 }
 
-int Input::method_modify(vector<string> args){
-  update->modify_method(args);
+int Input::method(vector<string> args){
+  update->create_method(args);
   return 0;
 }
 

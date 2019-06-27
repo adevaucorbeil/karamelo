@@ -28,10 +28,11 @@ Update::Update(MPM *mpm) : Pointers(mpm)
   vector<string> scheme_args;
   scheme_args.push_back("musl");
   create_scheme(scheme_args);
-  
-  vector<string> method_args;
-  method_args.push_back("tlmpm");
-  create_method(method_args);
+
+  method = NULL;
+  //vector<string> method_args;
+  //method_args.push_back("tlmpm");
+  //create_method(method_args);
 }
 
 Update::~Update()
@@ -89,14 +90,15 @@ void Update::new_scheme(vector<string> args){
 }
 
 void Update::create_method(vector<string> args){
-  if (args.size() < 1) {
-    cout << "Illegal run_method command: not enough arguments" << endl;
+  if (args.size() < 3) {
+    cout << "Illegal method command: not enough arguments" << endl;
     exit(1);
   }
 
   new_method(args);
 
   method_style = args[0];
+  method_shape_function = args[1];
 }
 
 void Update::new_method(vector<string> args){
@@ -116,15 +118,8 @@ void Update::new_method(vector<string> args){
     cout << "Illegal method style" << endl;
     exit(1);
   }
-}
 
-void Update::modify_method(vector<string> args){
-  if (args.size() < 1) {
-    cout << "Illegal modify_method command: not enough arguments" << endl;
-    exit(1);
-  }
-
-  method->modify(args);
+  method->setup(args);
 }
 
 /* ----------------------------------------------------------------------

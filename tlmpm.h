@@ -18,17 +18,16 @@ class TLMPM : public Method {
  public:
   string method_type;
   double FLIP;
-  string form_function;
+  string shape_function;
 
   TLMPM(class MPM *, vector<string>);
   ~TLMPM();
 
-  void modify(vector<string>);
+  void setup(vector<string>);
 
-  void setup();
   void compute_grid_weight_functions_and_gradients();
-  double (*basis_function)(double);
-  double (*derivative_basis_function)(double, double);
+  double (*basis_function)(double, bool);
+  double (*derivative_basis_function)(double, bool, double);
   void particles_to_grid();
   void update_grid_state();
   void grid_to_points();
@@ -43,10 +42,12 @@ class TLMPM : public Method {
   int update_wf;
 };
 
-double linear_basis_function(double);
-double derivative_linear_basis_function(double, double);
-double cubic_spline_basis_function(double);
-double derivative_cubic_spline_basis_function(double, double);
+double linear_basis_function(double, bool);
+double derivative_linear_basis_function(double, bool, double);
+double cubic_spline_basis_function(double, bool);
+double derivative_cubic_spline_basis_function(double, bool, double);
+double bernstein_quadratic_basis_function(double, bool);
+double derivative_bernstein_quadratic_basis_function(double, bool, double);
 
 
 #endif
