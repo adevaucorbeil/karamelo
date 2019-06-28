@@ -707,6 +707,7 @@ void Solid::compute_inertia_tensor(string form_function) {
   // 	Di[ip](1,1) += wf_pn[ip][j]*(dx[1]*dx[1]);
   //     }
   //     Di[ip](1,0) = Di[ip](0,1);
+  //     cout << "Di[" << ip << "]=\n" << Di[ip] << endl;
   //   }
   // } else if (domain->dimension == 3) {
   //   for (int ip=0; ip<np; ip++){
@@ -728,6 +729,8 @@ void Solid::compute_inertia_tensor(string form_function) {
   //   }
   // }
 
+  // Di[ip] = Di[ip].inverse();
+
   Eigen::Matrix3d eye;
   eye.setIdentity();
 
@@ -743,7 +746,8 @@ void Solid::compute_inertia_tensor(string form_function) {
     } else if ( form_function.compare("cubic-spline") == 0) {
       // If the form function is a cubic spline:
       Di[ip] = 3.0 * cellsizeSqInv * eye;
-    }
+    } else if ( form_function.compare("Bernstein-quadratic") == 0)
+      Di[ip] = 12.0 * cellsizeSqInv * eye;
     //cout << "Di[" << ip << "]=\n" << Di[ip] << endl;
   }
 }
