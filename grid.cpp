@@ -51,8 +51,8 @@ Grid::~Grid()
 }
 
 void Grid::init(double *solidlo, double *solidhi){
-  double Lx = solidhi[0]-solidlo[0]+2*cellsize;
-  double Ly = solidhi[1]-solidlo[1]+2*cellsize;
+  double Lx = solidhi[0]-solidlo[0];//+2*cellsize;
+  double Ly = solidhi[1]-solidlo[1];//+2*cellsize;
 
   double h = cellsize;
 
@@ -62,13 +62,13 @@ void Grid::init(double *solidlo, double *solidhi){
   nx = ((int) Lx/h)+1;
   ny = ((int) Ly/h)+1;
 
-  while (nx*h <= Lx+0.5*h) nx++;
-  while (ny*h <= Ly+0.5*h) ny++;
+  //while (nx*h <= Lx+0.5*h) nx++;
+  //while (ny*h <= Ly+0.5*h) ny++;
 
   if (domain->dimension == 3) {
     double Lz = solidhi[2]-solidlo[2]+2*h;
     nz = ((int) Lz/h)+1;
-    while (nz*h <= Lz+0.5*h) nz++;   
+    //while (nz*h <= Lz+0.5*h) nz++;   
    } else {
     nz = 1;
    }
@@ -82,9 +82,9 @@ void Grid::init(double *solidlo, double *solidhi){
   for (int i=0; i<nx; i++){
     for (int j=0; j<ny; j++){
       for (int k=0; k<nz; k++){
-	x0[l][0] = solidlo[0] + h*(i-1);
-	x0[l][1] = solidlo[1] + h*(j-1);
-	if (domain->dimension == 3) x0[l][2] = solidlo[2] + h*(k-1);
+	x0[l][0] = solidlo[0] + i*h;//h*(i-1);
+	x0[l][1] = solidlo[1] + j*h;//h*(j-1);
+	if (domain->dimension == 3) x0[l][2] = solidlo[2] + k*h;//h*(k-1);
 	else x0[l][2] = 0;
 
 	ntype[l][0] = i % 2;

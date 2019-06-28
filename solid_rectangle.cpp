@@ -40,21 +40,31 @@ SolRectangle::SolRectangle(MPM *mpm, vector<string> args) : Solid(mpm, args)
 
   // Calculate total number of particles np:
   int np, nx, ny, nz;
-  nx = grid->nx - 3;
-  ny = grid->ny - 3;
-  if (domain->dimension == 3) nz = grid->nz - 3;
-  else nz = 1;
-  np = nx*ny*nz;
-
-
-  // Create particles:
-
   double delta;
   double hdelta;
 
   delta = grid->cellsize;
 
   hdelta = 0.5*delta;
+  
+  double Lx = solidhi[0]-solidlo[0];
+  double Ly = solidhi[1]-solidlo[1];
+
+  nx = ((int) Lx/delta);
+  ny = ((int) Ly/delta);
+
+  if (domain->dimension == 3) {
+    double Lz = solidhi[2]-solidlo[2];
+    nz = ((int) Lz/delta); 
+   } else {
+    nz = 1;
+   }
+
+  np = nx*ny*nz;
+
+
+  // Create particles:
+
 
   cout << "delta = " << delta << endl;
 

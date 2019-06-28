@@ -254,7 +254,7 @@ double bernstein_quadratic_basis_function(double r_, bool ntype)
   if (ntype) {
     // Inside node:
     if (r >= 0.5) return 0;
-    return 0.5-2*r*r;
+    else return 0.5-2*r*r;
   } else {
     // Edge node:
     return (1-r)*(1-r);
@@ -268,14 +268,14 @@ double derivative_bernstein_quadratic_basis_function(double r_signed, bool ntype
   
   if (ntype) {
     // Inside node:
-    if (r >= 0.5) return 0;
+    if (r > 0.5) return 0;
     return -4*r_signed*icellsize;
   } else {
     // Edge node:
     if (r_signed>0) {
       return -2*(1-r_signed)*icellsize;
     } else {
-      return 2*(1-r_signed)*icellsize;
+      return 2*(1+r_signed)*icellsize;
     }
   }
 }
