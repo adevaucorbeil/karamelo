@@ -201,15 +201,15 @@ double derivative_linear_basis_function(double r, int ntype, double inv_cellsize
 
 double cubic_spline_basis_function(double r, int ntype)
 {
-  if (r >= 1 || r < 2) {
+  if (r >= 1 && r < 2) {
     if (ntype==1) {
       return 0;
     } else {
       return -1.0/6.0*r*r*r + r*r - 2*r + 4.0/3.0;
     }
-  } else if (r >=0 || r < 1) {
+  } else if (r >=0 && r < 1) {
     if (ntype==-2) {
-      return  1.0/6.0*r*r*r-r + 1;
+      return  1.0/6.0*r*r*r - r + 1;
     } else if (ntype==2) {
       return 1;
     } else if (ntype==1) {
@@ -217,7 +217,7 @@ double cubic_spline_basis_function(double r, int ntype)
     } else {
       return 0.5*r*r*r - r*r + 2.0/3.0;
     }
-  } else if (r >= -1 || r < 0) {
+  } else if (r >= -1 && r < 0) {
     if (ntype==2) {
       return -1.0/6.0*r*r*r + r + 1;
     } else if (ntype==-1) {
@@ -225,8 +225,8 @@ double cubic_spline_basis_function(double r, int ntype)
     } else {
       return -0.5*r*r*r - r*r + 2.0/3.0;
     }
-  } else if (r >= -2 || r < -1) {
-    return 1.0/6.0*r*r*r + r*r*2 + 2*r + 4.0/3.0;
+  } else if (r >= -2 && r < -1) {
+    return 1.0/6.0*r*r*r + r*r + 2*r + 4.0/3.0;
   } else {
     return 0;
   }
@@ -234,15 +234,15 @@ double cubic_spline_basis_function(double r, int ntype)
 
 double derivative_cubic_spline_basis_function(double r, int ntype, double icellsize)
 {
-  if (r >= 1 || r < 2) {
+  if (r >= 1 && r < 2) {
     if (ntype==1) {
       return -icellsize;// * (-1);
     } else {
       return icellsize * (-0.5*r*r + 2*r - 2);
     }
-  } else if (r >=0 || r < 1) {
+  } else if (r >=0 && r < 1) {
     if (ntype==-2) {
-      return icellsize * (0.5*r*r-1);
+      return icellsize * (0.5*r*r - 1);
     } else if (ntype==2) {
       return icellsize;// * (1);
     } else if (ntype==1) {
@@ -250,7 +250,7 @@ double derivative_cubic_spline_basis_function(double r, int ntype, double icells
     } else {
       return icellsize * (3.0/2.0*r*r - 2*r);
     }
-  } else if (r >= -1 || r < 0) {
+  } else if (r >= -1 && r < 0) {
     if (ntype==2) {
       return icellsize * (-0.5*r*r + 1);
     } else if (ntype==-1) {
@@ -258,7 +258,7 @@ double derivative_cubic_spline_basis_function(double r, int ntype, double icells
     } else {
       return icellsize * (-3.0/2.0*r*r - 2*r);
     }
-  } else if (r >= -2 || r < -1) {
+  } else if (r >= -2 && r < -1) {
     return icellsize * (0.5*r*r + 2*r + 2);
   } else {
     return 0;

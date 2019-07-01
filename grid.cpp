@@ -93,8 +93,8 @@ void Grid::init(double *solidlo, double *solidhi){
 	  ntype[l][2] = k % 2;
 	} else if (update->method_shape_function.compare("cubic-spline")==0) {
 	  ntype[l][0] = min(2,i)-min(nx-1-i,2);
-	  ntype[l][0] = min(2,j)-min(ny-1-j,2);
-	  ntype[l][0] = min(2,k)-min(nz-1-k,2);
+	  ntype[l][1] = min(2,j)-min(ny-1-j,2);
+	  ntype[l][2] = min(2,k)-min(nz-1-k,2);
 	}
 	
 	x[l] = x0[l];
