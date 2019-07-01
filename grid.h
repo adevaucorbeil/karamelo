@@ -32,7 +32,7 @@ class Grid : protected Pointers {
 
   double *mass;              // nodes' current mass
   int *mask;                 // nodes' group mask
-  bool **ntype;              // node type in x, y, and z directions (False for an edge, True otherwise)
+  int **ntype;              // node type in x, y, and z directions (False for an edge, True otherwise)
 
   Grid(class MPM *);
   virtual ~Grid();

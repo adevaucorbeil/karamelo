@@ -125,7 +125,7 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
       double wf;
       Eigen::Vector3d wfd;
 
-      bool **ntype = domain->solids[isolid]->grid->ntype;
+      int **ntype = domain->solids[isolid]->grid->ntype;
 
       if (np && nnodes) {
 	for (int ip=0; ip<np; ip++) {
@@ -180,7 +180,7 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
   update_wf = 0;
 }
 
-double linear_basis_function(double r_, bool ntype)
+double linear_basis_function(double r_, int ntype)
 {
   double r = fabs(r_);
   if (r >= 1.0)
@@ -189,7 +189,7 @@ double linear_basis_function(double r_, bool ntype)
     return 1.0 - r;
 }
 
-double derivative_linear_basis_function(double r, bool ntype, double inv_cellsize)
+double derivative_linear_basis_function(double r, int ntype, double inv_cellsize)
 {
   if (r >= 1.0 || r <= -1.0 || r == 0)
     return 0.0;
@@ -199,59 +199,78 @@ double derivative_linear_basis_function(double r, bool ntype, double inv_cellsiz
     return inv_cellsize;
 }
 
-double cubic_spline_basis_function(double r_, bool ntype)
+double cubic_spline_basis_function(double r, int ntype)
 {
-  double r = fabs(r_);
-  if (r >= 2.0) {
+  if (r >= 1 || r < 2) {
+    if (ntype==1) {
+      return 0;
+    } else {
+      return -1.0/6.0*r*r*r + r*r - 2*r + 4.0/3.0;
+    }
+  } else if (r >=0 || r < 1) {
+    if (ntype==-2) {
+      return  1.0/6.0*r*r*r-r + 1;
+    } else if (ntype==2) {
+      return 1;
+    } else if (ntype==1) {
+      return 1.0/3.0*r*r*r - r*r + 2.0/3.0;
+    } else {
+      return 0.5*r*r*r - r*r + 2.0/3.0;
+    }
+  } else if (r >= -1 || r < 0) {
+    if (ntype==2) {
+      return -1.0/6.0*r*r*r + r + 1;
+    } else if (ntype==-1) {
+      return  -1.0/3.0*r*r*r - r*r + 2.0/3.0;
+    } else {
+      return -0.5*r*r*r - r*r + 2.0/3.0;
+    }
+  } else if (r >= -2 || r < -1) {
+    return 1.0/6.0*r*r*r + r*r*2 + 2*r + 4.0/3.0;
+  } else {
     return 0;
   }
-
-  if (r <= 1.0) {
-    return 0.5 * r * r * r - r * r + 2. / 3.;
-  } else {
-    return -r * r * r / 6. + r * r - 2 * r + 4. / 3.;
-  }
 }
 
-double derivative_cubic_spline_basis_function(double r_signed, bool ntype, double icellsize)
+double derivative_cubic_spline_basis_function(double r, int ntype, double icellsize)
 {
-  if (r_signed >= 0.0) {
-    
-    /*
-     * no need to change the sign of r
-     */
-    
-    if (r_signed < 2.0) {
-      if (r_signed < 1.0) {
-	return icellsize * (1.5 * r_signed * r_signed - 2. * r_signed);
-      } else {
-	return icellsize * (-0.5 * r_signed * r_signed + 2. * r_signed - 2.);
-      }
+  if (r >= 1 || r < 2) {
+    if (ntype==1) {
+      return -icellsize;// * (-1);
     } else {
-      return 0;
+      return icellsize * (-0.5*r*r + 2*r - 2);
     }
-    
+  } else if (r >=0 || r < 1) {
+    if (ntype==-2) {
+      return icellsize * (0.5*r*r-1);
+    } else if (ntype==2) {
+      return icellsize;// * (1);
+    } else if (ntype==1) {
+      return icellsize * (r*r - 2*r);
+    } else {
+      return icellsize * (3.0/2.0*r*r - 2*r);
+    }
+  } else if (r >= -1 || r < 0) {
+    if (ntype==2) {
+      return icellsize * (-0.5*r*r + 1);
+    } else if (ntype==-1) {
+      return icellsize * (-r*r - 2*r);
+    } else {
+      return icellsize * (-3.0/2.0*r*r - 2*r);
+    }
+  } else if (r >= -2 || r < -1) {
+    return icellsize * (0.5*r*r + 2*r + 2);
   } else {
-    double r = fabs(r_signed);
-    
-    if (r < 2.0) {
-      if (r < 1.0) {
-	return -icellsize * (1.5 * r * r - 2. * r);
-      } else {
-	return -icellsize * (-0.5 * r * r + 2. * r - 2.);
-      }
-    } else {
-      return 0;
-    }
+    return 0;
   }
 }
 
-double bernstein_quadratic_basis_function(double r_, bool ntype)
+double bernstein_quadratic_basis_function(double r_, int ntype)
 {
   double r = fabs(r_);
   if (r >= 1.0) return 0;
 
-  if (ntype) {
+  if (ntype==1) {
     // Inside node:
     if (r >= 0.5) return 0;
     else return 0.5-2*r*r;
@@ -261,12 +280,12 @@ double bernstein_quadratic_basis_function(double r_, bool ntype)
   }
 }
 
-double derivative_bernstein_quadratic_basis_function(double r_signed, bool ntype, double icellsize)
+double derivative_bernstein_quadratic_basis_function(double r_signed, int ntype, double icellsize)
 {
   double r = fabs(r_signed);
   if (r >= 1.0) return 0;
   
-  if (ntype) {
+  if (ntype==1) {
     // Inside node:
     if (r > 0.5) return 0;
     return -4*r_signed*icellsize;

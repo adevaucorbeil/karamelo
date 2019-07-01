@@ -86,11 +86,17 @@ void Grid::init(double *solidlo, double *solidhi){
 	x0[l][1] = solidlo[1] + j*h;//h*(j-1);
 	if (domain->dimension == 3) x0[l][2] = solidlo[2] + k*h;//h*(k-1);
 	else x0[l][2] = 0;
-
-	ntype[l][0] = i % 2;
-	ntype[l][1] = j % 2;
-	ntype[l][2] = k % 2;
-
+	
+	if (update->method_shape_function.compare("Bernstein-quadratic")==0) {
+	  ntype[l][0] = i % 2;
+	  ntype[l][1] = j % 2;
+	  ntype[l][2] = k % 2;
+	} else if (update->method_shape_function.compare("cubic-spline")==0) {
+	  ntype[l][0] = min(2,i)-min(nx-1-i,2);
+	  ntype[l][0] = min(2,j)-min(ny-1-j,2);
+	  ntype[l][0] = min(2,k)-min(nz-1-k,2);
+	}
+	
 	x[l] = x0[l];
 	v[l].setZero();
 	v_update[l].setZero();
