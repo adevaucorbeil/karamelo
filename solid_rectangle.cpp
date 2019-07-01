@@ -43,9 +43,7 @@ SolRectangle::SolRectangle(MPM *mpm, vector<string> args) : Solid(mpm, args)
   double delta;
   double hdelta;
 
-  delta = grid->cellsize;
-
-  hdelta = 0.5*delta;
+  delta = grid->cellsize/((int) input->parsev(args[3]));
   
   double Lx = solidhi[0]-solidlo[0];
   double Ly = solidhi[1]-solidlo[1];
@@ -75,60 +73,60 @@ SolRectangle::SolRectangle(MPM *mpm, vector<string> args) : Solid(mpm, args)
 
   double mass_ = mat->rho0 * vol_;
 
-  if ((int) input->parsev(args[3]) == 1) {
+  // if ((int) input->parsev(args[3]) == 1) {
     // One particle per cell at the center:
 
     // Allocate the space in the vectors for np particles:
-    grow(np);
+  grow(np);
 
-    for (int i=0; i<nx; i++){
-      for (int j=0; j<ny; j++){
-	for (int k=0; k<nz; k++){
-	  x0[l][0] = x[l][0] = solidlo[0] + delta*(i+0.5);
-	  x0[l][1] = x[l][1] = solidlo[1] + delta*(j+0.5);
-	  if (domain->dimension == 3) x0[l][2] = x[l][2] = solidlo[2] + delta*(k+0.5);
-	  else x0[l][2] = x[l][2] = 0;
-	  l++;
-	}
+  for (int i=0; i<nx; i++){
+    for (int j=0; j<ny; j++){
+      for (int k=0; k<nz; k++){
+	x0[l][0] = x[l][0] = solidlo[0] + delta*(i+0.5);
+	x0[l][1] = x[l][1] = solidlo[1] + delta*(j+0.5);
+	if (domain->dimension == 3) x0[l][2] = x[l][2] = solidlo[2] + delta*(k+0.5);
+	else x0[l][2] = x[l][2] = 0;
+	l++;
       }
     }
-  } else if ((int) input->parsev(args[3]) == 2) {
-    // Quadratic elements:
-
-    np *= 8;
-    mass_ /= 8.0;
-    vol_ /= 8.0;
-    // Allocate the space in the vectors for np particles:
-    grow(np);
-
-    double half_Sqrt_three_inv = 0.5/sqrt(3.0);
-
-    double intpoints[8][3] = {{-half_Sqrt_three_inv, -half_Sqrt_three_inv, -half_Sqrt_three_inv},
-			      {-half_Sqrt_three_inv, -half_Sqrt_three_inv, half_Sqrt_three_inv},
-			      {-half_Sqrt_three_inv, half_Sqrt_three_inv, -half_Sqrt_three_inv},
-			      {-half_Sqrt_three_inv, half_Sqrt_three_inv, half_Sqrt_three_inv},
-			      {half_Sqrt_three_inv, -half_Sqrt_three_inv, -half_Sqrt_three_inv},
-			      {half_Sqrt_three_inv, -half_Sqrt_three_inv, half_Sqrt_three_inv},
-			      {half_Sqrt_three_inv, half_Sqrt_three_inv, -half_Sqrt_three_inv},
-			      {half_Sqrt_three_inv, half_Sqrt_three_inv, half_Sqrt_three_inv}};
-
-    for (int i=0; i<nx; i++){
-      for (int j=0; j<ny; j++){
-	for (int k=0; k<nz; k++){
-	  for (int ip=0; ip<8; ip++) {
-	    x0[l][0] = x[l][0] = solidlo[0] + delta*(i+0.5+intpoints[ip][0]);
-	    x0[l][1] = x[l][1] = solidlo[1] + delta*(j+0.5+intpoints[ip][1]);
-	    if (domain->dimension == 3) x0[l][2] = x[l][2] = solidlo[2] + delta*(k+0.5+intpoints[ip][2]);
-	    else x0[l][2] = x[l][2] = 0;
-	    l++;
-	  }
-	}
-      }
-    }    
-  } else {
-    cout << "Error: solid command 4th argument should be 1 or 2, but " << (int) input->parsev(args[3]) << "received.\n";
-    exit(1);
   }
+  // } else if ((int) input->parsev(args[3]) == 2) {
+  //   // Quadratic elements:
+
+  //   np *= 8;
+  //   mass_ /= 8.0;
+  //   vol_ /= 8.0;
+  //   // Allocate the space in the vectors for np particles:
+  //   grow(np);
+
+  //   double half_Sqrt_three_inv = 0.5/sqrt(3.0);
+
+  //   double intpoints[8][3] = {{-half_Sqrt_three_inv, -half_Sqrt_three_inv, -half_Sqrt_three_inv},
+  // 			      {-half_Sqrt_three_inv, -half_Sqrt_three_inv, half_Sqrt_three_inv},
+  // 			      {-half_Sqrt_three_inv, half_Sqrt_three_inv, -half_Sqrt_three_inv},
+  // 			      {-half_Sqrt_three_inv, half_Sqrt_three_inv, half_Sqrt_three_inv},
+  // 			      {half_Sqrt_three_inv, -half_Sqrt_three_inv, -half_Sqrt_three_inv},
+  // 			      {half_Sqrt_three_inv, -half_Sqrt_three_inv, half_Sqrt_three_inv},
+  // 			      {half_Sqrt_three_inv, half_Sqrt_three_inv, -half_Sqrt_three_inv},
+  // 			      {half_Sqrt_three_inv, half_Sqrt_three_inv, half_Sqrt_three_inv}};
+
+  //   for (int i=0; i<nx; i++){
+  //     for (int j=0; j<ny; j++){
+  // 	for (int k=0; k<nz; k++){
+  // 	  for (int ip=0; ip<8; ip++) {
+  // 	    x0[l][0] = x[l][0] = solidlo[0] + delta*(i+0.5+intpoints[ip][0]);
+  // 	    x0[l][1] = x[l][1] = solidlo[1] + delta*(j+0.5+intpoints[ip][1]);
+  // 	    if (domain->dimension == 3) x0[l][2] = x[l][2] = solidlo[2] + delta*(k+0.5+intpoints[ip][2]);
+  // 	    else x0[l][2] = x[l][2] = 0;
+  // 	    l++;
+  // 	  }
+  // 	}
+  //     }
+  //   }    
+  // } else {
+  //   cout << "Error: solid command 4th argument should be 1 or 2, but " << (int) input->parsev(args[3]) << "received.\n";
+  //   exit(1);
+  // }
 
   for (int i=0; i<np;i++) {
     a[i].setZero();
