@@ -132,7 +132,7 @@ SolRectangle::SolRectangle(MPM *mpm, vector<string> args) : Solid(mpm, args)
     // Allocate the space in the vectors for np particles:
     grow(np);
 
-    double a = 0.7746;
+    double a = 0.7746/2;
 
     double intpoints[27][3] = {{-a, -a, -a},
 			       {-a, -a, 0},
