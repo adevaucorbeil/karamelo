@@ -123,6 +123,58 @@ SolRectangle::SolRectangle(MPM *mpm, vector<string> args) : Solid(mpm, args)
   	}
       }
     }    
+  } else if ((int) input->parsev(args[3]) == 3) {
+    // Berstein elements:
+
+    np *= 27;
+    mass_ /= 27.0;
+    vol_ /= 27.0;
+    // Allocate the space in the vectors for np particles:
+    grow(np);
+
+    double a = 0.7746;
+
+    double intpoints[27][3] = {{-a, -a, -a},
+			       {-a, -a, 0},
+			       {-a, -a, a},
+			       {-a, 0, -a},
+			       {-a, 0, 0},
+			       {-a, 0, a},
+			       {-a, a, -a},
+			       {-a, a, 0},
+			       {-a, a, a},
+			       {0, -a, -a},
+			       {0, -a, 0},
+			       {0, -a, a},
+			       {0, 0, -a},
+			       {0, 0, 0},
+			       {0, 0, a},
+			       {0, a, -a},
+			       {0, a, 0},
+			       {0, a, a},
+			       {a, -a, -a},
+			       {a, -a, 0},
+			       {a, -a, a},
+			       {a, 0, -a},
+			       {a, 0, 0},
+			       {a, 0, a},
+			       {a, a, -a},
+			       {a, a, 0},
+			       {a, a, a}};
+
+    for (int i=0; i<nx; i++){
+      for (int j=0; j<ny; j++){
+	for (int k=0; k<nz; k++){
+	  for (int ip=0; ip<27; ip++) {
+	    x0[l][0] = x[l][0] = solidlo[0] + delta*(i+0.5+intpoints[ip][0]);
+	    x0[l][1] = x[l][1] = solidlo[1] + delta*(j+0.5+intpoints[ip][1]);
+	    if (domain->dimension == 3) x0[l][2] = x[l][2] = solidlo[2] + delta*(k+0.5+intpoints[ip][2]);
+	    else x0[l][2] = x[l][2] = 0;
+	    l++;
+	  }
+	}
+      }
+    }
   } else {
     cout << "Error: solid command 4th argument should be 1 or 2, but " << (int) input->parsev(args[3]) << "received.\n";
     exit(1);

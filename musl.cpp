@@ -58,6 +58,7 @@ void MUSL::run(int n){
     update->method->update_deformation_gradient();
     update->method->update_stress();
 
+    update->method->adjust_dt();
 
     modify->final_integrate();
 
@@ -71,7 +72,6 @@ void MUSL::run(int n){
       output->write(ntimestep);
     }
     
-    update->method->adjust_dt();
   }
 }
 
