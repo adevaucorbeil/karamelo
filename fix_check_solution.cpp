@@ -79,10 +79,12 @@ void FixChecksolution::final_integrate() {
   double *mass;
   double *vol0;
   Eigen::Vector3d error;
+  Eigen::Vector3d u_th;
   Eigen::Vector3d *x0;
   Eigen::Vector3d *x;  
 
   error.setZero();
+  u_th.setZero();
 
   double vtot;
 
@@ -104,20 +106,24 @@ void FixChecksolution::final_integrate() {
 	  if (xset) {
 	    ux = xvalue.result(mpm);
 	    error[0] += vol0[in]*square(ux-(x[in][0]-x0[in][0]));
+	    u_th[0] += vol0[in]*ux*ux;
 	  }
 	  if (yset) {
 	    uy = yvalue.result(mpm);
 	    error[1] += vol0[in]*square(uy-(x[in][1]-x0[in][1]));
+	    u_th[1] += vol0[in]*uy*uy;
 	  }
 	  if (zset) {
 	    uz = zvalue.result(mpm);
 	    error[2] += vol0[in]*square(uz-(x[in][2]-x0[in][2]));
+	    u_th[2] += vol0[in]*uz*uz;
 	  }
 	}
       }
     }
 
     (*input->vars)[id+"_s"]=Var(id+"_s", sqrt((error[0] + error[1] + error[2])/vtot));
+    (*input->vars)[id+"_x"]=Var(id+"_x", (*input->vars)[id+"_x"].result()+(*input->vars)[id+"_s"].result()*update->dt);
     // cout << "f for " << n << " nodes from solid " << domain->solids[isolid]->id << " set." << endl;
   } else {
     vtot = domain->solids[solid]->vtot;
@@ -135,19 +141,24 @@ void FixChecksolution::final_integrate() {
 	if (xset) {
 	  ux = xvalue.result(mpm);
 	  error[0] += vol0[in]*square(ux-(x[in][0]-x0[in][0]));
+	  u_th[0] += vol0[in]*ux*ux;
 	}
 	if (yset) {
 	  uy = yvalue.result(mpm);
 	  error[1] += vol0[in]*square(uy-(x[in][1]-x0[in][1]));
+	  u_th[1] += vol0[in]*uy*uy;
 	}
 	if (zset) {
 	  uz = zvalue.result(mpm);
 	  error[2] += vol0[in]*square(uz-(x[in][2]-x0[in][2]));
+	  u_th[2] += vol0[in]*uz*uz;
 	}
       }
     }
 
-    (*input->vars)[id+"_s"]=Var(id+"_s", sqrt((error[0] + error[1] + error[2])/vtot));
+    (*input->vars)[id+"_s"]=Var(id+"_s", sqrt((error[0] + error[1] + error[2])/(u_th[0] + u_th[1] + u_th[2])));
+    cout << (*input->vars)[id+"_s"].result() << endl;
+    (*input->vars)[id+"_x"]=Var(id+"_x", (*input->vars)[id+"_x"].result()+(*input->vars)[id+"_s"].result()*update->dt);
     // cout << "f for " << n << " nodes from solid " << domain->solids[solid]->id << " set." << endl;
   }
   // cout << "ftot = [" << ftot[0] << ", " << ftot[1] << ", " << ftot[2] << "]\n"; 
