@@ -122,7 +122,7 @@ void FixChecksolution::final_integrate() {
       }
     }
 
-    (*input->vars)[id+"_s"]=Var(id+"_s", sqrt((error[0] + error[1] + error[2])/vtot));
+    (*input->vars)[id+"_s"]=Var(id+"_s", sqrt((error[0] + error[1] + error[2])/(u_th[0] + u_th[1] + u_th[2])));
     (*input->vars)[id+"_x"]=Var(id+"_x", (*input->vars)[id+"_x"].result()+(*input->vars)[id+"_s"].result()*update->dt);
     // cout << "f for " << n << " nodes from solid " << domain->solids[isolid]->id << " set." << endl;
   } else {
@@ -157,7 +157,6 @@ void FixChecksolution::final_integrate() {
     }
 
     (*input->vars)[id+"_s"]=Var(id+"_s", sqrt((error[0] + error[1] + error[2])/(u_th[0] + u_th[1] + u_th[2])));
-    cout << (*input->vars)[id+"_s"].result() << endl;
     (*input->vars)[id+"_x"]=Var(id+"_x", (*input->vars)[id+"_x"].result()+(*input->vars)[id+"_s"].result()*update->dt);
     // cout << "f for " << n << " nodes from solid " << domain->solids[solid]->id << " set." << endl;
   }
