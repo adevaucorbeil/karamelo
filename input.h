@@ -46,7 +46,7 @@ private:
   int add_damage(vector<string>);
   int dump(vector<string>);
   int group_command(vector<string>);
-  int log(vector<string>);
+  int set_output(vector<string>);
   int log_modify(vector<string>);
   int method(vector<string>);
   int fix(vector<string>);

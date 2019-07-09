@@ -194,7 +194,7 @@ Var Input::evaluate_function(string func, string arg){
   if (func.compare("damage") == 0) return Var(add_damage(args));
   if (func.compare("dump") == 0) return Var(dump(args));
   if (func.compare("group") == 0) return Var(group_command(args));
-  if (func.compare("log") == 0) return Var(log(args));
+  if (func.compare("set_output") == 0) return Var(set_output(args));
   if (func.compare("log_modify") == 0) return Var(log_modify(args));
   if (func.compare("method") == 0) return Var(method(args));
   if (func.compare("fix") == 0) return Var(fix(args));
@@ -642,7 +642,7 @@ int Input::group_command(vector<string> args){
   return 0;
 }
 
-int Input::log(vector<string> args){
+int Input::set_output(vector<string> args){
   output->set_log(args);
   return 0;
 }
