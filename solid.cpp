@@ -3,6 +3,8 @@
 #include "memory.h"
 #include "update.h"
 #include "domain.h"
+#include "input.h"
+#include "var.h"
 #include <vector>
 #include <Eigen/Eigen>
 #include "mpm_math.h"
@@ -666,7 +668,10 @@ void Solid::update_stress()
       // Neo-Hookean material:
       FinvT = Finv[ip].transpose();
       PK1[ip] = mat->G*(F[ip] - FinvT) + mat->lambda*log(J[ip])*FinvT;
-      sigma[ip] = 1.0/J[ip]*(PK1[ip]*F[ip].transpose());
+      //cout << "log(J)=" << log(J[ip]) <<" F=" << endl << F[ip] << endl << "FinvT=" << endl << FinvT<< endl << "F*Finv=" << endl << F[ip]*Finv[ip]<< endl;
+      cout << (F[ip](0,0) - (1 + M_PI*0.05*cos(M_PI*x0[ip][0])*sin(100*M_PI*(*input->vars)["time"].result())))/F[ip](0,0) << "\t";
+      cout << (F[ip](1,1) - (1 + M_PI*0.05*cos(M_PI*x0[ip][1])*sin(100*M_PI*(*input->vars)["time"].result() + M_PI)))/F[ip](1,1) << endl;
+      sigma[ip] = 1.0/J[ip]*(F[ip]*PK1[ip].transpose());
     }
 
     
