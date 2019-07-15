@@ -59,8 +59,8 @@ void Grid::init(double *solidlo, double *solidhi){
   if (update->method_shape_function.compare("Bernstein-quadratic")==0)
     h /= 2;
 
-  nx = ((int) Lx/h)+1;
-  ny = ((int) Ly/h)+1;
+  nx = ((int) (Lx/h))+1;
+  ny = ((int) (Ly/h))+1;
 
   //while (nx*h <= Lx+0.5*h) nx++;
   //while (ny*h <= Ly+0.5*h) ny++;

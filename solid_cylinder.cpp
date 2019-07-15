@@ -38,7 +38,7 @@ SolCylinder::SolCylinder(MPM *mpm, vector<string> args) : Solid(mpm, args)
   grid->init(solidlo, solidhi);
 
   // Calculate total number of particles np:
-  int np, nx, ny, nz;
+  int nx, ny, nz;
   double delta;
   double hdelta;
 
@@ -47,12 +47,12 @@ SolCylinder::SolCylinder(MPM *mpm, vector<string> args) : Solid(mpm, args)
   double Lx = solidhi[0]-solidlo[0];
   double Ly = solidhi[1]-solidlo[1];
 
-  nx = ((int) Lx/delta);
-  ny = ((int) Ly/delta);
+  nx = (int) (Lx/delta);
+  ny = (int) (Ly/delta);
 
   if (domain->dimension == 3) {
     double Lz = solidhi[2]-solidlo[2];
-    nz = ((int) Lz/delta);
+    nz = (int) (Lz/delta);
    } else {
     nz = 1;
    }
@@ -85,7 +85,8 @@ SolCylinder::SolCylinder(MPM *mpm, vector<string> args) : Solid(mpm, args)
 	  x0[l][1] = x[l][1] = solidlo[1] + delta*(j+0.5);
 	  if (domain->dimension == 3) x0[l][2] = x[l][2] = solidlo[2] + delta*(k+0.5);
 	  else x0[l][2] = x[l][2] = 0;
-	  l++;
+	  // Check if the particle is inside cylinder:
+	  if (domain->regions[iregion]->inside(x0[l][0], x0[l][1], x0[l][2])==1) l++;
 	}
       }
     }
@@ -117,7 +118,8 @@ SolCylinder::SolCylinder(MPM *mpm, vector<string> args) : Solid(mpm, args)
 	    x0[l][1] = x[l][1] = solidlo[1] + delta*(j+0.5+intpoints[ip][1]);
 	    if (domain->dimension == 3) x0[l][2] = x[l][2] = solidlo[2] + delta*(k+0.5+intpoints[ip][2]);
 	    else x0[l][2] = x[l][2] = 0;
-	    l++;
+	    // Check if the particle is inside cylinder:
+	    if (domain->regions[iregion]->inside(x0[l][0], x0[l][1], x0[l][2])==1) l++;
 	  }
 	}
       }
@@ -169,7 +171,8 @@ SolCylinder::SolCylinder(MPM *mpm, vector<string> args) : Solid(mpm, args)
 	    x0[l][1] = x[l][1] = solidlo[1] + delta*(j+0.5+intpoints[ip][1]);
 	    if (domain->dimension == 3) x0[l][2] = x[l][2] = solidlo[2] + delta*(k+0.5+intpoints[ip][2]);
 	    else x0[l][2] = x[l][2] = 0;
-	    l++;
+	    // Check if the particle is inside cylinder:
+	    if (domain->regions[iregion]->inside(x0[l][0], x0[l][1], x0[l][2])==1) l++;
 	  }
 	}
       }
@@ -178,6 +181,9 @@ SolCylinder::SolCylinder(MPM *mpm, vector<string> args) : Solid(mpm, args)
     cout << "Error: solid command 4th argument should be 1 or 2, but " << (int) input->parsev(args[3]) << "received.\n";
     exit(1);
   }
+
+  np = l; // Adjust np to account for the particles outside the domain
+  cout << "np="<< np << endl;
 
   for (int i=0; i<np;i++) {
     a[i].setZero();
