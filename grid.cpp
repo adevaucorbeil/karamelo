@@ -163,7 +163,7 @@ void Grid::grow(int nn){
     exit(1);
   }
 
-  if (C == NULL) C = new Eigen::Vector3d[ncells];
+  if (C == NULL) C = new Eigen::Vector3d[nn];
   else {
     cout << "Error: C already exists, I don't know how to grow it!\n";
     exit(1);

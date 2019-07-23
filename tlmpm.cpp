@@ -136,6 +136,7 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
 	    s[0] = basis_function(r[0], ntype[in][0]);
 	    s[1] = basis_function(r[1], ntype[in][1]);
 	    if (domain->dimension == 3) s[2] = basis_function(r[2], ntype[in][2]);
+	    else s[2] = 1;
 
 	    if (s[0] != 0 && s[1] != 0 && s[2] != 0) {
 

@@ -48,11 +48,22 @@ SolCylinder::SolCylinder(MPM *mpm, vector<string> args) : Solid(mpm, args)
   double Ly = solidhi[1]-solidlo[1];
 
   nx = (int) (Lx/delta);
+  while (nx * delta <= Lx - delta) {
+    nx++;
+  }
+
   ny = (int) (Ly/delta);
+  while (ny * delta <= Ly - delta) {
+    ny++;
+  }
 
   if (domain->dimension == 3) {
     double Lz = solidhi[2]-solidlo[2];
     nz = (int) (Lz/delta);
+
+    while (nz * delta <= Lz - delta) {
+      nz++;
+    }
    } else {
     nz = 1;
    }
