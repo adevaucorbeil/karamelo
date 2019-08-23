@@ -9,6 +9,7 @@
 #include <Eigen/Eigen>
 #include <math.h>
 #include "var.h"
+#include <algorithm>
 
 using namespace std;
 
@@ -129,6 +130,27 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
 
       if (np && nnodes) {
 	for (int ip=0; ip<np; ip++) {
+	  // Calculate what nodes particle ip will interact with:
+	  int nx = domain->solids[isolid]->grid->nx;
+	  int ny = domain->solids[isolid]->grid->ny;
+	  int nz = domain->solids[isolid]->grid->nz;
+
+	  vector<int> n_neigh;
+
+	  if (update->method_shape_function.compare("linear")==0) {
+	    int i0 = (int) ((xp[ip][0] - domain->solids[isolid]->solidlo[0])*inv_cellsize);
+	    int j0 = (int) ((xp[ip][1] - domain->solids[isolid]->solidlo[1])*inv_cellsize);
+	    int k0 = (int) ((xp[ip][2] - domain->solids[isolid]->solidlo[2])*inv_cellsize);
+
+	    for(int i=i0; i<i0+2;i++){
+	      for(int j=j0; j<j0+2;j++){
+		for(int k=k0; k<k0+2;k++){
+		  n_neigh.push_back(nz*ny*i+nz*j+k);
+		}
+	      }
+	    }
+	  }
+
 	  for (int in=0; in<nnodes; in++) {
 	    // Calculate the distance between each pair of particle/node:
 	    r = (xp[ip] - xn[in]) * inv_cellsize;
@@ -139,6 +161,15 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
 	    else s[2] = 1;
 
 	    if (s[0] != 0 && s[1] != 0 && s[2] != 0) {
+
+	      // Check if this node is in n_neigh:
+	      if (find(n_neigh.begin(), n_neigh.end(), in) == n_neigh.end()) {
+		// ip is not in n_neigh
+		cout << "ip=" << ip << " not found in n_neigh for in=" << in << " which is :[";
+		for (auto ii: n_neigh)
+		  cout << ii << ' ';
+		cout << endl;
+	      }
 
 	      sd[0] = derivative_basis_function(r[0], ntype[in][0], inv_cellsize);
 	      sd[1] = derivative_basis_function(r[1], ntype[in][1], inv_cellsize);
