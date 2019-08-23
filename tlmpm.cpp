@@ -144,14 +144,79 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
 
 	    for(int i=i0; i<i0+2;i++){
 	      for(int j=j0; j<j0+2;j++){
-		for(int k=k0; k<k0+2;k++){
-		  n_neigh.push_back(nz*ny*i+nz*j+k);
+		if (nz>1){
+		  for(int k=k0; k<k0+2;k++){
+		    n_neigh.push_back(nz*ny*i+nz*j+k);
+		  }
+		} else {
+		  n_neigh.push_back(ny*i+j);
 		}
 	      }
 	    }
+	  } else if (update->method_shape_function.compare("Bernstein-quadratic")==0){
+	    int i0 = 2*(int) ((xp[ip][0] - domain->solids[isolid]->solidlo[0])*inv_cellsize);
+	    int j0 = 2*(int) ((xp[ip][1] - domain->solids[isolid]->solidlo[1])*inv_cellsize);
+	    int k0 = 2*(int) ((xp[ip][2] - domain->solids[isolid]->solidlo[2])*inv_cellsize);
+
+	    if ((i0 >= 1) && (i0 % 2 != 0)) i0--;
+	    if ((j0 >= 1) && (j0 % 2 != 0)) j0--;
+	    if (nz>1) if ((k0 >= 1) && (k0 % 2 != 0)) k0--;
+
+	    // cout << "(" << i0 << "," << j0 << "," << k0 << ")\t";
+
+	    for(int i=i0; i<i0+3;i++){
+	      for(int j=j0; j<j0+3;j++){
+		if (nz>1){
+		  for(int k=k0; k<k0+3;k++){
+		    n_neigh.push_back(nz*ny*i+nz*j+k);
+		    // if (nz*ny*i+nz*j+k >= nnodes) {
+		    //   cout << "Error: " << nz*ny*i+nz*j+k << " >= nnodes=" << nnodes << endl ;
+		    //   exit(1);
+		    // }
+		  }
+		} else {
+		  n_neigh.push_back(ny*i+j);
+		  // if (ny*i+j >= nnodes) {
+		  //   cout << "Error: " << ny*i+j << " >= nnodes=" << nnodes << endl ;
+		  //   exit(1);
+		  // }
+		}
+	      }
+	    }
+	  } else if (update->method_shape_function.compare("cubic-spline")==0){
+	    int i0 = (int) ((xp[ip][0] - domain->solids[isolid]->solidlo[0])*inv_cellsize - 1);
+	    int j0 = (int) ((xp[ip][1] - domain->solids[isolid]->solidlo[1])*inv_cellsize - 1);
+	    int k0 = (int) ((xp[ip][2] - domain->solids[isolid]->solidlo[2])*inv_cellsize - 1);
+
+	    // cout << "(" << i0 << "," << j0 << "," << k0 << ")\t";
+
+	    for(int i=i0; i<i0+4;i++){
+	      for(int j=j0; j<j0+4;j++){
+		if (nz>1){
+		  for(int k=k0; k<k0+4;k++){
+		    int n = nz*ny*i+nz*j+k;
+		    if (n < nnodes)
+		      n_neigh.push_back(n);
+		  }
+		} else {
+		  int n = ny*i+j;
+		    if (n < nnodes)
+		      n_neigh.push_back(n);
+		}
+	      }
+	    }
+	  } else {
+	    cout << "Shape function type not supported by TLMPM::compute_grid_weight_functions_and_gradients(): " << update->method_shape_function << endl;
+	    exit(1);
 	  }
 
-	  for (int in=0; in<nnodes; in++) {
+	  // cout << "[";
+	  // for (auto ii: n_neigh)
+	  //   cout << ii << ' ';
+	  // cout << "]\n";
+
+	  //for (int in=0; in<nnodes; in++) {
+	  for (auto in: n_neigh) {
 	    // Calculate the distance between each pair of particle/node:
 	    r = (xp[ip] - xn[in]) * inv_cellsize;
 
@@ -161,15 +226,15 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
 	    else s[2] = 1;
 
 	    if (s[0] != 0 && s[1] != 0 && s[2] != 0) {
-
-	      // Check if this node is in n_neigh:
-	      if (find(n_neigh.begin(), n_neigh.end(), in) == n_neigh.end()) {
-		// ip is not in n_neigh
-		cout << "ip=" << ip << " not found in n_neigh for in=" << in << " which is :[";
-		for (auto ii: n_neigh)
-		  cout << ii << ' ';
-		cout << endl;
-	      }
+	      // // cout << in << "\t";
+	      // // Check if this node is in n_neigh:
+	      // if (find(n_neigh.begin(), n_neigh.end(), in) == n_neigh.end()) {
+	      // 	// in is not in n_neigh
+	      //  	cout << "in=" << in << " not found in n_neigh for ip=" << ip << " which is :[";
+	      //  	for (auto ii: n_neigh)
+	      //  	  cout << ii << ' ';
+	      //  	cout << "]\n";
+	      // }
 
 	      sd[0] = derivative_basis_function(r[0], ntype[in][0], inv_cellsize);
 	      sd[1] = derivative_basis_function(r[1], ntype[in][1], inv_cellsize);
@@ -202,7 +267,8 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
 	      wfd_np[in].push_back(wfd);
 	      // cout << "ip=" << ip << ", in=" << in << ", wf=" << wf << ", wfd=[" << wfd[0] << "," << wfd[1] << "," << wfd[2] << "]" << endl;
 	    }
-	  } 
+	  }
+	  // cout << endl;
 	}
       }
       if (method_type.compare("APIC") == 0) domain->solids[isolid]->compute_inertia_tensor(shape_function);
