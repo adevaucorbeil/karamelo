@@ -1,4 +1,4 @@
-#include "tlmpm.h"
+#include "ulmpm.h"
 #include "domain.h"
 #include "solid.h"
 #include "grid.h"
@@ -14,8 +14,8 @@
 
 using namespace std;
 
-TLMPM::TLMPM(MPM *mpm, vector<string> args) : Method(mpm) {
-  cout << "In TLMPM::TLMPM()" << endl;
+ULMPM::ULMPM(MPM *mpm, vector<string> args) : Method(mpm) {
+  cout << "In ULMPM::ULMPM()" << endl;
 
   update_wf = 1;
   method_type = "FLIP";
@@ -27,11 +27,11 @@ TLMPM::TLMPM(MPM *mpm, vector<string> args) : Method(mpm) {
   derivative_basis_function = &BasisFunction::derivative_linear;
 }
 
-TLMPM::~TLMPM()
+ULMPM::~ULMPM()
 {
 }
 
-void TLMPM::setup(vector<string> args)
+void ULMPM::setup(vector<string> args)
 {
   int n = 1;
   bool isFLIP = false;
@@ -93,7 +93,7 @@ void TLMPM::setup(vector<string> args)
   // cout << "FLIP = " << FLIP << endl;
 }
 
-void TLMPM::compute_grid_weight_functions_and_gradients()
+void ULMPM::compute_grid_weight_functions_and_gradients()
 {
   if (!update_wf) return;
 
@@ -121,7 +121,7 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
 
       Eigen::Vector3d r;
       double s[3], sd[3];
-      Eigen::Vector3d *xp = domain->solids[isolid]->x0;
+      Eigen::Vector3d *xp = domain->solids[isolid]->x;
       Eigen::Vector3d *xn = domain->solids[isolid]->grid->x0;
       double inv_cellsize = 1.0 / domain->solids[isolid]->grid->cellsize;
       double wf;
@@ -207,7 +207,7 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
 	      }
 	    }
 	  } else {
-	    cout << "Shape function type not supported by TLMPM::compute_grid_weight_functions_and_gradients(): " << update->method_shape_function << endl;
+	    cout << "Shape function type not supported by ULMPM::compute_grid_weight_functions_and_gradients(): " << update->method_shape_function << endl;
 	    exit(1);
 	  }
 
@@ -275,11 +275,9 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
       if (method_type.compare("APIC") == 0) domain->solids[isolid]->compute_inertia_tensor(shape_function);
     }
   }
-
-  update_wf = 0;
 }
 
-void TLMPM::particles_to_grid()
+void ULMPM::particles_to_grid()
 {
   for (int isolid=0; isolid<domain->solids.size(); isolid++){
     domain->solids[isolid]->compute_mass_nodes();
@@ -287,19 +285,19 @@ void TLMPM::particles_to_grid()
     if (method_type.compare("APIC") == 0) domain->solids[isolid]->compute_velocity_nodes_APIC();
     else domain->solids[isolid]->compute_velocity_nodes();
     domain->solids[isolid]->compute_external_forces_nodes();
-    domain->solids[isolid]->compute_internal_forces_nodes_TL();
+    domain->solids[isolid]->compute_internal_forces_nodes_UL();
     /*compute_thermal_energy_nodes();*/
     }
 }
 
-void TLMPM::update_grid_state()
+void ULMPM::update_grid_state()
 {
   for (int isolid=0; isolid<domain->solids.size(); isolid++) {
     domain->solids[isolid]->grid->update_grid_velocities();
   }
 }
 
-void TLMPM::grid_to_points()
+void ULMPM::grid_to_points()
 {
   for (int isolid=0; isolid<domain->solids.size(); isolid++) {
     domain->solids[isolid]->compute_particle_velocities();
@@ -307,7 +305,7 @@ void TLMPM::grid_to_points()
   }
 }
 
-void TLMPM::advance_particles()
+void ULMPM::advance_particles()
 {
   for (int isolid=0; isolid<domain->solids.size(); isolid++) {
     domain->solids[isolid]->update_particle_position();
@@ -315,7 +313,7 @@ void TLMPM::advance_particles()
   }
 }
 
-void TLMPM::velocities_to_grid()
+void ULMPM::velocities_to_grid()
 {
   for (int isolid=0; isolid<domain->solids.size(); isolid++) {
     if (method_type.compare("APIC") != 0) { 
@@ -326,30 +324,30 @@ void TLMPM::velocities_to_grid()
   }
 }
 
-void TLMPM::compute_rate_deformation_gradient()
+void ULMPM::compute_rate_deformation_gradient()
 {
   for (int isolid=0; isolid<domain->solids.size(); isolid++) {
-    if (method_type.compare("APIC") == 0) domain->solids[isolid]->compute_rate_deformation_gradient_TL_APIC();
-    else domain->solids[isolid]->compute_rate_deformation_gradient_TL();
+    if (method_type.compare("APIC") == 0) domain->solids[isolid]->compute_rate_deformation_gradient_UL_APIC();
+    else domain->solids[isolid]->compute_rate_deformation_gradient_UL();
     //domain->solids[isolid]->compute_deformation_gradient();
   }
 }
 
-void TLMPM::update_deformation_gradient()
+void ULMPM::update_deformation_gradient()
 {
   for (int isolid=0; isolid<domain->solids.size(); isolid++) {
     domain->solids[isolid]->update_deformation_gradient();
   }
 }
 
-void TLMPM::update_stress()
+void ULMPM::update_stress()
 {
   for (int isolid=0; isolid<domain->solids.size(); isolid++) {
     domain->solids[isolid]->update_stress();
   }
 }
 
-void TLMPM::adjust_dt()
+void ULMPM::adjust_dt()
 {
   update->update_time();
   if (update->dt_constant) return; // dt is set as a constant, do not update
@@ -373,7 +371,7 @@ void TLMPM::adjust_dt()
   (*input->vars)["dt"] = Var("dt", update->dt);
 }
 
-void TLMPM::reset()
+void ULMPM::reset()
 {
   int np;
 

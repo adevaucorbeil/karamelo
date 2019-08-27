@@ -2,26 +2,26 @@
 
 #ifdef METHOD_CLASS
 
-MethodStyle(tlmpm,TLMPM)
+MethodStyle(ulmpm,ULMPM)
 
 #else
 
-#ifndef LMP_TLMPM_H
-#define LMP_TLMPM_H
+#ifndef LMP_ULMPM_H
+#define LMP_ULMPM_H
 
 #include "method.h"
 #include <vector>
 #include <Eigen/Eigen>
 
 
-class TLMPM : public Method {
+class ULMPM : public Method {
  public:
   string method_type;
   double FLIP;
   string shape_function;
 
-  TLMPM(class MPM *, vector<string>);
-  ~TLMPM();
+  ULMPM(class MPM *, vector<string>);
+  ~ULMPM();
 
   void setup(vector<string>);
 

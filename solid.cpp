@@ -341,6 +341,7 @@ void Solid::grow(int nparticles){
 void Solid::compute_node_rotation_matrix()
 {
   int ip;
+
   for (int in=0; in<grid->nnodes; in++){
     grid->R[in].setZero();
     for (int j=0; j<numneigh_np[in];j++){
@@ -355,6 +356,7 @@ void Solid::compute_node_rotation_matrix()
 void Solid::compute_mass_nodes()
 {
   int ip;
+
   for (int in=0; in<grid->nnodes; in++){
     grid->mass[in] = 0;
     for (int j=0; j<numneigh_np[in];j++){
@@ -370,7 +372,7 @@ void Solid::compute_velocity_nodes()
   Eigen::Vector3d *vn = grid->v;
   double *massn = grid->mass;
   int ip;
-  
+
   for (int in=0; in<grid->nnodes; in++) {
     vn[in].setZero();
     if (massn[in] > 0) {
@@ -389,7 +391,7 @@ void Solid::compute_velocity_nodes_APIC()
   Eigen::Vector3d *vn = grid->v;
   double *massn = grid->mass;
   int ip;
-  
+
   for (int in=0; in<grid->nnodes; in++) {
     vn[in].setZero();
     if (massn[in] > 0) {
@@ -407,7 +409,7 @@ void Solid::compute_external_forces_nodes()
   Eigen::Vector3d *bn = grid->b;
   double *massn = grid->mass;
   int ip;
-  
+
   for (int in=0; in<grid->nnodes; in++) {
     bn[in].setZero();
     if (massn[in] > 0) {
@@ -420,12 +422,12 @@ void Solid::compute_external_forces_nodes()
   }
 }
 
-void Solid::compute_internal_forces_nodes()
+void Solid::compute_internal_forces_nodes_TL()
 {
   Eigen::Vector3d *fn = grid->f;
   double *massn = grid->mass;
   int ip;
-  
+
   for (int in=0; in<grid->nnodes; in++) {
     fn[in].setZero();
     for (int j=0; j<numneigh_np[in];j++){
@@ -434,6 +436,22 @@ void Solid::compute_internal_forces_nodes()
     }
   }
 }
+
+void Solid::compute_internal_forces_nodes_UL()
+{
+  Eigen::Vector3d *fn = grid->f;
+  double *massn = grid->mass;
+  int ip;
+
+  for (int in=0; in<grid->nnodes; in++) {
+    fn[in].setZero();
+    for (int j=0; j<numneigh_np[in];j++){
+      ip = neigh_np[in][j];
+      fn[in] -= vol[ip] * (sigma[ip] * wfd_np[in][j]);
+    }
+  }
+}
+
 
 void Solid::compute_particle_velocities()
 {
@@ -482,7 +500,7 @@ void Solid::update_particle_velocities(double FLIP)
   }
 }
 
-void Solid::compute_rate_deformation_gradient()
+void Solid::compute_rate_deformation_gradient_TL()
 {
   int in;
   Eigen::Vector3d *vn = grid->v;
@@ -516,6 +534,42 @@ void Solid::compute_rate_deformation_gradient()
     }
   }
 }
+
+void Solid::compute_rate_deformation_gradient_UL()
+{
+  int in;
+  Eigen::Vector3d *vn = grid->v;
+
+  if (domain->dimension == 2) {
+    for (int ip=0; ip<np; ip++){
+      L[ip].setZero();
+      for (int j=0; j<numneigh_pn[ip]; j++){
+	in = neigh_pn[ip][j];
+	L[ip](0,0) += vn[in][0]*wfd_pn[ip][j][0];
+	L[ip](0,1) += vn[in][0]*wfd_pn[ip][j][1];
+	L[ip](1,0) += vn[in][1]*wfd_pn[ip][j][0];
+	L[ip](1,1) += vn[in][1]*wfd_pn[ip][j][1];
+      }
+    }
+  } else if (domain->dimension == 3) {
+    for (int ip=0; ip<np; ip++){
+      L[ip].setZero();
+      for (int j=0; j<numneigh_pn[ip]; j++){
+	in = neigh_pn[ip][j];
+	L[ip](0,0) += vn[in][0]*wfd_pn[ip][j][0];
+	L[ip](0,1) += vn[in][0]*wfd_pn[ip][j][1];
+	L[ip](0,2) += vn[in][0]*wfd_pn[ip][j][2];
+	L[ip](1,0) += vn[in][1]*wfd_pn[ip][j][0];
+	L[ip](1,1) += vn[in][1]*wfd_pn[ip][j][1];
+	L[ip](1,2) += vn[in][1]*wfd_pn[ip][j][2];
+	L[ip](2,0) += vn[in][2]*wfd_pn[ip][j][0];
+	L[ip](2,1) += vn[in][2]*wfd_pn[ip][j][1];
+	L[ip](2,2) += vn[in][2]*wfd_pn[ip][j][2];
+      }
+    }
+  }
+}
+
 void Solid::compute_deformation_gradient()
 {
   int in;
@@ -561,7 +615,7 @@ void Solid::compute_deformation_gradient()
 }
 
 
-void Solid::compute_rate_deformation_gradient_APIC()
+void Solid::compute_rate_deformation_gradient_TL_APIC()
 {
   int in;
   Eigen::Vector3d *x0n = grid->x0;
@@ -603,13 +657,60 @@ void Solid::compute_rate_deformation_gradient_APIC()
   }
 }
 
+void Solid::compute_rate_deformation_gradient_UL_APIC()
+{
+  int in;
+  Eigen::Vector3d *x0n = grid->x0;
+  //Eigen::Vector3d *vn = grid->v;
+  Eigen::Vector3d *vn = grid->v_update;
+  Eigen::Vector3d dx;
+
+  if (domain->dimension == 2) {
+    for (int ip=0; ip<np; ip++){
+      L[ip].setZero();
+      for (int j=0; j<numneigh_pn[ip]; j++){
+	in = neigh_pn[ip][j];
+	dx = x0n[in] - x0[ip];
+	L[ip](0,0) += vn[in][0]*dx[0]*wf_pn[ip][j];
+	L[ip](0,1) += vn[in][0]*dx[1]*wf_pn[ip][j];
+	L[ip](1,0) += vn[in][1]*dx[0]*wf_pn[ip][j];
+	L[ip](1,1) += vn[in][1]*dx[1]*wf_pn[ip][j];
+      }
+      L[ip] *= Di[ip];
+    }
+  } else if (domain->dimension == 3) {
+    for (int ip=0; ip<np; ip++){
+      L[ip].setZero();
+      for (int j=0; j<numneigh_pn[ip]; j++){
+	in = neigh_pn[ip][j];
+	dx = x0n[in] - x0[ip];
+	L[ip](0,0) += vn[in][0]*dx[0]*wf_pn[ip][j];
+	L[ip](0,1) += vn[in][0]*dx[1]*wf_pn[ip][j];
+	L[ip](0,2) += vn[in][0]*dx[2]*wf_pn[ip][j];
+	L[ip](1,0) += vn[in][1]*dx[0]*wf_pn[ip][j];
+	L[ip](1,1) += vn[in][1]*dx[1]*wf_pn[ip][j];
+	L[ip](1,2) += vn[in][1]*dx[2]*wf_pn[ip][j];
+	L[ip](2,0) += vn[in][2]*dx[0]*wf_pn[ip][j];
+	L[ip](2,1) += vn[in][2]*dx[1]*wf_pn[ip][j];
+	L[ip](2,2) += vn[in][2]*dx[2]*wf_pn[ip][j];
+      }
+      L[ip] *= Di[ip];
+    }
+  }
+}
+
 void Solid::update_deformation_gradient()
 {
   bool status;
   Eigen::Matrix3d U;
+  Eigen::Matrix3d eye;
+  eye.setIdentity();
 
   for (int ip=0; ip<np; ip++){
-    F[ip] += update->dt * Fdot[ip];
+    
+    if (update->method_style.compare("tlmpm") == 0) F[ip] += update->dt * Fdot[ip];
+    else F[ip] = (eye+update->dt*L[ip]) * F[ip];
+
     J[ip] = F[ip].determinant();
     if (J[ip] < 0.0) {
       cout << "Error: J[" << ip << "]<0.0 == " << J[ip] << endl;
@@ -619,10 +720,13 @@ void Solid::update_deformation_gradient()
     vol[ip] = J[ip] * vol0[ip];
     rho[ip] = rho0[ip] / J[ip];
     Finv[ip] = F[ip].inverse();
-    L[ip] = Fdot[ip] * Finv[ip];
+    if (update->method_style.compare("tlmpm") == 0)
+      L[ip] = Fdot[ip] * Finv[ip];
 
     status = PolDec(F[ip], R[ip], U, false); // polar decomposition of the deformation gradient, F = R * U
-    D[ip] = 0.5 * (R[ip].transpose() * (L[ip] + L[ip].transpose()) * R[ip]);
+    if (update->method_style.compare("tlmpm") == 0)
+      D[ip] = 0.5 * (R[ip].transpose() * (L[ip] + L[ip].transpose()) * R[ip]);
+    else D[ip] = 0.5 * (L[ip] + L[ip].transpose());
 
     if (!status) {
       cout << "Polar decomposition of deformation gradient failed for particle " << ip << ".\n";
@@ -660,7 +764,9 @@ void Solid::update_stress()
 	mat->damage->compute_damage(damage_init[ip], damage[ip], pH, sigma_dev, eff_plastic_strain_rate[ip], plastic_strain_increment);
       sigma[ip] = -pH*eye + sigma_dev;
 
-      PK1[ip] = J[ip] * (R[ip] * sigma[ip] * R[ip].transpose()) * Finv[ip].transpose();
+      if (update->method_style.compare("tlmpm") == 0) {
+	PK1[ip] = J[ip] * (R[ip] * sigma[ip] * R[ip].transpose()) * Finv[ip].transpose();
+      }
 
     } else {
       // Neo-Hookean material:
@@ -688,6 +794,7 @@ void Solid::update_stress()
       exit(1);
   }
 }
+
 
 void Solid::compute_inertia_tensor(string form_function) {
 
