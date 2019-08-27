@@ -62,13 +62,13 @@ void Grid::init(double *solidlo, double *solidhi){
   nx = ((int) (Lx/h))+1;
   ny = ((int) (Ly/h))+1;
 
-  //while (nx*h <= Lx+0.5*h) nx++;
-  //while (ny*h <= Ly+0.5*h) ny++;
+  while (nx*h <= Lx+0.5*h) nx++;
+  while (ny*h <= Ly+0.5*h) ny++;
 
   if (domain->dimension == 3) {
-    double Lz = solidhi[2]-solidlo[2]+2*h;
+    double Lz = solidhi[2]-solidlo[2];
     nz = ((int) Lz/h)+1;
-    //while (nz*h <= Lz+0.5*h) nz++;   
+    while (nz*h <= Lz+0.5*h) nz++;   
    } else {
     nz = 1;
    }

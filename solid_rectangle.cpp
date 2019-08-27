@@ -51,9 +51,13 @@ SolRectangle::SolRectangle(MPM *mpm, vector<string> args) : Solid(mpm, args)
   nx = ((int) Lx/delta);
   ny = ((int) Ly/delta);
 
+  while (nx*delta <= Lx-0.5*delta) nx++;
+  while (ny*delta <= Ly-0.5*delta) ny++;
+
   if (domain->dimension == 3) {
     double Lz = solidhi[2]-solidlo[2];
-    nz = ((int) Lz/delta); 
+    nz = ((int) Lz/delta);
+    while (nz*delta <= Lz-0.5*delta) nz++;
    } else {
     nz = 1;
    }
