@@ -14,12 +14,6 @@ using namespace std;
 Grid::Grid(MPM *mpm) :
   Pointers(mpm)
 {
-  // Check that a method is available:
-  if (update->method == NULL) {
-    cout << "Error: a method should be defined before creating a solid!" << endl;
-    exit(1);
-  }
-
   cout << "Creating new grid" << endl;
 
   x = x0 = NULL;
@@ -33,6 +27,9 @@ Grid::Grid(MPM *mpm) :
   R = NULL;
 
   C = NULL;
+
+  cellsize = 0;
+  nnodes = 0;
 }
 
 Grid::~Grid()
@@ -123,49 +120,49 @@ void Grid::grow(int nn){
 
   if (x0 == NULL) x0 = new Eigen::Vector3d[nn];
   else {
-    cout << "Error: x0 already exists, I don't know how to grow it!\n";
+    cout << "Error in Grid::grow(): x0 already exists, I don't know how to grow it!\n";
     exit(1);
   }
 
   if (x == NULL) x = new Eigen::Vector3d[nn];
   else {
-    cout << "Error: x already exists, I don't know how to grow it!\n";
+    cout << "Error in Grid::grow(): x already exists, I don't know how to grow it!\n";
     exit(1);
   }
 
   if (v == NULL) v = new Eigen::Vector3d[nn];
   else {
-    cout << "Error: v already exists, I don't know how to grow it!\n";
+    cout << "Error in Grid::grow(): v already exists, I don't know how to grow it!\n";
     exit(1);
   }
 
   if (v_update == NULL) v_update = new Eigen::Vector3d[nn];
   else {
-    cout << "Error: v_update already exists, I don't know how to grow it!\n";
+    cout << "Error in Grid::grow(): v_update already exists, I don't know how to grow it!\n";
     exit(1);
   }
 
   if (b == NULL) b = new Eigen::Vector3d[nn];
   else {
-    cout << "Error: b already exists, I don't know how to grow it!\n";
+    cout << "Error in Grid::grow(): b already exists, I don't know how to grow it!\n";
     exit(1);
   }
 
   if (f == NULL) f = new Eigen::Vector3d[nn];
   else {
-    cout << "Error: f already exists, I don't know how to grow it!\n";
+    cout << "Error in Grid::grow(): f already exists, I don't know how to grow it!\n";
     exit(1);
   }
 
   if (R == NULL) R = new Eigen::Matrix3d[nn];
   else {
-    cout << "Error: R already exists, I don't know how to grow it!\n";
+    cout << "Error in Grid::grow(): R already exists, I don't know how to grow it!\n";
     exit(1);
   }
 
   if (C == NULL) C = new Eigen::Vector3d[nn];
   else {
-    cout << "Error: C already exists, I don't know how to grow it!\n";
+    cout << "Error in Grid::grow(): C already exists, I don't know how to grow it!\n";
     exit(1);
   }
 

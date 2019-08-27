@@ -15,7 +15,15 @@ using namespace MPM_Math;
 Solid::Solid(MPM *mpm, vector<string> args) :
   Pointers(mpm)
 {
+  // Check that a method is available:
+  if (update->method == NULL) {
+    cout << "Error: a method should be defined before creating a solid!" << endl;
+    exit(1);
+  }
+
   cout << "Creating new solid with ID: " << args[0] << endl;
+
+  method_style = update->method_style;
   id = args[0];
 
   np = 0;
@@ -41,7 +49,9 @@ Solid::Solid(MPM *mpm, vector<string> args) :
   mask = NULL;
 
   mat = NULL;
-  grid = new Grid(mpm);
+
+  if (method_style.compare("tlmpm") == 0) grid = new Grid(mpm);
+  else grid = domain->grid;
 
   numneigh_pn = numneigh_np = NULL;
 
@@ -86,7 +96,7 @@ Solid::~Solid()
   memory->destroy(damage_init);
   memory->destroy(mask);
 
-  delete grid;
+  if (method_style.compare("tlmpm") == 0) delete grid;
 
   delete [] numneigh_pn;
   delete [] numneigh_np;
@@ -158,7 +168,7 @@ void Solid::options(vector<string> *args, vector<string>::iterator it)
 
     it++;
 
-    grid->setup(*it); // set the grid cellsize
+    if (grid->cellsize == 0) grid->setup(*it); // set the grid cellsize
 
     it++;
 

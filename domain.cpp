@@ -16,6 +16,8 @@ Domain::Domain(MPM *mpm) : Pointers(mpm)
   region_map = new RegionCreatorMap();
   solid_map = new SolidCreatorMap();
 
+  grid = new Grid(mpm);
+
 #define REGION_CLASS
 #define RegionStyle(key,Class) \
   (*region_map)[#key] = &region_creator<Class>;
@@ -38,6 +40,8 @@ Domain::~Domain()
 
   delete region_map;
   delete solid_map;
+
+  delete grid;
 }
 
 /* ----------------------------------------------------------------------
@@ -70,11 +74,14 @@ void Domain::add_region(vector<string> args){
 
 int Domain::find_region(string name)
 {
-  for (int iregion = 0; iregion < regions.size(); iregion++) {
-    cout << "regions["<< iregion <<"]->id=" << regions[iregion]->id << endl;
-    if (name.compare(regions[iregion]->id) == 0) return iregion;
-  }
-  return -1;
+  cout << "regions.size = " << regions.size() << endl;
+  if (regions.size()>0) {
+    for (int iregion = 0; iregion < regions.size(); iregion++) {
+      cout << "regions["<< iregion <<"]->id=" << regions[iregion]->id << endl;
+      if (name.compare(regions[iregion]->id) == 0) return iregion;
+    }
+    return -1;
+  } else return -1;
 }
 
 /* ----------------------------------------------------------------------

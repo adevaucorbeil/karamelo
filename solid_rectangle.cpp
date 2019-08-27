@@ -36,7 +36,7 @@ SolRectangle::SolRectangle(MPM *mpm, vector<string> args) : Solid(mpm, args)
   solidlo[2] = limits[4];
   solidhi[2] = limits[5];
 
-  grid->init(solidlo, solidhi);
+  if (grid->nnodes == 0) grid->init(solidlo, solidhi);
 
   // Calculate total number of particles np:
   int nx, ny, nz;

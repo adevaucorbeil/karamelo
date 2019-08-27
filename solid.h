@@ -70,6 +70,8 @@ class Solid : protected Pointers {
 
   class Grid *grid;                   // background grid
 
+  string method_style;
+
   Solid(class MPM *, vector<string>);
   virtual ~Solid();
 

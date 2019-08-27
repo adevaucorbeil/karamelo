@@ -23,6 +23,8 @@ class Domain : protected Pointers {
   vector<class Region *> regions;        // list of defined Regions
   vector<class Solid *> solids;          // list of defined Solids
 
+  class Grid *grid;                      // common background grid
+
   Domain(class MPM *);
   virtual ~Domain();
 

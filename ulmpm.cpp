@@ -292,9 +292,7 @@ void ULMPM::particles_to_grid()
 
 void ULMPM::update_grid_state()
 {
-  for (int isolid=0; isolid<domain->solids.size(); isolid++) {
-    domain->solids[isolid]->grid->update_grid_velocities();
-  }
+  domain->grid->update_grid_velocities();
 }
 
 void ULMPM::grid_to_points()
