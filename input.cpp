@@ -578,6 +578,12 @@ Var Input::parsev(string str)
 
 int Input::dimension(vector<string> args){
 
+  // Check that a method is available:
+  if (update->method == NULL) {
+    cout << "Error: a method should be defined before calling dimension()!" << endl;
+    exit(1);
+  }
+
   if (args.size()==0) {
     cout << "Error: dimension did not receive enough arguments: 1 minimum required" << endl;
     exit(1);
