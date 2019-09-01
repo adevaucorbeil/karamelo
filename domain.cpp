@@ -3,6 +3,7 @@
 #include "memory.h"
 #include "style_region.h"
 #include "style_solid.h"
+#include <Eigen/Eigen>
 
 using namespace std;
 
@@ -137,4 +138,20 @@ template <typename T>
 Solid *Domain::solid_creator(MPM *mpm, vector<string> args)
 {
   return new T(mpm, args);
+}
+
+
+/* ----------------------------------------------------------------------
+   inside = 1 if x,y,z is inside or on surface
+   inside = 0 if x,y,z is outside and not on surface
+------------------------------------------------------------------------- */
+
+int Domain::inside(Eigen::Vector3d x)
+{
+  //cout << "Check if point (" << x << ", " << y << ", " << z << ") is inside the domain" << endl;
+  if (   x[0] >= boxlo[0] && x[0] <= boxhi[0]
+      && x[1] >= boxlo[1] && x[1] <= boxhi[1]
+      && x[2] >= boxlo[2] && x[2] <= boxhi[2])
+    return 1;
+  return 0;
 }

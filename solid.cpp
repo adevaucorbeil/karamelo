@@ -500,6 +500,16 @@ void Solid::update_particle_position()
 {
   for (int ip=0; ip<np; ip++) {
     x[ip] += update->dt*v_update[ip];
+    if (update->method_style.compare("tlmpm") != 0) {
+      // Check if the particle is within the box's domain:
+      if (domain->inside(x[ip]) == 0) {
+	cout << "Error: Particle " << ip << " left the domain (" <<
+	  domain->boxlo[0] << ","<< domain->boxhi[0] << "," <<
+	  domain->boxlo[1] << ","<< domain->boxhi[1] << "," <<
+	  domain->boxlo[2] << ","<< domain->boxhi[2] << ",):\n" << x[ip] << endl;
+	exit(1);
+      }
+    }
   }
 }
 

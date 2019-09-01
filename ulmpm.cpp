@@ -129,8 +129,21 @@ void ULMPM::compute_grid_weight_functions_and_gradients()
 
       int **ntype = domain->solids[isolid]->grid->ntype;
 
+      for (int in=0; in<nnodes; in++) {
+	neigh_np[in].clear();
+	numneigh_np[in]=0;
+	wf_np[in].clear();
+	wfd_np[in].clear();
+      }
+
       if (np && nnodes) {
 	for (int ip=0; ip<np; ip++) {
+
+	  neigh_pn[ip].clear();
+	  numneigh_pn[ip] = 0;
+	  wf_pn[ip].clear();
+	  wfd_pn[ip].clear();
+
 	  // Calculate what nodes particle ip will interact with:
 	  int nx = domain->solids[isolid]->grid->nx;
 	  int ny = domain->solids[isolid]->grid->ny;
@@ -147,10 +160,20 @@ void ULMPM::compute_grid_weight_functions_and_gradients()
 	      for(int j=j0; j<j0+2;j++){
 		if (nz>1){
 		  for(int k=k0; k<k0+2;k++){
-		    n_neigh.push_back(nz*ny*i+nz*j+k);
+		    int n = nz*ny*i+nz*j+k;
+		    n_neigh.push_back(n);
+		    if (n >= nnodes) {
+		      cout << "Error: " << n<< " >= nnodes=" << nnodes << endl ;
+		      exit(1);
+		    }
 		  }
 		} else {
-		  n_neigh.push_back(ny*i+j);
+		  int n = ny*i+j;
+		  n_neigh.push_back(n);
+		  if (n >= nnodes) {
+		    cout << "Error: " << n<< " >= nnodes=" << nnodes << endl ;
+		    exit(1);
+		  }
 		}
 	      }
 	    }
@@ -169,18 +192,20 @@ void ULMPM::compute_grid_weight_functions_and_gradients()
 	      for(int j=j0; j<j0+3;j++){
 		if (nz>1){
 		  for(int k=k0; k<k0+3;k++){
-		    n_neigh.push_back(nz*ny*i+nz*j+k);
-		    // if (nz*ny*i+nz*j+k >= nnodes) {
-		    //   cout << "Error: " << nz*ny*i+nz*j+k << " >= nnodes=" << nnodes << endl ;
-		    //   exit(1);
-		    // }
+		    int n = nz*ny*i+nz*j+k;
+		    n_neigh.push_back(n);
+		    if (n >= nnodes) {
+		      cout << "Error: " << n<< " >= nnodes=" << nnodes << endl ;
+		      exit(1);
+		    }
 		  }
 		} else {
-		  n_neigh.push_back(ny*i+j);
-		  // if (ny*i+j >= nnodes) {
-		  //   cout << "Error: " << ny*i+j << " >= nnodes=" << nnodes << endl ;
-		  //   exit(1);
-		  // }
+		  int n = ny*i+j;
+		  n_neigh.push_back(n);
+		  if (n >= nnodes) {
+		    cout << "Error: " << n << " >= nnodes=" << nnodes << endl ;
+		    exit(1);
+		  }
 		}
 	      }
 	    }
@@ -198,11 +223,19 @@ void ULMPM::compute_grid_weight_functions_and_gradients()
 		    int n = nz*ny*i+nz*j+k;
 		    if (n < nnodes)
 		      n_neigh.push_back(n);
+		    else  {
+		      cout << "Error: " << n << " >= nnodes=" << nnodes << endl ;
+		      exit(1);
+		    }
 		  }
 		} else {
 		  int n = ny*i+j;
 		    if (n < nnodes)
 		      n_neigh.push_back(n);
+		    else  {
+		      cout << "Error: " << n << " >= nnodes=" << nnodes << endl ;
+		      exit(1);
+		    }
 		}
 	      }
 	    }
@@ -218,6 +251,7 @@ void ULMPM::compute_grid_weight_functions_and_gradients()
 
 	  //for (int in=0; in<nnodes; in++) {
 	  for (auto in: n_neigh) {
+
 	    // Calculate the distance between each pair of particle/node:
 	    r = (xp[ip] - xn[in]) * inv_cellsize;
 
@@ -318,7 +352,7 @@ void ULMPM::velocities_to_grid()
       //domain->solids[isolid]->compute_mass_nodes();
       domain->solids[isolid]->compute_velocity_nodes();
     }
-    domain->solids[isolid]->grid->update_grid_positions();
+    // domain->solids[isolid]->grid->update_grid_positions();
   }
 }
 

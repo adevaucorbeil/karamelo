@@ -83,8 +83,12 @@ void Grid::init(double *solidlo, double *solidhi){
 	x0[l][1] = solidlo[1] + j*h;//h*(j-1);
 	if (domain->dimension == 3) x0[l][2] = solidlo[2] + k*h;//h*(k-1);
 	else x0[l][2] = 0;
-	
-	if (update->method_shape_function.compare("Bernstein-quadratic")==0) {
+
+	if (update->method_shape_function.compare("linear")==0) {
+	  ntype[l][0] = 0;
+	  ntype[l][1] = 0;
+	  ntype[l][2] = 0;
+	} else if (update->method_shape_function.compare("Bernstein-quadratic")==0) {
 	  ntype[l][0] = i % 2;
 	  ntype[l][1] = j % 2;
 	  ntype[l][2] = k % 2;
@@ -184,7 +188,7 @@ void Grid::grow(int nn){
 void Grid::update_grid_velocities()
 {
   for (int i=0; i<nnodes; i++){
-    if (mass[i] > 0) v_update[i] = v[i] + update->dt * (f[i]/mass[i] + b[i]);
+    if (mass[i] > 1e-12) v_update[i] = v[i] + update->dt * (f[i]/mass[i] + b[i]);
     else v_update[i] = v[i];
     // if (update->ntimestep>450)
     //   if (i==0)

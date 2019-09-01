@@ -11,6 +11,7 @@
 #include <map>
 #include <string>
 #include <vector>
+#include <Eigen/Eigen>
 
 using namespace std;
 
@@ -41,7 +42,7 @@ class Domain : protected Pointers {
   typedef map<string,SolidCreator> SolidCreatorMap;
   SolidCreatorMap *solid_map;
 
-
+  int inside(Eigen::Vector3d);
 
  private:
   template <typename T> static Region *region_creator(MPM *,vector<string>);
