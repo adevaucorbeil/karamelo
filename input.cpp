@@ -616,6 +616,10 @@ int Input::dimension(vector<string> args){
 	domain->boxlo[1] = (double) parsev(args[3]);
 	domain->boxhi[1] = (double) parsev(args[4]);
 	domain->grid->cellsize = (double) parsev(args[5]);
+	if (domain->grid->cellsize < 0) {
+	  cout << "Error: cellsize negative! You gave: " << domain->grid->cellsize << endl;
+	  exit(1);
+	}
 	domain->grid->init(domain->boxlo, domain->boxhi);
       }
     } else {// dim ==3
@@ -627,6 +631,10 @@ int Input::dimension(vector<string> args){
 	domain->boxlo[2] = (double) parsev(args[5]);
 	domain->boxhi[2] = (double) parsev(args[6]);
 	domain->grid->cellsize = (double) parsev(args[7]);
+	if (domain->grid->cellsize < 0) {
+	  cout << "Error: cellsize negative! You gave: " << domain->grid->cellsize << endl;
+	  exit(1);
+	}
 	domain->grid->init(domain->boxlo, domain->boxhi);
       }
     }
