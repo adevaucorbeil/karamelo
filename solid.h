@@ -21,7 +21,7 @@ class Solid : protected Pointers {
   Eigen::Vector3d *x;        // particles' current position
   Eigen::Vector3d *x0;       // particles' reference position
 
-  Eigen::Vector3d *v;        // particles' current position
+  Eigen::Vector3d *v;        // particles' current velocity
   Eigen::Vector3d *v_update; // particles' velocity at time t+dt
 
   Eigen::Vector3d *a;        // particles' acceleration
