@@ -99,6 +99,9 @@ class Solid : protected Pointers {
   void compute_inertia_tensor(string);
   void compute_deformation_gradient();
   void copy_particle(int, int);
+
+private:
+  void populate(vector<string>);
 };
 
 #endif

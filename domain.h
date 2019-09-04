@@ -38,15 +38,15 @@ class Domain : protected Pointers {
   typedef map<string,RegionCreator> RegionCreatorMap;
   RegionCreatorMap *region_map;
 
-  typedef Solid *(*SolidCreator)(MPM *,vector<string>);
-  typedef map<string,SolidCreator> SolidCreatorMap;
-  SolidCreatorMap *solid_map;
+  // typedef Solid *(*SolidCreator)(MPM *,vector<string>);
+  // typedef map<string,SolidCreator> SolidCreatorMap;
+  // SolidCreatorMap *solid_map;
 
   int inside(Eigen::Vector3d);
 
  private:
   template <typename T> static Region *region_creator(MPM *,vector<string>);
-  template <typename T> static Solid *solid_creator(MPM *,vector<string>);
+  // template <typename T> static Solid *solid_creator(MPM *,vector<string>);
 };
 
 #endif

@@ -5,6 +5,7 @@
 #include "domain.h"
 #include "solid.h"
 #include "mpmtype.h"
+#include <algorithm>
 
 using namespace std;
 
@@ -44,8 +45,24 @@ void DumpGrid::write()
   if (dumpstream.is_open()) {
     dumpstream << "ITEM: TIMESTEP\n0\nITEM: NUMBER OF ATOMS\n";
 
+    // Check how many different grids we have:
+    vector<class Grid *> grids; // We will store the different pointers to grids here.
+
+    for (int isolid=0; isolid < domain->solids.size(); isolid++) {
+      if (grids.size()==0) {
+	grids.push_back(domain->solids[isolid]->grid);
+      } else {
+	// If the grid pointer is not present into grids, add it, otherwise continue:
+	if ( find(grids.begin(), grids.end(), domain->solids[isolid]->grid) == grids.end() )
+	  grids.push_back(domain->solids[isolid]->grid);
+      }
+    }
+    
+    // Now loop over the grids to find how many elements there are in total:
     bigint total_nn = 0;
-    for (int isolid=0; isolid < domain->solids.size(); isolid++) total_nn += domain->solids[isolid]->grid->nnodes;
+    for (auto g: grids) {
+      total_nn += g->nnodes;
+    }
 
     dumpstream << total_nn << endl;
     dumpstream << "ITEM: BOX BOUNDS sm sm sm\n";
@@ -55,12 +72,12 @@ void DumpGrid::write()
     dumpstream << "ITEM: ATOMS id type x y z vx vy vz fbx fby fbz mass ntypex ntypey ntypez\n";
 
     bigint ID = 0;
-    for (int isolid=0; isolid < domain->solids.size(); isolid++) {
-      Grid *g = domain->solids[isolid]->grid;
+    int igrid = 0;
+    for (auto g: grids) {
       for (bigint i=0; i<g->nnodes;i++) {
 	ID++;
 	dumpstream << ID << " "
-		   << isolid+1 << " "
+		   << igrid+1 << " "
 		   << g->x[i][0] << " " << g->x[i][1] << " " << g->x[i][2] << " "
 		   << g->v[i][0] << " " << g->v[i][1] << " " << g->v[i][2] << " "
 		   << g->b[i][0] << " " << g->b[i][1] << " " << g->b[i][2] << " "

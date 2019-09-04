@@ -2,7 +2,6 @@
 #include "region.h"
 #include "memory.h"
 #include "style_region.h"
-#include "style_solid.h"
 #include <Eigen/Eigen>
 
 using namespace std;
@@ -15,7 +14,7 @@ Domain::Domain(MPM *mpm) : Pointers(mpm)
   boxhi[0] = boxhi[1] = boxhi[2] = 0;
 
   region_map = new RegionCreatorMap();
-  solid_map = new SolidCreatorMap();
+  // solid_map = new SolidCreatorMap();
 
   grid = new Grid(mpm);
 
@@ -26,12 +25,12 @@ Domain::Domain(MPM *mpm) : Pointers(mpm)
 #undef RegionStyle
 #undef REGION_CLASS
 
-#define SOLID_CLASS
-#define SolidStyle(key,Class) \
-  (*solid_map)[#key] = &solid_creator<Class>;
-#include "style_solid.h"
-#undef SolidStyle
-#undef SOLID_CLASS
+// #define SOLID_CLASS
+// #define SolidStyle(key,Class) \
+//   (*solid_map)[#key] = &solid_creator<Class>;
+// #include "style_solid.h"
+// #undef SolidStyle
+// #undef SOLID_CLASS
 }
 
 Domain::~Domain()
@@ -40,7 +39,7 @@ Domain::~Domain()
   for (int i = 0; i < solids.size(); i++) delete solids[i];
 
   delete region_map;
-  delete solid_map;
+  // delete solid_map;
 
   delete grid;
 }
@@ -107,19 +106,21 @@ void Domain::add_solid(vector<string> args){
     exit(1);
   }
 
-    // create the Solid
+  // create the Solid
 
-  string *estyle = &args[1];
+  // string *estyle = &args[1];
 
-  if (solid_map->find(*estyle) != solid_map->end()) {
-    SolidCreator solid_creator = (*solid_map)[*estyle];
-    solids.push_back(solid_creator(mpm, args));
-    solids.back()->init();
-  }
-  else {
-    cout << "Unknown solid style " << *estyle << endl;
-    exit(1);
-  }
+  // if (solid_map->find(*estyle) != solid_map->end()) {
+  //   SolidCreator solid_creator = (*solid_map)[*estyle];
+  //   solids.push_back(solid_creator(mpm, args));
+  //   solids.back()->init();
+  // }
+  // else {
+  //   cout << "Unknown solid style " << *estyle << endl;
+  //   exit(1);
+  // }
+  solids.push_back(new Solid(mpm, args));
+  solids.back()->init();
   
 }
 
@@ -134,11 +135,11 @@ int Domain::find_solid(string name)
    one instance per solid style in style_solid.h
 ------------------------------------------------------------------------- */
 
-template <typename T>
-Solid *Domain::solid_creator(MPM *mpm, vector<string> args)
-{
-  return new T(mpm, args);
-}
+// template <typename T>
+// Solid *Domain::solid_creator(MPM *mpm, vector<string> args)
+// {
+//   return new T(mpm, args);
+// }
 
 
 /* ----------------------------------------------------------------------
