@@ -36,17 +36,37 @@ SolRectangle::SolRectangle(MPM *mpm, vector<string> args) : Solid(mpm, args)
   solidlo[2] = limits[4];
   solidhi[2] = limits[5];
 
-  if (grid->nnodes == 0) grid->init(solidlo, solidhi);
 
   // Calculate total number of particles np:
   int nx, ny, nz;
   double delta;
   double hdelta;
+  double Lx, Ly, Lz;
+  bool checkIfInRegion;
 
   delta = grid->cellsize;///((int) input->parsev(args[3]));
   
-  double Lx = solidhi[0]-solidlo[0];
-  double Ly = solidhi[1]-solidlo[1];
+  if (grid->nnodes == 0) {
+    // The grid will be ajusted to the solid's domain (good for TLMPM),
+    // so all particles created will lie in the region:
+    checkIfInRegion = false;
+
+    // and we need to create the corresponding grid:
+    grid->init(solidlo, solidhi);
+
+    Lx = solidhi[0]-solidlo[0];
+    Ly = solidhi[1]-solidlo[1];
+
+    if (domain->dimension == 3) Lz = solidhi[2]-solidlo[2];
+  } else {
+    // The grid is most likely bigger than the solid's domain (good for ULMPM),
+    // so all particles created won't lie in the region, they will need to be checked:
+    checkIfInRegion = true;
+
+    Lx = domain->boxhi[0] - domain->boxlo[0];
+    Ly = domain->boxhi[1] - domain->boxlo[1];
+    if (domain->dimension == 3) Lz = domain->boxhi[2] - domain->boxlo[2];
+  }
 
   nx = ((int) Lx/delta);
   ny = ((int) Ly/delta);
@@ -55,12 +75,11 @@ SolRectangle::SolRectangle(MPM *mpm, vector<string> args) : Solid(mpm, args)
   while (ny*delta <= Ly-0.5*delta) ny++;
 
   if (domain->dimension == 3) {
-    double Lz = solidhi[2]-solidlo[2];
     nz = ((int) Lz/delta);
     while (nz*delta <= Lz-0.5*delta) nz++;
-   } else {
+  } else {
     nz = 1;
-   }
+  }
 
   np = nx*ny*nz;
 
@@ -86,11 +105,21 @@ SolRectangle::SolRectangle(MPM *mpm, vector<string> args) : Solid(mpm, args)
     for (int i=0; i<nx; i++){
       for (int j=0; j<ny; j++){
 	for (int k=0; k<nz; k++){
-	  x0[l][0] = x[l][0] = solidlo[0] + delta*(i+0.5);
-	  x0[l][1] = x[l][1] = solidlo[1] + delta*(j+0.5);
-	  if (domain->dimension == 3) x0[l][2] = x[l][2] = solidlo[2] + delta*(k+0.5);
-	  else x0[l][2] = x[l][2] = 0;
-	  l++;
+	  if (checkIfInRegion) {
+	    x0[l][0] = x[l][0] = domain->boxlo[0] + delta*(i+0.5);
+	    x0[l][1] = x[l][1] = domain->boxlo[1] + delta*(j+0.5);
+	    if (domain->dimension == 3) x0[l][2] = x[l][2] = domain->boxlo[2] + delta*(k+0.5);
+	    else x0[l][2] = x[l][2] = 0;
+	  } else {
+	    x0[l][0] = x[l][0] = solidlo[0] + delta*(i+0.5);
+	    x0[l][1] = x[l][1] = solidlo[1] + delta*(j+0.5);
+	    if (domain->dimension == 3) x0[l][2] = x[l][2] = solidlo[2] + delta*(k+0.5);
+	    else x0[l][2] = x[l][2] = 0;
+	  }
+	  // Check if the particle is inside the region:
+	  if (checkIfInRegion)
+	    if (domain->regions[iregion]->inside(x0[l][0], x0[l][1], x0[l][2])==1)
+	      l++;
 	}
       }
     }
@@ -118,11 +147,21 @@ SolRectangle::SolRectangle(MPM *mpm, vector<string> args) : Solid(mpm, args)
       for (int j=0; j<ny; j++){
   	for (int k=0; k<nz; k++){
   	  for (int ip=0; ip<8; ip++) {
-  	    x0[l][0] = x[l][0] = solidlo[0] + delta*(i+0.5+intpoints[ip][0]);
-  	    x0[l][1] = x[l][1] = solidlo[1] + delta*(j+0.5+intpoints[ip][1]);
-  	    if (domain->dimension == 3) x0[l][2] = x[l][2] = solidlo[2] + delta*(k+0.5+intpoints[ip][2]);
-  	    else x0[l][2] = x[l][2] = 0;
-  	    l++;
+	    if (checkIfInRegion) {
+	      x0[l][0] = x[l][0] = domain->boxlo[0] + delta*(i+0.5+intpoints[ip][0]);
+	      x0[l][1] = x[l][1] = domain->boxlo[1] + delta*(j+0.5+intpoints[ip][1]);
+	      if (domain->dimension == 3) x0[l][2] = x[l][2] = domain->boxlo[2] + delta*(k+0.5+intpoints[ip][2]);
+	      else x0[l][2] = x[l][2] = 0;
+	    } else {
+	      x0[l][0] = x[l][0] = solidlo[0] + delta*(i+0.5+intpoints[ip][0]);
+	      x0[l][1] = x[l][1] = solidlo[1] + delta*(j+0.5+intpoints[ip][1]);
+	      if (domain->dimension == 3) x0[l][2] = x[l][2] = solidlo[2] + delta*(k+0.5+intpoints[ip][2]);
+	      else x0[l][2] = x[l][2] = 0;
+	    }
+	    // Check if the particle is inside the region:
+	    if (checkIfInRegion)
+	      if (domain->regions[iregion]->inside(x0[l][0], x0[l][1], x0[l][2])==1)
+		l++;
   	  }
   	}
       }
@@ -170,11 +209,21 @@ SolRectangle::SolRectangle(MPM *mpm, vector<string> args) : Solid(mpm, args)
       for (int j=0; j<ny; j++){
 	for (int k=0; k<nz; k++){
 	  for (int ip=0; ip<27; ip++) {
-	    x0[l][0] = x[l][0] = solidlo[0] + delta*(i+0.5+intpoints[ip][0]);
-	    x0[l][1] = x[l][1] = solidlo[1] + delta*(j+0.5+intpoints[ip][1]);
-	    if (domain->dimension == 3) x0[l][2] = x[l][2] = solidlo[2] + delta*(k+0.5+intpoints[ip][2]);
-	    else x0[l][2] = x[l][2] = 0;
-	    l++;
+	    if (checkIfInRegion) {
+	      x0[l][0] = x[l][0] = domain->boxlo[0] + delta*(i+0.5+intpoints[ip][0]);
+	      x0[l][1] = x[l][1] = domain->boxlo[1] + delta*(j+0.5+intpoints[ip][1]);
+	      if (domain->dimension == 3) x0[l][2] = x[l][2] = domain->boxlo[2] + delta*(k+0.5+intpoints[ip][2]);
+	      else x0[l][2] = x[l][2] = 0;
+	    } else {
+	      x0[l][0] = x[l][0] = solidlo[0] + delta*(i+0.5+intpoints[ip][0]);
+	      x0[l][1] = x[l][1] = solidlo[1] + delta*(j+0.5+intpoints[ip][1]);
+	      if (domain->dimension == 3) x0[l][2] = x[l][2] = solidlo[2] + delta*(k+0.5+intpoints[ip][2]);
+	      else x0[l][2] = x[l][2] = 0;
+	    }
+	    // Check if the particle is inside the region:
+	    if (checkIfInRegion)
+	      if (domain->regions[iregion]->inside(x0[l][0], x0[l][1], x0[l][2])==1)
+		l++;
 	  }
 	}
       }
@@ -183,6 +232,9 @@ SolRectangle::SolRectangle(MPM *mpm, vector<string> args) : Solid(mpm, args)
     cout << "Error: solid command 4th argument should be 1 or 2, but " << (int) input->parsev(args[3]) << "received.\n";
     exit(1);
   }
+
+  np = l; // Adjust np to account for the particles outside the domain
+  cout << "np="<< np << endl;
 
   for (int i=0; i<np;i++) {
     a[i].setZero();
