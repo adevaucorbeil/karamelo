@@ -79,13 +79,13 @@ class Solid : protected Pointers {
   void options(vector<string> *, vector<string>::iterator);
   void grow(int);
 
-  void compute_node_rotation_matrix();
-  void compute_mass_nodes();
-  void compute_velocity_nodes();
-  void compute_velocity_nodes_APIC();
-  void compute_external_forces_nodes();
+  void compute_node_rotation_matrix(bool);
+  void compute_mass_nodes(bool);
+  void compute_velocity_nodes(bool);
+  void compute_velocity_nodes_APIC(bool);
+  void compute_external_forces_nodes(bool);
   void compute_internal_forces_nodes_TL();
-  void compute_internal_forces_nodes_UL();
+  void compute_internal_forces_nodes_UL(bool);
   void compute_particle_velocities();
   void compute_particle_acceleration();
   void update_particle_position();

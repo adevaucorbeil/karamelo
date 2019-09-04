@@ -313,13 +313,18 @@ void ULMPM::compute_grid_weight_functions_and_gradients()
 
 void ULMPM::particles_to_grid()
 {
+  bool grid_reset = false; // Indicate if the grid quantities have to be reset
   for (int isolid=0; isolid<domain->solids.size(); isolid++){
-    domain->solids[isolid]->compute_mass_nodes();
-    domain->solids[isolid]->compute_node_rotation_matrix();
-    if (method_type.compare("APIC") == 0) domain->solids[isolid]->compute_velocity_nodes_APIC();
-    else domain->solids[isolid]->compute_velocity_nodes();
-    domain->solids[isolid]->compute_external_forces_nodes();
-    domain->solids[isolid]->compute_internal_forces_nodes_UL();
+
+    if (isolid == 0) grid_reset = true;
+    else grid_reset = false;
+
+    domain->solids[isolid]->compute_mass_nodes(grid_reset);
+    domain->solids[isolid]->compute_node_rotation_matrix(grid_reset);
+    if (method_type.compare("APIC") == 0) domain->solids[isolid]->compute_velocity_nodes_APIC(grid_reset);
+    else domain->solids[isolid]->compute_velocity_nodes(grid_reset);
+    domain->solids[isolid]->compute_external_forces_nodes(grid_reset);
+    domain->solids[isolid]->compute_internal_forces_nodes_UL(grid_reset);
     /*compute_thermal_energy_nodes();*/
     }
 }
@@ -347,10 +352,15 @@ void ULMPM::advance_particles()
 
 void ULMPM::velocities_to_grid()
 {
-  for (int isolid=0; isolid<domain->solids.size(); isolid++) {
+  bool grid_reset = false; // Indicate if the grid quantities have to be reset
+  for (int isolid=0; isolid<domain->solids.size(); isolid++){
+
+    if (isolid == 0) grid_reset = true;
+    else grid_reset = false;
+
     if (method_type.compare("APIC") != 0) { 
-      //domain->solids[isolid]->compute_mass_nodes();
-      domain->solids[isolid]->compute_velocity_nodes();
+      //domain->solids[isolid]->compute_mass_nodes(grid_reset);
+      domain->solids[isolid]->compute_velocity_nodes(grid_reset);
     }
     // domain->solids[isolid]->grid->update_grid_positions();
   }

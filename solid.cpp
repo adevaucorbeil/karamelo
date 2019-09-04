@@ -360,27 +360,28 @@ void Solid::grow(int nparticles){
   J = memory->grow(J, np, str);
 }
 
-void Solid::compute_node_rotation_matrix()
+void Solid::compute_node_rotation_matrix(bool reset)
 {
   int ip;
 
   for (int in=0; in<grid->nnodes; in++){
-    grid->R[in].setZero();
+    if (reset) grid->R[in].setZero();
+
     for (int j=0; j<numneigh_np[in];j++){
       ip = neigh_np[in][j];
-      grid->R[in] += (wf_np[in][j] * mass[ip]) * R[ip];
+      grid->R[in] += (wf_np[in][j] * mass[ip]) * R[ip]/grid->mass[in];
     }
-    grid->R[in] /= grid->mass[in];
   }
   return;
 }
 
-void Solid::compute_mass_nodes()
+void Solid::compute_mass_nodes(bool reset)
 {
   int ip;
 
   for (int in=0; in<grid->nnodes; in++){
-    grid->mass[in] = 0;
+    if (reset) grid->mass[in] = 0;
+
     for (int j=0; j<numneigh_np[in];j++){
       ip = neigh_np[in][j];
       grid->mass[in] += wf_np[in][j] * mass[ip];
@@ -389,25 +390,24 @@ void Solid::compute_mass_nodes()
   return;
 }
 
-void Solid::compute_velocity_nodes()
+void Solid::compute_velocity_nodes(bool reset)
 {
   Eigen::Vector3d *vn = grid->v;
   double *massn = grid->mass;
   int ip;
 
   for (int in=0; in<grid->nnodes; in++) {
-    vn[in].setZero();
+    if (reset) vn[in].setZero();
     if (massn[in] > 0) {
       for (int j=0; j<numneigh_np[in];j++){
 	ip = neigh_np[in][j];
-	vn[in] += (wf_np[in][j] * mass[ip]) * v[ip];
+	vn[in] += (wf_np[in][j] * mass[ip]) * v[ip]/ massn[in];
       }
-      vn[in] /= massn[in];
     }
   }
 }
 
-void Solid::compute_velocity_nodes_APIC()
+void Solid::compute_velocity_nodes_APIC(bool reset)
 {
   Eigen::Vector3d *x0n = grid->x0;
   Eigen::Vector3d *vn = grid->v;
@@ -415,31 +415,29 @@ void Solid::compute_velocity_nodes_APIC()
   int ip;
 
   for (int in=0; in<grid->nnodes; in++) {
-    vn[in].setZero();
+    if (reset) vn[in].setZero();
     if (massn[in] > 0) {
       for (int j=0; j<numneigh_np[in];j++){
 	ip = neigh_np[in][j];
-	vn[in] += (wf_np[in][j] * mass[ip]) * (v[ip] + Fdot[ip]*(x0n[in] - x0[ip]));
+	vn[in] += (wf_np[in][j] * mass[ip]) * (v[ip] + Fdot[ip]*(x0n[in] - x0[ip]))/ massn[in];
       }
-      vn[in] /= massn[in];
     }
   }
 }
 
-void Solid::compute_external_forces_nodes()
+void Solid::compute_external_forces_nodes(bool reset)
 {
   Eigen::Vector3d *bn = grid->b;
   double *massn = grid->mass;
   int ip;
 
   for (int in=0; in<grid->nnodes; in++) {
-    bn[in].setZero();
+    if (reset) bn[in].setZero();
     if (massn[in] > 0) {
       for (int j=0; j<numneigh_np[in];j++){
 	ip = neigh_np[in][j];
-	bn[in] += (wf_np[in][j] * mass[ip]) * b[ip];
+	bn[in] += (wf_np[in][j] * mass[ip]) * b[ip] / massn[in];
       }
-      bn[in] /=  massn[in];
     }
   }
 }
@@ -459,14 +457,14 @@ void Solid::compute_internal_forces_nodes_TL()
   }
 }
 
-void Solid::compute_internal_forces_nodes_UL()
+void Solid::compute_internal_forces_nodes_UL(bool reset)
 {
   Eigen::Vector3d *fn = grid->f;
   double *massn = grid->mass;
   int ip;
 
   for (int in=0; in<grid->nnodes; in++) {
-    fn[in].setZero();
+    if (reset) fn[in].setZero();
     for (int j=0; j<numneigh_np[in];j++){
       ip = neigh_np[in][j];
       fn[in] -= vol[ip] * (sigma[ip] * wfd_np[in][j]);
