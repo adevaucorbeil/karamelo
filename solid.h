@@ -30,6 +30,7 @@ class Solid : protected Pointers {
   Eigen::Vector3d *f;        // particles' internal forces
 
   Eigen::Matrix3d *sigma;            // stress matrix
+  Eigen::Matrix3d *strain_el;        // elastic strain matrix
   Eigen::Matrix3d *PK1;              // 1st Piola-Kirchhoff matrix
   Eigen::Matrix3d *PK1T;             // Transpose of the 1st Piola-Kirchhoff matrix
   Eigen::Matrix3d *L;                // velocity gradient matrix

@@ -7,3 +7,5 @@
 #include "fix_body_force.h"
 #include "fix_body_force_current_config.h"
 #include "fix_check_solution.h"
+#include "fix_kinetic_energy.h"
+#include "fix_strain_energy.h"

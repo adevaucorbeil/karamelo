@@ -39,7 +39,7 @@ Solid::Solid(MPM *mpm, vector<string> args) :
 
   a = NULL;
 
-  sigma = PK1 = PK1T = L = F = R = U = D = Finv = Fdot = Di = NULL;
+  sigma = strain_el = PK1 = PK1T = L = F = R = U = D = Finv = Fdot = Di = NULL;
 
   b = f = NULL;
 
@@ -86,6 +86,7 @@ Solid::~Solid()
   if (b!=NULL) delete b;
   if (f!=NULL) delete f;
   if (sigma!=NULL) delete sigma;
+  if (strain_el!=NULL) delete strain_el;
   if (PK1!=NULL) delete PK1;
   if (PK1T!=NULL) delete PK1T;
   if (L!=NULL) delete L;
@@ -256,6 +257,12 @@ void Solid::grow(int nparticles){
   if (sigma == NULL) sigma = new Eigen::Matrix3d[np];
   else {
     cout << "Error: sigma already exists, I don't know how to grow it!\n";
+    exit(1);
+  }
+
+  if (strain_el == NULL) strain_el = new Eigen::Matrix3d[np];
+  else {
+    cout << "Error: strain_el already exists, I don't know how to grow it!\n";
     exit(1);
   }
 
@@ -759,6 +766,8 @@ void Solid::update_deformation_gradient()
     Finv[ip] = F[ip].inverse();
     if (update->method_style.compare("tlmpm") == 0)
       L[ip] = Fdot[ip] * Finv[ip];
+    // else
+    //   Fdot[ip] = L[ip]*F[ip];
 
     status = PolDec(F[ip], R[ip], U, false); // polar decomposition of the deformation gradient, F = R * U
     if (update->method_style.compare("tlmpm") == 0)
@@ -801,6 +810,12 @@ void Solid::update_stress()
 	mat->damage->compute_damage(damage_init[ip], damage[ip], pH, sigma_dev, eff_plastic_strain_rate[ip], plastic_strain_increment);
       sigma[ip] = -pH*eye + sigma_dev;
 
+      if (damage[ip] > 1e-10) {
+	strain_el[ip] = (update->dt*D[ip].trace() + strain_el[ip].trace())/3.0*eye + sigma_dev/(mat->G*(1-damage[ip]));
+      } else {
+	strain_el[ip] =  (update->dt*D[ip].trace() + strain_el[ip].trace())/3.0*eye;
+      }
+
       if (update->method_style.compare("tlmpm") == 0) {
 	PK1[ip] = J[ip] * (R[ip] * sigma[ip] * R[ip].transpose()) * Finv[ip].transpose();
       }
@@ -810,6 +825,7 @@ void Solid::update_stress()
       FinvT = Finv[ip].transpose();
       PK1[ip] = mat->G*(F[ip] - FinvT) + mat->lambda*log(J[ip])*FinvT;
       sigma[ip] = 1.0/J[ip]*(F[ip]*PK1[ip].transpose());
+      strain_el[ip] = 0.5*(F[ip].transpose()*F[ip] - eye);//update->dt * D[ip];
     }
 
     PK1T[ip] = PK1[ip].transpose();
@@ -1161,6 +1177,7 @@ void Solid::populate(vector<string> args) {
     eff_plastic_strain_rate[i] = 0;
     damage[i] = 0;
     damage_init[i] = 0;
+    strain_el[i].setZero();
     sigma[i].setZero();
     PK1[i].setZero();
     L[i].setZero();
