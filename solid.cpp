@@ -25,7 +25,7 @@ Solid::Solid(MPM *mpm, vector<string> args) :
 
   a = NULL;
 
-  sigma = PK1 = L = F = R = U = D = Finv = Fdot = Di = NULL;
+  sigma = PK1 = PK1T = L = F = R = U = D = Finv = Fdot = Di = NULL;
 
   b = f = NULL;
 
@@ -65,6 +65,7 @@ Solid::~Solid()
   if (f!=NULL) delete f;
   if (sigma!=NULL) delete sigma;
   if (PK1!=NULL) delete PK1;
+  if (PK1T!=NULL) delete PK1T;
   if (L!=NULL) delete L;
   if (F!=NULL) delete F;
   if (R!=NULL) delete R;
@@ -239,6 +240,12 @@ void Solid::grow(int nparticles){
   if (PK1 == NULL) PK1 = new Eigen::Matrix3d[np];
   else {
     cout << "Error: PK1 already exists, I don't know how to grow it!\n";
+    exit(1);
+  }
+
+  if (PK1T == NULL) PK1T = new Eigen::Matrix3d[np];
+  else {
+    cout << "Error: PK1T already exists, I don't know how to grow it!\n";
     exit(1);
   }
 
@@ -430,7 +437,7 @@ void Solid::compute_internal_forces_nodes()
     fn[in].setZero();
     for (int j=0; j<numneigh_np[in];j++){
       ip = neigh_np[in][j];
-      fn[in] -= vol0[ip] * (PK1[ip] * wfd_np[in][j]);
+      fn[in] -= vol0[ip] * (PK1T[ip] * wfd_np[in][j]);
     }
   }
 }
@@ -669,6 +676,7 @@ void Solid::update_stress()
       sigma[ip] = 1.0/J[ip]*(F[ip]*PK1[ip].transpose());
     }
 
+    PK1T[ip] = PK1[ip].transpose();
     
     min_inv_p_wave_speed = MIN(min_inv_p_wave_speed, rho[ip] / (mat->K + 4.0/3.0 * mat->G));
     if (std::isnan(min_inv_p_wave_speed)) {
