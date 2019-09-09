@@ -1043,6 +1043,8 @@ void Solid::populate(vector<string> args) {
 	    x0[l][1] = x[l][1] = solidlo[1] + delta*(j+0.5);
 	    if (domain->dimension == 3) x0[l][2] = x[l][2] = solidlo[2] + delta*(k+0.5);
 	    else x0[l][2] = x[l][2] = 0;
+
+	    l++;
 	  }
 	  // Check if the particle is inside the region:
 	  if (checkIfInRegion)
@@ -1085,6 +1087,8 @@ void Solid::populate(vector<string> args) {
 	      x0[l][1] = x[l][1] = solidlo[1] + delta*(j+0.5+intpoints[ip][1]);
 	      if (domain->dimension == 3) x0[l][2] = x[l][2] = solidlo[2] + delta*(k+0.5+intpoints[ip][2]);
 	      else x0[l][2] = x[l][2] = 0;
+
+	      l++;
 	    }
 	    // Check if the particle is inside the region:
 	    if (checkIfInRegion)
@@ -1147,6 +1151,8 @@ void Solid::populate(vector<string> args) {
 	      x0[l][1] = x[l][1] = solidlo[1] + delta*(j+0.5+intpoints[ip][1]);
 	      if (domain->dimension == 3) x0[l][2] = x[l][2] = solidlo[2] + delta*(k+0.5+intpoints[ip][2]);
 	      else x0[l][2] = x[l][2] = 0;
+
+	      l++;
 	    }
 	    // Check if the particle is inside the region:
 	    if (checkIfInRegion)
