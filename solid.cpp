@@ -764,21 +764,25 @@ void Solid::update_deformation_gradient()
     vol[ip] = J[ip] * vol0[ip];
     rho[ip] = rho0[ip] / J[ip];
     Finv[ip] = F[ip].inverse();
-    if (update->method_style.compare("tlmpm") == 0)
-      L[ip] = Fdot[ip] * Finv[ip];
-    // else
-    //   Fdot[ip] = L[ip]*F[ip];
 
-    status = PolDec(F[ip], R[ip], U, false); // polar decomposition of the deformation gradient, F = R * U
-    if (update->method_style.compare("tlmpm") == 0)
-      D[ip] = 0.5 * (R[ip].transpose() * (L[ip] + L[ip].transpose()) * R[ip]);
-    else D[ip] = 0.5 * (L[ip] + L[ip].transpose());
+    if ((mat->eos!=NULL) && (mat->strength!=NULL)) {
+      // Only done if not Neo-Hookean:
+      if (update->method_style.compare("tlmpm") == 0)
+	L[ip] = Fdot[ip] * Finv[ip];
+      // else
+      //   Fdot[ip] = L[ip]*F[ip];
 
-    if (!status) {
-      cout << "Polar decomposition of deformation gradient failed for particle " << ip << ".\n";
-      cout << "F:" << endl << F[ip] << endl;
-      cout << "timestep" << endl << update->ntimestep << endl;
-      exit(1);
+      status = PolDec(F[ip], R[ip], U, false); // polar decomposition of the deformation gradient, F = R * U
+      if (update->method_style.compare("tlmpm") == 0)
+	D[ip] = 0.5 * (R[ip].transpose() * (L[ip] + L[ip].transpose()) * R[ip]);
+      else D[ip] = 0.5 * (L[ip] + L[ip].transpose());
+
+      if (!status) {
+	cout << "Polar decomposition of deformation gradient failed for particle " << ip << ".\n";
+	cout << "F:" << endl << F[ip] << endl;
+	cout << "timestep" << endl << update->ntimestep << endl;
+	exit(1);
+      }
     }
 
     // strain_increment[ip] = update->dt * D[ip];
