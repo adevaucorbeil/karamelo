@@ -94,7 +94,8 @@ void FixIndent::initial_integrate() {
 	if (mass[ip] > 0) {
 	  if (mask[ip] & groupbit) {
 	    // Gross screening:
-	    xsp = xs - x[ip];
+	    xsp = x[ip] - xs;
+
 	    if (( xsp[0] < R ) && ( xsp[1] < R ) && ( xsp[2] < R )
 		&& ( xsp[0] > -R ) && ( xsp[1] > -R ) && ( xsp[2] > -R )) {
 
@@ -106,7 +107,7 @@ void FixIndent::initial_integrate() {
 		// Maybe fmag should be inversely proportional to the mass of the particle!!
 		f = fmag*xsp/r;
 		b[ip] += f/mass[ip];
-		ftot += f; 
+		ftot += f;
 	      }
 	    }
 	  }
@@ -128,7 +129,7 @@ void FixIndent::initial_integrate() {
       if (mass[ip] > 0) {
 	if (mask[ip] & groupbit) {
 	  // Gross screening:
-	  xsp = xs - x[ip];
+	  xsp = x[ip] - xs;
 	  if (( xsp[0] < R ) && ( xsp[1] < R ) && ( xsp[2] < R )
 	      && ( xsp[0] > -R ) && ( xsp[1] > -R ) && ( xsp[2] > -R )) {
 
@@ -140,7 +141,7 @@ void FixIndent::initial_integrate() {
 	      // Maybe fmag should be inversely proportional to the mass of the particle!!
 	      f = fmag*xsp/r;
 	      b[ip] += f/mass[ip];
-	      ftot += f; 
+	      ftot += f;
 	    }
 	  }
 	}
