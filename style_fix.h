@@ -9,3 +9,4 @@
 #include "fix_check_solution.h"
 #include "fix_kinetic_energy.h"
 #include "fix_strain_energy.h"
+#include "fix_indent.h"

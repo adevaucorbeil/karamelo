@@ -16,13 +16,13 @@ FixStyle(indent,FixIndent)
 class FixIndent : public Fix {
  public:
   FixIndent(class MPM *, vector<string>);
-  ~FixIndent() {};
+  ~FixIndent();
   void setmask();
-  void init() {};
-  void setup() {};
+  void init();
+  void setup();
   
-  void initial_integrate() {};
-  void post_particles_to_grid();
+  void initial_integrate();
+  void post_particles_to_grid() {};
   void post_update_grid_state() {};
   void post_grid_to_point() {};
   void post_advance_particles() {};
@@ -30,9 +30,8 @@ class FixIndent : public Fix {
   void final_integrate() {};
 
 private:
-  class Var xvalue, yvalue, zvalue;    // Set position in x, y, and z directions.
-  double K;                            // Force constant for indenter surface
-  double R;                            // Indent radius
+  string type; // sphere
+  class Var Kvalue, xvalue, yvalue, zvalue, Rvalue; // Values for K, the position of the sphere, and its radius
 };
 
 #endif

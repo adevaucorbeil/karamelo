@@ -4,6 +4,7 @@
 #include "input.h"
 #include "group.h"
 #include "domain.h"
+#include "input.h"
 #include <Eigen/Eigen>
 
 using namespace std;
@@ -12,109 +13,144 @@ using namespace Eigen;
 
 FixIndent::FixIndent(MPM *mpm, vector<string> args) : Fix(mpm, args)
 {
-  if (args.size() < 6) {
-    cout << "Error: too few arguments for fix_indent: requires at least 8 arguments. " << args.size() << " received" << endl;
+  if (args.size() < 9) {
+    cout << "Error: too few arguments for fix_body_force_current_config: requires at least 9 arguments. " << args.size() << " received" << endl;
     exit(1);
   }
 
-  if (group->pon[igroup].compare("nodes") !=0 && group->pon[igroup].compare("all") !=0) {
+  if (group->pon[igroup].compare("particles") !=0 && group->pon[igroup].compare("all") !=0) {
     cout << "fix_indent needs to be given a group of nodes" << group->pon[igroup] << ", " << args[2] << " is a group of "<< group->pon[igroup] << "." << endl;
     exit(1);
   }
   cout << "Creating new fix FixIndent with ID: " << args[0] << endl;
   id = args[0];
 
-  xvalue = input->parsev(args[3]);
-  yvalue = input->parsev(args[4]);
-  zvalue = input->parsev(args[5]);
-  R = input->parsev(args[6]);
-  K = input->parsev(args[7]);
+  type = args[3];
+  if (args[3].compare("sphere")==0) {
+    type = "sphere";
+  } else {
+    cout << "Error indent type " << args[3] << " unknown. Only type sphere is supported.\n";
+    exit(1);
+  }
+
+  Kvalue = input->parsev(args[4]);
+  xvalue = input->parsev(args[5]);
+  yvalue = input->parsev(args[6]);
+  zvalue = input->parsev(args[7]);
+  Rvalue = input->parsev(args[8]);
+}
+
+FixIndent::~FixIndent()
+{
+}
+
+void FixIndent::init()
+{
+}
+
+void FixIndent::setup()
+{
 }
 
 void FixIndent::setmask() {
   mask = 0;
-  mask |= POST_PARTICLES_TO_GRID;
+  mask |= INITIAL_INTEGRATE;
 }
 
 
-void FixIndent::post_particles_to_grid() {
-  // cout << "In FixIndent::post_particles_to_grid()\n";
+void FixIndent::initial_integrate() {
+  // cout << "In FixIndent::initial_integrate()\n";
 
-  // Go through all the nodes in the group and set b to the right value:
-  Eigen::Vector3d xind;
+  // Go through all the particles in the group and set b to the right value:
+  Eigen::Vector3d f;
 
-  xind[0] = xvalue.result(mpm);
-  xind[1] = yvalue.result(mpm);
-  xind[2] = zvalue.result(mpm);
-
-    
   int solid = group->solid[igroup];
 
-  Eigen::Vector3d *b;
-  Eigen::Vector3d *xn;
-  Eigen::Vector3d f;
-  Eigen::Vector3d delx;
   int nmax;
   int *mask;
   double *mass;
-  int n = 0;
+  Eigen::Vector3d ftot;
+  Eigen::Vector3d *x;
+  Eigen::Vector3d *b;
+
+  double K = Kvalue.result(mpm);
+  double R = Rvalue.result(mpm);
+  Eigen::Vector3d xs(xvalue.result(mpm), yvalue.result(mpm), zvalue.result(mpm));
+  Eigen::Vector3d xsp;
+
   double r, dr, fmag;
+
+  ftot.setZero();
 
   if (solid == -1) {
     for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
-      n = 0;
-      b = domain->solids[isolid]->grid->b;
-      xn = domain->solids[isolid]->grid->x;
-      nmax = domain->solids[isolid]->grid->nnodes;
-      mask = domain->solids[isolid]->grid->mask;
-      mass = domain->solids[isolid]->grid->mass;
+      b = domain->solids[isolid]->b;
+      x = domain->solids[isolid]->x;
+      nmax = domain->solids[isolid]->np;
+      mask = domain->solids[isolid]->mask;
+      mass = domain->solids[isolid]->mass;
 
-      for (int in = 0; in < nmax; in++) {
-	if (mass[in] > 0) {
-	  if (mask[in] & groupbit) {
-	    delx = xn[in] - xind;
-	    r = delx.norm();
-	    dr = R - r;
+      for (int ip = 0; ip < nmax; ip++) {
+	if (mass[ip] > 0) {
+	  if (mask[ip] & groupbit) {
+	    // Gross screening:
+	    xsp = xs - x[ip];
+	    if (( xsp[0] < R ) && ( xsp[1] < R ) && ( xsp[2] < R )
+		&& ( xsp[0] > -R ) && ( xsp[1] > -R ) && ( xsp[2] > -R )) {
 
-	    if (dr > 0.0) {
-	      fmag = K*dr*dr;
-	      f = delx*fmag/r;
-	      b[in] += f;
-	      // cout << "b[" << in <<"]=[" << b[in][0] << ", " << b[in][1] << ", " << b[in][2] << "]\n";
-	      domain->solids[isolid]->dtCFL = MIN(mass[in] / (dr * K), domain->solids[isolid]->dtCFL);
+	      r = xsp.norm();
+	      // Finer screening:
+	      if (r < R) {
+		dr = r - R;
+		fmag = K*dr*dr;
+		// Maybe fmag should be inversely proportional to the mass of the particle!!
+		f = fmag*xsp/r;
+		b[ip] += f/mass[ip];
+		ftot += f; 
+	      }
 	    }
-	    n++;
 	  }
 	}
       }
-      // cout << "b for " << n << " nodes from solid " << domain->solids[isolid]->id << " set." << endl;
+      (*input->vars)[id+"_x"]=Var(id+"_x", ftot[0]);
+      (*input->vars)[id+"_y"]=Var(id+"_y", ftot[1]);
+      (*input->vars)[id+"_z"]=Var(id+"_z", ftot[2]);
+      // cout << "f for " << n << " nodes from solid " << domain->solids[isolid]->id << " set." << endl;
     }
   } else {
+    b = domain->solids[solid]->b;
+    x = domain->solids[solid]->x;
+    nmax = domain->solids[solid]->np;
+    mask = domain->solids[solid]->mask;
+    mass = domain->solids[solid]->mass;
 
-    b = domain->solids[solid]->grid->b;
-    xn = domain->solids[solid]->grid->x;
-    nmax = domain->solids[solid]->grid->nnodes;
-    mask = domain->solids[solid]->grid->mask;
-    mass = domain->solids[solid]->grid->mass;
+    for (int ip = 0; ip < nmax; ip++) {
+      if (mass[ip] > 0) {
+	if (mask[ip] & groupbit) {
+	  // Gross screening:
+	  xsp = xs - x[ip];
+	  if (( xsp[0] < R ) && ( xsp[1] < R ) && ( xsp[2] < R )
+	      && ( xsp[0] > -R ) && ( xsp[1] > -R ) && ( xsp[2] > -R )) {
 
-    for (int in = 0; in < nmax; in++) {
-      if (mass[in] > 0) {
-	if (mask[in] & groupbit) {
-	  delx = xn[in] - xind;
-	  r = delx.norm();
-	  dr = R - r;
-
-	  if (dr > 0.0) {
-	    fmag = K*dr*dr;
-	    f = delx*fmag/r;
-	    b[in] += f;
-	    // cout << "b[" << in <<"]=[" << b[in][0] << ", " << b[in][1] << ", " << b[in][2] << "]\n";
-	    domain->solids[solid]->dtCFL = MIN(mass[in] / (dr * K), domain->solids[solid]->dtCFL);
+	    r = xsp.norm();
+	    // Finer screening:
+	    if (r < R) {
+	      dr = r - R;
+	      fmag = K*dr*dr;
+	      // Maybe fmag should be inversely proportional to the mass of the particle!!
+	      f = fmag*xsp/r;
+	      b[ip] += f/mass[ip];
+	      ftot += f; 
+	    }
 	  }
-	  n++;
 	}
       }
     }
-    // cout << "b for " << n << " nodes from solid " << domain->solids[solid]->id << " set." << endl;
-  }
+
+    (*input->vars)[id+"_x"]=Var(id+"_x", ftot[0]);
+    (*input->vars)[id+"_y"]=Var(id+"_y", ftot[1]);
+    (*input->vars)[id+"_z"]=Var(id+"_z", ftot[2]);
+    // cout << "f for " << n << " nodes from solid " << domain->solids[isolid]->id << " set." << endl;
+    }
+  // cout << "ftot = [" << ftot[0] << ", " << ftot[1] << ", " << ftot[2] << "]\n"; 
 }
