@@ -1186,6 +1186,7 @@ void Solid::populate(vector<string> args) {
     strain_el[i].setZero();
     sigma[i].setZero();
     PK1[i].setZero();
+    PK1T[i].setZero();
     L[i].setZero();
     F[i].setIdentity();
     R[i].setIdentity();
@@ -1193,6 +1194,7 @@ void Solid::populate(vector<string> args) {
     D[i].setZero();
     Finv[i].setZero();
     Fdot[i].setZero();
+    Di[i].setZero();
 
     J[i] = 1;
   }

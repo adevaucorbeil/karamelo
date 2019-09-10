@@ -85,6 +85,7 @@ void Input::file()
       if (c == '#') ignore = true; // ignore everything after #
       if (c == '\377') {
 	// cout << line << endl;
+	if (line.compare("quit")==0) return;
 	parsev(line).result();
       } else {
 	if (!ignore) line.append(&c,1);
@@ -94,7 +95,7 @@ void Input::file()
 
       ignore = false;
       cout << line << endl;
-      // cout << " gives: " << parsev(line).result() << endl;
+      if (line.compare("quit")==0) return;
       parsev(line).result();
       line.clear();
 
