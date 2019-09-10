@@ -97,6 +97,7 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
 {
   if (!update_wf) return;
 
+  cout << "In TLMPM::compute_grid_weight_functions_and_gradients()\n";
   bigint nsolids, np, nnodes;
 
   nsolids = domain->solids.size();

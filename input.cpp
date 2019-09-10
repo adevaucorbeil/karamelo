@@ -217,6 +217,7 @@ Var Input::evaluate_function(string func, string arg){
   else if (func.compare("tan") == 0) return tanv(parsev(arg));
   else if (func.compare("atan2") == 0) return atan2v(parsev(args[0]),parsev(args[1]));
   else if (func.compare("log") == 0) return logv(parsev(arg));
+  else if (func.compare("evaluate") == 0) return parsev(arg).result(mpm);
   cout << "Error: Unknown function " << func << endl;
   exit(1);
 }
