@@ -35,6 +35,12 @@ Solid::Solid(MPM *mpm, vector<string> args) :
   np = 0;
 
   x = x0 = NULL;
+  xpc = xpc0 = NULL;
+
+  if ((method_style.compare("tlcpdi") == 0) || (method_style.compare("ulcpdi") == 0)) {
+    nc = pow(2, domain->dimension);
+  } else nc = 0;
+
   v = v_update = NULL;
 
   a = NULL;
@@ -80,6 +86,8 @@ Solid::~Solid()
 {
   if (x0!=NULL) delete x0;
   if (x!=NULL) delete x;
+  if (xpc0!=NULL) delete xpc0;
+  if (xpc!=NULL) delete xpc;
   if (v!=NULL) delete v;
   if (v_update!=NULL) delete v_update;
   if (a!=NULL) delete a;
@@ -198,6 +206,7 @@ void Solid::grow(int nparticles){
   np = nparticles;
 
   string str;
+
   str = "solid-" + id + ":x0";
   cout << "Growing " << str << endl;
   if (x0 == NULL) x0 = new Eigen::Vector3d[np];
@@ -212,6 +221,24 @@ void Solid::grow(int nparticles){
   else {
     cout << "Error: x already exists, I don't know how to grow it!\n";
     exit(1);
+  }
+
+  if (nc != 0) {
+    str = "solid-" + id + ":xpc0";
+    cout << "Growing " << str << endl;
+    if (xpc0 == NULL) xpc0 = new Eigen::Vector3d[nc*np];
+    else {
+      cout << "Error: xpc0 already exists, I don't know how to grow it!\n";
+      exit(1);
+    }
+
+    str = "solid-" + id + ":xpc";
+    cout << "Growing " << str << endl;
+    if (xpc == NULL) x = new Eigen::Vector3d[nc*np];
+    else {
+      cout << "Error: xpc already exists, I don't know how to grow it!\n";
+      exit(1);
+    }
   }
 
   str = "solid-" + id + ":v";
@@ -1024,147 +1051,157 @@ void Solid::populate(vector<string> args) {
 
   int np_per_cell = (int) input->parsev(args[2]);
 
+  double *boundlo;
+  if (checkIfInRegion) boundlo = solidlo;
+  else boundlo = domain->boxlo;
+
+  double xi = 0.5;
+  double lp = 0.5;
+  int nip = 1;
+  vector<double> intpoints;
+
   if (np_per_cell == 1) {
     // One particle per cell at the center:
 
-    // Allocate the space in the vectors for np particles:
-    grow(np);
+    xi = 0.5;
+    lp = 0.5;
+    nip = 1;
 
-    for (int i=0; i<nx; i++){
-      for (int j=0; j<ny; j++){
-	for (int k=0; k<nz; k++){
-	  if (checkIfInRegion) {
-	    x0[l][0] = x[l][0] = domain->boxlo[0] + delta*(i+0.5);
-	    x0[l][1] = x[l][1] = domain->boxlo[1] + delta*(j+0.5);
-	    if (domain->dimension == 3) x0[l][2] = x[l][2] = domain->boxlo[2] + delta*(k+0.5);
-	    else x0[l][2] = x[l][2] = 0;
-	  } else {
-	    x0[l][0] = x[l][0] = solidlo[0] + delta*(i+0.5);
-	    x0[l][1] = x[l][1] = solidlo[1] + delta*(j+0.5);
-	    if (domain->dimension == 3) x0[l][2] = x[l][2] = solidlo[2] + delta*(k+0.5);
-	    else x0[l][2] = x[l][2] = 0;
+    intpoints = {0, 0, 0};
 
-	    l++;
-	  }
-	  // Check if the particle is inside the region:
-	  if (checkIfInRegion)
-	    if (domain->regions[iregion]->inside(x0[l][0], x0[l][1], x0[l][2])==1)
-	      l++;
-	}
-      }
-    }
   } else if (np_per_cell == 2) {
     // Quadratic elements:
 
     np *= 8;
     mass_ /= 8.0;
     vol_ /= 8.0;
-    // Allocate the space in the vectors for np particles:
-    grow(np);
 
-    double half_Sqrt_three_inv = 0.5/sqrt(3.0);
+    if (nc==0) xi= 0.5/sqrt(3.0);
+    else xi = 0.25;
 
-    double intpoints[8][3] = {{-half_Sqrt_three_inv, -half_Sqrt_three_inv, -half_Sqrt_three_inv},
-  			      {-half_Sqrt_three_inv, -half_Sqrt_three_inv, half_Sqrt_three_inv},
-  			      {-half_Sqrt_three_inv, half_Sqrt_three_inv, -half_Sqrt_three_inv},
-  			      {-half_Sqrt_three_inv, half_Sqrt_three_inv, half_Sqrt_three_inv},
-  			      {half_Sqrt_three_inv, -half_Sqrt_three_inv, -half_Sqrt_three_inv},
-  			      {half_Sqrt_three_inv, -half_Sqrt_three_inv, half_Sqrt_three_inv},
-  			      {half_Sqrt_three_inv, half_Sqrt_three_inv, -half_Sqrt_three_inv},
-  			      {half_Sqrt_three_inv, half_Sqrt_three_inv, half_Sqrt_three_inv}};
+    lp = 0.25;
+    nip = 8;
 
-    for (int i=0; i<nx; i++){
-      for (int j=0; j<ny; j++){
-  	for (int k=0; k<nz; k++){
-  	  for (int ip=0; ip<8; ip++) {
-	    if (checkIfInRegion) {
-	      x0[l][0] = x[l][0] = domain->boxlo[0] + delta*(i+0.5+intpoints[ip][0]);
-	      x0[l][1] = x[l][1] = domain->boxlo[1] + delta*(j+0.5+intpoints[ip][1]);
-	      if (domain->dimension == 3) x0[l][2] = x[l][2] = domain->boxlo[2] + delta*(k+0.5+intpoints[ip][2]);
-	      else x0[l][2] = x[l][2] = 0;
-	    } else {
-	      x0[l][0] = x[l][0] = solidlo[0] + delta*(i+0.5+intpoints[ip][0]);
-	      x0[l][1] = x[l][1] = solidlo[1] + delta*(j+0.5+intpoints[ip][1]);
-	      if (domain->dimension == 3) x0[l][2] = x[l][2] = solidlo[2] + delta*(k+0.5+intpoints[ip][2]);
-	      else x0[l][2] = x[l][2] = 0;
+    intpoints = {-xi, -xi, -xi,
+		 -xi, -xi, xi,
+		 -xi, xi, -xi,
+		 -xi, xi, xi,
+		 xi, -xi, -xi,
+		 xi, -xi, xi,
+		 xi, xi, -xi,
+		 xi, xi, xi};
 
-	      l++;
-	    }
-	    // Check if the particle is inside the region:
-	    if (checkIfInRegion)
-	      if (domain->regions[iregion]->inside(x0[l][0], x0[l][1], x0[l][2])==1)
-		l++;
-  	  }
-  	}
-      }
-    }    
+
   } else if (np_per_cell == 3) {
     // Berstein elements:
 
     np *= 27;
     mass_ /= 27.0;
     vol_ /= 27.0;
-    // Allocate the space in the vectors for np particles:
-    grow(np);
 
-    double a = 0.7746/2;
+    if (nc == 0) xi = 0.7746/2;
+    else xi = 2.0/3.0;
 
-    double intpoints[27][3] = {{-a, -a, -a},
-			       {-a, -a, 0},
-			       {-a, -a, a},
-			       {-a, 0, -a},
-			       {-a, 0, 0},
-			       {-a, 0, a},
-			       {-a, a, -a},
-			       {-a, a, 0},
-			       {-a, a, a},
-			       {0, -a, -a},
-			       {0, -a, 0},
-			       {0, -a, a},
-			       {0, 0, -a},
-			       {0, 0, 0},
-			       {0, 0, a},
-			       {0, a, -a},
-			       {0, a, 0},
-			       {0, a, a},
-			       {a, -a, -a},
-			       {a, -a, 0},
-			       {a, -a, a},
-			       {a, 0, -a},
-			       {a, 0, 0},
-			       {a, 0, a},
-			       {a, a, -a},
-			       {a, a, 0},
-			       {a, a, a}};
+    lp = 1.0/3.0;
+    nip = 27;
 
-    for (int i=0; i<nx; i++){
-      for (int j=0; j<ny; j++){
-	for (int k=0; k<nz; k++){
-	  for (int ip=0; ip<27; ip++) {
-	    if (checkIfInRegion) {
-	      x0[l][0] = x[l][0] = domain->boxlo[0] + delta*(i+0.5+intpoints[ip][0]);
-	      x0[l][1] = x[l][1] = domain->boxlo[1] + delta*(j+0.5+intpoints[ip][1]);
-	      if (domain->dimension == 3) x0[l][2] = x[l][2] = domain->boxlo[2] + delta*(k+0.5+intpoints[ip][2]);
-	      else x0[l][2] = x[l][2] = 0;
-	    } else {
-	      x0[l][0] = x[l][0] = solidlo[0] + delta*(i+0.5+intpoints[ip][0]);
-	      x0[l][1] = x[l][1] = solidlo[1] + delta*(j+0.5+intpoints[ip][1]);
-	      if (domain->dimension == 3) x0[l][2] = x[l][2] = solidlo[2] + delta*(k+0.5+intpoints[ip][2]);
-	      else x0[l][2] = x[l][2] = 0;
+    intpoints = {-xi, -xi, -xi,
+		 -xi, -xi, 0,
+		 -xi, -xi, xi,
+		 -xi, 0, -xi,
+		 -xi, 0, 0,
+		 -xi, 0, xi,
+		 -xi, xi, -xi,
+		 -xi, xi, 0,
+		 -xi, xi, xi,
+		 0, -xi, -xi,
+		 0, -xi, 0,
+		 0, -xi, xi,
+		 0, 0, -xi,
+		 0, 0, 0,
+		 0, 0, xi,
+		 0, xi, -xi,
+		 0, xi, 0,
+		 0, xi, xi,
+		 xi, -xi, -xi,
+		 xi, -xi, 0,
+		 xi, -xi, xi,
+		 xi, 0, -xi,
+		 xi, 0, 0,
+		 xi, 0, xi,
+		 xi, xi, -xi,
+		 xi, xi, 0,
+		 xi, xi, xi};
 
+  } else {
+    cout << "Error: solid command 4th argument should be 1 or 2, but " << (int) input->parsev(args[3]) << "received.\n";
+    exit(1);
+  }
+
+  // Allocate the space in the vectors for np particles:
+  grow(np);
+
+  for (int i=0; i<nx; i++){
+    for (int j=0; j<ny; j++){
+      for (int k=0; k<nz; k++){
+	for (int ip=0; ip<nip; ip++) {
+	  x0[l][0] = x[l][0] = boundlo[0] + delta*(i+0.5+intpoints[3*ip+0]);
+	  x0[l][1] = x[l][1] = boundlo[1] + delta*(j+0.5+intpoints[3*ip+1]);
+	  if (domain->dimension == 3) x0[l][2] = x[l][2] = boundlo[2] + delta*(k+0.5+intpoints[3*ip+2]);
+	  else x0[l][2] = x[l][2] = 0;
+
+	  if (nc != 0) {
+	    xpc0[nc*l][0] = xpc[nc*l][0] = boundlo[0] + delta*(k+0.5+intpoints[3*ip+0] - lp);
+
+	    xpc0[nc*l+1][0] = xpc[nc*l+1][0] = boundlo[0] + delta*(k+0.5+intpoints[3*ip+0] + lp);
+
+	    if (domain->dimension >= 2)
+	      {
+		xpc0[nc*l][1] = xpc[nc*l][1] = boundlo[1] + delta*(k+0.5+intpoints[3*ip+1] - lp);
+		xpc0[nc*l+1][1] = xpc[nc*l+1][1] = boundlo[1] + delta*(k+0.5+intpoints[3*ip+1] - lp);
+
+		xpc0[nc*l+2][0] = xpc[nc*l+2][0] = boundlo[0] + delta*(k+0.5+intpoints[3*ip+0] - lp);
+		xpc0[nc*l+2][1] = xpc[nc*l+2][1] = boundlo[1] + delta*(k+0.5+intpoints[3*ip+1] + lp);
+
+		xpc0[nc*l+3][0] = xpc[nc*l+3][0] = boundlo[0] + delta*(k+0.5+intpoints[3*ip+0] + lp);
+		xpc0[nc*l+3][1] = xpc[nc*l+3][1] = boundlo[1] + delta*(k+0.5+intpoints[3*ip+1] + lp);
+	      }
+	      
+	    if (domain->dimension == 3)
+	      {
+		xpc0[nc*l][2] = xpc[nc*l][2] = boundlo[2] + delta*(k+0.5+intpoints[3*ip+2] - lp);
+		xpc0[nc*l+1][2] = xpc[nc*l+1][2] = boundlo[2] + delta*(k+0.5+intpoints[3*ip+2] - lp);
+		xpc0[nc*l+2][2] = xpc[nc*l+2][2] = boundlo[2] + delta*(k+0.5+intpoints[3*ip+2] - lp);
+		xpc0[nc*l+3][2] = xpc[nc*l+3][2] = boundlo[2] + delta*(k+0.5+intpoints[3*ip+2] - lp);
+
+		xpc0[nc*l+4][0] = xpc[nc*l+4][0] = boundlo[0] + delta*(k+0.5+intpoints[3*ip+0] - lp);
+		xpc0[nc*l+4][1] = xpc[nc*l+4][1] = boundlo[1] + delta*(k+0.5+intpoints[3*ip+1] - lp);
+		xpc0[nc*l+4][2] = xpc[nc*l+4][2] = boundlo[2] + delta*(k+0.5+intpoints[3*ip+2] + lp);
+
+		xpc0[nc*l+5][0] = xpc[nc*l+5][0] = boundlo[0] + delta*(k+0.5+intpoints[3*ip+0] + lp);
+		xpc0[nc*l+5][1] = xpc[nc*l+5][1] = boundlo[1] + delta*(k+0.5+intpoints[3*ip+1] - lp);
+		xpc0[nc*l+5][2] = xpc[nc*l+5][2] = boundlo[2] + delta*(k+0.5+intpoints[3*ip+2] + lp);
+
+		xpc0[nc*l+6][0] = xpc[nc*l+6][0] = boundlo[0] + delta*(k+0.5+intpoints[3*ip+0] - lp);
+		xpc0[nc*l+6][1] = xpc[nc*l+6][1] = boundlo[1] + delta*(k+0.5+intpoints[3*ip+1] + lp);
+		xpc0[nc*l+6][2] = xpc[nc*l+6][2] = boundlo[2] + delta*(k+0.5+intpoints[3*ip+2] + lp);
+
+		xpc0[nc*l+7][0] = xpc[nc*l+7][0] = boundlo[0] + delta*(k+0.5+intpoints[3*ip+0] + lp);
+		xpc0[nc*l+7][1] = xpc[nc*l+7][1] = boundlo[1] + delta*(k+0.5+intpoints[3*ip+1] + lp);
+		xpc0[nc*l+7][2] = xpc[nc*l+7][2] = boundlo[2] + delta*(k+0.5+intpoints[3*ip+2] + lp);
+	      }
+	  }
+
+	  // Check if the particle is inside the region:
+	  if (checkIfInRegion) {
+	    if (domain->regions[iregion]->inside(x0[l][0], x0[l][1], x0[l][2])==1)
 	      l++;
-	    }
-	    // Check if the particle is inside the region:
-	    if (checkIfInRegion)
-	      if (domain->regions[iregion]->inside(x0[l][0], x0[l][1], x0[l][2])==1)
-		l++;
+	  } else {
+	    l++;
 	  }
 	}
       }
     }
-  } else {
-    cout << "Error: solid command 4th argument should be 1 or 2, but " << (int) input->parsev(args[3]) << "received.\n";
-    exit(1);
   }
 
   np = l; // Adjust np to account for the particles outside the domain
