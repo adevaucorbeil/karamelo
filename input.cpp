@@ -112,7 +112,7 @@ void Input::file()
 // Function to find precedence of  
 // operators. 
 double Input::precedence(string op){
-    if(op == ">"||op == "<") return 1;
+    if(op == ">"||op == ">="||op == "<"||op == "<="||op == "=="||op == "!=") return 1;
     if(op == "+"||op == "-") return 2;
     if(op == "*"||op == "/") return 3;
     if(op == "**" || op == "^") return 4;
@@ -132,7 +132,11 @@ Var Input::applyOp(Var a, Var b, string op){
   else if (op.compare("e")==0) return a*powv(10,b);
   else if (op.compare("E")==0) return a*powv(10,b);
   else if (op.compare(">")==0) return a > b;
+  else if (op.compare(">=")==0) return a >= b;
   else if (op.compare("<")==0) return a < b;
+  else if (op.compare("<=")==0) return a <= b;
+  else if (op.compare("==")==0) return a == b;
+  else if (op.compare("!=")==0) return a != b;
   else if (op.compare("(")==0) {
     printf("Error: unmatched parenthesis (\n");
     exit(1);
@@ -150,6 +154,7 @@ bool Input::is_operator(char op){
   if (op=='^') return true;
   if (op=='>') return true;
   if (op=='<') return true;
+  if (op=='!') return true;
   return false;
 }
 
@@ -347,7 +352,7 @@ Var Input::parsev(string str)
       ops.pop();
     }
 
-    else if (is_operator(str[i])){
+    else if (is_operator(str[i]) || (str[i]=='=' && i+1 < str.length() && str[i+1] == '=')){
       string new_op;
       new_op.push_back(str[i]);
       //printf("found operator %c\n", new_op);
@@ -369,8 +374,13 @@ Var Input::parsev(string str)
 	exit(1);
       }
 
-      else if (new_op == "*" && i+1 < str.length() && str[i+1] == '*') {
+      else if (i+1 < str.length() && str[i+1] == '*') {
 	new_op.push_back('*');
+	i++;
+      }
+
+      else if (i+1 < str.length() && str[i+1] == '=') {
+	new_op.push_back('=');
 	i++;
       }
 
@@ -445,7 +455,7 @@ Var Input::parsev(string str)
       if (it != vars->end()){
 	// word is a variable
 	//cout << "word is a variable\n";
-	if (i+1 < str.length() && str[i+1] == '=') {
+	if (i+1 < str.length() && str[i+1] == '=' && str[i+2] != '=') {
 
 	  if (!values.empty() || !ops.empty() ) {
 	    printf("Error: I do not understand when '=' is located in the middle of an expression\n");
