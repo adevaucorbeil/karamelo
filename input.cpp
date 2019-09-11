@@ -111,11 +111,12 @@ void Input::file()
 
 // Function to find precedence of  
 // operators. 
-double Input::precedence(char op){ 
-    if(op == '+'||op == '-') return 1;
-    if(op == '*'||op == '/') return 2;
-    if(op == '^') return 3;
-    if(op == 'e'|| op == 'E') return 4;
+double Input::precedence(char op){
+    if(op == '>'||op == '<') return 1;
+    if(op == '+'||op == '-') return 2;
+    if(op == '*'||op == '/') return 3;
+    if(op == '^') return 4;
+    if(op == 'e'|| op == 'E') return 5;
     return 0;
 }
 
@@ -130,6 +131,8 @@ Var Input::applyOp(Var a, Var b, char op){
   case '^': return a ^ b;
   case 'e': return a*powv(10,b);
   case 'E': return a*powv(10,b);
+  case '>': return a > b;
+  case '<': return a < b;
   case '(':
     printf("Error: unmatched parenthesis (\n");
     exit(1);
@@ -145,16 +148,14 @@ bool Input::is_operator(char op){
   if (op=='*') return true;
   if (op=='/') return true;
   if (op=='^') return true;
+  if (op=='>') return true;
+  if (op=='<') return true;
   return false;
 }
 
 // check if op is either of +-/*()
 bool Input::is_math_char(char op){
-  if (op=='+') return true;
-  if (op=='-') return true;
-  if (op=='*') return true;
-  if (op=='/') return true;
-  if (op=='^') return true;
+  if (is_operator(op)) return true;
   if (op=='(') return true;
   if (op==')') return true;
   if (op=='=') return true;
@@ -365,7 +366,7 @@ Var Input::parsev(string str)
 	exit(1);
       }
 
-      else if (i+1 < str.length() && str[i+1] == '*') {
+      else if (new_op == '*' && i+1 < str.length() && str[i+1] == '*') {
 	new_op = '^';
 	i++;
       }
