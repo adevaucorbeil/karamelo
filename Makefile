@@ -10,7 +10,9 @@ SHELL = /bin/bash
 CC = g++
 
 # define any compile-time flags
-CFLAGS = -g -std=c++11 -O3
+CFLAGS = -g -std=c++11 -O3 -march=native
+#-fopenmp
+#-pg
 
 # define any directories containing header files other than /usr/include
 #
@@ -43,7 +45,7 @@ BRANCH := $(shell git rev-parse --short HEAD)
 endif
 
 # define the executable file 
-MAIN = mpm_${BRANCH}
+MAIN = karamelo_${BRANCH}
 
 #
 # The following part of the makefile is generic; it can be used to 
