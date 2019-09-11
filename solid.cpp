@@ -9,6 +9,7 @@
 #include <math.h>
 #include "input.h"
 #include "var.h"
+#include <omp.h>
 
 using namespace std;
 using namespace Eigen;
@@ -531,9 +532,14 @@ void Solid::compute_particle_acceleration()
 
 void Solid::update_particle_position()
 {
+  bool ul;
+
+  if (update->method_style.compare("tlmpm") != 0) ul = true;
+  else ul = false;
+
   for (int ip=0; ip<np; ip++) {
     x[ip] += update->dt*v_update[ip];
-    if (update->method_style.compare("tlmpm") != 0) {
+    if (ul) {
       // Check if the particle is within the box's domain:
       if (domain->inside(x[ip]) == 0) {
 	cout << "Error: Particle " << ip << " left the domain (" <<
@@ -773,15 +779,17 @@ void Solid::update_deformation_gradient()
     if (tl) F[ip] += update->dt * Fdot[ip];
     else F[ip] = (eye+update->dt*L[ip]) * F[ip];
 
+    Finv[ip] = F[ip].inverse();
     J[ip] = F[ip].determinant();
+
     if (J[ip] < 0.0) {
       cout << "Error: J[" << ip << "]<0.0 == " << J[ip] << endl;
       cout << "F[" << ip << "]:" << endl << F[ip] << endl;
 	exit(1);
     }
+
     vol[ip] = J[ip] * vol0[ip];
     rho[ip] = rho0[ip] / J[ip];
-    Finv[ip] = F[ip].inverse();
 
     if (nh) {
       // Only done if not Neo-Hookean:
@@ -812,11 +820,28 @@ void Solid::update_stress()
   min_inv_p_wave_speed = 1.0e22;
   double pH, plastic_strain_increment;
   Matrix3d eye, sigma_dev, FinvT;
+  bool tl, nh;
+
+  if ((mat->eos!=NULL) && (mat->strength!=NULL)) nh = false;
+  else nh = true;
+
+  if (update->method_style.compare("tlmpm") == 0) tl = true;
+  else tl = false;
 
   eye.setIdentity();
 
+  //# pragma omp parallel for
   for (int ip=0; ip<np; ip++){
-    if ((mat->eos!=NULL) && (mat->strength!=NULL)) {
+    if (nh) {
+
+      // Neo-Hookean material:
+      FinvT = Finv[ip].transpose();
+      PK1[ip] = mat->G*(F[ip] - FinvT) + mat->lambda*log(J[ip])*FinvT;
+      sigma[ip] = 1.0/J[ip]*(F[ip]*PK1[ip].transpose());
+      strain_el[ip] = 0.5*(F[ip].transpose()*F[ip] - eye);//update->dt * D[ip];
+
+    } else {
+
       pH = mat->eos->compute_pressure(J[ip], rho[ip], 0, damage[ip]);
       sigma_dev = mat->strength->update_deviatoric_stress(sigma[ip], D[ip], plastic_strain_increment, eff_plastic_strain[ip], eff_plastic_strain_rate[ip], damage[ip]);
 
@@ -838,20 +863,15 @@ void Solid::update_stress()
 	strain_el[ip] =  (update->dt*D[ip].trace() + strain_el[ip].trace())/3.0*eye;
       }
 
-      if (update->method_style.compare("tlmpm") == 0) {
+      if (tl) {
 	PK1[ip] = J[ip] * (R[ip] * sigma[ip] * R[ip].transpose()) * Finv[ip].transpose();
       }
-
-    } else {
-      // Neo-Hookean material:
-      FinvT = Finv[ip].transpose();
-      PK1[ip] = mat->G*(F[ip] - FinvT) + mat->lambda*log(J[ip])*FinvT;
-      sigma[ip] = 1.0/J[ip]*(F[ip]*PK1[ip].transpose());
-      strain_el[ip] = 0.5*(F[ip].transpose()*F[ip] - eye);//update->dt * D[ip];
     }
 
-    vol0PK1T[ip] = vol0[ip]*PK1[ip].transpose();
-    
+    if (tl) vol0PK1T[ip] = vol0[ip]*PK1[ip].transpose();
+  }
+
+  for (int ip=0; ip<np; ip++){
     min_inv_p_wave_speed = MIN(min_inv_p_wave_speed, rho[ip] / (mat->K + 4.0/3.0 * mat->G));
     if (std::isnan(min_inv_p_wave_speed)) {
       cout << "Error: min_inv_p_wave_speed is nan with ip=" << ip << ", rho[ip]=" << rho[ip] << ", K=" << mat->K << ", G=" << mat->G << endl;

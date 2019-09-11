@@ -420,6 +420,6 @@ void ULMPM::reset()
   for (int isolid=0; isolid<domain->solids.size(); isolid++) {
     domain->solids[isolid]->dtCFL = 1.0e22;
     np = domain->solids[isolid]->np;
-    for (int ip = 0; ip < np; ip++) domain->solids[isolid]->b[ip].setZero();
+    for (int ip = 0; ip < np; ip++) domain->solids[isolid]->mb[ip].setZero();
   }
 }

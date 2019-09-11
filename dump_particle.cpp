@@ -82,9 +82,9 @@ void DumpParticle::write()
 	dumpstream << s->damage_init[i] << " ";
 	dumpstream << s->vol[i] << " ";
 	dumpstream << s->mass[i] << " ";
-	dumpstream << s->b[i][0] << " ";
-	dumpstream << s->b[i][1] << " ";
-	dumpstream << s->b[i][2] << endl;
+	dumpstream << s->mb[i][0] << " ";
+	dumpstream << s->mb[i][1] << " ";
+	dumpstream << s->mb[i][2] << endl;
       }
     }
     dumpstream.close();

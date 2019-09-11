@@ -10,8 +10,7 @@ SHELL = /bin/bash
 CC = g++
 
 # define any compile-time flags
-CFLAGS = -g -std=c++11 -O3 -march=native
-#-fopenmp
+CFLAGS = -g -std=c++11 -O3 -march=native -fopenmp
 #-pg
 
 # define any directories containing header files other than /usr/include
