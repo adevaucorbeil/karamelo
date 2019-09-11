@@ -757,14 +757,20 @@ void Solid::compute_rate_deformation_gradient_UL_APIC()
 
 void Solid::update_deformation_gradient()
 {
-  bool status;
+  bool status, tl, nh;
   Eigen::Matrix3d U;
   Eigen::Matrix3d eye;
   eye.setIdentity();
 
+  if (update->method_style.compare("tlmpm") == 0) tl = true;
+  else tl = false;
+
+  if ((mat->eos!=NULL) && (mat->strength!=NULL)) nh = true;
+  else nh = false;
+
   for (int ip=0; ip<np; ip++){
     
-    if (update->method_style.compare("tlmpm") == 0) F[ip] += update->dt * Fdot[ip];
+    if (tl) F[ip] += update->dt * Fdot[ip];
     else F[ip] = (eye+update->dt*L[ip]) * F[ip];
 
     J[ip] = F[ip].determinant();
@@ -777,7 +783,7 @@ void Solid::update_deformation_gradient()
     rho[ip] = rho0[ip] / J[ip];
     Finv[ip] = F[ip].inverse();
 
-    if ((mat->eos!=NULL) && (mat->strength!=NULL)) {
+    if (nh) {
       // Only done if not Neo-Hookean:
       if (update->method_style.compare("tlmpm") == 0)
 	L[ip] = Fdot[ip] * Finv[ip];
