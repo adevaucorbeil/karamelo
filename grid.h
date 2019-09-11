@@ -25,7 +25,7 @@ class Grid : protected Pointers {
   Eigen::Vector3d *x0;           // nodes' reference position
   Eigen::Vector3d *v;            // nodes' velocity at time t
   Eigen::Vector3d *v_update;     // nodes' velocity at time t+dt
-  Eigen::Vector3d *b;            // nodes' external forces
+  Eigen::Vector3d *mb;           // nodes' external forces times the mass
   Eigen::Vector3d *f;            // nodes' internal forces
 
   Eigen::Matrix3d *R;            // nodes' rotation matrix

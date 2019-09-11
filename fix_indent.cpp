@@ -71,7 +71,7 @@ void FixIndent::initial_integrate() {
   double *mass;
   Eigen::Vector3d ftot;
   Eigen::Vector3d *x;
-  Eigen::Vector3d *b;
+  Eigen::Vector3d *mb;
 
   double K = Kvalue.result(mpm);
   double R = Rvalue.result(mpm);
@@ -84,7 +84,7 @@ void FixIndent::initial_integrate() {
 
   if (solid == -1) {
     for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
-      b = domain->solids[isolid]->b;
+      mb = domain->solids[isolid]->mb;
       x = domain->solids[isolid]->x;
       nmax = domain->solids[isolid]->np;
       mask = domain->solids[isolid]->mask;
@@ -106,7 +106,7 @@ void FixIndent::initial_integrate() {
 		fmag = K*dr*dr;
 		// Maybe fmag should be inversely proportional to the mass of the particle!!
 		f = fmag*xsp/r;
-		b[ip] += f/mass[ip];
+		mb[ip] += f;
 		ftot += f;
 	      }
 	    }
@@ -119,7 +119,7 @@ void FixIndent::initial_integrate() {
       // cout << "f for " << n << " nodes from solid " << domain->solids[isolid]->id << " set." << endl;
     }
   } else {
-    b = domain->solids[solid]->b;
+    mb = domain->solids[solid]->mb;
     x = domain->solids[solid]->x;
     nmax = domain->solids[solid]->np;
     mask = domain->solids[solid]->mask;
@@ -140,7 +140,7 @@ void FixIndent::initial_integrate() {
 	      fmag = K*dr*dr;
 	      // Maybe fmag should be inversely proportional to the mass of the particle!!
 	      f = fmag*xsp/r;
-	      b[ip] += f/mass[ip];
+	      mb[ip] += f;
 	      ftot += f;
 	    }
 	  }

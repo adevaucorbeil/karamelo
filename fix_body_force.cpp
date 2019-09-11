@@ -69,7 +69,7 @@ void FixBodyforce::post_particles_to_grid() {
 
   int solid = group->solid[igroup];
 
-  Eigen::Vector3d *b;
+  Eigen::Vector3d *mb;
   int nmax;
   int *mask;
   double *mass;
@@ -82,12 +82,11 @@ void FixBodyforce::post_particles_to_grid() {
 
   if (solid == -1) {
     for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
-      b = domain->solids[isolid]->grid->b;
+      mb = domain->solids[isolid]->grid->mb;
       x0 = domain->solids[isolid]->grid->x0;
       nmax = domain->solids[isolid]->grid->nnodes;
       mask = domain->solids[isolid]->grid->mask;
       mass = domain->solids[isolid]->grid->mass;
-      R = domain->solids[isolid]->grid->R;
 
       for (int in = 0; in < nmax; in++) {
 	if (mass[in] > 0) {
@@ -101,8 +100,9 @@ void FixBodyforce::post_particles_to_grid() {
 	      if (yset) f[1] = yvalue.result(mpm);
 	      if (zset) f[2] = zvalue.result(mpm);
 
-	      b[in] += f;
-	      ftot += mass[in]*f;
+	      f *= mass[in];
+	      mb[in] += f;
+	      ftot += f;
 	      mtot += mass[in];
 	  }
 	}
@@ -114,12 +114,11 @@ void FixBodyforce::post_particles_to_grid() {
     }
   } else {
 
-    b = domain->solids[solid]->grid->b;
+    mb = domain->solids[solid]->grid->mb;
     x0 = domain->solids[solid]->grid->x0;
     nmax = domain->solids[solid]->grid->nnodes;
     mask = domain->solids[solid]->grid->mask;
     mass = domain->solids[solid]->grid->mass;
-    R = domain->solids[solid]->grid->R;
 
     
     for (int in = 0; in < nmax; in++) {
@@ -134,7 +133,9 @@ void FixBodyforce::post_particles_to_grid() {
 	  if (yset) f[1] = yvalue.result(mpm);
 	  if (zset) f[2] = zvalue.result(mpm);
 
-	  ftot += mass[in]*f;
+	  f *= mass[in];
+	  mb[in] += f;
+	  ftot += f;
 	  mtot += mass[in];
 	}
       }

@@ -26,7 +26,7 @@ class Solid : protected Pointers {
 
   Eigen::Vector3d *a;        // particles' acceleration
 
-  Eigen::Vector3d *b;        // particles' external forces
+  Eigen::Vector3d *mb;        // particles' external forces times mass
   Eigen::Vector3d *f;        // particles' internal forces
 
   Eigen::Matrix3d *sigma;            // stress matrix

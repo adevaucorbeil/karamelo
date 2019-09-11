@@ -41,7 +41,7 @@ Solid::Solid(MPM *mpm, vector<string> args) :
 
   sigma = strain_el = PK1 = vol0PK1T = L = F = R = U = D = Finv = Fdot = Di = NULL;
 
-  b = f = NULL;
+  mb = f = NULL;
 
   J = NULL;
 
@@ -83,7 +83,7 @@ Solid::~Solid()
   if (v!=NULL) delete v;
   if (v_update!=NULL) delete v_update;
   if (a!=NULL) delete a;
-  if (b!=NULL) delete b;
+  if (mb!=NULL) delete mb;
   if (f!=NULL) delete f;
   if (sigma!=NULL) delete sigma;
   if (strain_el!=NULL) delete strain_el;
@@ -238,11 +238,11 @@ void Solid::grow(int nparticles){
     exit(1);
   }
 
-  str = "solid-" + id + ":b";
+  str = "solid-" + id + ":mb";
   cout << "Growing " << str << endl;
-  if (b == NULL) b = new Eigen::Vector3d[np];
+  if (mb == NULL) mb = new Eigen::Vector3d[np];
   else {
-    cout << "Error: b already exists, I don't know how to grow it!\n";
+    cout << "Error: mb already exists, I don't know how to grow it!\n";
     exit(1);
   }
 
@@ -407,16 +407,21 @@ void Solid::compute_mass_nodes(bool reset)
 void Solid::compute_velocity_nodes(bool reset)
 {
   Eigen::Vector3d *vn = grid->v;
+  Eigen::Vector3d vtemp;
   double *massn = grid->mass;
   int ip;
 
   for (int in=0; in<grid->nnodes; in++) {
     if (reset) vn[in].setZero();
     if (massn[in] > 0) {
+      vtemp.setZero();
       for (int j=0; j<numneigh_np[in];j++){
 	ip = neigh_np[in][j];
-	vn[in] += (wf_np[in][j] * mass[ip]) * v[ip]/ massn[in];
+	vtemp += (wf_np[in][j] * mass[ip]) * v[ip];
+	//vn[in] += (wf_np[in][j] * mass[ip]) * v[ip]/ massn[in];
       }
+      vtemp /= massn[in];
+      vn[in] += vtemp;
     }
   }
 }
@@ -441,16 +446,16 @@ void Solid::compute_velocity_nodes_APIC(bool reset)
 
 void Solid::compute_external_forces_nodes(bool reset)
 {
-  Eigen::Vector3d *bn = grid->b;
+  Eigen::Vector3d *mbn = grid->mb;
   double *massn = grid->mass;
   int ip;
 
   for (int in=0; in<grid->nnodes; in++) {
-    if (reset) bn[in].setZero();
+    if (reset) mbn[in].setZero();
     if (massn[in] > 0) {
       for (int j=0; j<numneigh_np[in];j++){
 	ip = neigh_np[in][j];
-	bn[in] += (wf_np[in][j] * mass[ip]) * b[ip] / massn[in];
+	mbn[in] += wf_np[in][j] * mb[ip];
       }
     }
   }
@@ -459,14 +464,18 @@ void Solid::compute_external_forces_nodes(bool reset)
 void Solid::compute_internal_forces_nodes_TL()
 {
   Eigen::Vector3d *fn = grid->f;
+  Eigen::Vector3d ftemp;
   int ip;
 
   for (int in=0; in<grid->nnodes; in++) {
-    fn[in].setZero();
+    //fn[in].setZero();
+    ftemp.setZero();
     for (int j=0; j<numneigh_np[in];j++){
       ip = neigh_np[in][j];
-      fn[in] -= (vol0PK1T[ip] * wfd_np[in][j]);
+      ftemp -= vol0PK1T[ip] * wfd_np[in][j];
+      //fn[in] -= (vol0PK1T[ip] * wfd_np[in][j]);
     }
+    fn[in] = ftemp;
   }
 }
 
@@ -513,8 +522,9 @@ void Solid::compute_particle_acceleration()
     a[ip].setZero();
     for (int j=0; j<numneigh_pn[ip]; j++){
       in = neigh_pn[ip][j];
-      a[ip] += inv_dt * wf_pn[ip][j] * (vn_update[in] - vn[in]);
+      a[ip] += wf_pn[ip][j] * (vn_update[in] - vn[in]);
     }
+    a[ip] *= inv_dt;
     f[ip] = a[ip] / mass[ip];
   }
 }
@@ -619,39 +629,42 @@ void Solid::compute_deformation_gradient()
   Eigen::Vector3d *xn = grid->x;
   Eigen::Vector3d *x0n = grid->x0;
   Eigen::Vector3d dx;
-  Eigen::Matrix3d eye;
+  Eigen::Matrix3d Ftemp, eye;
   eye.setIdentity();
 
   if (domain->dimension == 2) {
     for (int ip=0; ip<np; ip++){
-      F[ip].setZero();
+      // F[ip].setZero();
+      Ftemp.setZero();
       for (int j=0; j<numneigh_pn[ip]; j++){
 	in = neigh_pn[ip][j];
 	dx = xn[in] - x0n[in];
-	F[ip](0,0) += dx[0]*wfd_pn[ip][j][0];
-	F[ip](0,1) += dx[0]*wfd_pn[ip][j][1];
-	F[ip](1,0) += dx[1]*wfd_pn[ip][j][0];
-	F[ip](1,1) += dx[1]*wfd_pn[ip][j][1];
+	Ftemp(0,0) += dx[0]*wfd_pn[ip][j][0];
+	Ftemp(0,1) += dx[0]*wfd_pn[ip][j][1];
+	Ftemp(1,0) += dx[1]*wfd_pn[ip][j][0];
+	Ftemp(1,1) += dx[1]*wfd_pn[ip][j][1];
       }
-      F[ip].noalias() += eye;
+      F[ip] = Ftemp + eye;
     }
   } else if (domain->dimension == 3) {
     for (int ip=0; ip<np; ip++){
-      F[ip].setZero();
+      // F[ip].setZero();
+      Ftemp.setZero();
       for (int j=0; j<numneigh_pn[ip]; j++){
 	in = neigh_pn[ip][j];
 	dx = xn[in] - x0n[in];
-	F[ip](0,0) += dx[0]*wfd_pn[ip][j][0];
-	F[ip](0,1) += dx[0]*wfd_pn[ip][j][1];
-	F[ip](0,2) += dx[0]*wfd_pn[ip][j][2];
-	F[ip](1,0) += dx[1]*wfd_pn[ip][j][0];
-	F[ip](1,1) += dx[1]*wfd_pn[ip][j][1];
-	F[ip](1,2) += dx[1]*wfd_pn[ip][j][2];
-	F[ip](2,0) += dx[2]*wfd_pn[ip][j][0];
-	F[ip](2,1) += dx[2]*wfd_pn[ip][j][1];
-	F[ip](2,2) += dx[2]*wfd_pn[ip][j][2];
+	Ftemp(0,0) += dx[0]*wfd_pn[ip][j][0];
+	Ftemp(0,1) += dx[0]*wfd_pn[ip][j][1];
+	Ftemp(0,2) += dx[0]*wfd_pn[ip][j][2];
+	Ftemp(1,0) += dx[1]*wfd_pn[ip][j][0];
+	Ftemp(1,1) += dx[1]*wfd_pn[ip][j][1];
+	Ftemp(1,2) += dx[1]*wfd_pn[ip][j][2];
+	Ftemp(2,0) += dx[2]*wfd_pn[ip][j][0];
+	Ftemp(2,1) += dx[2]*wfd_pn[ip][j][1];
+	Ftemp(2,2) += dx[2]*wfd_pn[ip][j][2];
       }
-      F[ip].noalias() += eye;
+      //F[ip].noalias() += eye;
+      F[ip] = Ftemp + eye;
 
     }
   }
@@ -922,8 +935,8 @@ void Solid::copy_particle(int i, int j) {
   v[j] = v[i];
   v_update[j] = v[i];
   a[j] = a[i];
-  b[j] = b[i];
-  f[j] = b[i];
+  mb[j] = mb[i];
+  f[j] = f[i];
   vol0[j] = vol0[i];
   vol[j]= vol[i];
   rho0[j] = rho0[i];
@@ -1177,7 +1190,7 @@ void Solid::populate(vector<string> args) {
     a[i].setZero();
     v[i].setZero();
     f[i].setZero();
-    b[i].setZero();
+    mb[i].setZero();
     v_update[i].setZero();
     vol0[i] = vol[i] = vol_;
     rho0[i] = rho[i] = mat->rho0;
