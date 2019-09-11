@@ -871,8 +871,14 @@ void Solid::update_stress()
     if (tl) vol0PK1T[ip] = vol0[ip]*PK1[ip].transpose();
   }
 
+  double min_h_ratio = 1.0e22;
   for (int ip=0; ip<np; ip++){
     min_inv_p_wave_speed = MIN(min_inv_p_wave_speed, rho[ip] / (mat->K + 4.0/3.0 * mat->G));
+
+    min_h_ratio = MIN(min_h_ratio, F[ip](0,0)*F[ip](0,0) + F[ip](0,1)*F[ip](0,1) + F[ip](0,2)*F[ip](0,2));
+    min_h_ratio = MIN(min_h_ratio, F[ip](1,0)*F[ip](1,0) + F[ip](1,1)*F[ip](1,1) + F[ip](1,2)*F[ip](1,2));
+    min_h_ratio = MIN(min_h_ratio, F[ip](2,0)*F[ip](2,0) + F[ip](2,1)*F[ip](2,1) + F[ip](2,2)*F[ip](2,2));
+
     if (std::isnan(min_inv_p_wave_speed)) {
       cout << "Error: min_inv_p_wave_speed is nan with ip=" << ip << ", rho[ip]=" << rho[ip] << ", K=" << mat->K << ", G=" << mat->G << endl;
       exit(1);
@@ -883,7 +889,7 @@ void Solid::update_stress()
 
   }
   min_inv_p_wave_speed = sqrt(min_inv_p_wave_speed);
-  dtCFL = MIN(dtCFL, min_inv_p_wave_speed * grid->cellsize);
+  dtCFL = MIN(dtCFL, min_inv_p_wave_speed * grid->cellsize * sqrt(min_h_ratio));
   if (std::isnan(dtCFL)) {
       cout << "Error: dtCFL = " << dtCFL << "\n";
       cout << "min_inv_p_wave_speed = " << min_inv_p_wave_speed << ", grid->cellsize=" << grid->cellsize << endl;
