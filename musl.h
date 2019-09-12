@@ -10,6 +10,7 @@ SchemeStyle(musl,MUSL)
 #define LMP_MUSL_H
 
 #include "scheme.h"
+#include "var.h"
 #include <vector>
 
 class MUSL : public Scheme {
@@ -17,7 +18,7 @@ class MUSL : public Scheme {
   MUSL(class MPM *, vector<string>);
   ~MUSL() {}
   void setup();
-  void run(int);
+  void run(class Var);
 };
 
 #endif

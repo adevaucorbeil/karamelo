@@ -30,6 +30,7 @@ Input::Input(MPM *mpm, int argc, char **argv) : Pointers(mpm)
   vars = new map<string, Var>;
 
   (*vars)["time"] = Var("time", 0);
+  (*vars)["timestep"] = Var("timestep", 0);
   (*vars)["dt"] = Var("dt", 0);
   (*vars)["x"] = Var("x", 0);
   (*vars)["y"] = Var("y", 0);
@@ -321,6 +322,11 @@ Var Input::parsev(string str)
 	      values.pop();
 	      ops.pop();
 	      values.push(-val1);
+	    } else if (ops.top() == "!") {
+	      Var val1 = values.top();
+	      values.pop();
+	      ops.pop();
+	      values.push(!val1);
 	    } else if (ops.top() == "+") {
 	      ops.pop();
 	    } else {
@@ -554,6 +560,11 @@ Var Input::parsev(string str)
 	values.pop();
 	ops.pop();
 	values.push(-val1);
+      } else if (ops.top() == "!") {
+	Var val1 = values.top();
+	values.pop();
+	ops.pop();
+	values.push(!val1);
       } else if (ops.top() == "+") {
 	ops.pop();
       } else {

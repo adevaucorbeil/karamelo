@@ -1,5 +1,7 @@
 #include "run.h"
 #include "run_time.h"
+#include "run_while.h"
+#include "run_until.h"
 #include "centre_of_mass.h"
 #include "internal_force.h"
 #include "external_force.h"

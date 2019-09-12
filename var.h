@@ -32,6 +32,7 @@ class Var{
   Var operator<=(const Var&);
   Var operator==(const Var&);
   Var operator!=(const Var&);
+  Var operator!();
   //Var operator=(const Var&);
   operator int() {return (int) value;};
   operator double() {return value;};
