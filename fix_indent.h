@@ -31,7 +31,7 @@ class FixIndent : public Fix {
 
 private:
   string type; // sphere
-  class Var Kvalue, xvalue, yvalue, zvalue, Rvalue; // Values for K, the position of the sphere, and its radius
+  int Kpos, xpos, ypos, zpos, Rpos; // Positions of K, the position of the sphere, and its radius in the argument list (args)
 };
 
 #endif

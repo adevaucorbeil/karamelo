@@ -54,6 +54,7 @@ private:
   int set_dt(vector<string>);
   class Var value(vector<string>);
   int plot(vector<string>);
+  int print(vector<string>);
 
   bool protected_variable(string);
 

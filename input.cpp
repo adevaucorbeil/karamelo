@@ -35,7 +35,7 @@ Input::Input(MPM *mpm, int argc, char **argv) : Pointers(mpm)
   (*vars)["x"] = Var("x", 0);
   (*vars)["y"] = Var("y", 0);
   (*vars)["z"] = Var("z", 0);
-  (*vars)["PI"] = Var("PI", M_PI);
+  (*vars)["PI"] = Var(M_PI);
 
 
   // fill map with commands listed in style_command.h
@@ -225,7 +225,8 @@ Var Input::evaluate_function(string func, string arg){
   else if (func.compare("tan") == 0) return tanv(parsev(arg));
   else if (func.compare("atan2") == 0) return atan2v(parsev(args[0]),parsev(args[1]));
   else if (func.compare("log") == 0) return logv(parsev(arg));
-  else if (func.compare("evaluate") == 0) return parsev(arg).result(mpm);
+  else if (func.compare("evaluate") == 0) return Var(parsev(arg).result(mpm));
+  else if (func.compare("print") == 0) return Var(print(args));
   cout << "Error: Unknown function " << func << endl;
   exit(1);
 }
@@ -756,6 +757,28 @@ Var Input::value(vector<string> args){
 
 int Input::plot(vector<string> args){
   output->add_plot(args);
+  return 0;
+}
+
+int Input::print(vector<string> args){
+  if (args.size() < 1) {
+    cout << "Error: too few arguments for command value()" << endl;
+    exit(1);
+  } else if (args.size() > 1) {
+    cout << "Error: too many arguments for command value()" << endl;
+    exit(1);
+  }
+  Var v = parsev(args[0]);
+  cout << args[0] <<
+    " = {equation=\"" << v.eq() <<
+    "\", value=" << v.result(mpm) <<
+    ", constant=";
+
+  if(v.is_constant()) cout << "true";
+  else cout << "false";
+
+  cout << "}\n";
+
   return 0;
 }
 /* ----------------------------------------------------------------------

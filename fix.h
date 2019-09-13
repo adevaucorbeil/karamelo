@@ -11,6 +11,7 @@ class Fix : protected Pointers {
   string id;
   int igroup, groupbit;
   int mask;
+  vector<string> args; // Store arguments
 
   Fix(class MPM *, vector<string>);
   virtual ~Fix() {};

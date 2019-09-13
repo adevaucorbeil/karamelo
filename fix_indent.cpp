@@ -33,11 +33,11 @@ FixIndent::FixIndent(MPM *mpm, vector<string> args) : Fix(mpm, args)
     exit(1);
   }
 
-  Kvalue = input->parsev(args[4]);
-  xvalue = input->parsev(args[5]);
-  yvalue = input->parsev(args[6]);
-  zvalue = input->parsev(args[7]);
-  Rvalue = input->parsev(args[8]);
+  Kpos = 4;
+  xpos = 5;
+  ypos = 6;
+  zpos = 7;
+  Rpos = 8;
 }
 
 FixIndent::~FixIndent()
@@ -73,9 +73,11 @@ void FixIndent::initial_integrate() {
   Eigen::Vector3d *x;
   Eigen::Vector3d *mb;
 
-  double K = Kvalue.result(mpm);
-  double R = Rvalue.result(mpm);
-  Eigen::Vector3d xs(xvalue.result(mpm), yvalue.result(mpm), zvalue.result(mpm));
+  double K = input->parsev(args[Kpos]).result(mpm);
+  double R = input->parsev(args[Rpos]).result(mpm);
+  Eigen::Vector3d xs(input->parsev(args[xpos]).result(mpm),
+		     input->parsev(args[ypos]).result(mpm),
+		     input->parsev(args[zpos]).result(mpm));
   Eigen::Vector3d xsp;
 
   double r, dr, fmag;
