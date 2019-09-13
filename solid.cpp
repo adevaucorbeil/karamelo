@@ -1023,7 +1023,7 @@ void Solid::populate(vector<string> args) {
   if (grid->nnodes == 0) {
     // The grid will be ajusted to the solid's domain (good for TLMPM),
     // so all particles created will lie in the region:
-    checkIfInRegion = false;
+    checkIfInRegion = true;
 
     // and we need to create the corresponding grid:
     grid->init(solidlo, solidhi);
