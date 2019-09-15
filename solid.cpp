@@ -40,7 +40,7 @@ Solid::Solid(MPM *mpm, vector<string> args) :
 
   a = NULL;
 
-  sigma = strain_el = PK1 = vol0PK1T = L = F = R = U = D = Finv = Fdot = Di = NULL;
+  sigma = strain_el = PK1 = vol0PK1 = L = F = R = U = D = Finv = Fdot = Di = NULL;
 
   mb = f = NULL;
 
@@ -89,7 +89,7 @@ Solid::~Solid()
   if (sigma!=NULL) delete sigma;
   if (strain_el!=NULL) delete strain_el;
   if (PK1!=NULL) delete PK1;
-  if (vol0PK1T!=NULL) delete vol0PK1T;
+  if (vol0PK1!=NULL) delete vol0PK1;
   if (L!=NULL) delete L;
   if (F!=NULL) delete F;
   if (R!=NULL) delete R;
@@ -273,9 +273,9 @@ void Solid::grow(int nparticles){
     exit(1);
   }
 
-  if (vol0PK1T == NULL) vol0PK1T = new Eigen::Matrix3d[np];
+  if (vol0PK1 == NULL) vol0PK1 = new Eigen::Matrix3d[np];
   else {
-    cout << "Error: vol0PK1T already exists, I don't know how to grow it!\n";
+    cout << "Error: vol0PK1 already exists, I don't know how to grow it!\n";
     exit(1);
   }
 
@@ -473,8 +473,8 @@ void Solid::compute_internal_forces_nodes_TL()
     ftemp.setZero();
     for (int j=0; j<numneigh_np[in];j++){
       ip = neigh_np[in][j];
-      ftemp -= vol0PK1T[ip] * wfd_np[in][j];
-      //fn[in] -= (vol0PK1T[ip] * wfd_np[in][j]);
+      ftemp -= vol0PK1[ip] * wfd_np[in][j];
+      //fn[in] -= (vol0PK1[ip] * wfd_np[in][j]);
     }
     fn[in] = ftemp;
   }
@@ -868,7 +868,7 @@ void Solid::update_stress()
       }
     }
 
-    if (tl) vol0PK1T[ip] = vol0[ip]*PK1[ip].transpose();
+    if (tl) vol0PK1[ip] = vol0[ip]*PK1[ip];
   }
 
   double min_h_ratio = 1.0e22;
@@ -1234,7 +1234,7 @@ void Solid::populate(vector<string> args) {
     strain_el[i].setZero();
     sigma[i].setZero();
     PK1[i].setZero();
-    vol0PK1T[i].setZero();
+    vol0PK1[i].setZero();
     L[i].setZero();
     F[i].setIdentity();
     R[i].setIdentity();
