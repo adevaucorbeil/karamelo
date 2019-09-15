@@ -7,10 +7,11 @@
 using namespace std;
 
 
-Fix::Fix(MPM *mpm, vector<string> args) :
+Fix::Fix(MPM *mpm, vector<string> args_) :
   Pointers(mpm)
 {
   mask = 0;
+  args = args_;
   cout << "Creating new fix with ID: " << args[0] << endl;
   id = args[0];
 

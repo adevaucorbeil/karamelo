@@ -391,7 +391,6 @@ void ULMPM::update_stress()
 
 void ULMPM::adjust_dt()
 {
-  update->update_time();
   if (update->dt_constant) return; // dt is set as a constant, do not update
 
 

@@ -128,6 +128,84 @@ Var Var::operator^(const Var& right)
   }
 }
 
+Var Var::operator>(const Var& right)
+{
+  if (this->constant && right.constant) {
+    Var result(this->value > right.value);
+    return result;
+  } else {
+    Var result("(" + this->str() + ">" + right.str() + ")", this->value > right.value, false);
+    return result;
+  }
+}
+
+Var Var::operator>=(const Var& right)
+{
+  if (this->constant && right.constant) {
+    Var result(this->value >= right.value);
+    return result;
+  } else {
+    Var result("(" + this->str() + ">=" + right.str() + ")", this->value >= right.value, false);
+    return result;
+  }
+}
+
+Var Var::operator<(const Var& right)
+{
+  if (this->constant && right.constant) {
+    Var result(this->value < right.value);
+    return result;
+  } else {
+    Var result("(" + this->str() + "<" + right.str() + ")", this->value < right.value, false);
+    return result;
+  }
+}
+
+Var Var::operator<=(const Var& right)
+{
+  if (this->constant && right.constant) {
+    Var result(this->value <= right.value);
+    return result;
+  } else {
+    Var result("(" + this->str() + "<=" + right.str() + ")", this->value <= right.value, false);
+    return result;
+  }
+}
+
+Var Var::operator==(const Var& right)
+{
+  if (this->constant && right.constant) {
+    Var result(this->value == right.value);
+    return result;
+  } else {
+    Var result("(" + this->str() + "==" + right.str() + ")", this->value == right.value, false);
+    return result;
+  }
+}
+
+Var Var::operator!=(const Var& right)
+{
+  if (this->constant && right.constant) {
+    Var result(this->value != right.value);
+    return result;
+  } else {
+    Var result("(" + this->str() + "!=" + right.str() + ")", this->value != right.value, false);
+    return result;
+  }
+}
+
+Var Var::operator!()
+{
+  if (this->constant) {
+    Var result(!this->value);
+    return result;
+  } else {
+    Var result("(!" + this->str() + ")", !this->value, this->constant);
+    return result;
+  }
+}
+
+
 Var powv(int base, Var p){
   if (p.is_constant()) {
     Var result(pow(base, p.result()));

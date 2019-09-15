@@ -10,7 +10,7 @@ class Scheme : protected Pointers {
   Scheme(class MPM *);
   virtual ~Scheme();
   virtual void setup() = 0;
-  virtual void run(int) = 0;
+  virtual void run(class Var) = 0;
 };
 
 #endif
