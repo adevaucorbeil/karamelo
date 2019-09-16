@@ -625,7 +625,7 @@ int Input::dimension(vector<string> args){
   int dim = (int) parsev(args[0]);
 
 
-  if (dim != 2 && dim != 3) {
+  if (dim!=1 &&dim != 2 && dim != 3) {
     cout << "Error: dimension argument: " << dim << endl;
     exit(1);
   }
@@ -634,7 +634,21 @@ int Input::dimension(vector<string> args){
   cout << "Set dimension to " << dim << endl;
 
   if (args.size() > 1) {
-    if (dim == 2) {
+    if (dim ==1) {
+      if (args.size() > 4) {
+	cout << "Error: dimension received too many arguments: 6 maximum for 2D simulations (Dimension, domain xmin, domain xmax, cell size)" << endl;
+	exit(1);
+      } else if (args.size() == 4) {
+	domain->boxlo[0] = (double) parsev(args[1]);
+	domain->boxhi[0] = (double) parsev(args[2]);
+	domain->grid->cellsize = (double) parsev(args[4]);
+	if (domain->grid->cellsize < 0) {
+	  cout << "Error: cellsize negative! You gave: " << domain->grid->cellsize << endl;
+	  exit(1);
+	}
+	domain->grid->init(domain->boxlo, domain->boxhi);
+      }
+    } else if (dim == 2) {
       if (args.size() > 6) {
 	cout << "Error: dimension received too many arguments: 6 maximum for 2D simulations (Dimension, domain xmin, domain xmax, domain ymin, domain ymax, cell size)" << endl;
 	exit(1);

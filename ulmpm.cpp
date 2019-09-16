@@ -256,7 +256,8 @@ void ULMPM::compute_grid_weight_functions_and_gradients()
 	    r = (xp[ip] - xn[in]) * inv_cellsize;
 
 	    s[0] = basis_function(r[0], ntype[in][0]);
-	    s[1] = basis_function(r[1], ntype[in][1]);
+	    if (domain->dimension >= 2) s[1] = basis_function(r[1], ntype[in][1]);
+	    else s[1] = 1;
 	    if (domain->dimension == 3) s[2] = basis_function(r[2], ntype[in][2]);
 	    else s[2] = 1;
 
@@ -272,7 +273,7 @@ void ULMPM::compute_grid_weight_functions_and_gradients()
 	      // }
 
 	      sd[0] = derivative_basis_function(r[0], ntype[in][0], inv_cellsize);
-	      sd[1] = derivative_basis_function(r[1], ntype[in][1], inv_cellsize);
+	      if (domain->dimension >= 2) sd[1] = derivative_basis_function(r[1], ntype[in][1], inv_cellsize);
 	      if (domain->dimension == 3) sd[2] = derivative_basis_function(r[2], ntype[in][2], inv_cellsize);
 
 	      neigh_pn[ip].push_back(in);
@@ -280,13 +281,20 @@ void ULMPM::compute_grid_weight_functions_and_gradients()
 	      numneigh_pn[ip]++;
 	      numneigh_np[in]++;
 
+	      if (domain->dimension == 1) wf = s[0];
 	      if (domain->dimension == 2) wf = s[0]*s[1];
 	      if (domain->dimension == 3) wf = s[0]*s[1]*s[2];
 
 	      wf_pn[ip].push_back(wf);
 	      wf_np[in].push_back(wf);
 
-	      if (domain->dimension == 2)
+	      if (domain->dimension == 1)
+		{
+		  wfd[0] = sd[0];
+		  wfd[1] = 0;
+		  wfd[2] = 0;
+		}
+	      else if (domain->dimension == 2)
 		{
 		  wfd[0] = sd[0]*s[1];
 		  wfd[1] = s[0]*sd[1];

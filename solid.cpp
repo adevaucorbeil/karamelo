@@ -542,7 +542,15 @@ void Solid::compute_rate_deformation_gradient_TL()
   int in;
   Eigen::Vector3d *vn = grid->v;
 
-  if (domain->dimension == 2) {
+  if (domain->dimension == 1) {
+    for (int ip=0; ip<np; ip++){
+      Fdot[ip].setZero();
+      for (int j=0; j<numneigh_pn[ip]; j++){
+	in = neigh_pn[ip][j];
+	Fdot[ip](0,0) += vn[in][0]*wfd_pn[ip][j][0];
+      }
+    }
+  } else if (domain->dimension == 2) {
     for (int ip=0; ip<np; ip++){
       Fdot[ip].setZero();
       for (int j=0; j<numneigh_pn[ip]; j++){
@@ -577,7 +585,15 @@ void Solid::compute_rate_deformation_gradient_UL()
   int in;
   Eigen::Vector3d *vn = grid->v;
 
-  if (domain->dimension == 2) {
+  if (domain->dimension == 1) {
+    for (int ip=0; ip<np; ip++){
+      L[ip].setZero();
+      for (int j=0; j<numneigh_pn[ip]; j++){
+	in = neigh_pn[ip][j];
+	L[ip](0,0) += vn[in][0]*wfd_pn[ip][j][0];
+      }
+    }
+  } else if (domain->dimension == 2) {
     for (int ip=0; ip<np; ip++){
       L[ip].setZero();
       for (int j=0; j<numneigh_pn[ip]; j++){
@@ -616,7 +632,18 @@ void Solid::compute_deformation_gradient()
   Eigen::Matrix3d Ftemp, eye;
   eye.setIdentity();
 
-  if (domain->dimension == 2) {
+  if (domain->dimension == 1) {
+    for (int ip=0; ip<np; ip++){
+      // F[ip].setZero();
+      Ftemp.setZero();
+      for (int j=0; j<numneigh_pn[ip]; j++){
+	in = neigh_pn[ip][j];
+	dx = xn[in] - x0n[in];
+	Ftemp(0,0) += dx[0]*wfd_pn[ip][j][0];
+      }
+      F[ip](0,0) = Ftemp(0,0) +1;
+    }
+  } else if (domain->dimension == 2) {
     for (int ip=0; ip<np; ip++){
       // F[ip].setZero();
       Ftemp.setZero();
@@ -663,7 +690,17 @@ void Solid::compute_rate_deformation_gradient_TL_APIC()
   Eigen::Vector3d *vn = grid->v_update;
   Eigen::Vector3d dx;
 
-  if (domain->dimension == 2) {
+  if (domain->dimension == 1) {
+    for (int ip=0; ip<np; ip++){
+      Fdot[ip].setZero();
+      for (int j=0; j<numneigh_pn[ip]; j++){
+	in = neigh_pn[ip][j];
+	dx = x0n[in] - x0[ip];
+	Fdot[ip](0,0) += vn[in][0]*dx[0]*wf_pn[ip][j];
+      }
+      Fdot[ip] *= Di[ip];
+    }
+  } else if (domain->dimension == 2) {
     for (int ip=0; ip<np; ip++){
       Fdot[ip].setZero();
       for (int j=0; j<numneigh_pn[ip]; j++){
@@ -705,7 +742,17 @@ void Solid::compute_rate_deformation_gradient_UL_APIC()
   Eigen::Vector3d *vn = grid->v_update;
   Eigen::Vector3d dx;
 
-  if (domain->dimension == 2) {
+  if (domain->dimension == 1) {
+    for (int ip=0; ip<np; ip++){
+      L[ip].setZero();
+      for (int j=0; j<numneigh_pn[ip]; j++){
+	in = neigh_pn[ip][j];
+	dx = x0n[in] - x0[ip];
+	L[ip](0,0) += vn[in][0]*dx[0]*wf_pn[ip][j];
+      }
+      L[ip] *= Di[ip];
+    }
+  } else if (domain->dimension == 2) {
     for (int ip=0; ip<np; ip++){
       L[ip].setZero();
       for (int j=0; j<numneigh_pn[ip]; j++){
@@ -1006,24 +1053,28 @@ void Solid::populate(vector<string> args) {
     grid->init(solidlo, solidhi);
 
     Lx = solidhi[0]-solidlo[0];
-    Ly = solidhi[1]-solidlo[1];
-
+    if (domain->dimension >= 2) Ly = solidhi[1]-solidlo[1];
     if (domain->dimension == 3) Lz = solidhi[2]-solidlo[2];
+
   } else {
     // The grid is most likely bigger than the solid's domain (good for ULMPM),
     // so all particles created won't lie in the region, they will need to be checked:
     checkIfInRegion = true;
 
     Lx = domain->boxhi[0] - domain->boxlo[0];
-    Ly = domain->boxhi[1] - domain->boxlo[1];
+    if (domain->dimension >= 2) Ly = domain->boxhi[1] - domain->boxlo[1];
     if (domain->dimension == 3) Lz = domain->boxhi[2] - domain->boxlo[2];
   }
 
   nx = ((int) Lx/delta);
-  ny = ((int) Ly/delta);
-
   while (nx*delta <= Lx-0.5*delta) nx++;
-  while (ny*delta <= Ly-0.5*delta) ny++;
+
+  if (domain->dimension >= 2) {
+    ny = ((int) Ly/delta);
+    while (ny*delta <= Ly-0.5*delta) ny++;
+  } else {
+    ny = 1;
+  }
 
   if (domain->dimension == 3) {
     nz = ((int) Lz/delta);
@@ -1042,8 +1093,10 @@ void Solid::populate(vector<string> args) {
 
   int l=0;
   double vol_;
-  if (domain->dimension == 3) vol_ = delta*delta*delta;
-  else vol_ = delta*delta;
+
+  if (domain->dimension == 1) vol_ = delta;
+  else if (domain->dimension == 2) vol_ = delta*delta;
+  else vol_ = delta*delta*delta;
 
   double mass_ = mat->rho0 * vol_;
 
@@ -1060,12 +1113,14 @@ void Solid::populate(vector<string> args) {
 	for (int k=0; k<nz; k++){
 	  if (checkIfInRegion) {
 	    x0[l][0] = x[l][0] = domain->boxlo[0] + delta*(i+0.5);
-	    x0[l][1] = x[l][1] = domain->boxlo[1] + delta*(j+0.5);
+	    if (domain->dimension >= 2) x0[l][1] = x[l][1] = domain->boxlo[1] + delta*(j+0.5);
+	    else x0[l][1] = x[l][1] = 0;
 	    if (domain->dimension == 3) x0[l][2] = x[l][2] = domain->boxlo[2] + delta*(k+0.5);
 	    else x0[l][2] = x[l][2] = 0;
 	  } else {
 	    x0[l][0] = x[l][0] = solidlo[0] + delta*(i+0.5);
-	    x0[l][1] = x[l][1] = solidlo[1] + delta*(j+0.5);
+	    if (domain->dimension >= 2) x0[l][1] = x[l][1] = solidlo[1] + delta*(j+0.5);
+	    else x0[l][1] = x[l][1] = 0;
 	    if (domain->dimension == 3) x0[l][2] = x[l][2] = solidlo[2] + delta*(k+0.5);
 	    else x0[l][2] = x[l][2] = 0;
 
@@ -1104,12 +1159,14 @@ void Solid::populate(vector<string> args) {
   	  for (int ip=0; ip<8; ip++) {
 	    if (checkIfInRegion) {
 	      x0[l][0] = x[l][0] = domain->boxlo[0] + delta*(i+0.5+intpoints[ip][0]);
-	      x0[l][1] = x[l][1] = domain->boxlo[1] + delta*(j+0.5+intpoints[ip][1]);
+	      if (domain->dimension >= 2) x0[l][1] = x[l][1] = domain->boxlo[1] + delta*(j+0.5+intpoints[ip][1]);
+	      else x0[l][1] = x[l][1];
 	      if (domain->dimension == 3) x0[l][2] = x[l][2] = domain->boxlo[2] + delta*(k+0.5+intpoints[ip][2]);
 	      else x0[l][2] = x[l][2] = 0;
 	    } else {
 	      x0[l][0] = x[l][0] = solidlo[0] + delta*(i+0.5+intpoints[ip][0]);
-	      x0[l][1] = x[l][1] = solidlo[1] + delta*(j+0.5+intpoints[ip][1]);
+	      if (domain->dimension >= 2) x0[l][1] = x[l][1] = solidlo[1] + delta*(j+0.5+intpoints[ip][1]);
+	      else x0[l][1] = x[l][1];
 	      if (domain->dimension == 3) x0[l][2] = x[l][2] = solidlo[2] + delta*(k+0.5+intpoints[ip][2]);
 	      else x0[l][2] = x[l][2] = 0;
 
@@ -1168,12 +1225,14 @@ void Solid::populate(vector<string> args) {
 	  for (int ip=0; ip<27; ip++) {
 	    if (checkIfInRegion) {
 	      x0[l][0] = x[l][0] = domain->boxlo[0] + delta*(i+0.5+intpoints[ip][0]);
-	      x0[l][1] = x[l][1] = domain->boxlo[1] + delta*(j+0.5+intpoints[ip][1]);
+	      if (domain->dimension >= 2) x0[l][1] = x[l][1] = domain->boxlo[1] + delta*(j+0.5+intpoints[ip][1]);
+	      else x0[l][1] = x[l][1] = 0;
 	      if (domain->dimension == 3) x0[l][2] = x[l][2] = domain->boxlo[2] + delta*(k+0.5+intpoints[ip][2]);
 	      else x0[l][2] = x[l][2] = 0;
 	    } else {
 	      x0[l][0] = x[l][0] = solidlo[0] + delta*(i+0.5+intpoints[ip][0]);
-	      x0[l][1] = x[l][1] = solidlo[1] + delta*(j+0.5+intpoints[ip][1]);
+	      if (domain->dimension >= 2) x0[l][1] = x[l][1] = solidlo[1] + delta*(j+0.5+intpoints[ip][1]);
+	      else x0[l][1] = x[l][1] = 0;
 	      if (domain->dimension == 3) x0[l][2] = x[l][2] = solidlo[2] + delta*(k+0.5+intpoints[ip][2]);
 	      else x0[l][2] = x[l][2] = 0;
 
