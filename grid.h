@@ -20,7 +20,7 @@ class Grid : protected Pointers {
   int nz;                // number of particles along z
   double cellsize;       // size of the square cells forming the grid
 
-  Eigen::Vector3d *C;            // connectivity matrix
+  // Eigen::Vector3d *C;            // connectivity matrix
   Eigen::Vector3d *x;            // nodes' current position
   Eigen::Vector3d *x0;           // nodes' reference position
   Eigen::Vector3d *v;            // nodes' velocity at time t
@@ -28,11 +28,11 @@ class Grid : protected Pointers {
   Eigen::Vector3d *mb;           // nodes' external forces times the mass
   Eigen::Vector3d *f;            // nodes' internal forces
 
-  Eigen::Matrix3d *R;            // nodes' rotation matrix
+  // Eigen::Matrix3d *R;            // nodes' rotation matrix
 
   double *mass;              // nodes' current mass
   int *mask;                 // nodes' group mask
-  int **ntype;              // node type in x, y, and z directions (False for an edge, True otherwise)
+  int **ntype;               // node type in x, y, and z directions (False for an edge, True otherwise)
 
   Grid(class MPM *);
   virtual ~Grid();

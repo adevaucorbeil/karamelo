@@ -24,9 +24,9 @@ Grid::Grid(MPM *mpm) :
   mask = NULL;
   ntype = NULL;
 
-  R = NULL;
+  // R = NULL;
 
-  C = NULL;
+  // C = NULL;
 
   cellsize = 0;
   nnodes = 0;
@@ -43,8 +43,8 @@ Grid::~Grid()
   memory->destroy(mass);
   memory->destroy(mask);
   memory->destroy(ntype);
-  memory->destroy(R);
-  memory->destroy(C);
+  // memory->destroy(R);
+  // memory->destroy(C);
 }
 
 void Grid::init(double *solidlo, double *solidhi){
@@ -104,7 +104,7 @@ void Grid::init(double *solidlo, double *solidhi){
 	f[l].setZero();
 	mb[l].setZero();
 	mass[l] = 0;
-	R[l].setIdentity();
+	// R[l].setIdentity();
 
 	l++;
       }
@@ -158,17 +158,17 @@ void Grid::grow(int nn){
     exit(1);
   }
 
-  if (R == NULL) R = new Eigen::Matrix3d[nn];
-  else {
-    cout << "Error in Grid::grow(): R already exists, I don't know how to grow it!\n";
-    exit(1);
-  }
+  // if (R == NULL) R = new Eigen::Matrix3d[nn];
+  // else {
+  //   cout << "Error in Grid::grow(): R already exists, I don't know how to grow it!\n";
+  //   exit(1);
+  // }
 
-  if (C == NULL) C = new Eigen::Vector3d[nn];
-  else {
-    cout << "Error in Grid::grow(): C already exists, I don't know how to grow it!\n";
-    exit(1);
-  }
+  // if (C == NULL) C = new Eigen::Vector3d[nn];
+  // else {
+  //   cout << "Error in Grid::grow(): C already exists, I don't know how to grow it!\n";
+  //   exit(1);
+  // }
 
   string str = "grid-mass";
   cout << "Growing " << str << endl;

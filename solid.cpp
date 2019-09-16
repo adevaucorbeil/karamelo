@@ -375,21 +375,6 @@ void Solid::grow(int nparticles){
   J = memory->grow(J, np, str);
 }
 
-void Solid::compute_node_rotation_matrix(bool reset)
-{
-  int ip;
-
-  for (int in=0; in<grid->nnodes; in++){
-    if (reset) grid->R[in].setZero();
-
-    for (int j=0; j<numneigh_np[in];j++){
-      ip = neigh_np[in][j];
-      grid->R[in] += (wf_np[in][j] * mass[ip]) * R[ip]/grid->mass[in];
-    }
-  }
-  return;
-}
-
 void Solid::compute_mass_nodes(bool reset)
 {
   int ip;
