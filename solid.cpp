@@ -40,7 +40,7 @@ Solid::Solid(MPM *mpm, vector<string> args) :
 
   a = NULL;
 
-  sigma = strain_el = PK1 = vol0PK1 = L = F = R = U = D = Finv = Fdot = Di = NULL;
+  sigma = strain_el = vol0PK1 = L = F = R = U = D = Finv = Fdot = Di = NULL;
 
   mb = f = NULL;
 
@@ -88,7 +88,6 @@ Solid::~Solid()
   if (f!=NULL) delete f;
   if (sigma!=NULL) delete sigma;
   if (strain_el!=NULL) delete strain_el;
-  if (PK1!=NULL) delete PK1;
   if (vol0PK1!=NULL) delete vol0PK1;
   if (L!=NULL) delete L;
   if (F!=NULL) delete F;
@@ -264,12 +263,6 @@ void Solid::grow(int nparticles){
   if (strain_el == NULL) strain_el = new Eigen::Matrix3d[np];
   else {
     cout << "Error: strain_el already exists, I don't know how to grow it!\n";
-    exit(1);
-  }
-
-  if (PK1 == NULL) PK1 = new Eigen::Matrix3d[np];
-  else {
-    cout << "Error: PK1 already exists, I don't know how to grow it!\n";
     exit(1);
   }
 
@@ -804,7 +797,7 @@ void Solid::update_stress()
 {
   min_inv_p_wave_speed = 1.0e22;
   double pH, plastic_strain_increment;
-  Matrix3d eye, sigma_dev, FinvT;
+  Matrix3d eye, sigma_dev, FinvT, PK1;
   bool tl, nh;
 
   if ((mat->eos!=NULL) && (mat->strength!=NULL)) nh = false;
@@ -821,8 +814,9 @@ void Solid::update_stress()
 
       // Neo-Hookean material:
       FinvT = Finv[ip].transpose();
-      PK1[ip] = mat->G*(F[ip] - FinvT) + mat->lambda*log(J[ip])*FinvT;
-      sigma[ip] = 1.0/J[ip]*(F[ip]*PK1[ip].transpose());
+      PK1 = mat->G*(F[ip] - FinvT) + mat->lambda*log(J[ip])*FinvT;
+      vol0PK1[ip] = vol0[ip]*PK1;
+      sigma[ip] = 1.0/J[ip]*(F[ip]*PK1.transpose());
       strain_el[ip] = 0.5*(F[ip].transpose()*F[ip] - eye);//update->dt * D[ip];
 
     } else {
@@ -849,11 +843,9 @@ void Solid::update_stress()
       }
 
       if (tl) {
-	PK1[ip] = J[ip] * (R[ip] * sigma[ip] * R[ip].transpose()) * Finv[ip].transpose();
+	vol0PK1[ip] = vol0[ip]*J[ip] * (R[ip] * sigma[ip] * R[ip].transpose()) * Finv[ip].transpose();
       }
     }
-
-    if (tl) vol0PK1[ip] = vol0[ip]*PK1[ip];
   }
 
   double min_h_ratio = 1.0e22;
@@ -964,7 +956,7 @@ void Solid::copy_particle(int i, int j) {
   damage[j] = damage[i];
   damage_init[j] = damage_init[i];
   sigma[j] = sigma[i];
-  PK1[j] = PK1[i];
+  vol0PK1[j] = vol0PK1[i];
   L[j] = L[i];
   F[j] = F[i];
   R[j] = R[i];
@@ -1218,7 +1210,6 @@ void Solid::populate(vector<string> args) {
     damage_init[i] = 0;
     strain_el[i].setZero();
     sigma[i].setZero();
-    PK1[i].setZero();
     vol0PK1[i].setZero();
     L[i].setZero();
     F[i].setIdentity();
