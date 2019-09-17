@@ -130,6 +130,7 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
 
       int **ntype = domain->solids[isolid]->grid->ntype;
 
+      r.setZero();
       if (np && nnodes) {
 	for (int ip=0; ip<np; ip++) {
 	  // Calculate what nodes particle ip will interact with:
@@ -145,14 +146,23 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
 	    int k0 = (int) ((xp[ip][2] - domain->solids[isolid]->solidlo[2])*inv_cellsize);
 
 	    for(int i=i0; i<i0+2;i++){
-	      for(int j=j0; j<j0+2;j++){
-		if (nz>1){
-		  for(int k=k0; k<k0+2;k++){
-		    n_neigh.push_back(nz*ny*i+nz*j+k);
+	      if (ny>1){
+		for(int j=j0; j<j0+2;j++){
+		  if (nz>1){
+		    for(int k=k0; k<k0+2;k++){
+		      int n = nz*ny*i+nz*j+k;
+		      if (n < nnodes)
+			n_neigh.push_back(n);
+		    }
+		  } else {
+		    int n = ny*i+j;
+		    if (n < nnodes)
+		      n_neigh.push_back(n);
 		  }
-		} else {
-		  n_neigh.push_back(ny*i+j);
 		}
+	      } else {
+		if (i < nnodes)
+		  n_neigh.push_back(i);
 	      }
 	    }
 	  } else if (update->method_shape_function.compare("Bernstein-quadratic")==0){
@@ -167,22 +177,31 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
 	    // cout << "(" << i0 << "," << j0 << "," << k0 << ")\t";
 
 	    for(int i=i0; i<i0+3;i++){
-	      for(int j=j0; j<j0+3;j++){
-		if (nz>1){
-		  for(int k=k0; k<k0+3;k++){
-		    n_neigh.push_back(nz*ny*i+nz*j+k);
-		    // if (nz*ny*i+nz*j+k >= nnodes) {
-		    //   cout << "Error: " << nz*ny*i+nz*j+k << " >= nnodes=" << nnodes << endl ;
+	      if (ny>1){
+		for(int j=j0; j<j0+3;j++){
+		  if (nz>1){
+		    for(int k=k0; k<k0+3;k++){
+		      int n = nz*ny*i+nz*j+k;
+		      if (n < nnodes)
+			n_neigh.push_back(n);
+		      // if (nz*ny*i+nz*j+k >= nnodes) {
+		      //   cout << "Error: " << nz*ny*i+nz*j+k << " >= nnodes=" << nnodes << endl ;
+		      //   exit(1);
+		      // }
+		    }
+		  } else {
+		    int n = ny*i+j;
+		    if (n < nnodes)
+			n_neigh.push_back(n);
+		    // if (ny*i+j >= nnodes) {
+		    //   cout << "Error: " << ny*i+j << " >= nnodes=" << nnodes << endl ;
 		    //   exit(1);
 		    // }
 		  }
-		} else {
-		  n_neigh.push_back(ny*i+j);
-		  // if (ny*i+j >= nnodes) {
-		  //   cout << "Error: " << ny*i+j << " >= nnodes=" << nnodes << endl ;
-		  //   exit(1);
-		  // }
 		}
+	      } else {
+		if (i < nnodes)
+		  n_neigh.push_back(i);
 	      }
 	    }
 	  } else if (update->method_shape_function.compare("cubic-spline")==0){
@@ -193,18 +212,23 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
 	    // cout << "(" << i0 << "," << j0 << "," << k0 << ")\t";
 
 	    for(int i=i0; i<i0+4;i++){
-	      for(int j=j0; j<j0+4;j++){
-		if (nz>1){
-		  for(int k=k0; k<k0+4;k++){
-		    int n = nz*ny*i+nz*j+k;
+	      if (ny>1) {
+		for(int j=j0; j<j0+4;j++){
+		  if (nz>1){
+		    for(int k=k0; k<k0+4;k++){
+		      int n = nz*ny*i+nz*j+k;
+		      if (n < nnodes)
+			n_neigh.push_back(n);
+		    }
+		  } else {
+		    int n = ny*i+j;
 		    if (n < nnodes)
 		      n_neigh.push_back(n);
 		  }
-		} else {
-		  int n = ny*i+j;
-		    if (n < nnodes)
-		      n_neigh.push_back(n);
 		}
+	      } else {
+		if (i < nnodes)
+		  n_neigh.push_back(i);
 	      }
 	    }
 	  } else {
