@@ -896,8 +896,9 @@ void Solid::update_stress()
   }
 
   double min_h_ratio = 1.0e22;
+  double four_third = 1.333333333333333333333333333333333333333;
   for (int ip=0; ip<np; ip++){
-    min_inv_p_wave_speed = MIN(min_inv_p_wave_speed, rho[ip] / (mat->K + 4.0/3.0 * mat->G));
+    min_inv_p_wave_speed = MIN(min_inv_p_wave_speed, rho[ip] / (mat->K + four_third * mat->G));
 
     min_h_ratio = MIN(min_h_ratio, F[ip](0,0)*F[ip](0,0) + F[ip](0,1)*F[ip](0,1) + F[ip](0,2)*F[ip](0,2));
     min_h_ratio = MIN(min_h_ratio, F[ip](1,0)*F[ip](1,0) + F[ip](1,1)*F[ip](1,1) + F[ip](1,2)*F[ip](1,2));

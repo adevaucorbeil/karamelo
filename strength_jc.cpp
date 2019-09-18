@@ -11,6 +11,7 @@ using namespace std;
 using namespace Eigen;
 using namespace MPM_Math;
 
+#define SQRT_3_OVER_2 1.224744871 // sqrt(3.0/2.0)
 
 StrengthJohnsonCook::StrengthJohnsonCook(MPM *mpm, vector<string> args) : Strength(mpm, args)
 {
@@ -54,14 +55,25 @@ Matrix3d StrengthJohnsonCook::update_deviatoric_stress(const Matrix3d sigma, con
 
   double epsdot_ratio = epsdot / epsdot0;
   epsdot_ratio = MAX(epsdot_ratio, 1.0);
-	
-  yieldStress = (A + B * pow(eff_plastic_strain, n)) * pow(1.0 + epsdot_ratio, C) * (1.0 - damage); // * (1.0 - pow(TH, M));
+
+  if (eff_plastic_strain < 1.0e-10) {
+    yieldStress = A;
+  } else {
+    if (C != 0) yieldStress = (A + B * pow(eff_plastic_strain, n)) * pow(1.0 + epsdot_ratio, C); // * (1.0 - pow(TH, M));
+    else yieldStress = A + B * pow(eff_plastic_strain, n);
+  }
+
   /*
    * deviatoric rate of unrotated stress
    */
-  Gd = G_ * (1-damage);
+  Gd = G_;
   dev_rate = 2.0 * Gd * Deviator(D);
   sigmaInitial_dev = Deviator(sigma);
+
+  if (damage > 0) {
+    Gd *= (1-damage);
+    yieldStress *= (1-damage);
+  }
 
   /*
    * perform a trial elastic update to the deviatoric stress
@@ -71,7 +83,7 @@ Matrix3d StrengthJohnsonCook::update_deviatoric_stress(const Matrix3d sigma, con
   /*
    * check yield condition
    */
-  J2 = sqrt(3. / 2.) * sigmaTrial_dev.norm();
+  J2 = SQRT_3_OVER_2 * sigmaTrial_dev.norm();
   sigmaFinal_dev = sigmaTrial_dev;
 
   if (J2 < yieldStress) {

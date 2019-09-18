@@ -11,6 +11,7 @@ using namespace std;
 using namespace Eigen;
 using namespace MPM_Math;
 
+#define SQRT_3_OVER_2 1.224744871 // sqrt(3.0/2.0)
 
 DamageJohnsonCook::DamageJohnsonCook(MPM *mpm, vector<string> args) : Damage(mpm, args)
 {
@@ -37,7 +38,7 @@ DamageJohnsonCook::DamageJohnsonCook(MPM *mpm, vector<string> args) : Damage(mpm
 
 void DamageJohnsonCook::compute_damage(double &damage_init, double &damage, const double pH, const Eigen::Matrix3d Sdev, const double epsdot, const double plastic_strain_increment)
 {
-  double vm = sqrt(3. / 2.) * Sdev.norm(); // von-Mises equivalent stress
+  double vm = SQRT_3_OVER_2 * Sdev.norm(); // von-Mises equivalent stress
   if (vm < 0.0) {
     cout << "this is sdev " << endl << Sdev << endl;
     printf("vm=%f < 0.0, surely must be an error\n", vm);
