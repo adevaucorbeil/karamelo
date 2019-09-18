@@ -30,8 +30,10 @@ class FixVelocityNodes : public Fix {
   void final_integrate() {};
 
 private:
-  class Var xvalue, yvalue, zvalue;    // Set velocities in x, y, and z directions.
+  //class Var xvalue, yvalue, zvalue;    // Set velocities in x, y, and z directions.
   bool xset, yset, zset;               // Does the fix set the x, y, and z velocities of the group?
+  int xpos, ypos, zpos;                // Positions of x, y and z in the argument list (args)
+  vector<string> args_previous_step;
 };
 
 #endif

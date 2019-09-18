@@ -32,22 +32,43 @@ FixVelocityNodes::FixVelocityNodes(MPM *mpm, vector<string> args) : Fix(mpm, arg
 
   xset = yset = zset = false;
 
+  args_previous_step = args;
+
+  string time = "time";
+
   if (args[3].compare("NULL") != 0) {
-    xvalue = input->parsev(args[3]);
+    // xvalue = input->parsev(args[3]);
+    xpos = 3;
     xset = true;
+
+    // Replace "time" by "time - dt" in the x argument:
+    while(args_previous_step[xpos].find(time)!=std::string::npos) {
+      args_previous_step[xpos].replace(args_previous_step[xpos].find(time),time.length(),"time - dt");
+    }
   }
 
   if (domain->dimension >= 2) {
     if (args[4].compare("NULL") != 0) {
-      yvalue = input->parsev(args[4]);
+      ypos = 4;
+      // yvalue = input->parsev(args[4]);
       yset = true;
+      // Replace "time" by "time - dt" in the y argument:
+      while(args_previous_step[ypos].find(time)!=std::string::npos) {
+	args_previous_step[ypos].replace(args_previous_step[ypos].find(time),time.length(),"time - dt");
+      }
     }
   }
 
   if (domain->dimension == 3) {
     if (args[5].compare("NULL") != 0) {
-      zvalue = input->parsev(args[5]);
+      zpos = 5;
+      // zvalue = input->parsev(args[5]);
       zset = true;
+
+      // Replace "time" by "time - dt" in the z argument:
+      while(args_previous_step[zpos].find(time)!=std::string::npos) {
+	args_previous_step[zpos].replace(args_previous_step[zpos].find(time),time.length(),"time - dt");
+      }
     }
   }
 }
@@ -76,23 +97,29 @@ void FixVelocityNodes::post_update_grid_state() {
 
   // Go through all the nodes in the group and set v_update to the right value:
   double vx, vy, vz;
+  double vx_old, vy_old, vz_old;
 
   if (xset) {
-    vx = xvalue.result(mpm);
+    vx = input->parsev(args[xpos]).result(mpm);
+    vx_old = input->parsev(args_previous_step[xpos]).result(mpm);
     // cout << "Set v_update[0] to " << xvalue.eq() << "=" << vx << endl;
+    cout << "Set v[0] to " << vx_old << endl;
   }
 
   if (yset) {
-    vy = yvalue.result(mpm);
+    vy = input->parsev(args[ypos]).result(mpm);
+    vy_old = input->parsev(args_previous_step[ypos]).result(mpm);
     // cout << "Set v_update[1] to " << "=" <<  vy << endl;
+    cout << "Set v[1] to " << "=" <<  vy_old << endl;
   }
 
   if (zset) {
-    vz = zvalue.result(mpm);
+    vz = input->parsev(args[zpos]).result(mpm);
+    vz_old = input->parsev(args_previous_step[zpos]).result(mpm);
     // cout << "Set v_update[2] to " << "=" <<  vz << endl;
+    cout << "Set v[2] to " << "=" <<  vz_old << endl;
   }
 
-  
   int solid = group->solid[igroup];
 
   Eigen::Vector3d *v_update;
@@ -111,9 +138,18 @@ void FixVelocityNodes::post_update_grid_state() {
 
       for (int ip = 0; ip < nmax; ip++) {
 	if (mask[ip] & groupbit) {
-	  if (xset) v_update[ip][0] = v[ip][0] = vx;
-	  if (yset) v_update[ip][1] = v[ip][1] = vy;
-	  if (zset) v_update[ip][2] = v[ip][2] = vz;
+	  if (xset) {
+	    v_update[ip][0] = vx;
+	    v[ip][0] = vx_old;
+	  }
+	  if (yset) {
+	    v_update[ip][1] = vy;
+	    v[ip][1] = vy_old;
+	  }
+	  if (zset) {
+	    v_update[ip][2] = vz;
+	    v[ip][2] = vz_old;
+	  }
 	  n++;
 	}
       }
@@ -128,9 +164,18 @@ void FixVelocityNodes::post_update_grid_state() {
 
     for (int ip = 0; ip < nmax; ip++) {
       if (mask[ip] & groupbit) {
-	if (xset) v_update[ip][0] = v[ip][0] = vx;
-	if (yset) v_update[ip][1] = v[ip][1] = vy;
-	if (zset) v_update[ip][2] = v[ip][2] = vz;
+	if (xset) {
+	  v_update[ip][0] = vx;
+	  v[ip][0] = vx_old;
+	}
+	if (yset) {
+	  v_update[ip][1] = vy;
+	  v[ip][1] = vy_old;
+	}
+	if (zset) {
+	  v_update[ip][2] = vz;
+	  v[ip][2] = vz_old;
+	}
 	n++;
       }
     }
@@ -145,20 +190,16 @@ void FixVelocityNodes::post_velocities_to_grid() {
   double vx, vy, vz;
 
   if (xset) {
-    vx = xvalue.result(mpm);
-    // cout << "Set v[0] to " << xvalue.eq() << "=" << vx << endl;
+    vx = input->parsev(args[xpos]).result(mpm);
   }
 
   if (yset) {
-    vy = yvalue.result(mpm);
-    // cout << "Set v[1] to " << "=" <<  vy << endl;
+    vy = input->parsev(args[ypos]).result(mpm);
   }
 
   if (zset) {
-    vz = zvalue.result(mpm);
-    // cout << "Set v[2] to " << "=" <<  vz << endl;
+    vz = input->parsev(args[zpos]).result(mpm);
   }
-
   
   int solid = group->solid[igroup];
 
