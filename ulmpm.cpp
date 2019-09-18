@@ -157,24 +157,23 @@ void ULMPM::compute_grid_weight_functions_and_gradients()
 	    int k0 = (int) ((xp[ip][2] - domain->boxlo[2])*inv_cellsize);
 
 	    for(int i=i0; i<i0+2;i++){
-	      for(int j=j0; j<j0+2;j++){
-		if (nz>1){
-		  for(int k=k0; k<k0+2;k++){
-		    int n = nz*ny*i+nz*j+k;
-		    n_neigh.push_back(n);
-		    if (n >= nnodes) {
-		      cout << "Error: " << n<< " >= nnodes=" << nnodes << endl ;
-		      exit(1);
+	      if (ny>1){
+		for(int j=j0; j<j0+2;j++){
+		  if (nz>1){
+		    for(int k=k0; k<k0+2;k++){
+		      int n = nz*ny*i+nz*j+k;
+		      if (n < nnodes)
+			n_neigh.push_back(n);
 		    }
-		  }
-		} else {
-		  int n = ny*i+j;
-		  n_neigh.push_back(n);
-		  if (n >= nnodes) {
-		    cout << "Error: " << n<< " >= nnodes=" << nnodes << endl ;
-		    exit(1);
+		  } else {
+		    int n = ny*i+j;
+		    if (n < nnodes)
+		      n_neigh.push_back(n);
 		  }
 		}
+	      } else {
+		if (i < nnodes)
+		  n_neigh.push_back(i);
 	      }
 	    }
 	  } else if (update->method_shape_function.compare("Bernstein-quadratic")==0){
@@ -189,24 +188,23 @@ void ULMPM::compute_grid_weight_functions_and_gradients()
 	    // cout << "(" << i0 << "," << j0 << "," << k0 << ")\t";
 
 	    for(int i=i0; i<i0+3;i++){
-	      for(int j=j0; j<j0+3;j++){
-		if (nz>1){
-		  for(int k=k0; k<k0+3;k++){
-		    int n = nz*ny*i+nz*j+k;
-		    n_neigh.push_back(n);
-		    if (n >= nnodes) {
-		      cout << "Error: " << n<< " >= nnodes=" << nnodes << endl ;
-		      exit(1);
+	      if (ny>1){
+		for(int j=j0; j<j0+3;j++){
+		  if (nz>1){
+		    for(int k=k0; k<k0+3;k++){
+		      int n = nz*ny*i+nz*j+k;
+		      if (n < nnodes)
+			n_neigh.push_back(n);
 		    }
-		  }
-		} else {
-		  int n = ny*i+j;
-		  n_neigh.push_back(n);
-		  if (n >= nnodes) {
-		    cout << "Error: " << n << " >= nnodes=" << nnodes << endl ;
-		    exit(1);
+		  } else {
+		    int n = ny*i+j;
+		    if (n < nnodes)
+			n_neigh.push_back(n);
 		  }
 		}
+	      } else {
+		if (i < nnodes)
+		  n_neigh.push_back(i);
 	      }
 	    }
 	  } else if (update->method_shape_function.compare("cubic-spline")==0){
@@ -214,29 +212,24 @@ void ULMPM::compute_grid_weight_functions_and_gradients()
 	    int j0 = (int) ((xp[ip][1] - domain->boxlo[1])*inv_cellsize - 1);
 	    int k0 = (int) ((xp[ip][2] - domain->boxlo[2])*inv_cellsize - 1);
 
-	    // cout << "(" << i0 << "," << j0 << "," << k0 << ")\t";
-
 	    for(int i=i0; i<i0+4;i++){
-	      for(int j=j0; j<j0+4;j++){
-		if (nz>1){
-		  for(int k=k0; k<k0+4;k++){
-		    int n = nz*ny*i+nz*j+k;
+	      if (ny>1) {
+		for(int j=j0; j<j0+4;j++){
+		  if (nz>1){
+		    for(int k=k0; k<k0+4;k++){
+		      int n = nz*ny*i+nz*j+k;
+		      if (n < nnodes)
+			n_neigh.push_back(n);
+		    }
+		  } else {
+		    int n = ny*i+j;
 		    if (n < nnodes)
 		      n_neigh.push_back(n);
-		    else  {
-		      cout << "Error: " << n << " >= nnodes=" << nnodes << endl ;
-		      exit(1);
-		    }
 		  }
-		} else {
-		  int n = ny*i+j;
-		    if (n < nnodes)
-		      n_neigh.push_back(n);
-		    else  {
-		      cout << "Error: " << n << " >= nnodes=" << nnodes << endl ;
-		      exit(1);
-		    }
 		}
+	      } else {
+		if (i < nnodes)
+		  n_neigh.push_back(i);
 	      }
 	    }
 	  } else {
