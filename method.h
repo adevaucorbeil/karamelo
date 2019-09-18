@@ -18,6 +18,7 @@ class Method : protected Pointers {
   virtual void grid_to_points() = 0;
   virtual void advance_particles() = 0;
   virtual void velocities_to_grid() = 0;
+  virtual void update_grid_positions() = 0;
   virtual void compute_rate_deformation_gradient() = 0;
   virtual void update_deformation_gradient() = 0;
   virtual void update_stress() = 0;

@@ -54,6 +54,8 @@ void MUSL::run(Var condition){
 
     modify->post_velocities_to_grid();
 
+    update->method->update_grid_positions();
+
     update->method->compute_rate_deformation_gradient();
     update->method->update_deformation_gradient();
     update->method->update_stress();
