@@ -30,13 +30,13 @@ class Solid : protected Pointers {
 
   Eigen::Vector3d *a;        // particles' acceleration
 
-  Eigen::Vector3d *b;        // particles' external forces
+  Eigen::Vector3d *mb;        // particles' external forces times mass
   Eigen::Vector3d *f;        // particles' internal forces
 
   Eigen::Matrix3d *sigma;            // stress matrix
   Eigen::Matrix3d *strain_el;        // elastic strain matrix
-  Eigen::Matrix3d *PK1;              // 1st Piola-Kirchhoff matrix
-  Eigen::Matrix3d *PK1T;             // Transpose of the 1st Piola-Kirchhoff matrix
+  // Eigen::Matrix3d *PK1;              // 1st Piola-Kirchhoff matrix
+  Eigen::Matrix3d *vol0PK1;          // Transpose of the 1st Piola-Kirchhoff matrix times vol0
   Eigen::Matrix3d *L;                // velocity gradient matrix
   Eigen::Matrix3d *F;                // deformation gradient matrix
   Eigen::Matrix3d *R;                // Rotation matrix
@@ -85,7 +85,6 @@ class Solid : protected Pointers {
   void options(vector<string> *, vector<string>::iterator);
   void grow(int);
 
-  void compute_node_rotation_matrix(bool);
   void compute_mass_nodes(bool);
   void compute_velocity_nodes(bool);
   void compute_velocity_nodes_APIC(bool);

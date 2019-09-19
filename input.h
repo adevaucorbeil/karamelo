@@ -31,8 +31,8 @@ private:
   int maxarg;                  // max # of args in arg
 
   int numtriple(char *);                     // count number of triple quotes
-  double precedence(char);                   // find precedence of operators.
-  Var applyOp(Var, Var, char);              // perform arithmetic operations.
+  double precedence(string);                   // find precedence of operators.
+  Var applyOp(Var, Var, string);              // perform arithmetic operations.
   bool is_operator(char);                    // check if is an operator
   bool is_math_char(char);                   // check if the character is either of +-/*()
   Var evaluate_function(string , string); // evaluate function with argument
@@ -54,6 +54,7 @@ private:
   int set_dt(vector<string>);
   class Var value(vector<string>);
   int plot(vector<string>);
+  int print(vector<string>);
 
   bool protected_variable(string);
 

@@ -18,15 +18,15 @@ Grid::Grid(MPM *mpm) :
 
   x = x0 = NULL;
   v = v_update = NULL;
-  b = f = NULL;
+  mb = f = NULL;
 
   mass = NULL;
   mask = NULL;
   ntype = NULL;
 
-  R = NULL;
+  // R = NULL;
 
-  C = NULL;
+  // C = NULL;
 
   cellsize = 0;
   nnodes = 0;
@@ -38,18 +38,17 @@ Grid::~Grid()
   memory->destroy(x0);
   memory->destroy(v);
   memory->destroy(v_update);
-  memory->destroy(b);
+  memory->destroy(mb);
   memory->destroy(f);
   memory->destroy(mass);
   memory->destroy(mask);
   memory->destroy(ntype);
-  memory->destroy(R);
-  memory->destroy(C);
+  // memory->destroy(R);
+  // memory->destroy(C);
 }
 
 void Grid::init(double *solidlo, double *solidhi){
   double Lx = solidhi[0]-solidlo[0];//+2*cellsize;
-  double Ly = solidhi[1]-solidlo[1];//+2*cellsize;
 
   double h = cellsize;
 
@@ -57,10 +56,15 @@ void Grid::init(double *solidlo, double *solidhi){
     h /= 2;
 
   nx = ((int) (Lx/h))+1;
-  ny = ((int) (Ly/h))+1;
-
   while (nx*h <= Lx+0.5*h) nx++;
-  while (ny*h <= Ly+0.5*h) ny++;
+
+  if (domain->dimension >= 2) {
+    double Ly = solidhi[1]-solidlo[1];
+    ny = ((int) Ly/h)+1;
+    while (ny*h <= Ly+0.5*h) ny++;   
+   } else {
+    ny = 1;
+   }
 
   if (domain->dimension == 3) {
     double Lz = solidhi[2]-solidlo[2];
@@ -80,7 +84,8 @@ void Grid::init(double *solidlo, double *solidhi){
     for (int j=0; j<ny; j++){
       for (int k=0; k<nz; k++){
 	x0[l][0] = solidlo[0] + i*h;//h*(i-1);
-	x0[l][1] = solidlo[1] + j*h;//h*(j-1);
+	if (domain->dimension >= 2) x0[l][1] = solidlo[1] + j*h;//h*(j-1);
+	else x0[l][1] = 0;
 	if (domain->dimension == 3) x0[l][2] = solidlo[2] + k*h;//h*(k-1);
 	else x0[l][2] = 0;
 
@@ -102,9 +107,9 @@ void Grid::init(double *solidlo, double *solidhi){
 	v[l].setZero();
 	v_update[l].setZero();
 	f[l].setZero();
-	b[l].setZero();
+	mb[l].setZero();
 	mass[l] = 0;
-	R[l].setIdentity();
+	// R[l].setIdentity();
 
 	l++;
       }
@@ -146,9 +151,9 @@ void Grid::grow(int nn){
     exit(1);
   }
 
-  if (b == NULL) b = new Eigen::Vector3d[nn];
+  if (mb == NULL) mb = new Eigen::Vector3d[nn];
   else {
-    cout << "Error in Grid::grow(): b already exists, I don't know how to grow it!\n";
+    cout << "Error in Grid::grow(): mb already exists, I don't know how to grow it!\n";
     exit(1);
   }
 
@@ -158,17 +163,17 @@ void Grid::grow(int nn){
     exit(1);
   }
 
-  if (R == NULL) R = new Eigen::Matrix3d[nn];
-  else {
-    cout << "Error in Grid::grow(): R already exists, I don't know how to grow it!\n";
-    exit(1);
-  }
+  // if (R == NULL) R = new Eigen::Matrix3d[nn];
+  // else {
+  //   cout << "Error in Grid::grow(): R already exists, I don't know how to grow it!\n";
+  //   exit(1);
+  // }
 
-  if (C == NULL) C = new Eigen::Vector3d[nn];
-  else {
-    cout << "Error in Grid::grow(): C already exists, I don't know how to grow it!\n";
-    exit(1);
-  }
+  // if (C == NULL) C = new Eigen::Vector3d[nn];
+  // else {
+  //   cout << "Error in Grid::grow(): C already exists, I don't know how to grow it!\n";
+  //   exit(1);
+  // }
 
   string str = "grid-mass";
   cout << "Growing " << str << endl;
@@ -188,7 +193,7 @@ void Grid::grow(int nn){
 void Grid::update_grid_velocities()
 {
   for (int i=0; i<nnodes; i++){
-    if (mass[i] > 1e-12) v_update[i] = v[i] + update->dt * (f[i]/mass[i] + b[i]);
+    if (mass[i] > 1e-12) v_update[i] = v[i] + update->dt * (f[i] + mb[i])/mass[i];
     else v_update[i] = v[i];
     // if (update->ntimestep>450)
     //   if (i==0)
@@ -199,6 +204,6 @@ void Grid::update_grid_velocities()
 void Grid::update_grid_positions()
 {
   for (int i=0; i<nnodes; i++){
-    x[i] += update->dt*v_update[i];
+    x[i] += update->dt*v[i];
   }
 }

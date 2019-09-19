@@ -17,18 +17,17 @@ void MUSL::setup(){
   output->setup();
 }
 
-void MUSL::run(int n){
+void MUSL::run(Var condition){
 
   bigint ntimestep = update->ntimestep;
-  int nsteps = update->nsteps;
-  nsteps = n;
-
+  
   // cout << "In MUSL::run" << endl;
 
   output->write(ntimestep);
 
-  for (int i=0; i<nsteps; i++){
-    ntimestep = ++update->ntimestep;
+  //for (int i=0; i<nsteps; i++){
+  while ((bool) condition.result(mpm)) {
+    ntimestep = update->update_timestep();
 
     update->method->compute_grid_weight_functions_and_gradients();
 
@@ -55,11 +54,14 @@ void MUSL::run(int n){
 
     modify->post_velocities_to_grid();
 
+    update->method->update_grid_positions();
+
     update->method->compute_rate_deformation_gradient();
     update->method->update_deformation_gradient();
     update->method->update_stress();
 
     update->method->adjust_dt();
+    update->update_time();
 
     modify->final_integrate();
 
@@ -69,7 +71,7 @@ void MUSL::run(int n){
       break;
     }
 
-    if (ntimestep == output->next || ntimestep == nsteps) {
+    if (ntimestep == output->next || ntimestep == update->nsteps) {
       output->write(ntimestep);
     }
     

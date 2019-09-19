@@ -30,11 +30,12 @@ Input::Input(MPM *mpm, int argc, char **argv) : Pointers(mpm)
   vars = new map<string, Var>;
 
   (*vars)["time"] = Var("time", 0);
+  (*vars)["timestep"] = Var("timestep", 0);
   (*vars)["dt"] = Var("dt", 0);
   (*vars)["x"] = Var("x", 0);
   (*vars)["y"] = Var("y", 0);
   (*vars)["z"] = Var("z", 0);
-  (*vars)["PI"] = Var("PI", M_PI);
+  (*vars)["PI"] = Var(M_PI);
 
 
   // fill map with commands listed in style_command.h
@@ -85,6 +86,7 @@ void Input::file()
       if (c == '#') ignore = true; // ignore everything after #
       if (c == '\377') {
 	// cout << line << endl;
+	if (line.compare("quit")==0) return;
 	parsev(line).result();
       } else {
 	if (!ignore) line.append(&c,1);
@@ -94,7 +96,7 @@ void Input::file()
 
       ignore = false;
       cout << line << endl;
-      // cout << " gives: " << parsev(line).result() << endl;
+      if (line.compare("quit")==0) return;
       parsev(line).result();
       line.clear();
 
@@ -110,30 +112,37 @@ void Input::file()
 
 // Function to find precedence of  
 // operators. 
-double Input::precedence(char op){ 
-    if(op == '+'||op == '-') return 1;
-    if(op == '*'||op == '/') return 2;
-    if(op == '^') return 3;
-    if(op == 'e'|| op == 'E') return 4;
+double Input::precedence(string op){
+    if(op == ">"||op == ">="||op == "<"||op == "<="||op == "=="||op == "!=") return 1;
+    if(op == "+"||op == "-") return 2;
+    if(op == "*"||op == "/") return 3;
+    if(op == "**" || op == "^") return 4;
+    if(op == "e"|| op == "E") return 5;
     return 0;
 }
 
 // Function to perform arithmetic operations.
-Var Input::applyOp(Var a, Var b, char op){
+Var Input::applyOp(Var a, Var b, string op){
   // cout << "in applyOp with a=" << a.eq() << "=" << a.result() << " b=" << b.eq() << "=" << b.result() << " op=" << op << endl;
-  switch(op){
-  case '+': return a + b;
-  case '-': return a - b;
-  case '*': return a * b;
-  case '/': return a / b;
-  case '^': return a ^ b;
-  case 'e': return a*powv(10,b);
-  case 'E': return a*powv(10,b);
-  case '(':
+  if (op.compare("+")==0) return a + b;
+  else if (op.compare("-")==0) return a - b;
+  else if (op.compare("*")==0) return a * b;
+  else if (op.compare("/")==0) return a / b;
+  else if (op.compare("**")==0) return a ^ b;
+  else if (op.compare("^")==0) return a ^ b;
+  else if (op.compare("e")==0) return a*powv(10,b);
+  else if (op.compare("E")==0) return a*powv(10,b);
+  else if (op.compare(">")==0) return a > b;
+  else if (op.compare(">=")==0) return a >= b;
+  else if (op.compare("<")==0) return a < b;
+  else if (op.compare("<=")==0) return a <= b;
+  else if (op.compare("==")==0) return a == b;
+  else if (op.compare("!=")==0) return a != b;
+  else if (op.compare("(")==0) {
     printf("Error: unmatched parenthesis (\n");
     exit(1);
-  default:
-    printf("Error: unknown operator %c\n", op);
+  } else {
+    cout << "Error: unknown operator "<< op <<"\n";
     exit(1);
   }
 }
@@ -144,16 +153,15 @@ bool Input::is_operator(char op){
   if (op=='*') return true;
   if (op=='/') return true;
   if (op=='^') return true;
+  if (op=='>') return true;
+  if (op=='<') return true;
+  if (op=='!') return true;
   return false;
 }
 
 // check if op is either of +-/*()
 bool Input::is_math_char(char op){
-  if (op=='+') return true;
-  if (op=='-') return true;
-  if (op=='*') return true;
-  if (op=='/') return true;
-  if (op=='^') return true;
+  if (is_operator(op)) return true;
   if (op=='(') return true;
   if (op==')') return true;
   if (op=='=') return true;
@@ -217,6 +225,8 @@ Var Input::evaluate_function(string func, string arg){
   else if (func.compare("tan") == 0) return tanv(parsev(arg));
   else if (func.compare("atan2") == 0) return atan2v(parsev(args[0]),parsev(args[1]));
   else if (func.compare("log") == 0) return logv(parsev(arg));
+  else if (func.compare("evaluate") == 0) return Var(parsev(arg).result(mpm));
+  else if (func.compare("print") == 0) return Var(print(args));
   cout << "Error: Unknown function " << func << endl;
   exit(1);
 }
@@ -242,7 +252,7 @@ Var Input::parsev(string str)
   stack <Var> values;
 
   // stack to store operators.
-  stack <char> ops;
+  stack <string> ops;
 
   // stack to store functions.
   stack <string> funcs;
@@ -282,7 +292,9 @@ Var Input::parsev(string str)
     // If the first character in the righ-hand-side is (, push it to ops
     else if (str[i] == '(') {
       //cout << "Pushed \'(\' to ops stack" << endl;
-      ops.push(str[i]);
+      string bracket;
+      bracket.push_back(str[i]);
+      ops.push(bracket);
 
       if (i+1 < str.length() && str[i+1] == '-' && !(i+2 < str.length() && str[i+2] == '(')) {
 	negative = true;
@@ -300,18 +312,23 @@ Var Input::parsev(string str)
 	exit(1);
       }
 
-      while(ops.top() != '(')
+      while(ops.top() != "(")
 	{
 	  if (values.empty()) {
 	    cout << "Error: Ops is not empty with top element being " << ops.top() << ", while values is." << endl;
 	    exit(1);
 	  } else if (values.size() == 1) {
-	    if (ops.top() == '-') {
+	    if (ops.top() == "-") {
 	      Var val1 = values.top();
 	      values.pop();
 	      ops.pop();
 	      values.push(-val1);
-	    } else if (ops.top() == '+') {
+	    } else if (ops.top() == "!") {
+	      Var val1 = values.top();
+	      values.pop();
+	      ops.pop();
+	      values.push(!val1);
+	    } else if (ops.top() == "+") {
 	      ops.pop();
 	    } else {
 	      Var val1 = values.top();
@@ -325,7 +342,7 @@ Var Input::parsev(string str)
 	    Var val1 = values.top();
 	    values.pop();
 
-	    char op = ops.top();
+	    string op = ops.top();
 	    ops.pop();
 	    //cout << val1 << " " << val2 << " " << op << endl;
 
@@ -342,34 +359,40 @@ Var Input::parsev(string str)
       ops.pop();
     }
 
-    else if (is_operator(str[i])){
-      char new_op = str[i];
+    else if (is_operator(str[i]) || (str[i]=='=' && i+1 < str.length() && str[i+1] == '=')){
+      string new_op;
+      new_op.push_back(str[i]);
       //printf("found operator %c\n", new_op);
 
       if (values.empty() && !(i+1 < str.length() && str[i+1] == '(')) {
-	if (new_op == '-') {
+	if (new_op == "-") {
 	  negative = true;
 	  continue;
 	}
       }
 
       if (i+1 >= str.length()) {
-	printf("Error: end-of-line character detected after operator %c\n", new_op);
+	cout << "Error: end-of-line character detected after operator " << new_op << endl;
 	exit(1);
       }
 
       if (i+1 < str.length() && str[i+1] == '\0') {
-	printf("Error: end-of-line character detected after operator %c\n", new_op);
+	cout << "Error: end-of-line character detected after operator " << new_op << endl;
 	exit(1);
       }
 
       else if (i+1 < str.length() && str[i+1] == '*') {
-	new_op = '^';
+	new_op.push_back('*');
+	i++;
+      }
+
+      else if (i+1 < str.length() && str[i+1] == '=') {
+	new_op.push_back('=');
 	i++;
       }
 
       else if (i+1 < str.length() && is_operator(str[i+1]) && str[i+1] != '-') {
-	printf("Error: unknown operator sequence %c%c\n", new_op, str[i+1]);
+	cout << "Error: unknown operator sequence " << new_op << str[i+1] << endl;
 	exit(1);
       }
 
@@ -386,7 +409,7 @@ Var Input::parsev(string str)
 	Var val1 = values.top();
 	values.pop();
 
-	char op = ops.top();
+	string op = ops.top();
 	ops.pop();
 	//cout << val1 << " " << val2 << " " << op << endl;
 
@@ -420,7 +443,7 @@ Var Input::parsev(string str)
       if (word == "E" || word == "e") { // E or e have to be followed by + or - to indicate that it is 10^+xx
       	if (!values.empty() && isdigit(str[i-1]) && i+1 < str.length() && (str[i+1] == '+' || str[i+1] == '-')) {
 	  // Push current token to 'ops'.
-	  ops.push('e');
+	  ops.push("e");
 
 	  if (str[i+1] == '-') {
 	    negative = true;
@@ -439,7 +462,7 @@ Var Input::parsev(string str)
       if (it != vars->end()){
 	// word is a variable
 	//cout << "word is a variable\n";
-	if (i+1 < str.length() && str[i+1] == '=') {
+	if (i+1 < str.length() && str[i+1] == '=' && str[i+2] != '=') {
 
 	  if (!values.empty() || !ops.empty() ) {
 	    printf("Error: I do not understand when '=' is located in the middle of an expression\n");
@@ -533,12 +556,17 @@ Var Input::parsev(string str)
       cout << "Error: Ops is not empty with top element being " << ops.top() << ", while values is." << endl;
       exit(1);
     } else if (values.size() == 1) {
-      if (ops.top() == '-') {
+      if (ops.top() == "-") {
 	Var val1 = values.top();
 	values.pop();
 	ops.pop();
 	values.push(-val1);
-      } else if (ops.top() == '+') {
+      } else if (ops.top() == "!") {
+	Var val1 = values.top();
+	values.pop();
+	ops.pop();
+	values.push(!val1);
+      } else if (ops.top() == "+") {
 	ops.pop();
       } else {
 	Var val1 = values.top();
@@ -552,7 +580,7 @@ Var Input::parsev(string str)
       Var val1 = values.top();
       values.pop();
 
-      char op = ops.top();
+      string op = ops.top();
       ops.pop();
 
       values.push(applyOp(val1, val2, op));
@@ -597,7 +625,7 @@ int Input::dimension(vector<string> args){
   int dim = (int) parsev(args[0]);
 
 
-  if (dim != 2 && dim != 3) {
+  if (dim!=1 &&dim != 2 && dim != 3) {
     cout << "Error: dimension argument: " << dim << endl;
     exit(1);
   }
@@ -606,7 +634,21 @@ int Input::dimension(vector<string> args){
   cout << "Set dimension to " << dim << endl;
 
   if (args.size() > 1) {
-    if (dim == 2) {
+    if (dim ==1) {
+      if (args.size() > 4) {
+	cout << "Error: dimension received too many arguments: 6 maximum for 2D simulations (Dimension, domain xmin, domain xmax, cell size)" << endl;
+	exit(1);
+      } else if (args.size() == 4) {
+	domain->boxlo[0] = (double) parsev(args[1]);
+	domain->boxhi[0] = (double) parsev(args[2]);
+	domain->grid->cellsize = (double) parsev(args[4]);
+	if (domain->grid->cellsize < 0) {
+	  cout << "Error: cellsize negative! You gave: " << domain->grid->cellsize << endl;
+	  exit(1);
+	}
+	domain->grid->init(domain->boxlo, domain->boxhi);
+      }
+    } else if (dim == 2) {
       if (args.size() > 6) {
 	cout << "Error: dimension received too many arguments: 6 maximum for 2D simulations (Dimension, domain xmin, domain xmax, domain ymin, domain ymax, cell size)" << endl;
 	exit(1);
@@ -729,6 +771,28 @@ Var Input::value(vector<string> args){
 
 int Input::plot(vector<string> args){
   output->add_plot(args);
+  return 0;
+}
+
+int Input::print(vector<string> args){
+  if (args.size() < 1) {
+    cout << "Error: too few arguments for command value()" << endl;
+    exit(1);
+  } else if (args.size() > 1) {
+    cout << "Error: too many arguments for command value()" << endl;
+    exit(1);
+  }
+  Var v = parsev(args[0]);
+  cout << args[0] <<
+    " = {equation=\"" << v.eq() <<
+    "\", value=" << v.result(mpm) <<
+    ", constant=";
+
+  if(v.is_constant()) cout << "true";
+  else cout << "false";
+
+  cout << "}\n";
+
   return 0;
 }
 /* ----------------------------------------------------------------------

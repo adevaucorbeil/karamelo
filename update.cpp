@@ -133,3 +133,11 @@ void Update::update_time()
   atimestep = ntimestep;
   (*input->vars)["time"] = Var("time", atime);
 }
+
+
+int Update::update_timestep()
+{
+  update->ntimestep++;
+  (*input->vars)["timestep"] = Var("timestep", ntimestep);
+  return update->ntimestep;
+}

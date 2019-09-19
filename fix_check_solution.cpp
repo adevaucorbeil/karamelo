@@ -17,8 +17,14 @@ using namespace Eigen;
 
 FixChecksolution::FixChecksolution(MPM *mpm, vector<string> args) : Fix(mpm, args)
 {
-  if (args.size() < 6) {
+  if (domain->dimension == 3 && args.size()<6) {
     cout << "Error: too few arguments for fix_check_solution: requires at least 6 arguments. " << args.size() << " received" << endl;
+    exit(1);
+  } else if (domain->dimension == 2 && args.size()<5) {
+    cout << "Error: too few arguments for fix_check_solution: requires at least 5 arguments. " << args.size() << " received" << endl;
+    exit(1);
+  } else if (domain->dimension == 1 && args.size()<4) {
+    cout << "Error: too few arguments for fix_check_solution: requires at least 4 arguments. " << args.size() << " received" << endl;
     exit(1);
   }
 
@@ -36,14 +42,18 @@ FixChecksolution::FixChecksolution(MPM *mpm, vector<string> args) : Fix(mpm, arg
     xset = true;
   }
 
-  if (args[4].compare("NULL") != 0) {
-    yvalue = input->parsev(args[4]);
-    yset = true;
+  if (domain->dimension >= 2) {
+    if (args[4].compare("NULL") != 0) {
+      yvalue = input->parsev(args[4]);
+      yset = true;
+    }
   }
 
-  if (args[5].compare("NULL") != 0) {
-    zvalue = input->parsev(args[5]);
-    zset = true;
+  if (domain->dimension == 3) {
+    if (args[5].compare("NULL") != 0) {
+      zvalue = input->parsev(args[5]);
+      zset = true;
+    }
   }
 }
 
@@ -100,20 +110,20 @@ void FixChecksolution::final_integrate() {
 
       for (int in = 0; in < nmax; in++) {
 	if (mask[in] & groupbit) {
-	  (*input->vars)["x"] = Var("x", x0[in][0]);
-	  (*input->vars)["y"] = Var("y", x0[in][1]);
-	  (*input->vars)["z"] = Var("z", x0[in][2]);
 	  if (xset) {
+	    (*input->vars)["x"] = Var("x", x0[in][0]);
 	    ux = xvalue.result(mpm);
 	    error[0] += vol0[in]*square(ux-(x[in][0]-x0[in][0]));
 	    u_th[0] += vol0[in]*ux*ux;
 	  }
 	  if (yset) {
+	    (*input->vars)["y"] = Var("y", x0[in][1]);
 	    uy = yvalue.result(mpm);
 	    error[1] += vol0[in]*square(uy-(x[in][1]-x0[in][1]));
 	    u_th[1] += vol0[in]*uy*uy;
 	  }
 	  if (zset) {
+	    (*input->vars)["z"] = Var("z", x0[in][2]);
 	    uz = zvalue.result(mpm);
 	    error[2] += vol0[in]*square(uz-(x[in][2]-x0[in][2]));
 	    u_th[2] += vol0[in]*uz*uz;
@@ -121,8 +131,6 @@ void FixChecksolution::final_integrate() {
 	}
       }
     }
-
-
     (*input->vars)[id+"_s"]=Var(id+"_s", sqrt((error[0] + error[1] + error[2])/vtot));
     (*input->vars)[id+"_x"]=Var(id+"_x", (*input->vars)[id+"_x"].result() + update->dt*(error[0] + error[1] + error[2]));
     (*input->vars)[id+"_y"]=Var(id+"_y", (*input->vars)[id+"_y"].result() + update->dt*(u_th[0] + u_th[1] + u_th[2]));
@@ -138,20 +146,20 @@ void FixChecksolution::final_integrate() {
 
     for (int in = 0; in < nmax; in++) {
       if (mask[in] & groupbit) {
-	(*input->vars)["x"] = Var("x", x0[in][0]);
-	(*input->vars)["y"] = Var("y", x0[in][1]);
-	(*input->vars)["z"] = Var("z", x0[in][2]);
 	if (xset) {
+	  (*input->vars)["x"] = Var("x", x0[in][0]);
 	  ux = xvalue.result(mpm);
 	  error[0] += vol0[in]*square(ux-(x[in][0]-x0[in][0]));
 	  u_th[0] += vol0[in]*ux*ux;
 	}
 	if (yset) {
+	  (*input->vars)["y"] = Var("y", x0[in][1]);
 	  uy = yvalue.result(mpm);
 	  error[1] += vol0[in]*square(uy-(x[in][1]-x0[in][1]));
 	  u_th[1] += vol0[in]*uy*uy;
 	}
 	if (zset) {
+	  (*input->vars)["z"] = Var("z", x0[in][2]);
 	  uz = zvalue.result(mpm);
 	  error[2] += vol0[in]*square(uz-(x[in][2]-x0[in][2]));
 	  u_th[2] += vol0[in]*uz*uz;

@@ -38,6 +38,7 @@ class Update : protected Pointers {
   void create_method(vector<string>);
   void new_method(vector<string>);
   void update_time();
+  int update_timestep();
 protected:
   
 };

@@ -69,7 +69,7 @@ void FixBodyforceCurrentConfig::initial_integrate() {
     
   int solid = group->solid[igroup];
 
-  Eigen::Vector3d *b;
+  Eigen::Vector3d *mb;
   int nmax;
   int *mask;
   double *mass;
@@ -81,7 +81,7 @@ void FixBodyforceCurrentConfig::initial_integrate() {
 
   if (solid == -1) {
     for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
-      b = domain->solids[isolid]->b;
+      mb = domain->solids[isolid]->mb;
       x0 = domain->solids[isolid]->x0;
       nmax = domain->solids[isolid]->np;
       mask = domain->solids[isolid]->mask;
@@ -99,8 +99,9 @@ void FixBodyforceCurrentConfig::initial_integrate() {
 	    if (yset) f[1] = yvalue.result(mpm);
 	    if (zset) f[2] = zvalue.result(mpm);
 
-	    b[in] += f;
-	    ftot += mass[in]*f;
+	    f *= mass[in];
+	    mb[in] += f;
+	    ftot += f;
 	  }
 	}
       }
@@ -111,7 +112,7 @@ void FixBodyforceCurrentConfig::initial_integrate() {
     }
   } else {
 
-    b = domain->solids[solid]->b;
+    mb = domain->solids[solid]->mb;
     x0 = domain->solids[solid]->x0;
     nmax = domain->solids[solid]->np;
     mask = domain->solids[solid]->mask;
@@ -129,8 +130,9 @@ void FixBodyforceCurrentConfig::initial_integrate() {
 	  if (yset) f[1] = yvalue.result(mpm);
 	  if (zset) f[2] = zvalue.result(mpm);
 
-	  b[in] += f;
-	  ftot += mass[in]*f;
+	  f *= mass[in];
+	  mb[in] += f;
+	  ftot += f;
 	}
       }
     }

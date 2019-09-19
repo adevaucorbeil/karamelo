@@ -97,6 +97,7 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
 {
   if (!update_wf) return;
 
+  // cout << "In TLMPM::compute_grid_weight_functions_and_gradients()\n";
   bigint nsolids, np, nnodes;
 
   nsolids = domain->solids.size();
@@ -129,6 +130,7 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
 
       int **ntype = domain->solids[isolid]->grid->ntype;
 
+      r.setZero();
       if (np && nnodes) {
 	for (int ip=0; ip<np; ip++) {
 	  // Calculate what nodes particle ip will interact with:
@@ -144,14 +146,23 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
 	    int k0 = (int) ((xp[ip][2] - domain->solids[isolid]->solidlo[2])*inv_cellsize);
 
 	    for(int i=i0; i<i0+2;i++){
-	      for(int j=j0; j<j0+2;j++){
-		if (nz>1){
-		  for(int k=k0; k<k0+2;k++){
-		    n_neigh.push_back(nz*ny*i+nz*j+k);
+	      if (ny>1){
+		for(int j=j0; j<j0+2;j++){
+		  if (nz>1){
+		    for(int k=k0; k<k0+2;k++){
+		      int n = nz*ny*i+nz*j+k;
+		      if (n < nnodes)
+			n_neigh.push_back(n);
+		    }
+		  } else {
+		    int n = ny*i+j;
+		    if (n < nnodes)
+		      n_neigh.push_back(n);
 		  }
-		} else {
-		  n_neigh.push_back(ny*i+j);
 		}
+	      } else {
+		if (i < nnodes)
+		  n_neigh.push_back(i);
 	      }
 	    }
 	  } else if (update->method_shape_function.compare("Bernstein-quadratic")==0){
@@ -166,22 +177,31 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
 	    // cout << "(" << i0 << "," << j0 << "," << k0 << ")\t";
 
 	    for(int i=i0; i<i0+3;i++){
-	      for(int j=j0; j<j0+3;j++){
-		if (nz>1){
-		  for(int k=k0; k<k0+3;k++){
-		    n_neigh.push_back(nz*ny*i+nz*j+k);
-		    // if (nz*ny*i+nz*j+k >= nnodes) {
-		    //   cout << "Error: " << nz*ny*i+nz*j+k << " >= nnodes=" << nnodes << endl ;
+	      if (ny>1){
+		for(int j=j0; j<j0+3;j++){
+		  if (nz>1){
+		    for(int k=k0; k<k0+3;k++){
+		      int n = nz*ny*i+nz*j+k;
+		      if (n < nnodes)
+			n_neigh.push_back(n);
+		      // if (nz*ny*i+nz*j+k >= nnodes) {
+		      //   cout << "Error: " << nz*ny*i+nz*j+k << " >= nnodes=" << nnodes << endl ;
+		      //   exit(1);
+		      // }
+		    }
+		  } else {
+		    int n = ny*i+j;
+		    if (n < nnodes)
+			n_neigh.push_back(n);
+		    // if (ny*i+j >= nnodes) {
+		    //   cout << "Error: " << ny*i+j << " >= nnodes=" << nnodes << endl ;
 		    //   exit(1);
 		    // }
 		  }
-		} else {
-		  n_neigh.push_back(ny*i+j);
-		  // if (ny*i+j >= nnodes) {
-		  //   cout << "Error: " << ny*i+j << " >= nnodes=" << nnodes << endl ;
-		  //   exit(1);
-		  // }
 		}
+	      } else {
+		if (i < nnodes)
+		  n_neigh.push_back(i);
 	      }
 	    }
 	  } else if (update->method_shape_function.compare("cubic-spline")==0){
@@ -192,18 +212,23 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
 	    // cout << "(" << i0 << "," << j0 << "," << k0 << ")\t";
 
 	    for(int i=i0; i<i0+4;i++){
-	      for(int j=j0; j<j0+4;j++){
-		if (nz>1){
-		  for(int k=k0; k<k0+4;k++){
-		    int n = nz*ny*i+nz*j+k;
+	      if (ny>1) {
+		for(int j=j0; j<j0+4;j++){
+		  if (nz>1){
+		    for(int k=k0; k<k0+4;k++){
+		      int n = nz*ny*i+nz*j+k;
+		      if (n < nnodes)
+			n_neigh.push_back(n);
+		    }
+		  } else {
+		    int n = ny*i+j;
 		    if (n < nnodes)
 		      n_neigh.push_back(n);
 		  }
-		} else {
-		  int n = ny*i+j;
-		    if (n < nnodes)
-		      n_neigh.push_back(n);
 		}
+	      } else {
+		if (i < nnodes)
+		  n_neigh.push_back(i);
 	      }
 	    }
 	  } else {
@@ -222,7 +247,8 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
 	    r = (xp[ip] - xn[in]) * inv_cellsize;
 
 	    s[0] = basis_function(r[0], ntype[in][0]);
-	    s[1] = basis_function(r[1], ntype[in][1]);
+	    if (domain->dimension >= 2) s[1] = basis_function(r[1], ntype[in][1]);
+	    else s[1] = 1;
 	    if (domain->dimension == 3) s[2] = basis_function(r[2], ntype[in][2]);
 	    else s[2] = 1;
 
@@ -238,21 +264,27 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
 	      // }
 
 	      sd[0] = derivative_basis_function(r[0], ntype[in][0], inv_cellsize);
-	      sd[1] = derivative_basis_function(r[1], ntype[in][1], inv_cellsize);
+	      if (domain->dimension >= 2) sd[1] = derivative_basis_function(r[1], ntype[in][1], inv_cellsize);
 	      if (domain->dimension == 3) sd[2] = derivative_basis_function(r[2], ntype[in][2], inv_cellsize);
 
 	      neigh_pn[ip].push_back(in);
 	      neigh_np[in].push_back(ip);
 	      numneigh_pn[ip]++;
 	      numneigh_np[in]++;
-
+	      if (domain->dimension == 1) wf = s[0];
 	      if (domain->dimension == 2) wf = s[0]*s[1];
 	      if (domain->dimension == 3) wf = s[0]*s[1]*s[2];
 
 	      wf_pn[ip].push_back(wf);
 	      wf_np[in].push_back(wf);
 
-	      if (domain->dimension == 2)
+	      if (domain->dimension == 1)
+		{
+		  wfd[0] = sd[0];
+		  wfd[1] = 0;
+		  wfd[2] = 0;
+		}
+	      else if (domain->dimension == 2)
 		{
 		  wfd[0] = sd[0]*s[1];
 		  wfd[1] = s[0]*sd[1];
@@ -284,7 +316,7 @@ void TLMPM::particles_to_grid()
   bool grid_reset = true; // Indicate if the grid quantities have to be reset
   for (int isolid=0; isolid<domain->solids.size(); isolid++){
     domain->solids[isolid]->compute_mass_nodes(grid_reset);
-    domain->solids[isolid]->compute_node_rotation_matrix(grid_reset);
+    //domain->solids[isolid]->compute_node_rotation_matrix(grid_reset);
     if (method_type.compare("APIC") == 0) domain->solids[isolid]->compute_velocity_nodes_APIC(grid_reset);
     else domain->solids[isolid]->compute_velocity_nodes(grid_reset);
     domain->solids[isolid]->compute_external_forces_nodes(grid_reset);
@@ -318,11 +350,17 @@ void TLMPM::advance_particles()
 
 void TLMPM::velocities_to_grid()
 {
-  for (int isolid=0; isolid<domain->solids.size(); isolid++) {
-    if (method_type.compare("APIC") != 0) { 
+  if (method_type.compare("APIC") != 0) {
+    for (int isolid=0; isolid<domain->solids.size(); isolid++) {
       //domain->solids[isolid]->compute_mass_nodes();
       domain->solids[isolid]->compute_velocity_nodes(true);
     }
+  }
+}
+
+void TLMPM::update_grid_positions()
+{
+  for (int isolid=0; isolid<domain->solids.size(); isolid++) {
     domain->solids[isolid]->grid->update_grid_positions();
   }
 }
@@ -352,7 +390,6 @@ void TLMPM::update_stress()
 
 void TLMPM::adjust_dt()
 {
-  update->update_time();
   if (update->dt_constant) return; // dt is set as a constant, do not update
 
 
@@ -381,6 +418,6 @@ void TLMPM::reset()
   for (int isolid=0; isolid<domain->solids.size(); isolid++) {
     domain->solids[isolid]->dtCFL = 1.0e22;
     np = domain->solids[isolid]->np;
-    for (int ip = 0; ip < np; ip++) domain->solids[isolid]->b[ip].setZero();
+    for (int ip = 0; ip < np; ip++) domain->solids[isolid]->mb[ip].setZero();
   }
 }

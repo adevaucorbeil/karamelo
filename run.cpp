@@ -7,6 +7,7 @@
 #include "update.h"
 #include "scheme.h"
 #include "var.h"
+#include <string>
 
 /* ---------------------------------------------------------------------- */
 
@@ -34,11 +35,11 @@ Var Run::command(vector<string> args)
   }
 
   int nsteps = (int) input->parsev(args[0]);
-  update->nsteps = nsteps;
+  update->nsteps = INT_MAX;
   update->maxtime = -1;
-  update->firststep = update->ntimestep + 1;
+  update->firststep = update->ntimestep;
   update->laststep = update->firststep + nsteps;
-  update->scheme->run(nsteps);
+  update->scheme->run(Var("timestep<"+to_string(update->laststep), update->ntimestep<update->laststep));
 
   return Var(0);
 }

@@ -24,7 +24,7 @@ static inline Matrix3d Deviator(const Matrix3d M) {
 static inline Matrix2d Deviator(const Matrix2d M) {
 	Matrix2d eye;
 	eye.setIdentity();
-	eye *= M.trace() / 2.0;
+	eye *= 0.5 * M.trace();
 	return M - eye;
 }
 /*

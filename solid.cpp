@@ -9,6 +9,7 @@
 #include <math.h>
 #include "input.h"
 #include "var.h"
+#include <omp.h>
 
 using namespace std;
 using namespace Eigen;
@@ -45,9 +46,9 @@ Solid::Solid(MPM *mpm, vector<string> args) :
 
   a = NULL;
 
-  sigma = strain_el = PK1 = PK1T = L = F = R = U = D = Finv = Fdot = Di = NULL;
+  sigma = strain_el = vol0PK1 = L = F = R = U = D = Finv = Fdot = Di = NULL;
 
-  b = f = NULL;
+  mb = f = NULL;
 
   J = NULL;
 
@@ -91,12 +92,11 @@ Solid::~Solid()
   if (v!=NULL) delete v;
   if (v_update!=NULL) delete v_update;
   if (a!=NULL) delete a;
-  if (b!=NULL) delete b;
+  if (mb!=NULL) delete mb;
   if (f!=NULL) delete f;
   if (sigma!=NULL) delete sigma;
   if (strain_el!=NULL) delete strain_el;
-  if (PK1!=NULL) delete PK1;
-  if (PK1T!=NULL) delete PK1T;
+  if (vol0PK1!=NULL) delete vol0PK1;
   if (L!=NULL) delete L;
   if (F!=NULL) delete F;
   if (R!=NULL) delete R;
@@ -265,11 +265,11 @@ void Solid::grow(int nparticles){
     exit(1);
   }
 
-  str = "solid-" + id + ":b";
+  str = "solid-" + id + ":mb";
   cout << "Growing " << str << endl;
-  if (b == NULL) b = new Eigen::Vector3d[np];
+  if (mb == NULL) mb = new Eigen::Vector3d[np];
   else {
-    cout << "Error: b already exists, I don't know how to grow it!\n";
+    cout << "Error: mb already exists, I don't know how to grow it!\n";
     exit(1);
   }
 
@@ -293,15 +293,9 @@ void Solid::grow(int nparticles){
     exit(1);
   }
 
-  if (PK1 == NULL) PK1 = new Eigen::Matrix3d[np];
+  if (vol0PK1 == NULL) vol0PK1 = new Eigen::Matrix3d[np];
   else {
-    cout << "Error: PK1 already exists, I don't know how to grow it!\n";
-    exit(1);
-  }
-
-  if (PK1T == NULL) PK1T = new Eigen::Matrix3d[np];
-  else {
-    cout << "Error: PK1T already exists, I don't know how to grow it!\n";
+    cout << "Error: vol0PK1 already exists, I don't know how to grow it!\n";
     exit(1);
   }
 
@@ -401,21 +395,6 @@ void Solid::grow(int nparticles){
   J = memory->grow(J, np, str);
 }
 
-void Solid::compute_node_rotation_matrix(bool reset)
-{
-  int ip;
-
-  for (int in=0; in<grid->nnodes; in++){
-    if (reset) grid->R[in].setZero();
-
-    for (int j=0; j<numneigh_np[in];j++){
-      ip = neigh_np[in][j];
-      grid->R[in] += (wf_np[in][j] * mass[ip]) * R[ip]/grid->mass[in];
-    }
-  }
-  return;
-}
-
 void Solid::compute_mass_nodes(bool reset)
 {
   int ip;
@@ -434,16 +413,21 @@ void Solid::compute_mass_nodes(bool reset)
 void Solid::compute_velocity_nodes(bool reset)
 {
   Eigen::Vector3d *vn = grid->v;
+  Eigen::Vector3d vtemp;
   double *massn = grid->mass;
   int ip;
 
   for (int in=0; in<grid->nnodes; in++) {
     if (reset) vn[in].setZero();
     if (massn[in] > 0) {
+      vtemp.setZero();
       for (int j=0; j<numneigh_np[in];j++){
 	ip = neigh_np[in][j];
-	vn[in] += (wf_np[in][j] * mass[ip]) * v[ip]/ massn[in];
+	vtemp += (wf_np[in][j] * mass[ip]) * v[ip];
+	//vn[in] += (wf_np[in][j] * mass[ip]) * v[ip]/ massn[in];
       }
+      vtemp /= massn[in];
+      vn[in] += vtemp;
     }
   }
 }
@@ -468,16 +452,16 @@ void Solid::compute_velocity_nodes_APIC(bool reset)
 
 void Solid::compute_external_forces_nodes(bool reset)
 {
-  Eigen::Vector3d *bn = grid->b;
+  Eigen::Vector3d *mbn = grid->mb;
   double *massn = grid->mass;
   int ip;
 
   for (int in=0; in<grid->nnodes; in++) {
-    if (reset) bn[in].setZero();
+    if (reset) mbn[in].setZero();
     if (massn[in] > 0) {
       for (int j=0; j<numneigh_np[in];j++){
 	ip = neigh_np[in][j];
-	bn[in] += (wf_np[in][j] * mass[ip]) * b[ip] / massn[in];
+	mbn[in] += wf_np[in][j] * mb[ip];
       }
     }
   }
@@ -486,15 +470,18 @@ void Solid::compute_external_forces_nodes(bool reset)
 void Solid::compute_internal_forces_nodes_TL()
 {
   Eigen::Vector3d *fn = grid->f;
-  double *massn = grid->mass;
+  Eigen::Vector3d ftemp;
   int ip;
 
   for (int in=0; in<grid->nnodes; in++) {
-    fn[in].setZero();
+    //fn[in].setZero();
+    ftemp.setZero();
     for (int j=0; j<numneigh_np[in];j++){
       ip = neigh_np[in][j];
-      fn[in] -= vol0[ip] * (PK1T[ip] * wfd_np[in][j]);
+      ftemp -= vol0PK1[ip] * wfd_np[in][j];
+      //fn[in] -= (vol0PK1[ip] * wfd_np[in][j]);
     }
+    fn[in] = ftemp;
   }
 }
 
@@ -541,17 +528,23 @@ void Solid::compute_particle_acceleration()
     a[ip].setZero();
     for (int j=0; j<numneigh_pn[ip]; j++){
       in = neigh_pn[ip][j];
-      a[ip] += inv_dt * wf_pn[ip][j] * (vn_update[in] - vn[in]);
+      a[ip] += wf_pn[ip][j] * (vn_update[in] - vn[in]);
     }
+    a[ip] *= inv_dt;
     f[ip] = a[ip] / mass[ip];
   }
 }
 
 void Solid::update_particle_position()
 {
+  bool ul;
+
+  if (update->method_style.compare("tlmpm") != 0) ul = true;
+  else ul = false;
+
   for (int ip=0; ip<np; ip++) {
     x[ip] += update->dt*v_update[ip];
-    if (update->method_style.compare("tlmpm") != 0) {
+    if (ul) {
       // Check if the particle is within the box's domain:
       if (domain->inside(x[ip]) == 0) {
 	cout << "Error: Particle " << ip << " left the domain (" <<
@@ -576,7 +569,15 @@ void Solid::compute_rate_deformation_gradient_TL()
   int in;
   Eigen::Vector3d *vn = grid->v;
 
-  if (domain->dimension == 2) {
+  if (domain->dimension == 1) {
+    for (int ip=0; ip<np; ip++){
+      Fdot[ip].setZero();
+      for (int j=0; j<numneigh_pn[ip]; j++){
+	in = neigh_pn[ip][j];
+	Fdot[ip](0,0) += vn[in][0]*wfd_pn[ip][j][0];
+      }
+    }
+  } else if (domain->dimension == 2) {
     for (int ip=0; ip<np; ip++){
       Fdot[ip].setZero();
       for (int j=0; j<numneigh_pn[ip]; j++){
@@ -611,7 +612,15 @@ void Solid::compute_rate_deformation_gradient_UL()
   int in;
   Eigen::Vector3d *vn = grid->v;
 
-  if (domain->dimension == 2) {
+  if (domain->dimension == 1) {
+    for (int ip=0; ip<np; ip++){
+      L[ip].setZero();
+      for (int j=0; j<numneigh_pn[ip]; j++){
+	in = neigh_pn[ip][j];
+	L[ip](0,0) += vn[in][0]*wfd_pn[ip][j][0];
+      }
+    }
+  } else if (domain->dimension == 2) {
     for (int ip=0; ip<np; ip++){
       L[ip].setZero();
       for (int j=0; j<numneigh_pn[ip]; j++){
@@ -647,39 +656,53 @@ void Solid::compute_deformation_gradient()
   Eigen::Vector3d *xn = grid->x;
   Eigen::Vector3d *x0n = grid->x0;
   Eigen::Vector3d dx;
-  Eigen::Matrix3d eye;
+  Eigen::Matrix3d Ftemp, eye;
   eye.setIdentity();
 
-  if (domain->dimension == 2) {
+  if (domain->dimension == 1) {
     for (int ip=0; ip<np; ip++){
-      F[ip].setZero();
+      // F[ip].setZero();
+      Ftemp.setZero();
       for (int j=0; j<numneigh_pn[ip]; j++){
 	in = neigh_pn[ip][j];
 	dx = xn[in] - x0n[in];
-	F[ip](0,0) += dx[0]*wfd_pn[ip][j][0];
-	F[ip](0,1) += dx[0]*wfd_pn[ip][j][1];
-	F[ip](1,0) += dx[1]*wfd_pn[ip][j][0];
-	F[ip](1,1) += dx[1]*wfd_pn[ip][j][1];
+	Ftemp(0,0) += dx[0]*wfd_pn[ip][j][0];
       }
-      F[ip].noalias() += eye;
+      F[ip](0,0) = Ftemp(0,0) +1;
+    }
+  } else if (domain->dimension == 2) {
+    for (int ip=0; ip<np; ip++){
+      // F[ip].setZero();
+      Ftemp.setZero();
+      for (int j=0; j<numneigh_pn[ip]; j++){
+	in = neigh_pn[ip][j];
+	dx = xn[in] - x0n[in];
+	Ftemp(0,0) += dx[0]*wfd_pn[ip][j][0];
+	Ftemp(0,1) += dx[0]*wfd_pn[ip][j][1];
+	Ftemp(1,0) += dx[1]*wfd_pn[ip][j][0];
+	Ftemp(1,1) += dx[1]*wfd_pn[ip][j][1];
+      }
+      F[ip] = Ftemp + eye;
     }
   } else if (domain->dimension == 3) {
     for (int ip=0; ip<np; ip++){
-      F[ip].setZero();
+      // F[ip].setZero();
+      Ftemp.setZero();
       for (int j=0; j<numneigh_pn[ip]; j++){
 	in = neigh_pn[ip][j];
 	dx = xn[in] - x0n[in];
-	F[ip](0,0) += dx[0]*wfd_pn[ip][j][0];
-	F[ip](0,1) += dx[0]*wfd_pn[ip][j][1];
-	F[ip](0,2) += dx[0]*wfd_pn[ip][j][2];
-	F[ip](1,0) += dx[1]*wfd_pn[ip][j][0];
-	F[ip](1,1) += dx[1]*wfd_pn[ip][j][1];
-	F[ip](1,2) += dx[1]*wfd_pn[ip][j][2];
-	F[ip](2,0) += dx[2]*wfd_pn[ip][j][0];
-	F[ip](2,1) += dx[2]*wfd_pn[ip][j][1];
-	F[ip](2,2) += dx[2]*wfd_pn[ip][j][2];
+	Ftemp(0,0) += dx[0]*wfd_pn[ip][j][0];
+	Ftemp(0,1) += dx[0]*wfd_pn[ip][j][1];
+	Ftemp(0,2) += dx[0]*wfd_pn[ip][j][2];
+	Ftemp(1,0) += dx[1]*wfd_pn[ip][j][0];
+	Ftemp(1,1) += dx[1]*wfd_pn[ip][j][1];
+	Ftemp(1,2) += dx[1]*wfd_pn[ip][j][2];
+	Ftemp(2,0) += dx[2]*wfd_pn[ip][j][0];
+	Ftemp(2,1) += dx[2]*wfd_pn[ip][j][1];
+	Ftemp(2,2) += dx[2]*wfd_pn[ip][j][2];
       }
-      F[ip].noalias() += eye;
+      //F[ip].noalias() += eye;
+      F[ip] = Ftemp + eye;
 
     }
   }
@@ -694,7 +717,17 @@ void Solid::compute_rate_deformation_gradient_TL_APIC()
   Eigen::Vector3d *vn = grid->v_update;
   Eigen::Vector3d dx;
 
-  if (domain->dimension == 2) {
+  if (domain->dimension == 1) {
+    for (int ip=0; ip<np; ip++){
+      Fdot[ip].setZero();
+      for (int j=0; j<numneigh_pn[ip]; j++){
+	in = neigh_pn[ip][j];
+	dx = x0n[in] - x0[ip];
+	Fdot[ip](0,0) += vn[in][0]*dx[0]*wf_pn[ip][j];
+      }
+      Fdot[ip] *= Di[ip];
+    }
+  } else if (domain->dimension == 2) {
     for (int ip=0; ip<np; ip++){
       Fdot[ip].setZero();
       for (int j=0; j<numneigh_pn[ip]; j++){
@@ -736,7 +769,17 @@ void Solid::compute_rate_deformation_gradient_UL_APIC()
   Eigen::Vector3d *vn = grid->v_update;
   Eigen::Vector3d dx;
 
-  if (domain->dimension == 2) {
+  if (domain->dimension == 1) {
+    for (int ip=0; ip<np; ip++){
+      L[ip].setZero();
+      for (int j=0; j<numneigh_pn[ip]; j++){
+	in = neigh_pn[ip][j];
+	dx = x0n[in] - x0[ip];
+	L[ip](0,0) += vn[in][0]*dx[0]*wf_pn[ip][j];
+      }
+      L[ip] *= Di[ip];
+    }
+  } else if (domain->dimension == 2) {
     for (int ip=0; ip<np; ip++){
       L[ip].setZero();
       for (int j=0; j<numneigh_pn[ip]; j++){
@@ -772,40 +815,52 @@ void Solid::compute_rate_deformation_gradient_UL_APIC()
 
 void Solid::update_deformation_gradient()
 {
-  bool status;
+  bool status, tl, nh;
   Eigen::Matrix3d U;
   Eigen::Matrix3d eye;
   eye.setIdentity();
 
+  if (update->method_style.compare("tlmpm") == 0) tl = true;
+  else tl = false;
+
+  if ((mat->eos!=NULL) && (mat->strength!=NULL)) nh = true;
+  else nh = false;
+
   for (int ip=0; ip<np; ip++){
     
-    if (update->method_style.compare("tlmpm") == 0) F[ip] += update->dt * Fdot[ip];
+    if (tl) F[ip] += update->dt * Fdot[ip];
     else F[ip] = (eye+update->dt*L[ip]) * F[ip];
 
+    Finv[ip] = F[ip].inverse();
     J[ip] = F[ip].determinant();
+
     if (J[ip] < 0.0) {
       cout << "Error: J[" << ip << "]<0.0 == " << J[ip] << endl;
       cout << "F[" << ip << "]:" << endl << F[ip] << endl;
 	exit(1);
     }
+
     vol[ip] = J[ip] * vol0[ip];
     rho[ip] = rho0[ip] / J[ip];
-    Finv[ip] = F[ip].inverse();
-    if (update->method_style.compare("tlmpm") == 0)
-      L[ip] = Fdot[ip] * Finv[ip];
-    // else
-    //   Fdot[ip] = L[ip]*F[ip];
 
-    status = PolDec(F[ip], R[ip], U, false); // polar decomposition of the deformation gradient, F = R * U
-    if (update->method_style.compare("tlmpm") == 0)
-      D[ip] = 0.5 * (R[ip].transpose() * (L[ip] + L[ip].transpose()) * R[ip]);
-    else D[ip] = 0.5 * (L[ip] + L[ip].transpose());
+    if (nh) {
+      // Only done if not Neo-Hookean:
+      if (update->method_style.compare("tlmpm") == 0)
+	L[ip] = Fdot[ip] * Finv[ip];
+      // else
+      //   Fdot[ip] = L[ip]*F[ip];
 
-    if (!status) {
-      cout << "Polar decomposition of deformation gradient failed for particle " << ip << ".\n";
-      cout << "F:" << endl << F[ip] << endl;
-      cout << "timestep" << endl << update->ntimestep << endl;
-      exit(1);
+      status = PolDec(F[ip], R[ip], U, false); // polar decomposition of the deformation gradient, F = R * U
+      if (update->method_style.compare("tlmpm") == 0)
+	D[ip] = 0.5 * (R[ip].transpose() * (L[ip] + L[ip].transpose()) * R[ip]);
+      else D[ip] = 0.5 * (L[ip] + L[ip].transpose());
+
+      if (!status) {
+	cout << "Polar decomposition of deformation gradient failed for particle " << ip << ".\n";
+	cout << "F:" << endl << F[ip] << endl;
+	cout << "timestep" << endl << update->ntimestep << endl;
+	exit(1);
+      }
     }
 
     // strain_increment[ip] = update->dt * D[ip];
@@ -816,12 +871,30 @@ void Solid::update_stress()
 {
   min_inv_p_wave_speed = 1.0e22;
   double pH, plastic_strain_increment;
-  Matrix3d eye, sigma_dev, FinvT;
+  Matrix3d eye, sigma_dev, FinvT, PK1;
+  bool tl, nh;
+
+  if ((mat->eos!=NULL) && (mat->strength!=NULL)) nh = false;
+  else nh = true;
+
+  if (update->method_style.compare("tlmpm") == 0) tl = true;
+  else tl = false;
 
   eye.setIdentity();
 
+  //# pragma omp parallel for
   for (int ip=0; ip<np; ip++){
-    if ((mat->eos!=NULL) && (mat->strength!=NULL)) {
+    if (nh) {
+
+      // Neo-Hookean material:
+      FinvT = Finv[ip].transpose();
+      PK1 = mat->G*(F[ip] - FinvT) + mat->lambda*log(J[ip])*FinvT;
+      vol0PK1[ip] = vol0[ip]*PK1;
+      sigma[ip] = 1.0/J[ip]*(F[ip]*PK1.transpose());
+      strain_el[ip] = 0.5*(F[ip].transpose()*F[ip] - eye);//update->dt * D[ip];
+
+    } else {
+
       pH = mat->eos->compute_pressure(J[ip], rho[ip], 0, damage[ip]);
       sigma_dev = mat->strength->update_deviatoric_stress(sigma[ip], D[ip], plastic_strain_increment, eff_plastic_strain[ip], eff_plastic_strain_rate[ip], damage[ip]);
 
@@ -843,21 +916,21 @@ void Solid::update_stress()
 	strain_el[ip] =  (update->dt*D[ip].trace() + strain_el[ip].trace())/3.0*eye;
       }
 
-      if (update->method_style.compare("tlmpm") == 0) {
-	PK1[ip] = J[ip] * (R[ip] * sigma[ip] * R[ip].transpose()) * Finv[ip].transpose();
+      if (tl) {
+	vol0PK1[ip] = vol0[ip]*J[ip] * (R[ip] * sigma[ip] * R[ip].transpose()) * Finv[ip].transpose();
       }
-
-    } else {
-      // Neo-Hookean material:
-      FinvT = Finv[ip].transpose();
-      PK1[ip] = mat->G*(F[ip] - FinvT) + mat->lambda*log(J[ip])*FinvT;
-      sigma[ip] = 1.0/J[ip]*(F[ip]*PK1[ip].transpose());
-      strain_el[ip] = 0.5*(F[ip].transpose()*F[ip] - eye);//update->dt * D[ip];
     }
+  }
 
-    PK1T[ip] = PK1[ip].transpose();
-    
-    min_inv_p_wave_speed = MIN(min_inv_p_wave_speed, rho[ip] / (mat->K + 4.0/3.0 * mat->G));
+  double min_h_ratio = 1.0e22;
+  double four_third = 1.333333333333333333333333333333333333333;
+  for (int ip=0; ip<np; ip++){
+    min_inv_p_wave_speed = MIN(min_inv_p_wave_speed, rho[ip] / (mat->K + four_third * mat->G));
+
+    min_h_ratio = MIN(min_h_ratio, F[ip](0,0)*F[ip](0,0) + F[ip](0,1)*F[ip](0,1) + F[ip](0,2)*F[ip](0,2));
+    min_h_ratio = MIN(min_h_ratio, F[ip](1,0)*F[ip](1,0) + F[ip](1,1)*F[ip](1,1) + F[ip](1,2)*F[ip](1,2));
+    min_h_ratio = MIN(min_h_ratio, F[ip](2,0)*F[ip](2,0) + F[ip](2,1)*F[ip](2,1) + F[ip](2,2)*F[ip](2,2));
+
     if (std::isnan(min_inv_p_wave_speed)) {
       cout << "Error: min_inv_p_wave_speed is nan with ip=" << ip << ", rho[ip]=" << rho[ip] << ", K=" << mat->K << ", G=" << mat->G << endl;
       exit(1);
@@ -868,7 +941,7 @@ void Solid::update_stress()
 
   }
   min_inv_p_wave_speed = sqrt(min_inv_p_wave_speed);
-  dtCFL = MIN(dtCFL, min_inv_p_wave_speed * grid->cellsize);
+  dtCFL = MIN(dtCFL, min_inv_p_wave_speed * grid->cellsize * sqrt(min_h_ratio));
   if (std::isnan(dtCFL)) {
       cout << "Error: dtCFL = " << dtCFL << "\n";
       cout << "min_inv_p_wave_speed = " << min_inv_p_wave_speed << ", grid->cellsize=" << grid->cellsize << endl;
@@ -946,8 +1019,8 @@ void Solid::copy_particle(int i, int j) {
   v[j] = v[i];
   v_update[j] = v[i];
   a[j] = a[i];
-  b[j] = b[i];
-  f[j] = b[i];
+  mb[j] = mb[i];
+  f[j] = f[i];
   vol0[j] = vol0[i];
   vol[j]= vol[i];
   rho0[j] = rho0[i];
@@ -958,7 +1031,7 @@ void Solid::copy_particle(int i, int j) {
   damage[j] = damage[i];
   damage_init[j] = damage_init[i];
   sigma[j] = sigma[i];
-  PK1[j] = PK1[i];
+  vol0PK1[j] = vol0PK1[i];
   L[j] = L[i];
   F[j] = F[i];
   R[j] = R[i];
@@ -1002,30 +1075,34 @@ void Solid::populate(vector<string> args) {
   if (grid->nnodes == 0) {
     // The grid will be ajusted to the solid's domain (good for TLMPM),
     // so all particles created will lie in the region:
-    checkIfInRegion = false;
+    checkIfInRegion = true;
 
     // and we need to create the corresponding grid:
     grid->init(solidlo, solidhi);
 
     Lx = solidhi[0]-solidlo[0];
-    Ly = solidhi[1]-solidlo[1];
-
+    if (domain->dimension >= 2) Ly = solidhi[1]-solidlo[1];
     if (domain->dimension == 3) Lz = solidhi[2]-solidlo[2];
+
   } else {
     // The grid is most likely bigger than the solid's domain (good for ULMPM),
     // so all particles created won't lie in the region, they will need to be checked:
     checkIfInRegion = true;
 
     Lx = domain->boxhi[0] - domain->boxlo[0];
-    Ly = domain->boxhi[1] - domain->boxlo[1];
+    if (domain->dimension >= 2) Ly = domain->boxhi[1] - domain->boxlo[1];
     if (domain->dimension == 3) Lz = domain->boxhi[2] - domain->boxlo[2];
   }
 
   nx = ((int) Lx/delta);
-  ny = ((int) Ly/delta);
-
   while (nx*delta <= Lx-0.5*delta) nx++;
-  while (ny*delta <= Ly-0.5*delta) ny++;
+
+  if (domain->dimension >= 2) {
+    ny = ((int) Ly/delta);
+    while (ny*delta <= Ly-0.5*delta) ny++;
+  } else {
+    ny = 1;
+  }
 
   if (domain->dimension == 3) {
     nz = ((int) Lz/delta);
@@ -1044,8 +1121,10 @@ void Solid::populate(vector<string> args) {
 
   int l=0;
   double vol_;
-  if (domain->dimension == 3) vol_ = delta*delta*delta;
-  else vol_ = delta*delta;
+
+  if (domain->dimension == 1) vol_ = delta;
+  else if (domain->dimension == 2) vol_ = delta*delta;
+  else vol_ = delta*delta*delta;
 
   double mass_ = mat->rho0 * vol_;
 
@@ -1075,6 +1154,36 @@ void Solid::populate(vector<string> args) {
     np *= 8;
     mass_ /= 8.0;
     vol_ /= 8.0;
+    // Allocate the space in the vectors for np particles:
+    grow(np);
+
+    double half_Sqrt_three_inv = 0.5/sqrt(3.0);
+
+    double intpoints[8][3] = {{-half_Sqrt_three_inv, -half_Sqrt_three_inv, -half_Sqrt_three_inv},
+  			      {-half_Sqrt_three_inv, -half_Sqrt_three_inv, half_Sqrt_three_inv},
+  			      {-half_Sqrt_three_inv, half_Sqrt_three_inv, -half_Sqrt_three_inv},
+  			      {-half_Sqrt_three_inv, half_Sqrt_three_inv, half_Sqrt_three_inv},
+  			      {half_Sqrt_three_inv, -half_Sqrt_three_inv, -half_Sqrt_three_inv},
+  			      {half_Sqrt_three_inv, -half_Sqrt_three_inv, half_Sqrt_three_inv},
+  			      {half_Sqrt_three_inv, half_Sqrt_three_inv, -half_Sqrt_three_inv},
+  			      {half_Sqrt_three_inv, half_Sqrt_three_inv, half_Sqrt_three_inv}};
+
+    for (int i=0; i<nx; i++){
+      for (int j=0; j<ny; j++){
+  	for (int k=0; k<nz; k++){
+  	  for (int ip=0; ip<8; ip++) {
+	    if (checkIfInRegion) {
+	      x0[l][0] = x[l][0] = domain->boxlo[0] + delta*(i+0.5+intpoints[ip][0]);
+	      if (domain->dimension >= 2) x0[l][1] = x[l][1] = domain->boxlo[1] + delta*(j+0.5+intpoints[ip][1]);
+	      else x0[l][1] = x[l][1];
+	      if (domain->dimension == 3) x0[l][2] = x[l][2] = domain->boxlo[2] + delta*(k+0.5+intpoints[ip][2]);
+	      else x0[l][2] = x[l][2] = 0;
+	    } else {
+	      x0[l][0] = x[l][0] = solidlo[0] + delta*(i+0.5+intpoints[ip][0]);
+	      if (domain->dimension >= 2) x0[l][1] = x[l][1] = solidlo[1] + delta*(j+0.5+intpoints[ip][1]);
+	      else x0[l][1] = x[l][1];
+	      if (domain->dimension == 3) x0[l][2] = x[l][2] = solidlo[2] + delta*(k+0.5+intpoints[ip][2]);
+	      else x0[l][2] = x[l][2] = 0;
 
     if (nc==0) xi= 0.5/sqrt(3.0);
     else xi = 0.25;
@@ -1098,6 +1207,55 @@ void Solid::populate(vector<string> args) {
     np *= 27;
     mass_ /= 27.0;
     vol_ /= 27.0;
+    // Allocate the space in the vectors for np particles:
+    grow(np);
+
+    double a = 0.7746/2;
+
+    double intpoints[27][3] = {{-a, -a, -a},
+			       {-a, -a, 0},
+			       {-a, -a, a},
+			       {-a, 0, -a},
+			       {-a, 0, 0},
+			       {-a, 0, a},
+			       {-a, a, -a},
+			       {-a, a, 0},
+			       {-a, a, a},
+			       {0, -a, -a},
+			       {0, -a, 0},
+			       {0, -a, a},
+			       {0, 0, -a},
+			       {0, 0, 0},
+			       {0, 0, a},
+			       {0, a, -a},
+			       {0, a, 0},
+			       {0, a, a},
+			       {a, -a, -a},
+			       {a, -a, 0},
+			       {a, -a, a},
+			       {a, 0, -a},
+			       {a, 0, 0},
+			       {a, 0, a},
+			       {a, a, -a},
+			       {a, a, 0},
+			       {a, a, a}};
+
+    for (int i=0; i<nx; i++){
+      for (int j=0; j<ny; j++){
+	for (int k=0; k<nz; k++){
+	  for (int ip=0; ip<27; ip++) {
+	    if (checkIfInRegion) {
+	      x0[l][0] = x[l][0] = domain->boxlo[0] + delta*(i+0.5+intpoints[ip][0]);
+	      if (domain->dimension >= 2) x0[l][1] = x[l][1] = domain->boxlo[1] + delta*(j+0.5+intpoints[ip][1]);
+	      else x0[l][1] = x[l][1] = 0;
+	      if (domain->dimension == 3) x0[l][2] = x[l][2] = domain->boxlo[2] + delta*(k+0.5+intpoints[ip][2]);
+	      else x0[l][2] = x[l][2] = 0;
+	    } else {
+	      x0[l][0] = x[l][0] = solidlo[0] + delta*(i+0.5+intpoints[ip][0]);
+	      if (domain->dimension >= 2) x0[l][1] = x[l][1] = solidlo[1] + delta*(j+0.5+intpoints[ip][1]);
+	      else x0[l][1] = x[l][1] = 0;
+	      if (domain->dimension == 3) x0[l][2] = x[l][2] = solidlo[2] + delta*(k+0.5+intpoints[ip][2]);
+	      else x0[l][2] = x[l][2] = 0;
 
     if (nc == 0) xi = 0.7746/2;
     else xi = 2.0/3.0;
@@ -1211,7 +1369,7 @@ void Solid::populate(vector<string> args) {
     a[i].setZero();
     v[i].setZero();
     f[i].setZero();
-    b[i].setZero();
+    mb[i].setZero();
     v_update[i].setZero();
     vol0[i] = vol[i] = vol_;
     rho0[i] = rho[i] = mat->rho0;
@@ -1222,7 +1380,7 @@ void Solid::populate(vector<string> args) {
     damage_init[i] = 0;
     strain_el[i].setZero();
     sigma[i].setZero();
-    PK1[i].setZero();
+    vol0PK1[i].setZero();
     L[i].setZero();
     F[i].setIdentity();
     R[i].setIdentity();
@@ -1230,6 +1388,7 @@ void Solid::populate(vector<string> args) {
     D[i].setZero();
     Finv[i].setZero();
     Fdot[i].setZero();
+    Di[i].setZero();
 
     J[i] = 1;
   }
