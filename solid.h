@@ -21,8 +21,11 @@ class Solid : protected Pointers {
   Eigen::Vector3d *x;        // particles' current position
   Eigen::Vector3d *x0;       // particles' reference position
 
-  Eigen::Vector3d *xpc;      // current position of the corners of the particles' domain
-  Eigen::Vector3d *xpc0;     // reference position of the corners of the particles' domain
+  
+  Eigen::Vector3d *rp;       // current domain vector (CPDI1)
+  Eigen::Vector3d *rp0;      // reference domain vector (CPDI1)
+  Eigen::Vector3d *xpc;      // current position of the corners of the particles' domain (CPDI2)
+  Eigen::Vector3d *xpc0;     // reference position of the corners of the particles' domain (CPDI2)
   int nc;                    // number of corners per particles: 2^dimension
   
   Eigen::Vector3d *v;        // particles' current velocity
@@ -104,6 +107,7 @@ class Solid : protected Pointers {
   void compute_inertia_tensor(string);
   void compute_deformation_gradient();
   void copy_particle(int, int);
+  void update_particle_domain();
 
 private:
   void populate(vector<string>);

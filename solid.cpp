@@ -36,9 +36,13 @@ Solid::Solid(MPM *mpm, vector<string> args) :
   np = 0;
 
   x = x0 = NULL;
+  rp = rp0 = NULL;
   xpc = xpc0 = NULL;
 
-  if ((method_style.compare("tlcpdi") == 0) || (method_style.compare("ulcpdi") == 0)) {
+  if (method_style.compare("tlcpdi") == 0
+      || method_style.compare("ulcpdi") == 0
+      || method_style.compare("tlcpdi2") == 0
+      || method_style.compare("ulcpdi2") == 0) {
     nc = pow(2, domain->dimension);
   } else nc = 0;
 
@@ -87,6 +91,8 @@ Solid::~Solid()
 {
   if (x0!=NULL) delete x0;
   if (x!=NULL) delete x;
+  if (rp0!=NULL) delete rp0;
+  if (rp!=NULL) delete rp;
   if (xpc0!=NULL) delete xpc0;
   if (xpc!=NULL) delete xpc;
   if (v!=NULL) delete v;
@@ -223,7 +229,29 @@ void Solid::grow(int nparticles){
     exit(1);
   }
 
-  if (nc != 0) {
+  if (method_style.compare("tlcpdi") == 0
+      || method_style.compare("ulcpdi") == 0) {
+
+    str = "solid-" + id + ":rp0";
+    cout << "Growing " << str << endl;
+    if (rp0 == NULL) rp0 = new Eigen::Vector3d[domain->dimension*np];
+    else {
+      cout << "Error: xpc0 already exists, I don't know how to grow it!\n";
+      exit(1);
+    }
+
+    str = "solid-" + id + ":rp";
+    cout << "Growing " << str << endl;
+    if (rp == NULL) x = new Eigen::Vector3d[domain->dimension*np];
+    else {
+      cout << "Error: xpc already exists, I don't know how to grow it!\n";
+      exit(1);
+    }
+  }
+
+  if (method_style.compare("tlcpdi2") == 0
+      || method_style.compare("ulcpdi2") == 0) {
+
     str = "solid-" + id + ":xpc0";
     cout << "Growing " << str << endl;
     if (xpc0 == NULL) xpc0 = new Eigen::Vector3d[nc*np];
@@ -1151,45 +1179,14 @@ void Solid::populate(vector<string> args) {
   } else if (np_per_cell == 2) {
     // Quadratic elements:
 
-    np *= 8;
-    mass_ /= 8.0;
-    vol_ /= 8.0;
-    // Allocate the space in the vectors for np particles:
-    grow(np);
-
-    double half_Sqrt_three_inv = 0.5/sqrt(3.0);
-
-    double intpoints[8][3] = {{-half_Sqrt_three_inv, -half_Sqrt_three_inv, -half_Sqrt_three_inv},
-  			      {-half_Sqrt_three_inv, -half_Sqrt_three_inv, half_Sqrt_three_inv},
-  			      {-half_Sqrt_three_inv, half_Sqrt_three_inv, -half_Sqrt_three_inv},
-  			      {-half_Sqrt_three_inv, half_Sqrt_three_inv, half_Sqrt_three_inv},
-  			      {half_Sqrt_three_inv, -half_Sqrt_three_inv, -half_Sqrt_three_inv},
-  			      {half_Sqrt_three_inv, -half_Sqrt_three_inv, half_Sqrt_three_inv},
-  			      {half_Sqrt_three_inv, half_Sqrt_three_inv, -half_Sqrt_three_inv},
-  			      {half_Sqrt_three_inv, half_Sqrt_three_inv, half_Sqrt_three_inv}};
-
-    for (int i=0; i<nx; i++){
-      for (int j=0; j<ny; j++){
-  	for (int k=0; k<nz; k++){
-  	  for (int ip=0; ip<8; ip++) {
-	    if (checkIfInRegion) {
-	      x0[l][0] = x[l][0] = domain->boxlo[0] + delta*(i+0.5+intpoints[ip][0]);
-	      if (domain->dimension >= 2) x0[l][1] = x[l][1] = domain->boxlo[1] + delta*(j+0.5+intpoints[ip][1]);
-	      else x0[l][1] = x[l][1];
-	      if (domain->dimension == 3) x0[l][2] = x[l][2] = domain->boxlo[2] + delta*(k+0.5+intpoints[ip][2]);
-	      else x0[l][2] = x[l][2] = 0;
-	    } else {
-	      x0[l][0] = x[l][0] = solidlo[0] + delta*(i+0.5+intpoints[ip][0]);
-	      if (domain->dimension >= 2) x0[l][1] = x[l][1] = solidlo[1] + delta*(j+0.5+intpoints[ip][1]);
-	      else x0[l][1] = x[l][1];
-	      if (domain->dimension == 3) x0[l][2] = x[l][2] = solidlo[2] + delta*(k+0.5+intpoints[ip][2]);
-	      else x0[l][2] = x[l][2] = 0;
+    if (domain->dimension == 3) nip = 2;
+    else if (domain->dimension == 2) nip = 4;
+    else nip = 8;
 
     if (nc==0) xi= 0.5/sqrt(3.0);
     else xi = 0.25;
 
     lp = 0.25;
-    nip = 8;
 
     intpoints = {-xi, -xi, -xi,
 		 -xi, -xi, xi,
@@ -1204,64 +1201,14 @@ void Solid::populate(vector<string> args) {
   } else if (np_per_cell == 3) {
     // Berstein elements:
 
-    np *= 27;
-    mass_ /= 27.0;
-    vol_ /= 27.0;
-    // Allocate the space in the vectors for np particles:
-    grow(np);
-
-    double a = 0.7746/2;
-
-    double intpoints[27][3] = {{-a, -a, -a},
-			       {-a, -a, 0},
-			       {-a, -a, a},
-			       {-a, 0, -a},
-			       {-a, 0, 0},
-			       {-a, 0, a},
-			       {-a, a, -a},
-			       {-a, a, 0},
-			       {-a, a, a},
-			       {0, -a, -a},
-			       {0, -a, 0},
-			       {0, -a, a},
-			       {0, 0, -a},
-			       {0, 0, 0},
-			       {0, 0, a},
-			       {0, a, -a},
-			       {0, a, 0},
-			       {0, a, a},
-			       {a, -a, -a},
-			       {a, -a, 0},
-			       {a, -a, a},
-			       {a, 0, -a},
-			       {a, 0, 0},
-			       {a, 0, a},
-			       {a, a, -a},
-			       {a, a, 0},
-			       {a, a, a}};
-
-    for (int i=0; i<nx; i++){
-      for (int j=0; j<ny; j++){
-	for (int k=0; k<nz; k++){
-	  for (int ip=0; ip<27; ip++) {
-	    if (checkIfInRegion) {
-	      x0[l][0] = x[l][0] = domain->boxlo[0] + delta*(i+0.5+intpoints[ip][0]);
-	      if (domain->dimension >= 2) x0[l][1] = x[l][1] = domain->boxlo[1] + delta*(j+0.5+intpoints[ip][1]);
-	      else x0[l][1] = x[l][1] = 0;
-	      if (domain->dimension == 3) x0[l][2] = x[l][2] = domain->boxlo[2] + delta*(k+0.5+intpoints[ip][2]);
-	      else x0[l][2] = x[l][2] = 0;
-	    } else {
-	      x0[l][0] = x[l][0] = solidlo[0] + delta*(i+0.5+intpoints[ip][0]);
-	      if (domain->dimension >= 2) x0[l][1] = x[l][1] = solidlo[1] + delta*(j+0.5+intpoints[ip][1]);
-	      else x0[l][1] = x[l][1] = 0;
-	      if (domain->dimension == 3) x0[l][2] = x[l][2] = solidlo[2] + delta*(k+0.5+intpoints[ip][2]);
-	      else x0[l][2] = x[l][2] = 0;
-
     if (nc == 0) xi = 0.7746/2;
     else xi = 2.0/3.0;
 
-    lp = 1.0/3.0;
+    lp = 1.0/6.0;
     nip = 27;
+    if (domain->dimension == 3) nip = 3;
+    else if (domain->dimension == 2) nip = 9;
+    else nip = 27;
 
     intpoints = {-xi, -xi, -xi,
 		 -xi, -xi, 0,
@@ -1295,59 +1242,81 @@ void Solid::populate(vector<string> args) {
     cout << "Error: solid command 4th argument should be 1 or 2, but " << (int) input->parsev(args[3]) << "received.\n";
     exit(1);
   }
+  
+  np *= nip;
+  mass_ /= (double) nip;
+  vol_ /= (double) nip;
 
   // Allocate the space in the vectors for np particles:
   grow(np);
 
+  int dim = domain->dimension;
+  
   for (int i=0; i<nx; i++){
     for (int j=0; j<ny; j++){
       for (int k=0; k<nz; k++){
 	for (int ip=0; ip<nip; ip++) {
 	  x0[l][0] = x[l][0] = boundlo[0] + delta*(i+0.5+intpoints[3*ip+0]);
 	  x0[l][1] = x[l][1] = boundlo[1] + delta*(j+0.5+intpoints[3*ip+1]);
-	  if (domain->dimension == 3) x0[l][2] = x[l][2] = boundlo[2] + delta*(k+0.5+intpoints[3*ip+2]);
+	  if (dim == 3) x0[l][2] = x[l][2] = boundlo[2] + delta*(k+0.5+intpoints[3*ip+2]);
 	  else x0[l][2] = x[l][2] = 0;
 
-	  if (nc != 0) {
+	  if ((method_style.compare("tlcpdi") == 0 || method_style.compare("ulcpdi") == 0) && nc != 0) {
+	    rp0[dim*l][0] = rp[dim*l][0] = lp;
+	    rp0[dim*l][1] = rp[dim*l][1] = 0;
+	    rp0[dim*l][2] = rp[dim*l][2] = 0;
+
+	    if (dim >= 2) {
+	      rp0[dim*l+1][0] = rp[dim*l+1][0] = 0;
+	      rp0[dim*l+1][1] = rp[dim*l+1][1] = lp;
+	      rp0[dim*l+1][2] = rp[dim*l+1][2] = 0;
+
+	      if (dim == 3) {
+		rp0[dim*l+2][0] = rp[dim*l+1][0] = 0;
+		rp0[dim*l+2][1] = rp[dim*l+1][1] = 0;
+		rp0[dim*l+2][0] = rp[dim*l+1][0] = lp;
+	      }
+	    }
+	  }
+
+	  if ((method_style.compare("tlcpdi2") == 0 || method_style.compare("ulcpdi2") == 0) && nc != 0) {
 	    xpc0[nc*l][0] = xpc[nc*l][0] = boundlo[0] + delta*(k+0.5+intpoints[3*ip+0] - lp);
 
 	    xpc0[nc*l+1][0] = xpc[nc*l+1][0] = boundlo[0] + delta*(k+0.5+intpoints[3*ip+0] + lp);
 
-	    if (domain->dimension >= 2)
-	      {
-		xpc0[nc*l][1] = xpc[nc*l][1] = boundlo[1] + delta*(k+0.5+intpoints[3*ip+1] - lp);
-		xpc0[nc*l+1][1] = xpc[nc*l+1][1] = boundlo[1] + delta*(k+0.5+intpoints[3*ip+1] - lp);
+	    if (dim >= 2) {
+	      xpc0[nc*l][1] = xpc[nc*l][1] = boundlo[1] + delta*(k+0.5+intpoints[3*ip+1] - lp);
+	      xpc0[nc*l+1][1] = xpc[nc*l+1][1] = boundlo[1] + delta*(k+0.5+intpoints[3*ip+1] - lp);
 
-		xpc0[nc*l+2][0] = xpc[nc*l+2][0] = boundlo[0] + delta*(k+0.5+intpoints[3*ip+0] - lp);
-		xpc0[nc*l+2][1] = xpc[nc*l+2][1] = boundlo[1] + delta*(k+0.5+intpoints[3*ip+1] + lp);
+	      xpc0[nc*l+2][0] = xpc[nc*l+2][0] = boundlo[0] + delta*(k+0.5+intpoints[3*ip+0] - lp);
+	      xpc0[nc*l+2][1] = xpc[nc*l+2][1] = boundlo[1] + delta*(k+0.5+intpoints[3*ip+1] + lp);
 
-		xpc0[nc*l+3][0] = xpc[nc*l+3][0] = boundlo[0] + delta*(k+0.5+intpoints[3*ip+0] + lp);
-		xpc0[nc*l+3][1] = xpc[nc*l+3][1] = boundlo[1] + delta*(k+0.5+intpoints[3*ip+1] + lp);
-	      }
+	      xpc0[nc*l+3][0] = xpc[nc*l+3][0] = boundlo[0] + delta*(k+0.5+intpoints[3*ip+0] + lp);
+	      xpc0[nc*l+3][1] = xpc[nc*l+3][1] = boundlo[1] + delta*(k+0.5+intpoints[3*ip+1] + lp);
+	    }
 	      
-	    if (domain->dimension == 3)
-	      {
-		xpc0[nc*l][2] = xpc[nc*l][2] = boundlo[2] + delta*(k+0.5+intpoints[3*ip+2] - lp);
-		xpc0[nc*l+1][2] = xpc[nc*l+1][2] = boundlo[2] + delta*(k+0.5+intpoints[3*ip+2] - lp);
-		xpc0[nc*l+2][2] = xpc[nc*l+2][2] = boundlo[2] + delta*(k+0.5+intpoints[3*ip+2] - lp);
-		xpc0[nc*l+3][2] = xpc[nc*l+3][2] = boundlo[2] + delta*(k+0.5+intpoints[3*ip+2] - lp);
+	    if (dim == 3) {
+	      xpc0[nc*l][2] = xpc[nc*l][2] = boundlo[2] + delta*(k+0.5+intpoints[3*ip+2] - lp);
+	      xpc0[nc*l+1][2] = xpc[nc*l+1][2] = boundlo[2] + delta*(k+0.5+intpoints[3*ip+2] - lp);
+	      xpc0[nc*l+2][2] = xpc[nc*l+2][2] = boundlo[2] + delta*(k+0.5+intpoints[3*ip+2] - lp);
+	      xpc0[nc*l+3][2] = xpc[nc*l+3][2] = boundlo[2] + delta*(k+0.5+intpoints[3*ip+2] - lp);
 
-		xpc0[nc*l+4][0] = xpc[nc*l+4][0] = boundlo[0] + delta*(k+0.5+intpoints[3*ip+0] - lp);
-		xpc0[nc*l+4][1] = xpc[nc*l+4][1] = boundlo[1] + delta*(k+0.5+intpoints[3*ip+1] - lp);
-		xpc0[nc*l+4][2] = xpc[nc*l+4][2] = boundlo[2] + delta*(k+0.5+intpoints[3*ip+2] + lp);
+	      xpc0[nc*l+4][0] = xpc[nc*l+4][0] = boundlo[0] + delta*(k+0.5+intpoints[3*ip+0] - lp);
+	      xpc0[nc*l+4][1] = xpc[nc*l+4][1] = boundlo[1] + delta*(k+0.5+intpoints[3*ip+1] - lp);
+	      xpc0[nc*l+4][2] = xpc[nc*l+4][2] = boundlo[2] + delta*(k+0.5+intpoints[3*ip+2] + lp);
 
-		xpc0[nc*l+5][0] = xpc[nc*l+5][0] = boundlo[0] + delta*(k+0.5+intpoints[3*ip+0] + lp);
-		xpc0[nc*l+5][1] = xpc[nc*l+5][1] = boundlo[1] + delta*(k+0.5+intpoints[3*ip+1] - lp);
-		xpc0[nc*l+5][2] = xpc[nc*l+5][2] = boundlo[2] + delta*(k+0.5+intpoints[3*ip+2] + lp);
+	      xpc0[nc*l+5][0] = xpc[nc*l+5][0] = boundlo[0] + delta*(k+0.5+intpoints[3*ip+0] + lp);
+	      xpc0[nc*l+5][1] = xpc[nc*l+5][1] = boundlo[1] + delta*(k+0.5+intpoints[3*ip+1] - lp);
+	      xpc0[nc*l+5][2] = xpc[nc*l+5][2] = boundlo[2] + delta*(k+0.5+intpoints[3*ip+2] + lp);
 
-		xpc0[nc*l+6][0] = xpc[nc*l+6][0] = boundlo[0] + delta*(k+0.5+intpoints[3*ip+0] - lp);
-		xpc0[nc*l+6][1] = xpc[nc*l+6][1] = boundlo[1] + delta*(k+0.5+intpoints[3*ip+1] + lp);
-		xpc0[nc*l+6][2] = xpc[nc*l+6][2] = boundlo[2] + delta*(k+0.5+intpoints[3*ip+2] + lp);
+	      xpc0[nc*l+6][0] = xpc[nc*l+6][0] = boundlo[0] + delta*(k+0.5+intpoints[3*ip+0] - lp);
+	      xpc0[nc*l+6][1] = xpc[nc*l+6][1] = boundlo[1] + delta*(k+0.5+intpoints[3*ip+1] + lp);
+	      xpc0[nc*l+6][2] = xpc[nc*l+6][2] = boundlo[2] + delta*(k+0.5+intpoints[3*ip+2] + lp);
 
-		xpc0[nc*l+7][0] = xpc[nc*l+7][0] = boundlo[0] + delta*(k+0.5+intpoints[3*ip+0] + lp);
-		xpc0[nc*l+7][1] = xpc[nc*l+7][1] = boundlo[1] + delta*(k+0.5+intpoints[3*ip+1] + lp);
-		xpc0[nc*l+7][2] = xpc[nc*l+7][2] = boundlo[2] + delta*(k+0.5+intpoints[3*ip+2] + lp);
-	      }
+	      xpc0[nc*l+7][0] = xpc[nc*l+7][0] = boundlo[0] + delta*(k+0.5+intpoints[3*ip+0] + lp);
+	      xpc0[nc*l+7][1] = xpc[nc*l+7][1] = boundlo[1] + delta*(k+0.5+intpoints[3*ip+1] + lp);
+	      xpc0[nc*l+7][2] = xpc[nc*l+7][2] = boundlo[2] + delta*(k+0.5+intpoints[3*ip+2] + lp);
+	    }
 	  }
 
 	  // Check if the particle is inside the region:
@@ -1356,6 +1325,11 @@ void Solid::populate(vector<string> args) {
 	      l++;
 	  } else {
 	    l++;
+	  }
+
+	  if (l>=np) {
+	    cout << "Error in Solid::populate(), exceeding the allocated number of particles.\n";
+	    exit(1);
 	  }
 	}
       }
@@ -1396,5 +1370,15 @@ void Solid::populate(vector<string> args) {
   if (l!=np) {
     cout << "Error l=" << l << " != np=" << np << endl;
     exit(1);
+  }
+}
+
+void Solid::update_particle_domain() {
+  int dim = domain->dimension;
+
+  for (int ip=0; ip<np; ip++){
+    rp[dim*ip] = F[ip]*rp0[dim*ip];
+    if (dim >= 2) rp[dim*ip+1] = F[ip]*rp0[dim*ip+1];
+    if (dim == 3) rp[dim*ip+2] = F[ip]*rp0[dim*ip+2];
   }
 }

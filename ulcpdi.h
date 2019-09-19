@@ -33,6 +33,7 @@ class ULCPDI : public Method {
   void grid_to_points();
   void advance_particles();
   void velocities_to_grid();
+  void update_grid_positions() {};
   void compute_rate_deformation_gradient();
   void update_deformation_gradient();
   void update_stress();
