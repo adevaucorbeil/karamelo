@@ -103,21 +103,21 @@ void FixVelocityNodes::post_update_grid_state() {
     vx = input->parsev(args[xpos]).result(mpm);
     vx_old = input->parsev(args_previous_step[xpos]).result(mpm);
     // cout << "Set v_update[0] to " << xvalue.eq() << "=" << vx << endl;
-    cout << "Set v[0] to " << vx_old << endl;
+    // cout << "Set v[0] to " << vx_old << endl;
   }
 
   if (yset) {
     vy = input->parsev(args[ypos]).result(mpm);
     vy_old = input->parsev(args_previous_step[ypos]).result(mpm);
     // cout << "Set v_update[1] to " << "=" <<  vy << endl;
-    cout << "Set v[1] to " << "=" <<  vy_old << endl;
+    // cout << "Set v[1] to " << "=" <<  vy_old << endl;
   }
 
   if (zset) {
     vz = input->parsev(args[zpos]).result(mpm);
     vz_old = input->parsev(args_previous_step[zpos]).result(mpm);
     // cout << "Set v_update[2] to " << "=" <<  vz << endl;
-    cout << "Set v[2] to " << "=" <<  vz_old << endl;
+    // cout << "Set v[2] to " << "=" <<  vz_old << endl;
   }
 
   int solid = group->solid[igroup];

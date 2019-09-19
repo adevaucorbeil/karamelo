@@ -96,7 +96,7 @@ void DumpPyPlot::write()
 
   // Plot grid nodes and particles:
   plt::plot(xg, yg, "+");
-  plt::plot(xp, yp, "o");
+  plt::plot(xp, yp, ".");
 
   if (update->method_style.compare("tlcpdi") == 0
       || update->method_style.compare("ulcpdi") == 0) {
@@ -105,8 +105,8 @@ void DumpPyPlot::write()
       Solid *s = domain->solids[isolid];
 
       Eigen::Vector3d corner;
-      vector<double> xcorner(s->nc, 0.0);
-      vector<double> ycorner(s->nc, 0.0);
+      vector<double> xcorner(s->nc+1, 0.0);
+      vector<double> ycorner(s->nc+1, 0.0);
 
       for (bigint ip=0; ip<s->np;ip++) {
 	// Calculate the coordinates of the particle domain's corners:
@@ -118,6 +118,10 @@ void DumpPyPlot::write()
 	    // 2nd corner:
 	    corner = s->x[ip] - s->rp[ip];
 	    xcorner[1] = corner[0];
+
+	    // 1st corner:
+	    corner = s->x[ip] - s->rp[ip];
+	    xcorner[0] = corner[0];
 	  }
 
 	  if (domain->dimension == 2) {
@@ -134,12 +138,16 @@ void DumpPyPlot::write()
 	    xcorner[2] = corner[0];
 	    ycorner[2] = corner[1];
 	    // 4th corner:
-	    corner = s->x[ip] - s->rp[2*ip] - s->rp[2*ip+1];
+	    corner = s->x[ip] - s->rp[2*ip] + s->rp[2*ip+1];
 	    xcorner[3] = corner[0];
 	    ycorner[3] = corner[1];
+	    // 1st corner:
+	    corner = s->x[ip] - s->rp[2*ip] - s->rp[2*ip+1];
+	    xcorner[4] = corner[0];
+	    ycorner[4] = corner[1];
 	  }
 
-	plt::plot(xcorner, ycorner, "d-");
+	plt::plot(xcorner, ycorner, "r-");
       }
     }
   }

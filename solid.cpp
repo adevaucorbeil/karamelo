@@ -236,15 +236,15 @@ void Solid::grow(int nparticles){
     cout << "Growing " << str << endl;
     if (rp0 == NULL) rp0 = new Eigen::Vector3d[domain->dimension*np];
     else {
-      cout << "Error: xpc0 already exists, I don't know how to grow it!\n";
+      cout << "Error: rp0 already exists, I don't know how to grow it!\n";
       exit(1);
     }
 
     str = "solid-" + id + ":rp";
     cout << "Growing " << str << endl;
-    if (rp == NULL) x = new Eigen::Vector3d[domain->dimension*np];
+    if (rp == NULL) rp = new Eigen::Vector3d[domain->dimension*np];
     else {
-      cout << "Error: xpc already exists, I don't know how to grow it!\n";
+      cout << "Error: rp already exists, I don't know how to grow it!\n";
       exit(1);
     }
   }
@@ -262,7 +262,7 @@ void Solid::grow(int nparticles){
 
     str = "solid-" + id + ":xpc";
     cout << "Growing " << str << endl;
-    if (xpc == NULL) x = new Eigen::Vector3d[nc*np];
+    if (xpc == NULL) xpc = new Eigen::Vector3d[nc*np];
     else {
       cout << "Error: xpc already exists, I don't know how to grow it!\n";
       exit(1);
@@ -1163,7 +1163,7 @@ void Solid::populate(vector<string> args) {
   else boundlo = domain->boxlo;
 
   double xi = 0.5;
-  double lp = 0.5;
+  double lp = delta;
   int nip = 1;
   vector<double> intpoints;
 
@@ -1171,7 +1171,7 @@ void Solid::populate(vector<string> args) {
     // One particle per cell at the center:
 
     xi = 0.5;
-    lp = 0.5;
+    lp *= 0.5;
     nip = 1;
 
     intpoints = {0, 0, 0};
@@ -1186,15 +1186,15 @@ void Solid::populate(vector<string> args) {
     if (nc==0) xi= 0.5/sqrt(3.0);
     else xi = 0.25;
 
-    lp = 0.25;
+    lp *= 0.25;
 
     intpoints = {-xi, -xi, -xi,
-		 -xi, -xi, xi,
 		 -xi, xi, -xi,
-		 -xi, xi, xi,
 		 xi, -xi, -xi,
-		 xi, -xi, xi,
 		 xi, xi, -xi,
+		 -xi, -xi, xi,
+		 -xi, xi, xi,
+		 xi, -xi, xi,
 		 xi, xi, xi};
 
 
@@ -1202,40 +1202,40 @@ void Solid::populate(vector<string> args) {
     // Berstein elements:
 
     if (nc == 0) xi = 0.7746/2;
-    else xi = 2.0/3.0;
+    else xi = 1.0/3.0;
 
-    lp = 1.0/6.0;
+    lp *= 1.0/6.0;
     nip = 27;
     if (domain->dimension == 3) nip = 3;
     else if (domain->dimension == 2) nip = 9;
     else nip = 27;
 
     intpoints = {-xi, -xi, -xi,
-		 -xi, -xi, 0,
-		 -xi, -xi, xi,
 		 -xi, 0, -xi,
-		 -xi, 0, 0,
-		 -xi, 0, xi,
 		 -xi, xi, -xi,
-		 -xi, xi, 0,
-		 -xi, xi, xi,
 		 0, -xi, -xi,
-		 0, -xi, 0,
-		 0, -xi, xi,
 		 0, 0, -xi,
-		 0, 0, 0,
-		 0, 0, xi,
 		 0, xi, -xi,
-		 0, xi, 0,
-		 0, xi, xi,
 		 xi, -xi, -xi,
-		 xi, -xi, 0,
-		 xi, -xi, xi,
 		 xi, 0, -xi,
-		 xi, 0, 0,
-		 xi, 0, xi,
 		 xi, xi, -xi,
+		 -xi, -xi, 0,
+		 -xi, 0, 0,
+		 -xi, xi, 0,
+		 0, -xi, 0,
+		 0, 0, 0,
+		 0, xi, 0,
+		 xi, -xi, 0,
+		 xi, 0, 0,
 		 xi, xi, 0,
+		 -xi, -xi, xi,
+		 -xi, 0, xi,
+		 -xi, xi, xi,
+		 0, -xi, xi,
+		 0, 0, xi,
+		 0, xi, xi,
+		 xi, -xi, xi,
+		 xi, 0, xi,
 		 xi, xi, xi};
 
   } else {
@@ -1251,11 +1251,19 @@ void Solid::populate(vector<string> args) {
   grow(np);
 
   int dim = domain->dimension;
-  
+  //checkIfInRegion = false;
   for (int i=0; i<nx; i++){
     for (int j=0; j<ny; j++){
       for (int k=0; k<nz; k++){
 	for (int ip=0; ip<nip; ip++) {
+
+	  if (l>=np) {
+	    cout << "Error in Solid::populate(), exceeding the allocated number of particles.\n";
+	    cout << "l = " << l << endl;
+	    cout << "np = " << np << endl;
+	    exit(1);
+	  }
+
 	  x0[l][0] = x[l][0] = boundlo[0] + delta*(i+0.5+intpoints[3*ip+0]);
 	  x0[l][1] = x[l][1] = boundlo[1] + delta*(j+0.5+intpoints[3*ip+1]);
 	  if (dim == 3) x0[l][2] = x[l][2] = boundlo[2] + delta*(k+0.5+intpoints[3*ip+2]);
@@ -1325,11 +1333,6 @@ void Solid::populate(vector<string> args) {
 	      l++;
 	  } else {
 	    l++;
-	  }
-
-	  if (l>=np) {
-	    cout << "Error in Solid::populate(), exceeding the allocated number of particles.\n";
-	    exit(1);
 	  }
 	}
       }

@@ -133,7 +133,7 @@ void ULCPDI::compute_grid_weight_functions_and_gradients()
       int **ntype = domain->solids[isolid]->grid->ntype;
 
       double wf, wfc;
-      double s[3], sd[3];
+      double s[3];
       Eigen::Vector3d r, wfd;
       vector<Eigen::Vector3d> xcorner(nc, Eigen::Vector3d::Zero());
 
@@ -171,7 +171,7 @@ void ULCPDI::compute_grid_weight_functions_and_gradients()
 	    xcorner[0] = xp[ip] - rp[2*ip] - rp[2*ip+1];
 	    xcorner[1] = xp[ip] + rp[2*ip] - rp[2*ip+1];
 	    xcorner[2] = xp[ip] + rp[2*ip] + rp[2*ip+1];
-	    xcorner[3] = xp[ip] - rp[2*ip] - rp[2*ip+1];
+	    xcorner[3] = xp[ip] - rp[2*ip] + rp[2*ip+1];
 	  }
 
 	  if (domain->dimension == 3) {
@@ -213,6 +213,7 @@ void ULCPDI::compute_grid_weight_functions_and_gradients()
 	      exit(1);
 	    }
 
+	    // cout << "corner " << ic << " of particle " << ip << ": [" << xcorner[ic][0] << "," << xcorner[ic][1] << "," << xcorner[ic][2] << "], i0=" << i0 << ", j0=" << j0 << ", k0=" << k0 << endl;
 	    for(int i=i0; i<i0+m;i++){
 	      if (ny>1) {
 		for(int j=j0; j<j0+m;j++){
@@ -224,8 +225,10 @@ void ULCPDI::compute_grid_weight_functions_and_gradients()
 		    }
 		  } else {
 		    int n = ny*i+j;
-		    if (n < nnodes)
+		    if (n < nnodes) {
+		      // cout << "nodes:" << n << endl;
 		      n_neigh.push_back(n);
+		    }
 		  }
 		}
 	      } else {
@@ -249,7 +252,7 @@ void ULCPDI::compute_grid_weight_functions_and_gradients()
 	  //for (int in=0; in<nnodes; in++) {
 	  for (auto in: n_neigh) {
 
-	    sd[0] = sd[1] = sd[2] = 0;
+	    wfd[0] = wfd[1] = wfd[2] = 0;
 	    wf = 0;
 
 	    for(int ic=0; ic<nc; ic++) {
@@ -262,33 +265,40 @@ void ULCPDI::compute_grid_weight_functions_and_gradients()
 	      else s[2] = 1;
 
 	      wfc = s[0]*s[1]*s[2]; // Shape function of the corner node
-	      wf += wfc;
+	      if (wfc > 1.0e-12) {
+		wf += wfc;
 
-	      if (domain->dimension == 2) {
-		if (ic == 0) {
-		  sd[0] +=  wfc * (rp[domain->dimension*ip][1] - rp[domain->dimension*ip+1][1]);
-		  sd[1] +=  wfc * (rp[domain->dimension*ip+1][0] - rp[domain->dimension*ip][0]);
-		} else if (ic == 1) {
-		  sd[0] +=  wfc * (rp[domain->dimension*ip][1] + rp[domain->dimension*ip+1][1]);
-		  sd[1] +=  wfc * (-rp[domain->dimension*ip][0] - rp[domain->dimension*ip+1][0]);
-		} else if (ic == 2) {
-		  sd[0] -=  wfc * (rp[domain->dimension*ip][1] - rp[domain->dimension*ip+1][1]);
-		  sd[1] -=  wfc * (rp[domain->dimension*ip+1][0] - rp[domain->dimension*ip][0]);
-		} else if (ic == 3) {
-		  sd[0] -=  wfc * (rp[domain->dimension*ip][1] + rp[domain->dimension*ip+1][1]);
-		  sd[1] -=  wfc * (-rp[domain->dimension*ip][0] - rp[domain->dimension*ip+1][0]);
+		if (domain->dimension == 2) {
+		  if (ic == 0) {
+		    // cout << "N1=" << wfc << endl;
+		    wfd[0] +=  wfc * (rp[domain->dimension*ip][1] - rp[domain->dimension*ip+1][1]);
+		    wfd[1] +=  wfc * (rp[domain->dimension*ip+1][0] - rp[domain->dimension*ip][0]);
+		  } else if (ic == 1) {
+		    // cout << "N2=" << wfc << endl;
+		    wfd[0] +=  wfc * (rp[domain->dimension*ip][1] + rp[domain->dimension*ip+1][1]);
+		    wfd[1] +=  wfc * (-rp[domain->dimension*ip][0] - rp[domain->dimension*ip+1][0]);
+		  } else if (ic == 2) {
+		    // cout << "N3=" << wfc << endl;
+		    wfd[0] -= wfc * (rp[domain->dimension*ip][1] - rp[domain->dimension*ip+1][1]);
+		    wfd[1] -= wfc * (rp[domain->dimension*ip+1][0] - rp[domain->dimension*ip][0]);
+		  } else if (ic == 3) {
+		    // cout << "N4=" << wfc << endl;
+		    wfd[0] -= wfc * (rp[domain->dimension*ip][1] + rp[domain->dimension*ip+1][1]);
+		    wfd[1] -= wfc * (-rp[domain->dimension*ip][0] - rp[domain->dimension*ip+1][0]);
+		  }
+		  // cout << "in=" << in << "\tic=" << ic+1 << "\twfc=" << wfc << "\twfd=[" << wfd[0] << "," << wfd[1] << "]\n";
 		}
+	      
 	      }
 	    }
-
 	    wf *= 0.25;
 
 	    double inv_Vp = 1.0/vol[ip];
-	    sd[0] *= inv_Vp;
-	    sd[1] *= inv_Vp;
-	    sd[2] *= inv_Vp;
+	    wfd[0] *= inv_Vp;
+	    wfd[1] *= inv_Vp;
+	    wfd[2] *= inv_Vp;
 
-	    if (wf != 0) {
+	    if (wf > 1.0e-12) {
 	      neigh_pn[ip].push_back(in);
 	      neigh_np[in].push_back(ip);
 	      numneigh_pn[ip]++;
@@ -298,6 +308,8 @@ void ULCPDI::compute_grid_weight_functions_and_gradients()
 	      wf_np[in].push_back(wf);
 	      wfd_pn[ip].push_back(wfd);
 	      wfd_np[in].push_back(wfd);
+	      // cout << "node: " << in << " [ " << xn[in][0] << "," << xn[in][1] << "," << xn[in][2] << "]" <<
+	      // 	" with\twf=" << wf << " and\twfd=["<< wfd[0] << "," << wfd[1] << "," << wfd[2] << "]\n";
 	    }
 	  }
 	}
