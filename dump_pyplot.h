@@ -16,6 +16,8 @@ class DumpPyPlot : public Dump {
 
   void write();
   //protected:
+ private:
+  int xsize, ysize;
 };
 
 #endif

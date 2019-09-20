@@ -100,7 +100,8 @@ class Solid : protected Pointers {
   void update_particle_velocities(double);
   void compute_rate_deformation_gradient_TL();
   void compute_rate_deformation_gradient_TL_APIC();
-  void compute_rate_deformation_gradient_UL();
+  void compute_rate_deformation_gradient_UL_USL();
+  void compute_rate_deformation_gradient_UL_MUSL();
   void compute_rate_deformation_gradient_UL_APIC();
   void update_deformation_gradient();
   void update_stress();

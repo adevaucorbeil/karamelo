@@ -132,10 +132,11 @@ void ULCPDI::compute_grid_weight_functions_and_gradients()
       double *vol = domain->solids[isolid]->vol;
       int **ntype = domain->solids[isolid]->grid->ntype;
 
-      double wf, wfc;
+      double wf;
       double s[3];
       Eigen::Vector3d r, wfd;
       vector<Eigen::Vector3d> xcorner(nc, Eigen::Vector3d::Zero());
+      vector<double> wfc(nc, 0);
 
       for (int in=0; in<nnodes; in++) {
 	neigh_np[in].clear();
@@ -251,8 +252,6 @@ void ULCPDI::compute_grid_weight_functions_and_gradients()
 
 	  //for (int in=0; in<nnodes; in++) {
 	  for (auto in: n_neigh) {
-
-	    wfd[0] = wfd[1] = wfd[2] = 0;
 	    wf = 0;
 
 	    for(int ic=0; ic<nc; ic++) {
@@ -264,41 +263,28 @@ void ULCPDI::compute_grid_weight_functions_and_gradients()
 	      if (domain->dimension == 3) s[2] = basis_function(r[2], ntype[in][2]);
 	      else s[2] = 1;
 
-	      wfc = s[0]*s[1]*s[2]; // Shape function of the corner node
-	      if (wfc > 1.0e-12) {
-		wf += wfc;
+	      wfc[ic] = s[0]*s[1]*s[2]; // Shape function of the corner node
 
-		if (domain->dimension == 2) {
-		  if (ic == 0) {
-		    // cout << "N1=" << wfc << endl;
-		    wfd[0] +=  wfc * (rp[domain->dimension*ip][1] - rp[domain->dimension*ip+1][1]);
-		    wfd[1] +=  wfc * (rp[domain->dimension*ip+1][0] - rp[domain->dimension*ip][0]);
-		  } else if (ic == 1) {
-		    // cout << "N2=" << wfc << endl;
-		    wfd[0] +=  wfc * (rp[domain->dimension*ip][1] + rp[domain->dimension*ip+1][1]);
-		    wfd[1] +=  wfc * (-rp[domain->dimension*ip][0] - rp[domain->dimension*ip+1][0]);
-		  } else if (ic == 2) {
-		    // cout << "N3=" << wfc << endl;
-		    wfd[0] -= wfc * (rp[domain->dimension*ip][1] - rp[domain->dimension*ip+1][1]);
-		    wfd[1] -= wfc * (rp[domain->dimension*ip+1][0] - rp[domain->dimension*ip][0]);
-		  } else if (ic == 3) {
-		    // cout << "N4=" << wfc << endl;
-		    wfd[0] -= wfc * (rp[domain->dimension*ip][1] + rp[domain->dimension*ip+1][1]);
-		    wfd[1] -= wfc * (-rp[domain->dimension*ip][0] - rp[domain->dimension*ip+1][0]);
-		  }
-		  // cout << "in=" << in << "\tic=" << ic+1 << "\twfc=" << wfc << "\twfd=[" << wfd[0] << "," << wfd[1] << "]\n";
-		}
-	      
-	      }
+	      if (wfc[ic] > 1.0e-12) wf += wfc[ic];
 	    }
+
 	    wf *= 0.25;
 
-	    double inv_Vp = 1.0/vol[ip];
-	    wfd[0] *= inv_Vp;
-	    wfd[1] *= inv_Vp;
-	    wfd[2] *= inv_Vp;
-
 	    if (wf > 1.0e-12) {
+	      if (domain->dimension == 2) {
+		wfd[0] = (wfc[0] - wfc[2]) * (rp[domain->dimension*ip][1] - rp[domain->dimension*ip+1][1])
+		  + (wfc[1] - wfc[3]) * (rp[domain->dimension*ip][1] + rp[domain->dimension*ip+1][1]);
+		
+		wfd[1] = (wfc[0] - wfc[2]) * (rp[domain->dimension*ip+1][0] - rp[domain->dimension*ip][0])
+		  - (wfc[1] - wfc[3]) * (rp[domain->dimension*ip][0] + rp[domain->dimension*ip+1][0]);
+		wfd[2] = 0;
+	      }
+
+	      double inv_Vp = 1.0/vol[ip];
+	      wfd[0] *= inv_Vp;
+	      wfd[1] *= inv_Vp;
+	      wfd[2] *= inv_Vp;
+
 	      neigh_pn[ip].push_back(in);
 	      neigh_np[in].push_back(ip);
 	      numneigh_pn[ip]++;
@@ -377,7 +363,7 @@ void ULCPDI::compute_rate_deformation_gradient()
 {
   for (int isolid=0; isolid<domain->solids.size(); isolid++) {
     if (method_type.compare("APIC") == 0) domain->solids[isolid]->compute_rate_deformation_gradient_UL_APIC();
-    else domain->solids[isolid]->compute_rate_deformation_gradient_UL();
+    else domain->solids[isolid]->compute_rate_deformation_gradient_UL_USL();
     //domain->solids[isolid]->compute_deformation_gradient();
   }
 }

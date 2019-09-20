@@ -6,8 +6,8 @@
 #include "solid.h"
 #include "mpmtype.h"
 #include "mpm_math.h"
-#include <matplotlibcpp.h>
 #include <vector>
+#include <matplotlibcpp.h>
 
 using namespace std;
 using namespace MPM_Math;
@@ -20,6 +20,21 @@ DumpPyPlot::DumpPyPlot(MPM *mpm, vector<string> args) : Dump(mpm, args)
   if (domain->dimension != 1 && domain->dimension != 2) {
     cout << "Error: cannot use dump_pyplot with dimensions different than 1 or 2!\n";
     exit(1);
+  }
+
+  if (args.size() > 5) {
+    if (args.size() > 7) {
+      cout << "Error: too many options given to dump_pyplot\n.";
+      exit(1);
+    } else {
+      xsize = stoi(args[5]);
+      ysize = stoi(args[6]);
+
+      cout << "Plot will be drawn in a " << xsize << "x" << ysize << " figure, as requested.\n";
+    }
+  } else {
+    xsize = 0;
+    ysize = 0;
   }
 }
 
@@ -46,8 +61,9 @@ void DumpPyPlot::write()
 
   // cout << "Filemame for dump: " << fdump << endl;
 
-  // Set the size of output image to 1200x780 pixels
-  plt::figure_size(1200, 780);
+  // Set the size of output image to xsize x ysize pixels
+  if (xsize && ysize) plt::figure_size(xsize, ysize);
+  else plt::figure_size(1200, 780);
 
   // Check how many different grids we have:
   vector<class Grid *> grids; // We will store the different pointers to grids here.
@@ -153,6 +169,8 @@ void DumpPyPlot::write()
   }
 
   // Save the image (file format is determined by the extension)
+  plt::axis("equal");
   plt::save(fdump);
-  plt::show();
+  //plt::show();
+  plt::close();
 }

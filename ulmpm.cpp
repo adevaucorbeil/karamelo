@@ -371,7 +371,7 @@ void ULMPM::compute_rate_deformation_gradient()
 {
   for (int isolid=0; isolid<domain->solids.size(); isolid++) {
     if (method_type.compare("APIC") == 0) domain->solids[isolid]->compute_rate_deformation_gradient_UL_APIC();
-    else domain->solids[isolid]->compute_rate_deformation_gradient_UL();
+    else domain->solids[isolid]->compute_rate_deformation_gradient_UL_MUSL();
     //domain->solids[isolid]->compute_deformation_gradient();
   }
 }
