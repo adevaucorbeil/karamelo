@@ -16,7 +16,7 @@ CFLAGS = -DWITHOUT_NUMPY -g -std=c++11 -march=native -O3
 # define any directories containing header files other than /usr/include
 #
 
-INCLUDES = -I/usr/include/eigen3/ -I/home/adev0002/matplotlib-cpp -I/usr/include/python2.7
+#INCLUDES = -I/usr/include/eigen3/ -I/home/adev0002/matplotlib-cpp -I/usr/include/python2.7
 #INCLUDES = -I/usr/local/eigen/3.3.0/include/eigen3/ -I/home/adev0002/matplotlib-cpp -I/usr/include/python2.7
 
 # define library paths in addition to /usr/lib
