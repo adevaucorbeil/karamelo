@@ -30,6 +30,7 @@ class Domain : protected Pointers {
   Domain(class MPM *);
   virtual ~Domain();
 
+  void create_domain(vector<string>);
   void set_local_box();
   void add_region(vector<string>);
   int find_region(string);

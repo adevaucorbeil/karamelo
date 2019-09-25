@@ -24,6 +24,8 @@ class Method : protected Pointers {
   virtual void update_stress() = 0;
   virtual void adjust_dt() = 0;
   virtual void reset() = 0;
+
+  bool is_total_lagrangian;         // true: the method total Lagrangian; false: it is updated Lagrangian
 };
 
 #endif

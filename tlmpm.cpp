@@ -20,6 +20,7 @@ TLMPM::TLMPM(MPM *mpm, vector<string> args) : Method(mpm) {
   update_wf = 1;
   method_type = "FLIP";
   FLIP = 0.99;
+  is_TL = true;
 
   // Default base function (linear):
   shape_function = "linear";

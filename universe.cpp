@@ -66,7 +66,7 @@ void Universe::set_proc_grid() {
 		   domain->boxhi[1] - domain->boxlo[1]};
 
     if (l[0]<1.0e-10 || l[1]<1.0e-10) {
-      cout << "Error: the domain has a size in least one direction that is 0: Lx=" << l[0] << ", Ly=" << l[1] << endl;
+      cout << "Error: the domain has a size in at least one direction that is 0: Lx=" << l[0] << ", Ly=" << l[1] << endl;
       exit(1);
     }
 
@@ -99,7 +99,7 @@ void Universe::set_proc_grid() {
 			   {domain->boxhi[2] - domain->boxlo[2], 2}};
 
     if (l[0].dl<1.0e-10 || l[1].dl<1.0e-10 || l[2].dl<1.0e-10) {
-      cout << "Error: the domain has a size in least one direction that is 0: Lx=" << l[0].dl << ", Ly=" << l[1].dl << ", Lz=" << l[2].dl << endl;
+      cout << "Error: the domain has a size in at least one direction that is 0: Lx=" << l[0].dl << ", Ly=" << l[1].dl << ", Lz=" << l[2].dl << endl;
       exit(1);
     }
 
@@ -123,6 +123,8 @@ void Universe::set_proc_grid() {
     procneigh[1][0] = me - procgrid[0]*procgrid[1];
     procneigh[1][1] = me + procgrid[0]*procgrid[1];
   }
+
+  domain->set_local_box();
 }
 
 vector<int> tile2d(int p) {

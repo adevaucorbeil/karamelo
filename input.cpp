@@ -609,11 +609,6 @@ Var Input::parsev(string str)
 
 int Input::dimension(vector<string> args){
 
-  // Check that a method is available:
-  if (update->method == NULL) {
-    cout << "Error: a method should be defined before calling dimension()!" << endl;
-    exit(1);
-  }
 
   if (args.size()==0) {
     cout << "Error: dimension did not receive enough arguments: 1 minimum required" << endl;
@@ -627,7 +622,6 @@ int Input::dimension(vector<string> args){
 
   int dim = (int) parsev(args[0]);
 
-
   if (dim!=1 &&dim != 2 && dim != 3) {
     cout << "Error: dimension argument: " << dim << endl;
     exit(1);
@@ -636,59 +630,7 @@ int Input::dimension(vector<string> args){
 
   cout << "Set dimension to " << dim << endl;
 
-
-  if (args.size() > 1) {
-    if (dim ==1) {
-      if (args.size() > 4) {
-	cout << "Error: dimension received too many arguments: 6 maximum for 2D simulations (Dimension, domain xmin, domain xmax, cell size)" << endl;
-	exit(1);
-      } else if (args.size() == 4) {
-	domain->boxlo[0] = (double) parsev(args[1]);
-	domain->boxhi[0] = (double) parsev(args[2]);
-	domain->grid->cellsize = (double) parsev(args[4]);
-	if (domain->grid->cellsize < 0) {
-	  cout << "Error: cellsize negative! You gave: " << domain->grid->cellsize << endl;
-	  exit(1);
-	}
-	domain->grid->init(domain->boxlo, domain->boxhi);
-      }
-    } else if (dim == 2) {
-      if (args.size() > 6) {
-	cout << "Error: dimension received too many arguments: 6 maximum for 2D simulations (Dimension, domain xmin, domain xmax, domain ymin, domain ymax, cell size)" << endl;
-	exit(1);
-      } else if (args.size() == 6) {
-	domain->boxlo[0] = (double) parsev(args[1]);
-	domain->boxhi[0] = (double) parsev(args[2]);
-	domain->boxlo[1] = (double) parsev(args[3]);
-	domain->boxhi[1] = (double) parsev(args[4]);
-	domain->grid->cellsize = (double) parsev(args[5]);
-	if (domain->grid->cellsize < 0) {
-	  cout << "Error: cellsize negative! You gave: " << domain->grid->cellsize << endl;
-	  exit(1);
-	}
-	domain->grid->init(domain->boxlo, domain->boxhi);
-      }
-    } else {// dim ==3
-      if (args.size() == 8) {
-	domain->boxlo[0] = (double) parsev(args[1]);
-	domain->boxhi[0] = (double) parsev(args[2]);
-	domain->boxlo[1] = (double) parsev(args[3]);
-	domain->boxhi[1] = (double) parsev(args[4]);
-	domain->boxlo[2] = (double) parsev(args[5]);
-	domain->boxhi[2] = (double) parsev(args[6]);
-	domain->grid->cellsize = (double) parsev(args[7]);
-	if (domain->grid->cellsize < 0) {
-	  cout << "Error: cellsize negative! You gave: " << domain->grid->cellsize << endl;
-	  exit(1);
-	}
-	domain->grid->init(domain->boxlo, domain->boxhi);
-      }
-    }
-  }
-
-  // Set proc grid
-  universe->set_proc_grid();
-
+  domain->create_domain(args);
   return 0;
 }
 
