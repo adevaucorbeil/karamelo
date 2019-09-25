@@ -5,5 +5,11 @@
 /examples/*/*.LAMMPS
 /examples/*.LAMMPS
 /examples/*/*/*.LAMMPS
+/examples/*/log*
+/examples/*/*.png
+/examples/*/*.data
+/examples/*/*/*.png
+/examples/*/*/*.data
+/examples/*/*/*.*~
+/examples/*/*.*~
 /#*
-

@@ -20,6 +20,7 @@ class Domain : protected Pointers {
   int dimension;                         // 2 = 2d, 3 = 3d
 
   double boxlo[3],boxhi[3];              // orthogonal box global bounds
+  double sublo[3],subhi[3];              // sub-box bounds on this proc
 
   vector<class Region *> regions;        // list of defined Regions
   vector<class Solid *> solids;          // list of defined Solids
@@ -29,6 +30,7 @@ class Domain : protected Pointers {
   Domain(class MPM *);
   virtual ~Domain();
 
+  void set_local_box();
   void add_region(vector<string>);
   int find_region(string);
   void add_solid(vector<string>);

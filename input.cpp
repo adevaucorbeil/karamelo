@@ -1,3 +1,4 @@
+#include <mpi.h>
 #include "mpm.h"
 #include "input.h"
 #include "output.h"
@@ -24,6 +25,8 @@ using namespace std;
 
 Input::Input(MPM *mpm, int argc, char **argv) : Pointers(mpm)
 {
+  MPI_Comm_rank(world,&me);
+
   maxline = maxcopy = 0;
   maxarg = 0;
   arg = NULL;
@@ -633,6 +636,7 @@ int Input::dimension(vector<string> args){
 
   cout << "Set dimension to " << dim << endl;
 
+
   if (args.size() > 1) {
     if (dim ==1) {
       if (args.size() > 4) {
@@ -681,6 +685,10 @@ int Input::dimension(vector<string> args){
       }
     }
   }
+
+  // Set proc grid
+  universe->set_proc_grid();
+
   return 0;
 }
 

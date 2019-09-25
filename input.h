@@ -25,6 +25,7 @@ public:
 
 
 private:
+  int me;                      // proc ID
   char *command;               // ptr to current command
   string line,copy;            // input line string
   int maxline, maxcopy;        // max lengths of char strings

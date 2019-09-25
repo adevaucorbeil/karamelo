@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <mpi.h>
 #include <string.h>
 #include "mpm.h"
 #include "domain.h"
@@ -10,11 +11,11 @@
 #include "modify.h"
 #include "memory.h"
 #include "group.h"
-#include "variable.h"
 
-MPM::MPM(int narg, char **arg)
+MPM::MPM(int narg, char **arg, MPI_Comm communicator)
 {
   memory = new Memory(this);
+  universe = new Universe(this, communicator);
   input = new Input(this, narg, arg);
   output = new Output(this);
   update = new Update(this);
@@ -23,6 +24,8 @@ MPM::MPM(int narg, char **arg)
   material = new Material(this);
   modify = new Modify(this);
   group = new Group(this);
+
+  initclock = MPI_Wtime();
 
   // parse input switches
 
@@ -43,21 +46,20 @@ MPM::MPM(int narg, char **arg)
     iarg++;
   }
 
-  if (inflag != 0) infile.open(arg[inflag], ios_base::in); // open in read only
-  //logfile.open("log.mpm", ios_base::out); // open in write only
-  wlogfile = new ofstream("log.mpm", ios_base::out);
+  if (universe->me == 0) {
+    if (inflag != 0) infile.open(arg[inflag], ios_base::in); // open in read only
+    //logfile.open("log.mpm", ios_base::out); // open in write only
+    wlogfile = new ofstream("log.mpm", ios_base::out);
 
-  if (!wlogfile->is_open()){
-    printf("Cannot open file log.mpm\n");
-    exit(1);
+    if (!wlogfile->is_open()){
+      printf("Cannot open file log.mpm\n");
+      exit(1);
+    }
+    if (!infile.is_open()) {
+      printf("Cannot open input script %s\n",arg[inflag]);
+      exit(1);
+    }
   }
-  if (!infile.is_open()) {
-    printf("Cannot open input script %s\n",arg[inflag]);
-    exit(1);
-  }
-
-  
-  variables = new map<string, Variable>;
 }
 
 MPM::~MPM()
@@ -72,10 +74,20 @@ MPM::~MPM()
   delete modify;
   delete group;
 
-  if (infile.is_open()) infile.close();
-  if (wlogfile->is_open()) wlogfile->close();
+  double totalclock = MPI_Wtime() - initclock;
 
-  if (wlogfile) delete wlogfile;
+  int seconds = fmod(totalclock,60.0);
+  totalclock  = (totalclock - seconds) / 60.0;
+  int minutes = fmod(totalclock,60.0);
+  int hours = (totalclock - minutes) / 60.0;
+  cout << "Total wall time: " << hours << ":" << minutes << ":" << seconds << endl;
+
+  if (universe->me == 0) {
+    if (infile.is_open()) infile.close();
+    if (wlogfile->is_open()) wlogfile->close();
+  }
+
+  if (wlogfile) wlogfile = NULL;
 
   delete variables;
 }

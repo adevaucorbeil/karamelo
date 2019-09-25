@@ -156,3 +156,13 @@ int Domain::inside(Eigen::Vector3d x)
     return 1;
   return 0;
 }
+
+void Domain::set_local_box() {
+  if (dimension == 1) {
+    ;
+  } else if (dimension == 2) {
+    ;
+  } else {
+    ;
+  }
+}

@@ -9,7 +9,6 @@
 #include <string>
 #include <fstream>
 #include <map>
-#include "variable.h"
 
 using namespace std;
 
@@ -18,6 +17,7 @@ class MPM {
  public:
 
   class Memory *memory;          // memory allocation functions
+  class Universe *universe;      // universe of processors
   class Input *input;            // input script processing
   class Output *output;          // thermo/dump/restart
 
@@ -27,11 +27,12 @@ class MPM {
   class Modify *modify;          // fixes and computes
   class Group *group;            // groups of particles
 
+  MPI_Comm world;                // MPI communicator
+  double initclock;              // wall clock at instantiation
+
   filebuf infile;                // infile
   filebuf logfile;               // logfile
   ofstream *wlogfile;
-
-  map<string, class Variable> *variables; // global variables
 
   MPM(int, char **);
   ~MPM();
