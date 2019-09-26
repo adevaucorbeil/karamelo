@@ -6,6 +6,7 @@
 #include "math_special.h"
 #include <Eigen/Eigen>
 #include "var.h"
+#include "error.h"
 
 using namespace std;
 using namespace Eigen;
@@ -18,8 +19,7 @@ EOSShock::EOSShock(MPM *mpm, vector<string> args) : EOS(mpm, args)
   cout << "Initiate EOSShock" << endl;
 
   if (args.size()<8) {
-    cout << "Error: region command not enough arguments" << endl;
-    exit(1);
+    error->all(FLERR, "Error: not enough arguments.\n");
   }
   //options(&args, args.begin()+3);
   rho0_ = input->parsev(args[2]);

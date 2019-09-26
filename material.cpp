@@ -6,6 +6,7 @@
 #include "style_eos.h"
 #include "style_damage.h"
 #include <vector>
+#include "error.h"
 
 using namespace std;
 
@@ -54,8 +55,7 @@ void Material::options(vector<string> *args, vector<string>::iterator it)
 {
   cout << "In material::options()" << endl;
   if (args->end() < it) {
-    cout << "Error: not enough arguments" << endl;
-    exit(1);
+    error->all(FLERR, "Error: not enough arguments.\n");
   }
   if (args->end() > it) {
     cout << "Ignoring optional arguments: ";
@@ -74,8 +74,7 @@ void Material::add_EOS(vector<string> args){
   cout << "In add_EOS" << endl;
 
   if (find_EOS(args[0]) >= 0) {
-    cout << "Error: reuse of EOS ID" << endl;
-    exit(1);
+    error->all(FLERR, "Error: reuse of EOS ID.\n");
   }
 
     // create the EOS
@@ -87,8 +86,7 @@ void Material::add_EOS(vector<string> args){
     EOSs.back()->init();
   }
   else {
-    cout << "Unknown EOS style " << args[1] << endl;
-    exit(1);
+    error->all(FLERR, "Unknown EOS style " + args[1] + "\n");
   }
   
 }
@@ -115,8 +113,7 @@ void Material::add_strength(vector<string> args){
   cout << "In add_strength" << endl;
 
   if (find_strength(args[0]) >= 0) {
-    cout << "Error: reuse of strength ID" << endl;
-    exit(1);
+    error->all(FLERR, "Error: reuse of strength ID.\n");
   }
 
     // create the Strength
@@ -129,8 +126,7 @@ void Material::add_strength(vector<string> args){
     //materials.back()->init();
   }
   else {
-    cout << "Unknown strength style " << *estyle << endl;
-    exit(1);
+    error->all(FLERR, "Unknown strength style " + *estyle + ".\n");
   }
 }
 
@@ -150,8 +146,7 @@ void Material::add_damage(vector<string> args){
   cout << "In add_damage" << endl;
 
   if (find_damage(args[0]) >= 0) {
-    cout << "Error: reuse of damage ID" << endl;
-    exit(1);
+    error->all(FLERR, "Error: reuse of damage ID.\n");
   }
 
     // create the Damage
@@ -164,8 +159,7 @@ void Material::add_damage(vector<string> args){
     //materials.back()->init();
   }
   else {
-    cout << "Unknown damage style " << *estyle << endl;
-    exit(1);
+    error->all(FLERR,"Unknown damage style " + *estyle + "\n");
   }
 }
 
@@ -184,19 +178,16 @@ void Material::add_material(vector<string> args){
   cout << "In add_material" << endl;
 
   if (args.size()<3) {
-    cout << "Error: material command not enough arguments" << endl;
-    exit(1);
+    error->all(FLERR, "Error: material command not enough arguments.\n");
   }
 
   if (find_material(args[0]) >= 0) {
-    cout << "Error: reuse of material ID" << endl;
-    exit(1);
+    error->all(FLERR, "Error: reuse of material ID.\n");
   }
 
   if (args[1].compare("neo-hookean")==0) {
     if (args.size()<5) {
-      cout << "Error: material command not enough arguments" << endl;
-      exit(1);
+      error->all(FLERR,"Error: material command not enough arguments.\n");
     }
     Mat new_material(args[0], input->parsev(args[2]), input->parsev(args[3]), input->parsev(args[4]));
       materials.push_back(new_material);
@@ -206,21 +197,18 @@ void Material::add_material(vector<string> args){
     int iEOS = material->find_EOS(args[1]);
 
     if (iEOS == -1) {
-      cout << "Error: could not find EOS named: " << args[1] << endl;
-      exit(1);
+      error->all(FLERR, "Error: could not find EOS named: " + args[1] + ".\n");
     }
 
     int iStrength = material->find_strength(args[2]);
     if (iStrength == -1) {
-      cout << "Error: could not find strength named: " << args[2] << endl;
-      exit(1);
+      error->all(FLERR, "Error: could not find strength named: " + args[2] + ".\n");
     }
 
     if (args.size() > 3) {
       int iDamage = material->find_damage(args[3]);
       if (iDamage == -1) {
-	cout << "Error: could not find damage named: " << args[3] << endl;
-	exit(1);
+	error->all(FLERR, "Error: could not find damage named: " + args[3] + ".\n");
       }
       Mat new_material(args[0], EOSs[iEOS], strengths[iStrength], damages[iDamage]);
       materials.push_back(new_material);

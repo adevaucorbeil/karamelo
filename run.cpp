@@ -8,6 +8,7 @@
 #include "scheme.h"
 #include "var.h"
 #include <string>
+#include "error.h"
 
 /* ---------------------------------------------------------------------- */
 
@@ -20,8 +21,7 @@ Var Run::command(vector<string> args)
   // cout << "In Run::command()" << endl;
 
   if (args.size() < 1) {
-    cout << "Illegal run command" << endl;
-    exit(1);
+    error->all(FLERR, "Illegal run command.\n");
   }
 
   mpm->init();
@@ -30,8 +30,7 @@ Var Run::command(vector<string> args)
 
   // Check that a method is available:
   if (update->method == NULL) {
-    cout << "Error: no method was defined!" << endl;
-    exit(1);
+    error->all(FLERR, "Error: no method was defined!\n");
   }
 
   int nsteps = (int) input->parsev(args[0]);

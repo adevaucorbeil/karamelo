@@ -6,6 +6,8 @@
 #include "mpm.h"
 #include "mpmtype.h"
 
+#define FLERR __FILE__,__LINE__
+
 #define MIN(A,B) ((A) < (B) ? (A) : (B))
 #define MAX(A,B) ((A) > (B) ? (A) : (B))
 
@@ -15,15 +17,16 @@ class Pointers {
  public:
  Pointers(MPM *ptr) :
    mpm(ptr),
-   memory(ptr->memory), 
-   input(ptr->input), 
+   memory(ptr->memory),
+   error(ptr->error),
+   universe(ptr->universe),
+   input(ptr->input),
    output(ptr->output),
    infile(&ptr->infile),
    logfile(&ptr->logfile),
    wlogfile(ptr->wlogfile),
    domain(ptr->domain),
    material(ptr->material),
-   variables(ptr->variables),
    update(ptr->update),
    modify(ptr->modify),
    group(ptr->group) {}
@@ -31,6 +34,8 @@ class Pointers {
  protected:
   MPM *mpm;
   Memory *&memory;
+  Error *&error;
+  Universe *&universe;
   Input *&input;
   Output *&output;
   
@@ -43,8 +48,6 @@ class Pointers {
   filebuf *infile;
   filebuf *logfile;
   ofstream *&wlogfile;
-
-  map<string, Variable> *&variables;
 };
 
   

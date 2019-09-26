@@ -2,6 +2,7 @@
 #include "group.h"
 #include "delete_particles.h"
 #include "domain.h"
+#include "error.h"
 
 using namespace std;
 
@@ -10,10 +11,7 @@ DeleteParticles::DeleteParticles(MPM *mpm) : Pointers(mpm) {}
 Var DeleteParticles::command(vector<string> args) {
   cout << "In DeleteParticles::command()" << endl;
 
-  if (args.size() < 3) {
-    cout << "Illegal delete_particles command" << endl;
-    exit(1);
-  }
+  if (args.size() < 3) error->all(FLERR, "Illegal delete_particles command\n");
 
   int ns = domain->solids.size();
   dlist = new int*[ns];
@@ -21,17 +19,11 @@ Var DeleteParticles::command(vector<string> args) {
   int isolid = domain->find_solid(args[0]);
 
   if (isolid < 0) {
-    if (args[0].compare("all")!=0) {
-      cout << "Error: solid " << args[0] << " unknown.\n";
-      exit(1);
-    }
+    if (args[0].compare("all")!=0) error->all(FLERR, "Error: solid " + args[0] + " unknown.\n");
   }
 
   if (args[1].compare("region")==0) delete_region(args, isolid);
-  else {
-    cout << "Error: use of illegal keyword for delete_particles command: " << args[1] << endl;
-    exit(1);
-  }
+  else error->all(FLERR, "Error: use of illegal keyword for delete_particles command: " + args[1] + "\n");
 
 
   // Delete particles flagged in dlist:
@@ -62,10 +54,7 @@ Var DeleteParticles::command(vector<string> args) {
 void DeleteParticles::delete_region(vector<string> args, int isolid) {
   int iregion = domain->find_region(args[2]);
 
-  if (iregion < 0) {
-    cout << "Error: region " << args[2] << " unknown.\n";
-    exit(1);
-  }
+  if (iregion < 0) error->all(FLERR, "Error: region " + args[2] + " unknown.\n");
 
   int ns = domain->solids.size();
   int np;

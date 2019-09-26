@@ -1,5 +1,6 @@
 #include <iostream>
 #include "strength.h"
+#include "error.h"
 
 using namespace std;
 
@@ -24,8 +25,7 @@ void Strength::options(vector<string> *args, vector<string>::iterator it)
 {
   cout << "In Strength::options()" << endl;
   if (args->end() < it) {
-    cout << "Error: not enough arguments" << endl;
-    exit(1);
+    error->all(FLERR, "Error: not enough arguments.\n");
   }
   if (args->end() > it) {
     cout << "Ignoring optional arguments: ";

@@ -1,5 +1,6 @@
 #include <iostream>
 #include "dump.h"
+#include "error.h"
 
 using namespace std;
 
@@ -11,8 +12,7 @@ Dump::Dump(MPM *mpm, vector<string> args) :
   id = args[0];
 
   if (args[1].compare("all")!=0) {
-    cout << "Error: groups are not yet supported for dumps. Should use all." << endl;
-    exit(1);
+    error->all(FLERR, "Error: groups are not yet supported for dumps. Should use all.\n");
   }
 
   style = args[2];
@@ -29,8 +29,7 @@ void Dump::options(vector<string> *args, vector<string>::iterator it)
 {
   cout << "In dump::options()" << endl;
   if (args->end() < it) {
-    cout << "Error: not enough arguments" << endl;
-    exit(1);
+    error->all(FLERR, "Error: not enough arguments.\n");
   }
   if (args->end() > it) {
     cout << "Ignoring optional arguments: ";

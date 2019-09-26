@@ -1,10 +1,12 @@
 #include <mpi.h>
 #include <vector>
+#include <string>
+#include <math.h>
+#include <algorithm>
 #include "universe.h"
 #include "version.h"
 #include "domain.h"
-#include <math.h>
-#include <algorithm>
+#include "error.h"
 
 using namespace std;
 
@@ -27,15 +29,14 @@ Universe::Universe(MPM *mpm, MPI_Comm communicator) : Pointers(mpm)
 
 Universe::~Universe()
 {
-  if (uworld != uorig) MPI_Comm_free(&uworld);
+  // if (uworld != uorig) MPI_Comm_free(&uworld);
 }
 
 void Universe::set_proc_grid() {
   int dim = domain->dimension;
 
   if (dim != 1 && dim !=2 && dim !=3) {
-    cout << "Error in Universe::set_proc_grid(): invalid dimension: " << dim << endl;
-    exit(1);
+    error->all(FLERR, "Error in Universe::set_proc_grid(): invalid dimension: " + to_string(dim) + ".\n");
   }
 
   procgrid[0] = 1;
@@ -66,8 +67,7 @@ void Universe::set_proc_grid() {
 		   domain->boxhi[1] - domain->boxlo[1]};
 
     if (l[0]<1.0e-10 || l[1]<1.0e-10) {
-      cout << "Error: the domain has a size in at least one direction that is 0: Lx=" << l[0] << ", Ly=" << l[1] << endl;
-      exit(1);
+      error->all(FLERR, "Error: the domain has a size in at least one direction that is 0: Lx=" + to_string(l[0]) + ", Ly=" + to_string(l[1]) + ".\n");
     }
 
     // length >= width
@@ -99,8 +99,7 @@ void Universe::set_proc_grid() {
 			   {domain->boxhi[2] - domain->boxlo[2], 2}};
 
     if (l[0].dl<1.0e-10 || l[1].dl<1.0e-10 || l[2].dl<1.0e-10) {
-      cout << "Error: the domain has a size in at least one direction that is 0: Lx=" << l[0].dl << ", Ly=" << l[1].dl << ", Lz=" << l[2].dl << endl;
-      exit(1);
+      error->all(FLERR, "Error: the domain has a size in at least one direction that is 0: Lx=" + to_string(l[0].dl) + ", Ly=" + to_string(l[1].dl) + ", Lz=" + to_string(l[2].dl) + ".\n");
     }
 
     // Sort values in l according to their dl:

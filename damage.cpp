@@ -1,5 +1,6 @@
 #include <iostream>
 #include "damage.h"
+#include "error.h"
 
 using namespace std;
 
@@ -23,10 +24,9 @@ void Damage::init()
 void Damage::options(vector<string> *args, vector<string>::iterator it)
 {
   cout << "In Damage::options()" << endl;
-  if (args->end() < it) {
-    cout << "Error: not enough arguments" << endl;
-    exit(1);
-  }
+
+  if (args->end() < it) error->all(FLERR, "Error: not enough arguments\n");
+
   if (args->end() > it) {
     cout << "Ignoring optional arguments: ";
     for (it; it != args->end(); ++it){

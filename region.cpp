@@ -1,5 +1,6 @@
 #include <iostream>
 #include "region.h"
+#include "error.h"
 
 using namespace std;
 
@@ -26,8 +27,7 @@ void Region::options(vector<string> *args, vector<string>::iterator it)
 
   cout << "In region::options()" << endl;
   if (args->end() < it) {
-    cout << "Error: not enough arguments" << endl;
-    exit(1);
+    error->all(FLERR, "Error: not enough arguments.\n");
   }
   if (args->end() > it) {
     for (it; it != args->end(); ++it){

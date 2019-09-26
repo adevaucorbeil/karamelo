@@ -1,16 +1,18 @@
+#include <iostream>
+#include <vector>
+#include <Eigen/Eigen>
+#include <algorithm>
+#include <math.h>
+#include <string>
 #include "tlmpm.h"
+#include "var.h"
+#include "basis_functions.h"
+#include "error.h"
 #include "domain.h"
 #include "solid.h"
 #include "grid.h"
 #include "input.h"
 #include "update.h"
-#include <iostream>
-#include <vector>
-#include <Eigen/Eigen>
-#include <math.h>
-#include "var.h"
-#include <algorithm>
-#include "basis_functions.h"
 
 using namespace std;
 
@@ -45,15 +47,13 @@ void TLMPM::setup(vector<string> args)
     isFLIP = true;
 
     if (args.size() < 2) {
-      cout << "Illegal modify_method command: not enough arguments." << endl;
-      exit(1);
+      error->all(FLERR, "Illegal modify_method command: not enough arguments.\n");
     }
 
   } else if (args[n].compare("APIC") == 0) {
     method_type = "APIC";
   } else {
-    cout << "Error: method type " << args[n] << " not understood. Expect: PIC, FLIP or APIC\n";
-    exit(1);
+    error->all(FLERR, "Error: method type " + args[n] + " not understood. Expect: PIC, FLIP or APIC\n");
   }
 
   n++;
@@ -78,14 +78,12 @@ void TLMPM::setup(vector<string> args)
       derivative_basis_function = &BasisFunction::derivative_bernstein_quadratic;
       n++;
     } else {
-      cout << "Illegal method_method argument: form function of type " << args[n] << " is unknown." << endl;
-      exit(1);
+      error->all(FLERR, "Illegal method_method argument: form function of type " + args[n] + " is unknown.\n");
     }
   }
 
   if (args.size() > n + isFLIP) {
-    cout << "Illegal modify_method command: too many arguments: " << n + isFLIP << " expected, " << args.size() << " received." << endl;
-      exit(1);    
+    error->all(FLERR, "Illegal modify_method command: too many arguments: " + to_string(n + isFLIP) + " expected, " + to_string(args.size()) + " received.\n");
   }
 
   if (isFLIP) FLIP = input->parsev(args[n]);
@@ -185,19 +183,11 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
 		      int n = nz*ny*i+nz*j+k;
 		      if (n < nnodes)
 			n_neigh.push_back(n);
-		      // if (nz*ny*i+nz*j+k >= nnodes) {
-		      //   cout << "Error: " << nz*ny*i+nz*j+k << " >= nnodes=" << nnodes << endl ;
-		      //   exit(1);
-		      // }
 		    }
 		  } else {
 		    int n = ny*i+j;
 		    if (n < nnodes)
 			n_neigh.push_back(n);
-		    // if (ny*i+j >= nnodes) {
-		    //   cout << "Error: " << ny*i+j << " >= nnodes=" << nnodes << endl ;
-		    //   exit(1);
-		    // }
 		  }
 		}
 	      } else {
@@ -233,8 +223,7 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
 	      }
 	    }
 	  } else {
-	    cout << "Shape function type not supported by TLMPM::compute_grid_weight_functions_and_gradients(): " << update->method_shape_function << endl;
-	    exit(1);
+	    error->all(FLERR, "Shape function type not supported by TLMPM::compute_grid_weight_functions_and_gradients(): " + update->method_shape_function + ".\n");
 	  }
 
 	  // cout << "[";
@@ -401,11 +390,11 @@ void TLMPM::adjust_dt()
     if (dtCFL == 0) {
       cout << "Error: dtCFL == 0\n";
       cout << "domain->solids[" << isolid << "]->dtCFL == 0\n";
-      exit(1);
+      error->all(FLERR, "");
     } else if (std::isnan(dtCFL)) {
       cout << "Error: dtCFL = " << dtCFL << "\n";
       cout << "domain->solids[" << isolid << "]->dtCFL == " << domain->solids[isolid]->dtCFL << "\n";
-      exit(1);
+      error->all(FLERR, "");
     }
   }
   update->dt = dtCFL * update->dt_factor;

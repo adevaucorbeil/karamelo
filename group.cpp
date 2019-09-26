@@ -3,6 +3,8 @@
 #include "region.h"
 #include "solid.h"
 #include <Eigen/Eigen>
+#include "error.h"
+#include <string>
 
 #define MAX_GROUP 32
 
@@ -45,8 +47,7 @@ Group::~Group()
 void Group::assign(vector<string> args)
 {
   if (args.size() < 4) {
-    cout << "Error: too few arguments for group: requires at least 4 arguments. " << args.size() << " received" << endl;
-    exit(1);
+    error->all(FLERR,"Error: too few arguments for group: requires at least 4 arguments. " + to_string(args.size()) + " received.\n");
   }
 
   // find group in existing list
@@ -71,8 +72,7 @@ void Group::assign(vector<string> args)
   } else if (args[1].compare("nodes") == 0 ) {
     pon[igroup] = "nodes";
   } else {
-    cout << "Error: do not understand keyword " << args[1] << ", \"particles\" or \"nodes\" expected" << endl;
-    exit(1);    
+    error->all(FLERR,"Error: do not understand keyword " + args[1] + ", \"particles\" or \"nodes\" expected.\n");
   }
   
   // style = region
@@ -82,8 +82,7 @@ void Group::assign(vector<string> args)
     // Look for the region ID (if exists):
     int iregion = domain->find_region(args[3]);
     if (iregion == -1) {
-      cout << "Error: could not find region " << args[3] << endl;
-      exit(1);
+      error->all(FLERR, "Error: could not find region " + args[3] + ".\n");
     }
 
 
@@ -126,8 +125,7 @@ void Group::assign(vector<string> args)
       for (int i=5; i<args.size(); i++) {
 	solid[igroup] = domain->find_solid(args[i]);
 	if (solid[igroup] == -1) {
-	  cout << "Error: cannot find solid with ID " << args[i] << endl;
-	  exit(1);
+	  error->all(FLERR, "Error: cannot find solid with ID " + args[i] + ".\n");
 	}
 
 	Eigen::Vector3d *x;
@@ -158,8 +156,7 @@ void Group::assign(vector<string> args)
       }
 
     } else {
-      cout << "Error: unknown keyword in group command: " << args[3] << endl;
-      exit(1);
+      error->all(FLERR, "Error: unknown keyword in group command: " + args[3] + ".\n");
     }
   }
 }
@@ -304,8 +301,7 @@ double Group::internal_force(int igroup, int dir)
 double Group::external_force(int igroup, int dir)
 {
   if (pon[igroup].compare("nodes") == 0) {
-    cout << "Error: cannot calculate the external forces applied to the node group " << names[igroup] << endl;
-    exit(1);
+    error->all(FLERR, "Error: cannot calculate the external forces applied to the node group " + names[igroup] + ".\n");
   }
   
   Eigen::Vector3d *f;

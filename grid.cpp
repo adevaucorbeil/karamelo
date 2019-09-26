@@ -7,6 +7,7 @@
 #include "update.h"
 #include "var.h"
 #include "domain.h"
+#include "error.h"
 
 using namespace std;
 
@@ -128,52 +129,20 @@ void Grid::grow(int nn){
   nnodes = nn;
 
   if (x0 == NULL) x0 = new Eigen::Vector3d[nn];
-  else {
-    cout << "Error in Grid::grow(): x0 already exists, I don't know how to grow it!\n";
-    exit(1);
-  }
 
   if (x == NULL) x = new Eigen::Vector3d[nn];
-  else {
-    cout << "Error in Grid::grow(): x already exists, I don't know how to grow it!\n";
-    exit(1);
-  }
 
   if (v == NULL) v = new Eigen::Vector3d[nn];
-  else {
-    cout << "Error in Grid::grow(): v already exists, I don't know how to grow it!\n";
-    exit(1);
-  }
 
   if (v_update == NULL) v_update = new Eigen::Vector3d[nn];
-  else {
-    cout << "Error in Grid::grow(): v_update already exists, I don't know how to grow it!\n";
-    exit(1);
-  }
 
   if (mb == NULL) mb = new Eigen::Vector3d[nn];
-  else {
-    cout << "Error in Grid::grow(): mb already exists, I don't know how to grow it!\n";
-    exit(1);
-  }
 
   if (f == NULL) f = new Eigen::Vector3d[nn];
-  else {
-    cout << "Error in Grid::grow(): f already exists, I don't know how to grow it!\n";
-    exit(1);
-  }
 
   // if (R == NULL) R = new Eigen::Matrix3d[nn];
-  // else {
-  //   cout << "Error in Grid::grow(): R already exists, I don't know how to grow it!\n";
-  //   exit(1);
-  // }
 
   // if (C == NULL) C = new Eigen::Vector3d[nn];
-  // else {
-  //   cout << "Error in Grid::grow(): C already exists, I don't know how to grow it!\n";
-  //   exit(1);
-  // }
 
   string str = "grid-mass";
   cout << "Growing " << str << endl;

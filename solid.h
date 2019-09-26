@@ -15,8 +15,13 @@ using namespace Eigen;
 class Solid : protected Pointers {
  public:
   string id;                 // solid id
-  bigint np;                 // number of particles
-  double solidlo[3], solidhi[3]; // solid bounds
+  bigint np;                 // total number of particles in the domain
+  int np_local;              // number of local particles (in this CPU).
+
+  vector<tagint> ptag;       // unique identifier for particles in the system.
+
+  double solidlo[3], solidhi[3];           // solid global bounds
+  double solidsublo[3], solidsubhi[3];     // solid local bounds
 
   Eigen::Vector3d *x;        // particles' current position
   Eigen::Vector3d *x0;       // particles' reference position

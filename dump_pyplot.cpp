@@ -8,6 +8,7 @@
 #include "mpm_math.h"
 #include <vector>
 #include <matplotlibcpp.h>
+#include "error.h"
 
 using namespace std;
 using namespace MPM_Math;
@@ -18,14 +19,12 @@ DumpPyPlot::DumpPyPlot(MPM *mpm, vector<string> args) : Dump(mpm, args)
 {
   cout << "In DumpPyPlot::DumpPyPlot()" << endl;
   if (domain->dimension != 1 && domain->dimension != 2) {
-    cout << "Error: cannot use dump_pyplot with dimensions different than 1 or 2!\n";
-    exit(1);
+    error->all(FLERR, "Error: cannot use dump_pyplot with dimensions different than 1 or 2!\n");
   }
 
   if (args.size() > 5) {
     if (args.size() > 7) {
-      cout << "Error: too many options given to dump_pyplot\n.";
-      exit(1);
+      error->all(FLERR, "Error: too many options given to dump_pyplot\n.");
     } else {
       xsize = stoi(args[5]);
       ysize = stoi(args[6]);

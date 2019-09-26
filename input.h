@@ -4,12 +4,13 @@
 #define MPM_INPUT_H
 
 #include "pointers.h"
+#include "var.h"
 #include <vector>
 #include <map>
 
 
-
 class Input : protected Pointers {
+  friend class Error;
 public:
   int narg;                    // # of command args
   char **arg;                  // parsed args for command
@@ -56,6 +57,7 @@ private:
   class Var value(vector<string>);
   int plot(vector<string>);
   int print(vector<string>);
+  int create_domain(vector<string>);
 
   bool protected_variable(string);
 

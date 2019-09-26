@@ -6,6 +6,7 @@
 #include "mpm_math.h"
 #include <Eigen/Eigen>
 #include "var.h"
+#include "error.h"
 
 using namespace std;
 using namespace Eigen;
@@ -17,10 +18,8 @@ DamageJohnsonCook::DamageJohnsonCook(MPM *mpm, vector<string> args) : Damage(mpm
 {
   cout << "Initiate DamageJohnsonCook" << endl;
 
-  if (args.size()<7) {
-    cout << "Error: too few arguments for the damage command" << endl;
-    exit(1);
-  }
+  if (args.size()<7) error->all(FLERR, "Error: too few arguments for the damage command\n");
+
   //options(&args, args.begin()+3);
   d1 = input->parsev(args[2]);
   d2 = input->parsev(args[3]);
@@ -41,8 +40,9 @@ void DamageJohnsonCook::compute_damage(double &damage_init, double &damage, cons
   double vm = SQRT_3_OVER_2 * Sdev.norm(); // von-Mises equivalent stress
   if (vm < 0.0) {
     cout << "this is sdev " << endl << Sdev << endl;
-    printf("vm=%f < 0.0, surely must be an error\n", vm);
-    exit(1);
+    char str[128];
+    sprintf(str,"vm=%f < 0.0, surely must be an error\n", vm);
+    error->all(FLERR, str);
   }
 
   // determine stress triaxiality

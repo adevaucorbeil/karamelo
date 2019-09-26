@@ -3,6 +3,7 @@
 #include "region_block.h"
 #include "input.h"
 #include "var.h"
+#include "error.h"
 
 using namespace std;
 
@@ -13,14 +14,11 @@ RegBlock::RegBlock(MPM *mpm, vector<string> args) : Region(mpm, args)
   cout << "Initiate RegBlock" << endl;
 
   if (domain->dimension == 3 && args.size()<8) {
-    cout << "Error: region command not enough arguments" << endl;
-    exit(1);
+    error->all(FLERR, "Error: region command not enough arguments.\n");
   } else if (domain->dimension == 2 && args.size()<6) {
-    cout << "Error: region command not enough arguments" << endl;
-    exit(1);
+    error->all(FLERR, "Error: region command not enough arguments.\n");
   } else if (domain->dimension == 1 && args.size()<4) {
-    cout << "Error: region command not enough arguments" << endl;
-    exit(1);
+    error->all(FLERR, "Error: region command not enough arguments.\n");
   }
 
   if (domain->dimension == 3) options(&args, args.begin()+8);
@@ -29,16 +27,14 @@ RegBlock::RegBlock(MPM *mpm, vector<string> args) : Region(mpm, args)
 
   if (args[2].compare("INF") == 0 || args[2].compare("EDGE") == 0) {
     if (domain->regions.size() == 0) {
-      cout << "Cannot use region INF or EDGE when box does not exist" << endl;
-      exit(1);
+      error->all(FLERR, "Cannot use region INF or EDGE when box does not exist.\n");
     }
     xlo = -BIG;
   } else xlo = input->parsev(args[2]);
 
   if (args[3].compare("INF") == 0 || args[3].compare("EDGE") == 0) {
     if (domain->regions.size() == 0) {
-      cout << "Cannot use region INF or EDGE when box does not exist" << endl;
-      exit(1);
+      error->all(FLERR, "Cannot use region INF or EDGE when box does not exist.\n");
     }
     xhi = BIG;
   } else xhi = input->parsev(args[3]);
@@ -48,16 +44,14 @@ RegBlock::RegBlock(MPM *mpm, vector<string> args) : Region(mpm, args)
   if (domain->dimension >= 2) {
     if (args[4].compare("INF") == 0 || args[4].compare("EDGE") == 0) {
       if (domain->regions.size() == 0) {
-	cout << "Cannot use region INF or EDGE when box does not exist" << endl;
-	exit(1);
+	error->all(FLERR, "Cannot use region INF or EDGE when box does not exist.\n");
       }
       ylo = -BIG;
     } else ylo = input->parsev(args[4]);
 
     if (args[5].compare("INF") == 0 || args[5].compare("EDGE") == 0) {
       if (domain->regions.size() == 0) {
-	cout << "Cannot use region INF or EDGE when box does not exist" << endl;
-	exit(1);
+	error->all(FLERR, "Cannot use region INF or EDGE when box does not exist.\n");
       }
       yhi = BIG;
     } else yhi = input->parsev(args[5]);
@@ -71,16 +65,14 @@ RegBlock::RegBlock(MPM *mpm, vector<string> args) : Region(mpm, args)
   if (domain->dimension == 3) {
     if (args[6].compare("INF") == 0 || args[6].compare("EDGE") == 0) {
       if (domain->regions.size() == 0) {
-	cout << "Cannot use region INF or EDGE when box does not exist" << endl;
-	exit(1);
+	error->all(FLERR, "Cannot use region INF or EDGE when box does not exist.\n");
       }
       zlo = -BIG;
     } else zlo = input->parsev(args[6]);
 
     if (args[7].compare("INF") == 0 || args[7].compare("EDGE") == 0) {
       if (domain->regions.size() == 0) {
-	cout << "Cannot use region INF or EDGE when box does not exist" << endl;
-	exit(1);
+	error->all(FLERR, "Cannot use region INF or EDGE when box does not exist.\n");
       }
       zhi = BIG;
     } else zhi = input->parsev(args[7]);
@@ -93,8 +85,7 @@ RegBlock::RegBlock(MPM *mpm, vector<string> args) : Region(mpm, args)
   // error check
 
   if (xlo > xhi || ylo > yhi || zlo > zhi) {
-    cout << "Illegal region block command" << endl;
-    exit(1);
+    error->all(FLERR, "Illegal region block command.\n");
   }
 
   if (args[2].compare("INF") != 0 && args[2].compare("EDGE") != 0)

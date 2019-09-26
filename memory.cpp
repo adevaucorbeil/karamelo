@@ -1,6 +1,8 @@
 #include <iostream>
+#include <string>
 #include "string.h"
 #include "memory.h"
+#include "error.h"
 
 using namespace std;
 
@@ -25,8 +27,7 @@ void *Memory::smalloc(bigint nbytes, string name)
 #endif
   if (ptr == NULL) {
     char str[128];
-    cout << "Failed to allocate " << nbytes << " bytes for array " << name << endl;
-    exit(1);
+    error->all(FLERR, "Failed to allocate " + to_string(nbytes) + " bytes for array " + name + ".\n");
   }
   return ptr;
 }
@@ -45,8 +46,7 @@ void *Memory::srealloc(void *ptr, bigint nbytes, string name)
   ptr = realloc(ptr,nbytes);
   if (ptr == NULL) {
     char str[128];
-    cout << "Failed to allocate " << nbytes << " bytes for array " << name << endl;
-    exit(1);
+    error->all(FLERR, "Failed to allocate " + to_string(nbytes) + " bytes for array " + name + ".\n");
   }
   return ptr;
 }
@@ -68,6 +68,5 @@ void Memory::sfree(void *ptr)
 void Memory::fail(string name)
 {
   char str[128];
-  cout << "Cannot create/grow a vector/array of pointers for " << name << endl;
-  exit(1);
+  error->all(FLERR, "Cannot create/grow a vector/array of pointers for " + name + ".\n");
 }

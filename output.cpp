@@ -7,6 +7,7 @@
 #include "var.h"
 #include "plot.h"
 #include <matplotlibcpp.h>
+#include "error.h"
 
 namespace plt = matplotlibcpp;
 
@@ -91,8 +92,7 @@ void Output::setup(){
   else next = next_log;
 
   if (next==0) {
-    cout << "Error: next=0!\n";
-    exit(1);
+    error->all(FLERR,"Error: next=0!\n");
   }
 
   // cout << "next = " << next << endl;
@@ -128,8 +128,7 @@ void Output::write(bigint ntimestep){
   if (next_dump_any!=0) next = MIN(next_dump_any,next_log);
   else if (next_log!=0) next = next_log;
   else {
-    cout << "Error: next=0!\n";
-    exit(1);
+    error->all(FLERR,"Error: next=0!\n");
   }
 
   if (next_plot_any == ntimestep) {
@@ -163,8 +162,7 @@ void Output::write(bigint ntimestep){
 
 void Output::set_log(vector<string> args){
   if (args.size()!=1) {
-    cout << "Illegal log command: too many variables" << endl;
-    exit(1);
+    error->all(FLERR, "Illegal log command: too many variables.\n");
   }
   every_log = (int) input->parsev(args[0]);
 }
@@ -176,8 +174,7 @@ void Output::add_dump(vector<string> args){
   }
 
   if (find_dump(args[0]) >= 0) {
-    cout << "Error: reuse of dump ID" << endl;
-    exit(1);
+    error->all(FLERR,  "Error: reuse of dump ID.\n");
   }
 
   // create the Dump
@@ -191,8 +188,7 @@ void Output::add_dump(vector<string> args){
 #undef DUMP_CLASS
 
   else {
-    cout << "Unknown dump style " << args[2] << endl;
-    exit(1);
+    error->all(FLERR, "Unknown dump style " + args[2] + ".\n");
   }
 
   every_dump.push_back((int) input->parsev(args[3]));
@@ -206,12 +202,10 @@ void Output::modify_dump(vector<string> args){
 
   int idump = find_dump(args[1]);
   if (idump == 0) {
-    cout << "Error: dump ID unknown" << endl;
-    exit(1);
+    error->all(FLERR, "Error: dump ID unknown.\n");
   }
 
-  cout << "Unfinished function" << endl;
-  exit(1);
+  error->all(FLERR, "Unfinished function.\n");
 }
 
 void Output::delete_dump(string name){
@@ -219,8 +213,7 @@ void Output::delete_dump(string name){
 
   int idump = find_dump(name);
   if (idump == 0) {
-    cout << "Error: dump ID unknown" << endl;
-    exit(1);
+    error->all(FLERR, "Error: dump ID unknown.\n");
   }
 
   dumps.erase(dumps.begin() + idump);
@@ -240,8 +233,7 @@ void Output::add_plot(vector<string> args){
   }
 
   if (find_plot(args[0]) >= 0) {
-    cout << "Error: reuse of plot ID" << endl;
-    exit(1);
+    error->all(FLERR, "Error: reuse of plot ID.\n");
   }
 
   // create the Plot
@@ -258,12 +250,10 @@ void Output::modify_plot(vector<string> args){
 
   int iplot = find_plot(args[1]);
   if (iplot == 0) {
-    cout << "Error: plot ID unknown" << endl;
-    exit(1);
+    error->all(FLERR, "Error: plot ID unknown.\n");
   }
 
-  cout << "Unfinished function" << endl;
-  exit(1);
+  error->all(FLERR, "Unfinished function.\n");
 }
 
 void Output::delete_plot(string name){
@@ -271,8 +261,7 @@ void Output::delete_plot(string name){
 
   int iplot = find_plot(name);
   if (iplot == 0) {
-    cout << "Error: plot ID unknown" << endl;
-    exit(1);
+    error->all(FLERR, "Error: plot ID unknown.\n");
   }
 
   plots.erase(plots.begin() + iplot);

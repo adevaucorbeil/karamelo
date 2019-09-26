@@ -1,11 +1,13 @@
 #include <iostream>
 #include <vector>
+#include <string>
 #include "fix_indent.h"
 #include "input.h"
 #include "group.h"
 #include "domain.h"
 #include "input.h"
 #include <Eigen/Eigen>
+#include "error.h"
 
 using namespace std;
 using namespace FixConst;
@@ -14,13 +16,11 @@ using namespace Eigen;
 FixIndent::FixIndent(MPM *mpm, vector<string> args) : Fix(mpm, args)
 {
   if (args.size() < 9) {
-    cout << "Error: too few arguments for fix_body_force_current_config: requires at least 9 arguments. " << args.size() << " received" << endl;
-    exit(1);
+    error->all(FLERR,"Error: too few arguments for fix_body_force_current_config: requires at least 9 arguments. " + to_string(args.size()) + " received.\n");
   }
 
   if (group->pon[igroup].compare("particles") !=0 && group->pon[igroup].compare("all") !=0) {
-    cout << "fix_indent needs to be given a group of nodes" << group->pon[igroup] << ", " << args[2] << " is a group of "<< group->pon[igroup] << "." << endl;
-    exit(1);
+    error->all(FLERR, "fix_indent needs to be given a group of nodes" + group->pon[igroup] + ", " + args[2] + " is a group of " + group->pon[igroup] + ".\n");
   }
   cout << "Creating new fix FixIndent with ID: " << args[0] << endl;
   id = args[0];
@@ -29,8 +29,7 @@ FixIndent::FixIndent(MPM *mpm, vector<string> args) : Fix(mpm, args)
   if (args[3].compare("sphere")==0) {
     type = "sphere";
   } else {
-    cout << "Error indent type " << args[3] << " unknown. Only type sphere is supported.\n";
-    exit(1);
+    error->all(FLERR,"Error indent type " + args[3] + " unknown. Only type sphere is supported.\n");
   }
 
   Kpos = 4;

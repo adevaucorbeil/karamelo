@@ -1,11 +1,12 @@
 #include <iostream>
+#include <Eigen/Eigen>
 #include "strength_plastic.h"
 #include "input.h"
 #include "domain.h"
 #include "update.h"
 #include "mpm_math.h"
-#include <Eigen/Eigen>
 #include "var.h"
+#include "error.h"
 
 using namespace std;
 using namespace Eigen;
@@ -17,8 +18,7 @@ StrengthPlastic::StrengthPlastic(MPM *mpm, vector<string> args) : Strength(mpm, 
   cout << "Initiate StrengthPlastic" << endl;
 
   if (args.size()<3) {
-    cout << "Error: too few arguments for the strength command" << endl;
-    exit(1);
+    error->all(FLERR, "Error: too few arguments for the strength command.\n");
   }
   //options(&args, args.begin()+3);
   G_ = input->parsev(args[2]);

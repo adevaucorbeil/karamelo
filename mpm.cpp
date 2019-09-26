@@ -11,10 +11,13 @@
 #include "modify.h"
 #include "memory.h"
 #include "group.h"
+#include "universe.h"
+#include "error.h"
 
 MPM::MPM(int narg, char **arg, MPI_Comm communicator)
 {
   memory = new Memory(this);
+  error = new Error(this);
   universe = new Universe(this, communicator);
   input = new Input(this, narg, arg);
   output = new Output(this);
@@ -37,8 +40,7 @@ MPM::MPM(int narg, char **arg, MPI_Comm communicator)
     if (strcmp(arg[iarg],"-in") == 0 ||
 	strcmp(arg[iarg],"-i") == 0) {
       if (iarg+2 > narg) {
-	printf("Invalid command-line argument\n");
-	exit(1);
+	error->all(FLERR,"Invalid command-line argument\n");
       }
       inflag = iarg + 1;
       iarg += 2;
@@ -52,12 +54,11 @@ MPM::MPM(int narg, char **arg, MPI_Comm communicator)
     wlogfile = new ofstream("log.mpm", ios_base::out);
 
     if (!wlogfile->is_open()){
-      printf("Cannot open file log.mpm\n");
-      exit(1);
+      error->all(FLERR,"Cannot open file log.mpm\n");
     }
     if (!infile.is_open()) {
-      printf("Cannot open input script %s\n",arg[inflag]);
-      exit(1);
+      string problem(arg[inflag]);
+      error->all(FLERR,"Cannot open input script " + problem + ".\n");
     }
   }
 }
@@ -65,6 +66,7 @@ MPM::MPM(int narg, char **arg, MPI_Comm communicator)
 MPM::~MPM()
 {
   delete memory;
+  delete error;
   delete input;
   delete output;
   delete update;
@@ -88,8 +90,6 @@ MPM::~MPM()
   }
 
   if (wlogfile) wlogfile = NULL;
-
-  delete variables;
 }
 
 void MPM::init() {

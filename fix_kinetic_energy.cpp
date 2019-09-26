@@ -1,5 +1,6 @@
 #include <iostream>
 #include <vector>
+#include <string>
 #include "fix_kinetic_energy.h"
 #include "input.h"
 #include "group.h"
@@ -9,6 +10,7 @@
 #include "output.h"
 #include "math_special.h"
 #include <Eigen/Eigen>
+#include "error.h"
 
 using namespace std;
 using namespace FixConst;
@@ -18,13 +20,11 @@ using namespace Eigen;
 FixKineticEnergy::FixKineticEnergy(MPM *mpm, vector<string> args) : Fix(mpm, args)
 {
   if (args.size() < 3) {
-    cout << "Error: too few arguments for fix_kinetic_energy: requires at least 3 arguments. " << args.size() << " received" << endl;
-    exit(1);
+    error->all(FLERR,"Error: too few arguments for fix_kinetic_energy: requires at least 3 arguments. " + to_string(args.size()) + " received.\n");
   }
 
   if (group->pon[igroup].compare("particles") !=0 && group->pon[igroup].compare("all") !=0) {
-    cout << "fix_kinetic_energy needs to be given a group of particles" << group->pon[igroup] << ", " << args[2] << " is a group of "<< group->pon[igroup] << "." << endl;
-    exit(1);
+    error->all(FLERR, "fix_kinetic_energy needs to be given a group of particles" + group->pon[igroup] + ", " + args[2] + " is a group of " + group->pon[igroup] + ".\n");
   }
 
   cout << "Creating new fix FixKineticEnergy with ID: " << args[0] << endl;

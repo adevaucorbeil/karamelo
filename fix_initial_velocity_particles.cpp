@@ -1,11 +1,13 @@
 #include <iostream>
 #include <vector>
+#include <string>
 #include "fix_initial_velocity_particles.h"
 #include "input.h"
 #include "group.h"
 #include "domain.h"
 #include "update.h"
 #include <Eigen/Eigen>
+#include "error.h"
 
 using namespace std;
 using namespace FixConst;
@@ -14,13 +16,11 @@ using namespace Eigen;
 FixInitialVelocityParticles::FixInitialVelocityParticles(MPM *mpm, vector<string> args) : Fix(mpm, args)
 {
   if (args.size() < 6) {
-    cout << "Error: too few arguments for fix_initial_velocity_particles: requires at least 6 arguments. " << args.size() << " received" << endl;
-    exit(1);
+    error->all(FLERR,"Error: too few arguments for fix_initial_velocity_particles: requires at least 6 arguments. " + to_string(args.size()) + " received.\n");
   }
 
   if (group->pon[igroup].compare("particles") !=0 && group->pon[igroup].compare("all") !=0) {
-    cout << "fix_initial_velocity_particles needs to be given a group of particles" << group->pon[igroup] << ", " << args[2] << " is a group of "<< group->pon[igroup] << "." << endl;
-    exit(1);
+    error->all(FLERR, "fix_initial_velocity_particles needs to be given a group of particles" + group->pon[igroup] + ", " + args[2] + " is a group of " + group->pon[igroup] + ".\n");
   }
   cout << "Creating new fix FixInitialVelocityParticles with ID: " << args[0] << endl;
   id = args[0];

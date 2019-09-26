@@ -2,7 +2,11 @@
 #include "region.h"
 #include "memory.h"
 #include "universe.h"
+#include "update.h"
+#include "method.h"
+#include "input.h"
 #include "style_region.h"
+#include "error.h"
 #include <Eigen/Eigen>
 
 using namespace std;
@@ -52,10 +56,7 @@ Domain::~Domain()
 void Domain::add_region(vector<string> args){
   cout << "In add_region" << endl;
 
-  if (find_region(args[0]) >= 0) {
-    cout << "Error: reuse of region ID" << endl;
-    exit(1);
-  }
+  if (find_region(args[0]) >= 0) error->all(FLERR, "Error: reuse of region ID.\n");
 
     // create the Region
 
@@ -63,14 +64,8 @@ void Domain::add_region(vector<string> args){
     RegionCreator region_creator = (*region_map)[args[1]];
     regions.push_back(region_creator(mpm, args));
     regions.back()->init();
-
   }
-  else {
-    cout << "Unknown region style " << args[1] << endl;
-    exit(1);
-  }
-  
-
+  else error->all(FLERR, "Unknown region style " + args[1] + "\n");
 }
 
 int Domain::find_region(string name)
@@ -102,24 +97,9 @@ Region *Domain::region_creator(MPM *mpm, vector<string> args)
 void Domain::add_solid(vector<string> args){
   cout << "In add_solid" << endl;
 
-  if (find_solid(args[0]) >= 0) {
-    cout << "Error: reuse of solid ID" << endl;
-    exit(1);
-  }
+  if (find_solid(args[0]) >= 0) error->all(FLERR, "Error: reuse of region ID.\n");
 
   // create the Solid
-
-  // string *estyle = &args[1];
-
-  // if (solid_map->find(*estyle) != solid_map->end()) {
-  //   SolidCreator solid_creator = (*solid_map)[*estyle];
-  //   solids.push_back(solid_creator(mpm, args));
-  //   solids.back()->init();
-  // }
-  // else {
-  //   cout << "Unknown solid style " << *estyle << endl;
-  //   exit(1);
-  // }
   solids.push_back(new Solid(mpm, args));
   solids.back()->init();
   
@@ -150,9 +130,6 @@ int Domain::find_solid(string name)
 
 int Domain::inside(Eigen::Vector3d x)
 {
-  int *procgrid = universe->procgrid;
-  int *myloc = universe->myloc;
-
   //cout << "Check if point (" << x << ", " << y << ", " << z << ") is inside the domain" << endl;
   if (   x[0] >= boxlo[0] && x[0] <= boxhi[0]
       && x[1] >= boxlo[1] && x[1] <= boxhi[1]
@@ -161,7 +138,20 @@ int Domain::inside(Eigen::Vector3d x)
   return 0;
 }
 
+bool Domain::inside_subdomain(Eigen::Vector3d x) {
+  if (x(0) < sublo[0]) return false;
+  if (x(0) > subhi[0]) return false;
+  if (x(1) < sublo[1]) return false;
+  if (x(1) > subhi[1]) return false;
+  if (x(2) < sublo[2]) return false;
+  if (x(2) > subhi[2]) return false;
+  return true;
+}
+
 void Domain::set_local_box() {
+  int *procgrid = universe->procgrid;
+  int *myloc = universe->myloc;
+
   double l[3] = {boxhi[0] - boxlo[0],
 		 boxhi[1] - boxlo[1],
 		 boxhi[2] - boxlo[2]};
@@ -187,106 +177,86 @@ void Domain::set_local_box() {
 void Domain::create_domain(vector<string> args) {
 
   // Check that a method is available:
-  if (update->method == NULL) {
-    cout << "Error: a method should be defined before calling create_domain()!" << endl;
-    exit(1);
-  }
+  if (update->method == NULL)
+    error->all(FLERR, "Error: a method should be defined before calling create_domain()!\n");
 
   if (!update->method->is_TL) grid = new Grid(mpm);
 
-  if (dim ==1) {
+  if (dimension ==1) {
     if (update->method->is_TL) {
-      if (args.size() < 2) {
-	cout << "Error: create_domain received not enough arguments: 2 needed for 1D total Lagrangian simulations: domain xmin, domain xmax" << endl;
-	exit(1);
-      } else if (args.size() > 2) {
-	cout << "Error: create_domain received too many arguments: 2 needed for 1D total Lagrangian simulations: domain xmin, domain xmax" << endl;
-	exit(1);	
-      }
+      if (args.size() < 2)
+	error->all(FLERR, "Error: create_domain received not enough arguments: 2 needed for 1D total Lagrangian simulations: domain xmin, domain xmax.\n");
+      else if (args.size() > 2)
+	error->all(FLERR, "Error: create_domain received too many arguments: 2 needed for 1D total Lagrangian simulations: domain xmin, domain xmax.\n");
     } else {
-      if (args.size() < 3) {
-	cout << "Error: create_domain received not enough arguments: 3 needed for 1D total Lagrangian simulations: domain xmin, domain xmax, grid cell size" << endl;
-	exit(1);
-      } else if (args.size() > 3) {
-	cout << "Error: create_domain received too many arguments: 3 needed for 1D total Lagrangian simulations: domain xmin, domain xmax, grid cell size" << endl;
-	exit(1);	
-      }
+      if (args.size() < 3)
+	error->all(FLERR, "Error: create_domain received not enough arguments: 3 needed for 1D total Lagrangian simulations: domain xmin, domain xmax, grid cell size.\n");
+      else if (args.size() > 3)
+	error->all(FLERR, "Error: create_domain received too many arguments: 3 needed for 1D total Lagrangian simulations: domain xmin, domain xmax, grid cell size.\n");
     }
 
-    boxlo[0] = (double) parsev(args[1]);
-    boxhi[0] = (double) parsev(args[2]);
+    boxlo[0] = (double) input->parsev(args[0]);
+    boxhi[0] = (double) input->parsev(args[1]);
 
     if (!update->method->is_TL) {
-      grid->cellsize = (double) parsev(args[4]);
-      if (grid->cellsize < 0) {
-	cout << "Error: cellsize negative! You gave: " << grid->cellsize << endl;
-	exit(1);
-      }
+      grid->cellsize = (double) input->parsev(args[2]);
+
+      if (grid->cellsize < 0) 
+	error->all(FLERR, "Error: cellsize negative! You gave: " + to_string(grid->cellsize) + "\n");
+
       grid->init(boxlo, boxhi);
     }
-  } else if (dim == 2) {
+  } else if (dimension == 2) {
     if (update->method->is_TL) {
-      if (args.size() < 4) {
-	cout << "Error: create_domain received not enough arguments: 2 needed for 2D total Lagrangian simulations: domain xmin, domain xmax, domain ymin, domain ymax" << endl;
-	exit(1);
-      } else if (args.size() > 4) {
-	cout << "Error: create_domain received too many arguments: 2 needed for 2D total Lagrangian simulations: domain xmin, domain xmax, domain ymin, domain ymax" << endl;
-	exit(1);	
-      }
+      if (args.size() < 4)
+	error->all(FLERR, "Error: create_domain received not enough arguments: 2 needed for 2D total Lagrangian simulations: domain xmin, domain xmax, domain ymin, domain ymax.\n");
+      else if (args.size() > 4)
+	error->all(FLERR, "Error: create_domain received too many arguments: 2 needed for 2D total Lagrangian simulations: domain xmin, domain xmax, domain ymin, domain ymax.\n");
     } else {
-      if (args.size() < 5) {
-	cout << "Error: create_domain received not enough arguments: 3 needed for 2D total Lagrangian simulations: domain xmin, domain xmax, domain ymin, domain ymax, grid cell size" << endl;
-	exit(1);
-      } else if (args.size() > 5) {
-	cout << "Error: create_domain received too many arguments: 3 needed for 2D total Lagrangian simulations: domain xmin, domain xmax, domain ymin, domain ymax, grid cell size" << endl;
-	exit(1);	
-      }
+      if (args.size() < 5)  
+	error->all(FLERR, "Error: create_domain received not enough arguments: 3 needed for 2D total Lagrangian simulations: domain xmin, domain xmax, domain ymin, domain ymax, grid cell size.\n");
+      else if (args.size() > 5)  
+	error->all(FLERR, "Error: create_domain received too many arguments: 3 needed for 2D total Lagrangian simulations: domain xmin, domain xmax, domain ymin, domain ymax, grid cell size.\n");
     }
 
-    boxlo[0] = (double) parsev(args[1]);
-    boxhi[0] = (double) parsev(args[2]);
-    boxlo[1] = (double) parsev(args[3]);
-    boxhi[1] = (double) parsev(args[4]);
+    boxlo[0] = (double) input->parsev(args[0]);
+    boxhi[0] = (double) input->parsev(args[1]);
+    boxlo[1] = (double) input->parsev(args[2]);
+    boxhi[1] = (double) input->parsev(args[3]);
 
     if (!update->method->is_TL) {
-      grid->cellsize = (double) parsev(args[5]);
-      if (grid->cellsize < 0) {
-	cout << "Error: cellsize negative! You gave: " << grid->cellsize << endl;
-	exit(1);
-      }
+      grid->cellsize = (double) input->parsev(args[4]);
+
+      if (grid->cellsize < 0) 
+	error->all(FLERR, "Error: cellsize negative! You gave: " + to_string(grid->cellsize) + "\n");
+
       grid->init(boxlo, boxhi);
     }
-  } else {// dim ==3
+  } else {// dimension ==3
     if (update->method->is_TL) {
-      if (args.size() < 4) {
-	cout << "Error: create_domain received not enough arguments: 2 needed for 3D total Lagrangian simulations: domain xmin, domain xmax, domain ymin, domain ymax, domain zmin, domain zmax" << endl;
-	exit(1);
-      } else if (args.size() > 4) {
-	cout << "Error: create_domain received too many arguments: 2 needed for 3D total Lagrangian simulations: domain xmin, domain xmax, domain ymin, domain ymax, domain zmin, domain zmax" << endl;
-	exit(1);	
-      }
+      if (args.size() < 6)
+	error->all(FLERR, "Error: create_domain received not enough arguments: 2 needed for 3D total Lagrangian simulations: domain xmin, domain xmax, domain ymin, domain ymax, domain zmin, domain zmax.\n");
+      else if (args.size() > 6)
+	error->all(FLERR, "Error: create_domain received too many arguments: 2 needed for 3D total Lagrangian simulations: domain xmin, domain xmax, domain ymin, domain ymax, domain zmin, domain zmax.\n");
     } else {
-      if (args.size() < 5) {
-	cout << "Error: create_domain received not enough arguments: 3 needed for 3D total Lagrangian simulations: domain xmin, domain xmax, domain ymin, domain ymax, domain zmin, domain zmax, grid cell size" << endl;
-	exit(1);
-      } else if (args.size() > 5) {
-	cout << "Error: create_domain received too many arguments: 3 needed for 3D total Lagrangian simulations: domain xmin, domain xmax, domain ymin, domain ymax, domain zmin, domain zmax, grid cell size" << endl;
-	exit(1);	
-      }
+      if (args.size() < 7)
+	error->all(FLERR, "Error: create_domain received not enough arguments: 3 needed for 3D total Lagrangian simulations: domain xmin, domain xmax, domain ymin, domain ymax, domain zmin, domain zmax, grid cell size.\n");
+      else if (args.size() > 7)
+	error->all(FLERR, "Error: create_domain received too many arguments: 3 needed for 3D total Lagrangian simulations: domain xmin, domain xmax, domain ymin, domain ymax, domain zmin, domain zmax, grid cell size.\n");
     }
-    boxlo[0] = (double) parsev(args[1]);
-    boxhi[0] = (double) parsev(args[2]);
-    boxlo[1] = (double) parsev(args[3]);
-    boxhi[1] = (double) parsev(args[4]);
-    boxlo[2] = (double) parsev(args[5]);
-    boxhi[2] = (double) parsev(args[6]);
+    boxlo[0] = (double) input->parsev(args[0]);
+    boxhi[0] = (double) input->parsev(args[1]);
+    boxlo[1] = (double) input->parsev(args[2]);
+    boxhi[1] = (double) input->parsev(args[3]);
+    boxlo[2] = (double) input->parsev(args[4]);
+    boxhi[2] = (double) input->parsev(args[5]);
 
     if (!update->method->is_TL) {
-      grid->cellsize = (double) parsev(args[7]);
-      if (grid->cellsize < 0) {
-	cout << "Error: cellsize negative! You gave: " << grid->cellsize << endl;
-	exit(1);
-      }
+      grid->cellsize = (double) input->parsev(args[6]);
+
+      if (grid->cellsize < 0) 
+	error->all(FLERR, "Error: cellsize negative! You gave: " + to_string(grid->cellsize) + "\n");
+
       grid->init(boxlo, boxhi);
     }
   }

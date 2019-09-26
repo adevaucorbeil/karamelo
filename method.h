@@ -25,7 +25,8 @@ class Method : protected Pointers {
   virtual void adjust_dt() = 0;
   virtual void reset() = 0;
 
-  bool is_total_lagrangian;         // true: the method total Lagrangian; false: it is updated Lagrangian
+  bool is_TL;         // true: the method is total Lagrangian; false: it is updated Lagrangian
+  bool is_CPDI;       // true if the method is a CPDI-like
 };
 
 #endif

@@ -1,11 +1,13 @@
 #include <iostream>
 #include <vector>
+#include <string>
 #include "fix_body_force.h"
 #include "input.h"
 #include "group.h"
 #include "domain.h"
 #include "input.h"
 #include <Eigen/Eigen>
+#include "error.h"
 
 using namespace std;
 using namespace FixConst;
@@ -14,19 +16,15 @@ using namespace Eigen;
 FixBodyforce::FixBodyforce(MPM *mpm, vector<string> args) : Fix(mpm, args)
 {
   if (domain->dimension == 3 && args.size()<6) {
-    cout << "Error: too few arguments for fix_body_force: requires at least 6 arguments. " << args.size() << " received" << endl;
-    exit(1);
+    error->all(FLERR,"Error: too few arguments for fix_body_force: requires at least 6 arguments. " + to_string(args.size()) + " received.\n");
   } else if (domain->dimension == 2 && args.size()<5) {
-    cout << "Error: too few arguments for fix_body_force: requires at least 5 arguments. " << args.size() << " received" << endl;
-    exit(1);
+    error->all(FLERR,"Error: too few arguments for fix_body_force: requires at least 5 arguments. " + to_string(args.size()) + " received.\n");
   } else if (domain->dimension == 1 && args.size()<4) {
-    cout << "Error: too few arguments for fix_body_force: requires at least 4 arguments. " << args.size() << " received" << endl;
-    exit(1);
+    error->all(FLERR,"Error: too few arguments for fix_body_force: requires at least 4 arguments. " + to_string(args.size()) + " received.\n");
   }
 
   if (group->pon[igroup].compare("nodes") !=0 && group->pon[igroup].compare("all") !=0) {
-    cout << "fix_body_force needs to be given a group of nodes" << group->pon[igroup] << ", " << args[2] << " is a group of "<< group->pon[igroup] << "." << endl;
-    exit(1);
+    error->all(FLERR,"fix_body_force needs to be given a group of nodes" + group->pon[igroup] + ", " + args[2] + " is a group of " + group->pon[igroup] + ".\n");
   }
   cout << "Creating new fix FixBodyforce with ID: " << args[0] << endl;
   id = args[0];

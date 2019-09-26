@@ -7,6 +7,7 @@
 #include "update.h"
 #include "scheme.h"
 #include "var.h"
+#include "error.h"
 
 /* ---------------------------------------------------------------------- */
 
@@ -19,8 +20,7 @@ Var RunWhile::command(vector<string> args)
   // cout << "In RunWhile::command()" << endl;
 
   if (args.size() < 1) {
-    cout << "Illegal run command" << endl;
-    exit(1);
+    error->all(FLERR, "Illegal run command.\n");
   }
 
   mpm->init();

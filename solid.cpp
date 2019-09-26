@@ -1,15 +1,20 @@
+#include <mpi.h>
 #include "mpm.h"
 #include "solid.h"
 #include "memory.h"
 #include "update.h"
+#include "method.h"
 #include "domain.h"
+#include "universe.h"
 #include <vector>
+#include <string>
 #include <Eigen/Eigen>
 #include "mpm_math.h"
 #include <math.h>
 #include "input.h"
 #include "var.h"
 #include <omp.h>
+#include "error.h"
 
 using namespace std;
 using namespace Eigen;
@@ -20,12 +25,10 @@ Solid::Solid(MPM *mpm, vector<string> args) :
 {
   // Check that a method is available:
   if (update->method == NULL) {
-    cout << "Error: a method should be defined before creating a solid!" << endl;
-    exit(1);
+    error->all(FLERR, "Error: a method should be defined before creating a solid!\n");
   }
   if (args.size() < 3) {
-    cout << "Error: solid command not enough arguments" << endl;
-    exit(1);
+    error->all(FLERR, "Error: solid command not enough arguments.\n");
   }
 
   cout << "Creating new solid with ID: " << args[0] << endl;
@@ -39,10 +42,7 @@ Solid::Solid(MPM *mpm, vector<string> args) :
   rp = rp0 = NULL;
   xpc = xpc0 = NULL;
 
-  if (method_style.compare("tlcpdi") == 0
-      || method_style.compare("ulcpdi") == 0
-      || method_style.compare("tlcpdi2") == 0
-      || method_style.compare("ulcpdi2") == 0) {
+  if (update->method->is_CPDI) {
     nc = pow(2, domain->dimension);
   } else nc = 0;
 
@@ -67,7 +67,7 @@ Solid::Solid(MPM *mpm, vector<string> args) :
 
   mat = NULL;
 
-  if (method_style.compare("tlmpm") == 0) grid = new Grid(mpm);
+  if (update->method->is_TL) grid = new Grid(mpm);
   else grid = domain->grid;
 
   numneigh_pn = numneigh_np = NULL;
@@ -158,8 +158,7 @@ void Solid::init()
   if (grid->nnodes == 0) grid->init(solidlo, solidhi);
 
   if (np == 0) {
-    cout << "Error: solid does not have any particles" << endl;
-    exit(1);
+    error->all(FLERR,"Error: solid does not have any particles.\n");
   } else {
       bigint nnodes = grid->nnodes;
 
@@ -181,15 +180,14 @@ void Solid::options(vector<string> *args, vector<string>::iterator it)
 {
   cout << "In solid::options()" << endl;
   if (args->end() < it+2) {
-    cout << "Error: not enough arguments" << endl;
-    exit(1);
+    error->all(FLERR, "Error: not enough arguments.\n");
   }
   if (args->end() > it) {
     int iMat = material->find_material(*it);
 
     if (iMat == -1){
       cout << "Error: could not find material named " << *it << endl;
-      exit(1);
+      error->all(FLERR,"\n");
     }
 
     mat = &material->materials[iMat]; // point mat to the right material
@@ -201,8 +199,7 @@ void Solid::options(vector<string> *args, vector<string>::iterator it)
     it++;
 
     if (it != args->end()) {
-      cout << "Error: too many arguments" << endl;
-      exit(1);
+      error->all(FLERR,"Error: too many arguments.\n");
     }
   }
 }
@@ -216,18 +213,10 @@ void Solid::grow(int nparticles){
   str = "solid-" + id + ":x0";
   cout << "Growing " << str << endl;
   if (x0 == NULL) x0 = new Eigen::Vector3d[np];
-  else {
-    cout << "Error: x0 already exists, I don't know how to grow it!\n";
-    exit(1);
-  }
 
   str = "solid-" + id + ":x";
   cout << "Growing " << str << endl;
   if (x == NULL) x = new Eigen::Vector3d[np];
-  else {
-    cout << "Error: x already exists, I don't know how to grow it!\n";
-    exit(1);
-  }
 
   if (method_style.compare("tlcpdi") == 0
       || method_style.compare("ulcpdi") == 0) {
@@ -235,18 +224,10 @@ void Solid::grow(int nparticles){
     str = "solid-" + id + ":rp0";
     cout << "Growing " << str << endl;
     if (rp0 == NULL) rp0 = new Eigen::Vector3d[domain->dimension*np];
-    else {
-      cout << "Error: rp0 already exists, I don't know how to grow it!\n";
-      exit(1);
-    }
 
     str = "solid-" + id + ":rp";
     cout << "Growing " << str << endl;
     if (rp == NULL) rp = new Eigen::Vector3d[domain->dimension*np];
-    else {
-      cout << "Error: rp already exists, I don't know how to grow it!\n";
-      exit(1);
-    }
   }
 
   if (method_style.compare("tlcpdi2") == 0
@@ -255,125 +236,53 @@ void Solid::grow(int nparticles){
     str = "solid-" + id + ":xpc0";
     cout << "Growing " << str << endl;
     if (xpc0 == NULL) xpc0 = new Eigen::Vector3d[nc*np];
-    else {
-      cout << "Error: xpc0 already exists, I don't know how to grow it!\n";
-      exit(1);
-    }
 
     str = "solid-" + id + ":xpc";
     cout << "Growing " << str << endl;
     if (xpc == NULL) xpc = new Eigen::Vector3d[nc*np];
-    else {
-      cout << "Error: xpc already exists, I don't know how to grow it!\n";
-      exit(1);
-    }
   }
 
   str = "solid-" + id + ":v";
   cout << "Growing " << str << endl;
   if (v == NULL) v = new Eigen::Vector3d[np];
-  else {
-    cout << "Error: v already exists, I don't know how to grow it!\n";
-    exit(1);
-  }
 
   str = "solid-" + id + ":v_update";
   cout << "Growing " << str << endl;
   if (v_update == NULL) v_update = new Eigen::Vector3d[np];
-  else {
-    cout << "Error: v_update already exists, I don't know how to grow it!\n";
-    exit(1);
-  }
 
   str = "solid-" + id + ":a";
   cout << "Growing " << str << endl;
   if (a == NULL) a = new Eigen::Vector3d[np];
-  else {
-    cout << "Error: a already exists, I don't know how to grow it!\n";
-    exit(1);
-  }
 
   str = "solid-" + id + ":mb";
   cout << "Growing " << str << endl;
   if (mb == NULL) mb = new Eigen::Vector3d[np];
-  else {
-    cout << "Error: mb already exists, I don't know how to grow it!\n";
-    exit(1);
-  }
 
   str = "solid-" + id + ":f";
   cout << "Growing " << str << endl;
   if (f == NULL) f = new Eigen::Vector3d[np];
-  else {
-    cout << "Error: f already exists, I don't know how to grow it!\n";
-    exit(1);
-  }
 
   if (sigma == NULL) sigma = new Eigen::Matrix3d[np];
-  else {
-    cout << "Error: sigma already exists, I don't know how to grow it!\n";
-    exit(1);
-  }
 
   if (strain_el == NULL) strain_el = new Eigen::Matrix3d[np];
-  else {
-    cout << "Error: strain_el already exists, I don't know how to grow it!\n";
-    exit(1);
-  }
 
   if (vol0PK1 == NULL) vol0PK1 = new Eigen::Matrix3d[np];
-  else {
-    cout << "Error: vol0PK1 already exists, I don't know how to grow it!\n";
-    exit(1);
-  }
 
   if (L == NULL) L = new Eigen::Matrix3d[np];
-  else {
-    cout << "Error: L already exists, I don't know how to grow it!\n";
-    exit(1);
-  }
 
   if (F == NULL) F = new Eigen::Matrix3d[np];
-  else {
-    cout << "Error: F already exists, I don't know how to grow it!\n";
-    exit(1);
-  }
 
   if (R == NULL) R = new Eigen::Matrix3d[np];
-  else {
-    cout << "Error: R already exists, I don't know how to grow it!\n";
-    exit(1);
-  }
 
   if (U == NULL) U = new Eigen::Matrix3d[np];
-  else {
-    cout << "Error: U already exists, I don't know how to grow it!\n";
-    exit(1);
-  }
 
   if (D == NULL) D = new Eigen::Matrix3d[np];
-  else {
-    cout << "Error: D already exists, I don't know how to grow it!\n";
-    exit(1);
-  }
 
   if (Finv == NULL) Finv = new Eigen::Matrix3d[np];
-  else {
-    cout << "Error: Finv already exists, I don't know how to grow it!\n";
-    exit(1);
-  }
 
   if (Fdot == NULL) Fdot = new Eigen::Matrix3d[np];
-  else {
-    cout << "Error: Fdot already exists, I don't know how to grow it!\n";
-    exit(1);
-  }
 
   if (Di == NULL) Di = new Eigen::Matrix3d[np];
-  else {
-    cout << "Error: Di already exists, I don't know how to grow it!\n";
-    exit(1);
-  }
 
 
   str = "solid-" + id + ":vol0";
@@ -575,11 +484,10 @@ void Solid::update_particle_position()
     if (ul) {
       // Check if the particle is within the box's domain:
       if (domain->inside(x[ip]) == 0) {
-	cout << "Error: Particle " << ip << " left the domain (" <<
-	  domain->boxlo[0] << ","<< domain->boxhi[0] << "," <<
-	  domain->boxlo[1] << ","<< domain->boxhi[1] << "," <<
-	  domain->boxlo[2] << ","<< domain->boxhi[2] << ",):\n" << x[ip] << endl;
-	exit(1);
+	error->all(FLERR,"Error: Particle " + to_string(ip) + " left the domain (" +
+		   to_string(domain->boxlo[0]) + ","+ to_string(domain->boxhi[0]) + "," +
+		   to_string(domain->boxlo[1]) + ","+ to_string(domain->boxhi[1]) + "," +
+		   to_string(domain->boxlo[2]) + ","+ to_string(domain->boxhi[2]) + ",):\n");
       }
     }
   }
@@ -908,7 +816,7 @@ void Solid::update_deformation_gradient()
     if (J[ip] < 0.0) {
       cout << "Error: J[" << ip << "]<0.0 == " << J[ip] << endl;
       cout << "F[" << ip << "]:" << endl << F[ip] << endl;
-	exit(1);
+      error->all(FLERR,"");
     }
 
     vol[ip] = J[ip] * vol0[ip];
@@ -930,7 +838,7 @@ void Solid::update_deformation_gradient()
 	cout << "Polar decomposition of deformation gradient failed for particle " << ip << ".\n";
 	cout << "F:" << endl << F[ip] << endl;
 	cout << "timestep" << endl << update->ntimestep << endl;
-	exit(1);
+	error->all(FLERR,"");
       }
     }
 
@@ -1004,10 +912,10 @@ void Solid::update_stress()
 
     if (std::isnan(min_inv_p_wave_speed)) {
       cout << "Error: min_inv_p_wave_speed is nan with ip=" << ip << ", rho[ip]=" << rho[ip] << ", K=" << mat->K << ", G=" << mat->G << endl;
-      exit(1);
+      error->all(FLERR, "");
     } else if (min_inv_p_wave_speed < 0.0) {
       cout << "Error: min_inv_p_wave_speed= " << min_inv_p_wave_speed << " with ip=" << ip << ", rho[ip]=" << rho[ip] << ", K=" << mat->K << ", G=" << mat->G << endl;
-      exit(1);
+      error->all(FLERR, "");
     }
 
   }
@@ -1016,7 +924,7 @@ void Solid::update_stress()
   if (std::isnan(dtCFL)) {
       cout << "Error: dtCFL = " << dtCFL << "\n";
       cout << "min_inv_p_wave_speed = " << min_inv_p_wave_speed << ", grid->cellsize=" << grid->cellsize << endl;
-      exit(1);
+      error->all(FLERR, "");
   }
 }
 
@@ -1120,9 +1028,11 @@ void Solid::populate(vector<string> args) {
   // Look for region ID:
   int iregion = domain->find_region(args[1]);
   if (iregion == -1) {
-    cout << "Error: region ID " << args[1] << " not does not exist" << endl;
-    exit(1);
+    error->all(FLERR, "Error: region ID " + args[1] + " not does not exist.\n");
   }
+
+  double *sublo = domain->sublo;
+  double *subhi = domain->subhi;
 
   vector<double> limits = domain->regions[iregion]->limits();
 
@@ -1133,57 +1043,68 @@ void Solid::populate(vector<string> args) {
   solidlo[2] = limits[4];
   solidhi[2] = limits[5];
 
+  solidsublo[0] = MIN(solidlo[0], sublo[0]);
+  solidsublo[1] = MIN(solidlo[1], sublo[1]);
+  solidsublo[2] = MIN(solidlo[2], sublo[2]);
+
+  solidsubhi[0] = MIN(solidhi[0], subhi[0]);
+  solidsubhi[1] = MIN(solidhi[1], subhi[1]);
+  solidsubhi[2] = MIN(solidhi[2], subhi[2]);
+
 
   // Calculate total number of particles np:
-  int nx, ny, nz;
+  int nx, ny, nz, nsubx, nsuby, nsubz;
   double delta;
   double hdelta;
-  double Lx, Ly, Lz;
-  bool checkIfInRegion;
+  double Lx, Ly, Lz, Lsubx, Lsuby, Lsubz;
 
   delta = grid->cellsize;
   
   if (grid->nnodes == 0) {
-    // The grid will be ajusted to the solid's domain (good for TLMPM),
-    // so all particles created will lie in the region:
-    checkIfInRegion = true;
+    // The grid will be ajusted to the solid's domain (good for TLMPM).
 
     // and we need to create the corresponding grid:
     grid->init(solidlo, solidhi);
-
-    Lx = solidhi[0]-solidlo[0];
-    if (domain->dimension >= 2) Ly = solidhi[1]-solidlo[1];
-    if (domain->dimension == 3) Lz = solidhi[2]-solidlo[2];
-
-  } else {
-    // The grid is most likely bigger than the solid's domain (good for ULMPM),
-    // so all particles created won't lie in the region, they will need to be checked:
-    checkIfInRegion = true;
-
-    Lx = domain->boxhi[0] - domain->boxlo[0];
-    if (domain->dimension >= 2) Ly = domain->boxhi[1] - domain->boxlo[1];
-    if (domain->dimension == 3) Lz = domain->boxhi[2] - domain->boxlo[2];
   }
+
+  Lx = solidhi[0]-solidlo[0];
+  if (domain->dimension >= 2) Ly = solidhi[1]-solidlo[1];
+  if (domain->dimension == 3) Lz = solidhi[2]-solidlo[2];
+
+  Lsubx = solidsubhi[0]-solidsublo[0];
+  if (domain->dimension >= 2) Lsuby = solidsubhi[1]-solidsublo[1];
+  if (domain->dimension == 3) Lsubz = solidsubhi[2]-solidsublo[2];
+
 
   nx = ((int) Lx/delta);
   while (nx*delta <= Lx-0.5*delta) nx++;
 
+  nsubx = ((int) Lsubx/delta);
+  while (nx*delta <= Lsubx-0.5*delta) nsubx++;
+
   if (domain->dimension >= 2) {
     ny = ((int) Ly/delta);
     while (ny*delta <= Ly-0.5*delta) ny++;
+
+    nsuby = ((int) Lsuby/delta);
+    while (nsuby*delta <= Lsuby-0.5*delta) nsuby++;
   } else {
     ny = 1;
+    nsuby = 1;
   }
 
   if (domain->dimension == 3) {
     nz = ((int) Lz/delta);
     while (nz*delta <= Lz-0.5*delta) nz++;
+
+    nsubz = ((int) Lsubz/delta);
+    while (nsubz*delta <= Lsubz-0.5*delta) nsubz++;
   } else {
     nz = 1;
+    nsubz = 1;
   }
 
-  np = nx*ny*nz;
-
+  np_local = nsubx*nsuby*nsubz;
 
   // Create particles:
 
@@ -1201,9 +1122,7 @@ void Solid::populate(vector<string> args) {
 
   int np_per_cell = (int) input->parsev(args[2]);
 
-  double *boundlo;
-  if (checkIfInRegion) boundlo = solidlo;
-  else boundlo = domain->boxlo;
+  double *boxlo = domain->boxlo;
 
   double xi = 0.5;
   double lp = delta;
@@ -1282,99 +1201,107 @@ void Solid::populate(vector<string> args) {
 		 xi, xi, xi};
 
   } else {
-    cout << "Error: solid command 4th argument should be 1 or 2, but " << (int) input->parsev(args[3]) << "received.\n";
-    exit(1);
+    error->all(FLERR, "Error: solid command 4th argument should be 1 or 2, but " + to_string((int) input->parsev(args[3])) + "received.\n");
   }
-  
-  np *= nip;
+
+  np_local *= nip;
   mass_ /= (double) nip;
   vol_ /= (double) nip;
 
   // Allocate the space in the vectors for np particles:
-  grow(np);
+  grow(np_local);
 
   int dim = domain->dimension;
   //checkIfInRegion = false;
-  for (int i=0; i<nx; i++){
-    for (int j=0; j<ny; j++){
-      for (int k=0; k<nz; k++){
+
+  int nsubx0, nsuby0, nsubz0;
+  if (update->method->is_TL) {
+    nsubx0 = (int) (sublo[0] - solidlo[0])/delta;
+    nsuby0 = (int) (sublo[1] - solidlo[1])/delta;
+    nsubz0 = (int) (sublo[2] - solidlo[2])/delta;
+  } else {
+    nsubx0 = (int) (sublo[0] - boxlo[0])/delta;
+    nsuby0 = (int) (sublo[1] - boxlo[1])/delta;
+    nsubz0 = (int) (sublo[2] - boxlo[2])/delta;
+  }
+
+  for (int i=nsubx0; i<nsubx; i++){
+    for (int j=nsuby0; j<nsuby; j++){
+      for (int k=nsubz0; k<nsubz; k++){
 	for (int ip=0; ip<nip; ip++) {
 
-	  if (l>=np) {
+	  if (l>=np_local) {
 	    cout << "Error in Solid::populate(), exceeding the allocated number of particles.\n";
 	    cout << "l = " << l << endl;
-	    cout << "np = " << np << endl;
-	    exit(1);
+	    cout << "np_local = " << np_local << endl;
+	    error->all(FLERR, "");
 	  }
 
-	  x0[l][0] = x[l][0] = boundlo[0] + delta*(i+0.5+intpoints[3*ip+0]);
-	  x0[l][1] = x[l][1] = boundlo[1] + delta*(j+0.5+intpoints[3*ip+1]);
-	  if (dim == 3) x0[l][2] = x[l][2] = boundlo[2] + delta*(k+0.5+intpoints[3*ip+2]);
+	  x0[l][0] = x[l][0] = boxlo[0] + delta*(i+0.5+intpoints[3*ip+0]);
+	  x0[l][1] = x[l][1] = boxlo[1] + delta*(j+0.5+intpoints[3*ip+1]);
+	  if (dim == 3) x0[l][2] = x[l][2] = boxlo[2] + delta*(k+0.5+intpoints[3*ip+2]);
 	  else x0[l][2] = x[l][2] = 0;
 
-	  if ((method_style.compare("tlcpdi") == 0 || method_style.compare("ulcpdi") == 0) && nc != 0) {
-	    rp0[dim*l][0] = rp[dim*l][0] = lp;
-	    rp0[dim*l][1] = rp[dim*l][1] = 0;
-	    rp0[dim*l][2] = rp[dim*l][2] = 0;
+	  // Check if the particle is inside the region:
+	  if (domain->inside_subdomain(x0[l]) && domain->regions[iregion]->inside(x0[l][0], x0[l][1], x0[l][2])==1) {
 
-	    if (dim >= 2) {
-	      rp0[dim*l+1][0] = rp[dim*l+1][0] = 0;
-	      rp0[dim*l+1][1] = rp[dim*l+1][1] = lp;
-	      rp0[dim*l+1][2] = rp[dim*l+1][2] = 0;
+	    if (update->method->is_CPDI && nc != 0) {
+	      rp0[dim*l][0] = rp[dim*l][0] = lp;
+	      rp0[dim*l][1] = rp[dim*l][1] = 0;
+	      rp0[dim*l][2] = rp[dim*l][2] = 0;
 
-	      if (dim == 3) {
-		rp0[dim*l+2][0] = rp[dim*l+1][0] = 0;
-		rp0[dim*l+2][1] = rp[dim*l+1][1] = 0;
-		rp0[dim*l+2][0] = rp[dim*l+1][0] = lp;
+	      if (dim >= 2) {
+		rp0[dim*l+1][0] = rp[dim*l+1][0] = 0;
+		rp0[dim*l+1][1] = rp[dim*l+1][1] = lp;
+		rp0[dim*l+1][2] = rp[dim*l+1][2] = 0;
+
+		if (dim == 3) {
+		  rp0[dim*l+2][0] = rp[dim*l+1][0] = 0;
+		  rp0[dim*l+2][1] = rp[dim*l+1][1] = 0;
+		  rp0[dim*l+2][0] = rp[dim*l+1][0] = lp;
+		}
 	      }
 	    }
-	  }
 
-	  if ((method_style.compare("tlcpdi2") == 0 || method_style.compare("ulcpdi2") == 0) && nc != 0) {
-	    xpc0[nc*l][0] = xpc[nc*l][0] = boundlo[0] + delta*(k+0.5+intpoints[3*ip+0] - lp);
+	    // if ((method_style.compare("tlcpdi2") == 0 || method_style.compare("ulcpdi2") == 0) && nc != 0) {
+	    //   xpc0[nc*l][0] = xpc[nc*l][0] = boxlo[0] + delta*(k+0.5+intpoints[3*ip+0] - lp);
 
-	    xpc0[nc*l+1][0] = xpc[nc*l+1][0] = boundlo[0] + delta*(k+0.5+intpoints[3*ip+0] + lp);
+	    //   xpc0[nc*l+1][0] = xpc[nc*l+1][0] = boxlo[0] + delta*(k+0.5+intpoints[3*ip+0] + lp);
 
-	    if (dim >= 2) {
-	      xpc0[nc*l][1] = xpc[nc*l][1] = boundlo[1] + delta*(k+0.5+intpoints[3*ip+1] - lp);
-	      xpc0[nc*l+1][1] = xpc[nc*l+1][1] = boundlo[1] + delta*(k+0.5+intpoints[3*ip+1] - lp);
+	    //   if (dim >= 2) {
+	    //     xpc0[nc*l][1] = xpc[nc*l][1] = boxlo[1] + delta*(k+0.5+intpoints[3*ip+1] - lp);
+	    //     xpc0[nc*l+1][1] = xpc[nc*l+1][1] = boxlo[1] + delta*(k+0.5+intpoints[3*ip+1] - lp);
 
-	      xpc0[nc*l+2][0] = xpc[nc*l+2][0] = boundlo[0] + delta*(k+0.5+intpoints[3*ip+0] - lp);
-	      xpc0[nc*l+2][1] = xpc[nc*l+2][1] = boundlo[1] + delta*(k+0.5+intpoints[3*ip+1] + lp);
+	    //     xpc0[nc*l+2][0] = xpc[nc*l+2][0] = boxlo[0] + delta*(k+0.5+intpoints[3*ip+0] - lp);
+	    //     xpc0[nc*l+2][1] = xpc[nc*l+2][1] = boxlo[1] + delta*(k+0.5+intpoints[3*ip+1] + lp);
 
-	      xpc0[nc*l+3][0] = xpc[nc*l+3][0] = boundlo[0] + delta*(k+0.5+intpoints[3*ip+0] + lp);
-	      xpc0[nc*l+3][1] = xpc[nc*l+3][1] = boundlo[1] + delta*(k+0.5+intpoints[3*ip+1] + lp);
-	    }
+	    //     xpc0[nc*l+3][0] = xpc[nc*l+3][0] = boxlo[0] + delta*(k+0.5+intpoints[3*ip+0] + lp);
+	    //     xpc0[nc*l+3][1] = xpc[nc*l+3][1] = boxlo[1] + delta*(k+0.5+intpoints[3*ip+1] + lp);
+	    //   }
 	      
-	    if (dim == 3) {
-	      xpc0[nc*l][2] = xpc[nc*l][2] = boundlo[2] + delta*(k+0.5+intpoints[3*ip+2] - lp);
-	      xpc0[nc*l+1][2] = xpc[nc*l+1][2] = boundlo[2] + delta*(k+0.5+intpoints[3*ip+2] - lp);
-	      xpc0[nc*l+2][2] = xpc[nc*l+2][2] = boundlo[2] + delta*(k+0.5+intpoints[3*ip+2] - lp);
-	      xpc0[nc*l+3][2] = xpc[nc*l+3][2] = boundlo[2] + delta*(k+0.5+intpoints[3*ip+2] - lp);
+	    //   if (dim == 3) {
+	    //     xpc0[nc*l][2] = xpc[nc*l][2] = boxlo[2] + delta*(k+0.5+intpoints[3*ip+2] - lp);
+	    //     xpc0[nc*l+1][2] = xpc[nc*l+1][2] = boxlo[2] + delta*(k+0.5+intpoints[3*ip+2] - lp);
+	    //     xpc0[nc*l+2][2] = xpc[nc*l+2][2] = boxlo[2] + delta*(k+0.5+intpoints[3*ip+2] - lp);
+	    //     xpc0[nc*l+3][2] = xpc[nc*l+3][2] = boxlo[2] + delta*(k+0.5+intpoints[3*ip+2] - lp);
 
-	      xpc0[nc*l+4][0] = xpc[nc*l+4][0] = boundlo[0] + delta*(k+0.5+intpoints[3*ip+0] - lp);
-	      xpc0[nc*l+4][1] = xpc[nc*l+4][1] = boundlo[1] + delta*(k+0.5+intpoints[3*ip+1] - lp);
-	      xpc0[nc*l+4][2] = xpc[nc*l+4][2] = boundlo[2] + delta*(k+0.5+intpoints[3*ip+2] + lp);
+	    //     xpc0[nc*l+4][0] = xpc[nc*l+4][0] = boxlo[0] + delta*(k+0.5+intpoints[3*ip+0] - lp);
+	    //     xpc0[nc*l+4][1] = xpc[nc*l+4][1] = boxlo[1] + delta*(k+0.5+intpoints[3*ip+1] - lp);
+	    //     xpc0[nc*l+4][2] = xpc[nc*l+4][2] = boxlo[2] + delta*(k+0.5+intpoints[3*ip+2] + lp);
 
-	      xpc0[nc*l+5][0] = xpc[nc*l+5][0] = boundlo[0] + delta*(k+0.5+intpoints[3*ip+0] + lp);
-	      xpc0[nc*l+5][1] = xpc[nc*l+5][1] = boundlo[1] + delta*(k+0.5+intpoints[3*ip+1] - lp);
-	      xpc0[nc*l+5][2] = xpc[nc*l+5][2] = boundlo[2] + delta*(k+0.5+intpoints[3*ip+2] + lp);
+	    //     xpc0[nc*l+5][0] = xpc[nc*l+5][0] = boxlo[0] + delta*(k+0.5+intpoints[3*ip+0] + lp);
+	    //     xpc0[nc*l+5][1] = xpc[nc*l+5][1] = boxlo[1] + delta*(k+0.5+intpoints[3*ip+1] - lp);
+	    //     xpc0[nc*l+5][2] = xpc[nc*l+5][2] = boxlo[2] + delta*(k+0.5+intpoints[3*ip+2] + lp);
 
-	      xpc0[nc*l+6][0] = xpc[nc*l+6][0] = boundlo[0] + delta*(k+0.5+intpoints[3*ip+0] - lp);
-	      xpc0[nc*l+6][1] = xpc[nc*l+6][1] = boundlo[1] + delta*(k+0.5+intpoints[3*ip+1] + lp);
-	      xpc0[nc*l+6][2] = xpc[nc*l+6][2] = boundlo[2] + delta*(k+0.5+intpoints[3*ip+2] + lp);
+	    //     xpc0[nc*l+6][0] = xpc[nc*l+6][0] = boxlo[0] + delta*(k+0.5+intpoints[3*ip+0] - lp);
+	    //     xpc0[nc*l+6][1] = xpc[nc*l+6][1] = boxlo[1] + delta*(k+0.5+intpoints[3*ip+1] + lp);
+	    //     xpc0[nc*l+6][2] = xpc[nc*l+6][2] = boxlo[2] + delta*(k+0.5+intpoints[3*ip+2] + lp);
 
-	      xpc0[nc*l+7][0] = xpc[nc*l+7][0] = boundlo[0] + delta*(k+0.5+intpoints[3*ip+0] + lp);
-	      xpc0[nc*l+7][1] = xpc[nc*l+7][1] = boundlo[1] + delta*(k+0.5+intpoints[3*ip+1] + lp);
-	      xpc0[nc*l+7][2] = xpc[nc*l+7][2] = boundlo[2] + delta*(k+0.5+intpoints[3*ip+2] + lp);
-	    }
-	  }
-
-	  // Check if the particle is inside the region:
-	  if (checkIfInRegion) {
-	    if (domain->regions[iregion]->inside(x0[l][0], x0[l][1], x0[l][2])==1)
-	      l++;
-	  } else {
+	    //     xpc0[nc*l+7][0] = xpc[nc*l+7][0] = boxlo[0] + delta*(k+0.5+intpoints[3*ip+0] + lp);
+	    //     xpc0[nc*l+7][1] = xpc[nc*l+7][1] = boxlo[1] + delta*(k+0.5+intpoints[3*ip+1] + lp);
+	    //     xpc0[nc*l+7][2] = xpc[nc*l+7][2] = boxlo[2] + delta*(k+0.5+intpoints[3*ip+2] + lp);
+	    //   }
+	    // }
 	    l++;
 	  }
 	}
@@ -1382,10 +1309,14 @@ void Solid::populate(vector<string> args) {
     }
   }
 
-  np = l; // Adjust np to account for the particles outside the domain
-  cout << "np="<< np << endl;
+  MPI_Barrier(universe->uworld);
 
-  for (int i=0; i<np;i++) {
+  np_local = l; // Adjust np to account for the particles outside the domain
+  cout << "np_local="<< np_local << endl;
+
+  MPI_Allreduce(&np_local,&np,1,MPI_MPM_BIGINT,MPI_SUM,universe->uworld);
+
+  for (int i=0; i<np_local;i++) {
     a[i].setZero();
     v[i].setZero();
     f[i].setZero();
@@ -1412,11 +1343,7 @@ void Solid::populate(vector<string> args) {
 
     J[i] = 1;
   }
-
-  if (l!=np) {
-    cout << "Error l=" << l << " != np=" << np << endl;
-    exit(1);
-  }
+  error->all(FLERR, "");
 }
 
 void Solid::update_particle_domain() {

@@ -7,6 +7,7 @@
 #include "style_scheme.h"
 #include "style_method.h"
 #include <vector>
+#include "error.h"
 
 using namespace std;
 
@@ -43,16 +44,14 @@ Update::~Update()
 
 void Update::set_dt_factor(vector<string> args){
   if (args.size()!=1) {
-    cout << "Illegal dt_factor command: not enough arguments or too many arguments" << endl;
-    exit(1);
+    error->all(FLERR, "Illegal dt_factor command: not enough arguments or too many arguments.\n");
   }
   dt_factor = input->parsev(args[0]);
 }
 
 void Update::set_dt(vector<string> args){
   if (args.size()!=1) {
-    cout << "Illegal set_dt command: not enough arguments or too many arguments" << endl;
-    exit(1);
+    error->all(FLERR, "Illegal dt_factor command: not enough arguments or too many arguments.\n");
   }
   dt = input->parsev(args[0]);
   dt_constant = true;
@@ -61,8 +60,7 @@ void Update::set_dt(vector<string> args){
 
 void Update::create_scheme(vector<string> args){
   if (args.size() < 1) {
-    cout << "Illegal run_scheme command: not enough arguments" << endl;
-    exit(1);
+    error->all(FLERR, "Illegal dt_factor command: not enough arguments.\n");
   }
 
   new_scheme(args);
@@ -84,15 +82,13 @@ void Update::new_scheme(vector<string> args){
 #undef SCHEME_CLASS
 
   else {
-    cout << "Illegal scheme style" << endl;
-    exit(1);
+    error->all(FLERR, "Illegal scheme style.\n");
   }
 }
 
 void Update::create_method(vector<string> args){
   if (args.size() < 3) {
-    cout << "Illegal method command: not enough arguments" << endl;
-    exit(1);
+    error->all(FLERR, "Illegal method command: not enough arguments.\n");
   }
 
   new_method(args);
@@ -115,8 +111,7 @@ void Update::new_method(vector<string> args){
 #undef METHOD_CLASS
 
   else {
-    cout << "Illegal method style" << endl;
-    exit(1);
+    error->all(FLERR, "Illegal method style.\n");
   }
 
   method->setup(args);

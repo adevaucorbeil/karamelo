@@ -31,6 +31,7 @@ class Domain : protected Pointers {
   virtual ~Domain();
 
   void create_domain(vector<string>);
+  bool inside_subdomain(Eigen::Vector3d);
   void set_local_box();
   void add_region(vector<string>);
   int find_region(string);

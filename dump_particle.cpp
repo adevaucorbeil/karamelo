@@ -6,6 +6,7 @@
 #include "solid.h"
 #include "mpmtype.h"
 #include "mpm_math.h"
+#include "error.h"
 
 using namespace std;
 using namespace MPM_Math;
@@ -91,7 +92,6 @@ void DumpParticle::write()
     }
     dumpstream.close();
   } else {
-    cout << "Error: cannot write in file: " << fdump << endl;
-    exit(1);
+    error->all(FLERR, "Error: cannot write in file: " + fdump + ".\n");
   }
 }

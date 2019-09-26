@@ -7,10 +7,10 @@
 
 SHELL = /bin/bash
 # define the C compiler to use
-CC = g++
+CC = mpicxx
 
 # define any compile-time flags
-CFLAGS = -DWITHOUT_NUMPY -g -std=c++11 -march=native -O3
+CFLAGS = -DWITHOUT_NUMPY -g -march=native -O3
 #-pg
 
 # define any directories containing header files other than /usr/include
@@ -54,7 +54,7 @@ MAIN = karamelo_${BRANCH}
 all:    $(MAIN)
 	@echo  Simple compiler named mpm has been compiled
 
-$(MAIN): $(OBJ) #dump_particle.o
+$(MAIN): $(OBJ) main.o
 	$(CC) $(CFLAGS) $(INCLUDES) $(OBJ) $(LFLAGS) $(LIBS) -o $(MAIN) 
 
 # this is a suffix replacement rule for building .o's from .c's
@@ -62,6 +62,8 @@ $(MAIN): $(OBJ) #dump_particle.o
 # the rule(a .c file) and $@: the name of the target of the rule (a .o file) 
 # (see the gnu make manual section about automatic variables)
 %.o:%.cpp %.h
+	$(CC) $(CFLAGS) $(INCLUDES) -c $<  -o $@
+%.o:%.cpp
 	$(CC) $(CFLAGS) $(INCLUDES) -c $<  -o $@
 
 #dump_particle.o:dump_particle.cpp dump_particle.h

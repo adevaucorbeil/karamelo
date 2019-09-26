@@ -16,6 +16,9 @@
 #include "var.h"
 #include <map>
 #include "modify.h"
+#include "universe.h"
+#include "error.h"
+#include "mpi_wrappers.h"
 
 #define DELTALINE 256
 #define DELTA 4
@@ -25,7 +28,7 @@ using namespace std;
 
 Input::Input(MPM *mpm, int argc, char **argv) : Pointers(mpm)
 {
-  MPI_Comm_rank(world,&me);
+  MPI_Comm_rank(universe->uworld,&me);
 
   maxline = maxcopy = 0;
   maxarg = 0;
@@ -79,38 +82,42 @@ Input::~Input()
 
 void Input::file()
 {
+  cout << "In Input::file()\n";
   bool ignore = false;
+  int end = 0;
 
   istream is(infile);
-  while (is) {
-    char c = char(is.get());
-    if (c != '\n') {
-
-      if (c == '#') ignore = true; // ignore everything after #
-      if (c == '\377') {
-	// cout << line << endl;
-	if (line.compare("quit")==0) return;
-	parsev(line).result();
-      } else {
-	if (!ignore) line.append(&c,1);
-      }
-
-    } else {
-
-      ignore = false;
-      cout << line << endl;
-      if (line.compare("quit")==0) return;
-      parsev(line).result();
-      line.clear();
-
-    }
-  }
-  // cout << "t.constant()" << (*vars)["t"].is_constant() << endl;
-  // (*vars)["time"] = Var("time", 2, false);
-  // cout << "t=" << (*vars)["t"].result() << endl;
-  // cout << "t=" << (*vars)["t"].eq() << endl;
-  // cout << "t=" << (*vars)["t"].result(mpm) << endl;
   
+  while(1) {
+    if (me == 0) {
+      while(1) {
+	char c = char(is.get());
+	if (c != '\n') {
+	  if (c == '#') ignore = true; // ignore everything after #
+	  if (c == '\377') {
+	    end = 1;
+	    break;
+	  } else {
+	    if (!ignore) line.append(&c,1);
+	  }
+
+	} else {
+	  ignore = false;
+	  break;
+	}
+      }
+    }
+
+    MPI_string_bcast(line, MPI_CHAR, 0, universe->uworld);
+    if (line.compare("quit")==0) break;
+    parsev(line).result();
+
+    line.clear();
+
+    MPI_Bcast(&end,1,MPI_INT,0, universe->uworld);
+    if (end) break;
+  }
+
 }
 
 // Function to find precedence of  
@@ -142,11 +149,9 @@ Var Input::applyOp(Var a, Var b, string op){
   else if (op.compare("==")==0) return a == b;
   else if (op.compare("!=")==0) return a != b;
   else if (op.compare("(")==0) {
-    printf("Error: unmatched parenthesis (\n");
-    exit(1);
+    error->all(FLERR, "Error: unmatched parenthesis (\n");
   } else {
-    cout << "Error: unknown operator "<< op <<"\n";
-    exit(1);
+    error->all(FLERR, "Error: unknown operator " + op + "\n");
   }
 }
 
@@ -184,8 +189,7 @@ Var Input::evaluate_function(string func, string arg){
     // Locate comas.
     if (arg[i] == ',' || i==arg.length()-1)  {
       if (i==start && i!=arg.length()-1) {
-	cout << "Error: missing argument" << endl;
-	exit(1);
+	error->all(FLERR, "Error: missing argument.\n");
       }
 
       args.resize(args.size()+1);
@@ -213,6 +217,7 @@ Var Input::evaluate_function(string func, string arg){
   if (func.compare("set_dt") == 0 ) return Var(set_dt(args));
   if (func.compare("value") == 0) return value(args);
   if (func.compare("plot") == 0) return Var(plot(args));
+  if (func.compare("create_domain") == 0) return Var(create_domain(args));
 
   // invoke commands added via style_command.h
 
@@ -230,8 +235,7 @@ Var Input::evaluate_function(string func, string arg){
   else if (func.compare("log") == 0) return logv(parsev(arg));
   else if (func.compare("evaluate") == 0) return Var(parsev(arg).result(mpm));
   else if (func.compare("print") == 0) return Var(print(args));
-  cout << "Error: Unknown function " << func << endl;
-  exit(1);
+  error->all(FLERR, "Error: Unknown function " + func + "\n");
 }
 
 // remove white spaces from string
@@ -245,8 +249,7 @@ string Input::remove_whitespace(string str){
 }
 
 double Input::parse(string str){
-  cout << "Error: Input::parse deprecated function" << endl;
-  exit(1);
+  error->all(FLERR, "Error: Input::parse deprecated function.\n");
 }
 
 Var Input::parsev(string str)
@@ -311,15 +314,13 @@ Var Input::parsev(string str)
       //cout << "Found \')\'" << endl;
 
       if (ops.empty() && values.size() < 2) {
-	printf("Error, unmatched parenthesis )\n");
-	exit(1);
+	error->all(FLERR, "Error, unmatched parenthesis )\n");
       }
 
       while(ops.top() != "(")
 	{
 	  if (values.empty()) {
-	    cout << "Error: Ops is not empty with top element being " << ops.top() << ", while values is." << endl;
-	    exit(1);
+	    error->all(FLERR, "Error: Ops is not empty with top element being " + ops.top() + ", while values is.\n");
 	  } else if (values.size() == 1) {
 	    if (ops.top() == "-") {
 	      Var val1 = values.top();
@@ -335,8 +336,7 @@ Var Input::parsev(string str)
 	      ops.pop();
 	    } else {
 	      Var val1 = values.top();
-	      cout << "Error: do not know how to apply " << ops.top() << ", to " << val1.eq() << endl;
-	      exit(1);
+	      error->all(FLERR, "Error: do not know how to apply " + ops.top() + ", to " + val1.eq() + ".\n");
 	    }
 	  } else {
 	    Var val2 = values.top();
@@ -353,8 +353,7 @@ Var Input::parsev(string str)
 
 	    //cout << "Pushed number: " << values.top() << " to values stack" << endl;
 	    if (ops.empty()) {
-	      printf("Error, unmatched parenthesis )\n");
-	      exit(1);
+	      error->all(FLERR, "Error, unmatched parenthesis )\n");
 	    }
 	  }
 	}
@@ -375,13 +374,11 @@ Var Input::parsev(string str)
       }
 
       if (i+1 >= str.length()) {
-	cout << "Error: end-of-line character detected after operator " << new_op << endl;
-	exit(1);
+	error->all(FLERR, "Error: end-of-line character detected after operator " + new_op + ".\n");
       }
 
       if (i+1 < str.length() && str[i+1] == '\0') {
-	cout << "Error: end-of-line character detected after operator " << new_op << endl;
-	exit(1);
+	error->all(FLERR, "Error: end-of-line character detected after operator " + new_op + ".\n");
       }
 
       else if (i+1 < str.length() && str[i+1] == '*') {
@@ -395,8 +392,7 @@ Var Input::parsev(string str)
       }
 
       else if (i+1 < str.length() && is_operator(str[i+1]) && str[i+1] != '-') {
-	cout << "Error: unknown operator sequence " << new_op << str[i+1] << endl;
-	exit(1);
+	error->all(FLERR, "Error: unknown operator sequence " + new_op + str[i+1] + ".\n");
       }
 
 
@@ -468,8 +464,7 @@ Var Input::parsev(string str)
 	if (i+1 < str.length() && str[i+1] == '=' && str[i+2] != '=') {
 
 	  if (!values.empty() || !ops.empty() ) {
-	    printf("Error: I do not understand when '=' is located in the middle of an expression\n");
-	    exit(1);
+	    error->all(FLERR, "Error: I do not understand when '=' is located in the middle of an expression\n");
 	  }
 
 	  else {
@@ -513,8 +508,7 @@ Var Input::parsev(string str)
 	//cout << "Check if there is an =\n";
 	returnvar = word;
 	if (protected_variable(returnvar)) {
-	  cout << "Error: " << returnvar << " is a protected variable: it cannot be modified!\n";
-	  exit(1);
+	  error->all(FLERR, "Error: " + returnvar + " is a protected variable: it cannot be modified!\n");
 	}
 	//cout << "The computed value will be stored in " <<  returnvar << endl;
 	i++;
@@ -533,8 +527,7 @@ Var Input::parsev(string str)
 	  if (str[i+k]==')') nRparenthesis++;
 	  k++;
 	  if (i+k > str.length()) {
-	    cout << "Error: Unbalanced parenthesis '('" << endl;
-	    exit(1);
+	    error->all(FLERR, "Error: Unbalanced parenthesis '('.\n");
 	  }
 	}
 	string arg;
@@ -545,8 +538,7 @@ Var Input::parsev(string str)
       }
 
       else {
-	cout << "Error: " << word << " is unknown\n";
-	exit(1);
+	error->all(FLERR, "Error: " + word + " is unknown.\n");
       }
     }
   }
@@ -556,8 +548,7 @@ Var Input::parsev(string str)
   // values.
   while(!ops.empty()){
     if (values.empty()) {
-      cout << "Error: Ops is not empty with top element being " << ops.top() << ", while values is." << endl;
-      exit(1);
+      error->all(FLERR, "Error: Ops is not empty with top element being " + ops.top() + ", while values is.\n");
     } else if (values.size() == 1) {
       if (ops.top() == "-") {
 	Var val1 = values.top();
@@ -573,8 +564,7 @@ Var Input::parsev(string str)
 	ops.pop();
       } else {
 	Var val1 = values.top();
-	cout << "Error: do not know how to apply " << ops.top() << ", to " << val1.eq() << endl;
-	exit(1);
+	error->all(FLERR, "Error: do not know how to apply " + ops.top() + ", to " + val1.eq() + ".\n");
       }
     } else {
       Var val2 = values.top();
@@ -611,26 +601,21 @@ int Input::dimension(vector<string> args){
 
 
   if (args.size()==0) {
-    cout << "Error: dimension did not receive enough arguments: 1 minimum required" << endl;
-    exit(1);
+    error->all(FLERR, "Error: dimension did not receive enough arguments: 1 minimum required.\n");
   }
 
   if (args.size() > 8) {
-	cout << "Error: dimension received too many arguments: 8 maximum for 2D simulations (Dimension, domain xmin, domain xmax, domain ymin, domain ymax, domain zmin, domain zmax, cell size)" << endl;
-    exit(1);
+    error->all(FLERR, "Error: dimension received too many arguments: 8 maximum for 2D simulations (Dimension, domain xmin, domain xmax, domain ymin, domain ymax, domain zmin, domain zmax, cell size).\n");
   }
 
   int dim = (int) parsev(args[0]);
 
   if (dim!=1 &&dim != 2 && dim != 3) {
-    cout << "Error: dimension argument: " << dim << endl;
-    exit(1);
+    error->all(FLERR, "Error: dimension argument: " + to_string(dim) + ".\n");
   }
   else domain->dimension = dim;
 
   cout << "Set dimension to " << dim << endl;
-
-  domain->create_domain(args);
   return 0;
 }
 
@@ -707,11 +692,9 @@ int Input::set_dt(vector<string> args){
 
 Var Input::value(vector<string> args){
   if (args.size() < 1) {
-    cout << "Error: too few arguments for command value()" << endl;
-    exit(1);
+    error->all(FLERR, "Error: too few arguments for command value().\n");
   } else if (args.size() > 1) {
-    cout << "Error: too many arguments for command value()" << endl;
-    exit(1);
+    error->all(FLERR, "Error: too many arguments for command value().\n");
   }
   Var v = parsev(args[0]);
   v.make_constant();
@@ -726,12 +709,11 @@ int Input::plot(vector<string> args){
 
 int Input::print(vector<string> args){
   if (args.size() < 1) {
-    cout << "Error: too few arguments for command value()" << endl;
-    exit(1);
+    error->all(FLERR, "Error: too few arguments for command value().\n");
   } else if (args.size() > 1) {
-    cout << "Error: too many arguments for command value()" << endl;
-    exit(1);
+    error->all(FLERR, "Error: too many arguments for command value().\n");
   }
+
   Var v = parsev(args[0]);
   cout << args[0] <<
     " = {equation=\"" << v.eq() <<
@@ -760,5 +742,10 @@ bool Input::protected_variable(string variable) {
   for (int i=0; i<protected_vars.size();i++) {
     if (variable.compare(protected_vars[i])==0) return 1;
   }
+  return 0;
+}
+
+int Input::create_domain(vector<string> args){
+  domain->create_domain(args);
   return 0;
 }

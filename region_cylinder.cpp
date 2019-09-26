@@ -4,6 +4,7 @@
 #include "input.h"
 #include "var.h"
 #include "math_special.h"
+#include "error.h"
 
 using namespace std;
 using namespace MathSpecial;
@@ -16,15 +17,13 @@ RegCylinder::RegCylinder(MPM *mpm, vector<string> args) : Region(mpm, args)
 
   if (domain->dimension == 3) {
     if (args.size()<8) {
-    cout << "Error: region command not enough arguments" << endl;
-    exit(1);
+      error->all(FLERR, "Error: not enough arguments.\n");
     }
 
     options(&args, args.begin()+8);
   } else {
     if (args.size()<5) {
-    cout << "Error: region command not enough arguments" << endl;
-    exit(1);
+      error->all(FLERR, "Error: not enough arguments.\n");
     }    
 
     options(&args, args.begin()+5);
@@ -38,8 +37,7 @@ RegCylinder::RegCylinder(MPM *mpm, vector<string> args) : Region(mpm, args)
     } else if (args[2].compare("z") == 0) {
       axis = 'z';
     } else {
-      cout << "Error: region cylinder axis not understood, expect x, y, or z, received " << args[2] << endl;
-      exit(1);
+      error->all(FLERR, "Error: region cylinder axis not understood, expect x, y, or z, received " + args[2]+".\n");
     }
 
     c1 = input->parsev(args[3]);
@@ -48,16 +46,14 @@ RegCylinder::RegCylinder(MPM *mpm, vector<string> args) : Region(mpm, args)
 
     if (args[6].compare("INF") == 0 || args[6].compare("EDGE") == 0) {
       if (domain->regions.size() == 0) {
-	cout << "Cannot use region INF or EDGE when box does not exist" << endl;
-	exit(1);
+	error->all(FLERR, "Cannot use region INF or EDGE when box does not exist.\n");
       }
       lo = -BIG;
     } else lo = input->parsev(args[6]);
 
     if (args[7].compare("INF") == 0 || args[7].compare("EDGE") == 0) {
       if (domain->regions.size() == 0) {
-	cout << "Cannot use region INF or EDGE when box does not exist" << endl;
-	exit(1);
+	error->all(FLERR, "Cannot use region INF or EDGE when box does not exist.\n");
       }
       hi = BIG;
     } else hi = input->parsev(args[7]);
@@ -78,8 +74,7 @@ RegCylinder::RegCylinder(MPM *mpm, vector<string> args) : Region(mpm, args)
   // error check
 
   if (lo > hi) {
-    cout << "Illegal region cylinder command: low is higher than high" << endl;
-    exit(1);
+    error->all(FLERR, "Illegal region cylinder command: low is higher than high.\n");
   }
 
   if (axis=='x') {

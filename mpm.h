@@ -9,6 +9,7 @@
 #include <string>
 #include <fstream>
 #include <map>
+#include <mpi.h>
 
 using namespace std;
 
@@ -17,6 +18,7 @@ class MPM {
  public:
 
   class Memory *memory;          // memory allocation functions
+  class Error *error;            // error handling
   class Universe *universe;      // universe of processors
   class Input *input;            // input script processing
   class Output *output;          // thermo/dump/restart
@@ -34,7 +36,7 @@ class MPM {
   filebuf logfile;               // logfile
   ofstream *wlogfile;
 
-  MPM(int, char **);
+  MPM(int, char **, MPI_Comm);
   ~MPM();
   void init();
 };

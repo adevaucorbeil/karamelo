@@ -1,7 +1,9 @@
 #include <iostream>
 #include <vector>
+#include <string>
 #include "fix_velocity.h"
 #include "input.h"
+#include "error.h"
 
 using namespace std;
 using namespace FixConst;
@@ -9,8 +11,7 @@ using namespace FixConst;
 FixVelocity::FixVelocity(MPM *mpm, vector<string> args) : Fix(mpm, args)
 {
   if (args.size() < 6) {
-    cout << "Error: too few arguments for fix_velocity: requires at least 6 arguments. " << args.size() << " received" << endl;
-    exit(1);
+    error->all(FLERR,"Error: too few arguments for fix_velocity: requires at least 6 arguments. " + to_string(args.size()) + " received.\n");
   }
   cout << "Creating new fix FixVelocity with ID: " << args[0] << endl;
   id = args[0];

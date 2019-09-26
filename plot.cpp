@@ -1,13 +1,15 @@
 #include <iostream>
 #include <fstream>
+#include <string>
+#include <sstream>
+#include <stdexcept>
+#include <matplotlibcpp.h>
 #include "plot.h"
 #include "mpmtype.h"
 #include "update.h"
 #include "input.h"
 #include "var.h"
-#include <sstream>
-#include <stdexcept>
-#include <matplotlibcpp.h>
+#include "error.h"
 
 namespace plt = matplotlibcpp;
 using namespace std;
@@ -48,8 +50,7 @@ void Plot::parse_keywords(vector<string> keyword)
     if (i==0) x_or_y = 0;
     else if (i==1) x_or_y = 1;
     else {
-      cout << "Error: too many variables to plot." << endl;
-      exit(1);
+      error->all(FLERR, "Error: too many variables to plot.\n");
     }
 
     if (keyword[i].compare("step")==0)      addfield("Step", &Plot::compute_step, BIGINT, x_or_y);
@@ -61,9 +62,8 @@ void Plot::parse_keywords(vector<string> keyword)
 	addfield(keyword[i], &Plot::compute_var, FLOAT, x_or_y);
       }
       catch (const std::out_of_range& oor) {
-	cout << "Error: unknown plot keyword " << keyword[i] << endl;
-	std::cerr << "Out of Range error: " << oor.what() << '\n';
-	exit(1);
+	error->all(FLERR, "Error: unknown plot keyword " + keyword[i] + ".\n");
+	// std::cerr << "Out of Range error: " << oor.what() << '\n';
       }
     }
   }
@@ -99,8 +99,7 @@ void Plot::compute_step(string name, int x_or_y)
   } else if (x_or_y == 1) {
     y.push_back(update->ntimestep);
   } else {
-    cout << "Error: in Plot::compute_step, x_or_y == " << x_or_y << ". Expected 0 or 1!" << endl;
-    exit(1);
+    error->all(FLERR, "Error: in Plot::compute_step, x_or_y == " + to_string(x_or_y) + ". Expected 0 or 1!\n");
   }
 }
 
@@ -111,8 +110,7 @@ void Plot::compute_dt(string name, int x_or_y)
   } else if (x_or_y == 1) {
     y.push_back(update->dt);
   } else {
-    cout << "Error: in Plot::compute_dt, x_or_y == " << x_or_y << ". Expected 0 or 1!" << endl;
-    exit(1);
+    error->all(FLERR, "Error: in Plot::compute_dt, x_or_y == " + to_string(x_or_y) + ". Expected 0 or 1!\n");
   }
 }
 
@@ -123,8 +121,7 @@ void Plot::compute_time(string name, int x_or_y)
   } else if (x_or_y == 1) {
     y.push_back(update->atime);
   } else {
-    cout << "Error: in Plot::compute_time, x_or_y == " << x_or_y << ". Expected 0 or 1!" << endl;
-    exit(1);
+    error->all(FLERR, "Error: in Plot::compute_time, x_or_y == " + to_string(x_or_y) + ". Expected 0 or 1!\n");
   }
 }
 
@@ -135,16 +132,14 @@ void Plot::compute_var(string name, int x_or_y)
   } else if (x_or_y == 1) {
     y.push_back((*input->vars)[name].result(mpm));
   } else {
-    cout << "Error: in Plot::compute_var, x_or_y == " << x_or_y << ". Expected 0 or 1!" << endl;
-    exit(1);
+    error->all(FLERR, "Error: in Plot::compute_var, x_or_y == " + to_string(x_or_y) + ". Expected 0 or 1!\n");
   }
 }
 
 void Plot::modify(vector<string> args)
 {
   if (args.size() < 1) {
-    cout << "Erro: too few arguments given to plot_modify command." << endl;
-    exit(1);
+    error->all(FLERR, "Error: too few arguments given to plot_modify command.\n");
   }
 
   style = args[0];

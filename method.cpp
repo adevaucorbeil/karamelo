@@ -5,7 +5,8 @@ using namespace std;
 
 Method::Method(MPM *mpm) : Pointers(mpm)
 {
-  is_total_lagrangian = false;
+  is_TL = false;
+  is_CPDI = false;
 }
 
 Method::~Method()

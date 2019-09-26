@@ -3,6 +3,7 @@
 #include "style_fix.h"
 #include "fix.h"
 #include "compute.h"
+#include "error.h"
 
 using namespace FixConst;
 
@@ -108,8 +109,7 @@ void Modify::add_fix(vector<string> args){
     fix.back()->init();
   }
   else {
-    cout << "Unknown fix style " << args[1] << endl;
-    exit(1);
+    error->all(FLERR, "Unknown fix style " + args[1] + ".\n");
   }
 
   fix[ifix]->setmask();
@@ -142,8 +142,7 @@ void Modify::delete_fix(string id)
 {
   int ifix = find_fix(id);
   if (ifix < 0) {
-    cout << "Could not find fix ID to delete" << endl;
-    exit(1);
+    error->all(FLERR, "Could not find fix ID to delete.\n");
   }
   delete_fix(ifix);
 }
@@ -162,8 +161,7 @@ void Modify::add_compute(vector<string> args){
   cout << "In add_compute" << endl;
 
   if (find_compute(args[0]) >= 0) {
-    cout << "Error: reuse of compute ID" << endl;
-    exit(1);
+    error->all(FLERR, "Error: reuse of compute ID.\n");
   }
 
     // create the Compute
@@ -174,8 +172,7 @@ void Modify::add_compute(vector<string> args){
     compute.back()->init();
   }
   else {
-    cout << "Unknown compute style " << args[1] << endl;
-    exit(1);
+    error->all(FLERR, "Unknown compute style " + args[1] + ".\n");
   }
   
 }
@@ -207,8 +204,7 @@ void Modify::delete_compute(string id)
 {
   int icompute = find_compute(id);
   if (icompute < 0) {
-    cout << "Could not find compute ID to delete" << endl;
-    exit(1);
+    error->all(FLERR, "Could not find compute ID to delete.\n");
   }
   delete_compute(icompute);
 }

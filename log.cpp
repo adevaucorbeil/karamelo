@@ -7,6 +7,7 @@
 #include "var.h"
 #include <sstream>
 #include <stdexcept>
+#include "error.h"
 
 using namespace std;
 
@@ -29,8 +30,7 @@ Log::Log(MPM *mpm, vector<string> args) : Pointers(mpm)
     keyword.push_back("dt");
     keyword.push_back("time");
   } else {
-    cout << "Unknown log style " << style << endl;
-    exit(1);
+    error->all(FLERR, "Unknown log style " + style + ".\n");
   }
   parse_keywords(keyword);
 }
@@ -68,9 +68,8 @@ void Log::parse_keywords(vector<string> keyword)
 	addfield(keyword[i], &Log::compute_var, FLOAT);
       }
       catch (const std::out_of_range& oor) {
-	cout << "Error: unknown log keyword " << keyword[i] << endl;
-	std::cerr << "Out of Range error: " << oor.what() << '\n';
-	exit(1);
+	error->all(FLERR,"Error: unknown log keyword " + keyword[i] + ".\n");
+	// std::cerr << "Out of Range error: " << oor.what() << '\n';
       }
     }
   }
@@ -134,8 +133,7 @@ void Log::compute_var(string name)
 void Log::modify(vector<string> args)
 {
   if (args.size() < 1) {
-    cout << "Erro: too few arguments given to log_modify command." << endl;
-    exit(1);
+    error->all(FLERR, "Error: too few arguments given to log_modify command.\n");
   }
 
   style = args[0];
@@ -149,15 +147,13 @@ void Log::modify(vector<string> args)
   } else if (style.compare("custom") == 0) {
     
     if (args.size() < 2) {
-      cout << "Erro: too few arguments given to log_modify(custom,...) command." << endl;
-      exit(1);
+      error->all(FLERR, "Error: too few arguments given to log_modify(custom,...) command.\n");
     }
 
     for (int i=1; i<args.size(); i++) keyword.push_back(args[i]);
 
   } else {
-    cout << "Unknown log style " << style << endl;
-    exit(1);
+    error->all(FLERR, "Unknown log style " + style + "\n");
   }
 
   clearfields();
