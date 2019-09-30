@@ -7,7 +7,13 @@
 #include "update.h"
 #include "var.h"
 #include "domain.h"
+#include "method.h"
 #include "error.h"
+
+#ifdef DEBUG
+#include <matplotlibcpp.h>
+namespace plt = matplotlibcpp;
+#endif
 
 using namespace std;
 
@@ -44,14 +50,46 @@ Grid::~Grid()
   memory->destroy(mass);
   memory->destroy(mask);
   memory->destroy(ntype);
-  // memory->destroy(R);
-  // memory->destroy(C);
 }
 
 void Grid::init(double *solidlo, double *solidhi){
-  double Lx = solidhi[0]-solidlo[0];//+2*cellsize;
 
   double h = cellsize;
+
+  double *sublo = domain->sublo;
+  double *subhi = domain->subhi;
+
+  double *boundlo, *boundhi;
+  if (update->method->is_TL) {
+    boundlo = solidlo;
+    boundhi = solidhi;
+  }
+  else {
+    boundlo = domain->boxlo;
+    boundhi = domain->boxhi;
+  }
+
+  bool is_cubic = false;
+
+  if (update->method_shape_function.compare("cubic-spline")==0) is_cubic = true;
+
+  double Loffsetlo[3] = {MAX(0.0, domain->sublo[0] - boundlo[0] - is_cubic*2*h),
+			 MAX(0.0, domain->sublo[1] - boundlo[1] - is_cubic*2*h),
+			 MAX(0.0, domain->sublo[2] - boundlo[2] - is_cubic*2*h)};
+
+  double Loffsethi[3] = {MIN(0.0, domain->subhi[0] - boundhi[0] + is_cubic*2*h),
+			 MIN(0.0, domain->subhi[1] - boundhi[1] + is_cubic*2*h),
+			 MIN(0.0, domain->subhi[2] - boundhi[2] + is_cubic*2*h)};
+
+  int noffsetlo[3] = {(int) (Loffsetlo[0]/h),
+		      (int) (Loffsetlo[1]/h),
+		      (int) (Loffsetlo[2]/h)};
+
+  int noffsethi[3] = {(int) (-Loffsethi[0]/h),
+		      (int) (-Loffsethi[1]/h),
+		      (int) (-Loffsethi[2]/h)};
+
+  double Lx = (boundhi[0] - boundlo[0]) - (noffsetlo[0] + noffsethi[0])*h;
 
   if (update->method_shape_function.compare("Bernstein-quadratic")==0)
     h /= 2;
@@ -60,7 +98,7 @@ void Grid::init(double *solidlo, double *solidhi){
   while (nx*h <= Lx+0.5*h) nx++;
 
   if (domain->dimension >= 2) {
-    double Ly = solidhi[1]-solidlo[1];
+    double Ly = (boundhi[1] - boundlo[1]) - (noffsetlo[1] + noffsethi[1])*h;
     ny = ((int) Ly/h)+1;
     while (ny*h <= Ly+0.5*h) ny++;   
    } else {
@@ -68,7 +106,7 @@ void Grid::init(double *solidlo, double *solidhi){
    }
 
   if (domain->dimension == 3) {
-    double Lz = solidhi[2]-solidlo[2];
+    double Lz = (boundhi[2] - boundlo[2]) - (noffsetlo[2] + noffsethi[2])*h;
     nz = ((int) Lz/h)+1;
     while (nz*h <= Lz+0.5*h) nz++;   
    } else {
@@ -79,15 +117,19 @@ void Grid::init(double *solidlo, double *solidhi){
   int nn = nx*ny*nz;
   grow(nn);
 
+#ifdef DEBUG
+  std::vector<double> x2plot, y2plot;
+#endif
+
 
   int l=0;
   for (int i=0; i<nx; i++){
     for (int j=0; j<ny; j++){
       for (int k=0; k<nz; k++){
-	x0[l][0] = solidlo[0] + i*h;//h*(i-1);
-	if (domain->dimension >= 2) x0[l][1] = solidlo[1] + j*h;//h*(j-1);
+	x0[l][0] = boundlo[0] + (noffsetlo[0] + i)*h;//h*(i-1);
+	if (domain->dimension >= 2) x0[l][1] = boundlo[1] + (noffsetlo[1] + j)*h;
 	else x0[l][1] = 0;
-	if (domain->dimension == 3) x0[l][2] = solidlo[2] + k*h;//h*(k-1);
+	if (domain->dimension == 3) x0[l][2] = boundlo[2] + (noffsetlo[2] + k)*h;
 	else x0[l][2] = 0;
 
 	if (update->method_shape_function.compare("linear")==0) {
@@ -112,12 +154,19 @@ void Grid::init(double *solidlo, double *solidhi){
 	mass[l] = 0;
 	// R[l].setIdentity();
 
+#ifdef DEBUG
+	x2plot.push_back(x0[l][0]);
+	y2plot.push_back(x0[l][1]);
+#endif
 	l++;
       }
     }
   }
 
   
+#ifdef DEBUG
+  plt::plot(x2plot, y2plot, "g+");
+#endif
 }
 
 void Grid::setup(string cs){

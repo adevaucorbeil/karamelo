@@ -1065,6 +1065,9 @@ void Solid::populate(vector<string> args) {
 
 #ifdef DEBUG
   cout << "proc " << universe->me << "\tsolidsublo=[" << solidsublo[0] << "," << solidsublo[1] << "," << solidsublo[2] << "]\t solidsubhi=["<< solidsubhi[0] << "," << solidsubhi[1] << "," << solidsubhi[2] << "]\n";
+
+  std::vector<double> x2plot, y2plot;
+  plt::figure_size(1200, 780);
 #endif
 
   // Calculate total number of particles np:
@@ -1231,13 +1234,10 @@ void Solid::populate(vector<string> args) {
   nsuby0 = (int) (sublo[1] - boundlo[1])/delta;
   nsubz0 = (int) (sublo[2] - boundlo[2])/delta;
 
-#ifdef DEBUG
-  std::vector<double> x2plot, y2plot;
-#endif
 
-  double Loffset[3] = {MAX(0.0 ,domain->sublo[0] - boundlo[0]),
-		       MAX(0.0 ,domain->sublo[1] - boundlo[1]),
-		       MAX(0.0 ,domain->sublo[2] - boundlo[2])};
+  double Loffset[3] = {MAX(0.0, domain->sublo[0] - boundlo[0]),
+		       MAX(0.0, domain->sublo[1] - boundlo[1]),
+		       MAX(0.0, domain->sublo[2] - boundlo[2])};
 
   int noffset[3] = {(int) (Loffset[0]/delta),
 		    (int) (Loffset[1]/delta),
@@ -1329,7 +1329,6 @@ void Solid::populate(vector<string> args) {
   xsubdomain.push_back(domain->sublo[0]);
   ysubdomain.push_back(domain->sublo[1]);
 
-  plt::figure_size(1200, 780);
   plt::plot(xdomain, ydomain, "b-");
   plt::plot(xsubdomain, ysubdomain, "r-");
   plt::plot(x2plot, y2plot, ".");
