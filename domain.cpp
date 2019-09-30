@@ -158,20 +158,22 @@ void Domain::set_local_box() {
 
   double h[3];
   h[0] = l[0]/procgrid[0];
-  sublo[0] = myloc[0]*h[0];
+  sublo[0] = myloc[0]*h[0] + boxlo[0];
   subhi[0] = sublo[0] + h[0];
 
   if (dimension >= 2) {
     h[1] = l[1]/procgrid[1];
-    sublo[1] = myloc[1]*h[1];
+    sublo[1] = myloc[1]*h[1] + boxlo[1];
     subhi[1] = sublo[1] + h[1];
   }
 
   if (dimension == 3) {
     h[2] = l[2]/procgrid[2];
-    sublo[2] = myloc[2]*h[2];
+    sublo[2] = myloc[2]*h[2] + boxlo[2];
     subhi[2] = sublo[2] + h[2];
   }
+
+  cout << "proc " << universe->me << "\tsublo=[" << sublo[0] << "," << sublo[1] << "," << sublo[2] << "]\t subhi=["<< subhi[0] << "," << subhi[1] << "," << subhi[2] << "]\n";
 }
 
 void Domain::create_domain(vector<string> args) {

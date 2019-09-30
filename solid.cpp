@@ -16,6 +16,11 @@
 #include <omp.h>
 #include "error.h"
 
+#ifdef DEBUG
+#include <matplotlibcpp.h>
+namespace plt = matplotlibcpp;
+#endif
+
 using namespace std;
 using namespace Eigen;
 using namespace MPM_Math;
@@ -1051,6 +1056,9 @@ void Solid::populate(vector<string> args) {
   solidsubhi[1] = MIN(solidhi[1], subhi[1]);
   solidsubhi[2] = MIN(solidhi[2], subhi[2]);
 
+#ifdef DEBUG
+  cout << "proc " << universe->me << "\tsolidsublo=[" << solidsublo[0] << "," << solidsublo[1] << "," << solidsublo[2] << "]\t solidsubhi=["<< solidsubhi[0] << "," << solidsubhi[1] << "," << solidsubhi[2] << "]\n";
+#endif
 
   // Calculate total number of particles np:
   int nx, ny, nz, nsubx, nsuby, nsubz;
@@ -1076,17 +1084,17 @@ void Solid::populate(vector<string> args) {
   if (domain->dimension == 3) Lsubz = solidsubhi[2]-solidsublo[2];
 
 
-  nx = ((int) Lx/delta);
+  nx = (int) (Lx/delta);
   while (nx*delta <= Lx-0.5*delta) nx++;
 
-  nsubx = ((int) Lsubx/delta);
-  while (nx*delta <= Lsubx-0.5*delta) nsubx++;
+  nsubx = (int) (Lsubx/delta);
+  while (nsubx*delta <= Lsubx-0.5*delta) nsubx++;
 
   if (domain->dimension >= 2) {
-    ny = ((int) Ly/delta);
+    ny = (int) (Ly/delta);
     while (ny*delta <= Ly-0.5*delta) ny++;
 
-    nsuby = ((int) Lsuby/delta);
+    nsuby = (int) (Lsuby/delta);
     while (nsuby*delta <= Lsuby-0.5*delta) nsuby++;
   } else {
     ny = 1;
@@ -1094,15 +1102,19 @@ void Solid::populate(vector<string> args) {
   }
 
   if (domain->dimension == 3) {
-    nz = ((int) Lz/delta);
+  nz = (int) (Lz/delta);
     while (nz*delta <= Lz-0.5*delta) nz++;
 
-    nsubz = ((int) Lsubz/delta);
+    nsubz = (int) (Lsubz/delta);
     while (nsubz*delta <= Lsubz-0.5*delta) nsubz++;
   } else {
     nz = 1;
     nsubz = 1;
   }
+
+#ifdef DEBUG
+  cout << "proc " << universe->me << "\tLsub=[" << Lsubx << "," << Lsuby << "," << Lsubz << "]\t nsub=["<< nsubx << "," << nsuby << "," << nsubz << "]\n";
+#endif
 
   np_local = nsubx*nsuby*nsubz;
 
@@ -1141,7 +1153,7 @@ void Solid::populate(vector<string> args) {
   } else if (np_per_cell == 2) {
     // Quadratic elements:
 
-    if (domain->dimension == 3) nip = 2;
+    if (domain->dimension == 1) nip = 2;
     else if (domain->dimension == 2) nip = 4;
     else nip = 8;
 
@@ -1168,7 +1180,7 @@ void Solid::populate(vector<string> args) {
 
     lp *= 1.0/6.0;
     nip = 27;
-    if (domain->dimension == 3) nip = 3;
+    if (domain->dimension == 1) nip = 3;
     else if (domain->dimension == 2) nip = 9;
     else nip = 27;
 
@@ -1205,6 +1217,9 @@ void Solid::populate(vector<string> args) {
   }
 
   np_local *= nip;
+#ifdef DEBUG
+  cout << "proc " << universe->me << "\tnp_local=" << np_local << endl;
+#endif
   mass_ /= (double) nip;
   vol_ /= (double) nip;
 
@@ -1225,6 +1240,10 @@ void Solid::populate(vector<string> args) {
     nsubz0 = (int) (sublo[2] - boxlo[2])/delta;
   }
 
+#ifdef DEBUG
+  std::vector<double> x2plot, y2plot;
+#endif
+
   for (int i=nsubx0; i<nsubx; i++){
     for (int j=nsuby0; j<nsuby; j++){
       for (int k=nsubz0; k<nsubz; k++){
@@ -1237,9 +1256,9 @@ void Solid::populate(vector<string> args) {
 	    error->all(FLERR, "");
 	  }
 
-	  x0[l][0] = x[l][0] = boxlo[0] + delta*(i+0.5+intpoints[3*ip+0]);
-	  x0[l][1] = x[l][1] = boxlo[1] + delta*(j+0.5+intpoints[3*ip+1]);
-	  if (dim == 3) x0[l][2] = x[l][2] = boxlo[2] + delta*(k+0.5+intpoints[3*ip+2]);
+	  x0[l][0] = x[l][0] = sublo[0] + delta*(i+0.5+intpoints[3*ip+0]);
+	  x0[l][1] = x[l][1] = sublo[1] + delta*(j+0.5+intpoints[3*ip+1]);
+	  if (dim == 3) x0[l][2] = x[l][2] = sublo[2] + delta*(k+0.5+intpoints[3*ip+2]);
 	  else x0[l][2] = x[l][2] = 0;
 
 	  // Check if the particle is inside the region:
@@ -1263,45 +1282,10 @@ void Solid::populate(vector<string> args) {
 	      }
 	    }
 
-	    // if ((method_style.compare("tlcpdi2") == 0 || method_style.compare("ulcpdi2") == 0) && nc != 0) {
-	    //   xpc0[nc*l][0] = xpc[nc*l][0] = boxlo[0] + delta*(k+0.5+intpoints[3*ip+0] - lp);
-
-	    //   xpc0[nc*l+1][0] = xpc[nc*l+1][0] = boxlo[0] + delta*(k+0.5+intpoints[3*ip+0] + lp);
-
-	    //   if (dim >= 2) {
-	    //     xpc0[nc*l][1] = xpc[nc*l][1] = boxlo[1] + delta*(k+0.5+intpoints[3*ip+1] - lp);
-	    //     xpc0[nc*l+1][1] = xpc[nc*l+1][1] = boxlo[1] + delta*(k+0.5+intpoints[3*ip+1] - lp);
-
-	    //     xpc0[nc*l+2][0] = xpc[nc*l+2][0] = boxlo[0] + delta*(k+0.5+intpoints[3*ip+0] - lp);
-	    //     xpc0[nc*l+2][1] = xpc[nc*l+2][1] = boxlo[1] + delta*(k+0.5+intpoints[3*ip+1] + lp);
-
-	    //     xpc0[nc*l+3][0] = xpc[nc*l+3][0] = boxlo[0] + delta*(k+0.5+intpoints[3*ip+0] + lp);
-	    //     xpc0[nc*l+3][1] = xpc[nc*l+3][1] = boxlo[1] + delta*(k+0.5+intpoints[3*ip+1] + lp);
-	    //   }
-	      
-	    //   if (dim == 3) {
-	    //     xpc0[nc*l][2] = xpc[nc*l][2] = boxlo[2] + delta*(k+0.5+intpoints[3*ip+2] - lp);
-	    //     xpc0[nc*l+1][2] = xpc[nc*l+1][2] = boxlo[2] + delta*(k+0.5+intpoints[3*ip+2] - lp);
-	    //     xpc0[nc*l+2][2] = xpc[nc*l+2][2] = boxlo[2] + delta*(k+0.5+intpoints[3*ip+2] - lp);
-	    //     xpc0[nc*l+3][2] = xpc[nc*l+3][2] = boxlo[2] + delta*(k+0.5+intpoints[3*ip+2] - lp);
-
-	    //     xpc0[nc*l+4][0] = xpc[nc*l+4][0] = boxlo[0] + delta*(k+0.5+intpoints[3*ip+0] - lp);
-	    //     xpc0[nc*l+4][1] = xpc[nc*l+4][1] = boxlo[1] + delta*(k+0.5+intpoints[3*ip+1] - lp);
-	    //     xpc0[nc*l+4][2] = xpc[nc*l+4][2] = boxlo[2] + delta*(k+0.5+intpoints[3*ip+2] + lp);
-
-	    //     xpc0[nc*l+5][0] = xpc[nc*l+5][0] = boxlo[0] + delta*(k+0.5+intpoints[3*ip+0] + lp);
-	    //     xpc0[nc*l+5][1] = xpc[nc*l+5][1] = boxlo[1] + delta*(k+0.5+intpoints[3*ip+1] - lp);
-	    //     xpc0[nc*l+5][2] = xpc[nc*l+5][2] = boxlo[2] + delta*(k+0.5+intpoints[3*ip+2] + lp);
-
-	    //     xpc0[nc*l+6][0] = xpc[nc*l+6][0] = boxlo[0] + delta*(k+0.5+intpoints[3*ip+0] - lp);
-	    //     xpc0[nc*l+6][1] = xpc[nc*l+6][1] = boxlo[1] + delta*(k+0.5+intpoints[3*ip+1] + lp);
-	    //     xpc0[nc*l+6][2] = xpc[nc*l+6][2] = boxlo[2] + delta*(k+0.5+intpoints[3*ip+2] + lp);
-
-	    //     xpc0[nc*l+7][0] = xpc[nc*l+7][0] = boxlo[0] + delta*(k+0.5+intpoints[3*ip+0] + lp);
-	    //     xpc0[nc*l+7][1] = xpc[nc*l+7][1] = boxlo[1] + delta*(k+0.5+intpoints[3*ip+1] + lp);
-	    //     xpc0[nc*l+7][2] = xpc[nc*l+7][2] = boxlo[2] + delta*(k+0.5+intpoints[3*ip+2] + lp);
-	    //   }
-	    // }
+#ifdef DEBUG
+	    x2plot.push_back(x0[l][0]);
+	    y2plot.push_back(x0[l][1]);
+#endif
 	    l++;
 	  }
 	}
@@ -1311,8 +1295,55 @@ void Solid::populate(vector<string> args) {
 
   MPI_Barrier(universe->uworld);
 
+#ifdef DEBUG
+  vector<double> xdomain, ydomain;
+  vector<double> xsubdomain, ysubdomain;
+
+  xdomain.push_back(domain->boxlo[0]);
+  ydomain.push_back(domain->boxlo[1]);
+
+  xdomain.push_back(domain->boxhi[0]);
+  ydomain.push_back(domain->boxlo[1]);
+
+  xdomain.push_back(domain->boxhi[0]);
+  ydomain.push_back(domain->boxhi[1]);
+
+  xdomain.push_back(domain->boxlo[0]);
+  ydomain.push_back(domain->boxhi[1]);
+
+  xdomain.push_back(domain->boxlo[0]);
+  ydomain.push_back(domain->boxlo[1]);
+
+
+  xsubdomain.push_back(domain->sublo[0]);
+  ysubdomain.push_back(domain->sublo[1]);
+
+  xsubdomain.push_back(domain->subhi[0]);
+  ysubdomain.push_back(domain->sublo[1]);
+
+  xsubdomain.push_back(domain->subhi[0]);
+  ysubdomain.push_back(domain->subhi[1]);
+
+  xsubdomain.push_back(domain->sublo[0]);
+  ysubdomain.push_back(domain->subhi[1]);
+
+  xsubdomain.push_back(domain->sublo[0]);
+  ysubdomain.push_back(domain->sublo[1]);
+
+  plt::figure_size(1200, 780);
+  plt::plot(xdomain, ydomain, "b-");
+  plt::plot(xsubdomain, ysubdomain, "r-");
+  plt::plot(x2plot, y2plot, ".");
+  plt::axis("equal");
+  plt::save("debug-proc_" + to_string(universe->me) + ".png");
+  plt::close();
+#endif
+
   np_local = l; // Adjust np to account for the particles outside the domain
-  cout << "np_local="<< np_local << endl;
+
+#ifdef DEBUG
+  cout << "proc " << universe->me << "\tnp_local=" << np_local << endl;
+#endif
 
   MPI_Allreduce(&np_local,&np,1,MPI_MPM_BIGINT,MPI_SUM,universe->uworld);
 
