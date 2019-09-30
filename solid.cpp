@@ -1068,10 +1068,10 @@ void Solid::populate(vector<string> args) {
 #endif
 
   // Calculate total number of particles np:
-  int nx, ny, nz, nsubx, nsuby, nsubz;
+  int nsubx, nsuby, nsubz;
   double delta;
   double hdelta;
-  double Lx, Ly, Lz, Lsubx, Lsuby, Lsubz;
+  double Lsubx, Lsuby, Lsubz;
 
   delta = grid->cellsize;
   
@@ -1082,43 +1082,27 @@ void Solid::populate(vector<string> args) {
     grid->init(solidlo, solidhi);
   }
 
-  Lx = solidhi[0]-solidlo[0];
-  if (domain->dimension >= 2) Ly = solidhi[1]-solidlo[1];
-  if (domain->dimension == 3) Lz = solidhi[2]-solidlo[2];
-
   Lsubx = solidsubhi[0]-solidsublo[0];
   if (domain->dimension >= 2) Lsuby = solidsubhi[1]-solidsublo[1];
   if (domain->dimension == 3) Lsubz = solidsubhi[2]-solidsublo[2];
-
-
-  nx = (int) (Lx/delta);
-  while (nx*delta <= Lx-0.5*delta) nx++;
 
   nsubx = (int) (Lsubx/delta);
   while (nsubx*delta <= Lsubx-0.5*delta) nsubx++;
   nsubx++;
 
   if (domain->dimension >= 2) {
-    ny = (int) (Ly/delta);
-    while (ny*delta <= Ly-0.5*delta) ny++;
-
     nsuby = (int) (Lsuby/delta);
     while (nsuby*delta <= Lsuby-0.5*delta) nsuby++;
     nsuby++;
   } else {
-    ny = 1;
     nsuby = 1;
   }
 
   if (domain->dimension == 3) {
-    nz = (int) (Lz/delta);
-    while (nz*delta <= Lz-0.5*delta) nz++;
-
     nsubz = (int) (Lsubz/delta);
     while (nsubz*delta <= Lsubz-0.5*delta) nsubz++;
     nsubz++;
   } else {
-    nz = 1;
     nsubz = 1;
   }
 
