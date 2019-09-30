@@ -1096,6 +1096,7 @@ void Solid::populate(vector<string> args) {
 
   nsubx = (int) (Lsubx/delta);
   while (nsubx*delta <= Lsubx-0.5*delta) nsubx++;
+  nsubx++;
 
   if (domain->dimension >= 2) {
     ny = (int) (Ly/delta);
@@ -1103,17 +1104,19 @@ void Solid::populate(vector<string> args) {
 
     nsuby = (int) (Lsuby/delta);
     while (nsuby*delta <= Lsuby-0.5*delta) nsuby++;
+    nsuby++;
   } else {
     ny = 1;
     nsuby = 1;
   }
 
   if (domain->dimension == 3) {
-  nz = (int) (Lz/delta);
+    nz = (int) (Lz/delta);
     while (nz*delta <= Lz-0.5*delta) nz++;
 
     nsubz = (int) (Lsubz/delta);
     while (nsubz*delta <= Lsubz-0.5*delta) nsubz++;
+    nsubz++;
   } else {
     nz = 1;
     nsubz = 1;
@@ -1141,7 +1144,10 @@ void Solid::populate(vector<string> args) {
 
   int np_per_cell = (int) input->parsev(args[2]);
 
-  double *boxlo = domain->boxlo;
+  double *boundlo;
+  if (update->method->is_TL)
+    boundlo = solidlo;
+  else boundlo = domain->boxlo;
 
   double xi = 0.5;
   double lp = delta;
@@ -1237,19 +1243,21 @@ void Solid::populate(vector<string> args) {
   //checkIfInRegion = false;
 
   int nsubx0, nsuby0, nsubz0;
-  if (update->method->is_TL) {
-    nsubx0 = (int) (sublo[0] - solidlo[0])/delta;
-    nsuby0 = (int) (sublo[1] - solidlo[1])/delta;
-    nsubz0 = (int) (sublo[2] - solidlo[2])/delta;
-  } else {
-    nsubx0 = (int) (sublo[0] - boxlo[0])/delta;
-    nsuby0 = (int) (sublo[1] - boxlo[1])/delta;
-    nsubz0 = (int) (sublo[2] - boxlo[2])/delta;
-  }
+  nsubx0 = (int) (sublo[0] - boundlo[0])/delta;
+  nsuby0 = (int) (sublo[1] - boundlo[1])/delta;
+  nsubz0 = (int) (sublo[2] - boundlo[2])/delta;
 
 #ifdef DEBUG
   std::vector<double> x2plot, y2plot;
 #endif
+
+  double Loffset[3] = {MAX(0.0 ,domain->sublo[0] - boundlo[0]),
+		       MAX(0.0 ,domain->sublo[1] - boundlo[1]),
+		       MAX(0.0 ,domain->sublo[2] - boundlo[2])};
+
+  int noffset[3] = {(int) (Loffset[0]/delta),
+		    (int) (Loffset[1]/delta),
+		    (int) (Loffset[2]/delta)};
 
   for (int i=nsubx0; i<nsubx; i++){
     for (int j=nsuby0; j<nsuby; j++){
@@ -1263,9 +1271,9 @@ void Solid::populate(vector<string> args) {
 	    error->all(FLERR, "");
 	  }
 
-	  x0[l][0] = x[l][0] = sublo[0] + delta*(i+0.5+intpoints[3*ip+0]);
-	  x0[l][1] = x[l][1] = sublo[1] + delta*(j+0.5+intpoints[3*ip+1]);
-	  if (dim == 3) x0[l][2] = x[l][2] = sublo[2] + delta*(k+0.5+intpoints[3*ip+2]);
+	  x0[l][0] = x[l][0] = boundlo[0] + delta*(noffset[0] + i + 0.5 + intpoints[3*ip+0]);
+	  x0[l][1] = x[l][1] = boundlo[1] + delta*(noffset[1] + j + 0.5 + intpoints[3*ip+1]);
+	  if (dim == 3) x0[l][2] = x[l][2] = boundlo[2] + delta*(noffset[2] + k + 0.5 + intpoints[3*ip+2]);
 	  else x0[l][2] = x[l][2] = 0;
 
 	  // Check if the particle is inside the region:
