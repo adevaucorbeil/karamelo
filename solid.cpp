@@ -43,6 +43,8 @@ Solid::Solid(MPM *mpm, vector<string> args) :
 
   np = 0;
 
+  ptag = NULL;
+
   x = x0 = NULL;
   rp = rp0 = NULL;
   xpc = xpc0 = NULL;
@@ -94,6 +96,7 @@ Solid::Solid(MPM *mpm, vector<string> args) :
 
 Solid::~Solid()
 {
+  if (ptag!=NULL) delete ptag;
   if (x0!=NULL) delete x0;
   if (x!=NULL) delete x;
   if (rp0!=NULL) delete rp0;
@@ -214,6 +217,10 @@ void Solid::grow(int nparticles){
   np = nparticles;
 
   string str;
+
+  str = "solid-" + id + ":ptag";
+  cout << "Growing " << str << endl;
+  if (ptag == NULL) ptag = new tagint[np];
 
   str = "solid-" + id + ":x0";
   cout << "Growing " << str << endl;
@@ -1048,9 +1055,9 @@ void Solid::populate(vector<string> args) {
   solidlo[2] = limits[4];
   solidhi[2] = limits[5];
 
-  solidsublo[0] = MIN(solidlo[0], sublo[0]);
-  solidsublo[1] = MIN(solidlo[1], sublo[1]);
-  solidsublo[2] = MIN(solidlo[2], sublo[2]);
+  solidsublo[0] = MAX(solidlo[0], sublo[0]);
+  solidsublo[1] = MAX(solidlo[1], sublo[1]);
+  solidsublo[2] = MAX(solidlo[2], sublo[2]);
 
   solidsubhi[0] = MIN(solidhi[0], subhi[0]);
   solidsubhi[1] = MIN(solidhi[1], subhi[1]);
@@ -1347,6 +1354,26 @@ void Solid::populate(vector<string> args) {
 
   MPI_Allreduce(&np_local,&np,1,MPI_MPM_BIGINT,MPI_SUM,universe->uworld);
 
+  tagint ptag0 = 0;
+
+  for (int proc=0; proc<universe->nprocs; proc++){
+    int np_local_bcast;
+    if (proc == universe->me) {
+      // Send np_local
+      np_local_bcast = np_local;
+    } else {
+      // Receive np_local
+      np_local_bcast = 0;
+    }
+    MPI_Bcast(&np_local_bcast,1,MPI_INT,proc,universe->uworld);
+    if (universe->me > proc) ptag0 += np_local_bcast;
+  }
+
+#ifdef DEBUG
+  cout << "proc " << universe->me << "\tptag0 = " << ptag0 << endl;
+#endif
+
+
   for (int i=0; i<np_local;i++) {
     a[i].setZero();
     v[i].setZero();
@@ -1373,6 +1400,8 @@ void Solid::populate(vector<string> args) {
     Di[i].setZero();
 
     J[i] = 1;
+
+    ptag[i] = ptag0 + i + 1;
   }
   error->all(FLERR, "");
 }

@@ -18,7 +18,7 @@ class Solid : protected Pointers {
   bigint np;                 // total number of particles in the domain
   int np_local;              // number of local particles (in this CPU).
 
-  vector<tagint> ptag;       // unique identifier for particles in the system.
+  tagint *ptag;       // unique identifier for particles in the system.
 
   double solidlo[3], solidhi[3];           // solid global bounds
   double solidsublo[3], solidsubhi[3];     // solid local bounds
