@@ -312,7 +312,9 @@ void TLMPM::particles_to_grid()
     domain->solids[isolid]->compute_external_forces_nodes(grid_reset);
     domain->solids[isolid]->compute_internal_forces_nodes_TL();
     /*compute_thermal_energy_nodes();*/
-    }
+
+    domain->solids[isolid]->grid->reduce_ghost_nodes();
+  }
 }
 
 void TLMPM::update_grid_state()
@@ -344,6 +346,7 @@ void TLMPM::velocities_to_grid()
     for (int isolid=0; isolid<domain->solids.size(); isolid++) {
       //domain->solids[isolid]->compute_mass_nodes();
       domain->solids[isolid]->compute_velocity_nodes(true);
+      domain->solids[isolid]->grid->reduce_ghost_nodes(true);
     }
   }
 }

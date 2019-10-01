@@ -29,6 +29,7 @@ Grid::Grid(MPM *mpm) :
   cout << "Creating new grid" << endl;
 
   ntag = NULL;
+  nowner = NULL;
   x = x0 = NULL;
   v = v_update = NULL;
   mb = f = NULL;
@@ -47,14 +48,16 @@ Grid::Grid(MPM *mpm) :
   // Create MPI type for struct Point:
   Point dummy;
 
-  MPI_Datatype type[2] = {MPI_MPM_TAGINT, MPI_DOUBLE};
-  int blocklen[2] = {1, 3};
-  MPI_Aint disp[2];
+  MPI_Datatype type[3] = {MPI_MPM_TAGINT, MPI_DOUBLE, MPI_INT};
+  int blocklen[3] = {1, 3, 1};
+  MPI_Aint disp[3];
   MPI_Address( &dummy.tag, &disp[0] );
   MPI_Address( &dummy.x, &disp[1] );
+  MPI_Address( &dummy.owner, &disp[2] );
+  disp[2] = disp[2] - disp[0];
   disp[1] = disp[1] - disp[0];
   disp[0] = 0;
-  MPI_Type_struct(2, blocklen, disp, type, &Pointtype);
+  MPI_Type_struct(3, blocklen, disp, type, &Pointtype);
   //MPI_Type_create_struct(2, blocklen, disp, type, &Pointtype);
   MPI_Type_commit(&Pointtype);
 
@@ -62,6 +65,8 @@ Grid::Grid(MPM *mpm) :
 
 Grid::~Grid()
 {
+  memory->destroy(ntag);
+  memory->destroy(nowner);
   memory->destroy(x);
   memory->destroy(x0);
   memory->destroy(v);
@@ -173,7 +178,7 @@ void Grid::init(double *solidlo, double *solidhi){
 	  ntype[l][1] = min(2,j)-min(ny-1-j,2);
 	  ntype[l][2] = min(2,k)-min(nz-1-k,2);
 	}
-	
+
 	x[l] = x0[l];
 	v[l].setZero();
 	v_update[l].setZero();
@@ -214,6 +219,7 @@ void Grid::init(double *solidlo, double *solidhi){
 
   for (int i=0; i<nnodes_local; i++) {
     ntag[i] = ntag0 + i + 1;
+    map_ntag[ntag[i]] = i;
   }
 
 #ifdef DEBUG
@@ -249,11 +255,13 @@ void Grid::init(double *solidlo, double *solidhi){
 	isnt_subhi_boundhi[0] && (subhi[0] - x0[in][0] < delta) ||
 	(domain->dimension >= 2) && isnt_subhi_boundhi[1] && (subhi[1] - x0[in][1] < delta) ||
 	(domain->dimension == 3) && isnt_subhi_boundhi[2] && (subhi[2] - x0[in][2] < delta)) {
-      Point p = {ntag[in], {x0[in][0], x0[in][1], x0[in][2]}};
+      Point p = {ntag[in], {x0[in][0], x0[in][1], x0[in][2]}, universe->me};
       ns.push_back(p);
+      shared.push_back(in);
     }
   }
 
+  nshared = ns.size();
 #ifdef DEBUG
   cout << "proc " << universe->me << " has " << ns.size() << " node to send.\n";
 #endif
@@ -301,22 +309,24 @@ void Grid::init(double *solidlo, double *solidhi){
 
   // Copy ghost nodes at the end of the local nodes:
   for (int in=0; in<nnodes_ghost; in++) {
-    ntag[nnodes_local+in] = gnodes[in].tag;
-    x0[nnodes_local+in][0] = x[nnodes_local+in][0] = gnodes[in].x[0];
-    x0[nnodes_local+in][1] = x[nnodes_local+in][1] = gnodes[in].x[1];
-    x0[nnodes_local+in][2] = x[nnodes_local+in][2] = gnodes[in].x[2];
-    v[nnodes_local+in].setZero();
-    v_update[nnodes_local+in].setZero();
-    f[nnodes_local+in].setZero();
-    mb[nnodes_local+in].setZero();
-    mass[nnodes_local+in] = 0;
+    int i = nnodes_local+in;
+    ntag[i] = gnodes[in].tag;
+    map_ntag[ntag[i]] = i;
+    x0[i][0] = x[i][0] = gnodes[in].x[0];
+    x0[i][1] = x[i][1] = gnodes[in].x[1];
+    x0[i][2] = x[i][2] = gnodes[in].x[2];
+    v[i].setZero();
+    v_update[i].setZero();
+    f[i].setZero();
+    mb[i].setZero();
+    mass[i] = 0;
 
 #ifdef DEBUG
-    x2plot.push_back(x0[nnodes_local+in][0]);
-    y2plot.push_back(x0[nnodes_local+in][1]);
+    x2plot.push_back(x0[i][0]);
+    y2plot.push_back(x0[i][1]);
 #endif
   }
-  
+
   MPI_Barrier(universe->uworld);
 
 #ifdef DEBUG
@@ -335,6 +345,10 @@ void Grid::grow(int nn){
   string str = "grid-ntag";
   cout << "Growing " << str << endl;
   ntag = memory->grow(ntag, nn, str);
+
+  str = "grid-nowner";
+  cout << "Growing " << str << endl;
+  nowner = memory->grow(nowner, nn, str);
 
   str = "grid-x0";
   cout << "Growing " << str << endl;
@@ -377,7 +391,8 @@ void Grid::grow(int nn){
 
 void Grid::update_grid_velocities()
 {
-  for (int i=0; i<nnodes; i++){
+  // Update all particles (even the ghost to not have to communicate the result)
+  for (int i=0; i<nnodes_local + nnodes_ghost; i++){
     if (mass[i] > 1e-12) v_update[i] = v[i] + update->dt * (f[i] + mb[i])/mass[i];
     else v_update[i] = v[i];
     // if (update->ntimestep>450)
@@ -388,7 +403,73 @@ void Grid::update_grid_velocities()
 
 void Grid::update_grid_positions()
 {
-  for (int i=0; i<nnodes; i++){
+  // Update all particles (even the ghost to not have to communicate the result)
+  for (int i=0; i<nnodes_local + nnodes_ghost; i++){
     x[i] += update->dt*v[i];
+  }
+}
+
+void Grid::reduce_ghost_nodes(bool only_v)
+{
+  tagint in, j, ng;
+  double mass_local, mass_reduced, f_local[3], f_reduced[3], v_local[3], v_reduced[3];
+
+  MPI_Barrier(universe->uworld);
+
+  for (int proc=0; proc<universe->nprocs; proc++){
+    if (proc == universe->me) {
+      ng = nshared;
+    } else {
+      ng = 0;
+    }
+
+    MPI_Bcast(&ng,1,MPI_INT,proc,universe->uworld);
+
+    for (int is=0; is<ng; is++) {
+      if (proc == universe->me) {
+	// Position in array of the shared node: shared[is]
+	j = ntag[shared[is]];
+      }
+
+      MPI_Barrier(universe->uworld);
+      MPI_Bcast(&j,1,MPI_MPM_TAGINT,proc,universe->uworld);
+
+      if (map_ntag.count(j)) in = map_ntag[j];
+      else in = -1;
+
+      if (in >= 0) {
+	if (!only_v) {
+	  mass_local = mass[in];
+	  f_local[0] = f[in][0];
+	  f_local[1] = f[in][1];
+	  f_local[2] = f[in][2];
+	}
+	v_local[0] = v[in][0];
+	v_local[1] = v[in][1];
+	v_local[2] = v[in][2];	
+      } else {
+	if (!only_v) {
+	  mass_local = 0;
+	  f_local[0] = f_local[1] = f_local[2] = 0;
+	}
+	v_local[0] = v_local[1] = v_local[2] = 0;
+      }
+
+      if (!only_v) {
+	MPI_Allreduce(&mass_local, &mass_reduced, 1, MPI_DOUBLE, MPI_SUM, universe->uworld);
+	MPI_Allreduce(f_local, f_reduced, 3, MPI_DOUBLE, MPI_SUM, universe->uworld);
+
+	mass[in] = mass_reduced;
+	f[in][0] = f_reduced[0];
+	f[in][1] = f_reduced[1];
+	f[in][2] = f_reduced[2];
+      }
+
+      MPI_Allreduce(v_local, v_reduced, 3, MPI_DOUBLE, MPI_SUM, universe->uworld);
+
+      v[in][0] = v_reduced[0];
+      v[in][1] = v_reduced[1];
+      v[in][2] = v_reduced[2];
+      }
   }
 }

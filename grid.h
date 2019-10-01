@@ -8,12 +8,14 @@
 #include "grid.h"
 #include <vector>
 #include <Eigen/Eigen>
+#include <map>
 
 using namespace Eigen;
 
 struct Point {
   tagint tag;
   double x[3];
+  int owner;
 };
 
 class Grid : protected Pointers {
@@ -23,9 +25,14 @@ class Grid : protected Pointers {
   bigint nnodes_local;   // number of nodes (in this CPU)
   bigint nnodes_ghost;   // number of ghost nodes (in this CPU)
   tagint *ntag;          // unique identifier for nodes in the system.
-  int nx;                // number of particles along x
-  int ny;                // number of particles along y
-  int nz;                // number of particles along z
+  map<int, int> map_ntag;// map_ntag[ntag[i]] = i;
+  int nx;                // number of nodes along x
+  int ny;                // number of nodes along y
+  int nz;                // number of nodes along z
+  int nshared;           // number of nodes that are shared (ghosts in other CPUs
+  vector<int> shared;    // position of all shared nodes
+
+  int *nowner;          // which CPU owns each node (universe->me for local nodes, other CPU for ghost nodes
 
   double cellsize;       // size of the square cells forming the grid
 
@@ -52,6 +59,7 @@ class Grid : protected Pointers {
   void setup(string);
   void init(double*, double*);
 
+  void reduce_ghost_nodes(bool only_v = false);
   void update_grid_velocities();
   void update_grid_positions();
 };
