@@ -15,7 +15,6 @@ class Memory : protected Pointers {
   void sfree(void *);
   void fail(string);
 
-
 /* ----------------------------------------------------------------------
    create/grow/destroy vecs and multidim arrays with contiguous memory blocks
    only use with primitive data types, e.g. 1d vec of ints, 2d array of doubles

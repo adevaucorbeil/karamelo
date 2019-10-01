@@ -1,14 +1,18 @@
+#include <vector>
+#include <math.h>
+#include <Eigen/Eigen>
 #include "mpm.h"
 #include "grid.h"
 #include "material.h"
 #include "input.h"
-#include <vector>
 #include "memory.h"
 #include "update.h"
 #include "var.h"
 #include "domain.h"
 #include "method.h"
+#include "universe.h"
 #include "error.h"
+
 
 #ifdef DEBUG
 #include <matplotlibcpp.h>
@@ -16,6 +20,7 @@ namespace plt = matplotlibcpp;
 #endif
 
 using namespace std;
+using namespace Eigen;
 
 
 Grid::Grid(MPM *mpm) :
@@ -23,6 +28,7 @@ Grid::Grid(MPM *mpm) :
 {
   cout << "Creating new grid" << endl;
 
+  ntag = NULL;
   x = x0 = NULL;
   v = v_update = NULL;
   mb = f = NULL;
@@ -37,6 +43,21 @@ Grid::Grid(MPM *mpm) :
 
   cellsize = 0;
   nnodes = 0;
+
+  // Create MPI type for struct Point:
+  Point dummy;
+
+  MPI_Datatype type[2] = {MPI_MPM_TAGINT, MPI_DOUBLE};
+  int blocklen[2] = {1, 3};
+  MPI_Aint disp[2];
+  MPI_Address( &dummy.tag, &disp[0] );
+  MPI_Address( &dummy.x, &disp[1] );
+  disp[1] = disp[1] - disp[0];
+  disp[0] = 0;
+  MPI_Type_struct(2, blocklen, disp, type, &Pointtype);
+  //MPI_Type_create_struct(2, blocklen, disp, type, &Pointtype);
+  MPI_Type_commit(&Pointtype);
+
 }
 
 Grid::~Grid()
@@ -50,6 +71,9 @@ Grid::~Grid()
   memory->destroy(mass);
   memory->destroy(mask);
   memory->destroy(ntype);
+
+  // Destroy MPI type:
+  MPI_Type_free(&Pointtype);
 }
 
 void Grid::init(double *solidlo, double *solidhi){
@@ -73,21 +97,25 @@ void Grid::init(double *solidlo, double *solidhi){
 
   if (update->method_shape_function.compare("cubic-spline")==0) is_cubic = true;
 
-  double Loffsetlo[3] = {MAX(0.0, domain->sublo[0] - boundlo[0] - is_cubic*2*h),
-			 MAX(0.0, domain->sublo[1] - boundlo[1] - is_cubic*2*h),
-			 MAX(0.0, domain->sublo[2] - boundlo[2] - is_cubic*2*h)};
+  double Loffsetlo[3] = {MAX(0.0, sublo[0] - boundlo[0] - is_cubic*2*h),
+			 MAX(0.0, sublo[1] - boundlo[1] - is_cubic*2*h),
+			 MAX(0.0, sublo[2] - boundlo[2] - is_cubic*2*h)};
 
-  double Loffsethi[3] = {MIN(0.0, domain->subhi[0] - boundhi[0] + is_cubic*2*h),
-			 MIN(0.0, domain->subhi[1] - boundhi[1] + is_cubic*2*h),
-			 MIN(0.0, domain->subhi[2] - boundhi[2] + is_cubic*2*h)};
+  double Loffsethi[3] = {MIN(0.0, subhi[0] - boundhi[0] + is_cubic*2*h),
+			 MIN(0.0, subhi[1] - boundhi[1] + is_cubic*2*h),
+			 MIN(0.0, subhi[2] - boundhi[2] + is_cubic*2*h)};
 
-  int noffsetlo[3] = {(int) (Loffsetlo[0]/h),
-		      (int) (Loffsetlo[1]/h),
-		      (int) (Loffsetlo[2]/h)};
+  if (Loffsethi[0] > -1.0e-12) Loffsethi[0] = 0;
+  if (Loffsethi[1] > -1.0e-12) Loffsethi[1] = 0;
+  if (Loffsethi[2] > -1.0e-12) Loffsethi[2] = 0;
 
-  int noffsethi[3] = {(int) (-Loffsethi[0]/h),
-		      (int) (-Loffsethi[1]/h),
-		      (int) (-Loffsethi[2]/h)};
+  int noffsetlo[3] = {(int) ceil(Loffsetlo[0]/h),
+		      (int) ceil(Loffsetlo[1]/h),
+		      (int) ceil(Loffsetlo[2]/h)};
+
+  int noffsethi[3] = {(int) ceil(-Loffsethi[0]/h),
+		      (int) ceil(-Loffsethi[1]/h),
+		      (int) ceil(-Loffsethi[2]/h)};
 
   double Lx = (boundhi[0] - boundlo[0]) - (noffsetlo[0] + noffsethi[0])*h;
 
@@ -113,9 +141,9 @@ void Grid::init(double *solidlo, double *solidhi){
     nz = 1;
    }
 
-
-  int nn = nx*ny*nz;
-  grow(nn);
+  // Create nodes that are inside the local subdomain:
+  nnodes_local = nx*ny*nz;
+  grow(nnodes_local);
 
 #ifdef DEBUG
   std::vector<double> x2plot, y2plot;
@@ -163,7 +191,134 @@ void Grid::init(double *solidlo, double *solidhi){
     }
   }
 
+  nnodes_local = l;
+
+
+  MPI_Allreduce(&nnodes_local,&nnodes,1,MPI_MPM_BIGINT,MPI_SUM,universe->uworld);
+
+  // Give a unique identification to all nodes:
+  tagint ntag0 = 0;
+
+  for (int proc=0; proc<universe->nprocs; proc++){
+    int nnodes_local_bcast;
+    if (proc == universe->me) {
+      // Send nnodes_local
+      nnodes_local_bcast = nnodes_local;
+    } else {
+      // Receive nnodes_local
+      nnodes_local_bcast = 0;
+    }
+    MPI_Bcast(&nnodes_local_bcast,1,MPI_INT,proc,universe->uworld);
+    if (universe->me > proc) ntag0 += nnodes_local_bcast;
+  }
+
+  for (int i=0; i<nnodes_local; i++) {
+    ntag[i] = ntag0 + i + 1;
+  }
+
+#ifdef DEBUG
+  cout << "proc " << universe->me << "\tntag0 = " << ntag0 << endl;
+#endif
+
+  // Give to neighbouring procs ghost nodes:
+  vector<Point> ns;
+  vector<Point> gnodes;
+
+  double delta;
+  if (is_cubic) delta = 2*h;
+  else delta = h;
+
+  cout << "delta=" << delta << endl;
+
+  bool isnt_sublo_boundlo[3] = {true, true, true};
+  bool isnt_subhi_boundhi[3] = {true, true, true};
+
+  if (abs(sublo[0] - boundlo[0]) < 1.0e-12) isnt_sublo_boundlo[0] = false;
+  if (abs(sublo[1] - boundlo[1]) < 1.0e-12) isnt_sublo_boundlo[1] = false;
+  if (abs(sublo[2] - boundlo[2]) < 1.0e-12) isnt_sublo_boundlo[2] = false;
+
+  if (abs(subhi[0] - boundhi[0]) < 1.0e-12) isnt_subhi_boundhi[0] = false;
+  if (abs(subhi[1] - boundhi[1]) < 1.0e-12) isnt_subhi_boundhi[1] = false;
+  if (abs(subhi[2] - boundhi[2]) < 1.0e-12) isnt_subhi_boundhi[2] = false;
+
+  // For each node, check if it needs to be sent to another proc:
+  for (int in=0; in<nnodes_local; in++){
+    if (isnt_sublo_boundlo[0] && (x0[in][0] - sublo[0] < delta) ||
+	(domain->dimension >= 2) && isnt_sublo_boundlo[1] && (x0[in][1] - sublo[1] < delta) ||
+	(domain->dimension == 3) && isnt_sublo_boundlo[2] && (x0[in][2] - sublo[2] < delta) ||
+	isnt_subhi_boundhi[0] && (subhi[0] - x0[in][0] < delta) ||
+	(domain->dimension >= 2) && isnt_subhi_boundhi[1] && (subhi[1] - x0[in][1] < delta) ||
+	(domain->dimension == 3) && isnt_subhi_boundhi[2] && (subhi[2] - x0[in][2] < delta)) {
+      Point p = {ntag[in], {x0[in][0], x0[in][1], x0[in][2]}};
+      ns.push_back(p);
+    }
+  }
+
+#ifdef DEBUG
+  cout << "proc " << universe->me << " has " << ns.size() << " node to send.\n";
+#endif
+
+  MPI_Barrier(universe->uworld);
+
+  // Send over the tag and coordinates of the nodes to send:
+  for (int sproc=0; sproc<universe->nprocs; sproc++){
+    int size_nr = 0;
+
+    if (sproc == universe->me) {
+      int size_ns = ns.size();
+
+      for (int rproc=0; rproc<universe->nprocs; rproc++){
+	if (rproc != universe->me) {
+	  MPI_Send(&size_ns, 1, MPI_INT, rproc, 0, universe->uworld);
+	  MPI_Send(ns.data(), size_ns, Pointtype, rproc, 0, MPI_COMM_WORLD);
+	}
+      }
+    } else {
+      MPI_Recv(&size_nr, 1, MPI_INT, sproc, 0, universe->uworld, MPI_STATUS_IGNORE);
+
+      Point buf_recv[size_nr];
+
+      MPI_Recv(&buf_recv[0], size_nr, Pointtype, sproc, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+
+      // Check if the nodes received are in the subdomain:
+      for (int i_recv=0; i_recv<size_nr; i_recv++) {
+	if (!domain->inside_subdomain(buf_recv[i_recv].x[0], buf_recv[i_recv].x[1], buf_recv[i_recv].x[2])) {
+	  if (domain->inside_subdomain_extended(buf_recv[i_recv].x[0], buf_recv[i_recv].x[1], buf_recv[i_recv].x[2], delta)) {
+	    gnodes.push_back(buf_recv[i_recv]);
+	  }
+	}
+      }
+    }
+    MPI_Barrier(universe->uworld);
+  }
+
+  nnodes_ghost = gnodes.size();
+
+#ifdef DEBUG
+  cout << "proc " << universe->me << " has " << nnodes_ghost << " ghost nodes.\n";
+#endif
+  grow(nnodes_local + nnodes_ghost);
+
+  // Copy ghost nodes at the end of the local nodes:
+  for (int in=0; in<nnodes_ghost; in++) {
+    ntag[nnodes_local+in] = gnodes[in].tag;
+    x0[nnodes_local+in][0] = x[nnodes_local+in][0] = gnodes[in].x[0];
+    x0[nnodes_local+in][1] = x[nnodes_local+in][1] = gnodes[in].x[1];
+    x0[nnodes_local+in][2] = x[nnodes_local+in][2] = gnodes[in].x[2];
+    v[nnodes_local+in].setZero();
+    v_update[nnodes_local+in].setZero();
+    f[nnodes_local+in].setZero();
+    mb[nnodes_local+in].setZero();
+    mass[nnodes_local+in] = 0;
+
+#ifdef DEBUG
+    x2plot.push_back(x0[nnodes_local+in][0]);
+    y2plot.push_back(x0[nnodes_local+in][1]);
+#endif
+  }
   
+  MPI_Barrier(universe->uworld);
+
 #ifdef DEBUG
   plt::plot(x2plot, y2plot, "g+");
 #endif
@@ -175,25 +330,37 @@ void Grid::setup(string cs){
 }
 
 void Grid::grow(int nn){
-  nnodes = nn;
+  //nnodes_local = nn;
 
-  if (x0 == NULL) x0 = new Eigen::Vector3d[nn];
+  string str = "grid-ntag";
+  cout << "Growing " << str << endl;
+  ntag = memory->grow(ntag, nn, str);
 
-  if (x == NULL) x = new Eigen::Vector3d[nn];
+  str = "grid-x0";
+  cout << "Growing " << str << endl;
+  x0 = memory->grow(x0, nn, str);
 
-  if (v == NULL) v = new Eigen::Vector3d[nn];
+  str = "grid-x";
+  cout << "Growing " << str << endl;
+  x = memory->grow(x, nn, str);
 
-  if (v_update == NULL) v_update = new Eigen::Vector3d[nn];
+  str = "grid-v";
+  cout << "Growing " << str << endl;
+  v = memory->grow(v, nn, str);
 
-  if (mb == NULL) mb = new Eigen::Vector3d[nn];
+  str = "grid-v_update";
+  cout << "Growing " << str << endl;
+  v_update = memory->grow(v_update, nn, str);
 
-  if (f == NULL) f = new Eigen::Vector3d[nn];
+  str = "grid-mb";
+  cout << "Growing " << str << endl;
+  mb = memory->grow(mb, nn, str);
 
-  // if (R == NULL) R = new Eigen::Matrix3d[nn];
+  str = "grid-f";
+  cout << "Growing " << str << endl;
+  f = memory->grow(f, nn, str);
 
-  // if (C == NULL) C = new Eigen::Vector3d[nn];
-
-  string str = "grid-mass";
+  str = "grid-mass";
   cout << "Growing " << str << endl;
   mass = memory->grow(mass, nn, str);
 

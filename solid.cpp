@@ -1235,9 +1235,9 @@ void Solid::populate(vector<string> args) {
   nsubz0 = (int) (sublo[2] - boundlo[2])/delta;
 
 
-  double Loffset[3] = {MAX(0.0, domain->sublo[0] - boundlo[0]),
-		       MAX(0.0, domain->sublo[1] - boundlo[1]),
-		       MAX(0.0, domain->sublo[2] - boundlo[2])};
+  double Loffset[3] = {MAX(0.0, sublo[0] - boundlo[0]),
+		       MAX(0.0, sublo[1] - boundlo[1]),
+		       MAX(0.0, sublo[2] - boundlo[2])};
 
   int noffset[3] = {(int) (Loffset[0]/delta),
 		    (int) (Loffset[1]/delta),
@@ -1261,7 +1261,7 @@ void Solid::populate(vector<string> args) {
 	  else x0[l][2] = x[l][2] = 0;
 
 	  // Check if the particle is inside the region:
-	  if (domain->inside_subdomain(x0[l]) && domain->regions[iregion]->inside(x0[l][0], x0[l][1], x0[l][2])==1) {
+	  if (domain->inside_subdomain(x0[l][0], x0[l][1], x0[l][2]) && domain->regions[iregion]->inside(x0[l][0], x0[l][1], x0[l][2])==1) {
 
 	    if (update->method->is_CPDI && nc != 0) {
 	      rp0[dim*l][0] = rp[dim*l][0] = lp;
@@ -1314,20 +1314,20 @@ void Solid::populate(vector<string> args) {
   ydomain.push_back(domain->boxlo[1]);
 
 
-  xsubdomain.push_back(domain->sublo[0]);
-  ysubdomain.push_back(domain->sublo[1]);
+  xsubdomain.push_back(sublo[0]);
+  ysubdomain.push_back(sublo[1]);
 
-  xsubdomain.push_back(domain->subhi[0]);
-  ysubdomain.push_back(domain->sublo[1]);
+  xsubdomain.push_back(subhi[0]);
+  ysubdomain.push_back(sublo[1]);
 
-  xsubdomain.push_back(domain->subhi[0]);
-  ysubdomain.push_back(domain->subhi[1]);
+  xsubdomain.push_back(subhi[0]);
+  ysubdomain.push_back(subhi[1]);
 
-  xsubdomain.push_back(domain->sublo[0]);
-  ysubdomain.push_back(domain->subhi[1]);
+  xsubdomain.push_back(sublo[0]);
+  ysubdomain.push_back(subhi[1]);
 
-  xsubdomain.push_back(domain->sublo[0]);
-  ysubdomain.push_back(domain->sublo[1]);
+  xsubdomain.push_back(sublo[0]);
+  ysubdomain.push_back(sublo[1]);
 
   plt::plot(xdomain, ydomain, "b-");
   plt::plot(xsubdomain, ysubdomain, "r-");

@@ -138,13 +138,23 @@ int Domain::inside(Eigen::Vector3d x)
   return 0;
 }
 
-bool Domain::inside_subdomain(Eigen::Vector3d x) {
-  if (x(0) < sublo[0]) return false;
-  if (x(0) > subhi[0]) return false;
-  if (x(1) < sublo[1]) return false;
-  if (x(1) > subhi[1]) return false;
-  if (x(2) < sublo[2]) return false;
-  if (x(2) > subhi[2]) return false;
+bool Domain::inside_subdomain(double x, double y, double z) {
+  if (x < sublo[0]) return false;
+  if (x > subhi[0]) return false;
+  if (y < sublo[1]) return false;
+  if (y > subhi[1]) return false;
+  if (z < sublo[2]) return false;
+  if (z > subhi[2]) return false;
+  return true;
+}
+
+bool Domain::inside_subdomain_extended(double x, double y, double z, double h) {
+  if (x < sublo[0] - h) return false;
+  if (x > subhi[0] + h) return false;
+  if (y < sublo[1] - h) return false;
+  if (y > subhi[1] + h) return false;
+  if (z < sublo[2] - h) return false;
+  if (z > subhi[2] + h) return false;
   return true;
 }
 

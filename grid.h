@@ -11,13 +11,22 @@
 
 using namespace Eigen;
 
+struct Point {
+  tagint tag;
+  double x[3];
+};
+
 class Grid : protected Pointers {
  public:
   int ncells;            // number of cells
-  bigint nnodes;         // number of particles
+  bigint nnodes;         // total number of nodes in the domain
+  bigint nnodes_local;   // number of nodes (in this CPU)
+  bigint nnodes_ghost;   // number of ghost nodes (in this CPU)
+  tagint *ntag;          // unique identifier for nodes in the system.
   int nx;                // number of particles along x
   int ny;                // number of particles along y
   int nz;                // number of particles along z
+
   double cellsize;       // size of the square cells forming the grid
 
   // Eigen::Vector3d *C;            // connectivity matrix
@@ -34,9 +43,12 @@ class Grid : protected Pointers {
   int *mask;                 // nodes' group mask
   int **ntype;               // node type in x, y, and z directions (False for an edge, True otherwise)
 
+  MPI_Datatype Pointtype;    // MPI type for struct Point
+
   Grid(class MPM *);
   virtual ~Grid();
   void grow(int);
+  void grow_ghosts(int);
   void setup(string);
   void init(double*, double*);
 
