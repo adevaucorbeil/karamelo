@@ -1,10 +1,11 @@
+#include <Eigen/Eigen>
+#include <string>
 #include "group.h"
 #include "domain.h"
 #include "region.h"
 #include "solid.h"
-#include <Eigen/Eigen>
 #include "error.h"
-#include <string>
+#include "universe.h"
 
 #define MAX_GROUP 32
 
@@ -100,12 +101,12 @@ void Group::assign(vector<string> args)
 
 	if (pon[igroup].compare("particles") == 0) {
 	  x = domain->solids[isolid]->x;
-	  nmax = domain->solids[isolid]->np;
+	  nmax = domain->solids[isolid]->np_local;
 	  mask = domain->solids[isolid]->mask;
 	  cout << "Solid has " << domain->solids[isolid]->np << " particles" << endl;
 	} else {
 	  x = domain->solids[isolid]->grid->x;
-	  nmax = domain->solids[isolid]->grid->nnodes;
+	  nmax = domain->solids[isolid]->grid->nnodes_local;
 	  mask = domain->solids[isolid]->grid->mask;
 	  cout << "Grid has " << domain->solids[isolid]->grid->nnodes << " nodes" << endl;
 	}
@@ -118,7 +119,11 @@ void Group::assign(vector<string> args)
 	    n++;
 	  }
 	}
-	cout << n << " " << pon[igroup] << " from solid " << domain->solids[isolid]->id << " found" << endl;
+
+	int n_tot = 0;
+	MPI_Allreduce(&n,&n_tot,1,MPI_INT,MPI_SUM,universe->uworld);
+	
+	cout << n_tot << " " << pon[igroup] << " from solid " << domain->solids[isolid]->id << " found" << endl;
       }
     } else if (args[4].compare("solid") == 0) {
 
@@ -134,12 +139,12 @@ void Group::assign(vector<string> args)
 
 	if (pon[igroup].compare("particles") == 0) {
 	  x = domain->solids[solid[igroup]]->x;
-	  nmax = domain->solids[solid[igroup]]->np;
+	  nmax = domain->solids[solid[igroup]]->np_local;
 	  mask = domain->solids[solid[igroup]]->mask;
 	  cout << "Solid has " << domain->solids[solid[igroup]]->np << " particles" << endl;
 	} else {
 	  x = domain->solids[solid[igroup]]->grid->x;
-	  nmax = domain->solids[solid[igroup]]->grid->nnodes;
+	  nmax = domain->solids[solid[igroup]]->grid->nnodes_local;
 	  mask = domain->solids[solid[igroup]]->grid->mask;
 	  cout << "Grid has " << domain->solids[solid[igroup]]->grid->nnodes << " nodes" << endl;
 	}
@@ -152,7 +157,11 @@ void Group::assign(vector<string> args)
 	    n++;
 	  }
 	}
-	cout << n << " " << pon[igroup] << " from solid " << domain->solids[solid[igroup]]->id << " found" << endl;
+
+	int n_tot = 0;
+	MPI_Allreduce(&n,&n_tot,1,MPI_INT,MPI_SUM,universe->uworld);
+	
+	cout << n_tot << " " << pon[igroup] << " from solid " << domain->solids[solid[igroup]]->id << " found" << endl;
       }
 
     } else {
@@ -203,12 +212,12 @@ double Group::xcm(int igroup, int dir)
       if (pon[igroup].compare("particles") == 0) {
 	x = domain->solids[solid[igroup]]->x;
 	mass = domain->solids[solid[igroup]]->mass;
-	nmax = domain->solids[solid[igroup]]->np;
+	nmax = domain->solids[solid[igroup]]->np_local;
 	mask = domain->solids[solid[igroup]]->mask;
       } else {
 	x = domain->solids[solid[igroup]]->grid->x;
 	mass = domain->solids[solid[igroup]]->grid->mass;
-	nmax = domain->solids[solid[igroup]]->grid->nnodes;
+	nmax = domain->solids[solid[igroup]]->grid->nnodes_local;
 	mask = domain->solids[solid[igroup]]->grid->mask;
       }
     
@@ -225,12 +234,12 @@ double Group::xcm(int igroup, int dir)
     if (pon[igroup].compare("particles") == 0) {
       x = domain->solids[solid[igroup]]->x;
       mass = domain->solids[solid[igroup]]->mass;
-      nmax = domain->solids[solid[igroup]]->np;
+      nmax = domain->solids[solid[igroup]]->np_local;
       mask = domain->solids[solid[igroup]]->mask;
     } else {
       x = domain->solids[solid[igroup]]->grid->x;
       mass = domain->solids[solid[igroup]]->grid->mass;
-      nmax = domain->solids[solid[igroup]]->grid->nnodes;
+      nmax = domain->solids[solid[igroup]]->grid->nnodes_local;
       mask = domain->solids[solid[igroup]]->grid->mask;
     }
     
@@ -261,11 +270,11 @@ double Group::internal_force(int igroup, int dir)
     for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
       if (pon[igroup].compare("particles") == 0) {
 	f = domain->solids[solid[igroup]]->f;
-	nmax = domain->solids[solid[igroup]]->np;
+	nmax = domain->solids[solid[igroup]]->np_local;
 	mask = domain->solids[solid[igroup]]->mask;
       } else {
 	f = domain->solids[solid[igroup]]->grid->f;
-	nmax = domain->solids[solid[igroup]]->grid->nnodes;
+	nmax = domain->solids[solid[igroup]]->grid->nnodes_local;
 	mask = domain->solids[solid[igroup]]->grid->mask;
       }
     
@@ -280,11 +289,11 @@ double Group::internal_force(int igroup, int dir)
 
     if (pon[igroup].compare("particles") == 0) {
       f = domain->solids[solid[igroup]]->f;
-      nmax = domain->solids[solid[igroup]]->np;
+      nmax = domain->solids[solid[igroup]]->np_local;
       mask = domain->solids[solid[igroup]]->mask;
     } else {
       f = domain->solids[solid[igroup]]->grid->f;
-      nmax = domain->solids[solid[igroup]]->grid->nnodes;
+      nmax = domain->solids[solid[igroup]]->grid->nnodes_local;
       mask = domain->solids[solid[igroup]]->grid->mask;
     }
     
@@ -315,7 +324,7 @@ double Group::external_force(int igroup, int dir)
 
     for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
       f = domain->solids[solid[igroup]]->f;
-      nmax = domain->solids[solid[igroup]]->np;
+      nmax = domain->solids[solid[igroup]]->np_local;
       mask = domain->solids[solid[igroup]]->mask;
     
       for (int ip = 0; ip < nmax; ip++) {
@@ -328,7 +337,7 @@ double Group::external_force(int igroup, int dir)
     int isolid = solid[igroup];
 
     f = domain->solids[solid[igroup]]->f;
-    nmax = domain->solids[solid[igroup]]->np;
+    nmax = domain->solids[solid[igroup]]->np_local;
     mask = domain->solids[solid[igroup]]->mask;
     
     for (int ip = 0; ip < nmax; ip++) {

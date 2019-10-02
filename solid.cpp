@@ -1326,12 +1326,13 @@ void Solid::populate(vector<string> args) {
   }
   np_local = l; // Adjust np to account for the particles outside the domain
 
-#ifdef DEBUG
-  cout << "proc " << universe->me << "\tnp_local=" << np_local << endl;
-#endif
 
   // Determine the total number of particles:
-  MPI_Allreduce(&np_local,&np,1,MPI_MPM_BIGINT,MPI_SUM,universe->uworld);
+  bigint np_temp = np_local;
+  MPI_Allreduce(&np_temp,&np,1,MPI_MPM_BIGINT,MPI_SUM,universe->uworld);
+#ifdef DEBUG
+  cout << "proc " << universe->me << "\tnp_local=" << np_local << "\tnp=" << np << endl;
+#endif
 
   tagint ptag0 = 0;
 
@@ -1431,7 +1432,6 @@ void Solid::populate(vector<string> args) {
   plt::close();
 #endif
 
-  error->all(FLERR, "");
   MPI_Barrier(universe->uworld);
 }
 
