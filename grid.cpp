@@ -43,6 +43,9 @@ Grid::Grid(MPM *mpm) :
 
   // C = NULL;
 
+  nx = ny = nz = 0;
+  nx_global = ny_global = nz_global = 0;
+
   cellsize = 0;
   nnodes = 0;
 
@@ -123,6 +126,22 @@ void Grid::init(double *solidlo, double *solidhi){
 		      (int) ceil(-Loffsethi[1]/h),
 		      (int) ceil(-Loffsethi[2]/h)};
 
+  if (universe->procneigh[0][0] >= 0 && abs(boundlo[0]+ noffsetlo[0]*h - sublo[0])<1.0e-12) {
+    // Some nodes would fall exactly on the subdomain lower x boundary
+    // they should below to procneigh[0][0]
+    noffsetlo[0]++;
+  }
+  if (universe->procneigh[1][0] >= 0 && abs(boundlo[1]+ noffsetlo[1]*h - sublo[1])<1.0e-12) {
+    // Some nodes would fall exactly on the subdomain lower y boundary
+    // they should below to procneigh[1][0]
+    noffsetlo[1]++;
+  }
+  if (universe->procneigh[1][0] >= 0 && abs(boundlo[1]+ noffsetlo[1]*h - sublo[1])<1.0e-12) {
+    // Some nodes would fall exactly on the subdomain lower x boundary
+    // they should below to procneigh[0][0]
+    noffsetlo[1]++;
+  }
+
   double Lx = (boundhi[0] - boundlo[0]) - (noffsetlo[0] + noffsethi[0])*h;
 
   if (update->method_shape_function.compare("Bernstein-quadratic")==0)
@@ -155,6 +174,70 @@ void Grid::init(double *solidlo, double *solidhi){
   std::vector<double> x2plot, y2plot;
 #endif
 
+  double Lx_global = solidhi[0]-solidlo[0];//+2*cellsize;
+
+  nx_global = ((int) (Lx_global/h))+1;
+  while (nx_global*h <= Lx_global+0.5*h) nx_global++;
+
+  if (domain->dimension >= 2) {
+    double Ly_global = solidhi[1]-solidlo[1];
+    ny_global = ((int) Ly_global/h)+1;
+    while (ny_global*h <= Ly_global+0.5*h) ny_global++;
+  } else {
+    ny_global = 1;
+  }
+
+  if (domain->dimension == 3) {
+    double Lz_global = solidhi[2]-solidlo[2];
+    nz_global = ((int) Lz_global/h)+1;
+    while (nz_global*h <= Lz_global+0.5*h) nz_global++;
+  } else {
+    nz_global = 1;
+  }
+
+  // Need to receive from lower neighbouring CPUs what their nx, ny, and nz:
+
+  int nx0, ny0, nz0, nx_temp, ny_temp, nz_temp;
+  nx0 = ny0 = nz0 = 0;
+
+  for (int iproc=0; iproc<universe->nprocs; iproc++){
+    if (iproc == universe->me) {
+      if (universe->procneigh[0][1] >= 0) {
+	// Send nx to the neighbouring CPU in ascending x
+	nx_temp = nx0 + nx;
+	MPI_Send(&nx_temp, 1, MPI_INT, universe->procneigh[0][1], 0, universe->uworld);
+      }
+
+      if ((domain->dimension >= 2) && (universe->procneigh[1][1] >= 0)){
+	// Send ny to the neighbouring CPU in ascending y
+	ny_temp = ny0 + ny;
+	MPI_Send(&ny_temp, 1, MPI_INT, universe->procneigh[1][1], 0, universe->uworld);
+      }
+
+      if ((domain->dimension == 3) && (universe->procneigh[2][1] >= 0)){
+	// Send nz to the neighbouring CPU in ascending z
+	nz_temp = nz0 + nz;
+	MPI_Send(&nz_temp, 1, MPI_INT, universe->procneigh[2][1], 0, universe->uworld);
+      }
+    }
+
+    if (iproc == universe->procneigh[0][0]) {
+      // Receive nx0 from the neighbouring CPU in descending x
+      MPI_Recv(&nx0, 1, MPI_INT, iproc, 0, universe->uworld, MPI_STATUS_IGNORE);
+    }
+    if ((domain->dimension >= 2) && iproc == universe->procneigh[1][0]) {
+      // Receive ny0 from the neighbouring CPU in descending y
+      MPI_Recv(&ny0, 1, MPI_INT, iproc, 0, universe->uworld, MPI_STATUS_IGNORE);
+    }
+    if ((domain->dimension == 3) && iproc == universe->procneigh[2][0]) {
+      // Receive nz0 from the neighbouring CPU in descending y
+      MPI_Recv(&nz0, 1, MPI_INT, iproc, 0, universe->uworld, MPI_STATUS_IGNORE);
+    }
+  }
+
+#ifdef DEBUG
+  cout << "proc " << universe->me << " nx0=" << nx0 << "\tny0=" << ny0 << "\tnz0=" << nz0 <<endl;
+#endif
 
   int l=0;
   for (int i=0; i<nx; i++){
@@ -188,7 +271,17 @@ void Grid::init(double *solidlo, double *solidhi){
 	mass[l] = 0;
 	// R[l].setIdentity();
 
+	ntag[l] = nz_global*ny_global*(i+nx0) + nz_global*(j+ny0) + k+nz0;
+	cout << "ntag = " << ntag[l] << endl;
+
+	// Check if ntag[l] already exists:
+	if(map_ntag.count(ntag[l]) > 0 ) {
+	  error->all(FLERR, "node " + to_string(ntag[l]) + " already exists.");
+	}
+	map_ntag[ntag[l]] = l;
+
 #ifdef DEBUG
+	plt::annotate(to_string(ntag[l]), x0[l][0], x0[l][1]);
 	x2plot.push_back(x0[l][0]);
 	y2plot.push_back(x0[l][1]);
 #endif
@@ -200,43 +293,43 @@ void Grid::init(double *solidlo, double *solidhi){
   nnodes_local = l;
 
 
-  MPI_Allreduce(&nnodes_local,&nnodes,1,MPI_MPM_BIGINT,MPI_SUM,universe->uworld);
+//   MPI_Allreduce(&nnodes_local, &nnodes, 1, MPI_MPM_BIGINT, MPI_SUM, universe->uworld);
 
-  // Give a unique identification to all nodes:
-  tagint ntag0 = 0;
+//   // Give a unique identification to all nodes:
+//   tagint ntag0 = 0;
 
-  for (int proc=0; proc<universe->nprocs; proc++){
-    int nnodes_local_bcast;
-    if (proc == universe->me) {
-      // Send nnodes_local
-      nnodes_local_bcast = nnodes_local;
-    } else {
-      // Receive nnodes_local
-      nnodes_local_bcast = 0;
-    }
-    MPI_Bcast(&nnodes_local_bcast,1,MPI_INT,proc,universe->uworld);
-    if (universe->me > proc) ntag0 += nnodes_local_bcast;
-  }
+//   for (int proc=0; proc<universe->nprocs; proc++){
+//     int nnodes_local_bcast;
+//     if (proc == universe->me) {
+//       // Send nnodes_local
+//       nnodes_local_bcast = nnodes_local;
+//     } else {
+//       // Receive nnodes_local
+//       nnodes_local_bcast = 0;
+//     }
+//     MPI_Bcast(&nnodes_local_bcast, 1, MPI_INT, proc,universe->uworld);
+//     if (universe->me > proc) ntag0 += nnodes_local_bcast;
+//   }
 
-  for (int i=0; i<nnodes_local; i++) {
-    ntag[i] = ntag0 + i + 1;
-    map_ntag[ntag[i]] = i;
-#ifdef DEBUG
-    plt::annotate(to_string(ntag[i]), x0[i][0], x0[i][1]);
-#endif
-  }
+// //   for (int i=0; i<nnodes_local; i++) {
+// //     ntag[i] = ntag0 + i + 1;
+// //     map_ntag[ntag[i]] = i;
+// // #ifdef DEBUG
+// //     plt::annotate(to_string(ntag[i]), x0[i][0], x0[i][1]);
+// // #endif
+// //   }
 
-#ifdef DEBUG
-  cout << "proc " << universe->me << "\tntag0 = " << ntag0 << endl;
-#endif
+// #ifdef DEBUG
+//   cout << "proc " << universe->me << "\tntag0 = " << ntag0 << endl;
+// #endif
 
   // Give to neighbouring procs ghost nodes:
   vector<Point> ns;
   vector<Point> gnodes;
 
   double delta;
-  if (is_cubic) delta = 2*h;
-  else delta = h;
+  if (is_cubic) delta = 2*h - 1.0e-12;
+  else delta = h - 1.0e-12;
 
   cout << "delta=" << delta << endl;
 
@@ -294,7 +387,7 @@ void Grid::init(double *solidlo, double *solidhi){
 
       // Check if the nodes received are in the subdomain:
       for (int i_recv=0; i_recv<size_nr; i_recv++) {
-	if (!domain->inside_subdomain(buf_recv[i_recv].x[0], buf_recv[i_recv].x[1], buf_recv[i_recv].x[2])) {
+	if (1) {//!domain->inside_subdomain(buf_recv[i_recv].x[0], buf_recv[i_recv].x[1], buf_recv[i_recv].x[2])) {
 	  if (domain->inside_subdomain_extended(buf_recv[i_recv].x[0], buf_recv[i_recv].x[1], buf_recv[i_recv].x[2], delta)) {
 	    gnodes.push_back(buf_recv[i_recv]);
 	  }
@@ -314,7 +407,14 @@ void Grid::init(double *solidlo, double *solidhi){
   // Copy ghost nodes at the end of the local nodes:
   for (int in=0; in<nnodes_ghost; in++) {
     int i = nnodes_local+in;
+
     ntag[i] = gnodes[in].tag;
+
+    // Check if ntag[l] already exists:
+    if(map_ntag.count(ntag[i]) > 0 ) {
+      error->all(FLERR, "node " + to_string(ntag[i]) + " already exists.");
+    }
+
     map_ntag[ntag[i]] = i;
     x0[i][0] = x[i][0] = gnodes[in].x[0];
     x0[i][1] = x[i][1] = gnodes[in].x[1];

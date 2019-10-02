@@ -26,9 +26,15 @@ class Grid : protected Pointers {
   bigint nnodes_ghost;   // number of ghost nodes (in this CPU)
   tagint *ntag;          // unique identifier for nodes in the system.
   map<int, int> map_ntag;// map_ntag[ntag[i]] = i;
-  int nx;                // number of nodes along x
-  int ny;                // number of nodes along y
-  int nz;                // number of nodes along z
+
+  int nx;                // number of nodes along x on this CPU
+  int ny;                // number of nodes along y on this CPU
+  int nz;                // number of nodes along z on this CPU
+
+  int nx_global;         // number of nodes along x on all CPUs
+  int ny_global;         // number of nodes along y on all CPUs
+  int nz_global;         // number of nodes along z on all CPUs
+
   int nshared;           // number of nodes that are shared (ghosts in other CPUs
   vector<int> shared;    // position of all shared nodes
 

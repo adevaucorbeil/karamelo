@@ -183,7 +183,10 @@ void Domain::set_local_box() {
     subhi[2] = sublo[2] + h[2];
   }
 
+#ifdef DEBUG
+  cout << "proc " << universe->me << "\tboxlo=[" << boxlo[0] << "," << boxlo[1] << "," << boxlo[2] << "]\t boxhi=["<< boxhi[0] << "," << boxhi[1] << "," << boxhi[2] << "]\n";
   cout << "proc " << universe->me << "\tsublo=[" << sublo[0] << "," << sublo[1] << "," << sublo[2] << "]\t subhi=["<< subhi[0] << "," << subhi[1] << "," << subhi[2] << "]\n";
+#endif
 }
 
 void Domain::create_domain(vector<string> args) {

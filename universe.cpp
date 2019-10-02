@@ -39,6 +39,11 @@ void Universe::set_proc_grid() {
     error->all(FLERR, "Error in Universe::set_proc_grid(): invalid dimension: " + to_string(dim) + ".\n");
   }
 
+  double *sublo = domain->sublo;
+  double *subhi = domain->subhi;
+  double *boxlo = domain->boxlo;
+  double *boxhi = domain->boxhi;
+
   procgrid[0] = 1;
   procgrid[1] = 1;
   procgrid[2] = 1;
@@ -47,21 +52,14 @@ void Universe::set_proc_grid() {
   myloc[1] = 0;
   myloc[2] = 0;
 
-  procneigh[0][0] = procneigh[0][1] = 0;
-  procneigh[1][0] = procneigh[1][1] = 0;
-  procneigh[2][0] = procneigh[2][1] = 0;
-
-  if (dim == 1) {
+  if (nprocs > 1 && dim == 1) {
     // Easy bit, all procs are in line:
     procgrid[0] = nprocs;
 
     myloc[0] = me;
-
-    procneigh[0][0] = me - 1;
-    procneigh[0][1] = me + 1;
   }
 
-  if (dim == 2) {
+  if (nprocs > 1 && dim == 2) {
     // Determine the smallest dimension:
     double l[2] = {domain->boxhi[0] - domain->boxlo[0],
 		   domain->boxhi[1] - domain->boxlo[1]};
@@ -85,14 +83,9 @@ void Universe::set_proc_grid() {
 
     myloc[0] = me % procgrid[0];
     myloc[1] = me / procgrid[0];
-
-    procneigh[0][0] = me - 1;
-    procneigh[0][1] = me + 1;
-    procneigh[1][0] = me - procgrid[0];
-    procneigh[1][1] = me + procgrid[0];
   }
 
-  if (dim == 3) {
+  if (nprocs > 1 && dim == 3) {
     // Determine the smallest dimension:
     vector<boundsize> l = {{domain->boxhi[0] - domain->boxlo[0], 0},
 			   {domain->boxhi[1] - domain->boxlo[1], 1},
@@ -114,16 +107,72 @@ void Universe::set_proc_grid() {
     myloc[2] = me / (procgrid[0]*procgrid[1]);
     myloc[1] = me / procgrid[0] - myloc[2]*procgrid[1];
     myloc[0] = me - (myloc[1] + myloc[2]*procgrid[1])*procgrid[0];
-
-    procneigh[0][0] = me - 1;
-    procneigh[0][1] = me + 1;
-    procneigh[1][0] = me - procgrid[0];
-    procneigh[1][1] = me + procgrid[0];
-    procneigh[1][0] = me - procgrid[0]*procgrid[1];
-    procneigh[1][1] = me + procgrid[0]*procgrid[1];
   }
 
+
   domain->set_local_box();
+
+
+  procneigh[0][0] = procneigh[0][1] = 0;
+  procneigh[1][0] = procneigh[1][1] = 0;
+  procneigh[2][0] = procneigh[2][1] = 0;
+
+  if (nprocs > 1 && dim == 1) {
+    if (sublo[0] > boxlo[0] + 1.0e-12) procneigh[0][0] = me - 1;
+    else procneigh[0][0] = -1;
+    if (subhi[0] < boxhi[0] - 1.0e-12) procneigh[0][1] = me + 1;
+    else procneigh[0][1] = -1;
+  }
+
+  if (nprocs > 1 && dim == 2) {
+    if (sublo[0] > boxlo[0] + 1.0e-12)
+      procneigh[0][0] = me - 1;
+    else
+      procneigh[0][0] = -1;
+    if (subhi[0] < boxhi[0] - 1.0e-12)
+      procneigh[0][1] = me + 1;
+    else
+      procneigh[0][1] = -1;
+    if (sublo[1] > boxlo[1] + 1.0e-12)
+      procneigh[1][0] = me - procgrid[0];
+    else
+      procneigh[1][0] = -1;
+    if (subhi[1] < boxhi[1] - 1.0e-12)
+      procneigh[1][1] = me + procgrid[0];
+    else
+      procneigh[1][1] = -1;
+
+#ifdef DEBUG
+    cout << "proc " << universe->me << "\tprocneigh = [[" << procneigh[0][0] << "," << procneigh[0][1] <<"],[" << procneigh[1][0] << "," << procneigh[1][1] <<"],[" << procneigh[2][0] << "," << procneigh[2][1] << "]\n.";
+#endif
+  }
+
+  if (nprocs > 1 && dim == 3) {
+    if (sublo[0] > boxlo[0] + 1.0e-12)
+      procneigh[0][0] = me - 1;
+    else
+      procneigh[0][0] = -1;
+    if (subhi[0] < boxhi[0] - 1.0e-12)
+      procneigh[0][1] = me + 1;
+    else
+      procneigh[0][1] = -1;
+    if (sublo[1] > boxlo[1] + 1.0e-12)
+      procneigh[1][0] = me - procgrid[0];
+    else
+      procneigh[1][0] = -1;
+    if (subhi[1] < boxhi[1] - 1.0e-12)
+      procneigh[1][1] = me + procgrid[0];
+    else
+      procneigh[1][1] = -1;procneigh[0][0] = me - 1;
+    if (sublo[2] > boxlo[2] + 1.0e-12)
+      procneigh[2][0] = me - procgrid[0]*procgrid[1];
+    else
+      procneigh[2][0] = -1;
+    if (subhi[2] < boxhi[2] - 1.0e-12)
+      procneigh[2][1] = me + procgrid[0]*procgrid[1];
+    else
+      procneigh[2][1] = -1;
+  }
 }
 
 vector<int> tile2d(int p) {
