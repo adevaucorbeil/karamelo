@@ -1311,11 +1311,6 @@ void Solid::populate(vector<string> args) {
 		}
 	      }
 	    }
-
-#ifdef DEBUG
-	    x2plot.push_back(x0[l][0]);
-	    y2plot.push_back(x0[l][1]);
-#endif
 	    l++;
 	  }
 	}
@@ -1325,49 +1320,10 @@ void Solid::populate(vector<string> args) {
 
   MPI_Barrier(universe->uworld);
 
-#ifdef DEBUG
-  vector<double> xdomain, ydomain;
-  vector<double> xsubdomain, ysubdomain;
 
-  xdomain.push_back(domain->boxlo[0]);
-  ydomain.push_back(domain->boxlo[1]);
-
-  xdomain.push_back(domain->boxhi[0]);
-  ydomain.push_back(domain->boxlo[1]);
-
-  xdomain.push_back(domain->boxhi[0]);
-  ydomain.push_back(domain->boxhi[1]);
-
-  xdomain.push_back(domain->boxlo[0]);
-  ydomain.push_back(domain->boxhi[1]);
-
-  xdomain.push_back(domain->boxlo[0]);
-  ydomain.push_back(domain->boxlo[1]);
-
-
-  xsubdomain.push_back(sublo[0]);
-  ysubdomain.push_back(sublo[1]);
-
-  xsubdomain.push_back(subhi[0]);
-  ysubdomain.push_back(sublo[1]);
-
-  xsubdomain.push_back(subhi[0]);
-  ysubdomain.push_back(subhi[1]);
-
-  xsubdomain.push_back(sublo[0]);
-  ysubdomain.push_back(subhi[1]);
-
-  xsubdomain.push_back(sublo[0]);
-  ysubdomain.push_back(sublo[1]);
-
-  plt::plot(xdomain, ydomain, "b-");
-  plt::plot(xsubdomain, ysubdomain, "r-");
-  plt::plot(x2plot, y2plot, ".");
-  plt::axis("equal");
-  plt::save("debug-proc_" + to_string(universe->me) + ".png");
-  plt::close();
-#endif
-
+  if (np_local > l) {
+    grow(l);
+  }
   np_local = l; // Adjust np to account for the particles outside the domain
 
 #ifdef DEBUG
@@ -1425,7 +1381,56 @@ void Solid::populate(vector<string> args) {
     J[i] = 1;
 
     ptag[i] = ptag0 + i + 1;
+
+#ifdef DEBUG
+    x2plot.push_back(x0[i][0]);
+    y2plot.push_back(x0[i][1]);
+#endif
   }
+
+#ifdef DEBUG
+  vector<double> xdomain, ydomain;
+  vector<double> xsubdomain, ysubdomain;
+
+  xdomain.push_back(domain->boxlo[0]);
+  ydomain.push_back(domain->boxlo[1]);
+
+  xdomain.push_back(domain->boxhi[0]);
+  ydomain.push_back(domain->boxlo[1]);
+
+  xdomain.push_back(domain->boxhi[0]);
+  ydomain.push_back(domain->boxhi[1]);
+
+  xdomain.push_back(domain->boxlo[0]);
+  ydomain.push_back(domain->boxhi[1]);
+
+  xdomain.push_back(domain->boxlo[0]);
+  ydomain.push_back(domain->boxlo[1]);
+
+
+  xsubdomain.push_back(sublo[0]);
+  ysubdomain.push_back(sublo[1]);
+
+  xsubdomain.push_back(subhi[0]);
+  ysubdomain.push_back(sublo[1]);
+
+  xsubdomain.push_back(subhi[0]);
+  ysubdomain.push_back(subhi[1]);
+
+  xsubdomain.push_back(sublo[0]);
+  ysubdomain.push_back(subhi[1]);
+
+  xsubdomain.push_back(sublo[0]);
+  ysubdomain.push_back(sublo[1]);
+
+  plt::plot(xdomain, ydomain, "b-");
+  plt::plot(xsubdomain, ysubdomain, "r-");
+  plt::plot(x2plot, y2plot, ".");
+  plt::axis("equal");
+  plt::save("debug-proc_" + to_string(universe->me) + ".png");
+  plt::close();
+#endif
+
   error->all(FLERR, "");
   MPI_Barrier(universe->uworld);
 }

@@ -1,6 +1,7 @@
 #include <vector>
 #include <math.h>
 #include <Eigen/Eigen>
+#include <string>
 #include "mpm.h"
 #include "grid.h"
 #include "material.h"
@@ -220,6 +221,9 @@ void Grid::init(double *solidlo, double *solidhi){
   for (int i=0; i<nnodes_local; i++) {
     ntag[i] = ntag0 + i + 1;
     map_ntag[ntag[i]] = i;
+#ifdef DEBUG
+    plt::annotate(to_string(ntag[i]), x0[i][0], x0[i][1]);
+#endif
   }
 
 #ifdef DEBUG
@@ -324,6 +328,7 @@ void Grid::init(double *solidlo, double *solidhi){
 #ifdef DEBUG
     x2plot.push_back(x0[i][0]);
     y2plot.push_back(x0[i][1]);
+    plt::annotate(to_string(ntag[i]), x0[i][0], x0[i][1]);
 #endif
   }
 
