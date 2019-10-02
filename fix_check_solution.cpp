@@ -1,6 +1,7 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <Eigen/Eigen>
 #include "fix_check_solution.h"
 #include "input.h"
 #include "group.h"
@@ -9,7 +10,7 @@
 #include "update.h"
 #include "output.h"
 #include "math_special.h"
-#include <Eigen/Eigen>
+#include "universe.h"
 #include "error.h"
 
 using namespace std;
@@ -86,7 +87,7 @@ void FixChecksolution::final_integrate() {
   int *mask;
   double *mass;
   double *vol0;
-  Eigen::Vector3d error;
+  Eigen::Vector3d error, error_reduced;
   Eigen::Vector3d u_th;
   Eigen::Vector3d *x0;
   Eigen::Vector3d *x;  
@@ -103,7 +104,7 @@ void FixChecksolution::final_integrate() {
       x0 = domain->solids[isolid]->x0;
       x = domain->solids[isolid]->x;
       vol0 = domain->solids[isolid]->vol0;
-      nmax = domain->solids[isolid]->np;
+      nmax = domain->solids[isolid]->np_local;
       mask = domain->solids[isolid]->mask;
 
       for (int in = 0; in < nmax; in++) {
@@ -129,17 +130,12 @@ void FixChecksolution::final_integrate() {
 	}
       }
     }
-    (*input->vars)[id+"_s"]=Var(id+"_s", sqrt((error[0] + error[1] + error[2])/vtot));
-    (*input->vars)[id+"_x"]=Var(id+"_x", (*input->vars)[id+"_x"].result() + update->dt*(error[0] + error[1] + error[2]));
-    (*input->vars)[id+"_y"]=Var(id+"_y", (*input->vars)[id+"_y"].result() + update->dt*(u_th[0] + u_th[1] + u_th[2]));
-    (*input->vars)[id+"_z"]=Var(id+"_z", sqrt((*input->vars)[id+"_x"].result()/(*input->vars)[id+"_y"].result()));
-    // cout << "f for " << n << " nodes from solid " << domain->solids[isolid]->id << " set." << endl;
   } else {
     vtot = domain->solids[solid]->vtot;
     x0 = domain->solids[solid]->x0;
     x = domain->solids[solid]->x;
     vol0 = domain->solids[solid]->vol0;
-    nmax = domain->solids[solid]->np;
+    nmax = domain->solids[solid]->np_local;
     mask = domain->solids[solid]->mask;
 
     for (int in = 0; in < nmax; in++) {
@@ -165,12 +161,15 @@ void FixChecksolution::final_integrate() {
       }
     }
 
-
-    (*input->vars)[id+"_s"]=Var(id+"_s", sqrt((error[0] + error[1] + error[2])/vtot));
-    (*input->vars)[id+"_x"]=Var(id+"_x", (*input->vars)[id+"_x"].result() + update->dt*(error[0] + error[1] + error[2]));
-    (*input->vars)[id+"_y"]=Var(id+"_y", (*input->vars)[id+"_y"].result() + update->dt*(u_th[0] + u_th[1] + u_th[2]));
-    (*input->vars)[id+"_z"]=Var(id+"_z", sqrt((*input->vars)[id+"_x"].result()/(*input->vars)[id+"_y"].result()));
-    // cout << "f for " << n << " nodes from solid " << domain->solids[solid]->id << " set." << endl;
   }
+
+  // Reduce error:
+  MPI_Allreduce(error.data(),error_reduced.data(),3,MPI_DOUBLE,MPI_SUM,universe->uworld);
+
+  (*input->vars)[id+"_s"]=Var(id+"_s", sqrt((error_reduced[0] + error_reduced[1] + error_reduced[2])/vtot));
+  (*input->vars)[id+"_x"]=Var(id+"_x", (*input->vars)[id+"_x"].result() + update->dt*(error_reduced[0] + error_reduced[1] + error_reduced[2]));
+  (*input->vars)[id+"_y"]=Var(id+"_y", (*input->vars)[id+"_y"].result() + update->dt*(u_th[0] + u_th[1] + u_th[2]));
+  (*input->vars)[id+"_z"]=Var(id+"_z", sqrt((*input->vars)[id+"_x"].result()/(*input->vars)[id+"_y"].result()));
+    // cout << "f for " << n << " nodes from solid " << domain->solids[solid]->id << " set." << endl;
   // cout << "ftot = [" << ftot[0] << ", " << ftot[1] << ", " << ftot[2] << "]\n"; 
 }

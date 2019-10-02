@@ -1,12 +1,12 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <Eigen/Eigen>
 #include "fix_initial_velocity_nodes.h"
 #include "input.h"
 #include "group.h"
 #include "domain.h"
 #include "update.h"
-#include <Eigen/Eigen>
 #include "error.h"
 
 using namespace std;
@@ -90,7 +90,7 @@ void FixInitialVelocityNodes::post_update_grid_state() {
       n = 0;
       v_update = domain->solids[isolid]->grid->v_update;
       x0 = domain->solids[isolid]->grid->x0;
-      nmax = domain->solids[isolid]->grid->nnodes;
+      nmax = domain->solids[isolid]->grid->nnodes_local;
       mask = domain->solids[isolid]->grid->mask;
 
       for (int ip = 0; ip < nmax; ip++) {
@@ -119,7 +119,7 @@ void FixInitialVelocityNodes::post_update_grid_state() {
 
     v_update = domain->solids[solid]->grid->v_update;
     x0 = domain->solids[solid]->grid->x0;
-    nmax = domain->solids[solid]->grid->nnodes;
+    nmax = domain->solids[solid]->grid->nnodes_local;
     mask = domain->solids[solid]->grid->mask;
 
     for (int ip = 0; ip < nmax; ip++) {
@@ -166,7 +166,7 @@ void FixInitialVelocityNodes::post_velocities_to_grid() {
       n = 0;
       v = domain->solids[isolid]->grid->v;
       x0 = domain->solids[isolid]->grid->x0;
-      nmax = domain->solids[isolid]->grid->nnodes;
+      nmax = domain->solids[isolid]->grid->nnodes_local;
       mask = domain->solids[isolid]->grid->mask;
 
       
@@ -196,7 +196,7 @@ void FixInitialVelocityNodes::post_velocities_to_grid() {
 
     v = domain->solids[solid]->grid->v;
     x0 = domain->solids[solid]->grid->x0;
-    nmax = domain->solids[solid]->grid->nnodes;
+    nmax = domain->solids[solid]->grid->nnodes_local;
     mask = domain->solids[solid]->grid->mask;
 
     for (int ip = 0; ip < nmax; ip++) {

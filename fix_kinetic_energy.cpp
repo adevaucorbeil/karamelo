@@ -1,6 +1,7 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <Eigen/Eigen>
 #include "fix_kinetic_energy.h"
 #include "input.h"
 #include "group.h"
@@ -9,7 +10,7 @@
 #include "update.h"
 #include "output.h"
 #include "math_special.h"
-#include <Eigen/Eigen>
+#include "universe.h"
 #include "error.h"
 
 using namespace std;
@@ -61,13 +62,14 @@ void FixKineticEnergy::final_integrate() {
   int nmax;
   int *mask;
   double *mass;
-  double Ek = 0;
+  double Ek, Ek_reduced;
   Eigen::Vector3d *v;
 
+  Ek = 0;
   if (solid == -1) {
     for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
       mass = domain->solids[isolid]->mass;
-      nmax = domain->solids[isolid]->np;
+      nmax = domain->solids[isolid]->np_local;
       mask = domain->solids[isolid]->mask;
       v = domain->solids[isolid]->v;
 
@@ -77,12 +79,9 @@ void FixKineticEnergy::final_integrate() {
 	}
       }
     }
-
-
-    (*input->vars)[id+"_s"]=Var(id+"_s", Ek);
   } else {
     mass = domain->solids[solid]->mass;
-    nmax = domain->solids[solid]->np;
+    nmax = domain->solids[solid]->np_local;
     mask = domain->solids[solid]->mask;
     v = domain->solids[solid]->v;
 
@@ -91,8 +90,9 @@ void FixKineticEnergy::final_integrate() {
 	Ek += 0.5*mass[in]*v[in].norm();
       }
     }
-
-
-    (*input->vars)[id+"_s"]=Var(id+"_s", Ek);
   }
+
+  // Reduce Ek:
+  MPI_Allreduce(&Ek,&Ek_reduced,1,MPI_DOUBLE,MPI_SUM,universe->uworld);
+  (*input->vars)[id+"_s"]=Var(id+"_s", Ek_reduced);
 }

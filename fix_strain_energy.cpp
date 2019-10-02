@@ -1,6 +1,7 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <Eigen/Eigen>
 #include "fix_strain_energy.h"
 #include "input.h"
 #include "group.h"
@@ -9,7 +10,7 @@
 #include "update.h"
 #include "output.h"
 #include "math_special.h"
-#include <Eigen/Eigen>
+#include "universe.h"
 #include "error.h"
 
 using namespace std;
@@ -61,14 +62,15 @@ void FixStrainEnergy::final_integrate() {
   int nmax;
   int *mask;
   double *vol;
-  double Es = 0;
+  double Es, Es_reduced;
   Eigen::Matrix3d *sigma;
   Eigen::Matrix3d *strain;
 
+  Es = 0;
   if (solid == -1) {
     for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
       vol = domain->solids[isolid]->vol;
-      nmax = domain->solids[isolid]->np;
+      nmax = domain->solids[isolid]->np_local;
       mask = domain->solids[isolid]->mask;
       sigma = domain->solids[isolid]->sigma;
       strain = domain->solids[isolid]->strain_el;
@@ -87,12 +89,9 @@ void FixStrainEnergy::final_integrate() {
 	}
       }
     }
-
-
-    (*input->vars)[id+"_s"]=Var(id+"_s", Es);
   } else {
     vol = domain->solids[solid]->vol;
-    nmax = domain->solids[solid]->np;
+    nmax = domain->solids[solid]->np_local;
     mask = domain->solids[solid]->mask;
     sigma = domain->solids[solid]->sigma;
     strain = domain->solids[solid]->strain_el;
@@ -110,8 +109,9 @@ void FixStrainEnergy::final_integrate() {
 			   + sigma[in](2,2)*strain[in](2,2));
       }
     }
-
-
-    (*input->vars)[id+"_s"]=Var(id+"_s", Es);
   }
+
+  // Reduce Es:
+  MPI_Allreduce(&Es,&Es_reduced,1,MPI_DOUBLE,MPI_SUM,universe->uworld);
+  (*input->vars)[id+"_s"]=Var(id+"_s", Es_reduced);
 }

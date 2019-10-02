@@ -1,12 +1,13 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <Eigen/Eigen>
 #include "fix_force_nodes.h"
 #include "input.h"
 #include "group.h"
 #include "domain.h"
 #include "input.h"
-#include <Eigen/Eigen>
+#include "universe.h"
 #include "error.h"
 
 using namespace std;
@@ -89,7 +90,7 @@ void FixForceNodes::post_particles_to_grid() {
   int *mask;
   double *mass;
   int n = 0;
-  Eigen::Vector3d ftot;
+  Eigen::Vector3d ftot, ftot_reduced;
   ftot.setZero();
 
   if (solid == -1) {
@@ -126,10 +127,6 @@ void FixForceNodes::post_particles_to_grid() {
 	  }
 	}
       }
-      if (xset) (*input->vars)[id+"_x"]=Var(id+"_x", ftot[0]);
-      if (yset) (*input->vars)[id+"_y"]=Var(id+"_y", ftot[1]);
-      if (zset) (*input->vars)[id+"_z"]=Var(id+"_z", ftot[2]);
-      // cout << "f for " << n << " nodes from solid " << domain->solids[isolid]->id << " set." << endl;
     }
   } else {
 
@@ -164,10 +161,14 @@ void FixForceNodes::post_particles_to_grid() {
 	}
       }
     }
-    if (xset) (*input->vars)[id+"_x"]=Var(id+"_x", ftot[0]);
-    if (yset) (*input->vars)[id+"_y"]=Var(id+"_y", ftot[1]);
-    if (zset) (*input->vars)[id+"_z"]=Var(id+"_z", ftot[2]);
-    // cout << "f for " << n << " nodes from solid " << domain->solids[solid]->id << " set." << endl;
   }
+
+  // Reduce ftot:
+  MPI_Allreduce(ftot.data(),ftot_reduced.data(),3,MPI_DOUBLE,MPI_SUM,universe->uworld);
+
+  if (xset) (*input->vars)[id+"_x"]=Var(id+"_x", ftot_reduced[0]);
+  if (yset) (*input->vars)[id+"_y"]=Var(id+"_y", ftot_reduced[1]);
+  if (zset) (*input->vars)[id+"_z"]=Var(id+"_z", ftot_reduced[2]);
+  // cout << "f for " << n << " nodes from solid " << domain->solids[solid]->id << " set." << endl;
   // cout << "ftot = [" << ftot[0] << ", " << ftot[1] << ", " << ftot[2] << "]\n"; 
 }

@@ -1,12 +1,13 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <Eigen/Eigen>
 #include "fix_indent.h"
 #include "input.h"
 #include "group.h"
 #include "domain.h"
 #include "input.h"
-#include <Eigen/Eigen>
+#include "universe.h"
 #include "error.h"
 
 using namespace std;
@@ -68,7 +69,7 @@ void FixIndent::initial_integrate() {
   int nmax;
   int *mask;
   double *mass;
-  Eigen::Vector3d ftot;
+  Eigen::Vector3d ftot, ftot_reduced;
   Eigen::Vector3d *x;
   Eigen::Vector3d *mb;
 
@@ -114,10 +115,6 @@ void FixIndent::initial_integrate() {
 	  }
 	}
       }
-      (*input->vars)[id+"_x"]=Var(id+"_x", ftot[0]);
-      (*input->vars)[id+"_y"]=Var(id+"_y", ftot[1]);
-      (*input->vars)[id+"_z"]=Var(id+"_z", ftot[2]);
-      // cout << "f for " << n << " nodes from solid " << domain->solids[isolid]->id << " set." << endl;
     }
   } else {
     mb = domain->solids[solid]->mb;
@@ -148,11 +145,14 @@ void FixIndent::initial_integrate() {
 	}
       }
     }
+  }
 
-    (*input->vars)[id+"_x"]=Var(id+"_x", ftot[0]);
-    (*input->vars)[id+"_y"]=Var(id+"_y", ftot[1]);
-    (*input->vars)[id+"_z"]=Var(id+"_z", ftot[2]);
-    // cout << "f for " << n << " nodes from solid " << domain->solids[isolid]->id << " set." << endl;
-    }
+  // Reduce ftot:
+  MPI_Allreduce(ftot.data(),ftot_reduced.data(),3,MPI_DOUBLE,MPI_SUM,universe->uworld);
+
+  (*input->vars)[id+"_x"]=Var(id+"_x", ftot_reduced[0]);
+  (*input->vars)[id+"_y"]=Var(id+"_y", ftot_reduced[1]);
+  (*input->vars)[id+"_z"]=Var(id+"_z", ftot_reduced[2]);
+  // cout << "f for " << n << " nodes from solid " << domain->solids[isolid]->id << " set." << endl;
   // cout << "ftot = [" << ftot[0] << ", " << ftot[1] << ", " << ftot[2] << "]\n"; 
 }

@@ -1,12 +1,13 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <Eigen/Eigen>
 #include "fix_body_force_current_config.h"
 #include "input.h"
 #include "group.h"
 #include "domain.h"
 #include "input.h"
-#include <Eigen/Eigen>
+#include "universe.h"
 #include "error.h"
 
 using namespace std;
@@ -73,7 +74,7 @@ void FixBodyforceCurrentConfig::initial_integrate() {
   int nmax;
   int *mask;
   double *mass;
-  Eigen::Vector3d ftot;
+  Eigen::Vector3d ftot, ftot_reduced;
   Eigen::Vector3d *x0;
   Eigen::Matrix3d *R;
 
@@ -83,7 +84,7 @@ void FixBodyforceCurrentConfig::initial_integrate() {
     for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
       mb = domain->solids[isolid]->mb;
       x0 = domain->solids[isolid]->x0;
-      nmax = domain->solids[isolid]->np;
+      nmax = domain->solids[isolid]->np_local;
       mask = domain->solids[isolid]->mask;
       mass = domain->solids[isolid]->mass;
       R = domain->solids[isolid]->R;
@@ -105,16 +106,12 @@ void FixBodyforceCurrentConfig::initial_integrate() {
 	  }
 	}
       }
-      if (xset) (*input->vars)[id+"_x"]=Var(id+"_x", ftot[0]);
-      if (yset) (*input->vars)[id+"_y"]=Var(id+"_y", ftot[1]);
-      if (zset) (*input->vars)[id+"_z"]=Var(id+"_z", ftot[2]);
-      // cout << "f for " << n << " nodes from solid " << domain->solids[isolid]->id << " set." << endl;
     }
   } else {
 
     mb = domain->solids[solid]->mb;
     x0 = domain->solids[solid]->x0;
-    nmax = domain->solids[solid]->np;
+    nmax = domain->solids[solid]->np_local;
     mask = domain->solids[solid]->mask;
     mass = domain->solids[solid]->mass;
     R = domain->solids[solid]->R;
@@ -136,10 +133,15 @@ void FixBodyforceCurrentConfig::initial_integrate() {
 	}
       }
     }
-    if (xset) (*input->vars)[id+"_x"]=Var(id+"_x", ftot[0]);
-    if (yset) (*input->vars)[id+"_y"]=Var(id+"_y", ftot[1]);
-    if (zset) (*input->vars)[id+"_z"]=Var(id+"_z", ftot[2]);
     // cout << "f for " << n << " nodes from solid " << domain->solids[isolid]->id << " set." << endl;
-    }
+  }
+
+  // Reduce ftot:
+  MPI_Allreduce(ftot.data(),ftot_reduced.data(),3,MPI_DOUBLE,MPI_SUM,universe->uworld);
+
+  if (xset) (*input->vars)[id+"_x"]=Var(id+"_x", ftot_reduced[0]);
+  if (yset) (*input->vars)[id+"_y"]=Var(id+"_y", ftot_reduced[1]);
+  if (zset) (*input->vars)[id+"_z"]=Var(id+"_z", ftot_reduced[2]);
+
   // cout << "ftot = [" << ftot[0] << ", " << ftot[1] << ", " << ftot[2] << "]\n"; 
 }

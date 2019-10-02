@@ -1,12 +1,12 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <Eigen/Eigen>
 #include "fix_initial_velocity_particles.h"
 #include "input.h"
 #include "group.h"
 #include "domain.h"
 #include "update.h"
-#include <Eigen/Eigen>
 #include "error.h"
 
 using namespace std;
@@ -81,7 +81,7 @@ void FixInitialVelocityParticles::initial_integrate() {
       n = 0;
       v = domain->solids[isolid]->v;
       x = domain->solids[isolid]->x;
-      nmax = domain->solids[isolid]->np;
+      nmax = domain->solids[isolid]->np_local;
       mask = domain->solids[isolid]->mask;
 
       for (int ip = 0; ip < nmax; ip++) {
@@ -110,7 +110,7 @@ void FixInitialVelocityParticles::initial_integrate() {
 
     v = domain->solids[solid]->v;
     x = domain->solids[solid]->x;
-    nmax = domain->solids[solid]->np;
+    nmax = domain->solids[solid]->np_local;
     mask = domain->solids[solid]->mask;
 
     for (int ip = 0; ip < nmax; ip++) {
