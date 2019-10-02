@@ -1,12 +1,13 @@
 #include <iostream>
 #include <fstream>
+#include <sstream>
+#include <stdexcept>
 #include "log.h"
 #include "mpmtype.h"
 #include "update.h"
 #include "input.h"
 #include "var.h"
-#include <sstream>
-#include <stdexcept>
+#include "universe.h"
 #include "error.h"
 
 using namespace std;
@@ -37,6 +38,8 @@ Log::Log(MPM *mpm, vector<string> args) : Pointers(mpm)
 
 void Log::write()
 {
+  if (universe->me != 0) return; // Only write in the file if I am proc 0
+
   stringstream soutput;
   string output = "";
 
@@ -99,6 +102,8 @@ void Log::init()
 
 void Log::header()
 {
+  if (universe->me != 0) return;
+
   string output = "";
   for (int i=0; i<field.size(); i++){
     output += field[i].name + "\t";

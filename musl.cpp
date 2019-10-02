@@ -6,6 +6,7 @@
 #include "update.h"
 #include "output.h"
 #include "modify.h"
+#include "universe.h"
 
 using namespace std;
 
@@ -27,6 +28,7 @@ void MUSL::run(Var condition){
 
   //for (int i=0; i<nsteps; i++){
   while ((bool) condition.result(mpm)) {
+    MPI_Barrier(universe->uworld);
     ntimestep = update->update_timestep();
 
     update->method->compute_grid_weight_functions_and_gradients();
@@ -60,6 +62,8 @@ void MUSL::run(Var condition){
     update->method->update_deformation_gradient();
     update->method->update_stress();
 
+    MPI_Barrier(universe->uworld);
+
     update->method->adjust_dt();
     update->update_time();
 
@@ -74,7 +78,7 @@ void MUSL::run(Var condition){
     if (ntimestep == output->next || ntimestep == update->nsteps) {
       output->write(ntimestep);
     }
-    
   }
+  MPI_Barrier(universe->uworld);
 }
 
