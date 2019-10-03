@@ -48,6 +48,8 @@ MPM::MPM(int narg, char **arg, MPI_Comm communicator)
     iarg++;
   }
 
+  wlogfile = NULL;
+
   if (universe->me == 0) {
     if (inflag != 0) infile.open(arg[inflag], ios_base::in); // open in read only
     //logfile.open("log.mpm", ios_base::out); // open in write only
