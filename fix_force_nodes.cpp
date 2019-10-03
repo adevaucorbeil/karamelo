@@ -96,7 +96,7 @@ void FixForceNodes::post_particles_to_grid() {
       g = domain->solids[isolid]->grid;
       n = 0;
 
-      for (int in = 0; in < g->nnodes_local; in++) {
+      for (int in = 0; in < g->nnodes_local + g->nnodes_ghost; in++) {
 	if (g->mass[in] > 0) {
 	  if (g->mask[in] & groupbit) {
 	    n++;
@@ -104,7 +104,7 @@ void FixForceNodes::post_particles_to_grid() {
 	}
       }
 	    
-      for (int in = 0; in < g->nnodes_local; in++) {
+      for (int in = 0; in < g->nnodes_local + g->nnodes_ghost; in++) {
 	if (g->mass[in] > 0) {
 	  if (g->mask[in] & groupbit) {
 	    if (xset) {
@@ -128,7 +128,7 @@ void FixForceNodes::post_particles_to_grid() {
     g = domain->solids[solid]->grid;
     n = 0;
 
-    for (int in = 0; in < g->nnodes_local; in++) {
+    for (int in = 0; in < g->nnodes_local + g->nnodes_ghost; in++) {
       if (g->mass[in] > 0) {
 	if (g->mask[in] & groupbit) {
 	  n++;
@@ -136,7 +136,7 @@ void FixForceNodes::post_particles_to_grid() {
       }
     }
 
-    for (int in = 0; in < g->nnodes_local; in++) {
+    for (int in = 0; in < g->nnodes_local + g->nnodes_ghost; in++) {
       if (g->mass[in] > 0) {
 	if (g->mask[in] & groupbit) {
 	  if (xset) {

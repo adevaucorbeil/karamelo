@@ -126,7 +126,7 @@ void FixVelocityNodes::post_update_grid_state() {
     for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
       g = domain->solids[isolid]->grid;
 
-      for (int ip = 0; ip < g->nnodes_local; ip++) {
+      for (int ip = 0; ip < g->nnodes_local + g->nnodes_ghost; ip++) {
 	if (g->mask[ip] & groupbit) {
 	  if (xset) {
 	    g->v_update[ip][0] = vx;
@@ -147,7 +147,7 @@ void FixVelocityNodes::post_update_grid_state() {
 
     g = domain->solids[solid]->grid;
 
-    for (int ip = 0; ip < g->nnodes_local; ip++) {
+    for (int ip = 0; ip < g->nnodes_local + g->nnodes_ghost; ip++) {
       if (g->mask[ip] & groupbit) {
 	if (xset) {
 	  g->v_update[ip][0] = vx;
@@ -191,7 +191,7 @@ void FixVelocityNodes::post_velocities_to_grid() {
     for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
       g = domain->solids[isolid]->grid;
 
-      for (int ip = 0; ip < g->nnodes_local; ip++) {
+      for (int ip = 0; ip < g->nnodes_local + g->nnodes_ghost; ip++) {
 	if (g->mask[ip] & groupbit) {
 	  if (xset) g->v[ip][0] = vx;
 	  if (yset) g->v[ip][1] = vy;
@@ -202,7 +202,7 @@ void FixVelocityNodes::post_velocities_to_grid() {
   } else {
     g = domain->solids[solid]->grid;
 
-    for (int ip = 0; ip < g->nnodes_local; ip++) {
+    for (int ip = 0; ip < g->nnodes_local + g->nnodes_ghost; ip++) {
       if (g->mask[ip] & groupbit) {
 	if (xset) g->v[ip][0] = vx;
 	if (yset) g->v[ip][1] = vy;

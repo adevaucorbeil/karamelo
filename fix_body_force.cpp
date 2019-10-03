@@ -89,7 +89,7 @@ void FixBodyforce::post_particles_to_grid() {
     for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
       g = domain->solids[isolid]->grid;
 
-      for (int in = 0; in < g->nnodes_local; in++) {
+      for (int in = 0; in < g->nnodes_local + g->nnodes_ghost; in++) {
 	if (g->mass[in] > 0) {
 	  if (g->mask[in] & groupbit) {
 	      (*input->vars)["x"] = Var("x", g->x0[in][0]);
@@ -112,7 +112,7 @@ void FixBodyforce::post_particles_to_grid() {
   } else {
     g = domain->solids[solid]->grid;
 
-    for (int in = 0; in < g->nnodes_local; in++) {
+    for (int in = 0; in < g->nnodes_local + g->nnodes_ghost; in++) {
       if (g->mass[in] > 0) {
 	if (g->mask[in] & groupbit) {
 	  (*input->vars)["x"] = Var("x", g->x0[in][0]);
