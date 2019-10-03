@@ -175,12 +175,16 @@ void Domain::set_local_box() {
     h[1] = l[1]/procgrid[1];
     sublo[1] = myloc[1]*h[1] + boxlo[1];
     subhi[1] = sublo[1] + h[1];
+  } else {
+    sublo[1] = subhi[1] = 0;
   }
 
   if (dimension == 3) {
     h[2] = l[2]/procgrid[2];
     sublo[2] = myloc[2]*h[2] + boxlo[2];
     subhi[2] = sublo[2] + h[2];
+  } else {
+    sublo[2] = subhi[2] = 0;
   }
 
 #ifdef DEBUG
