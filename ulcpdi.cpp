@@ -12,6 +12,7 @@
 #include "var.h"
 #include "basis_functions.h"
 #include "error.h"
+#include "universe.h"
 
 using namespace std;
 
@@ -387,6 +388,7 @@ void ULCPDI::adjust_dt()
 
 
   double dtCFL = 1.0e22;
+  double dtCFL_reduced = 1.0e22;
 
   for (int isolid=0; isolid<domain->solids.size(); isolid++) {
     dtCFL = MIN(dtCFL, domain->solids[isolid]->dtCFL);
@@ -400,7 +402,10 @@ void ULCPDI::adjust_dt()
       error->all(FLERR, "");
     }
   }
-  update->dt = dtCFL * update->dt_factor;
+
+  MPI_Allreduce(&dtCFL, &dtCFL_reduced, 1, MPI_DOUBLE, MPI_MIN, universe->uworld);
+
+  update->dt = dtCFL_reduced * update->dt_factor;
   (*input->vars)["dt"] = Var("dt", update->dt);
 }
 
