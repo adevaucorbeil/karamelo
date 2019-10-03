@@ -78,12 +78,12 @@ void FixBodyforce::post_particles_to_grid() {
 
   int solid = group->solid[igroup];
 
-  Eigen::Vector3d *mb;
+  vector<Eigen::Vector3d> *x0;
+  vector<Eigen::Vector3d> *mb;
   int nmax;
   int *mask;
   double *mass;
   Eigen::Vector3d ftot, ftot_reduced;
-  Eigen::Vector3d *x0;
   Eigen::Matrix3d *R;
 
   double mtot = 0;
@@ -91,8 +91,8 @@ void FixBodyforce::post_particles_to_grid() {
 
   if (solid == -1) {
     for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
-      mb = domain->solids[isolid]->grid->mb;
-      x0 = domain->solids[isolid]->grid->x0;
+      mb = &domain->solids[isolid]->grid->mb;
+      x0 = &domain->solids[isolid]->grid->x0;
       nmax = domain->solids[isolid]->grid->nnodes_local;
       mask = domain->solids[isolid]->grid->mask;
       mass = domain->solids[isolid]->grid->mass;
@@ -100,9 +100,9 @@ void FixBodyforce::post_particles_to_grid() {
       for (int in = 0; in < nmax; in++) {
 	if (mass[in] > 0) {
 	  if (mask[in] & groupbit) {
-	      (*input->vars)["x"] = Var("x", x0[in][0]);
-	      (*input->vars)["y"] = Var("y", x0[in][1]);
-	      (*input->vars)["z"] = Var("z", x0[in][2]);
+	      (*input->vars)["x"] = Var("x", (*x0)[in][0]);
+	      (*input->vars)["y"] = Var("y", (*x0)[in][1]);
+	      (*input->vars)["z"] = Var("z", (*x0)[in][2]);
 
 	      f.setZero();
 	      if (xset) f[0] = xvalue.result(mpm);
@@ -110,7 +110,7 @@ void FixBodyforce::post_particles_to_grid() {
 	      if (zset) f[2] = zvalue.result(mpm);
 
 	      f *= mass[in];
-	      mb[in] += f;
+	      (*mb)[in] += f;
 	      ftot += f;
 	      mtot += mass[in];
 	  }
@@ -119,8 +119,8 @@ void FixBodyforce::post_particles_to_grid() {
     }
   } else {
 
-    mb = domain->solids[solid]->grid->mb;
-    x0 = domain->solids[solid]->grid->x0;
+    mb = &domain->solids[solid]->grid->mb;
+    x0 = &domain->solids[solid]->grid->x0;
     nmax = domain->solids[solid]->grid->nnodes_local;
     mask = domain->solids[solid]->grid->mask;
     mass = domain->solids[solid]->grid->mass;
@@ -129,9 +129,9 @@ void FixBodyforce::post_particles_to_grid() {
     for (int in = 0; in < nmax; in++) {
       if (mass[in] > 0) {
 	if (mask[in] & groupbit) {
-	  (*input->vars)["x"] = Var("x", x0[in][0]);
-	  (*input->vars)["y"] = Var("y", x0[in][1]);
-	  (*input->vars)["z"] = Var("z", x0[in][2]);
+	  (*input->vars)["x"] = Var("x", (*x0)[in][0]);
+	  (*input->vars)["y"] = Var("y", (*x0)[in][1]);
+	  (*input->vars)["z"] = Var("z", (*x0)[in][2]);
 
 	  f.setZero();
 	  if (xset) f[0] = xvalue.result(mpm);
@@ -139,7 +139,7 @@ void FixBodyforce::post_particles_to_grid() {
 	  if (zset) f[2] = zvalue.result(mpm);
 
 	  f *= mass[in];
-	  mb[in] += f;
+	  (*mb)[in] += f;
 	  ftot += f;
 	  mtot += mass[in];
 	}

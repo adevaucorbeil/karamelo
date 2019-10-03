@@ -118,8 +118,8 @@ void ULMPM::compute_grid_weight_functions_and_gradients()
 
       Eigen::Vector3d r;
       double s[3], sd[3];
-      Eigen::Vector3d *xp = domain->solids[isolid]->x;
-      Eigen::Vector3d *xn = domain->solids[isolid]->grid->x0;
+      vector<Eigen::Vector3d> *xp = &domain->solids[isolid]->x;
+      vector<Eigen::Vector3d> *xn = &domain->solids[isolid]->grid->x0;
       double inv_cellsize = 1.0 / domain->solids[isolid]->grid->cellsize;
       double wf;
       Eigen::Vector3d wfd;
@@ -149,9 +149,9 @@ void ULMPM::compute_grid_weight_functions_and_gradients()
 	  vector<int> n_neigh;
 
 	  if (update->method_shape_function.compare("linear")==0) {
-	    int i0 = (int) ((xp[ip][0] - domain->boxlo[0])*inv_cellsize);
-	    int j0 = (int) ((xp[ip][1] - domain->boxlo[1])*inv_cellsize);
-	    int k0 = (int) ((xp[ip][2] - domain->boxlo[2])*inv_cellsize);
+	    int i0 = (int) (((*xp)[ip][0] - domain->boxlo[0])*inv_cellsize);
+	    int j0 = (int) (((*xp)[ip][1] - domain->boxlo[1])*inv_cellsize);
+	    int k0 = (int) (((*xp)[ip][2] - domain->boxlo[2])*inv_cellsize);
 
 	    for(int i=i0; i<i0+2;i++){
 	      if (ny>1){
@@ -174,9 +174,9 @@ void ULMPM::compute_grid_weight_functions_and_gradients()
 	      }
 	    }
 	  } else if (update->method_shape_function.compare("Bernstein-quadratic")==0){
-	    int i0 = 2*(int) ((xp[ip][0] - domain->boxlo[0])*inv_cellsize);
-	    int j0 = 2*(int) ((xp[ip][1] - domain->boxlo[1])*inv_cellsize);
-	    int k0 = 2*(int) ((xp[ip][2] - domain->boxlo[2])*inv_cellsize);
+	    int i0 = 2*(int) (((*xp)[ip][0] - domain->boxlo[0])*inv_cellsize);
+	    int j0 = 2*(int) (((*xp)[ip][1] - domain->boxlo[1])*inv_cellsize);
+	    int k0 = 2*(int) (((*xp)[ip][2] - domain->boxlo[2])*inv_cellsize);
 
 	    if ((i0 >= 1) && (i0 % 2 != 0)) i0--;
 	    if ((j0 >= 1) && (j0 % 2 != 0)) j0--;
@@ -205,9 +205,9 @@ void ULMPM::compute_grid_weight_functions_and_gradients()
 	      }
 	    }
 	  } else if (update->method_shape_function.compare("cubic-spline")==0){
-	    int i0 = (int) ((xp[ip][0] - domain->boxlo[0])*inv_cellsize - 1);
-	    int j0 = (int) ((xp[ip][1] - domain->boxlo[1])*inv_cellsize - 1);
-	    int k0 = (int) ((xp[ip][2] - domain->boxlo[2])*inv_cellsize - 1);
+	    int i0 = (int) (((*xp)[ip][0] - domain->boxlo[0])*inv_cellsize - 1);
+	    int j0 = (int) (((*xp)[ip][1] - domain->boxlo[1])*inv_cellsize - 1);
+	    int k0 = (int) (((*xp)[ip][2] - domain->boxlo[2])*inv_cellsize - 1);
 
 	    for(int i=i0; i<i0+4;i++){
 	      if (ny>1) {
@@ -242,7 +242,7 @@ void ULMPM::compute_grid_weight_functions_and_gradients()
 	  for (auto in: n_neigh) {
 
 	    // Calculate the distance between each pair of particle/node:
-	    r = (xp[ip] - xn[in]) * inv_cellsize;
+	    r = ((*xp)[ip] - (*xn)[in]) * inv_cellsize;
 
 	    s[0] = basis_function(r[0], ntype[in][0]);
 	    if (domain->dimension >= 2) s[1] = basis_function(r[1], ntype[in][1]);
@@ -415,7 +415,7 @@ void ULMPM::reset()
 
   for (int isolid=0; isolid<domain->solids.size(); isolid++) {
     domain->solids[isolid]->dtCFL = 1.0e22;
-    np = domain->solids[isolid]->np;
-    for (int ip = 0; ip < np; ip++) domain->solids[isolid]->mb[ip].setZero();
+    np = domain->solids[isolid]->np_local;
+    for (int ip = 0; ip < np; ip++) domain->solids[isolid]->mbp[ip].setZero();
   }
 }

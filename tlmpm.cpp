@@ -124,8 +124,8 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
 
       Eigen::Vector3d r;
       double s[3], sd[3];
-      Eigen::Vector3d *xp = domain->solids[isolid]->x0;
-      Eigen::Vector3d *xn = domain->solids[isolid]->grid->x0;
+      vector<Eigen::Vector3d> *xp = &domain->solids[isolid]->x;
+      vector<Eigen::Vector3d> *xn = &domain->solids[isolid]->grid->x0;
       double inv_cellsize = 1.0 / domain->solids[isolid]->grid->cellsize;
       double wf;
       Eigen::Vector3d wfd;
@@ -148,11 +148,11 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
 	  vector<int> n_neigh;
 
 	  if (update->method_shape_function.compare("linear")==0) {
-	    int i0 = (int) ((xp[ip][0] - domain->solids[isolid]->solidlo[0])*inv_cellsize);
-	    int j0 = (int) ((xp[ip][1] - domain->solids[isolid]->solidlo[1])*inv_cellsize);
-	    int k0 = (int) ((xp[ip][2] - domain->solids[isolid]->solidlo[2])*inv_cellsize);
+	    int i0 = (int) (((*xp)[ip][0] - domain->solids[isolid]->solidlo[0])*inv_cellsize);
+	    int j0 = (int) (((*xp)[ip][1] - domain->solids[isolid]->solidlo[1])*inv_cellsize);
+	    int k0 = (int) (((*xp)[ip][2] - domain->solids[isolid]->solidlo[2])*inv_cellsize);
 
-	    cout << "(" << i0 << "," << j0 << "," << k0 << ")\t";
+	    // cout << "(" << i0 << "," << j0 << "," << k0 << ")\t";
 
 	    for(int i=i0; i<i0+2;i++){
 	      if (ny>1){
@@ -177,9 +177,9 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
 	      }
 	    }
 	  } else if (update->method_shape_function.compare("Bernstein-quadratic")==0){
-	    int i0 = 2*(int) ((xp[ip][0] - domain->solids[isolid]->solidlo[0])*inv_cellsize);
-	    int j0 = 2*(int) ((xp[ip][1] - domain->solids[isolid]->solidlo[1])*inv_cellsize);
-	    int k0 = 2*(int) ((xp[ip][2] - domain->solids[isolid]->solidlo[2])*inv_cellsize);
+	    int i0 = 2*(int) (((*xp)[ip][0] - domain->solids[isolid]->solidlo[0])*inv_cellsize);
+	    int j0 = 2*(int) (((*xp)[ip][1] - domain->solids[isolid]->solidlo[1])*inv_cellsize);
+	    int k0 = 2*(int) (((*xp)[ip][2] - domain->solids[isolid]->solidlo[2])*inv_cellsize);
 
 	    if ((i0 >= 1) && (i0 % 2 != 0)) i0--;
 	    if ((j0 >= 1) && (j0 % 2 != 0)) j0--;
@@ -210,9 +210,9 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
 	      }
 	    }
 	  } else if (update->method_shape_function.compare("cubic-spline")==0){
-	    int i0 = (int) ((xp[ip][0] - domain->solids[isolid]->solidlo[0])*inv_cellsize - 1);
-	    int j0 = (int) ((xp[ip][1] - domain->solids[isolid]->solidlo[1])*inv_cellsize - 1);
-	    int k0 = (int) ((xp[ip][2] - domain->solids[isolid]->solidlo[2])*inv_cellsize - 1);
+	    int i0 = (int) (((*xp)[ip][0] - domain->solids[isolid]->solidlo[0])*inv_cellsize - 1);
+	    int j0 = (int) (((*xp)[ip][1] - domain->solids[isolid]->solidlo[1])*inv_cellsize - 1);
+	    int k0 = (int) (((*xp)[ip][2] - domain->solids[isolid]->solidlo[2])*inv_cellsize - 1);
 
 	    // cout << "(" << i0 << "," << j0 << "," << k0 << ")\t";
 
@@ -251,7 +251,7 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
 	  //for (int in=0; in<nnodes; in++) {
 	  for (auto in: n_neigh) {
 	    // Calculate the distance between each pair of particle/node:
-	    r = (xp[ip] - xn[in]) * inv_cellsize;
+	    r = ((*xp)[ip] - (*xn)[in]) * inv_cellsize;
 
 	    s[0] = basis_function(r[0], ntype[in][0]);
 	    if (domain->dimension >= 2) s[1] = basis_function(r[1], ntype[in][1]);
@@ -323,6 +323,7 @@ void TLMPM::particles_to_grid()
   bool grid_reset = true; // Indicate if the grid quantities have to be reset
   for (int isolid=0; isolid<domain->solids.size(); isolid++){
     domain->solids[isolid]->compute_mass_nodes(grid_reset);
+    domain->solids[isolid]->grid->reduce_mass_ghost_nodes();
     //domain->solids[isolid]->compute_node_rotation_matrix(grid_reset);
     if (method_type.compare("APIC") == 0) domain->solids[isolid]->compute_velocity_nodes_APIC(grid_reset);
     else domain->solids[isolid]->compute_velocity_nodes(grid_reset);
@@ -427,7 +428,7 @@ void TLMPM::reset()
 
   for (int isolid=0; isolid<domain->solids.size(); isolid++) {
     domain->solids[isolid]->dtCFL = 1.0e22;
-    np = domain->solids[isolid]->np;
-    for (int ip = 0; ip < np; ip++) domain->solids[isolid]->mb[ip].setZero();
+    np = domain->solids[isolid]->np_local;
+    for (int ip = 0; ip < np; ip++) domain->solids[isolid]->mbp[ip].setZero();
   }
 }

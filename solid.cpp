@@ -45,21 +45,9 @@ Solid::Solid(MPM *mpm, vector<string> args) :
 
   ptag = NULL;
 
-  x = x0 = NULL;
-  rp = rp0 = NULL;
-  xpc = xpc0 = NULL;
-
   if (update->method->is_CPDI) {
     nc = pow(2, domain->dimension);
   } else nc = 0;
-
-  v = v_update = NULL;
-
-  a = NULL;
-
-  sigma = strain_el = vol0PK1 = L = F = R = U = D = Finv = Fdot = Di = NULL;
-
-  mb = f = NULL;
 
   J = NULL;
 
@@ -97,28 +85,6 @@ Solid::Solid(MPM *mpm, vector<string> args) :
 Solid::~Solid()
 {
   memory->destroy(ptag);
-  memory->destroy(x0);
-  memory->destroy(x);
-  memory->destroy(rp0);
-  memory->destroy(rp);
-  memory->destroy(xpc0);
-  memory->destroy(xpc);
-  memory->destroy(v);
-  memory->destroy(v_update);
-  memory->destroy(a);
-  memory->destroy(mb);
-  memory->destroy(f);
-  memory->destroy(sigma);
-  memory->destroy(strain_el);
-  memory->destroy(vol0PK1);
-  memory->destroy(L);
-  memory->destroy(F);
-  memory->destroy(R);
-  memory->destroy(U);
-  memory->destroy(D);
-  memory->destroy(Finv);
-  memory->destroy(Fdot);
-  memory->destroy(Di);
 
   memory->destroy(J);
   memory->destroy(vol);
@@ -167,7 +133,7 @@ void Solid::init()
 
   if (grid->nnodes_local == 0) grid->init(solidlo, solidhi);
 
-  if (np == 0) {
+  if (np_local == 0) {
     error->all(FLERR,"Error: solid does not have any particles.\n");
   } else {
       bigint nnodes = grid->nnodes_local + grid->nnodes_ghost;
@@ -227,13 +193,11 @@ void Solid::grow(int nparticles){
 
   str = "solid-" + id + ":x0";
   cout << "Growing " << str << endl;
-  // if (x0 == NULL) x0 = new Eigen::Vector3d[nparticles];
-  x0 = memory->grow(x0, nparticles, str);
+  x0.resize(nparticles);
 
   str = "solid-" + id + ":x";
   cout << "Growing " << str << endl;
-  // if (x == NULL) x = new Eigen::Vector3d[nparticles];
-  x = memory->grow(x, nparticles, str);
+  x.resize(nparticles);
 
   if (method_style.compare("tlcpdi") == 0
       || method_style.compare("ulcpdi") == 0) {
@@ -241,12 +205,12 @@ void Solid::grow(int nparticles){
     str = "solid-" + id + ":rp0";
     cout << "Growing " << str << endl;
     // if (rp0 == NULL) rp0 = new Eigen::Vector3d[domain->dimension*nparticles];
-    rp0 = memory->grow(rp0, domain->dimension*nparticles, str);
+    rp0.resize(nparticles);
 
     str = "solid-" + id + ":rp";
     cout << "Growing " << str << endl;
     // if (rp == NULL) rp = new Eigen::Vector3d[domain->dimension*nparticles];
-    rp = memory->grow(rp, domain->dimension*nparticles, str);
+    rp.resize(nparticles);
   }
 
   if (method_style.compare("tlcpdi2") == 0
@@ -255,71 +219,70 @@ void Solid::grow(int nparticles){
     str = "solid-" + id + ":xpc0";
     cout << "Growing " << str << endl;
     // if (xpc0 == NULL) xpc0 = new Eigen::Vector3d[nc*nparticles];
-    xpc0 = memory->grow(xpc0, nc*nparticles, str);
+    xpc0.resize(nparticles);
 
     str = "solid-" + id + ":xpc";
     cout << "Growing " << str << endl;
     // if (xpc == NULL) xpc = new Eigen::Vector3d[nc*nparticles];
-    xpc = memory->grow(xpc, nc*nparticles, str);
+    xpc.resize(nparticles);
   }
 
   str = "solid-" + id + ":v";
   cout << "Growing " << str << endl;
   // if (v == NULL) v = new Eigen::Vector3d[nparticles];
-  v = memory->grow(v, nparticles, str);
+  v.resize(nparticles);
 
   str = "solid-" + id + ":v_update";
   cout << "Growing " << str << endl;
   // if (v_update == NULL) v_update = new Eigen::Vector3d[nparticles];
-  v_update = memory->grow(v_update, nparticles, str);
+  v_update.resize(nparticles);
 
   str = "solid-" + id + ":a";
   cout << "Growing " << str << endl;
   // if (a == NULL) a = new Eigen::Vector3d[nparticles];
-  a = memory->grow(a, nparticles, str);
+  a.resize(nparticles);
 
-  str = "solid-" + id + ":mb";
+  str = "solid-" + id + ":mbp";
   cout << "Growing " << str << endl;
-  // if (mb == NULL) mb = new Eigen::Vector3d[nparticles];
-  mb = memory->grow(mb, nparticles, str);
+  mbp.resize(nparticles);
 
   str = "solid-" + id + ":f";
   cout << "Growing " << str << endl;
   // if (f == NULL) f = new Eigen::Vector3d[nparticles];
-  f = memory->grow(f, nparticles, str);
+  f.resize(nparticles);
 
   // if (sigma == NULL) sigma = new Eigen::Matrix3d[nparticles];
-  sigma = memory->grow(sigma, nparticles, str);
+  sigma.resize(nparticles);
 
   // if (strain_el == NULL) strain_el = new Eigen::Matrix3d[nparticles];
-  strain_el = memory->grow(strain_el, nparticles, str);
+  strain_el.resize(nparticles);
 
   // if (vol0PK1 == NULL) vol0PK1 = new Eigen::Matrix3d[nparticles];
-  vol0PK1 = memory->grow(vol0PK1, nparticles, str);
+  vol0PK1.resize(nparticles);
 
   // if (L == NULL) L = new Eigen::Matrix3d[nparticles];
-  L = memory->grow(L, nparticles, str);
+  L.resize(nparticles);
 
   // if (F == NULL) F = new Eigen::Matrix3d[nparticles];
-  F = memory->grow(F, nparticles, str);
+  F.resize(nparticles);
 
   // if (R == NULL) R = new Eigen::Matrix3d[nparticles];
-  R = memory->grow(R, nparticles, str);
+  R.resize(nparticles);
 
   // if (U == NULL) U = new Eigen::Matrix3d[nparticles];
-  U = memory->grow(U, nparticles, str);
+  U.resize(nparticles);
 
   // if (D == NULL) D = new Eigen::Matrix3d[nparticles];
-  D = memory->grow(D, nparticles, str);
+  D.resize(nparticles);
 
   // if (Finv == NULL) Finv = new Eigen::Matrix3d[nparticles];
-  Finv = memory->grow(Finv, nparticles, str);
+  Finv.resize(nparticles);
 
   // if (Fdot == NULL) Fdot = new Eigen::Matrix3d[nparticles];
-  Fdot = memory->grow(Fdot, nparticles, str);
+  Fdot.resize(nparticles);
 
   // if (Di == NULL) Di = new Eigen::Matrix3d[nparticles];
-  Di = memory->grow(Di, nparticles, str);
+  Di.resize(nparticles);
 
 
   str = "solid-" + id + ":vol0";
@@ -387,41 +350,41 @@ void Solid::compute_mass_nodes(bool reset)
 
 void Solid::compute_velocity_nodes(bool reset)
 {
-  Eigen::Vector3d *vn = grid->v;
+  vector<Eigen::Vector3d> *vn = &grid->v;
   Eigen::Vector3d vtemp;
   double *massn = grid->mass;
   int ip;
   int nn = grid->nnodes_local + grid->nnodes_ghost;
 
   for (int in=0; in<nn; in++) {
-    if (reset) vn[in].setZero();
+    if (reset) (*vn)[in].setZero();
     if (massn[in] > 0) {
       vtemp.setZero();
       for (int j=0; j<numneigh_np[in];j++){
 	ip = neigh_np[in][j];
 	vtemp += (wf_np[in][j] * mass[ip]) * v[ip];
-	//vn[in] += (wf_np[in][j] * mass[ip]) * v[ip]/ massn[in];
+	//(*vn)[in] += (wf_np[in][j] * mass[ip]) * v[ip]/ massn[in];
       }
       vtemp /= massn[in];
-      vn[in] += vtemp;
+      (*vn)[in] += vtemp;
     }
   }
 }
 
 void Solid::compute_velocity_nodes_APIC(bool reset)
 {
-  Eigen::Vector3d *x0n = grid->x0;
-  Eigen::Vector3d *vn = grid->v;
+  vector<Eigen::Vector3d> *x0n = &grid->x0;
+  vector<Eigen::Vector3d> *vn = &grid->v;
   double *massn = grid->mass;
   int ip;
   int nn = grid->nnodes_local + grid->nnodes_ghost;
 
   for (int in=0; in<nn; in++) {
-    if (reset) vn[in].setZero();
+    if (reset) (*vn)[in].setZero();
     if (massn[in] > 0) {
       for (int j=0; j<numneigh_np[in];j++){
 	ip = neigh_np[in][j];
-	vn[in] += (wf_np[in][j] * mass[ip]) * (v[ip] + Fdot[ip]*(x0n[in] - x0[ip]))/ massn[in];
+	(*vn)[in] += (wf_np[in][j] * mass[ip]) * (v[ip] + Fdot[ip]*((*x0n)[in] - x0[ip]))/ massn[in];
       }
     }
   }
@@ -429,17 +392,17 @@ void Solid::compute_velocity_nodes_APIC(bool reset)
 
 void Solid::compute_external_forces_nodes(bool reset)
 {
-  Eigen::Vector3d *mbn = grid->mb;
+  vector<Eigen::Vector3d> *mbn = &grid->mb;
   double *massn = grid->mass;
   int ip;
   int nn = grid->nnodes_local + grid->nnodes_ghost;
 
   for (int in=0; in<nn; in++) {
-    if (reset) mbn[in].setZero();
+    if (reset) (*mbn)[in].setZero();
     if (massn[in] > 0) {
       for (int j=0; j<numneigh_np[in];j++){
 	ip = neigh_np[in][j];
-	mbn[in] += wf_np[in][j] * mb[ip];
+	(*mbn)[in] += wf_np[in][j] * mbp[ip];
       }
     }
   }
@@ -447,7 +410,7 @@ void Solid::compute_external_forces_nodes(bool reset)
 
 void Solid::compute_internal_forces_nodes_TL()
 {
-  Eigen::Vector3d *fn = grid->f;
+  vector<Eigen::Vector3d> *fn = &grid->f;
   Eigen::Vector3d ftemp;
   int ip;
   int nn = grid->nnodes_local + grid->nnodes_ghost;
@@ -460,22 +423,22 @@ void Solid::compute_internal_forces_nodes_TL()
       ftemp -= vol0PK1[ip] * wfd_np[in][j];
       //fn[in] -= (vol0PK1[ip] * wfd_np[in][j]);
     }
-    fn[in] = ftemp;
+    (*fn)[in] = ftemp;
   }
 }
 
 void Solid::compute_internal_forces_nodes_UL(bool reset)
 {
-  Eigen::Vector3d *fn = grid->f;
+  vector<Eigen::Vector3d> *fn = &grid->f;
   double *massn = grid->mass;
   int ip;
   int nn = grid->nnodes_local + grid->nnodes_ghost;
 
   for (int in=0; in<nn; in++) {
-    if (reset) fn[in].setZero();
+    if (reset) (*fn)[in].setZero();
     for (int j=0; j<numneigh_np[in];j++){
       ip = neigh_np[in][j];
-      fn[in] -= vol[ip] * (sigma[ip] * wfd_np[in][j]);
+      (*fn)[in] -= vol[ip] * (sigma[ip] * wfd_np[in][j]);
     }
   }
 }
@@ -483,14 +446,14 @@ void Solid::compute_internal_forces_nodes_UL(bool reset)
 
 void Solid::compute_particle_velocities()
 {
-  Eigen::Vector3d *vn_update = grid->v_update;
+  vector<Eigen::Vector3d> *vn_update = &grid->v_update;
   int in;
 
   for (int ip=0; ip<np_local; ip++){
     v_update[ip].setZero();
     for (int j=0; j<numneigh_pn[ip]; j++){
       in = neigh_pn[ip][j];
-      v_update[ip] += wf_pn[ip][j] * vn_update[in];
+      v_update[ip] += wf_pn[ip][j] * (*vn_update)[in];
     }
   }
 }
@@ -499,8 +462,8 @@ void Solid::compute_particle_acceleration()
 {
   double inv_dt = 1.0/update->dt;
   
-  Eigen::Vector3d *vn_update = grid->v_update;
-  Eigen::Vector3d *vn = grid->v;
+  vector<Eigen::Vector3d> *vn_update = &grid->v_update;
+  vector<Eigen::Vector3d> *vn = &grid->v;
 
   int in;
 
@@ -508,7 +471,7 @@ void Solid::compute_particle_acceleration()
     a[ip].setZero();
     for (int j=0; j<numneigh_pn[ip]; j++){
       in = neigh_pn[ip][j];
-      a[ip] += wf_pn[ip][j] * (vn_update[in] - vn[in]);
+      a[ip] += wf_pn[ip][j] * ((*vn_update)[in] - (*vn)[in]);
     }
     a[ip] *= inv_dt;
     f[ip] = a[ip] / mass[ip];
@@ -546,14 +509,14 @@ void Solid::update_particle_velocities(double FLIP)
 void Solid::compute_rate_deformation_gradient_TL()
 {
   int in;
-  Eigen::Vector3d *vn = grid->v;
+  vector<Eigen::Vector3d> *vn = &grid->v;
 
   if (domain->dimension == 1) {
     for (int ip=0; ip<np_local; ip++){
       Fdot[ip].setZero();
       for (int j=0; j<numneigh_pn[ip]; j++){
 	in = neigh_pn[ip][j];
-	Fdot[ip](0,0) += vn[in][0]*wfd_pn[ip][j][0];
+	Fdot[ip](0,0) += (*vn)[in][0]*wfd_pn[ip][j][0];
       }
     }
   } else if (domain->dimension == 2) {
@@ -561,10 +524,10 @@ void Solid::compute_rate_deformation_gradient_TL()
       Fdot[ip].setZero();
       for (int j=0; j<numneigh_pn[ip]; j++){
 	in = neigh_pn[ip][j];
-	Fdot[ip](0,0) += vn[in][0]*wfd_pn[ip][j][0];
-	Fdot[ip](0,1) += vn[in][0]*wfd_pn[ip][j][1];
-	Fdot[ip](1,0) += vn[in][1]*wfd_pn[ip][j][0];
-	Fdot[ip](1,1) += vn[in][1]*wfd_pn[ip][j][1];
+	Fdot[ip](0,0) += (*vn)[in][0]*wfd_pn[ip][j][0];
+	Fdot[ip](0,1) += (*vn)[in][0]*wfd_pn[ip][j][1];
+	Fdot[ip](1,0) += (*vn)[in][1]*wfd_pn[ip][j][0];
+	Fdot[ip](1,1) += (*vn)[in][1]*wfd_pn[ip][j][1];
       }
     }
   } else if (domain->dimension == 3) {
@@ -572,15 +535,15 @@ void Solid::compute_rate_deformation_gradient_TL()
       Fdot[ip].setZero();
       for (int j=0; j<numneigh_pn[ip]; j++){
 	in = neigh_pn[ip][j];
-	Fdot[ip](0,0) += vn[in][0]*wfd_pn[ip][j][0];
-	Fdot[ip](0,1) += vn[in][0]*wfd_pn[ip][j][1];
-	Fdot[ip](0,2) += vn[in][0]*wfd_pn[ip][j][2];
-	Fdot[ip](1,0) += vn[in][1]*wfd_pn[ip][j][0];
-	Fdot[ip](1,1) += vn[in][1]*wfd_pn[ip][j][1];
-	Fdot[ip](1,2) += vn[in][1]*wfd_pn[ip][j][2];
-	Fdot[ip](2,0) += vn[in][2]*wfd_pn[ip][j][0];
-	Fdot[ip](2,1) += vn[in][2]*wfd_pn[ip][j][1];
-	Fdot[ip](2,2) += vn[in][2]*wfd_pn[ip][j][2];
+	Fdot[ip](0,0) += (*vn)[in][0]*wfd_pn[ip][j][0];
+	Fdot[ip](0,1) += (*vn)[in][0]*wfd_pn[ip][j][1];
+	Fdot[ip](0,2) += (*vn)[in][0]*wfd_pn[ip][j][2];
+	Fdot[ip](1,0) += (*vn)[in][1]*wfd_pn[ip][j][0];
+	Fdot[ip](1,1) += (*vn)[in][1]*wfd_pn[ip][j][1];
+	Fdot[ip](1,2) += (*vn)[in][1]*wfd_pn[ip][j][2];
+	Fdot[ip](2,0) += (*vn)[in][2]*wfd_pn[ip][j][0];
+	Fdot[ip](2,1) += (*vn)[in][2]*wfd_pn[ip][j][1];
+	Fdot[ip](2,2) += (*vn)[in][2]*wfd_pn[ip][j][2];
       }
     }
   }
@@ -589,14 +552,14 @@ void Solid::compute_rate_deformation_gradient_TL()
 void Solid::compute_rate_deformation_gradient_UL_MUSL()
 {
   int in;
-  Eigen::Vector3d *vn = grid->v;
+  vector<Eigen::Vector3d> *vn = &grid->v;
 
   if (domain->dimension == 1) {
     for (int ip=0; ip<np_local; ip++){
       L[ip].setZero();
       for (int j=0; j<numneigh_pn[ip]; j++){
 	in = neigh_pn[ip][j];
-	L[ip](0,0) += vn[in][0]*wfd_pn[ip][j][0];
+	L[ip](0,0) += (*vn)[in][0]*wfd_pn[ip][j][0];
       }
     }
   } else if (domain->dimension == 2) {
@@ -604,10 +567,10 @@ void Solid::compute_rate_deformation_gradient_UL_MUSL()
       L[ip].setZero();
       for (int j=0; j<numneigh_pn[ip]; j++){
 	in = neigh_pn[ip][j];
-	L[ip](0,0) += vn[in][0]*wfd_pn[ip][j][0];
-	L[ip](0,1) += vn[in][0]*wfd_pn[ip][j][1];
-	L[ip](1,0) += vn[in][1]*wfd_pn[ip][j][0];
-	L[ip](1,1) += vn[in][1]*wfd_pn[ip][j][1];
+	L[ip](0,0) += (*vn)[in][0]*wfd_pn[ip][j][0];
+	L[ip](0,1) += (*vn)[in][0]*wfd_pn[ip][j][1];
+	L[ip](1,0) += (*vn)[in][1]*wfd_pn[ip][j][0];
+	L[ip](1,1) += (*vn)[in][1]*wfd_pn[ip][j][1];
       }
     }
   } else if (domain->dimension == 3) {
@@ -615,15 +578,15 @@ void Solid::compute_rate_deformation_gradient_UL_MUSL()
       L[ip].setZero();
       for (int j=0; j<numneigh_pn[ip]; j++){
 	in = neigh_pn[ip][j];
-	L[ip](0,0) += vn[in][0]*wfd_pn[ip][j][0];
-	L[ip](0,1) += vn[in][0]*wfd_pn[ip][j][1];
-	L[ip](0,2) += vn[in][0]*wfd_pn[ip][j][2];
-	L[ip](1,0) += vn[in][1]*wfd_pn[ip][j][0];
-	L[ip](1,1) += vn[in][1]*wfd_pn[ip][j][1];
-	L[ip](1,2) += vn[in][1]*wfd_pn[ip][j][2];
-	L[ip](2,0) += vn[in][2]*wfd_pn[ip][j][0];
-	L[ip](2,1) += vn[in][2]*wfd_pn[ip][j][1];
-	L[ip](2,2) += vn[in][2]*wfd_pn[ip][j][2];
+	L[ip](0,0) += (*vn)[in][0]*wfd_pn[ip][j][0];
+	L[ip](0,1) += (*vn)[in][0]*wfd_pn[ip][j][1];
+	L[ip](0,2) += (*vn)[in][0]*wfd_pn[ip][j][2];
+	L[ip](1,0) += (*vn)[in][1]*wfd_pn[ip][j][0];
+	L[ip](1,1) += (*vn)[in][1]*wfd_pn[ip][j][1];
+	L[ip](1,2) += (*vn)[in][1]*wfd_pn[ip][j][2];
+	L[ip](2,0) += (*vn)[in][2]*wfd_pn[ip][j][0];
+	L[ip](2,1) += (*vn)[in][2]*wfd_pn[ip][j][1];
+	L[ip](2,2) += (*vn)[in][2]*wfd_pn[ip][j][2];
       }
     }
   }
@@ -632,14 +595,14 @@ void Solid::compute_rate_deformation_gradient_UL_MUSL()
 void Solid::compute_rate_deformation_gradient_UL_USL()
 {
   int in;
-  Eigen::Vector3d *vn = grid->v_update;
+  vector<Eigen::Vector3d> *vn = &grid->v_update;
 
   if (domain->dimension == 1) {
     for (int ip=0; ip<np_local; ip++){
       L[ip].setZero();
       for (int j=0; j<numneigh_pn[ip]; j++){
 	in = neigh_pn[ip][j];
-	L[ip](0,0) += vn[in][0]*wfd_pn[ip][j][0];
+	L[ip](0,0) += (*vn)[in][0]*wfd_pn[ip][j][0];
       }
     }
   } else if (domain->dimension == 2) {
@@ -647,10 +610,10 @@ void Solid::compute_rate_deformation_gradient_UL_USL()
       L[ip].setZero();
       for (int j=0; j<numneigh_pn[ip]; j++){
 	in = neigh_pn[ip][j];
-	L[ip](0,0) += vn[in][0]*wfd_pn[ip][j][0];
-	L[ip](0,1) += vn[in][0]*wfd_pn[ip][j][1];
-	L[ip](1,0) += vn[in][1]*wfd_pn[ip][j][0];
-	L[ip](1,1) += vn[in][1]*wfd_pn[ip][j][1];
+	L[ip](0,0) += (*vn)[in][0]*wfd_pn[ip][j][0];
+	L[ip](0,1) += (*vn)[in][0]*wfd_pn[ip][j][1];
+	L[ip](1,0) += (*vn)[in][1]*wfd_pn[ip][j][0];
+	L[ip](1,1) += (*vn)[in][1]*wfd_pn[ip][j][1];
       }
     }
   } else if (domain->dimension == 3) {
@@ -658,15 +621,15 @@ void Solid::compute_rate_deformation_gradient_UL_USL()
       L[ip].setZero();
       for (int j=0; j<numneigh_pn[ip]; j++){
 	in = neigh_pn[ip][j];
-	L[ip](0,0) += vn[in][0]*wfd_pn[ip][j][0];
-	L[ip](0,1) += vn[in][0]*wfd_pn[ip][j][1];
-	L[ip](0,2) += vn[in][0]*wfd_pn[ip][j][2];
-	L[ip](1,0) += vn[in][1]*wfd_pn[ip][j][0];
-	L[ip](1,1) += vn[in][1]*wfd_pn[ip][j][1];
-	L[ip](1,2) += vn[in][1]*wfd_pn[ip][j][2];
-	L[ip](2,0) += vn[in][2]*wfd_pn[ip][j][0];
-	L[ip](2,1) += vn[in][2]*wfd_pn[ip][j][1];
-	L[ip](2,2) += vn[in][2]*wfd_pn[ip][j][2];
+	L[ip](0,0) += (*vn)[in][0]*wfd_pn[ip][j][0];
+	L[ip](0,1) += (*vn)[in][0]*wfd_pn[ip][j][1];
+	L[ip](0,2) += (*vn)[in][0]*wfd_pn[ip][j][2];
+	L[ip](1,0) += (*vn)[in][1]*wfd_pn[ip][j][0];
+	L[ip](1,1) += (*vn)[in][1]*wfd_pn[ip][j][1];
+	L[ip](1,2) += (*vn)[in][1]*wfd_pn[ip][j][2];
+	L[ip](2,0) += (*vn)[in][2]*wfd_pn[ip][j][0];
+	L[ip](2,1) += (*vn)[in][2]*wfd_pn[ip][j][1];
+	L[ip](2,2) += (*vn)[in][2]*wfd_pn[ip][j][2];
       }
     }
   }
@@ -675,8 +638,8 @@ void Solid::compute_rate_deformation_gradient_UL_USL()
 void Solid::compute_deformation_gradient()
 {
   int in;
-  Eigen::Vector3d *xn = grid->x;
-  Eigen::Vector3d *x0n = grid->x0;
+  vector<Eigen::Vector3d> *xn = &grid->x;
+  vector<Eigen::Vector3d> *x0n = &grid->x0;
   Eigen::Vector3d dx;
   Eigen::Matrix3d Ftemp, eye;
   eye.setIdentity();
@@ -687,7 +650,7 @@ void Solid::compute_deformation_gradient()
       Ftemp.setZero();
       for (int j=0; j<numneigh_pn[ip]; j++){
 	in = neigh_pn[ip][j];
-	dx = xn[in] - x0n[in];
+	dx = (*xn)[in] - (*x0n)[in];
 	Ftemp(0,0) += dx[0]*wfd_pn[ip][j][0];
       }
       F[ip](0,0) = Ftemp(0,0) +1;
@@ -698,7 +661,7 @@ void Solid::compute_deformation_gradient()
       Ftemp.setZero();
       for (int j=0; j<numneigh_pn[ip]; j++){
 	in = neigh_pn[ip][j];
-	dx = xn[in] - x0n[in];
+	dx = (*xn)[in] - (*x0n)[in];
 	Ftemp(0,0) += dx[0]*wfd_pn[ip][j][0];
 	Ftemp(0,1) += dx[0]*wfd_pn[ip][j][1];
 	Ftemp(1,0) += dx[1]*wfd_pn[ip][j][0];
@@ -712,7 +675,7 @@ void Solid::compute_deformation_gradient()
       Ftemp.setZero();
       for (int j=0; j<numneigh_pn[ip]; j++){
 	in = neigh_pn[ip][j];
-	dx = xn[in] - x0n[in];
+	dx = (*xn)[in] - (*x0n)[in];
 	Ftemp(0,0) += dx[0]*wfd_pn[ip][j][0];
 	Ftemp(0,1) += dx[0]*wfd_pn[ip][j][1];
 	Ftemp(0,2) += dx[0]*wfd_pn[ip][j][2];
@@ -734,9 +697,9 @@ void Solid::compute_deformation_gradient()
 void Solid::compute_rate_deformation_gradient_TL_APIC()
 {
   int in;
-  Eigen::Vector3d *x0n = grid->x0;
+  vector<Eigen::Vector3d> *x0n = &grid->x0;
   //Eigen::Vector3d *vn = grid->v;
-  Eigen::Vector3d *vn = grid->v_update;
+  vector<Eigen::Vector3d> *vn = &grid->v_update;
   Eigen::Vector3d dx;
 
   if (domain->dimension == 1) {
@@ -744,8 +707,8 @@ void Solid::compute_rate_deformation_gradient_TL_APIC()
       Fdot[ip].setZero();
       for (int j=0; j<numneigh_pn[ip]; j++){
 	in = neigh_pn[ip][j];
-	dx = x0n[in] - x0[ip];
-	Fdot[ip](0,0) += vn[in][0]*dx[0]*wf_pn[ip][j];
+	dx = (*x0n)[in] - x0[ip];
+	Fdot[ip](0,0) += (*vn)[in][0]*dx[0]*wf_pn[ip][j];
       }
       Fdot[ip] *= Di[ip];
     }
@@ -754,11 +717,11 @@ void Solid::compute_rate_deformation_gradient_TL_APIC()
       Fdot[ip].setZero();
       for (int j=0; j<numneigh_pn[ip]; j++){
 	in = neigh_pn[ip][j];
-	dx = x0n[in] - x0[ip];
-	Fdot[ip](0,0) += vn[in][0]*dx[0]*wf_pn[ip][j];
-	Fdot[ip](0,1) += vn[in][0]*dx[1]*wf_pn[ip][j];
-	Fdot[ip](1,0) += vn[in][1]*dx[0]*wf_pn[ip][j];
-	Fdot[ip](1,1) += vn[in][1]*dx[1]*wf_pn[ip][j];
+	dx = (*x0n)[in] - x0[ip];
+	Fdot[ip](0,0) += (*vn)[in][0]*dx[0]*wf_pn[ip][j];
+	Fdot[ip](0,1) += (*vn)[in][0]*dx[1]*wf_pn[ip][j];
+	Fdot[ip](1,0) += (*vn)[in][1]*dx[0]*wf_pn[ip][j];
+	Fdot[ip](1,1) += (*vn)[in][1]*dx[1]*wf_pn[ip][j];
       }
       Fdot[ip] *= Di[ip];
     }
@@ -767,16 +730,16 @@ void Solid::compute_rate_deformation_gradient_TL_APIC()
       Fdot[ip].setZero();
       for (int j=0; j<numneigh_pn[ip]; j++){
 	in = neigh_pn[ip][j];
-	dx = x0n[in] - x0[ip];
-	Fdot[ip](0,0) += vn[in][0]*dx[0]*wf_pn[ip][j];
-	Fdot[ip](0,1) += vn[in][0]*dx[1]*wf_pn[ip][j];
-	Fdot[ip](0,2) += vn[in][0]*dx[2]*wf_pn[ip][j];
-	Fdot[ip](1,0) += vn[in][1]*dx[0]*wf_pn[ip][j];
-	Fdot[ip](1,1) += vn[in][1]*dx[1]*wf_pn[ip][j];
-	Fdot[ip](1,2) += vn[in][1]*dx[2]*wf_pn[ip][j];
-	Fdot[ip](2,0) += vn[in][2]*dx[0]*wf_pn[ip][j];
-	Fdot[ip](2,1) += vn[in][2]*dx[1]*wf_pn[ip][j];
-	Fdot[ip](2,2) += vn[in][2]*dx[2]*wf_pn[ip][j];
+	dx = (*x0n)[in] - x0[ip];
+	Fdot[ip](0,0) += (*vn)[in][0]*dx[0]*wf_pn[ip][j];
+	Fdot[ip](0,1) += (*vn)[in][0]*dx[1]*wf_pn[ip][j];
+	Fdot[ip](0,2) += (*vn)[in][0]*dx[2]*wf_pn[ip][j];
+	Fdot[ip](1,0) += (*vn)[in][1]*dx[0]*wf_pn[ip][j];
+	Fdot[ip](1,1) += (*vn)[in][1]*dx[1]*wf_pn[ip][j];
+	Fdot[ip](1,2) += (*vn)[in][1]*dx[2]*wf_pn[ip][j];
+	Fdot[ip](2,0) += (*vn)[in][2]*dx[0]*wf_pn[ip][j];
+	Fdot[ip](2,1) += (*vn)[in][2]*dx[1]*wf_pn[ip][j];
+	Fdot[ip](2,2) += (*vn)[in][2]*dx[2]*wf_pn[ip][j];
       }
       Fdot[ip] *= Di[ip];
     }
@@ -786,9 +749,9 @@ void Solid::compute_rate_deformation_gradient_TL_APIC()
 void Solid::compute_rate_deformation_gradient_UL_APIC()
 {
   int in;
-  Eigen::Vector3d *x0n = grid->x0;
+  vector<Eigen::Vector3d> *x0n = &grid->x0;
   //Eigen::Vector3d *vn = grid->v;
-  Eigen::Vector3d *vn = grid->v_update;
+  vector<Eigen::Vector3d> *vn = &grid->v_update;
   Eigen::Vector3d dx;
 
   if (domain->dimension == 1) {
@@ -796,8 +759,8 @@ void Solid::compute_rate_deformation_gradient_UL_APIC()
       L[ip].setZero();
       for (int j=0; j<numneigh_pn[ip]; j++){
 	in = neigh_pn[ip][j];
-	dx = x0n[in] - x0[ip];
-	L[ip](0,0) += vn[in][0]*dx[0]*wf_pn[ip][j];
+	dx = (*x0n)[in] - x0[ip];
+	L[ip](0,0) += (*vn)[in][0]*dx[0]*wf_pn[ip][j];
       }
       L[ip] *= Di[ip];
     }
@@ -806,11 +769,11 @@ void Solid::compute_rate_deformation_gradient_UL_APIC()
       L[ip].setZero();
       for (int j=0; j<numneigh_pn[ip]; j++){
 	in = neigh_pn[ip][j];
-	dx = x0n[in] - x0[ip];
-	L[ip](0,0) += vn[in][0]*dx[0]*wf_pn[ip][j];
-	L[ip](0,1) += vn[in][0]*dx[1]*wf_pn[ip][j];
-	L[ip](1,0) += vn[in][1]*dx[0]*wf_pn[ip][j];
-	L[ip](1,1) += vn[in][1]*dx[1]*wf_pn[ip][j];
+	dx = (*x0n)[in] - x0[ip];
+	L[ip](0,0) += (*vn)[in][0]*dx[0]*wf_pn[ip][j];
+	L[ip](0,1) += (*vn)[in][0]*dx[1]*wf_pn[ip][j];
+	L[ip](1,0) += (*vn)[in][1]*dx[0]*wf_pn[ip][j];
+	L[ip](1,1) += (*vn)[in][1]*dx[1]*wf_pn[ip][j];
       }
       L[ip] *= Di[ip];
     }
@@ -819,16 +782,16 @@ void Solid::compute_rate_deformation_gradient_UL_APIC()
       L[ip].setZero();
       for (int j=0; j<numneigh_pn[ip]; j++){
 	in = neigh_pn[ip][j];
-	dx = x0n[in] - x0[ip];
-	L[ip](0,0) += vn[in][0]*dx[0]*wf_pn[ip][j];
-	L[ip](0,1) += vn[in][0]*dx[1]*wf_pn[ip][j];
-	L[ip](0,2) += vn[in][0]*dx[2]*wf_pn[ip][j];
-	L[ip](1,0) += vn[in][1]*dx[0]*wf_pn[ip][j];
-	L[ip](1,1) += vn[in][1]*dx[1]*wf_pn[ip][j];
-	L[ip](1,2) += vn[in][1]*dx[2]*wf_pn[ip][j];
-	L[ip](2,0) += vn[in][2]*dx[0]*wf_pn[ip][j];
-	L[ip](2,1) += vn[in][2]*dx[1]*wf_pn[ip][j];
-	L[ip](2,2) += vn[in][2]*dx[2]*wf_pn[ip][j];
+	dx = (*x0n)[in] - x0[ip];
+	L[ip](0,0) += (*vn)[in][0]*dx[0]*wf_pn[ip][j];
+	L[ip](0,1) += (*vn)[in][0]*dx[1]*wf_pn[ip][j];
+	L[ip](0,2) += (*vn)[in][0]*dx[2]*wf_pn[ip][j];
+	L[ip](1,0) += (*vn)[in][1]*dx[0]*wf_pn[ip][j];
+	L[ip](1,1) += (*vn)[in][1]*dx[1]*wf_pn[ip][j];
+	L[ip](1,2) += (*vn)[in][1]*dx[2]*wf_pn[ip][j];
+	L[ip](2,0) += (*vn)[in][2]*dx[0]*wf_pn[ip][j];
+	L[ip](2,1) += (*vn)[in][2]*dx[1]*wf_pn[ip][j];
+	L[ip](2,2) += (*vn)[in][2]*dx[2]*wf_pn[ip][j];
       }
       L[ip] *= Di[ip];
     }
@@ -1033,35 +996,6 @@ void Solid::compute_inertia_tensor(string form_function) {
       Di[ip] = 12.0 * cellsizeSqInv * eye;
     //cout << "Di[" << ip << "]=\n" << Di[ip] << endl;
   }
-}
-
-void Solid::copy_particle(int i, int j) {
-  x0[j] = x0[i];
-  x[j] = x[i];
-  v[j] = v[i];
-  v_update[j] = v[i];
-  a[j] = a[i];
-  mb[j] = mb[i];
-  f[j] = f[i];
-  vol0[j] = vol0[i];
-  vol[j]= vol[i];
-  rho0[j] = rho0[i];
-  rho[j] = rho[i];
-  mass[j] = mass[i];
-  eff_plastic_strain[j] = eff_plastic_strain[i];
-  eff_plastic_strain_rate[j] = eff_plastic_strain_rate[i];
-  damage[j] = damage[i];
-  damage_init[j] = damage_init[i];
-  sigma[j] = sigma[i];
-  vol0PK1[j] = vol0PK1[i];
-  L[j] = L[i];
-  F[j] = F[i];
-  R[j] = R[i];
-  U[j] = U[i];
-  D[j] = D[i];
-  Finv[j] = Finv[i];
-  Fdot[j] = Fdot[i];
-  J[j] = J[i];
 }
 
 void Solid::populate(vector<string> args) {
@@ -1324,7 +1258,7 @@ void Solid::populate(vector<string> args) {
   if (np_local > l) {
     grow(l);
   }
-  np_local = l; // Adjust np to account for the particles outside the domain
+  np_local = l; // Adjust np_local to account for the particles outside the domain
 
 
   // Determine the total number of particles:
@@ -1358,7 +1292,7 @@ void Solid::populate(vector<string> args) {
     a[i].setZero();
     v[i].setZero();
     f[i].setZero();
-    mb[i].setZero();
+    mbp[i].setZero();
     v_update[i].setZero();
     vol0[i] = vol[i] = vol_;
     rho0[i] = rho[i] = mat->rho0;

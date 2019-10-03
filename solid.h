@@ -23,36 +23,35 @@ class Solid : protected Pointers {
   double solidlo[3], solidhi[3];           // solid global bounds
   double solidsublo[3], solidsubhi[3];     // solid local bounds
 
-  Eigen::Vector3d *x;        // particles' current position
-  Eigen::Vector3d *x0;       // particles' reference position
+  vector<Eigen::Vector3d> x;        // particles' current position
+  vector<Eigen::Vector3d> x0;       // particles' reference position
 
   
-  Eigen::Vector3d *rp;       // current domain vector (CPDI1)
-  Eigen::Vector3d *rp0;      // reference domain vector (CPDI1)
-  Eigen::Vector3d *xpc;      // current position of the corners of the particles' domain (CPDI2)
-  Eigen::Vector3d *xpc0;     // reference position of the corners of the particles' domain (CPDI2)
+  vector<Eigen::Vector3d> rp;       // current domain vector (CPDI1)
+  vector<Eigen::Vector3d> rp0;      // reference domain vector (CPDI1)
+  vector<Eigen::Vector3d> xpc;      // current position of the corners of the particles' domain (CPDI2)
+  vector<Eigen::Vector3d> xpc0;     // reference position of the corners of the particles' domain (CPDI2)
   int nc;                    // number of corners per particles: 2^dimension
   
-  Eigen::Vector3d *v;        // particles' current velocity
-  Eigen::Vector3d *v_update; // particles' velocity at time t+dt
+  vector<Eigen::Vector3d> v;        // particles' current velocity
+  vector<Eigen::Vector3d> v_update; // particles' velocity at time t+dt
 
-  Eigen::Vector3d *a;        // particles' acceleration
+  vector<Eigen::Vector3d> a;         // particles' acceleration
 
-  Eigen::Vector3d *mb;        // particles' external forces times mass
-  Eigen::Vector3d *f;        // particles' internal forces
+  vector<Eigen::Vector3d> mbp;       // particles' external forces times mass
+  vector<Eigen::Vector3d> f;         // particles' internal forces
 
-  Eigen::Matrix3d *sigma;            // stress matrix
-  Eigen::Matrix3d *strain_el;        // elastic strain matrix
-  // Eigen::Matrix3d *PK1;              // 1st Piola-Kirchhoff matrix
-  Eigen::Matrix3d *vol0PK1;          // Transpose of the 1st Piola-Kirchhoff matrix times vol0
-  Eigen::Matrix3d *L;                // velocity gradient matrix
-  Eigen::Matrix3d *F;                // deformation gradient matrix
-  Eigen::Matrix3d *R;                // Rotation matrix
-  Eigen::Matrix3d *U;
-  Eigen::Matrix3d *D;                // symmetric part of L
-  Eigen::Matrix3d *Finv;             // inverse of the deformation gradient matrix
-  Eigen::Matrix3d *Fdot;             // rate of deformation gradient matrix
-  Eigen::Matrix3d *Di;               // inertia tensor
+  vector<Eigen::Matrix3d> sigma;            // stress matrix
+  vector<Eigen::Matrix3d> strain_el;        // elastic strain matrix
+  vector<Eigen::Matrix3d> vol0PK1;          // Transpose of the 1st Piola-Kirchhoff matrix times vol0
+  vector<Eigen::Matrix3d> L;                // velocity gradient matrix
+  vector<Eigen::Matrix3d> F;                // deformation gradient matrix
+  vector<Eigen::Matrix3d> R;                // Rotation matrix
+  vector<Eigen::Matrix3d> U;
+  vector<Eigen::Matrix3d> D;                // symmetric part of L
+  vector<Eigen::Matrix3d> Finv;             // inverse of the deformation gradient matrix
+  vector<Eigen::Matrix3d> Fdot;             // rate of deformation gradient matrix
+  vector<Eigen::Matrix3d> Di;               // inertia tensor
 
   double *J;                         // determinant of the deformation matrix
   double *vol0;                      // particles' reference volume
@@ -112,7 +111,6 @@ class Solid : protected Pointers {
   void update_stress();
   void compute_inertia_tensor(string);
   void compute_deformation_gradient();
-  void copy_particle(int, int);
   void update_particle_domain();
 
 private:

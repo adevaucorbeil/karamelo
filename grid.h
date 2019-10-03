@@ -42,15 +42,12 @@ class Grid : protected Pointers {
 
   double cellsize;       // size of the square cells forming the grid
 
-  // Eigen::Vector3d *C;            // connectivity matrix
-  Eigen::Vector3d *x;            // nodes' current position
-  Eigen::Vector3d *x0;           // nodes' reference position
-  Eigen::Vector3d *v;            // nodes' velocity at time t
-  Eigen::Vector3d *v_update;     // nodes' velocity at time t+dt
-  Eigen::Vector3d *mb;           // nodes' external forces times the mass
-  Eigen::Vector3d *f;            // nodes' internal forces
-
-  // Eigen::Matrix3d *R;            // nodes' rotation matrix
+  vector<Eigen::Vector3d> x;            // nodes' current position
+  vector<Eigen::Vector3d> x0;           // nodes' reference position
+  vector<Eigen::Vector3d> v;            // nodes' velocity at time t
+  vector<Eigen::Vector3d> v_update;     // nodes' velocity at time t+dt
+  vector<Eigen::Vector3d> mb;           // nodes' external forces times the mass
+  vector<Eigen::Vector3d> f;            // nodes' internal forces
 
   double *mass;              // nodes' current mass
   int *mask;                 // nodes' group mask
@@ -65,6 +62,7 @@ class Grid : protected Pointers {
   void setup(string);
   void init(double*, double*);
 
+  void reduce_mass_ghost_nodes();
   void reduce_ghost_nodes(bool only_v = false);
   void update_grid_velocities();
   void update_grid_positions();

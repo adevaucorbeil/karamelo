@@ -31,9 +31,6 @@ Grid::Grid(MPM *mpm) :
 
   ntag = NULL;
   nowner = NULL;
-  x = x0 = NULL;
-  v = v_update = NULL;
-  mb = f = NULL;
 
   mass = NULL;
   mask = NULL;
@@ -71,12 +68,6 @@ Grid::~Grid()
 {
   memory->destroy(ntag);
   memory->destroy(nowner);
-  memory->destroy(x);
-  memory->destroy(x0);
-  memory->destroy(v);
-  memory->destroy(v_update);
-  memory->destroy(mb);
-  memory->destroy(f);
   memory->destroy(mass);
   memory->destroy(mask);
   memory->destroy(ntype);
@@ -387,10 +378,8 @@ void Grid::init(double *solidlo, double *solidhi){
 
       // Check if the nodes received are in the subdomain:
       for (int i_recv=0; i_recv<size_nr; i_recv++) {
-	if (1) {//!domain->inside_subdomain(buf_recv[i_recv].x[0], buf_recv[i_recv].x[1], buf_recv[i_recv].x[2])) {
-	  if (domain->inside_subdomain_extended(buf_recv[i_recv].x[0], buf_recv[i_recv].x[1], buf_recv[i_recv].x[2], delta)) {
-	    gnodes.push_back(buf_recv[i_recv]);
-	  }
+	if (domain->inside_subdomain_extended(buf_recv[i_recv].x[0], buf_recv[i_recv].x[1], buf_recv[i_recv].x[2], delta)) {
+	  gnodes.push_back(buf_recv[i_recv]);
 	}
       }
     }
@@ -457,27 +446,27 @@ void Grid::grow(int nn){
 
   str = "grid-x0";
   cout << "Growing " << str << endl;
-  x0 = memory->grow(x0, nn, str);
+  x0.resize(nn);
 
   str = "grid-x";
   cout << "Growing " << str << endl;
-  x = memory->grow(x, nn, str);
+  x.resize(nn);
 
   str = "grid-v";
   cout << "Growing " << str << endl;
-  v = memory->grow(v, nn, str);
+  v.resize(nn);
 
   str = "grid-v_update";
   cout << "Growing " << str << endl;
-  v_update = memory->grow(v_update, nn, str);
+  v_update.resize(nn);
 
   str = "grid-mb";
   cout << "Growing " << str << endl;
-  mb = memory->grow(mb, nn, str);
+  mb.resize(nn);
 
   str = "grid-f";
   cout << "Growing " << str << endl;
-  f = memory->grow(f, nn, str);
+  f.resize(nn);
 
   str = "grid-mass";
   cout << "Growing " << str << endl;
@@ -514,10 +503,50 @@ void Grid::update_grid_positions()
   }
 }
 
+void Grid::reduce_mass_ghost_nodes()
+{
+  tagint in, j, ng;
+  double mass_local, mass_reduced;
+
+  MPI_Barrier(universe->uworld);
+
+  for (int proc=0; proc<universe->nprocs; proc++){
+    if (proc == universe->me) {
+      ng = nshared;
+    } else {
+      ng = 0;
+    }
+
+    MPI_Bcast(&ng,1,MPI_INT,proc,universe->uworld);
+
+    for (int is=0; is<ng; is++) {
+      if (proc == universe->me) {
+	// Position in array of the shared node: shared[is]
+	j = ntag[shared[is]];
+      }
+
+      MPI_Barrier(universe->uworld);
+      MPI_Bcast(&j,1,MPI_MPM_TAGINT,proc,universe->uworld);
+
+      if (map_ntag.count(j)) in = map_ntag[j];
+      else in = -1;
+
+      if (in >= 0) {
+	mass_local = mass[in];	
+      } else {
+	mass_local = 0;
+      }
+
+      MPI_Allreduce(&mass_local, &mass_reduced, 1, MPI_DOUBLE, MPI_SUM, universe->uworld);
+      mass[in] = mass_reduced;
+    }
+  }
+}
+
 void Grid::reduce_ghost_nodes(bool only_v)
 {
   tagint in, j, ng;
-  double mass_local, mass_reduced, f_local[3], f_reduced[3], v_local[3], v_reduced[3];
+  double f_local[3], f_reduced[3], v_local[3], v_reduced[3];
 
   MPI_Barrier(universe->uworld);
 
@@ -544,7 +573,6 @@ void Grid::reduce_ghost_nodes(bool only_v)
 
       if (in >= 0) {
 	if (!only_v) {
-	  mass_local = mass[in];
 	  f_local[0] = f[in][0];
 	  f_local[1] = f[in][1];
 	  f_local[2] = f[in][2];
@@ -554,17 +582,14 @@ void Grid::reduce_ghost_nodes(bool only_v)
 	v_local[2] = v[in][2];	
       } else {
 	if (!only_v) {
-	  mass_local = 0;
 	  f_local[0] = f_local[1] = f_local[2] = 0;
 	}
 	v_local[0] = v_local[1] = v_local[2] = 0;
       }
 
       if (!only_v) {
-	MPI_Allreduce(&mass_local, &mass_reduced, 1, MPI_DOUBLE, MPI_SUM, universe->uworld);
 	MPI_Allreduce(f_local, f_reduced, 3, MPI_DOUBLE, MPI_SUM, universe->uworld);
 
-	mass[in] = mass_reduced;
 	f[in][0] = f_reduced[0];
 	f[in][1] = f_reduced[1];
 	f[in][2] = f_reduced[2];

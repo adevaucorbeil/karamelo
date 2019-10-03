@@ -83,9 +83,9 @@ void DumpParticle::write()
 	dumpstream << s->damage_init[i] << " ";
 	dumpstream << s->vol[i] << " ";
 	dumpstream << s->mass[i] << " ";
-	dumpstream << s->mb[i][0] << " ";
-	dumpstream << s->mb[i][1] << " ";
-	dumpstream << s->mb[i][2] << " ";
+	dumpstream << s->mbp[i][0] << " ";
+	dumpstream << s->mbp[i][1] << " ";
+	dumpstream << s->mbp[i][2] << " ";
 	dumpstream << s->eff_plastic_strain[i] << " ";
 	dumpstream << s->eff_plastic_strain_rate[i] << endl;
       }

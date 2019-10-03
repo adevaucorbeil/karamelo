@@ -70,36 +70,36 @@ void FixInitialVelocityParticles::initial_integrate() {
   
   int solid = group->solid[igroup];
 
-  Eigen::Vector3d *v;
+  vector<Eigen::Vector3d> *v;
   int nmax;
   int *mask;
   int n = 0;
-  Eigen::Vector3d *x;
+  vector<Eigen::Vector3d> *x;
 
   if (solid == -1) {
     for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
       n = 0;
-      v = domain->solids[isolid]->v;
-      x = domain->solids[isolid]->x;
+      v = &domain->solids[isolid]->v;
+      x = &domain->solids[isolid]->x;
       nmax = domain->solids[isolid]->np_local;
       mask = domain->solids[isolid]->mask;
 
       for (int ip = 0; ip < nmax; ip++) {
 	if (mask[ip] & groupbit) {
-	  (*input->vars)["x"] = Var("x", x[ip][0]);
-	  (*input->vars)["y"] = Var("y", x[ip][1]);
-	  (*input->vars)["z"] = Var("z", x[ip][2]);
+	  (*input->vars)["x"] = Var("x", (*x)[ip][0]);
+	  (*input->vars)["y"] = Var("y", (*x)[ip][1]);
+	  (*input->vars)["z"] = Var("z", (*x)[ip][2]);
 	  if (xset) {
 	    vx = xvalue.result(mpm);
-	    v[ip][0] = vx;
+	    (*v)[ip][0] = vx;
 	  }
 	  if (yset) {
 	    vy = yvalue.result(mpm);
-	    v[ip][1] = vy;
+	    (*v)[ip][1] = vy;
 	  }
 	  if (zset) {
 	    vz = zvalue.result(mpm);
-	    v[ip][2] = vz;
+	    (*v)[ip][2] = vz;
 	  }
 	  n++;
 	}
@@ -108,27 +108,27 @@ void FixInitialVelocityParticles::initial_integrate() {
     }
   } else {
 
-    v = domain->solids[solid]->v;
-    x = domain->solids[solid]->x;
+    v = &domain->solids[solid]->v;
+    x = &domain->solids[solid]->x;
     nmax = domain->solids[solid]->np_local;
     mask = domain->solids[solid]->mask;
 
     for (int ip = 0; ip < nmax; ip++) {
       if (mask[ip] & groupbit) {
-	(*input->vars)["x"] = Var("x", x[ip][0]);
-	(*input->vars)["y"] = Var("y", x[ip][1]);
-	(*input->vars)["z"] = Var("z", x[ip][2]);
+	(*input->vars)["x"] = Var("x", (*x)[ip][0]);
+	(*input->vars)["y"] = Var("y", (*x)[ip][1]);
+	(*input->vars)["z"] = Var("z", (*x)[ip][2]);
 	if (xset) {
 	  vx = xvalue.result(mpm);
-	  v[ip][0] = vx;
+	  (*v)[ip][0] = vx;
 	}
 	if (yset) {
 	  vy = yvalue.result(mpm);
-	  v[ip][1] = vy;
+	  (*v)[ip][1] = vy;
 	}
 	if (zset) {
 	  vz = zvalue.result(mpm);
-	  v[ip][2] = vz;
+	  (*v)[ip][2] = vz;
 	}
 	n++;
       }

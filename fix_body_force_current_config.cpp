@@ -70,38 +70,36 @@ void FixBodyforceCurrentConfig::initial_integrate() {
     
   int solid = group->solid[igroup];
 
-  Eigen::Vector3d *mb;
+  vector<Eigen::Vector3d> *mbp;
   int nmax;
   int *mask;
   double *mass;
   Eigen::Vector3d ftot, ftot_reduced;
-  Eigen::Vector3d *x0;
-  Eigen::Matrix3d *R;
+  vector<Eigen::Vector3d> *x0;
 
   ftot.setZero();
 
   if (solid == -1) {
     for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
-      mb = domain->solids[isolid]->mb;
-      x0 = domain->solids[isolid]->x0;
+      mbp = &domain->solids[isolid]->mbp;
+      x0 = &domain->solids[isolid]->x0;
       nmax = domain->solids[isolid]->np_local;
       mask = domain->solids[isolid]->mask;
       mass = domain->solids[isolid]->mass;
-      R = domain->solids[isolid]->R;
 
       for (int in = 0; in < nmax; in++) {
 	if (mass[in] > 0) {
 	  if (mask[in] & groupbit) {
-	    (*input->vars)["x"] = Var("x", x0[in][0]);
-	    (*input->vars)["y"] = Var("y", x0[in][1]);
-	    (*input->vars)["z"] = Var("z", x0[in][2]);
+	    (*input->vars)["x"] = Var("x", (*x0)[in][0]);
+	    (*input->vars)["y"] = Var("y", (*x0)[in][1]);
+	    (*input->vars)["z"] = Var("z", (*x0)[in][2]);
 	    f.setZero();
 	    if (xset) f[0] = xvalue.result(mpm);
 	    if (yset) f[1] = yvalue.result(mpm);
 	    if (zset) f[2] = zvalue.result(mpm);
 
 	    f *= mass[in];
-	    mb[in] += f;
+	    (*mbp)[in] += f;
 	    ftot += f;
 	  }
 	}
@@ -109,26 +107,25 @@ void FixBodyforceCurrentConfig::initial_integrate() {
     }
   } else {
 
-    mb = domain->solids[solid]->mb;
-    x0 = domain->solids[solid]->x0;
+    mbp = &domain->solids[solid]->mbp;
+    x0 = &domain->solids[solid]->x0;
     nmax = domain->solids[solid]->np_local;
     mask = domain->solids[solid]->mask;
     mass = domain->solids[solid]->mass;
-    R = domain->solids[solid]->R;
 
     for (int in = 0; in < nmax; in++) {
       if (mass[in] > 0) {
 	if (mask[in] & groupbit) {
-	  (*input->vars)["x"] = Var("x", x0[in][0]);
-	  (*input->vars)["y"] = Var("y", x0[in][1]);
-	  (*input->vars)["z"] = Var("z", x0[in][2]);
+	  (*input->vars)["x"] = Var("x", (*x0)[in][0]);
+	  (*input->vars)["y"] = Var("y", (*x0)[in][1]);
+	  (*input->vars)["z"] = Var("z", (*x0)[in][2]);
 	  f.setZero();  
 	  if (xset) f[0] = xvalue.result(mpm);
 	  if (yset) f[1] = yvalue.result(mpm);
 	  if (zset) f[2] = zvalue.result(mpm);
 
 	  f *= mass[in];
-	  mb[in] += f;
+	  (*mbp)[in] += f;
 	  ftot += f;
 	}
       }

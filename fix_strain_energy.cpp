@@ -63,8 +63,8 @@ void FixStrainEnergy::final_integrate() {
   int *mask;
   double *vol;
   double Es, Es_reduced;
-  Eigen::Matrix3d *sigma;
-  Eigen::Matrix3d *strain;
+  vector<Eigen::Matrix3d> *sigma;
+  vector<Eigen::Matrix3d> *strain;
 
   Es = 0;
   if (solid == -1) {
@@ -72,20 +72,20 @@ void FixStrainEnergy::final_integrate() {
       vol = domain->solids[isolid]->vol;
       nmax = domain->solids[isolid]->np_local;
       mask = domain->solids[isolid]->mask;
-      sigma = domain->solids[isolid]->sigma;
-      strain = domain->solids[isolid]->strain_el;
+      sigma = &domain->solids[isolid]->sigma;
+      strain = &domain->solids[isolid]->strain_el;
 
       for (int in = 0; in < nmax; in++) {
 	if (mask[in] & groupbit) {
-	  Es += 0.5*vol[in]*(sigma[in](0,0)*strain[in](0,0)
-			     + sigma[in](0,1)*strain[in](0,1)
-			     + sigma[in](0,2)*strain[in](0,2)
-			     + sigma[in](1,0)*strain[in](1,0)
-			     + sigma[in](1,1)*strain[in](1,1)
-			     + sigma[in](1,2)*strain[in](1,2)
-			     + sigma[in](2,0)*strain[in](2,0)
-			     + sigma[in](2,1)*strain[in](2,1)
-			     + sigma[in](2,2)*strain[in](2,2));
+	  Es += 0.5*vol[in]*((*sigma)[in](0,0)*(*strain)[in](0,0)
+			     + (*sigma)[in](0,1)*(*strain)[in](0,1)
+			     + (*sigma)[in](0,2)*(*strain)[in](0,2)
+			     + (*sigma)[in](1,0)*(*strain)[in](1,0)
+			     + (*sigma)[in](1,1)*(*strain)[in](1,1)
+			     + (*sigma)[in](1,2)*(*strain)[in](1,2)
+			     + (*sigma)[in](2,0)*(*strain)[in](2,0)
+			     + (*sigma)[in](2,1)*(*strain)[in](2,1)
+			     + (*sigma)[in](2,2)*(*strain)[in](2,2));
 	}
       }
     }
@@ -93,20 +93,20 @@ void FixStrainEnergy::final_integrate() {
     vol = domain->solids[solid]->vol;
     nmax = domain->solids[solid]->np_local;
     mask = domain->solids[solid]->mask;
-    sigma = domain->solids[solid]->sigma;
-    strain = domain->solids[solid]->strain_el;
+    sigma = &domain->solids[solid]->sigma;
+    strain = &domain->solids[solid]->strain_el;
 
     for (int in = 0; in < nmax; in++) {
       if (mask[in] & groupbit) {
-	Es += 0.5*vol[in]*(sigma[in](0,0)*strain[in](0,0)
-			   + sigma[in](0,1)*strain[in](0,1)
-			   + sigma[in](0,2)*strain[in](0,2)
-			   + sigma[in](1,0)*strain[in](1,0)
-			   + sigma[in](1,1)*strain[in](1,1)
-			   + sigma[in](1,2)*strain[in](1,2)
-			   + sigma[in](2,0)*strain[in](2,0)
-			   + sigma[in](2,1)*strain[in](2,1)
-			   + sigma[in](2,2)*strain[in](2,2));
+	Es += 0.5*vol[in]*((*sigma)[in](0,0)*(*strain)[in](0,0)
+			   + (*sigma)[in](0,1)*(*strain)[in](0,1)
+			   + (*sigma)[in](0,2)*(*strain)[in](0,2)
+			   + (*sigma)[in](1,0)*(*strain)[in](1,0)
+			   + (*sigma)[in](1,1)*(*strain)[in](1,1)
+			   + (*sigma)[in](1,2)*(*strain)[in](1,2)
+			   + (*sigma)[in](2,0)*(*strain)[in](2,0)
+			   + (*sigma)[in](2,1)*(*strain)[in](2,1)
+			   + (*sigma)[in](2,2)*(*strain)[in](2,2));
       }
     }
   }

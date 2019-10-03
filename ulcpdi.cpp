@@ -121,9 +121,9 @@ void ULCPDI::compute_grid_weight_functions_and_gradients()
       vector< Eigen::Vector3d > *wfd_pn = domain->solids[isolid]->wfd_pn;
       vector< Eigen::Vector3d > *wfd_np = domain->solids[isolid]->wfd_np;
 
-      Eigen::Vector3d *xp = domain->solids[isolid]->x;
-      Eigen::Vector3d *xn = domain->solids[isolid]->grid->x0;
-      Eigen::Vector3d *rp = domain->solids[isolid]->rp;
+      vector<Eigen::Vector3d> *xp = &domain->solids[isolid]->x;
+      vector<Eigen::Vector3d> *xn = &domain->solids[isolid]->grid->x0;
+      vector<Eigen::Vector3d> *rp = &domain->solids[isolid]->rp;
 
       double inv_cellsize = 1.0 / domain->solids[isolid]->grid->cellsize;
       double *vol = domain->solids[isolid]->vol;
@@ -161,15 +161,15 @@ void ULCPDI::compute_grid_weight_functions_and_gradients()
 
 	  // Calculate the coordinates of the particle domain's corners:
 	  if (domain->dimension == 1) {
-	    xcorner[0] = xp[ip] - rp[ip];
-	    xcorner[1] = xp[ip] + rp[ip];
+	    xcorner[0] = (*xp)[ip] - (*rp)[ip];
+	    xcorner[1] = (*xp)[ip] + (*rp)[ip];
 	  }
 
 	  if (domain->dimension == 2) {
-	    xcorner[0] = xp[ip] - rp[2*ip] - rp[2*ip+1];
-	    xcorner[1] = xp[ip] + rp[2*ip] - rp[2*ip+1];
-	    xcorner[2] = xp[ip] + rp[2*ip] + rp[2*ip+1];
-	    xcorner[3] = xp[ip] - rp[2*ip] + rp[2*ip+1];
+	    xcorner[0] = (*xp)[ip] - (*rp)[2*ip] - (*rp)[2*ip+1];
+	    xcorner[1] = (*xp)[ip] + (*rp)[2*ip] - (*rp)[2*ip+1];
+	    xcorner[2] = (*xp)[ip] + (*rp)[2*ip] + (*rp)[2*ip+1];
+	    xcorner[3] = (*xp)[ip] - (*rp)[2*ip] + (*rp)[2*ip+1];
 	  }
 
 	  if (domain->dimension == 3) {
@@ -251,7 +251,7 @@ void ULCPDI::compute_grid_weight_functions_and_gradients()
 
 	    for(int ic=0; ic<nc; ic++) {
 	      // Calculate the distance between each pair of particle/node:
-	      r = (xcorner[ic] - xn[in]) * inv_cellsize;
+	      r = (xcorner[ic] - (*xn)[in]) * inv_cellsize;
 
 	      s[0] = basis_function(r[0], ntype[in][0]);
 	      s[1] = basis_function(r[1], ntype[in][1]);
@@ -267,11 +267,11 @@ void ULCPDI::compute_grid_weight_functions_and_gradients()
 
 	    if (wf > 1.0e-12) {
 	      if (domain->dimension == 2) {
-		wfd[0] = (wfc[0] - wfc[2]) * (rp[domain->dimension*ip][1] - rp[domain->dimension*ip+1][1])
-		  + (wfc[1] - wfc[3]) * (rp[domain->dimension*ip][1] + rp[domain->dimension*ip+1][1]);
+		wfd[0] = (wfc[0] - wfc[2]) * ((*rp)[domain->dimension*ip][1] - (*rp)[domain->dimension*ip+1][1])
+		  + (wfc[1] - wfc[3]) * ((*rp)[domain->dimension*ip][1] + (*rp)[domain->dimension*ip+1][1]);
 		
-		wfd[1] = (wfc[0] - wfc[2]) * (rp[domain->dimension*ip+1][0] - rp[domain->dimension*ip][0])
-		  - (wfc[1] - wfc[3]) * (rp[domain->dimension*ip][0] + rp[domain->dimension*ip+1][0]);
+		wfd[1] = (wfc[0] - wfc[2]) * ((*rp)[domain->dimension*ip+1][0] - (*rp)[domain->dimension*ip][0])
+		  - (wfc[1] - wfc[3]) * ((*rp)[domain->dimension*ip][0] + (*rp)[domain->dimension*ip+1][0]);
 		wfd[2] = 0;
 	      }
 
@@ -289,7 +289,7 @@ void ULCPDI::compute_grid_weight_functions_and_gradients()
 	      wf_np[in].push_back(wf);
 	      wfd_pn[ip].push_back(wfd);
 	      wfd_np[in].push_back(wfd);
-	      // cout << "node: " << in << " [ " << xn[in][0] << "," << xn[in][1] << "," << xn[in][2] << "]" <<
+	      // cout << "node: " << in << " [ " << (*xn)[in][0] << "," << (*xn)[in][1] << "," << (*xn)[in][2] << "]" <<
 	      // 	" with\twf=" << wf << " and\twfd=["<< wfd[0] << "," << wfd[1] << "," << wfd[2] << "]\n";
 	    }
 	  }
@@ -408,7 +408,7 @@ void ULCPDI::reset()
 
   for (int isolid=0; isolid<domain->solids.size(); isolid++) {
     domain->solids[isolid]->dtCFL = 1.0e22;
-    np = domain->solids[isolid]->np;
-    for (int ip = 0; ip < np; ip++) domain->solids[isolid]->mb[ip].setZero();
+    np = domain->solids[isolid]->np_local;
+    for (int ip = 0; ip < np; ip++) domain->solids[isolid]->mbp[ip].setZero();
   }
 }

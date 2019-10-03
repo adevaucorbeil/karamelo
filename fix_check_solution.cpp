@@ -89,8 +89,8 @@ void FixChecksolution::final_integrate() {
   double *vol0;
   Eigen::Vector3d error, error_reduced;
   Eigen::Vector3d u_th;
-  Eigen::Vector3d *x0;
-  Eigen::Vector3d *x;  
+  vector<Eigen::Vector3d> *x0;
+  vector<Eigen::Vector3d> *x;
 
   error.setZero();
   u_th.setZero();
@@ -101,8 +101,8 @@ void FixChecksolution::final_integrate() {
     vtot = 0;
     for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
       vtot += domain->solids[isolid]->vtot;
-      x0 = domain->solids[isolid]->x0;
-      x = domain->solids[isolid]->x;
+      x0 = &domain->solids[isolid]->x0;
+      x = &domain->solids[isolid]->x;
       vol0 = domain->solids[isolid]->vol0;
       nmax = domain->solids[isolid]->np_local;
       mask = domain->solids[isolid]->mask;
@@ -110,21 +110,21 @@ void FixChecksolution::final_integrate() {
       for (int in = 0; in < nmax; in++) {
 	if (mask[in] & groupbit) {
 	  if (xset) {
-	    (*input->vars)["x"] = Var("x", x0[in][0]);
+	    (*input->vars)["x"] = Var("x", (*x0)[in][0]);
 	    ux = xvalue.result(mpm);
-	    error[0] += vol0[in]*square(ux-(x[in][0]-x0[in][0]));
+	    error[0] += vol0[in]*square(ux-((*x)[in][0]-(*x0)[in][0]));
 	    u_th[0] += vol0[in]*ux*ux;
 	  }
 	  if (yset) {
-	    (*input->vars)["y"] = Var("y", x0[in][1]);
+	    (*input->vars)["y"] = Var("y", (*x0)[in][1]);
 	    uy = yvalue.result(mpm);
-	    error[1] += vol0[in]*square(uy-(x[in][1]-x0[in][1]));
+	    error[1] += vol0[in]*square(uy-((*x)[in][1]-(*x0)[in][1]));
 	    u_th[1] += vol0[in]*uy*uy;
 	  }
 	  if (zset) {
-	    (*input->vars)["z"] = Var("z", x0[in][2]);
+	    (*input->vars)["z"] = Var("z", (*x0)[in][2]);
 	    uz = zvalue.result(mpm);
-	    error[2] += vol0[in]*square(uz-(x[in][2]-x0[in][2]));
+	    error[2] += vol0[in]*square(uz-((*x)[in][2]-(*x0)[in][2]));
 	    u_th[2] += vol0[in]*uz*uz;
 	  }
 	}
@@ -132,8 +132,8 @@ void FixChecksolution::final_integrate() {
     }
   } else {
     vtot = domain->solids[solid]->vtot;
-    x0 = domain->solids[solid]->x0;
-    x = domain->solids[solid]->x;
+    x0 = &domain->solids[solid]->x0;
+    x = &domain->solids[solid]->x;
     vol0 = domain->solids[solid]->vol0;
     nmax = domain->solids[solid]->np_local;
     mask = domain->solids[solid]->mask;
@@ -141,21 +141,21 @@ void FixChecksolution::final_integrate() {
     for (int in = 0; in < nmax; in++) {
       if (mask[in] & groupbit) {
 	if (xset) {
-	  (*input->vars)["x"] = Var("x", x0[in][0]);
+	  (*input->vars)["x"] = Var("x", (*x0)[in][0]);
 	  ux = xvalue.result(mpm);
-	  error[0] += vol0[in]*square(ux-(x[in][0]-x0[in][0]));
+	  error[0] += vol0[in]*square(ux-((*x)[in][0]-(*x0)[in][0]));
 	  u_th[0] += vol0[in]*ux*ux;
 	}
 	if (yset) {
-	  (*input->vars)["y"] = Var("y", x0[in][1]);
+	  (*input->vars)["y"] = Var("y", (*x0)[in][1]);
 	  uy = yvalue.result(mpm);
-	  error[1] += vol0[in]*square(uy-(x[in][1]-x0[in][1]));
+	  error[1] += vol0[in]*square(uy-((*x)[in][1]-(*x0)[in][1]));
 	  u_th[1] += vol0[in]*uy*uy;
 	}
 	if (zset) {
-	  (*input->vars)["z"] = Var("z", x0[in][2]);
+	  (*input->vars)["z"] = Var("z", (*x0)[in][2]);
 	  uz = zvalue.result(mpm);
-	  error[2] += vol0[in]*square(uz-(x[in][2]-x0[in][2]));
+	  error[2] += vol0[in]*square(uz-((*x)[in][2]-(*x0)[in][2]));
 	  u_th[2] += vol0[in]*uz*uz;
 	}
       }

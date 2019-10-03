@@ -120,8 +120,8 @@ void FixVelocityNodes::post_update_grid_state() {
 
   int solid = group->solid[igroup];
 
-  Eigen::Vector3d *v_update;
-  Eigen::Vector3d *v;
+  vector<Eigen::Vector3d> *v_update;
+  vector<Eigen::Vector3d> *v;
   int nmax;
   int *mask;
   int n = 0;
@@ -129,55 +129,55 @@ void FixVelocityNodes::post_update_grid_state() {
   if (solid == -1) {
     for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
       n = 0;
-      v_update = domain->solids[isolid]->grid->v_update;
-      v = domain->solids[isolid]->grid->v;
+      v_update = &domain->solids[isolid]->grid->v_update;
+      v = &domain->solids[isolid]->grid->v;
       nmax = domain->solids[isolid]->grid->nnodes_local;
       mask = domain->solids[isolid]->grid->mask;
 
       for (int ip = 0; ip < nmax; ip++) {
 	if (mask[ip] & groupbit) {
 	  if (xset) {
-	    v_update[ip][0] = vx;
-	    v[ip][0] = vx_old;
+	    (*v_update)[ip][0] = vx;
+	    (*v)[ip][0] = vx_old;
 	  }
 	  if (yset) {
-	    v_update[ip][1] = vy;
-	    v[ip][1] = vy_old;
+	    (*v_update)[ip][1] = vy;
+	    (*v)[ip][1] = vy_old;
 	  }
 	  if (zset) {
-	    v_update[ip][2] = vz;
-	    v[ip][2] = vz_old;
+	    (*v_update)[ip][2] = vz;
+	    (*v)[ip][2] = vz_old;
 	  }
 	  n++;
 	}
       }
-      // cout << "v_update for " << n << " nodes from solid " << domain->solids[isolid]->id << " set." << endl;
+      // cout << "(*v_update) for " << n << " nodes from solid " << domain->solids[isolid]->id << " set." << endl;
     }
   } else {
 
-    v_update = domain->solids[solid]->grid->v_update;
-    v = domain->solids[solid]->grid->v;
+    v_update = &domain->solids[solid]->grid->v_update;
+    v = &domain->solids[solid]->grid->v;
     nmax = domain->solids[solid]->grid->nnodes_local;
     mask = domain->solids[solid]->grid->mask;
 
     for (int ip = 0; ip < nmax; ip++) {
       if (mask[ip] & groupbit) {
 	if (xset) {
-	  v_update[ip][0] = vx;
-	  v[ip][0] = vx_old;
+	  (*v_update)[ip][0] = vx;
+	  (*v)[ip][0] = vx_old;
 	}
 	if (yset) {
-	  v_update[ip][1] = vy;
-	  v[ip][1] = vy_old;
+	  (*v_update)[ip][1] = vy;
+	  (*v)[ip][1] = vy_old;
 	}
 	if (zset) {
-	  v_update[ip][2] = vz;
-	  v[ip][2] = vz_old;
+	  (*v_update)[ip][2] = vz;
+	  (*v)[ip][2] = vz_old;
 	}
 	n++;
       }
     }
-    // cout << "v_update for " << n << " nodes from solid " << domain->solids[solid]->id << " set." << endl;
+    // cout << "(*v_update) for " << n << " nodes from solid " << domain->solids[solid]->id << " set." << endl;
   }
 }
 
@@ -201,7 +201,7 @@ void FixVelocityNodes::post_velocities_to_grid() {
   
   int solid = group->solid[igroup];
 
-  Eigen::Vector3d *v;
+  vector<Eigen::Vector3d> *v;
   int nmax;
   int *mask;
   int n = 0;
@@ -209,15 +209,15 @@ void FixVelocityNodes::post_velocities_to_grid() {
   if (solid == -1) {
     for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
       n = 0;
-      v = domain->solids[isolid]->grid->v;
+      v = &domain->solids[isolid]->grid->v;
       nmax = domain->solids[isolid]->grid->nnodes_local;
       mask = domain->solids[isolid]->grid->mask;
 
       for (int ip = 0; ip < nmax; ip++) {
 	if (mask[ip] & groupbit) {
-	  if (xset) v[ip][0] = vx;
-	  if (yset) v[ip][1] = vy;
-	  if (zset) v[ip][2] = vz;
+	  if (xset) (*v)[ip][0] = vx;
+	  if (yset) (*v)[ip][1] = vy;
+	  if (zset) (*v)[ip][2] = vz;
 	  n++;
 	}
       }
@@ -225,15 +225,15 @@ void FixVelocityNodes::post_velocities_to_grid() {
     }
   } else {
 
-    v = domain->solids[solid]->grid->v;
+    v = &domain->solids[solid]->grid->v;
     nmax = domain->solids[solid]->grid->nnodes_local;
     mask = domain->solids[solid]->grid->mask;
 
     for (int ip = 0; ip < nmax; ip++) {
       if (mask[ip] & groupbit) {
-	if (xset) v[ip][0] = vx;
-	if (yset) v[ip][1] = vy;
-	if (zset) v[ip][2] = vz;
+	if (xset) (*v)[ip][0] = vx;
+	if (yset) (*v)[ip][1] = vy;
+	if (zset) (*v)[ip][2] = vz;
 	n++;
       }
     }

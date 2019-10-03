@@ -95,17 +95,17 @@ void Group::assign(vector<string> args)
 
       for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
 
-	Eigen::Vector3d *x;
+	vector<Eigen::Vector3d> *x;
 	int nmax;
 	int *mask;
 
 	if (pon[igroup].compare("particles") == 0) {
-	  x = domain->solids[isolid]->x;
+	  x = &domain->solids[isolid]->x;
 	  nmax = domain->solids[isolid]->np_local;
 	  mask = domain->solids[isolid]->mask;
 	  cout << "Solid has " << domain->solids[isolid]->np << " particles" << endl;
 	} else {
-	  x = domain->solids[isolid]->grid->x;
+	  x = &domain->solids[isolid]->grid->x;
 	  nmax = domain->solids[isolid]->grid->nnodes_local;
 	  mask = domain->solids[isolid]->grid->mask;
 	  cout << "Grid has " << domain->solids[isolid]->grid->nnodes << " nodes" << endl;
@@ -114,7 +114,7 @@ void Group::assign(vector<string> args)
 	int n = 0;
 
 	for (int ip = 0; ip < nmax; ip++) {
-	  if (domain->regions[iregion]->match(x[ip][0],x[ip][1],x[ip][2])) {
+	  if (domain->regions[iregion]->match((*x)[ip][0],(*x)[ip][1],(*x)[ip][2])) {
 	    mask[ip] |= bit;
 	    n++;
 	  }
@@ -133,17 +133,17 @@ void Group::assign(vector<string> args)
 	  error->all(FLERR, "Error: cannot find solid with ID " + args[i] + ".\n");
 	}
 
-	Eigen::Vector3d *x;
+	vector<Eigen::Vector3d> *x;
 	int nmax;
 	int *mask;
 
 	if (pon[igroup].compare("particles") == 0) {
-	  x = domain->solids[solid[igroup]]->x;
+	  x = &domain->solids[solid[igroup]]->x;
 	  nmax = domain->solids[solid[igroup]]->np_local;
 	  mask = domain->solids[solid[igroup]]->mask;
 	  cout << "Solid has " << domain->solids[solid[igroup]]->np << " particles" << endl;
 	} else {
-	  x = domain->solids[solid[igroup]]->grid->x;
+	  x = &domain->solids[solid[igroup]]->grid->x;
 	  nmax = domain->solids[solid[igroup]]->grid->nnodes_local;
 	  mask = domain->solids[solid[igroup]]->grid->mask;
 	  cout << "Grid has " << domain->solids[solid[igroup]]->grid->nnodes << " nodes" << endl;
@@ -152,7 +152,7 @@ void Group::assign(vector<string> args)
 	int n = 0;
 
 	for (int ip = 0; ip < nmax; ip++) {
-	  if (domain->regions[iregion]->match(x[ip][0],x[ip][1],x[ip][2])) {
+	  if (domain->regions[iregion]->match((*x)[ip][0],(*x)[ip][1],(*x)[ip][2])) {
 	    mask[ip] |= bit;
 	    n++;
 	  }
@@ -197,7 +197,7 @@ int Group::find_unused()
 double Group::xcm(int igroup, int dir)
 {
   
-  Eigen::Vector3d *x;
+  vector<Eigen::Vector3d> *x;
   double *mass;
   int nmax;
   int *mask;
@@ -210,12 +210,12 @@ double Group::xcm(int igroup, int dir)
 
     for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
       if (pon[igroup].compare("particles") == 0) {
-	x = domain->solids[solid[igroup]]->x;
+	x = &domain->solids[solid[igroup]]->x;
 	mass = domain->solids[solid[igroup]]->mass;
 	nmax = domain->solids[solid[igroup]]->np_local;
 	mask = domain->solids[solid[igroup]]->mask;
       } else {
-	x = domain->solids[solid[igroup]]->grid->x;
+	x = &domain->solids[solid[igroup]]->grid->x;
 	mass = domain->solids[solid[igroup]]->grid->mass;
 	nmax = domain->solids[solid[igroup]]->grid->nnodes_local;
 	mask = domain->solids[solid[igroup]]->grid->mask;
@@ -223,7 +223,7 @@ double Group::xcm(int igroup, int dir)
     
       for (int ip = 0; ip < nmax; ip++) {
 	if (mask[ip] & groupbit) {
-	  com += x[ip][dir] * mass[ip];
+	  com += (*x)[ip][dir] * mass[ip];
 	  mass_tot += mass[ip];
 	}
       }
@@ -232,12 +232,12 @@ double Group::xcm(int igroup, int dir)
     int isolid = solid[igroup];
 
     if (pon[igroup].compare("particles") == 0) {
-      x = domain->solids[solid[igroup]]->x;
+      x = &domain->solids[solid[igroup]]->x;
       mass = domain->solids[solid[igroup]]->mass;
       nmax = domain->solids[solid[igroup]]->np_local;
       mask = domain->solids[solid[igroup]]->mask;
     } else {
-      x = domain->solids[solid[igroup]]->grid->x;
+      x = &domain->solids[solid[igroup]]->grid->x;
       mass = domain->solids[solid[igroup]]->grid->mass;
       nmax = domain->solids[solid[igroup]]->grid->nnodes_local;
       mask = domain->solids[solid[igroup]]->grid->mask;
@@ -245,7 +245,7 @@ double Group::xcm(int igroup, int dir)
     
     for (int ip = 0; ip < nmax; ip++) {
       if (mask[ip] & groupbit) {
-	com += x[ip][dir] * mass[ip];
+	com += (*x)[ip][dir] * mass[ip];
 	mass_tot += mass[ip];
       }
     }
@@ -258,7 +258,7 @@ double Group::xcm(int igroup, int dir)
 double Group::internal_force(int igroup, int dir)
 {
   
-  Eigen::Vector3d *f;
+  vector<Eigen::Vector3d> *f;
   int nmax;
   int *mask;
   double resulting_force = 0;
@@ -269,18 +269,18 @@ double Group::internal_force(int igroup, int dir)
 
     for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
       if (pon[igroup].compare("particles") == 0) {
-	f = domain->solids[solid[igroup]]->f;
+	f = &domain->solids[solid[igroup]]->f;
 	nmax = domain->solids[solid[igroup]]->np_local;
 	mask = domain->solids[solid[igroup]]->mask;
       } else {
-	f = domain->solids[solid[igroup]]->grid->f;
+	f = &domain->solids[solid[igroup]]->grid->f;
 	nmax = domain->solids[solid[igroup]]->grid->nnodes_local;
 	mask = domain->solids[solid[igroup]]->grid->mask;
       }
     
       for (int ip = 0; ip < nmax; ip++) {
 	if (mask[ip] & groupbit) {
-	  resulting_force += f[ip][dir];
+	  resulting_force += (*f)[ip][dir];
 	}
       }
     }
@@ -288,18 +288,18 @@ double Group::internal_force(int igroup, int dir)
     int isolid = solid[igroup];
 
     if (pon[igroup].compare("particles") == 0) {
-      f = domain->solids[solid[igroup]]->f;
+      f = &domain->solids[solid[igroup]]->f;
       nmax = domain->solids[solid[igroup]]->np_local;
       mask = domain->solids[solid[igroup]]->mask;
     } else {
-      f = domain->solids[solid[igroup]]->grid->f;
+      f = &domain->solids[solid[igroup]]->grid->f;
       nmax = domain->solids[solid[igroup]]->grid->nnodes_local;
       mask = domain->solids[solid[igroup]]->grid->mask;
     }
     
     for (int ip = 0; ip < nmax; ip++) {
       if (mask[ip] & groupbit) {
-	resulting_force += f[ip][dir];
+	resulting_force += (*f)[ip][dir];
       }
     }
   }
@@ -313,7 +313,7 @@ double Group::external_force(int igroup, int dir)
     error->all(FLERR, "Error: cannot calculate the external forces applied to the node group " + names[igroup] + ".\n");
   }
   
-  Eigen::Vector3d *f;
+  vector<Eigen::Vector3d> *f;
   int nmax;
   int *mask;
   double resulting_force = 0;
@@ -323,26 +323,26 @@ double Group::external_force(int igroup, int dir)
     // Consider all solids
 
     for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
-      f = domain->solids[solid[igroup]]->f;
+      f = &domain->solids[solid[igroup]]->f;
       nmax = domain->solids[solid[igroup]]->np_local;
       mask = domain->solids[solid[igroup]]->mask;
     
       for (int ip = 0; ip < nmax; ip++) {
 	if (mask[ip] & groupbit) {
-	  resulting_force += f[ip][dir];
+	  resulting_force += (*f)[ip][dir];
 	}
       }
     }
   } else {
     int isolid = solid[igroup];
 
-    f = domain->solids[solid[igroup]]->f;
+    f = &domain->solids[solid[igroup]]->f;
     nmax = domain->solids[solid[igroup]]->np_local;
     mask = domain->solids[solid[igroup]]->mask;
     
     for (int ip = 0; ip < nmax; ip++) {
       if (mask[ip] & groupbit) {
-	resulting_force += f[ip][dir];
+	resulting_force += (*f)[ip][dir];
       }
     }
   }

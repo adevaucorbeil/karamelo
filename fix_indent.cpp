@@ -70,8 +70,8 @@ void FixIndent::initial_integrate() {
   int *mask;
   double *mass;
   Eigen::Vector3d ftot, ftot_reduced;
-  Eigen::Vector3d *x;
-  Eigen::Vector3d *mb;
+  vector<Eigen::Vector3d> *x;
+  vector<Eigen::Vector3d> *mbp;
 
   double K = input->parsev(args[Kpos]).result(mpm);
   double R = input->parsev(args[Rpos]).result(mpm);
@@ -86,8 +86,8 @@ void FixIndent::initial_integrate() {
 
   if (solid == -1) {
     for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
-      mb = domain->solids[isolid]->mb;
-      x = domain->solids[isolid]->x;
+      mbp = &domain->solids[isolid]->mbp;
+      x = &domain->solids[isolid]->x;
       nmax = domain->solids[isolid]->np;
       mask = domain->solids[isolid]->mask;
       mass = domain->solids[isolid]->mass;
@@ -96,7 +96,7 @@ void FixIndent::initial_integrate() {
 	if (mass[ip] > 0) {
 	  if (mask[ip] & groupbit) {
 	    // Gross screening:
-	    xsp = x[ip] - xs;
+	    xsp = (*x)[ip] - xs;
 
 	    if (( xsp[0] < R ) && ( xsp[1] < R ) && ( xsp[2] < R )
 		&& ( xsp[0] > -R ) && ( xsp[1] > -R ) && ( xsp[2] > -R )) {
@@ -108,7 +108,7 @@ void FixIndent::initial_integrate() {
 		fmag = K*dr*dr;
 		// Maybe fmag should be inversely proportional to the mass of the particle!!
 		f = fmag*xsp/r;
-		mb[ip] += f;
+		(*mbp)[ip] += f;
 		ftot += f;
 	      }
 	    }
@@ -117,8 +117,8 @@ void FixIndent::initial_integrate() {
       }
     }
   } else {
-    mb = domain->solids[solid]->mb;
-    x = domain->solids[solid]->x;
+    mbp = &domain->solids[solid]->mbp;
+    x = &domain->solids[solid]->x;
     nmax = domain->solids[solid]->np;
     mask = domain->solids[solid]->mask;
     mass = domain->solids[solid]->mass;
@@ -127,7 +127,7 @@ void FixIndent::initial_integrate() {
       if (mass[ip] > 0) {
 	if (mask[ip] & groupbit) {
 	  // Gross screening:
-	  xsp = x[ip] - xs;
+	  xsp = (*x)[ip] - xs;
 	  if (( xsp[0] < R ) && ( xsp[1] < R ) && ( xsp[2] < R )
 	      && ( xsp[0] > -R ) && ( xsp[1] > -R ) && ( xsp[2] > -R )) {
 
@@ -138,7 +138,7 @@ void FixIndent::initial_integrate() {
 	      fmag = K*dr*dr;
 	      // Maybe fmag should be inversely proportional to the mass of the particle!!
 	      f = fmag*xsp/r;
-	      mb[ip] += f;
+	      (*mbp)[ip] += f;
 	      ftot += f;
 	    }
 	  }
