@@ -11,6 +11,7 @@
 #include "output.h"
 #include "math_special.h"
 #include "universe.h"
+#include "solid.h"
 #include "error.h"
 
 using namespace std;
@@ -83,14 +84,10 @@ void FixChecksolution::final_integrate() {
     
   int solid = group->solid[igroup];
 
-  int nmax;
-  int *mask;
-  double *mass;
-  double *vol0;
+  Solid *s;
+
   Eigen::Vector3d error, error_reduced;
   Eigen::Vector3d u_th;
-  vector<Eigen::Vector3d> *x0;
-  vector<Eigen::Vector3d> *x;
 
   error.setZero();
   u_th.setZero();
@@ -100,63 +97,55 @@ void FixChecksolution::final_integrate() {
   if (solid == -1) {
     vtot = 0;
     for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
-      vtot += domain->solids[isolid]->vtot;
-      x0 = &domain->solids[isolid]->x0;
-      x = &domain->solids[isolid]->x;
-      vol0 = domain->solids[isolid]->vol0;
-      nmax = domain->solids[isolid]->np_local;
-      mask = domain->solids[isolid]->mask;
+      s = domain->solids[isolid];
+      vtot += s->vtot;
 
-      for (int in = 0; in < nmax; in++) {
-	if (mask[in] & groupbit) {
+      for (int in = 0; in < s->np_local; in++) {
+	if (s->mask[in] & groupbit) {
 	  if (xset) {
-	    (*input->vars)["x"] = Var("x", (*x0)[in][0]);
+	    (*input->vars)["x"] = Var("x", s->x0[in][0]);
 	    ux = xvalue.result(mpm);
-	    error[0] += vol0[in]*square(ux-((*x)[in][0]-(*x0)[in][0]));
-	    u_th[0] += vol0[in]*ux*ux;
+	    error[0] += s->vol0[in]*square(ux-(s->x[in][0]-s->x0[in][0]));
+	    u_th[0] += s->vol0[in]*ux*ux;
 	  }
 	  if (yset) {
-	    (*input->vars)["y"] = Var("y", (*x0)[in][1]);
+	    (*input->vars)["y"] = Var("y", s->x0[in][1]);
 	    uy = yvalue.result(mpm);
-	    error[1] += vol0[in]*square(uy-((*x)[in][1]-(*x0)[in][1]));
-	    u_th[1] += vol0[in]*uy*uy;
+	    error[1] += s->vol0[in]*square(uy-(s->x[in][1]-s->x0[in][1]));
+	    u_th[1] += s->vol0[in]*uy*uy;
 	  }
 	  if (zset) {
-	    (*input->vars)["z"] = Var("z", (*x0)[in][2]);
+	    (*input->vars)["z"] = Var("z", s->x0[in][2]);
 	    uz = zvalue.result(mpm);
-	    error[2] += vol0[in]*square(uz-((*x)[in][2]-(*x0)[in][2]));
-	    u_th[2] += vol0[in]*uz*uz;
+	    error[2] += s->vol0[in]*square(uz-(s->x[in][2]-s->x0[in][2]));
+	    u_th[2] += s->vol0[in]*uz*uz;
 	  }
 	}
       }
     }
   } else {
-    vtot = domain->solids[solid]->vtot;
-    x0 = &domain->solids[solid]->x0;
-    x = &domain->solids[solid]->x;
-    vol0 = domain->solids[solid]->vol0;
-    nmax = domain->solids[solid]->np_local;
-    mask = domain->solids[solid]->mask;
+    s = domain->solids[solid];
+    vtot += s->vtot;
 
-    for (int in = 0; in < nmax; in++) {
-      if (mask[in] & groupbit) {
+    for (int in = 0; in < s->np_local; in++) {
+      if (s->mask[in] & groupbit) {
 	if (xset) {
-	  (*input->vars)["x"] = Var("x", (*x0)[in][0]);
+	  (*input->vars)["x"] = Var("x", s->x0[in][0]);
 	  ux = xvalue.result(mpm);
-	  error[0] += vol0[in]*square(ux-((*x)[in][0]-(*x0)[in][0]));
-	  u_th[0] += vol0[in]*ux*ux;
+	  error[0] += s->vol0[in]*square(ux-(s->x[in][0]-s->x0[in][0]));
+	  u_th[0] += s->vol0[in]*ux*ux;
 	}
 	if (yset) {
-	  (*input->vars)["y"] = Var("y", (*x0)[in][1]);
+	  (*input->vars)["y"] = Var("y", s->x0[in][1]);
 	  uy = yvalue.result(mpm);
-	  error[1] += vol0[in]*square(uy-((*x)[in][1]-(*x0)[in][1]));
-	  u_th[1] += vol0[in]*uy*uy;
+	  error[1] += s->vol0[in]*square(uy-(s->x[in][1]-s->x0[in][1]));
+	  u_th[1] += s->vol0[in]*uy*uy;
 	}
 	if (zset) {
-	  (*input->vars)["z"] = Var("z", (*x0)[in][2]);
+	  (*input->vars)["z"] = Var("z", s->x0[in][2]);
 	  uz = zvalue.result(mpm);
-	  error[2] += vol0[in]*square(uz-((*x)[in][2]-(*x0)[in][2]));
-	  u_th[2] += vol0[in]*uz*uz;
+	  error[2] += s->vol0[in]*square(uz-(s->x[in][2]-s->x0[in][2]));
+	  u_th[2] += s->vol0[in]*uz*uz;
 	}
       }
     }

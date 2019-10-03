@@ -24,7 +24,7 @@ class Grid : protected Pointers {
   bigint nnodes;         // total number of nodes in the domain
   bigint nnodes_local;   // number of nodes (in this CPU)
   bigint nnodes_ghost;   // number of ghost nodes (in this CPU)
-  tagint *ntag;          // unique identifier for nodes in the system.
+  vector<tagint> ntag;   // unique identifier for nodes in the system.
   map<int, int> map_ntag;// map_ntag[ntag[i]] = i;
 
   int nx;                // number of nodes along x on this CPU
@@ -38,7 +38,7 @@ class Grid : protected Pointers {
   int nshared;           // number of nodes that are shared (ghosts in other CPUs
   vector<int> shared;    // position of all shared nodes
 
-  int *nowner;          // which CPU owns each node (universe->me for local nodes, other CPU for ghost nodes
+  vector<int> nowner;    // which CPU owns each node (universe->me for local nodes, other CPU for ghost nodes
 
   double cellsize;       // size of the square cells forming the grid
 
@@ -49,9 +49,9 @@ class Grid : protected Pointers {
   vector<Eigen::Vector3d> mb;           // nodes' external forces times the mass
   vector<Eigen::Vector3d> f;            // nodes' internal forces
 
-  double *mass;              // nodes' current mass
-  int *mask;                 // nodes' group mask
-  int **ntype;               // node type in x, y, and z directions (False for an edge, True otherwise)
+  vector<double> mass;              // nodes' current mass
+  vector<int> mask;                 // nodes' group mask
+  int **ntype;                      // node type in x, y, and z directions (False for an edge, True otherwise)
 
   MPI_Datatype Pointtype;    // MPI type for struct Point
 

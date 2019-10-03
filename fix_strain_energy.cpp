@@ -12,6 +12,7 @@
 #include "math_special.h"
 #include "universe.h"
 #include "error.h"
+#include "solid.h"
 
 using namespace std;
 using namespace FixConst;
@@ -59,54 +60,42 @@ void FixStrainEnergy::final_integrate() {
     
   int solid = group->solid[igroup];
 
-  int nmax;
-  int *mask;
-  double *vol;
   double Es, Es_reduced;
-  vector<Eigen::Matrix3d> *sigma;
-  vector<Eigen::Matrix3d> *strain;
+  Solid *s;
 
   Es = 0;
   if (solid == -1) {
     for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
-      vol = domain->solids[isolid]->vol;
-      nmax = domain->solids[isolid]->np_local;
-      mask = domain->solids[isolid]->mask;
-      sigma = &domain->solids[isolid]->sigma;
-      strain = &domain->solids[isolid]->strain_el;
+      s = domain->solids[isolid];
 
-      for (int in = 0; in < nmax; in++) {
-	if (mask[in] & groupbit) {
-	  Es += 0.5*vol[in]*((*sigma)[in](0,0)*(*strain)[in](0,0)
-			     + (*sigma)[in](0,1)*(*strain)[in](0,1)
-			     + (*sigma)[in](0,2)*(*strain)[in](0,2)
-			     + (*sigma)[in](1,0)*(*strain)[in](1,0)
-			     + (*sigma)[in](1,1)*(*strain)[in](1,1)
-			     + (*sigma)[in](1,2)*(*strain)[in](1,2)
-			     + (*sigma)[in](2,0)*(*strain)[in](2,0)
-			     + (*sigma)[in](2,1)*(*strain)[in](2,1)
-			     + (*sigma)[in](2,2)*(*strain)[in](2,2));
+      for (int in = 0; in < s->np_local; in++) {
+	if (s->mask[in] & groupbit) {
+	  Es += 0.5*s->vol[in]*(s->sigma[in](0,0)*s->strain_el[in](0,0)
+				+ s->sigma[in](0,1)*s->strain_el[in](0,1)
+				+ s->sigma[in](0,2)*s->strain_el[in](0,2)
+				+ s->sigma[in](1,0)*s->strain_el[in](1,0)
+				+ s->sigma[in](1,1)*s->strain_el[in](1,1)
+				+ s->sigma[in](1,2)*s->strain_el[in](1,2)
+				+ s->sigma[in](2,0)*s->strain_el[in](2,0)
+				+ s->sigma[in](2,1)*s->strain_el[in](2,1)
+				+ s->sigma[in](2,2)*s->strain_el[in](2,2));
 	}
       }
     }
   } else {
-    vol = domain->solids[solid]->vol;
-    nmax = domain->solids[solid]->np_local;
-    mask = domain->solids[solid]->mask;
-    sigma = &domain->solids[solid]->sigma;
-    strain = &domain->solids[solid]->strain_el;
+    s = domain->solids[solid];
 
-    for (int in = 0; in < nmax; in++) {
-      if (mask[in] & groupbit) {
-	Es += 0.5*vol[in]*((*sigma)[in](0,0)*(*strain)[in](0,0)
-			   + (*sigma)[in](0,1)*(*strain)[in](0,1)
-			   + (*sigma)[in](0,2)*(*strain)[in](0,2)
-			   + (*sigma)[in](1,0)*(*strain)[in](1,0)
-			   + (*sigma)[in](1,1)*(*strain)[in](1,1)
-			   + (*sigma)[in](1,2)*(*strain)[in](1,2)
-			   + (*sigma)[in](2,0)*(*strain)[in](2,0)
-			   + (*sigma)[in](2,1)*(*strain)[in](2,1)
-			   + (*sigma)[in](2,2)*(*strain)[in](2,2));
+    for (int in = 0; in < s->np_local; in++) {
+      if (s->mask[in] & groupbit) {
+	Es += 0.5*s->vol[in]*(s->sigma[in](0,0)*s->strain_el[in](0,0)
+			      + s->sigma[in](0,1)*s->strain_el[in](0,1)
+			      + s->sigma[in](0,2)*s->strain_el[in](0,2)
+			      + s->sigma[in](1,0)*s->strain_el[in](1,0)
+			      + s->sigma[in](1,1)*s->strain_el[in](1,1)
+			      + s->sigma[in](1,2)*s->strain_el[in](1,2)
+			      + s->sigma[in](2,0)*s->strain_el[in](2,0)
+			      + s->sigma[in](2,1)*s->strain_el[in](2,1)
+			      + s->sigma[in](2,2)*s->strain_el[in](2,2));
       }
     }
   }

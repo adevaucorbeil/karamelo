@@ -7,6 +7,7 @@
 #include "group.h"
 #include "domain.h"
 #include "update.h"
+#include "grid.h"
 #include "error.h"
 
 using namespace std;
@@ -78,71 +79,56 @@ void FixInitialVelocityNodes::post_update_grid_state() {
   double vx, vy, vz;
   
   int solid = group->solid[igroup];
-
-  vector<Eigen::Vector3d> *v_update;
-  int nmax;
-  int *mask;
-  int n = 0;
-  vector<Eigen::Vector3d> *x0;
+  Grid *g;
 
   if (solid == -1) {
     for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
-      n = 0;
-      v_update = &domain->solids[isolid]->grid->v_update;
-      x0 = &domain->solids[isolid]->grid->x0;
-      nmax = domain->solids[isolid]->grid->nnodes_local;
-      mask = domain->solids[isolid]->grid->mask;
+      g = domain->solids[isolid]->grid;
 
-      for (int ip = 0; ip < nmax; ip++) {
-	if (mask[ip] & groupbit) {
-	  (*input->vars)["x"] = Var("x", (*x0)[ip][0]);
-	  (*input->vars)["y"] = Var("y", (*x0)[ip][1]);
-	  (*input->vars)["z"] = Var("z", (*x0)[ip][2]);
+      for (int in = 0; in < g->nnodes_local; in++) {
+	if (g->mask[in] & groupbit) {
+	  (*input->vars)["x"] = Var("x", g->x0[in][0]);
+	  (*input->vars)["y"] = Var("y", g->x0[in][1]);
+	  (*input->vars)["z"] = Var("z", g->x0[in][2]);
 	  if (xset) {
 	    vx = xvalue.result(mpm);
-	    (*v_update)[ip][0] = vx;
+	    g->v_update[in][0] = vx;
 	  }
 	  if (yset) {
 	    vy = yvalue.result(mpm);
-	    (*v_update)[ip][1] = vy;
+	    g->v_update[in][1] = vy;
 	  }
 	  if (zset) {
 	    vz = zvalue.result(mpm);
-	    (*v_update)[ip][2] = vz;
+	    g->v_update[in][2] = vz;
 	  }
-	  n++;
 	}
       }
-      // cout << "(*v_update) for " << n << " nodes from solid " << domain->solids[isolid]->id << " set." << endl;
+      // cout << "g->v_update for " << n << " nodes from solid " << domain->solids[isolid]->id << " set." << endl;
     }
   } else {
+    g = domain->solids[solid]->grid;
 
-    v_update = &domain->solids[solid]->grid->v_update;
-    x0 = &domain->solids[solid]->grid->x0;
-    nmax = domain->solids[solid]->grid->nnodes_local;
-    mask = domain->solids[solid]->grid->mask;
-
-    for (int ip = 0; ip < nmax; ip++) {
-      if (mask[ip] & groupbit) {
-	(*input->vars)["x"] = Var("x", (*x0)[ip][0]);
-	(*input->vars)["y"] = Var("y", (*x0)[ip][1]);
-	(*input->vars)["z"] = Var("z", (*x0)[ip][2]);
+    for (int in = 0; in < g->nnodes_local; in++) {
+      if (g->mask[in] & groupbit) {
+	(*input->vars)["x"] = Var("x", g->x0[in][0]);
+	(*input->vars)["y"] = Var("y", g->x0[in][1]);
+	(*input->vars)["z"] = Var("z", g->x0[in][2]);
 	if (xset) {
 	  vx = xvalue.result(mpm);
-	  (*v_update)[ip][0] = vx;
+	  g->v_update[in][0] = vx;
 	}
 	if (yset) {
 	  vy = yvalue.result(mpm);
-	  (*v_update)[ip][1] = vy;
+	  g->v_update[in][1] = vy;
 	}
 	if (zset) {
 	  vz = zvalue.result(mpm);
-	  (*v_update)[ip][2] = vz;
+	  g->v_update[in][2] = vz;
 	}
-	n++;
       }
     }
-    // cout << "(*v_update) for " << n << " nodes from solid " << domain->solids[solid]->id << " set." << endl;
+    // cout << "g->v_update for " << n << " nodes from solid " << domain->solids[solid]->id << " set." << endl;
   }
 }
 
@@ -154,69 +140,53 @@ void FixInitialVelocityNodes::post_velocities_to_grid() {
   double vx, vy, vz;
   
   int solid = group->solid[igroup];
-
-  vector<Eigen::Vector3d> *v;
-  int nmax;
-  int *mask;
-  int n = 0;
-  vector<Eigen::Vector3d> *x0;
+  Grid *g;
 
   if (solid == -1) {
     for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
-      n = 0;
-      v = &domain->solids[isolid]->grid->v;
-      x0 = &domain->solids[isolid]->grid->x0;
-      nmax = domain->solids[isolid]->grid->nnodes_local;
-      mask = domain->solids[isolid]->grid->mask;
+      g = domain->solids[isolid]->grid;
 
-      
-      for (int ip = 0; ip < nmax; ip++) {
-	if (mask[ip] & groupbit) {
-	  (*input->vars)["x"] = Var("x", (*x0)[ip][0]);
-	  (*input->vars)["y"] = Var("y", (*x0)[ip][1]);
-	  (*input->vars)["z"] = Var("z", (*x0)[ip][2]);
+      for (int in = 0; in < g->nnodes_local; in++) {
+	if (g->mask[in] & groupbit) {
+	  (*input->vars)["x"] = Var("x", g->x0[in][0]);
+	  (*input->vars)["y"] = Var("y", g->x0[in][1]);
+	  (*input->vars)["z"] = Var("z", g->x0[in][2]);
 	  if (xset) {
 	    vx = xvalue.result(mpm);
-	    (*v)[ip][0] = vx;
+	    g->v[in][0] = vx;
 	  }
 	  if (yset) {
 	    vy = yvalue.result(mpm);
-	    (*v)[ip][1] = vy;
+	    g->v[in][1] = vy;
 	  }
 	  if (zset) {
 	    vz = zvalue.result(mpm);
-	    (*v)[ip][2] = vz;
+	    g->v[in][2] = vz;
 	  }
-	  n++;
 	}
       }
       // cout << "v for " << n << " nodes from solid " << domain->solids[isolid]->id << " set." << endl;
     }
   } else {
+      g = domain->solids[solid]->grid;
 
-    v = &domain->solids[solid]->grid->v;
-    x0 = &domain->solids[solid]->grid->x0;
-    nmax = domain->solids[solid]->grid->nnodes_local;
-    mask = domain->solids[solid]->grid->mask;
-
-    for (int ip = 0; ip < nmax; ip++) {
-      if (mask[ip] & groupbit) {
-	(*input->vars)["x"] = Var("x", (*x0)[ip][0]);
-	(*input->vars)["y"] = Var("y", (*x0)[ip][1]);
-	(*input->vars)["z"] = Var("z", (*x0)[ip][2]);
+      for (int in = 0; in < g->nnodes_local; in++) {
+	if (g->mask[in] & groupbit) {
+	(*input->vars)["x"] = Var("x", g->x0[in][0]);
+	(*input->vars)["y"] = Var("y", g->x0[in][1]);
+	(*input->vars)["z"] = Var("z", g->x0[in][2]);
 	if (xset) {
 	  vx = xvalue.result(mpm);
-	  (*v)[ip][0] = vx;
+	  g->v[in][0] = vx;
 	}
 	if (yset) {
 	  vy = yvalue.result(mpm);
-	  (*v)[ip][1] = vy;
+	  g->v[in][1] = vy;
 	}
 	if (zset) {
 	  vz = zvalue.result(mpm);
-	  (*v)[ip][2] = vz;
+	  g->v[in][2] = vz;
 	}
-	n++;
       }
     }
     // cout << "v for " << n << " nodes from solid " << domain->solids[solid]->id << " set." << endl;

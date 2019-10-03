@@ -8,6 +8,7 @@
 #include "domain.h"
 #include "input.h"
 #include "universe.h"
+#include "grid.h"
 #include "error.h"
 
 using namespace std;
@@ -84,44 +85,38 @@ void FixForceNodes::post_particles_to_grid() {
   }
     
   int solid = group->solid[igroup];
+  Grid *g;
 
-  vector<Eigen::Vector3d> *mb;
-  int nmax;
-  int *mask;
-  double *mass;
   int n = 0;
   Eigen::Vector3d ftot, ftot_reduced;
   ftot.setZero();
 
   if (solid == -1) {
     for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
+      g = domain->solids[isolid]->grid;
       n = 0;
-      mb = &domain->solids[isolid]->grid->mb;
-      nmax = domain->solids[isolid]->grid->nnodes;
-      mask = domain->solids[isolid]->grid->mask;
-      mass = domain->solids[isolid]->grid->mass;
 
-      for (int in = 0; in < nmax; in++) {
-	if (mass[in] > 0) {
-	  if (mask[in] & groupbit) {
+      for (int in = 0; in < g->nnodes_local; in++) {
+	if (g->mass[in] > 0) {
+	  if (g->mask[in] & groupbit) {
 	    n++;
 	  }
 	}
       }
 	    
-      for (int in = 0; in < nmax; in++) {
-	if (mass[in] > 0) {
-	  if (mask[in] & groupbit) {
+      for (int in = 0; in < g->nnodes_local; in++) {
+	if (g->mass[in] > 0) {
+	  if (g->mask[in] & groupbit) {
 	    if (xset) {
-	      (*mb)[in][0] += fx/((double) n);
+	      g->mb[in][0] += fx/((double) n);
 	      ftot[0] += fx/((double) n);
 	    }
 	    if (yset) {
-	      (*mb)[in][1] += fy/((double) n);
+	      g->mb[in][1] += fy/((double) n);
 	      ftot[1] += fy/((double) n);
 	    }
 	    if (zset) {
-	      (*mb)[in][2] += fz/((double) n);
+	      g->mb[in][2] += fz/((double) n);
 	      ftot[2] += fz/((double) n);
 	    }
 	  }
@@ -130,32 +125,30 @@ void FixForceNodes::post_particles_to_grid() {
     }
   } else {
 
-    mb = &domain->solids[solid]->grid->mb;
-    nmax = domain->solids[solid]->grid->nnodes;
-    mask = domain->solids[solid]->grid->mask;
-    mass = domain->solids[solid]->grid->mass;
+    g = domain->solids[solid]->grid;
+    n = 0;
 
-    for (int in = 0; in < nmax; in++) {
-      if (mass[in] > 0) {
-	if (mask[in] & groupbit) {
+    for (int in = 0; in < g->nnodes_local; in++) {
+      if (g->mass[in] > 0) {
+	if (g->mask[in] & groupbit) {
 	  n++;
 	}
       }
     }
 
-    for (int in = 0; in < nmax; in++) {
-      if (mass[in] > 0) {
-	if (mask[in] & groupbit) {
+    for (int in = 0; in < g->nnodes_local; in++) {
+      if (g->mass[in] > 0) {
+	if (g->mask[in] & groupbit) {
 	  if (xset) {
-	    (*mb)[in][0] += fx/((double) n);
+	    g->mb[in][0] += fx/((double) n);
 	    ftot[0] += fx/((double) n);
 	  }
 	  if (yset) {
-	    (*mb)[in][1] += fy/((double) n);
+	    g->mb[in][1] += fy/((double) n);
 	    ftot[1] += fy/((double) n);
 	  }
 	  if (zset) {
-	    (*mb)[in][2] += fz/((double) n);
+	    g->mb[in][2] += fz/((double) n);
 	    ftot[2] += fz/((double) n);
 	  }
 	}

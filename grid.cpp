@@ -29,16 +29,7 @@ Grid::Grid(MPM *mpm) :
 {
   cout << "Creating new grid" << endl;
 
-  ntag = NULL;
-  nowner = NULL;
-
-  mass = NULL;
-  mask = NULL;
   ntype = NULL;
-
-  // R = NULL;
-
-  // C = NULL;
 
   nx = ny = nz = 0;
   nx_global = ny_global = nz_global = 0;
@@ -66,10 +57,6 @@ Grid::Grid(MPM *mpm) :
 
 Grid::~Grid()
 {
-  memory->destroy(ntag);
-  memory->destroy(nowner);
-  memory->destroy(mass);
-  memory->destroy(mask);
   memory->destroy(ntype);
 
   // Destroy MPI type:
@@ -438,11 +425,11 @@ void Grid::grow(int nn){
 
   string str = "grid-ntag";
   cout << "Growing " << str << endl;
-  ntag = memory->grow(ntag, nn, str);
+  ntag.resize(nn);
 
   str = "grid-nowner";
   cout << "Growing " << str << endl;
-  nowner = memory->grow(nowner, nn, str);
+  nowner.resize(nn);
 
   str = "grid-x0";
   cout << "Growing " << str << endl;
@@ -470,11 +457,11 @@ void Grid::grow(int nn){
 
   str = "grid-mass";
   cout << "Growing " << str << endl;
-  mass = memory->grow(mass, nn, str);
+  mass.resize(nn);
 
   str = "grid-mask";
   cout << "Growing " << str << endl;
-  mask = memory->grow(mask, nn, str);
+  mask.resize(nn);
 
   for (int i=0; i<nn; i++) mask[i] = 1;
 

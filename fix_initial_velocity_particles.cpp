@@ -7,6 +7,7 @@
 #include "group.h"
 #include "domain.h"
 #include "update.h"
+#include "solid.h"
 #include "error.h"
 
 using namespace std;
@@ -70,69 +71,53 @@ void FixInitialVelocityParticles::initial_integrate() {
   
   int solid = group->solid[igroup];
 
-  vector<Eigen::Vector3d> *v;
-  int nmax;
-  int *mask;
-  int n = 0;
-  vector<Eigen::Vector3d> *x;
+  Solid *s;
 
   if (solid == -1) {
     for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
-      n = 0;
-      v = &domain->solids[isolid]->v;
-      x = &domain->solids[isolid]->x;
-      nmax = domain->solids[isolid]->np_local;
-      mask = domain->solids[isolid]->mask;
+      s = domain->solids[isolid];
 
-      for (int ip = 0; ip < nmax; ip++) {
-	if (mask[ip] & groupbit) {
-	  (*input->vars)["x"] = Var("x", (*x)[ip][0]);
-	  (*input->vars)["y"] = Var("y", (*x)[ip][1]);
-	  (*input->vars)["z"] = Var("z", (*x)[ip][2]);
+      for (int ip = 0; ip < s->np_local; ip++) {
+	if (s->mask[ip] & groupbit) {
+	  (*input->vars)["x"] = Var("x", s->x[ip][0]);
+	  (*input->vars)["y"] = Var("y", s->x[ip][1]);
+	  (*input->vars)["z"] = Var("z", s->x[ip][2]);
 	  if (xset) {
 	    vx = xvalue.result(mpm);
-	    (*v)[ip][0] = vx;
+	    s->v[ip][0] = vx;
 	  }
 	  if (yset) {
 	    vy = yvalue.result(mpm);
-	    (*v)[ip][1] = vy;
+	    s->v[ip][1] = vy;
 	  }
 	  if (zset) {
 	    vz = zvalue.result(mpm);
-	    (*v)[ip][2] = vz;
+	    s->v[ip][2] = vz;
 	  }
-	  n++;
 	}
       }
-      // cout << "v_update for " << n << " particles from solid " << domain->solids[isolid]->id << " set." << endl;
     }
   } else {
+    s = domain->solids[solid];
 
-    v = &domain->solids[solid]->v;
-    x = &domain->solids[solid]->x;
-    nmax = domain->solids[solid]->np_local;
-    mask = domain->solids[solid]->mask;
-
-    for (int ip = 0; ip < nmax; ip++) {
-      if (mask[ip] & groupbit) {
-	(*input->vars)["x"] = Var("x", (*x)[ip][0]);
-	(*input->vars)["y"] = Var("y", (*x)[ip][1]);
-	(*input->vars)["z"] = Var("z", (*x)[ip][2]);
+    for (int ip = 0; ip < s->np_local; ip++) {
+      if (s->mask[ip] & groupbit) {
+	(*input->vars)["x"] = Var("x", s->x[ip][0]);
+	(*input->vars)["y"] = Var("y", s->x[ip][1]);
+	(*input->vars)["z"] = Var("z", s->x[ip][2]);
 	if (xset) {
 	  vx = xvalue.result(mpm);
-	  (*v)[ip][0] = vx;
+	  s->v[ip][0] = vx;
 	}
 	if (yset) {
 	  vy = yvalue.result(mpm);
-	  (*v)[ip][1] = vy;
+	  s->v[ip][1] = vy;
 	}
 	if (zset) {
 	  vz = zvalue.result(mpm);
-	  (*v)[ip][2] = vz;
+	  s->v[ip][2] = vz;
 	}
-	n++;
       }
     }
-    // cout << "v_update for " << n << " particles from solid " << domain->solids[solid]->id << " set." << endl;
   }
 }

@@ -18,7 +18,7 @@ class Solid : protected Pointers {
   bigint np;                 // total number of particles in the domain
   int np_local;              // number of local particles (in this CPU)
 
-  tagint *ptag;              // unique identifier for particles in the system
+  vector<tagint> ptag;              // unique identifier for particles in the system
 
   double solidlo[3], solidhi[3];           // solid global bounds
   double solidsublo[3], solidsubhi[3];     // solid local bounds
@@ -31,7 +31,7 @@ class Solid : protected Pointers {
   vector<Eigen::Vector3d> rp0;      // reference domain vector (CPDI1)
   vector<Eigen::Vector3d> xpc;      // current position of the corners of the particles' domain (CPDI2)
   vector<Eigen::Vector3d> xpc0;     // reference position of the corners of the particles' domain (CPDI2)
-  int nc;                    // number of corners per particles: 2^dimension
+  int nc;                           // number of corners per particles: 2^dimension
   
   vector<Eigen::Vector3d> v;        // particles' current velocity
   vector<Eigen::Vector3d> v_update; // particles' velocity at time t+dt
@@ -53,18 +53,18 @@ class Solid : protected Pointers {
   vector<Eigen::Matrix3d> Fdot;             // rate of deformation gradient matrix
   vector<Eigen::Matrix3d> Di;               // inertia tensor
 
-  double *J;                         // determinant of the deformation matrix
-  double *vol0;                      // particles' reference volume
-  double *vol;                       // particles' current volume
-  double vtot;                       // total volume
-  double *rho0;                      // particles' reference density
-  double *rho;                       // particles' current density
-  double *mass;                      // particles' current mass
-  double *eff_plastic_strain;        // particles' effective plastic strain
-  double *eff_plastic_strain_rate;   // particles' effective plastic strain rate
-  double *damage;                    // particles' damage variable
-  double *damage_init;               // particles' damage initiation variable
-  int *mask;                         // particles' group mask
+  vector<double> J;                         // determinant of the deformation matrix
+  vector<double> vol0;                      // particles' reference volume
+  vector<double> vol;                       // particles' current volume
+  double vtot;                              // total volume
+  vector<double> rho0;                      // particles' reference density
+  vector<double> rho;                       // particles' current density
+  vector<double> mass;                      // particles' current mass
+  vector<double> eff_plastic_strain;        // particles' effective plastic strain
+  vector<double> eff_plastic_strain_rate;   // particles' effective plastic strain rate
+  vector<double> damage;                    // particles' damage variable
+  vector<double> damage_init;               // particles' damage initiation variable
+  vector<int> mask;                         // particles' group mask
 
   double min_inv_p_wave_speed;   // minimum of the inverse of the particle wave speed
   double dtCFL;

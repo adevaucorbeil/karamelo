@@ -59,6 +59,8 @@ void FixKineticEnergy::final_integrate() {
     
   int solid = group->solid[igroup];
 
+  Solid *s;
+
   int nmax;
   int *mask;
   double *mass;
@@ -68,26 +70,20 @@ void FixKineticEnergy::final_integrate() {
   Ek = 0;
   if (solid == -1) {
     for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
-      mass = domain->solids[isolid]->mass;
-      nmax = domain->solids[isolid]->np_local;
-      mask = domain->solids[isolid]->mask;
-      v = &domain->solids[isolid]->v;
+      s = domain->solids[isolid];
 
-      for (int in = 0; in < nmax; in++) {
-	if (mask[in] & groupbit) {
-	  Ek += 0.5*mass[in]*(*v)[in].norm();
+      for (int in = 0; in < s->np_local; in++) {
+	if (s->mask[in] & groupbit) {
+	  Ek += 0.5*s->mass[in]*s->v[in].norm();
 	}
       }
     }
   } else {
-    mass = domain->solids[solid]->mass;
-    nmax = domain->solids[solid]->np_local;
-    mask = domain->solids[solid]->mask;
-    v = &domain->solids[solid]->v;
+    s = domain->solids[solid];
 
-    for (int in = 0; in < nmax; in++) {
-      if (mask[in] & groupbit) {
-	Ek += 0.5*mass[in]*(*v)[in].norm();
+    for (int in = 0; in < s->np_local; in++) {
+      if (s->mask[in] & groupbit) {
+	Ek += 0.5*s->mass[in]*s->v[in].norm();
       }
     }
   }

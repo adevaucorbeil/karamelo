@@ -8,6 +8,7 @@
 #include "domain.h"
 #include "input.h"
 #include "universe.h"
+#include "solid.h"
 #include "error.h"
 
 using namespace std;
@@ -66,12 +67,8 @@ void FixIndent::initial_integrate() {
 
   int solid = group->solid[igroup];
 
-  int nmax;
-  int *mask;
-  double *mass;
+  Solid *s;
   Eigen::Vector3d ftot, ftot_reduced;
-  vector<Eigen::Vector3d> *x;
-  vector<Eigen::Vector3d> *mbp;
 
   double K = input->parsev(args[Kpos]).result(mpm);
   double R = input->parsev(args[Rpos]).result(mpm);
@@ -86,17 +83,13 @@ void FixIndent::initial_integrate() {
 
   if (solid == -1) {
     for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
-      mbp = &domain->solids[isolid]->mbp;
-      x = &domain->solids[isolid]->x;
-      nmax = domain->solids[isolid]->np;
-      mask = domain->solids[isolid]->mask;
-      mass = domain->solids[isolid]->mass;
+      s = domain->solids[isolid];
 
-      for (int ip = 0; ip < nmax; ip++) {
-	if (mass[ip] > 0) {
-	  if (mask[ip] & groupbit) {
+      for (int ip = 0; ip < s->np_local; ip++) {
+	if (s->mass[ip] > 0) {
+	  if (s->mask[ip] & groupbit) {
 	    // Gross screening:
-	    xsp = (*x)[ip] - xs;
+	    xsp = s->x[ip] - xs;
 
 	    if (( xsp[0] < R ) && ( xsp[1] < R ) && ( xsp[2] < R )
 		&& ( xsp[0] > -R ) && ( xsp[1] > -R ) && ( xsp[2] > -R )) {
@@ -108,7 +101,7 @@ void FixIndent::initial_integrate() {
 		fmag = K*dr*dr;
 		// Maybe fmag should be inversely proportional to the mass of the particle!!
 		f = fmag*xsp/r;
-		(*mbp)[ip] += f;
+		s->mbp[ip] += f;
 		ftot += f;
 	      }
 	    }
@@ -117,17 +110,13 @@ void FixIndent::initial_integrate() {
       }
     }
   } else {
-    mbp = &domain->solids[solid]->mbp;
-    x = &domain->solids[solid]->x;
-    nmax = domain->solids[solid]->np;
-    mask = domain->solids[solid]->mask;
-    mass = domain->solids[solid]->mass;
+    s = domain->solids[solid];
 
-    for (int ip = 0; ip < nmax; ip++) {
-      if (mass[ip] > 0) {
-	if (mask[ip] & groupbit) {
+    for (int ip = 0; ip < s->np_local; ip++) {
+      if (s->mass[ip] > 0) {
+	if (s->mask[ip] & groupbit) {
 	  // Gross screening:
-	  xsp = (*x)[ip] - xs;
+	  xsp = s->x[ip] - xs;
 	  if (( xsp[0] < R ) && ( xsp[1] < R ) && ( xsp[2] < R )
 	      && ( xsp[0] > -R ) && ( xsp[1] > -R ) && ( xsp[2] > -R )) {
 
@@ -138,7 +127,7 @@ void FixIndent::initial_integrate() {
 	      fmag = K*dr*dr;
 	      // Maybe fmag should be inversely proportional to the mass of the particle!!
 	      f = fmag*xsp/r;
-	      (*mbp)[ip] += f;
+	      s->mbp[ip] += f;
 	      ftot += f;
 	    }
 	  }

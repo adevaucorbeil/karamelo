@@ -98,39 +98,41 @@ void ULCPDI::compute_grid_weight_functions_and_gradients()
     error->all(FLERR, "Error: ULCPDI is only 2D....\n");
   }
 
-  bigint nsolids, np, nnodes, nc;
+  bigint nsolids, np_local, nnodes, nc;
 
   nsolids = domain->solids.size();
 
   if (nsolids) {
     for (int isolid=0; isolid<nsolids; isolid++){
 
-      np = domain->solids[isolid]->np;
-      nc = domain->solids[isolid]->nc;
-      nnodes = domain->solids[isolid]->grid->nnodes;
+      Solid *s = domain->solids[isolid];
 
-      int *numneigh_pn = domain->solids[isolid]->numneigh_pn;
-      int *numneigh_np = domain->solids[isolid]->numneigh_np;
+      np_local = s->np_local;
+      nc = s->nc;
+      nnodes = s->grid->nnodes_local + s->grid->nnodes_ghost;
 
-      vector<int> *neigh_pn = domain->solids[isolid]->neigh_pn;
-      vector<int> *neigh_np = domain->solids[isolid]->neigh_np;
 
-      vector< double > *wf_pn = domain->solids[isolid]->wf_pn;
-      vector< double > *wf_np = domain->solids[isolid]->wf_np;
+      int *numneigh_pn = s->numneigh_pn;
+      int *numneigh_np = s->numneigh_np;
 
-      vector< Eigen::Vector3d > *wfd_pn = domain->solids[isolid]->wfd_pn;
-      vector< Eigen::Vector3d > *wfd_np = domain->solids[isolid]->wfd_np;
+      vector<int> *neigh_pn = s->neigh_pn;
+      vector<int> *neigh_np = s->neigh_np;
 
-      vector<Eigen::Vector3d> *xp = &domain->solids[isolid]->x;
-      vector<Eigen::Vector3d> *xn = &domain->solids[isolid]->grid->x0;
-      vector<Eigen::Vector3d> *rp = &domain->solids[isolid]->rp;
+      vector< double > *wf_pn = s->wf_pn;
+      vector< double > *wf_np = s->wf_np;
 
-      double inv_cellsize = 1.0 / domain->solids[isolid]->grid->cellsize;
-      double *vol = domain->solids[isolid]->vol;
-      int **ntype = domain->solids[isolid]->grid->ntype;
+      vector< Eigen::Vector3d > *wfd_pn = s->wfd_pn;
+      vector< Eigen::Vector3d > *wfd_np = s->wfd_np;
+
+      vector<Eigen::Vector3d> *xp = &s->x;
+      vector<Eigen::Vector3d> *xn = &s->grid->x0;
+      vector<Eigen::Vector3d> *rp = &s->rp;
+
+      double inv_cellsize = 1.0 / s->grid->cellsize;
+      int **ntype = s->grid->ntype;
 
       double wf;
-      double s[3];
+      double phi[3];
       Eigen::Vector3d r, wfd;
       vector<Eigen::Vector3d> xcorner(nc, Eigen::Vector3d::Zero());
       vector<double> wfc(nc, 0);
@@ -142,8 +144,8 @@ void ULCPDI::compute_grid_weight_functions_and_gradients()
 	wfd_np[in].clear();
       }
 
-      if (np && nnodes) {
-	for (int ip=0; ip<np; ip++) {
+      if (np_local && nnodes) {
+	for (int ip=0; ip<np_local; ip++) {
 
 	  neigh_pn[ip].clear();
 	  numneigh_pn[ip] = 0;
@@ -151,9 +153,9 @@ void ULCPDI::compute_grid_weight_functions_and_gradients()
 	  wfd_pn[ip].clear();
 
 	  // Calculate what nodes the corner of Omega_p will interact with:
-	  int nx = domain->solids[isolid]->grid->nx;
-	  int ny = domain->solids[isolid]->grid->ny;
-	  int nz = domain->solids[isolid]->grid->nz;
+	  int nx = s->grid->nx;
+	  int ny = s->grid->ny;
+	  int nz = s->grid->nz;
 
 	  vector<int> n_neigh;
 	  int m;
@@ -253,12 +255,12 @@ void ULCPDI::compute_grid_weight_functions_and_gradients()
 	      // Calculate the distance between each pair of particle/node:
 	      r = (xcorner[ic] - (*xn)[in]) * inv_cellsize;
 
-	      s[0] = basis_function(r[0], ntype[in][0]);
-	      s[1] = basis_function(r[1], ntype[in][1]);
-	      if (domain->dimension == 3) s[2] = basis_function(r[2], ntype[in][2]);
-	      else s[2] = 1;
+	      phi[0] = basis_function(r[0], ntype[in][0]);
+	      phi[1] = basis_function(r[1], ntype[in][1]);
+	      if (domain->dimension == 3) phi[2] = basis_function(r[2], ntype[in][2]);
+	      else phi[2] = 1;
 
-	      wfc[ic] = s[0]*s[1]*s[2]; // Shape function of the corner node
+	      wfc[ic] = phi[0]*phi[1]*phi[2]; // Shape function of the corner node
 
 	      if (wfc[ic] > 1.0e-12) wf += wfc[ic];
 	    }
@@ -275,7 +277,7 @@ void ULCPDI::compute_grid_weight_functions_and_gradients()
 		wfd[2] = 0;
 	      }
 
-	      double inv_Vp = 1.0/vol[ip];
+	      double inv_Vp = 1.0/s->vol[ip];
 	      wfd[0] *= inv_Vp;
 	      wfd[1] *= inv_Vp;
 	      wfd[2] *= inv_Vp;
@@ -295,7 +297,7 @@ void ULCPDI::compute_grid_weight_functions_and_gradients()
 	  }
 	}
       }
-      if (method_type.compare("APIC") == 0) domain->solids[isolid]->compute_inertia_tensor(shape_function);
+      if (method_type.compare("APIC") == 0) s->compute_inertia_tensor(shape_function);
     }
   }
 }
