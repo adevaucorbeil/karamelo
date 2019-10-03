@@ -29,8 +29,6 @@ Grid::Grid(MPM *mpm) :
 {
   cout << "Creating new grid" << endl;
 
-  ntype = NULL;
-
   nx = ny = nz = 0;
   nx_global = ny_global = nz_global = 0;
 
@@ -57,8 +55,6 @@ Grid::Grid(MPM *mpm) :
 
 Grid::~Grid()
 {
-  memory->destroy(ntype);
-
   // Destroy MPI type:
   MPI_Type_free(&Pointtype);
 }
@@ -467,7 +463,7 @@ void Grid::grow(int nn){
 
   str = "grid-ntype";
   cout << "Growing " << str << endl;
-  ntype = memory->grow(ntype, nn, 3, str);
+  ntype.resize(nn);
 }
 
 void Grid::update_grid_velocities()

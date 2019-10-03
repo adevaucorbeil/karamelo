@@ -129,7 +129,7 @@ void ULCPDI::compute_grid_weight_functions_and_gradients()
       vector<Eigen::Vector3d> *rp = &s->rp;
 
       double inv_cellsize = 1.0 / s->grid->cellsize;
-      int **ntype = s->grid->ntype;
+      vector<array<int, 3>> *ntype = &domain->solids[isolid]->grid->ntype;
 
       double wf;
       double phi[3];
@@ -255,9 +255,9 @@ void ULCPDI::compute_grid_weight_functions_and_gradients()
 	      // Calculate the distance between each pair of particle/node:
 	      r = (xcorner[ic] - (*xn)[in]) * inv_cellsize;
 
-	      phi[0] = basis_function(r[0], ntype[in][0]);
-	      phi[1] = basis_function(r[1], ntype[in][1]);
-	      if (domain->dimension == 3) phi[2] = basis_function(r[2], ntype[in][2]);
+	      phi[0] = basis_function(r[0], (*ntype)[in][0]);
+	      phi[1] = basis_function(r[1], (*ntype)[in][1]);
+	      if (domain->dimension == 3) phi[2] = basis_function(r[2], (*ntype)[in][2]);
 	      else phi[2] = 1;
 
 	      wfc[ic] = phi[0]*phi[1]*phi[2]; // Shape function of the corner node

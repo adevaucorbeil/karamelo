@@ -51,7 +51,7 @@ class Grid : protected Pointers {
 
   vector<double> mass;              // nodes' current mass
   vector<int> mask;                 // nodes' group mask
-  int **ntype;                      // node type in x, y, and z directions (False for an edge, True otherwise)
+  vector<array<int, 3>> ntype;   // node type in x, y, and z directions (False for an edge, True otherwise)
 
   MPI_Datatype Pointtype;    // MPI type for struct Point
 
