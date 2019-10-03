@@ -6,6 +6,7 @@
 #include "solid.h"
 #include "mpmtype.h"
 #include "mpm_math.h"
+#include "universe.h"
 #include "error.h"
 
 using namespace std;
@@ -30,9 +31,12 @@ void DumpParticle::write()
 
   if (pos_asterisk >= 0)
     {
-      // Replace the asterisk by ntimestep:
-      fdump = filename.substr(0, pos_asterisk)
-	+ to_string(update->ntimestep);
+      // Replace the asterisk by proc-N.ntimestep:
+      fdump = filename.substr(0, pos_asterisk);
+      if (universe->nprocs > 1) {
+	fdump += "proc-" + to_string(universe->me) + ".";
+      }
+      fdump += to_string(update->ntimestep);
       if (filename.size()-pos_asterisk-1 > 0)
 	fdump += filename.substr(pos_asterisk+1, filename.size()-pos_asterisk-1);
     }
@@ -47,7 +51,7 @@ void DumpParticle::write()
     dumpstream << "ITEM: TIMESTEP\n0\nITEM: NUMBER OF ATOMS\n";
 
     bigint total_np = 0;
-    for (int isolid=0; isolid < domain->solids.size(); isolid++) total_np += domain->solids[isolid]->np;
+    for (int isolid=0; isolid < domain->solids.size(); isolid++) total_np += domain->solids[isolid]->np_local;
 
     dumpstream << total_np << endl;
     dumpstream << "ITEM: BOX BOUNDS sm sm sm\n";
@@ -56,12 +60,10 @@ void DumpParticle::write()
     dumpstream << domain->boxlo[2] << " " << domain->boxhi[2] << endl;
     dumpstream << "ITEM: ATOMS id type x y z x0 y0 z0 vx vy vz s11 s22 s33 s12 s13 s23 seq damage damage_init volume mass bx by bz ep epdot\n";
 
-    bigint ID = 0;
     for (int isolid=0; isolid < domain->solids.size(); isolid++) {
       Solid *s = domain->solids[isolid];
       for (bigint i=0; i<s->np;i++) {
-	ID++;
-	dumpstream << ID << " ";
+	dumpstream << s->ptag[i] << " ";
 	dumpstream << isolid+1 << " ";
 	dumpstream << s->x[i][0] << " ";
 	dumpstream << s->x[i][1] << " ";

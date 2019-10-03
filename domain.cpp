@@ -14,6 +14,7 @@ using namespace std;
 Domain::Domain(MPM *mpm) : Pointers(mpm)
 {
   dimension = 3;
+  created = false;
 
   boxlo[0] = boxlo[1] = boxlo[2] = 0;
   boxhi[0] = boxhi[1] = boxhi[2] = 0;
@@ -282,4 +283,5 @@ void Domain::create_domain(vector<string> args) {
   
   // Set proc grid
   universe->set_proc_grid();
+  created = true;
 }

@@ -30,7 +30,7 @@ void Error::all(const char *file, int line, const string str)
   //                        "Last command: %s\n",
   //                        str,file,line,lastcmd);
   // }
-  cout << "Error: " << str << "(" << file << "," << line << ")\n";
+  cout << "Error at line " << input->line_number << ": " << str << " raised at (" << file << "," << line << ")\n";
   cout << "Last command: " << input->line << endl;
   MPI_Finalize();
   exit(1);

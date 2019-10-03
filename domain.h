@@ -18,6 +18,7 @@ using namespace std;
 class Domain : protected Pointers {
  public:
   int dimension;                         // 2 = 2d, 3 = 3d
+  bool created;                          // has the domain been created?
 
   double boxlo[3],boxhi[3];              // orthogonal box global bounds
   double sublo[3],subhi[3];              // sub-box bounds on this proc

@@ -30,6 +30,7 @@ Input::Input(MPM *mpm, int argc, char **argv) : Pointers(mpm)
 {
   MPI_Comm_rank(universe->uworld,&me);
 
+  line_number = 0;
   maxline = maxcopy = 0;
   maxarg = 0;
   arg = NULL;
@@ -87,8 +88,11 @@ void Input::file()
   int end = 0;
 
   istream is(infile);
-  
+
   while(1) {
+
+    line_number++;
+
     if (me == 0) {
       while(1) {
 	char c = char(is.get());

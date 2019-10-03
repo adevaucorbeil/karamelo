@@ -963,6 +963,10 @@ void Solid::populate(vector<string> args) {
     error->all(FLERR, "Error: region ID " + args[1] + " not does not exist.\n");
   }
 
+  if (domain->created==false) {
+    error->all(FLERR, "The domain must be created before any solids can (create_domain(...)).");
+  }
+
   double *sublo = domain->sublo;
   double *subhi = domain->subhi;
 
