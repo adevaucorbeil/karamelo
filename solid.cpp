@@ -433,6 +433,9 @@ void Solid::compute_mass_nodes(bool reset)
     for (int j=0; j<numneigh_np[in];j++){
       ip = neigh_np[in][j];
       grid->mass[in] += wf_np[in][j] * mass[ip];
+      if (in==6) {
+	cout << "compute_mass_nodes:\ttag=" << in << "\tptag = " << ip << "\tmass[ip]=" << mass[ip] << "\tphi=" << wf_np[in][j] << "\tmassn=" << grid->mass[in] << endl;
+      }
     }
   }
   return;
