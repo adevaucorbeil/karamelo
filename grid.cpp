@@ -474,8 +474,8 @@ void Grid::update_grid_velocities()
   for (int i=0; i<nnodes_local + nnodes_ghost; i++){
     if (mass[i] > 1e-12) v_update[i] = v[i] + update->dt * (f[i] + mb[i])/mass[i];
     else v_update[i] = v[i];
-    // if (ntag[i]==27)
-    // cout << "update_grid_velocities: tag=" << ntag[i] << ", vn=[" << v[i][0] << "," << v[i][1] << "," << v[i][2] << "], f=[" << f[i][0] << "," << f[i][1] << "," << f[i][2] << "], mb=[" << mb[i][0] << "," << mb[i][1] << "," << mb[i][2] << "], dt=" << update->dt << ", mass[i]=" << mass[i] << endl;
+    if (ntag[i]==5)
+    cout << "update_grid_velocities: tag=" << ntag[i] << ", vn=[" << v[i][0] << "," << v[i][1] << "," << v[i][2] << "], f=[" << f[i][0] << "," << f[i][1] << "," << f[i][2] << "], mb=[" << mb[i][0] << "," << mb[i][1] << "," << mb[i][2] << "], dt=" << update->dt << ", mass[i]=" << mass[i] << endl;
   }
 }
 
