@@ -33,6 +33,7 @@ Universe::~Universe()
 }
 
 void Universe::set_proc_grid() {
+  cout << "In Universe::set_proc_grid()\n";
   int dim = domain->dimension;
 
   if (dim != 1 && dim !=2 && dim !=3) {
@@ -141,10 +142,6 @@ void Universe::set_proc_grid() {
       procneigh[1][1] = me + procgrid[0];
     else
       procneigh[1][1] = -1;
-
-#ifdef DEBUG
-    cout << "proc " << universe->me << "\tprocneigh = [[" << procneigh[0][0] << "," << procneigh[0][1] <<"],[" << procneigh[1][0] << "," << procneigh[1][1] <<"],[" << procneigh[2][0] << "," << procneigh[2][1] << "]\n.";
-#endif
   }
 
   if (nprocs > 1 && dim == 3) {
@@ -163,7 +160,7 @@ void Universe::set_proc_grid() {
     if (subhi[1] < boxhi[1] - 1.0e-12)
       procneigh[1][1] = me + procgrid[0];
     else
-      procneigh[1][1] = -1;procneigh[0][0] = me - 1;
+      procneigh[1][1] = -1;
     if (sublo[2] > boxlo[2] + 1.0e-12)
       procneigh[2][0] = me - procgrid[0]*procgrid[1];
     else
@@ -173,6 +170,10 @@ void Universe::set_proc_grid() {
     else
       procneigh[2][1] = -1;
   }
+
+#ifdef DEBUG
+    cout << "proc " << universe->me << "\tprocneigh = [[" << procneigh[0][0] << "," << procneigh[0][1] <<"],[" << procneigh[1][0] << "," << procneigh[1][1] <<"],[" << procneigh[2][0] << "," << procneigh[2][1] << "].\n";
+#endif
 }
 
 vector<int> tile2d(int p) {
