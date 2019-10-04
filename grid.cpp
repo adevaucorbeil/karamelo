@@ -234,9 +234,9 @@ void Grid::init(double *solidlo, double *solidhi){
 	  ntype[l][1] = j % 2;
 	  ntype[l][2] = k % 2;
 	} else if (cubic) {
-	  ntype[l][0] = min(2,i)-min(nx-1-i,2);
-	  ntype[l][1] = min(2,j)-min(ny-1-j,2);
-	  ntype[l][2] = min(2,k)-min(nz-1-k,2);
+	  ntype[l][0] = min(2,i+nx0)-min(nx_global-1-i-nx0,2);
+	  ntype[l][1] = min(2,j+ny0)-min(ny_global-1-j-ny0,2);
+	  ntype[l][2] = min(2,k+nz0)-min(nz_global-1-k-nz0,2);
 	}
 
 	x[l] = x0[l];
