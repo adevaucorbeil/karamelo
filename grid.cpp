@@ -174,53 +174,53 @@ void Grid::init(double *solidlo, double *solidhi){
     nz_global = 1;
   }
 
-  // Need to receive from lower neighbouring CPUs what their nx, ny, and nz:
+//   // Need to receive from lower neighbouring CPUs what their nx, ny, and nz:
 
-  int nx0, ny0, nz0, nx_temp, ny_temp, nz_temp;
-  nx0 = ny0 = nz0 = 0;
+//   int nx0, ny0, nz0, nx_temp, ny_temp, nz_temp;
+//   nx0 = ny0 = nz0 = 0;
 
-  for (int iproc=0; iproc<universe->nprocs; iproc++){
-    if (iproc == universe->me) {
-      if (universe->procneigh[0][1] >= 0) {
-	// Send nx to the neighbouring CPU in ascending x
-	nx_temp = nx0 + nx;
-	MPI_Send(&nx_temp, 1, MPI_INT, universe->procneigh[0][1], 0, universe->uworld);
-      }
+//   for (int iproc=0; iproc<universe->nprocs; iproc++){
+//     if (iproc == universe->me) {
+//       if (universe->procneigh[0][1] >= 0) {
+// 	// Send nx to the neighbouring CPU in ascending x
+// 	nx_temp = nx0 + nx;
+// 	MPI_Send(&nx_temp, 1, MPI_INT, universe->procneigh[0][1], 0, universe->uworld);
+//       }
 
-      if ((domain->dimension >= 2) && (universe->procneigh[1][1] >= 0)){
-	// Send ny to the neighbouring CPU in ascending y
-	ny_temp = ny0 + ny;
-	MPI_Send(&ny_temp, 1, MPI_INT, universe->procneigh[1][1], 0, universe->uworld);
-      }
+//       if ((domain->dimension >= 2) && (universe->procneigh[1][1] >= 0)){
+// 	// Send ny to the neighbouring CPU in ascending y
+// 	ny_temp = ny0 + ny;
+// 	MPI_Send(&ny_temp, 1, MPI_INT, universe->procneigh[1][1], 0, universe->uworld);
+//       }
 
-      if ((domain->dimension == 3) && (universe->procneigh[2][1] >= 0)){
-	// Send nz to the neighbouring CPU in ascending z
-	nz_temp = nz0 + nz;
-	MPI_Send(&nz_temp, 1, MPI_INT, universe->procneigh[2][1], 0, universe->uworld);
-      }
-    }
+//       if ((domain->dimension == 3) && (universe->procneigh[2][1] >= 0)){
+// 	// Send nz to the neighbouring CPU in ascending z
+// 	nz_temp = nz0 + nz;
+// 	MPI_Send(&nz_temp, 1, MPI_INT, universe->procneigh[2][1], 0, universe->uworld);
+//       }
+//     }
 
-    if (iproc == universe->procneigh[0][0]) {
-      // Receive nx0 from the neighbouring CPU in descending x
-      MPI_Recv(&nx0, 1, MPI_INT, iproc, 0, universe->uworld, MPI_STATUS_IGNORE);
-    }
-    if ((domain->dimension >= 2) && iproc == universe->procneigh[1][0]) {
-      // Receive ny0 from the neighbouring CPU in descending y
-      MPI_Recv(&ny0, 1, MPI_INT, iproc, 0, universe->uworld, MPI_STATUS_IGNORE);
-    }
-    if ((domain->dimension == 3) && iproc == universe->procneigh[2][0]) {
-      // Receive nz0 from the neighbouring CPU in descending y
-      MPI_Recv(&nz0, 1, MPI_INT, iproc, 0, universe->uworld, MPI_STATUS_IGNORE);
-    }
-  }
+//     if (iproc == universe->procneigh[0][0]) {
+//       // Receive nx0 from the neighbouring CPU in descending x
+//       MPI_Recv(&nx0, 1, MPI_INT, iproc, 0, universe->uworld, MPI_STATUS_IGNORE);
+//     }
+//     if ((domain->dimension >= 2) && iproc == universe->procneigh[1][0]) {
+//       // Receive ny0 from the neighbouring CPU in descending y
+//       MPI_Recv(&ny0, 1, MPI_INT, iproc, 0, universe->uworld, MPI_STATUS_IGNORE);
+//     }
+//     if ((domain->dimension == 3) && iproc == universe->procneigh[2][0]) {
+//       // Receive nz0 from the neighbouring CPU in descending y
+//       MPI_Recv(&nz0, 1, MPI_INT, iproc, 0, universe->uworld, MPI_STATUS_IGNORE);
+//     }
+//   }
 
-#ifdef DEBUG
-  cout << "proc " << universe->me << " nx0=" << nx0 << "\tny0=" << ny0 << "\tnz0=" << nz0 <<endl;
-  cout << "proc " << universe->me << " noffsetlo=[" << noffsetlo[0] << "," << noffsetlo[1] << "," << noffsetlo[2] << "]\n";
-  if (noffsetlo[0]!=nx0) error->all(FLERR, "noffsetlo[0]!=nx0:" + to_string(noffsetlo[0]) + "!=" + to_string(nx0) + "\n");
-  if (noffsetlo[1]!=ny0) error->all(FLERR, "noffsetlo[1]!=ny0:" + to_string(noffsetlo[1]) + "!=" + to_string(ny0) + "\n");
-  if (noffsetlo[2]!=nz0) error->all(FLERR, "noffsetlo[2]!=nz0:" + to_string(noffsetlo[2]) + "!=" + to_string(nz0) + "\n");
-#endif
+// #ifdef DEBUG
+//   cout << "proc " << universe->me << " nx0=" << nx0 << "\tny0=" << ny0 << "\tnz0=" << nz0 <<endl;
+//   cout << "proc " << universe->me << " noffsetlo=[" << noffsetlo[0] << "," << noffsetlo[1] << "," << noffsetlo[2] << "]\n";
+//   if (noffsetlo[0]!=nx0) error->all(FLERR, "noffsetlo[0]!=nx0:" + to_string(noffsetlo[0]) + "!=" + to_string(nx0) + "\n");
+//   if (noffsetlo[1]!=ny0) error->all(FLERR, "noffsetlo[1]!=ny0:" + to_string(noffsetlo[1]) + "!=" + to_string(ny0) + "\n");
+//   if (noffsetlo[2]!=nz0) error->all(FLERR, "noffsetlo[2]!=nz0:" + to_string(noffsetlo[2]) + "!=" + to_string(nz0) + "\n");
+// #endif
 
   int l=0;
   for (int i=0; i<nx; i++){
@@ -237,13 +237,13 @@ void Grid::init(double *solidlo, double *solidhi){
 	  ntype[l][1] = 0;
 	  ntype[l][2] = 0;
 	} else if (bernstein) {
-	  ntype[l][0] = (i+nx0) % 2;
-	  ntype[l][1] = (j+ny0) % 2;
-	  ntype[l][2] = (k+nz0) % 2;
+	  ntype[l][0] = (i+noffsetlo[0]) % 2;
+	  ntype[l][1] = (j+noffsetlo[1]) % 2;
+	  ntype[l][2] = (k+noffsetlo[2]) % 2;
 	} else if (cubic) {
-	  ntype[l][0] = min(2,i+nx0)-min(nx_global-1-i-nx0,2);
-	  ntype[l][1] = min(2,j+ny0)-min(ny_global-1-j-ny0,2);
-	  ntype[l][2] = min(2,k+nz0)-min(nz_global-1-k-nz0,2);
+	  ntype[l][0] = min(2,i+noffsetlo[0])-min(nx_global-1-i-noffsetlo[0],2);
+	  ntype[l][1] = min(2,j+noffsetlo[1])-min(ny_global-1-j-noffsetlo[1],2);
+	  ntype[l][2] = min(2,k+noffsetlo[2])-min(nz_global-1-k-noffsetlo[2],2);
 	}
 
 	x[l] = x0[l];
@@ -254,7 +254,7 @@ void Grid::init(double *solidlo, double *solidhi){
 	mass[l] = 0;
 	// R[l].setIdentity();
 
-	ntag[l] = nz_global*ny_global*(i+nx0) + nz_global*(j+ny0) + k+nz0;
+	ntag[l] = nz_global*ny_global*(i+noffsetlo[0]) + nz_global*(j+noffsetlo[1]) + k+noffsetlo[2];
 	// cout << "ntag = " << ntag[l] << endl;
 
 	// Check if ntag[l] already exists:
