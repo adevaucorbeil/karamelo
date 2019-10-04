@@ -13,9 +13,10 @@
 using namespace Eigen;
 
 struct Point {
+  int owner;
   tagint tag;
   double x[3];
-  int owner;
+  int ntype[3];
 };
 
 class Grid : protected Pointers {

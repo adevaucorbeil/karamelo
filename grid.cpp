@@ -38,17 +38,18 @@ Grid::Grid(MPM *mpm) :
   // Create MPI type for struct Point:
   Point dummy;
 
-  MPI_Datatype type[3] = {MPI_MPM_TAGINT, MPI_DOUBLE, MPI_INT};
-  int blocklen[3] = {1, 3, 1};
-  MPI_Aint disp[3];
-  MPI_Address( &dummy.tag, &disp[0] );
-  MPI_Address( &dummy.x, &disp[1] );
-  MPI_Address( &dummy.owner, &disp[2] );
+  MPI_Datatype type[4] = {MPI_INT, MPI_MPM_TAGINT, MPI_DOUBLE, MPI_INT};
+  int blocklen[4] = {1, 1, 3, 3};
+  MPI_Aint disp[4];
+  MPI_Address( &dummy.owner, &disp[0] );
+  MPI_Address( &dummy.tag, &disp[1] );
+  MPI_Address( &dummy.x, &disp[2] );
+  MPI_Address( &dummy.ntype, &disp[3] );
+  disp[3] = disp[3] - disp[0];
   disp[2] = disp[2] - disp[0];
   disp[1] = disp[1] - disp[0];
   disp[0] = 0;
-  MPI_Type_struct(3, blocklen, disp, type, &Pointtype);
-  //MPI_Type_create_struct(2, blocklen, disp, type, &Pointtype);
+  MPI_Type_struct(4, blocklen, disp, type, &Pointtype);
   MPI_Type_commit(&Pointtype);
 
 }
@@ -255,6 +256,7 @@ void Grid::init(double *solidlo, double *solidhi){
 	  error->all(FLERR, "node " + to_string(ntag[l]) + " already exists.");
 	}
 	map_ntag[ntag[l]] = l;
+	nowner[l] = universe->me;
 
 #ifdef DEBUG
 	plt::annotate(to_string(ntag[l]), x0[l][0], x0[l][1]);
@@ -328,7 +330,7 @@ void Grid::init(double *solidlo, double *solidhi){
 	isnt_subhi_boundhi[0] && (subhi[0] - x0[in][0] < delta) ||
 	(domain->dimension >= 2) && isnt_subhi_boundhi[1] && (subhi[1] - x0[in][1] < delta) ||
 	(domain->dimension == 3) && isnt_subhi_boundhi[2] && (subhi[2] - x0[in][2] < delta)) {
-      Point p = {ntag[in], {x0[in][0], x0[in][1], x0[in][2]}, universe->me};
+      Point p = {universe->me, ntag[in], {x0[in][0], x0[in][1], x0[in][2]}, {ntype[in][0], ntype[in][1], ntype[in][2]}};
       ns.push_back(p);
       shared.push_back(in);
     }
@@ -382,6 +384,7 @@ void Grid::init(double *solidlo, double *solidhi){
   for (int in=0; in<nnodes_ghost; in++) {
     int i = nnodes_local+in;
 
+    nowner[i] = gnodes[in].owner;
     ntag[i] = gnodes[in].tag;
 
     // Check if ntag[l] already exists:
@@ -390,9 +393,15 @@ void Grid::init(double *solidlo, double *solidhi){
     }
 
     map_ntag[ntag[i]] = i;
+
     x0[i][0] = x[i][0] = gnodes[in].x[0];
     x0[i][1] = x[i][1] = gnodes[in].x[1];
     x0[i][2] = x[i][2] = gnodes[in].x[2];
+
+    ntype[i][0] = gnodes[in].ntype[0];
+    ntype[i][1] = gnodes[in].ntype[1];
+    ntype[i][2] = gnodes[in].ntype[2];
+
     v[i].setZero();
     v_update[i].setZero();
     f[i].setZero();
