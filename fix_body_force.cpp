@@ -103,8 +103,11 @@ void FixBodyforce::post_particles_to_grid() {
 
 	      f *= g->mass[in];
 	      g->mb[in] += f;
-	      ftot += f;
-	      mtot += g->mass[in];
+
+	      if (in < g->nnodes_local) {
+		ftot += f;
+		mtot += g->mass[in];
+	      }
 	  }
 	}
       }
@@ -126,8 +129,11 @@ void FixBodyforce::post_particles_to_grid() {
 
 	  f *= g->mass[in];
 	  g->mb[in] += f;
-	  ftot += f;
-	  mtot += g->mass[in];
+
+	  if (in < g->nnodes_local) {
+	    ftot += f;
+	    mtot += g->mass[in];
+	  }
 	}
       }
     }

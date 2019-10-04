@@ -62,7 +62,7 @@ void DumpParticle::write()
 
     for (int isolid=0; isolid < domain->solids.size(); isolid++) {
       Solid *s = domain->solids[isolid];
-      for (bigint i=0; i<s->np;i++) {
+      for (bigint i=0; i<s->np_local;i++) {
 	dumpstream << s->ptag[i] << " ";
 	dumpstream << isolid+1 << " ";
 	dumpstream << s->x[i][0] << " ";

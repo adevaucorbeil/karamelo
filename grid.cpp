@@ -76,11 +76,13 @@ void Grid::init(double *solidlo, double *solidhi){
     boundhi = domain->boxhi;
   }
 
-  bool is_cubic = false;
+  bool cubic = false;
+  bool bernstein = false;
 
-  if (update->method_shape_function.compare("cubic-spline")==0) is_cubic = true;
+  if (update->method_shape_function.compare("cubic-spline")==0) cubic = true;
+  if (update->method_shape_function.compare("Bernstein-quadratic")==0) bernstein = true;
 
-  double Loffsetlo[3] = {MAX(0.0, sublo[0] - boundlo[0]),
+ double Loffsetlo[3] = {MAX(0.0, sublo[0] - boundlo[0]),
 			 MAX(0.0, sublo[1] - boundlo[1]),
 			 MAX(0.0, sublo[2] - boundlo[2])};
 
@@ -118,7 +120,7 @@ void Grid::init(double *solidlo, double *solidhi){
 
   double Lx = (boundhi[0] - boundlo[0]) - (noffsetlo[0] + noffsethi[0])*h;
 
-  if (update->method_shape_function.compare("Bernstein-quadratic")==0)
+  if (bernstein)
     h /= 2;
 
   nx = ((int) (Lx/h))+1;
@@ -227,11 +229,11 @@ void Grid::init(double *solidlo, double *solidhi){
 	  ntype[l][0] = 0;
 	  ntype[l][1] = 0;
 	  ntype[l][2] = 0;
-	} else if (update->method_shape_function.compare("Bernstein-quadratic")==0) {
+	} else if (bernstein) {
 	  ntype[l][0] = i % 2;
 	  ntype[l][1] = j % 2;
 	  ntype[l][2] = k % 2;
-	} else if (update->method_shape_function.compare("cubic-spline")==0) {
+	} else if (cubic) {
 	  ntype[l][0] = min(2,i)-min(nx-1-i,2);
 	  ntype[l][1] = min(2,j)-min(ny-1-j,2);
 	  ntype[l][2] = min(2,k)-min(nz-1-k,2);
@@ -246,7 +248,7 @@ void Grid::init(double *solidlo, double *solidhi){
 	// R[l].setIdentity();
 
 	ntag[l] = nz_global*ny_global*(i+nx0) + nz_global*(j+ny0) + k+nz0;
-	cout << "ntag = " << ntag[l] << endl;
+	// cout << "ntag = " << ntag[l] << endl;
 
 	// Check if ntag[l] already exists:
 	if(map_ntag.count(ntag[l]) > 0 ) {
@@ -302,7 +304,7 @@ void Grid::init(double *solidlo, double *solidhi){
   vector<Point> gnodes;
 
   double delta;
-  if (is_cubic) delta = 2*h - 1.0e-12;
+  if (cubic || bernstein) delta = 2*h - 1.0e-12;
   else delta = h - 1.0e-12;
 
   cout << "delta=" << delta << endl;
@@ -520,7 +522,7 @@ void Grid::reduce_mass_ghost_nodes()
       }
 
       MPI_Allreduce(&mass_local, &mass_reduced, 1, MPI_DOUBLE, MPI_SUM, universe->uworld);
-      mass[in] = mass_reduced;
+      if (in >= 0) mass[in] = mass_reduced;
     }
   }
 }
@@ -572,16 +574,20 @@ void Grid::reduce_ghost_nodes(bool only_v)
       if (!only_v) {
 	MPI_Allreduce(f_local, f_reduced, 3, MPI_DOUBLE, MPI_SUM, universe->uworld);
 
-	f[in][0] = f_reduced[0];
-	f[in][1] = f_reduced[1];
-	f[in][2] = f_reduced[2];
+	if (in >= 0) {
+	  f[in][0] = f_reduced[0];
+	  f[in][1] = f_reduced[1];
+	  f[in][2] = f_reduced[2];
+	}
       }
 
       MPI_Allreduce(v_local, v_reduced, 3, MPI_DOUBLE, MPI_SUM, universe->uworld);
 
-      v[in][0] = v_reduced[0];
-      v[in][1] = v_reduced[1];
-      v[in][2] = v_reduced[2];
+      if (in >= 0) {
+	v[in][0] = v_reduced[0];
+	v[in][1] = v_reduced[1];
+	v[in][2] = v_reduced[2];
       }
+    }
   }
 }

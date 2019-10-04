@@ -109,15 +109,15 @@ void FixForceNodes::post_particles_to_grid() {
 	  if (g->mask[in] & groupbit) {
 	    if (xset) {
 	      g->mb[in][0] += fx/((double) n);
-	      ftot[0] += fx/((double) n);
+	      if(in < g->nnodes_local) ftot[0] += fx/((double) n);
 	    }
 	    if (yset) {
 	      g->mb[in][1] += fy/((double) n);
-	      ftot[1] += fy/((double) n);
+	      if(in < g->nnodes_local) ftot[1] += fy/((double) n);
 	    }
 	    if (zset) {
 	      g->mb[in][2] += fz/((double) n);
-	      ftot[2] += fz/((double) n);
+	      if(in < g->nnodes_local) ftot[2] += fz/((double) n);
 	    }
 	  }
 	}
@@ -141,15 +141,15 @@ void FixForceNodes::post_particles_to_grid() {
 	if (g->mask[in] & groupbit) {
 	  if (xset) {
 	    g->mb[in][0] += fx/((double) n);
-	    ftot[0] += fx/((double) n);
+	    if(in < g->nnodes_local) ftot[0] += fx/((double) n);
 	  }
 	  if (yset) {
 	    g->mb[in][1] += fy/((double) n);
-	    ftot[1] += fy/((double) n);
+	    if(in < g->nnodes_local) ftot[1] += fy/((double) n);
 	  }
 	  if (zset) {
 	    g->mb[in][2] += fz/((double) n);
-	    ftot[2] += fz/((double) n);
+	    if(in < g->nnodes_local) ftot[2] += fz/((double) n);
 	  }
 	}
       }
