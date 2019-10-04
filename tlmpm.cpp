@@ -275,6 +275,10 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
 	      if (domain->dimension == 2) wf = s[0]*s[1];
 	      if (domain->dimension == 3) wf = s[0]*s[1]*s[2];
 
+	      if ((in==5) && (ip == 20)) {
+		cout << "ntag=" << in << "\tptag=" << ip << "\twf=" << wf << "\tr=[" << r[0] << "," << r[1] << "," << r[2] << "\txp=" << xp[ip][0] << ","  << xp[ip][1] << "," << xp[ip][2] << "]\txn=["<< xn[in][0] << "," << xn[in][1] << "," << xn[in][2] <<"]\n";
+	      }
+
 	      wf_pn[ip].push_back(wf);
 	      wf_np[in].push_back(wf);
 
