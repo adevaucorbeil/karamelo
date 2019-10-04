@@ -1017,12 +1017,12 @@ void Solid::populate(vector<string> args) {
   if (domain->dimension == 3) Lsubz = solidsubhi[2]-solidsublo[2];
 
   nsubx = (int) (Lsubx/delta);
-  while (nsubx*delta <= Lsubx-0.5*delta) nsubx++;
+  while (nsubx*delta <= Lsubx-0.1*delta) nsubx++;
   nsubx++;
 
   if (domain->dimension >= 2) {
     nsuby = (int) (Lsuby/delta);
-    while (nsuby*delta <= Lsuby-0.5*delta) nsuby++;
+    while (nsuby*delta <= Lsuby-0.1*delta) nsuby++;
     nsuby++;
   } else {
     nsuby = 1;
@@ -1030,7 +1030,7 @@ void Solid::populate(vector<string> args) {
 
   if (domain->dimension == 3) {
     nsubz = (int) (Lsubz/delta);
-    while (nsubz*delta <= Lsubz-0.5*delta) nsubz++;
+    while (nsubz*delta <= Lsubz-0.1*delta) nsubz++;
     nsubz++;
   } else {
     nsubz = 1;

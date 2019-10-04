@@ -112,12 +112,12 @@ void Grid::init(double *solidlo, double *solidhi){
     // they should below to procneigh[0][0]
     noffsetlo[0]++;
   }
-  if (universe->procneigh[1][0] >= 0 && abs(boundlo[1]+ noffsetlo[1]*h - sublo[1])<1.0e-12) {
+  if (domain->dimension >= 2 && universe->procneigh[1][0] >= 0 && abs(boundlo[1]+ noffsetlo[1]*h - sublo[1])<1.0e-12) {
     // Some nodes would fall exactly on the subdomain lower y boundary
     // they should below to procneigh[1][0]
     noffsetlo[1]++;
   }
-  if (universe->procneigh[2][0] >= 0 && abs(boundlo[2]+ noffsetlo[2]*h - sublo[2])<1.0e-12) {
+  if (domain->dimension == 3 && universe->procneigh[2][0] >= 0 && abs(boundlo[2]+ noffsetlo[2]*h - sublo[2])<1.0e-12) {
     // Some nodes would fall exactly on the subdomain lower x boundary
     // they should below to procneigh[2][0]
     noffsetlo[2]++;
