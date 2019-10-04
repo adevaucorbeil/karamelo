@@ -62,6 +62,7 @@ Grid::~Grid()
 
 void Grid::init(double *solidlo, double *solidhi){
 
+  cout << "In Grid::init()\n";
   bool cubic = false;
   bool bernstein = false;
   double h = cellsize;
@@ -116,10 +117,10 @@ void Grid::init(double *solidlo, double *solidhi){
     // they should below to procneigh[1][0]
     noffsetlo[1]++;
   }
-  if (universe->procneigh[1][0] >= 0 && abs(boundlo[1]+ noffsetlo[1]*h - sublo[1])<1.0e-12) {
+  if (universe->procneigh[2][0] >= 0 && abs(boundlo[2]+ noffsetlo[2]*h - sublo[2])<1.0e-12) {
     // Some nodes would fall exactly on the subdomain lower x boundary
-    // they should below to procneigh[0][0]
-    noffsetlo[1]++;
+    // they should below to procneigh[2][0]
+    noffsetlo[2]++;
   }
 
   double Lx = (boundhi[0] - boundlo[0]) - (noffsetlo[0] + noffsethi[0])*h;
@@ -215,6 +216,10 @@ void Grid::init(double *solidlo, double *solidhi){
 
 #ifdef DEBUG
   cout << "proc " << universe->me << " nx0=" << nx0 << "\tny0=" << ny0 << "\tnz0=" << nz0 <<endl;
+  cout << "proc " << universe->me << " noffsetlo=[" << noffsetlo[0] << "," << noffsetlo[1] << "," << noffsetlo[2] << "]\n";
+  if (noffsetlo[0]!=nx0) error->all(FLERR, "noffsetlo[0]!=nx0:" + to_string(noffsetlo[0]) + "!=" + to_string(nx0) + "\n");
+  if (noffsetlo[1]!=ny0) error->all(FLERR, "noffsetlo[1]!=ny0:" + to_string(noffsetlo[1]) + "!=" + to_string(ny0) + "\n");
+  if (noffsetlo[2]!=nz0) error->all(FLERR, "noffsetlo[2]!=nz0:" + to_string(noffsetlo[2]) + "!=" + to_string(nz0) + "\n");
 #endif
 
   int l=0;
