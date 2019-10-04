@@ -62,7 +62,15 @@ Grid::~Grid()
 
 void Grid::init(double *solidlo, double *solidhi){
 
+  bool cubic = false;
+  bool bernstein = false;
   double h = cellsize;
+
+  if (update->method_shape_function.compare("cubic-spline")==0) cubic = true;
+  if (update->method_shape_function.compare("Bernstein-quadratic")==0) {
+    bernstein = true;
+    h /= 2;
+  }
 
   double *sublo = domain->sublo;
   double *subhi = domain->subhi;
@@ -77,11 +85,6 @@ void Grid::init(double *solidlo, double *solidhi){
     boundhi = domain->boxhi;
   }
 
-  bool cubic = false;
-  bool bernstein = false;
-
-  if (update->method_shape_function.compare("cubic-spline")==0) cubic = true;
-  if (update->method_shape_function.compare("Bernstein-quadratic")==0) bernstein = true;
 
  double Loffsetlo[3] = {MAX(0.0, sublo[0] - boundlo[0]),
 			 MAX(0.0, sublo[1] - boundlo[1]),
@@ -121,8 +124,6 @@ void Grid::init(double *solidlo, double *solidhi){
 
   double Lx = (boundhi[0] - boundlo[0]) - (noffsetlo[0] + noffsethi[0])*h;
 
-  if (bernstein)
-    h /= 2;
 
   nx = ((int) (Lx/h))+1;
   while (nx*h <= Lx+0.5*h) nx++;
@@ -231,9 +232,9 @@ void Grid::init(double *solidlo, double *solidhi){
 	  ntype[l][1] = 0;
 	  ntype[l][2] = 0;
 	} else if (bernstein) {
-	  ntype[l][0] = i % 2;
-	  ntype[l][1] = j % 2;
-	  ntype[l][2] = k % 2;
+	  ntype[l][0] = (i+nx0) % 2;
+	  ntype[l][1] = (j+ny0) % 2;
+	  ntype[l][2] = (k+nz0) % 2;
 	} else if (cubic) {
 	  ntype[l][0] = min(2,i+nx0)-min(nx_global-1-i-nx0,2);
 	  ntype[l][1] = min(2,j+ny0)-min(ny_global-1-j-ny0,2);
@@ -269,37 +270,6 @@ void Grid::init(double *solidlo, double *solidhi){
   }
 
   nnodes_local = l;
-
-
-//   MPI_Allreduce(&nnodes_local, &nnodes, 1, MPI_MPM_BIGINT, MPI_SUM, universe->uworld);
-
-//   // Give a unique identification to all nodes:
-//   tagint ntag0 = 0;
-
-//   for (int proc=0; proc<universe->nprocs; proc++){
-//     int nnodes_local_bcast;
-//     if (proc == universe->me) {
-//       // Send nnodes_local
-//       nnodes_local_bcast = nnodes_local;
-//     } else {
-//       // Receive nnodes_local
-//       nnodes_local_bcast = 0;
-//     }
-//     MPI_Bcast(&nnodes_local_bcast, 1, MPI_INT, proc,universe->uworld);
-//     if (universe->me > proc) ntag0 += nnodes_local_bcast;
-//   }
-
-// //   for (int i=0; i<nnodes_local; i++) {
-// //     ntag[i] = ntag0 + i + 1;
-// //     map_ntag[ntag[i]] = i;
-// // #ifdef DEBUG
-// //     plt::annotate(to_string(ntag[i]), x0[i][0], x0[i][1]);
-// // #endif
-// //   }
-
-// #ifdef DEBUG
-//   cout << "proc " << universe->me << "\tntag0 = " << ntag0 << endl;
-// #endif
 
   // Give to neighbouring procs ghost nodes:
   vector<Point> ns;
@@ -483,8 +453,8 @@ void Grid::update_grid_velocities()
   for (int i=0; i<nnodes_local + nnodes_ghost; i++){
     if (mass[i] > 1e-12) v_update[i] = v[i] + update->dt * (f[i] + mb[i])/mass[i];
     else v_update[i] = v[i];
-    if (ntag[i]==5)
-    cout << "update_grid_velocities: tag=" << ntag[i] << ", vn=[" << v[i][0] << "," << v[i][1] << "," << v[i][2] << "], f=[" << f[i][0] << "," << f[i][1] << "," << f[i][2] << "], mb=[" << mb[i][0] << "," << mb[i][1] << "," << mb[i][2] << "], dt=" << update->dt << ", mass[i]=" << mass[i] << endl;
+  //   if (ntag[i]==5)
+  //   cout << "update_grid_velocities: tag=" << ntag[i] << ", vn=[" << v[i][0] << "," << v[i][1] << "," << v[i][2] << "], f=[" << f[i][0] << "," << f[i][1] << "," << f[i][2] << "], mb=[" << mb[i][0] << "," << mb[i][1] << "," << mb[i][2] << "], dt=" << update->dt << ", mass[i]=" << mass[i] << endl;
   }
 }
 

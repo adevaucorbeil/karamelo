@@ -314,9 +314,9 @@ void Solid::compute_mass_nodes(bool reset)
     for (int j=0; j<numneigh_np[in];j++){
       ip = neigh_np[in][j];
       grid->mass[in] += wf_np[in][j] * mass[ip];
-      if (grid->ntag[in]==5) {
-	cout << "compute_mass_nodes:\ttag=" << grid->ntag[in] << "\tptag = " << ptag[ip] << "\tmass[ip]=" << mass[ip] << "\tphi=" << wf_np[in][j] << "\tmassn=" << grid->mass[in] << endl;
-      }
+      // if (grid->ntag[in]==5) {
+      // 	cout << "compute_mass_nodes:\ttag=" << grid->ntag[in] << "\tptag = " << ptag[ip] << "\tmass[ip]=" << mass[ip] << "\tphi=" << wf_np[in][j] << "\tmassn=" << grid->mass[in] << endl;
+      // }
     }
   }
   return;
