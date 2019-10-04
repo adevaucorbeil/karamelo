@@ -80,13 +80,13 @@ void Grid::init(double *solidlo, double *solidhi){
 
   if (update->method_shape_function.compare("cubic-spline")==0) is_cubic = true;
 
-  double Loffsetlo[3] = {MAX(0.0, sublo[0] - boundlo[0] - is_cubic*2*h),
-			 MAX(0.0, sublo[1] - boundlo[1] - is_cubic*2*h),
-			 MAX(0.0, sublo[2] - boundlo[2] - is_cubic*2*h)};
+  double Loffsetlo[3] = {MAX(0.0, sublo[0] - boundlo[0]),
+			 MAX(0.0, sublo[1] - boundlo[1]),
+			 MAX(0.0, sublo[2] - boundlo[2])};
 
-  double Loffsethi[3] = {MIN(0.0, subhi[0] - boundhi[0] + is_cubic*2*h),
-			 MIN(0.0, subhi[1] - boundhi[1] + is_cubic*2*h),
-			 MIN(0.0, subhi[2] - boundhi[2] + is_cubic*2*h)};
+  double Loffsethi[3] = {MIN(0.0, subhi[0] - boundhi[0]),
+			 MIN(0.0, subhi[1] - boundhi[1]),
+			 MIN(0.0, subhi[2] - boundhi[2])};
 
   if (Loffsethi[0] > -1.0e-12) Loffsethi[0] = 0;
   if (Loffsethi[1] > -1.0e-12) Loffsethi[1] = 0;
