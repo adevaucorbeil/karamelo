@@ -106,7 +106,8 @@ void Group::assign(vector<string> args)
 	  cout << "Solid has " << domain->solids[isolid]->np << " particles" << endl;
 	} else {
 	  x = &domain->solids[isolid]->grid->x;
-	  nmax = domain->solids[isolid]->grid->nnodes_local;
+	  nmax = domain->solids[isolid]->grid->nnodes_local
+	       + domain->solids[isolid]->grid->nnodes_ghost;
 	  mask = &domain->solids[isolid]->grid->mask;
 	  cout << "Grid has " << domain->solids[isolid]->grid->nnodes << " nodes" << endl;
 	}
@@ -144,7 +145,8 @@ void Group::assign(vector<string> args)
 	  cout << "Solid has " << domain->solids[solid[igroup]]->np << " particles" << endl;
 	} else {
 	  x = &domain->solids[solid[igroup]]->grid->x;
-	  nmax = domain->solids[solid[igroup]]->grid->nnodes_local;
+	  nmax = domain->solids[solid[igroup]]->grid->nnodes_local
+	       + domain->solids[solid[igroup]]->grid->nnodes_ghost;
 	  mask = &domain->solids[solid[igroup]]->grid->mask;
 	  cout << "Grid has " << domain->solids[solid[igroup]]->grid->nnodes << " nodes" << endl;
 	}
