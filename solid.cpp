@@ -433,9 +433,9 @@ void Solid::compute_mass_nodes(bool reset)
     for (int j=0; j<numneigh_np[in];j++){
       ip = neigh_np[in][j];
       grid->mass[in] += wf_np[in][j] * mass[ip];
-      if (in==5) {
-	cout << "compute_mass_nodes:\ttag=" << in << "\tptag = " << ip << "\tmass[ip]=" << mass[ip] << "\tphi=" << wf_np[in][j] << "\tmassn=" << grid->mass[in] << endl;
-      }
+      // if (in==5) {
+      // 	cout << "compute_mass_nodes:\ttag=" << in << "\tptag = " << ip << "\tmass[ip]=" << mass[ip] << "\tphi=" << wf_np[in][j] << "\tmassn=" << grid->mass[in] << endl;
+      // }
     }
   }
   return;
@@ -1225,7 +1225,7 @@ void Solid::populate(vector<string> args) {
   } else if (np_per_cell == 2) {
     // Quadratic elements:
 
-    if (domain->dimension == 3) nip = 2;
+    if (domain->dimension == 1) nip = 2;
     else if (domain->dimension == 2) nip = 4;
     else nip = 8;
 
@@ -1252,7 +1252,7 @@ void Solid::populate(vector<string> args) {
 
     lp *= 1.0/6.0;
     nip = 27;
-    if (domain->dimension == 3) nip = 3;
+    if (domain->dimension == 1) nip = 3;
     else if (domain->dimension == 2) nip = 9;
     else nip = 27;
 
