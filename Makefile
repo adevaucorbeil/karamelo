@@ -10,7 +10,8 @@ SHELL = /bin/bash
 CC = mpicxx
 
 # define any compile-time flags
-CFLAGS = -DWITHOUT_NUMPY -g -march=native -O3
+CFLAGS = -DWITHOUT_NUMPY -g -march=native -DDEBUG
+#-O3
 #-pg
 
 # define any directories containing header files other than /usr/include
