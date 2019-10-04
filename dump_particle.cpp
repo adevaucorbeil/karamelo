@@ -60,7 +60,7 @@ void DumpParticle::write()
       Solid *s = domain->solids[isolid];
       for (bigint i=0; i<s->np;i++) {
 	ID++;
-	dumpstream << ID << " ";
+	dumpstream << i << " ";
 	dumpstream << isolid+1 << " ";
 	dumpstream << s->x[i][0] << " ";
 	dumpstream << s->x[i][1] << " ";

@@ -76,7 +76,7 @@ void DumpGrid::write()
     for (auto g: grids) {
       for (bigint i=0; i<g->nnodes;i++) {
 	ID++;
-	dumpstream << ID << " "
+	dumpstream << i << " "
 		   << igrid+1 << " "
 		   << g->x[i][0] << " " << g->x[i][1] << " " << g->x[i][2] << " "
 		   << g->v[i][0] << " " << g->v[i][1] << " " << g->v[i][2] << " "
