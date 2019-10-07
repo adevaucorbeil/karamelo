@@ -37,7 +37,7 @@ class Grid : protected Pointers {
   int nz_global;         // number of nodes along z on all CPUs
 
   int nshared;           // number of nodes that are shared (ghosts in other CPUs
-  vector<int> shared;    // position of all shared nodes
+  vector<tagint> shared; // tag of all shared nodes
 
   vector<int> nowner;    // which CPU owns each node (universe->me for local nodes, other CPU for ghost nodes
 

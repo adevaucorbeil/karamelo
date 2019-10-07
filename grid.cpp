@@ -307,7 +307,7 @@ void Grid::init(double *solidlo, double *solidhi){
 	(domain->dimension == 3) && isnt_subhi_boundhi[2] && (subhi[2] - x0[in][2] < delta)) {
       Point p = {universe->me, ntag[in], {x0[in][0], x0[in][1], x0[in][2]}, {ntype[in][0], ntype[in][1], ntype[in][2]}};
       ns.push_back(p);
-      shared.push_back(in);
+      shared.push_back(ntag[in]);
     }
   }
 
@@ -475,8 +475,10 @@ void Grid::reduce_mass_ghost_nodes()
 {
   tagint in, j, ng;
   double mass_local, mass_reduced;
+  vector<tagint> tmp_shared;
+  vector<double> tmp_mass, tmp_mass_reduced;
 
-  MPI_Barrier(universe->uworld);
+  // MPI_Barrier(universe->uworld);
 
   for (int proc=0; proc<universe->nprocs; proc++){
     if (proc == universe->me) {
@@ -485,29 +487,64 @@ void Grid::reduce_mass_ghost_nodes()
       ng = 0;
     }
 
-    MPI_Bcast(&ng,1,MPI_INT,proc,universe->uworld);
+    MPI_Bcast(&ng, 1, MPI_INT, proc, universe->uworld);
+
+    if (proc == universe->me) {
+      tmp_shared = shared;
+    } else {
+      tmp_shared.resize(ng);
+    }
+
+    tmp_mass.assign(ng, 0);
+    tmp_mass_reduced.assign(ng, 0);
+
+    MPI_Bcast(tmp_shared.data(), ng, MPI_MPM_TAGINT, proc, universe->uworld);
 
     for (int is=0; is<ng; is++) {
-      if (proc == universe->me) {
-	// Position in array of the shared node: shared[is]
-	j = ntag[shared[is]];
+      j = tmp_shared[is];
+
+      if (map_ntag.count(j)) {
+	tmp_mass[is] = mass[map_ntag[j]];
       }
-
-      MPI_Barrier(universe->uworld);
-      MPI_Bcast(&j,1,MPI_MPM_TAGINT,proc,universe->uworld);
-
-      if (map_ntag.count(j)) in = map_ntag[j];
-      else in = -1;
-
-      if (in >= 0) {
-	mass_local = mass[in];	
-      } else {
-	mass_local = 0;
-      }
-
-      MPI_Allreduce(&mass_local, &mass_reduced, 1, MPI_DOUBLE, MPI_SUM, universe->uworld);
-      if (in >= 0) mass[in] = mass_reduced;
     }
+
+    MPI_Allreduce(tmp_mass.data(), tmp_mass_reduced.data(), ng, MPI_DOUBLE, MPI_SUM, universe->uworld);
+
+    for (int is=0; is<ng; is++) {
+      j = tmp_shared[is];
+
+      if (map_ntag.count(j)) {
+	mass[map_ntag[j]] = tmp_mass_reduced[is];
+	// cout << "mass[" << map_ntag[j] << "]=" << tmp_mass_reduced[is] << "\n";
+      }
+    }
+
+    // // cout << "------------------\n";
+
+    // for (int is=0; is<ng; is++) {
+    //   if (proc == universe->me) {
+    // 	// Position in array of the shared node: shared[is]
+    // 	j = shared[is];
+    //   }
+
+    //   // MPI_Barrier(universe->uworld);
+    //   MPI_Bcast(&j,1,MPI_MPM_TAGINT,proc,universe->uworld);
+
+    //   if (map_ntag.count(j)) in = map_ntag[j];
+    //   else in = -1;
+
+    //   if (in >= 0) {
+    // 	mass_local = mass[in];
+    //   } else {
+    // 	mass_local = 0;
+    //   }
+
+    //   MPI_Allreduce(&mass_local, &mass_reduced, 1, MPI_DOUBLE, MPI_SUM, universe->uworld);
+    //   if (in >= 0) {
+    // 	//mass[in] = mass_reduced;
+    // 	cout << "mass[" << in << "]=" << mass_reduced << endl;
+    //   }
+    // }
   }
 }
 
@@ -516,7 +553,7 @@ void Grid::reduce_ghost_nodes(bool only_v)
   tagint in, j, ng;
   double f_local[3], f_reduced[3], v_local[3], v_reduced[3];
 
-  MPI_Barrier(universe->uworld);
+  // MPI_Barrier(universe->uworld);
 
   for (int proc=0; proc<universe->nprocs; proc++){
     if (proc == universe->me) {
@@ -530,10 +567,10 @@ void Grid::reduce_ghost_nodes(bool only_v)
     for (int is=0; is<ng; is++) {
       if (proc == universe->me) {
 	// Position in array of the shared node: shared[is]
-	j = ntag[shared[is]];
+	j = shared[is];
       }
 
-      MPI_Barrier(universe->uworld);
+      // MPI_Barrier(universe->uworld);
       MPI_Bcast(&j,1,MPI_MPM_TAGINT,proc,universe->uworld);
 
       if (map_ntag.count(j)) in = map_ntag[j];
