@@ -253,7 +253,12 @@ double Group::xcm(int igroup, int dir)
     }
   }
 
-  if (mass_tot) return com/mass_tot;
+  double com_reduced,  mass_tot_reduced;
+
+  MPI_Allreduce(&com,&com_reduced,1,MPI_DOUBLE,MPI_SUM,universe->uworld);
+  MPI_Allreduce(&mass_tot,&mass_tot_reduced,1,MPI_DOUBLE,MPI_SUM,universe->uworld);
+
+  if (mass_tot) return com_reduced/mass_tot_reduced;
   else return 0;
 }
 
@@ -306,7 +311,11 @@ double Group::internal_force(int igroup, int dir)
     }
   }
 
-  return resulting_force;
+  double resulting_force_reduced;
+
+  MPI_Allreduce(&resulting_force,&resulting_force_reduced,1,MPI_DOUBLE,MPI_SUM,universe->uworld);
+
+  return resulting_force_reduced;
 }
 
 double Group::external_force(int igroup, int dir)
@@ -348,6 +357,10 @@ double Group::external_force(int igroup, int dir)
       }
     }
   }
+
+  double resulting_force_reduced;
+
+  MPI_Allreduce(&resulting_force,&resulting_force_reduced,1,MPI_DOUBLE,MPI_SUM,universe->uworld);
 
   return resulting_force;
 }
