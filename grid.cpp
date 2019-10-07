@@ -474,7 +474,6 @@ void Grid::update_grid_positions()
 void Grid::reduce_mass_ghost_nodes()
 {
   tagint in, j, ng;
-  double mass_local, mass_reduced;
   vector<tagint> tmp_shared;
   vector<double> tmp_mass, tmp_mass_reduced;
 
@@ -551,7 +550,12 @@ void Grid::reduce_mass_ghost_nodes()
 void Grid::reduce_ghost_nodes(bool only_v)
 {
   tagint in, j, ng;
-  double f_local[3], f_reduced[3], v_local[3], v_reduced[3];
+  vector<tagint> tmp_shared;
+  vector<double> buf, buf_reduced;
+  int nsend, k, m;
+
+  if (only_v) nsend = 1*3;
+  else nsend = 2*3;
 
   // MPI_Barrier(universe->uworld);
 
@@ -562,53 +566,118 @@ void Grid::reduce_ghost_nodes(bool only_v)
       ng = 0;
     }
 
-    MPI_Bcast(&ng,1,MPI_INT,proc,universe->uworld);
+    MPI_Bcast(&ng, 1, MPI_INT, proc, universe->uworld);
+
+    if (proc == universe->me) {
+      tmp_shared = shared;
+    } else {
+      tmp_shared.resize(ng);
+    }
+
+    MPI_Bcast(tmp_shared.data(), ng, MPI_MPM_TAGINT, proc, universe->uworld);
+
+    buf.assign(nsend*ng, 0);
+    buf_reduced.assign(nsend*ng, 0);
 
     for (int is=0; is<ng; is++) {
-      if (proc == universe->me) {
-	// Position in array of the shared node: shared[is]
-	j = shared[is];
-      }
+      j = tmp_shared[is];
 
-      // MPI_Barrier(universe->uworld);
-      MPI_Bcast(&j,1,MPI_MPM_TAGINT,proc,universe->uworld);
-
-      if (map_ntag.count(j)) in = map_ntag[j];
-      else in = -1;
-
-      if (in >= 0) {
+      if (map_ntag.count(j)) {
+	m = map_ntag[j];
+	k = nsend*is;
+	buf[k] = v[m][0];
+	buf[k + 1] = v[m][1];
+	buf[k + 2] = v[m][2];
 	if (!only_v) {
-	  f_local[0] = f[in][0];
-	  f_local[1] = f[in][1];
-	  f_local[2] = f[in][2];
+	  buf[k + 3] = f[m][0];
+	  buf[k + 4] = f[m][1];
+	  buf[k + 5] = f[m][2];
 	}
-	v_local[0] = v[in][0];
-	v_local[1] = v[in][1];
-	v_local[2] = v[in][2];	
-      } else {
+      }
+    }
+
+    MPI_Allreduce(buf.data(), buf_reduced.data(), nsend*ng, MPI_DOUBLE, MPI_SUM, universe->uworld);
+
+    for (int is=0; is<ng; is++) {
+      j = tmp_shared[is];
+
+      if (map_ntag.count(j)) {
+	m = map_ntag[j];
+	k = nsend*is;
+	v[m][0] = buf_reduced[k];
+	v[m][1] = buf_reduced[k + 1];
+	v[m][2] = buf_reduced[k + 2];
 	if (!only_v) {
-	  f_local[0] = f_local[1] = f_local[2] = 0;
+	  f[m][0] = buf_reduced[k + 3];
+	  f[m][1] = buf_reduced[k + 4];
+	  f[m][2] = buf_reduced[k + 5];	  
 	}
-	v_local[0] = v_local[1] = v_local[2] = 0;
-      }
-
-      if (!only_v) {
-	MPI_Allreduce(f_local, f_reduced, 3, MPI_DOUBLE, MPI_SUM, universe->uworld);
-
-	if (in >= 0) {
-	  f[in][0] = f_reduced[0];
-	  f[in][1] = f_reduced[1];
-	  f[in][2] = f_reduced[2];
-	}
-      }
-
-      MPI_Allreduce(v_local, v_reduced, 3, MPI_DOUBLE, MPI_SUM, universe->uworld);
-
-      if (in >= 0) {
-	v[in][0] = v_reduced[0];
-	v[in][1] = v_reduced[1];
-	v[in][2] = v_reduced[2];
       }
     }
   }
 }
+
+// void Grid::reduce_ghost_nodes(bool only_v)
+// {
+//   tagint in, j, ng;
+//   double f_local[3], f_reduced[3], v_local[3], v_reduced[3];
+
+//   // MPI_Barrier(universe->uworld);
+
+//   for (int proc=0; proc<universe->nprocs; proc++){
+//     if (proc == universe->me) {
+//       ng = nshared;
+//     } else {
+//       ng = 0;
+//     }
+
+//     MPI_Bcast(&ng,1,MPI_INT,proc,universe->uworld);
+
+//     for (int is=0; is<ng; is++) {
+//       if (proc == universe->me) {
+// 	// Position in array of the shared node: shared[is]
+// 	j = shared[is];
+//       }
+
+//       // MPI_Barrier(universe->uworld);
+//       MPI_Bcast(&j,1,MPI_MPM_TAGINT,proc,universe->uworld);
+
+//       if (map_ntag.count(j)) in = map_ntag[j];
+//       else in = -1;
+
+//       if (in >= 0) {
+// 	if (!only_v) {
+// 	  f_local[0] = f[in][0];
+// 	  f_local[1] = f[in][1];
+// 	  f_local[2] = f[in][2];
+// 	}
+// 	v_local[0] = v[in][0];
+// 	v_local[1] = v[in][1];
+// 	v_local[2] = v[in][2];	
+//       } else {
+// 	if (!only_v) {
+// 	  f_local[0] = f_local[1] = f_local[2] = 0;
+// 	}
+// 	v_local[0] = v_local[1] = v_local[2] = 0;
+//       }
+
+//       if (!only_v) {
+// 	MPI_Allreduce(f_local, f_reduced, 3, MPI_DOUBLE, MPI_SUM, universe->uworld);
+
+// 	if (in >= 0) {
+// 	  f[in][0] = f_reduced[0];
+// 	  f[in][1] = f_reduced[1];
+// 	  f[in][2] = f_reduced[2];
+// 	}
+//       }
+
+//       MPI_Allreduce(v_local, v_reduced, 3, MPI_DOUBLE, MPI_SUM, universe->uworld);
+
+//       if (in >= 0) {
+// 	v[in][0] = v_reduced[0];
+// 	v[in][1] = v_reduced[1];
+// 	v[in][2] = v_reduced[2];
+//       }
+//     }
+//   }
+// }
