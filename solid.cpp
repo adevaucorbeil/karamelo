@@ -335,6 +335,8 @@ void Solid::compute_velocity_nodes(bool reset)
       for (int j=0; j<numneigh_np[in];j++){
 	ip = neigh_np[in][j];
 	vtemp += (wf_np[in][j] * mass[ip]) * v[ip];
+	// if (grid->ntag[in]==31 || grid->ntag[in]==64)
+	//   printf("proc %d - ntag=%d, ptag=%d, ip=%d, wf=%.10e, mp=%.10e, vyp=%.10e, vtemp=%.10e\n", universe->me, grid->ntag[in], ptag[ip], ip, wf_np[in][j], mass[ip], v[ip][1], vtemp[1]);
 	//(*vn)[in] += (wf_np[in][j] * mass[ip]) * v[ip]/ massn[in];
       }
       vtemp /= grid->mass[in];
@@ -415,6 +417,8 @@ void Solid::compute_particle_velocities()
     for (int j=0; j<numneigh_pn[ip]; j++){
       in = neigh_pn[ip][j];
       v_update[ip] += wf_pn[ip][j] * grid->v_update[in];
+      // if (ptag[ip]==80||ptag[ip]==85)
+      // 	printf("proc %d - ntag=%d, ptag=%d, ip=%d, wf=%.10e, vyp=%.10e, vyn=%.10e\n", universe->me, grid->ntag[in], ptag[ip], ip, wf_pn[ip][j], v_update[ip][1], grid->v_update[in][1]);
     }
   }
 }

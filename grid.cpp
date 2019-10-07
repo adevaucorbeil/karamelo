@@ -458,8 +458,8 @@ void Grid::update_grid_velocities()
   for (int i=0; i<nnodes_local + nnodes_ghost; i++){
     if (mass[i] > 1e-12) v_update[i] = v[i] + update->dt * (f[i] + mb[i])/mass[i];
     else v_update[i] = v[i];
-  //   if (ntag[i]==5)
-  //   cout << "update_grid_velocities: tag=" << ntag[i] << ", vn=[" << v[i][0] << "," << v[i][1] << "," << v[i][2] << "], f=[" << f[i][0] << "," << f[i][1] << "," << f[i][2] << "], mb=[" << mb[i][0] << "," << mb[i][1] << "," << mb[i][2] << "], dt=" << update->dt << ", mass[i]=" << mass[i] << endl;
+    // if (ntag[i]==65)
+    //   printf("proc %d - update_grid_velocities: tag=%d, v_update=[%.10e, %.10e, %.10e], f=[%.10e, %.10e, %.10e], mb=[%.10e, %.10e, %.10e], dt=%f, mass[i]=%f\n", universe->me, ntag[i], v_update[i][0], v_update[i][1], v_update[i][2], f[i][0], f[i][1],f[i][2],mb[i][0],mb[i][1],mb[i][2],update->dt,mass[i]);
   }
 }
 
