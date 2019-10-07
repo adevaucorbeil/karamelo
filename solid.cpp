@@ -1221,9 +1221,6 @@ void Solid::populate(vector<string> args) {
     }
   }
 
-  MPI_Barrier(universe->uworld);
-
-
   if (np_local > l) {
     grow(l);
   }
@@ -1335,8 +1332,6 @@ void Solid::populate(vector<string> args) {
   plt::save("debug-proc_" + to_string(universe->me) + ".png");
   plt::close();
 #endif
-
-  MPI_Barrier(universe->uworld);
 }
 
 void Solid::update_particle_domain() {

@@ -316,8 +316,6 @@ void Grid::init(double *solidlo, double *solidhi){
   cout << "proc " << universe->me << " has " << ns.size() << " node to send.\n";
 #endif
 
-  MPI_Barrier(universe->uworld);
-
   // Send over the tag and coordinates of the nodes to send:
   for (int sproc=0; sproc<universe->nprocs; sproc++){
     int size_nr = 0;
@@ -345,7 +343,6 @@ void Grid::init(double *solidlo, double *solidhi){
 	}
       }
     }
-    MPI_Barrier(universe->uworld);
   }
 
   nnodes_ghost = gnodes.size();
@@ -389,8 +386,6 @@ void Grid::init(double *solidlo, double *solidhi){
     plt::annotate(to_string(ntag[i]), x0[i][0], x0[i][1]);
 #endif
   }
-
-  MPI_Barrier(universe->uworld);
 
 #ifdef DEBUG
   plt::plot(x2plot, y2plot, "g+");
