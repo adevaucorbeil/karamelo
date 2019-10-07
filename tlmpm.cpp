@@ -325,8 +325,10 @@ void TLMPM::particles_to_grid()
 {
   bool grid_reset = true; // Indicate if the grid quantities have to be reset
   for (int isolid=0; isolid<domain->solids.size(); isolid++){
-    domain->solids[isolid]->compute_mass_nodes(grid_reset);
-    domain->solids[isolid]->grid->reduce_mass_ghost_nodes();
+    if (update->ntimestep==1) {
+      domain->solids[isolid]->compute_mass_nodes(grid_reset);
+      domain->solids[isolid]->grid->reduce_mass_ghost_nodes();
+    }
     //domain->solids[isolid]->compute_node_rotation_matrix(grid_reset);
     if (method_type.compare("APIC") == 0) domain->solids[isolid]->compute_velocity_nodes_APIC(grid_reset);
     else domain->solids[isolid]->compute_velocity_nodes(grid_reset);
