@@ -38,8 +38,6 @@ Log::Log(MPM *mpm, vector<string> args) : Pointers(mpm)
 
 void Log::write()
 {
-  if (universe->me != 0) return; // Only write in the file if I am proc 0
-
   stringstream soutput;
   string output = "";
 
@@ -50,6 +48,8 @@ void Log::write()
     if (field[i].typeflag==FLOAT) soutput << dvalue << "\t";
     if (field[i].typeflag==BIGINT) soutput << bivalue << "\t";
   }
+
+  if (universe->me != 0) return; // Only write in the file if I am proc 0
 
   soutput << "\n";
   cout << soutput.str();
