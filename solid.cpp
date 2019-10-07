@@ -107,7 +107,7 @@ void Solid::init()
   if (grid->nnodes_local == 0) grid->init(solidlo, solidhi);
 
   if (np_local == 0) {
-    error->all(FLERR,"Error: solid does not have any particles.\n");
+    error->one(FLERR,"Error: solid does not have any particles.\n");
   } else {
       bigint nnodes = grid->nnodes_local + grid->nnodes_ghost;
 
@@ -1160,10 +1160,10 @@ void Solid::populate(vector<string> args) {
   int dim = domain->dimension;
   //checkIfInRegion = false;
 
-  int nsubx0, nsuby0, nsubz0;
-  nsubx0 = (int) (sublo[0] - boundlo[0])/delta;
-  nsuby0 = (int) (sublo[1] - boundlo[1])/delta;
-  nsubz0 = (int) (sublo[2] - boundlo[2])/delta;
+  // int nsubx0, nsuby0, nsubz0;
+  // nsubx0 = (int) (sublo[0] - boundlo[0])/delta;
+  // nsuby0 = (int) (sublo[1] - boundlo[1])/delta;
+  // nsubz0 = (int) (sublo[2] - boundlo[2])/delta;
 
 
   double Loffset[3] = {MAX(0.0, sublo[0] - boundlo[0]),
@@ -1174,9 +1174,9 @@ void Solid::populate(vector<string> args) {
 		    (int) (Loffset[1]/delta),
 		    (int) (Loffset[2]/delta)};
 
-  for (int i=nsubx0; i<nsubx; i++){
-    for (int j=nsuby0; j<nsuby; j++){
-      for (int k=nsubz0; k<nsubz; k++){
+  for (int i=0; i<nsubx; i++){
+    for (int j=0; j<nsuby; j++){
+      for (int k=0; k<nsubz; k++){
 	for (int ip=0; ip<nip; ip++) {
 
 	  if (l>=np_local) {
@@ -1191,8 +1191,11 @@ void Solid::populate(vector<string> args) {
 	  if (dim == 3) x0[l][2] = x[l][2] = boundlo[2] + delta*(noffset[2] + k + 0.5 + intpoints[3*ip+2]);
 	  else x0[l][2] = x[l][2] = 0;
 
+	  // cout << "x0[" << l << "]=[" << x0[l][0] << "," << x0[l][1] << "," << x0[l][2] << "]\n";;
+
 	  // Check if the particle is inside the region:
 	  if (domain->inside_subdomain(x0[l][0], x0[l][1], x0[l][2]) && domain->regions[iregion]->inside(x0[l][0], x0[l][1], x0[l][2])==1) {
+	    // cout << "Inside\n";
 
 	    if (update->method->is_CPDI && nc != 0) {
 	      rp0[dim*l][0] = rp[dim*l][0] = lp;

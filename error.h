@@ -10,6 +10,7 @@ class Error : protected Pointers {
   Error(class MPM *);
 
   void all(const char *, int, const string);
+  void one(const char *, int, const string);
 };
 
 #endif
