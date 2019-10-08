@@ -1,3 +1,16 @@
+/* ----------------------------------------------------------------------
+ *
+ *                    ***       Karamelo       ***
+ *               Parallel Material Point Method Simulator
+ * 
+ * Copyright (2019) Alban de Vaucorbeil, alban.devaucorbeil@monash.edu
+ * Materials Science and Engineering, Monash University
+ * Clayton VIC 3800, Australia
+
+ * This software is distributed under the GNU General Public License.
+ *
+ * ----------------------------------------------------------------------- */
+
 #include <iostream>
 #include <Eigen/Eigen>
 #include "strength_jc.h"
@@ -50,7 +63,7 @@ Matrix3d StrengthJohnsonCook::update_deviatoric_stress(const Matrix3d sigma, con
     return sigmaFinal_dev;
   }
 
-  Matrix3d sigmaInitial_dev, sigmaFinal_dev, sigmaTrial_dev, dev_rate;
+  Matrix3d sigmaFinal_dev, sigmaTrial, sigmaTrial_dev;
   double J2, Gd, yieldStress;
 
   double epsdot_ratio = epsdot / epsdot0;
@@ -67,18 +80,21 @@ Matrix3d StrengthJohnsonCook::update_deviatoric_stress(const Matrix3d sigma, con
    * deviatoric rate of unrotated stress
    */
   Gd = G_;
-  dev_rate = 2.0 * Gd * Deviator(D);
-  sigmaInitial_dev = Deviator(sigma);
 
   if (damage > 0) {
     Gd *= (1-damage);
     yieldStress *= (1-damage);
   }
 
+  // dev_rate = 2.0 * Gd * Deviator(D);
+  // sigmaInitial_dev = Deviator(sigma);
+
   /*
    * perform a trial elastic update to the deviatoric stress
    */
-  sigmaTrial_dev = sigmaInitial_dev + update->dt * dev_rate; // increment stress deviator using deviatoric rate
+  // sigmaTrial_dev = sigmaInitial_dev + update->dt * dev_rate; // increment stress deviator using deviatoric rate
+  sigmaTrial = sigma + update->dt * 2.0 * Gd * D;
+  sigmaTrial_dev = Deviator(sigmaTrial); // increment stress deviator using deviatoric rate
 
   /*
    * check yield condition
