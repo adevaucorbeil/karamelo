@@ -147,7 +147,7 @@ void Grid::init(double *solidlo, double *solidhi){
 
   if (domain->dimension >= 2) {
     double Ly = (boundhi[1] - boundlo[1]) - (noffsetlo[1] + noffsethi[1])*h;
-    ny = ((int) Ly/h)+1;
+    ny = ((int) (Ly/h))+1;
     if (universe->procneigh[1][1]>=0)
       while ((ny*h <= Ly+0.5*h) && (boundlo[1] + (noffsetlo[1] + ny)*h <= subhi[1])) ny++;
     else
@@ -158,7 +158,7 @@ void Grid::init(double *solidlo, double *solidhi){
 
   if (domain->dimension == 3) {
     double Lz = (boundhi[2] - boundlo[2]) - (noffsetlo[2] + noffsethi[2])*h;
-    nz = ((int) Lz/h)+1;
+    nz = ((int) (Lz/h))+1;
     if (universe->procneigh[2][1]>=0)
       while ((nz*h <= Lz+0.5*h) && (boundlo[2] + (noffsetlo[2] + nz)*h <= subhi[2])) nz++;
     else
