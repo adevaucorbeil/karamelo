@@ -140,12 +140,18 @@ void Grid::init(double *solidlo, double *solidhi){
 
 
   nx = ((int) (Lx/h))+1;
-  while (nx*h <= Lx+0.5*h) nx++;
+  if (universe->procneigh[0][1]>=0)
+    while ((nx*h <= Lx+0.5*h) && (boundlo[0] + (noffsetlo[0] + nx)*h <= subhi[0])) nx++;
+  else
+    while (nx*h <= Lx+0.5*h) nx++;
 
   if (domain->dimension >= 2) {
     double Ly = (boundhi[1] - boundlo[1]) - (noffsetlo[1] + noffsethi[1])*h;
     ny = ((int) Ly/h)+1;
-    while (ny*h <= Ly+0.5*h) ny++;   
+    if (universe->procneigh[1][1]>=0)
+      while ((ny*h <= Ly+0.5*h) && (boundlo[1] + (noffsetlo[1] + ny)*h <= subhi[1])) ny++;
+    else
+      while (ny*h <= Ly+0.5*h) ny++;
    } else {
     ny = 1;
    }
@@ -153,7 +159,10 @@ void Grid::init(double *solidlo, double *solidhi){
   if (domain->dimension == 3) {
     double Lz = (boundhi[2] - boundlo[2]) - (noffsetlo[2] + noffsethi[2])*h;
     nz = ((int) Lz/h)+1;
-    while (nz*h <= Lz+0.5*h) nz++;   
+    if (universe->procneigh[2][1]>=0)
+      while ((nz*h <= Lz+0.5*h) && (boundlo[2] + (noffsetlo[2] + nz)*h <= subhi[2])) nz++;
+    else
+      while (nz*h <= Lz+0.5*h) nz++;
    } else {
     nz = 1;
    }
@@ -227,13 +236,14 @@ void Grid::init(double *solidlo, double *solidhi){
 //     }
 //   }
 
-// #ifdef DEBUG
-//   cout << "proc " << universe->me << " nx0=" << nx0 << "\tny0=" << ny0 << "\tnz0=" << nz0 <<endl;
-//   cout << "proc " << universe->me << " noffsetlo=[" << noffsetlo[0] << "," << noffsetlo[1] << "," << noffsetlo[2] << "]\n";
+#ifdef DEBUG
+  cout << "proc " << universe->me << " nx=" << nx << "\tny=" << ny << "\tnz=" << nz <<endl;
+  cout << "proc " << universe->me << " noffsetlo=[" << noffsetlo[0] << "," << noffsetlo[1] << "," << noffsetlo[2] << "]\n";
+  cout << "proc " << universe->me << " noffsethi=[" << noffsethi[0] << "," << noffsethi[1] << "," << noffsethi[2] << "]\n";
 //   if (noffsetlo[0]!=nx0) error->all(FLERR, "noffsetlo[0]!=nx0:" + to_string(noffsetlo[0]) + "!=" + to_string(nx0) + "\n");
 //   if (noffsetlo[1]!=ny0) error->all(FLERR, "noffsetlo[1]!=ny0:" + to_string(noffsetlo[1]) + "!=" + to_string(ny0) + "\n");
 //   if (noffsetlo[2]!=nz0) error->all(FLERR, "noffsetlo[2]!=nz0:" + to_string(noffsetlo[2]) + "!=" + to_string(nz0) + "\n");
-// #endif
+#endif
 
   int l=0;
   for (int i=0; i<nx; i++){
@@ -374,6 +384,7 @@ void Grid::init(double *solidlo, double *solidhi){
 
     // Check if ntag[l] already exists:
     if(map_ntag.count(ntag[i]) > 0 ) {
+      cout << "x0[" << ntag[i] << "]=[" << gnodes[in].x[0] << "," << gnodes[in].x[1] << "," << gnodes[in].x[2] << "]\t exits in x=[" << x0[map_ntag[i]][0] << "," << x0[map_ntag[i]][1] << "," << x0[map_ntag[i]][2] << "]\n";
       error->all(FLERR, "node " + to_string(ntag[i]) + " already exists.");
     }
 
