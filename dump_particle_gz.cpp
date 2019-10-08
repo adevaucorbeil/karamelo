@@ -12,6 +12,7 @@
  * ----------------------------------------------------------------------- */
 
 #include <iostream>
+#include <gzstream.h>
 #include "output.h"
 #include "dump_particle_gz.h"
 #include "update.h"
@@ -19,7 +20,7 @@
 #include "solid.h"
 #include "mpmtype.h"
 #include "mpm_math.h"
-#include <gzstream.h>
+#include "universe.h"
 
 using namespace std;
 using namespace MPM_Math;
@@ -43,9 +44,12 @@ void DumpParticleGz::write()
 
   if (pos_asterisk >= 0)
     {
-      // Replace the asterisk by ntimestep:
-      fdump = filename.substr(0, pos_asterisk)
-	+ to_string(update->ntimestep);
+      // Replace the asterisk by proc-N.ntimestep:
+      fdump = filename.substr(0, pos_asterisk);
+      if (universe->nprocs > 1) {
+	fdump += "proc-" + to_string(universe->me) + ".";
+      }
+      fdump += to_string(update->ntimestep);
       if (filename.size()-pos_asterisk-1 > 0)
 	fdump += filename.substr(pos_asterisk+1, filename.size()-pos_asterisk-1);
     }
@@ -71,9 +75,8 @@ void DumpParticleGz::write()
   bigint ID = 0;
   for (int isolid=0; isolid < domain->solids.size(); isolid++) {
     Solid *s = domain->solids[isolid];
-    for (bigint i=0; i<s->np;i++) {
-      ID++;
-      dumpstream << ID << " ";
+    for (bigint i=0; i<s->np_local;i++) {
+      dumpstream << s->ptag[i] << " ";
       dumpstream << isolid+1 << " ";
       dumpstream << s->x[i][0] << " ";
       dumpstream << s->x[i][1] << " ";

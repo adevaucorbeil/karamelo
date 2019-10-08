@@ -12,14 +12,15 @@
  * ----------------------------------------------------------------------- */
 
 #include <iostream>
+#include <algorithm>
+#include <gzstream.h>
 #include "output.h"
 #include "dump_grid_gz.h"
 #include "update.h"
 #include "domain.h"
 #include "solid.h"
 #include "mpmtype.h"
-#include <algorithm>
-#include <gzstream.h>
+#include "universe.h"
 
 using namespace std;
 
@@ -42,9 +43,12 @@ void DumpGridGz::write()
 
   if (pos_asterisk >= 0)
     {
-      // Replace the asterisk by ntimestep:
-      fdump = filename.substr(0, pos_asterisk)
-	+ to_string(update->ntimestep);
+      // Replace the asterisk by proc-N.ntimestep:
+      fdump = filename.substr(0, pos_asterisk);
+      if (universe->nprocs > 1) {
+	fdump += "proc-" + to_string(universe->me) + ".";
+      }
+      fdump += to_string(update->ntimestep);
       if (filename.size()-pos_asterisk-1 > 0)
 	fdump += filename.substr(pos_asterisk+1, filename.size()-pos_asterisk-1);
     }
@@ -73,7 +77,7 @@ void DumpGridGz::write()
   // Now loop over the grids to find how many elements there are in total:
   bigint total_nn = 0;
   for (auto g: grids) {
-    total_nn += g->nnodes;
+    total_nn += g->nnodes_local;
   }
 
   dumpstream << total_nn << endl;
@@ -83,12 +87,10 @@ void DumpGridGz::write()
   dumpstream << domain->boxlo[2] << " " << domain->boxhi[2] << endl;
   dumpstream << "ITEM: ATOMS id type x y z vx vy vz fbx fby fbz mass ntypex ntypey ntypez\n";
 
-  bigint ID = 0;
   int igrid = 0;
   for (auto g: grids) {
-    for (bigint i=0; i<g->nnodes;i++) {
-      ID++;
-      dumpstream << ID << " "
+    for (bigint i=0; i<g->nnodes_local;i++) {
+      dumpstream << g->ntag[i] << " "
 		 << igrid+1 << " "
 		 << g->x[i][0] << " " << g->x[i][1] << " " << g->x[i][2] << " "
 		 << g->v[i][0] << " " << g->v[i][1] << " " << g->v[i][2] << " "
