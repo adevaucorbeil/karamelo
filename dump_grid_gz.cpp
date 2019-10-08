@@ -27,7 +27,7 @@ using namespace std;
 
 DumpGridGz::DumpGridGz(MPM *mpm, vector<string> args) : Dump(mpm, args)
 {
-  cout << "In DumpGridGz::DumpGridGz()" << endl;
+  // cout << "In DumpGridGz::DumpGridGz()" << endl;
 }
 
 DumpGridGz::~DumpGridGz()

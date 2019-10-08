@@ -28,7 +28,7 @@ using namespace MPM_Math;
 
 DumpParticleGz::DumpParticleGz(MPM *mpm, vector<string> args) : Dump(mpm, args)
 {
-  cout << "In DumpParticleGz::DumpParticleGz()" << endl;
+  // cout << "In DumpParticleGz::DumpParticleGz()" << endl;
 }
 
 DumpParticleGz::~DumpParticleGz()
@@ -63,7 +63,7 @@ void DumpParticleGz::write()
   dumpstream << "ITEM: TIMESTEP\n0\nITEM: NUMBER OF ATOMS\n";
 
   bigint total_np = 0;
-  for (int isolid=0; isolid < domain->solids.size(); isolid++) total_np += domain->solids[isolid]->np;
+  for (int isolid=0; isolid < domain->solids.size(); isolid++) total_np += domain->solids[isolid]->np_local;
 
   dumpstream << total_np << endl;
   dumpstream << "ITEM: BOX BOUNDS sm sm sm\n";
