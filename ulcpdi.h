@@ -12,6 +12,7 @@ MethodStyle(ulcpdi,ULCPDI)
 #include "method.h"
 #include <vector>
 #include <Eigen/Eigen>
+#include <map>
 
 
 class ULCPDI : public Method {
@@ -19,6 +20,7 @@ class ULCPDI : public Method {
   string method_type;
   double FLIP;
   string shape_function;
+  int style;
 
   ULCPDI(class MPM *, vector<string>);
   ~ULCPDI();
@@ -41,6 +43,8 @@ class ULCPDI : public Method {
   void reset();
 
   int update_wf;
+private:
+  string known_styles[2] = {"R4", "Q4"};
 };
 
 // double linear_basis_function(double, int);

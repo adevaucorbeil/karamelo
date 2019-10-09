@@ -15,11 +15,13 @@
 using namespace std;
 
 ULCPDI::ULCPDI(MPM *mpm, vector<string> args) : Method(mpm) {
+
   cout << "In ULCPDI::ULCPDI()" << endl;
 
   update_wf = 1;
   method_type = "FLIP";
   FLIP = 0.99;
+  style = 0;   //Default CPDI style is known_styles[style]="R4";
 
   // Default base function (linear):
   shape_function = "linear";
@@ -77,17 +79,40 @@ void ULCPDI::setup(vector<string> args)
       derivative_basis_function = &BasisFunction::derivative_bernstein_quadratic;
       n++;
     } else {
-      cout << "Illegal method_method argument: form function of type " << args[n] << " is unknown." << endl;
+      cout << "Illegal method_method argument: form function of type \033[1;31m" << args[n] << " is unknown. Available options are:  \033[1;32mlinear\033[0m, \033[1;32mcubic-spline\033[0m, \033[1;32mBernstein-quadratic\033[0m.\n";
       exit(1);
     }
   }
 
-  if (args.size() > n + isFLIP) {
-    cout << "Illegal modify_method command: too many arguments: " << n + isFLIP << " expected, " << args.size() << " received." << endl;
-      exit(1);    
+  if (args.size() > n + isFLIP + 1) {
+    cout << "Illegal modify_method command: too many arguments: " << n + isFLIP << " or " << n + isFLIP + 1 << "expected, " << args.size() << " received." << endl;
+    exit(1);
   }
 
   if (isFLIP) FLIP = input->parsev(args[n]);
+
+  n++;
+
+  if (n<args.size()) {
+    bool found_style = false;
+    for (int i=0; i<sizeof(known_styles)/sizeof(string); i++) {
+      if (known_styles[i].compare(args[n])==0) {
+       	style = i;
+	found_style = true;
+      	break;
+      }
+    }
+    if (!found_style) {
+      cout << "CPDI style \033[1;31m" << args[n] << "\033[0m unknown. Available options are:";
+      for (int i=0; i<sizeof(known_styles)/sizeof(string); i++) {
+	if (i) cout << ",";
+	cout << " \033[1;32m" << known_styles[i] << "\033[0m";
+      }
+      cout << ".\n";
+      exit(1);
+    }
+  }
+  cout << "Using CPDI-" << known_styles[style] << endl;
   // cout << "shape_function = " << shape_function << endl;
   // cout << "method_type = " << method_type << endl;
   // cout << "FLIP = " << FLIP << endl;

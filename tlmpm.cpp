@@ -77,7 +77,7 @@ void TLMPM::setup(vector<string> args)
       derivative_basis_function = &BasisFunction::derivative_bernstein_quadratic;
       n++;
     } else {
-      cout << "Illegal method_method argument: form function of type " << args[n] << " is unknown." << endl;
+      cout << "Illegal method_method argument: form function of type \033[1;31m" << args[n] << " is unknown. Available options are:  \033[1;32mlinear\033[0m, \033[1;32mcubic-spline\033[0m, \033[1;32mBernstein-quadratic\033[0m.\n";
       exit(1);
     }
   }
