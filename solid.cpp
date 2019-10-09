@@ -385,6 +385,8 @@ void Solid::compute_external_forces_nodes(bool reset)
       for (int j=0; j<numneigh_np[in];j++){
 	ip = neigh_np[in][j];
 	 grid->mb[in] += wf_np[in][j] *  mbp[ip];
+	 // if (grid->ntag[in]==5706)
+	 //   printf("proc %d - ntag=%d, ptag=%d, ip=%d, wf=%.10e,\tmbp=[%.10e, %.10e, %.10e],\tmb=[%.10e, %.10e, %.10e]\n", universe->me, grid->ntag[in], ptag[ip], ip, wf_np[in][j], mbp[ip][0], mbp[ip][1], mbp[ip][2], grid->mb[in][0], grid->mb[in][1], grid->mb[in][2]);
       }
     }
   }
@@ -1298,7 +1300,7 @@ void Solid::populate(vector<string> args) {
     ptag[i] = ptag0 + i + 1;
 
 #ifdef DEBUG
-    x2plot.push_back(x0[i][0]);
+    x2plot.push_back(x0[i][2]);
     y2plot.push_back(x0[i][1]);
 #endif
   }

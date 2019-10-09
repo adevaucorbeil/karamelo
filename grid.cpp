@@ -288,8 +288,8 @@ void Grid::init(double *solidlo, double *solidhi){
 	nowner[l] = universe->me;
 
 #ifdef DEBUG
-	plt::annotate(to_string(ntag[l]), x0[l][0], x0[l][1]);
-	x2plot.push_back(x0[l][0]);
+	plt::annotate(to_string(ntag[l]), x0[l][2], x0[l][1]);
+	x2plot.push_back(x0[l][2]);
 	y2plot.push_back(x0[l][1]);
 #endif
 	l++;
@@ -405,9 +405,9 @@ void Grid::init(double *solidlo, double *solidhi){
     mass[i] = 0;
 
 #ifdef DEBUG
-    x2plot.push_back(x0[i][0]);
+    x2plot.push_back(x0[i][2]);
     y2plot.push_back(x0[i][1]);
-    plt::annotate(to_string(ntag[i]), x0[i][0], x0[i][1]);
+    plt::annotate(to_string(ntag[i]), x0[i][2], x0[i][1]);
 #endif
   }
 
@@ -574,7 +574,7 @@ void Grid::reduce_ghost_nodes(bool only_v)
   int nsend, k, m;
 
   if (only_v) nsend = 1*3;
-  else nsend = 2*3;
+  else nsend = 3*3;
 
   // MPI_Barrier(universe->uworld);
 
@@ -611,6 +611,10 @@ void Grid::reduce_ghost_nodes(bool only_v)
 	  buf[k + 3] = f[m][0];
 	  buf[k + 4] = f[m][1];
 	  buf[k + 5] = f[m][2];
+
+	  buf[k + 6] = mb[m][0];
+	  buf[k + 7] = mb[m][1];
+	  buf[k + 8] = mb[m][2];
 	}
       }
     }
@@ -629,7 +633,11 @@ void Grid::reduce_ghost_nodes(bool only_v)
 	if (!only_v) {
 	  f[m][0] = buf_reduced[k + 3];
 	  f[m][1] = buf_reduced[k + 4];
-	  f[m][2] = buf_reduced[k + 5];	  
+	  f[m][2] = buf_reduced[k + 5];
+
+	  mb[m][0] = buf_reduced[k + 6];
+	  mb[m][1] = buf_reduced[k + 7];
+	  mb[m][2] = buf_reduced[k + 8];
 	}
       }
     }
