@@ -1142,14 +1142,16 @@ void Solid::populate(vector<string> args) {
   double delta;
   double hdelta;
   double Lx, Ly, Lz;
-  bool checkIfInRegion;
+
+  double *boundlo;
 
   delta = grid->cellsize;
   
   if (grid->nnodes == 0) {
     // The grid will be ajusted to the solid's domain (good for TLMPM),
     // so all particles created will lie in the region:
-    checkIfInRegion = true;
+
+    boundlo = solidlo;
 
     // and we need to create the corresponding grid:
     grid->init(solidlo, solidhi);
@@ -1161,25 +1163,26 @@ void Solid::populate(vector<string> args) {
   } else {
     // The grid is most likely bigger than the solid's domain (good for ULMPM),
     // so all particles created won't lie in the region, they will need to be checked:
-    checkIfInRegion = true;
+
+    boundlo = domain->boxlo;
 
     Lx = domain->boxhi[0] - domain->boxlo[0];
     if (domain->dimension >= 2) Ly = domain->boxhi[1] - domain->boxlo[1];
     if (domain->dimension == 3) Lz = domain->boxhi[2] - domain->boxlo[2];
   }
 
-  nx = ((int) Lx/delta);
+  nx = (int) (Lx/delta);
   while (nx*delta <= Lx-0.5*delta) nx++;
 
   if (domain->dimension >= 2) {
-    ny = ((int) Ly/delta);
+    ny = (int) (Ly/delta);
     while (ny*delta <= Ly-0.5*delta) ny++;
   } else {
     ny = 1;
   }
 
   if (domain->dimension == 3) {
-    nz = ((int) Lz/delta);
+    nz = (int) (Lz/delta);
     while (nz*delta <= Lz-0.5*delta) nz++;
   } else {
     nz = 1;
@@ -1203,10 +1206,6 @@ void Solid::populate(vector<string> args) {
   double mass_ = mat->rho0 * vol_;
 
   int np_per_cell = (int) input->parsev(args[2]);
-
-  double *boundlo;
-  if (checkIfInRegion) boundlo = solidlo;
-  else boundlo = domain->boxlo;
 
   double xi = 0.5;
   double lp = delta;
@@ -1297,7 +1296,7 @@ void Solid::populate(vector<string> args) {
   grow(np);
 
   int dim = domain->dimension;
-  //checkIfInRegion = false;
+
   for (int i=0; i<nx; i++){
     for (int j=0; j<ny; j++){
       for (int k=0; k<nz; k++){
@@ -1374,12 +1373,8 @@ void Solid::populate(vector<string> args) {
 	  }
 
 	  // Check if the particle is inside the region:
-	  if (checkIfInRegion) {
-	    if (domain->regions[iregion]->inside(x0[l][0], x0[l][1], x0[l][2])==1)
-	      l++;
-	  } else {
+	  if (domain->regions[iregion]->inside(x0[l][0], x0[l][1], x0[l][2])==1)
 	    l++;
-	  }
 	}
       }
     }
