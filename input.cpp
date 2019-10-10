@@ -35,6 +35,9 @@ Input::Input(MPM *mpm, int argc, char **argv) : Pointers(mpm)
   (*vars)["x"] = Var("x", 0);
   (*vars)["y"] = Var("y", 0);
   (*vars)["z"] = Var("z", 0);
+  (*vars)["x0"] = Var("x0", 0);
+  (*vars)["y0"] = Var("y0", 0);
+  (*vars)["z0"] = Var("z0", 0);
   (*vars)["PI"] = Var(M_PI);
 
 
