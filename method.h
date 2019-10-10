@@ -8,6 +8,7 @@
 
 class Method : protected Pointers {
  public:
+  int style = 0;
   Method(class MPM *);
   virtual ~Method();
 

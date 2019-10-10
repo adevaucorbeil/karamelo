@@ -72,14 +72,17 @@ class Solid : protected Pointers {
 
   vector< double > *wf_pn;
   vector< double > *wf_np;
+  vector< double > *wf_pn_corners;
+
   vector< Eigen::Vector3d > *wfd_pn;
   vector< Eigen::Vector3d > *wfd_np;
+
 
   struct Mat *mat;                     // Material
 
   class Grid *grid;                   // background grid
 
-  string method_style;
+  string method_type;
 
   Solid(class MPM *, vector<string>);
   virtual ~Solid();

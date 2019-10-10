@@ -5,11 +5,12 @@
 #include "domain.h"
 #include <vector>
 #include <Eigen/Eigen>
-#include "mpm_math.h"
+#include <omp.h>
 #include <math.h>
+#include "mpm_math.h"
 #include "input.h"
 #include "var.h"
-#include <omp.h>
+#include "method.h"
 
 using namespace std;
 using namespace Eigen;
@@ -30,7 +31,7 @@ Solid::Solid(MPM *mpm, vector<string> args) :
 
   cout << "Creating new solid with ID: " << args[0] << endl;
 
-  method_style = update->method_style;
+  method_type = update->method_type;
   id = args[0];
 
   np = 0;
@@ -39,10 +40,8 @@ Solid::Solid(MPM *mpm, vector<string> args) :
   rp = rp0 = NULL;
   xpc = xpc0 = NULL;
 
-  if (method_style.compare("tlcpdi") == 0
-      || method_style.compare("ulcpdi") == 0
-      || method_style.compare("tlcpdi2") == 0
-      || method_style.compare("ulcpdi2") == 0) {
+  if (method_type.compare("tlcpdi") == 0
+      || method_type.compare("ulcpdi") == 0) {
     nc = pow(2, domain->dimension);
   } else nc = 0;
 
@@ -67,14 +66,14 @@ Solid::Solid(MPM *mpm, vector<string> args) :
 
   mat = NULL;
 
-  if (method_style.compare("tlmpm") == 0) grid = new Grid(mpm);
+  if (method_type.compare("tlmpm") == 0) grid = new Grid(mpm);
   else grid = domain->grid;
 
   numneigh_pn = numneigh_np = NULL;
 
   neigh_pn = neigh_np = NULL;
 
-  wf_pn = wf_np = NULL;
+  wf_pn = wf_np = wf_pn_corners = NULL;
   wfd_pn = wfd_np = NULL;
 
   dtCFL = 1.0e22;
@@ -124,7 +123,7 @@ Solid::~Solid()
   memory->destroy(damage_init);
   memory->destroy(mask);
 
-  if (method_style.compare("tlmpm") == 0) delete grid;
+  if (method_type.compare("tlmpm") == 0) delete grid;
 
   delete [] numneigh_pn;
   delete [] numneigh_np;
@@ -134,6 +133,7 @@ Solid::~Solid()
 
   delete [] wf_pn;
   delete [] wf_np;
+  if (wf_pn_corners!=NULL) delete [] wf_pn_corners;
 
   delete [] wfd_pn;
   delete [] wfd_np;
@@ -166,6 +166,7 @@ void Solid::init()
       numneigh_pn = new int[np]();
       neigh_pn = new vector<int>[np];
       wf_pn = new vector<double>[np];
+      if (nc!=0) wf_pn_corners = new vector< double >[nc*np];
       wfd_pn = new vector< Vector3d >[np];
 
       if (nnodes) {
@@ -229,43 +230,44 @@ void Solid::grow(int nparticles){
     exit(1);
   }
 
-  if (method_style.compare("tlcpdi") == 0
-      || method_style.compare("ulcpdi") == 0) {
+  if (method_type.compare("tlcpdi") == 0
+      || method_type.compare("ulcpdi") == 0) {
 
-    str = "solid-" + id + ":rp0";
-    cout << "Growing " << str << endl;
-    if (rp0 == NULL) rp0 = new Eigen::Vector3d[domain->dimension*np];
-    else {
-      cout << "Error: rp0 already exists, I don't know how to grow it!\n";
-      exit(1);
+    if (update->method->style == 0) { // CPDI-R4
+      str = "solid-" + id + ":rp0";
+      cout << "Growing " << str << endl;
+      if (rp0 == NULL) rp0 = new Eigen::Vector3d[domain->dimension*np];
+      else {
+	cout << "Error: rp0 already exists, I don't know how to grow it!\n";
+	exit(1);
+      }
+
+      str = "solid-" + id + ":rp";
+      cout << "Growing " << str << endl;
+      if (rp == NULL) rp = new Eigen::Vector3d[domain->dimension*np];
+      else {
+	cout << "Error: rp already exists, I don't know how to grow it!\n";
+	exit(1);
+      }
     }
+    if (update->method->style == 1) { // CPDI-Q4
+      str = "solid-" + id + ":xpc0";
+      cout << "Growing " << str << endl;
+      if (xpc0 == NULL) xpc0 = new Eigen::Vector3d[nc*np];
+      else {
+	cout << "Error: xpc0 already exists, I don't know how to grow it!\n";
+	exit(1);
+      }
+      for (int i=0; i<nc*np; i++) xpc0[i].setZero();
 
-    str = "solid-" + id + ":rp";
-    cout << "Growing " << str << endl;
-    if (rp == NULL) rp = new Eigen::Vector3d[domain->dimension*np];
-    else {
-      cout << "Error: rp already exists, I don't know how to grow it!\n";
-      exit(1);
-    }
-  }
-
-  if (method_style.compare("tlcpdi2") == 0
-      || method_style.compare("ulcpdi2") == 0) {
-
-    str = "solid-" + id + ":xpc0";
-    cout << "Growing " << str << endl;
-    if (xpc0 == NULL) xpc0 = new Eigen::Vector3d[nc*np];
-    else {
-      cout << "Error: xpc0 already exists, I don't know how to grow it!\n";
-      exit(1);
-    }
-
-    str = "solid-" + id + ":xpc";
-    cout << "Growing " << str << endl;
-    if (xpc == NULL) xpc = new Eigen::Vector3d[nc*np];
-    else {
-      cout << "Error: xpc already exists, I don't know how to grow it!\n";
-      exit(1);
+      str = "solid-" + id + ":xpc";
+      cout << "Growing " << str << endl;
+      if (xpc == NULL) xpc = new Eigen::Vector3d[nc*np];
+      else {
+	cout << "Error: xpc already exists, I don't know how to grow it!\n";
+	exit(1);
+      }
+      for (int i=0; i<nc*np; i++) xpc[i].setZero();
     }
   }
 
@@ -535,13 +537,36 @@ void Solid::compute_internal_forces_nodes_UL(bool reset)
 void Solid::compute_particle_velocities()
 {
   Eigen::Vector3d *vn_update = grid->v_update;
+
+  vector<Eigen::Vector3d> vc_update;
+  vc_update.resize(nc);
+
   int in;
 
+  bool update_corners;
+  if ((method_type.compare("tlcpdi") == 0 || method_type.compare("ulcpdi") == 0)
+      && (update->method->style == 1)) {
+    update_corners = true;
+  } else update_corners = false;
+
   for (int ip=0; ip<np; ip++){
+
     v_update[ip].setZero();
+    if (update_corners) for (int i=0; i<nc; i++) vc_update[i].setZero();
+
     for (int j=0; j<numneigh_pn[ip]; j++){
       in = neigh_pn[ip][j];
       v_update[ip] += wf_pn[ip][j] * vn_update[in];
+      if (update_corners) {
+	for (int ic=0; ic<nc; ic++) {
+	  vc_update[ic] += wf_pn_corners[nc*ip+ic][j] * vn_update[in];
+	}
+      }
+    }
+    if (update_corners) {
+      for (int ic=0; ic<nc; ic++) {
+	xpc[nc*ip+ic] += update->dt*vc_update[ic];
+      }
     }
   }
 }
@@ -570,7 +595,7 @@ void Solid::update_particle_position()
 {
   bool ul;
 
-  if (update->method_style.compare("tlmpm") != 0) ul = true;
+  if (update->method_type.compare("tlmpm") != 0) ul = true;
   else ul = false;
 
   for (int ip=0; ip<np; ip++) {
@@ -889,16 +914,21 @@ void Solid::compute_rate_deformation_gradient_UL_APIC()
 
 void Solid::update_deformation_gradient()
 {
-  bool status, tl, nh;
+  bool status, tl, nh, vol_cpdi;
   Eigen::Matrix3d U;
   Eigen::Matrix3d eye;
   eye.setIdentity();
 
-  if (update->method_style.compare("tlmpm") == 0) tl = true;
+  if (update->method_type.compare("tlmpm") == 0) tl = true;
   else tl = false;
 
   if ((mat->eos!=NULL) && (mat->strength!=NULL)) nh = true;
   else nh = false;
+
+  if ((method_type.compare("tlcpdi") == 0 || method_type.compare("ulcpdi") == 0)
+      && (update->method->style == 1)) {
+    vol_cpdi = true;
+  } else vol_cpdi = false;
 
   for (int ip=0; ip<np; ip++){
     
@@ -906,7 +936,6 @@ void Solid::update_deformation_gradient()
     else F[ip] = (eye+update->dt*L[ip]) * F[ip];
 
     Finv[ip] = F[ip].inverse();
-    J[ip] = F[ip].determinant();
 
     if (J[ip] < 0.0) {
       cout << "Error: J[" << ip << "]<0.0 == " << J[ip] << endl;
@@ -914,18 +943,25 @@ void Solid::update_deformation_gradient()
 	exit(1);
     }
 
+    // if (vol_cpdi) {
+    //   vol[ip] = 0.5*(xpc[nc*ip+0][0]*xpc[nc*ip+1][1] - xpc[nc*ip+1][0]*xpc[nc*ip+0][1] + xpc[nc*ip+1][0]*xpc[nc*ip+2][1] - xpc[nc*ip+2][0]*xpc[nc*ip+1][1] + xpc[nc*ip+2][0]*xpc[nc*ip+3][1] - xpc[nc*ip+3][0]*xpc[nc*ip+2][1] + xpc[nc*ip+3][0]*xpc[nc*ip+0][1] - xpc[nc*ip+0][0]*xpc[nc*ip+3][1]);
+    //   //rho[ip] = rho0[ip];
+    //   J[ip] = vol[ip]/vol0[ip];
+    // } else {
+    J[ip] = F[ip].determinant();
     vol[ip] = J[ip] * vol0[ip];
+    // }
     rho[ip] = rho0[ip] / J[ip];
 
     if (nh) {
       // Only done if not Neo-Hookean:
-      if (update->method_style.compare("tlmpm") == 0)
+      if (update->method_type.compare("tlmpm") == 0)
 	L[ip] = Fdot[ip] * Finv[ip];
       // else
       //   Fdot[ip] = L[ip]*F[ip];
 
       status = PolDec(F[ip], R[ip], U, false); // polar decomposition of the deformation gradient, F = R * U
-      if (update->method_style.compare("tlmpm") == 0)
+      if (update->method_type.compare("tlmpm") == 0)
 	D[ip] = 0.5 * (R[ip].transpose() * (L[ip] + L[ip].transpose()) * R[ip]);
       else D[ip] = 0.5 * (L[ip] + L[ip].transpose());
 
@@ -951,7 +987,7 @@ void Solid::update_stress()
   if ((mat->eos!=NULL) && (mat->strength!=NULL)) nh = false;
   else nh = true;
 
-  if (update->method_style.compare("tlmpm") == 0) tl = true;
+  if (update->method_type.compare("tlmpm") == 0) tl = true;
   else tl = false;
 
   eye.setIdentity();
@@ -1297,6 +1333,18 @@ void Solid::populate(vector<string> args) {
 
   int dim = domain->dimension;
 
+  bool r4 = false;
+  bool q4 = false;
+
+  if (method_type.compare("tlcpdi") == 0 || method_type.compare("ulcpdi") == 0) {
+    if (update->method->style == 0) { // CPDI-R4
+      r4 = true;
+    }
+    if (update->method->style == 1) { // CPDI-Q4
+      q4 = true;
+    }
+  }
+
   for (int i=0; i<nx; i++){
     for (int j=0; j<ny; j++){
       for (int k=0; k<nz; k++){
@@ -1314,7 +1362,7 @@ void Solid::populate(vector<string> args) {
 	  if (dim == 3) x0[l][2] = x[l][2] = boundlo[2] + delta*(k+0.5+intpoints[3*ip+2]);
 	  else x0[l][2] = x[l][2] = 0;
 
-	  if ((method_style.compare("tlcpdi") == 0 || method_style.compare("ulcpdi") == 0) && nc != 0) {
+	  if (r4) { // CPDI-R4
 	    rp0[dim*l][0] = rp[dim*l][0] = lp;
 	    rp0[dim*l][1] = rp[dim*l][1] = 0;
 	    rp0[dim*l][2] = rp[dim*l][2] = 0;
@@ -1332,46 +1380,46 @@ void Solid::populate(vector<string> args) {
 	    }
 	  }
 
-	  if ((method_style.compare("tlcpdi2") == 0 || method_style.compare("ulcpdi2") == 0) && nc != 0) {
-	    xpc0[nc*l][0] = xpc[nc*l][0] = boundlo[0] + delta*(k+0.5+intpoints[3*ip+0] - lp);
+	  if (q4) { // CPDI-Q4
+	    xpc0[nc*l][0] = xpc[nc*l][0] = x0[l][0] - lp;
 
-	    xpc0[nc*l+1][0] = xpc[nc*l+1][0] = boundlo[0] + delta*(k+0.5+intpoints[3*ip+0] + lp);
+	    xpc0[nc*l+1][0] = xpc[nc*l+1][0] = x0[l][0] + lp;
 
 	    if (dim >= 2) {
-	      xpc0[nc*l][1] = xpc[nc*l][1] = boundlo[1] + delta*(k+0.5+intpoints[3*ip+1] - lp);
-	      xpc0[nc*l+1][1] = xpc[nc*l+1][1] = boundlo[1] + delta*(k+0.5+intpoints[3*ip+1] - lp);
+	      xpc0[nc*l][1] = xpc[nc*l][1] = x0[l][1] - lp;
+	      xpc0[nc*l+1][1] = xpc[nc*l+1][1] = x0[l][1] - lp;
 
-	      xpc0[nc*l+2][0] = xpc[nc*l+2][0] = boundlo[0] + delta*(k+0.5+intpoints[3*ip+0] - lp);
-	      xpc0[nc*l+2][1] = xpc[nc*l+2][1] = boundlo[1] + delta*(k+0.5+intpoints[3*ip+1] + lp);
+	      xpc0[nc*l+2][0] = xpc[nc*l+2][0] = x0[l][0] + lp;
+	      xpc0[nc*l+2][1] = xpc[nc*l+2][1] = x0[l][1] + lp;
 
-	      xpc0[nc*l+3][0] = xpc[nc*l+3][0] = boundlo[0] + delta*(k+0.5+intpoints[3*ip+0] + lp);
-	      xpc0[nc*l+3][1] = xpc[nc*l+3][1] = boundlo[1] + delta*(k+0.5+intpoints[3*ip+1] + lp);
-	    }
-	      
+	      xpc0[nc*l+3][0] = xpc[nc*l+3][0] = x0[l][0] - lp;
+	      xpc0[nc*l+3][1] = xpc[nc*l+3][1] = x0[l][1] + lp;
+
+	    }  
+
 	    if (dim == 3) {
-	      xpc0[nc*l][2] = xpc[nc*l][2] = boundlo[2] + delta*(k+0.5+intpoints[3*ip+2] - lp);
-	      xpc0[nc*l+1][2] = xpc[nc*l+1][2] = boundlo[2] + delta*(k+0.5+intpoints[3*ip+2] - lp);
-	      xpc0[nc*l+2][2] = xpc[nc*l+2][2] = boundlo[2] + delta*(k+0.5+intpoints[3*ip+2] - lp);
-	      xpc0[nc*l+3][2] = xpc[nc*l+3][2] = boundlo[2] + delta*(k+0.5+intpoints[3*ip+2] - lp);
+	      xpc0[nc*l][2] = xpc[nc*l][2] = x0[l][2] - lp;
+	      xpc0[nc*l+1][2] = xpc[nc*l+1][2] = x0[l][2] - lp;
+	      xpc0[nc*l+2][2] = xpc[nc*l+2][2] = x0[l][2] - lp;
+	      xpc0[nc*l+3][2] = xpc[nc*l+3][2] = x0[l][2] - lp;
 
-	      xpc0[nc*l+4][0] = xpc[nc*l+4][0] = boundlo[0] + delta*(k+0.5+intpoints[3*ip+0] - lp);
-	      xpc0[nc*l+4][1] = xpc[nc*l+4][1] = boundlo[1] + delta*(k+0.5+intpoints[3*ip+1] - lp);
-	      xpc0[nc*l+4][2] = xpc[nc*l+4][2] = boundlo[2] + delta*(k+0.5+intpoints[3*ip+2] + lp);
+	      xpc0[nc*l+4][0] = xpc[nc*l+4][0] = x0[l][0] - lp;
+	      xpc0[nc*l+4][1] = xpc[nc*l+4][1] = x0[l][1] - lp;
+	      xpc0[nc*l+4][2] = xpc[nc*l+4][2] = x0[l][2] + lp;
 
-	      xpc0[nc*l+5][0] = xpc[nc*l+5][0] = boundlo[0] + delta*(k+0.5+intpoints[3*ip+0] + lp);
-	      xpc0[nc*l+5][1] = xpc[nc*l+5][1] = boundlo[1] + delta*(k+0.5+intpoints[3*ip+1] - lp);
-	      xpc0[nc*l+5][2] = xpc[nc*l+5][2] = boundlo[2] + delta*(k+0.5+intpoints[3*ip+2] + lp);
+	      xpc0[nc*l+5][0] = xpc[nc*l+5][0] = x0[l][0] + lp;
+	      xpc0[nc*l+5][1] = xpc[nc*l+5][1] = x0[l][1] - lp;
+	      xpc0[nc*l+5][2] = xpc[nc*l+5][2] = x0[l][2] + lp;
 
-	      xpc0[nc*l+6][0] = xpc[nc*l+6][0] = boundlo[0] + delta*(k+0.5+intpoints[3*ip+0] - lp);
-	      xpc0[nc*l+6][1] = xpc[nc*l+6][1] = boundlo[1] + delta*(k+0.5+intpoints[3*ip+1] + lp);
-	      xpc0[nc*l+6][2] = xpc[nc*l+6][2] = boundlo[2] + delta*(k+0.5+intpoints[3*ip+2] + lp);
+	      xpc0[nc*l+6][0] = xpc[nc*l+6][0] = x0[l][0] + lp;
+	      xpc0[nc*l+6][1] = xpc[nc*l+6][1] = x0[l][1] + lp;
+	      xpc0[nc*l+6][2] = xpc[nc*l+6][2] = x0[l][2] + lp;
 
-	      xpc0[nc*l+7][0] = xpc[nc*l+7][0] = boundlo[0] + delta*(k+0.5+intpoints[3*ip+0] + lp);
-	      xpc0[nc*l+7][1] = xpc[nc*l+7][1] = boundlo[1] + delta*(k+0.5+intpoints[3*ip+1] + lp);
-	      xpc0[nc*l+7][2] = xpc[nc*l+7][2] = boundlo[2] + delta*(k+0.5+intpoints[3*ip+2] + lp);
+	      xpc0[nc*l+7][0] = xpc[nc*l+7][0] = x0[l][0] - lp;
+	      xpc0[nc*l+7][1] = xpc[nc*l+7][1] = x0[l][1] + lp;
+	      xpc0[nc*l+7][2] = xpc[nc*l+7][2] = x0[l][2] + lp;
 	    }
 	  }
-
 	  // Check if the particle is inside the region:
 	  if (domain->regions[iregion]->inside(x0[l][0], x0[l][1], x0[l][2])==1)
 	    l++;
@@ -1420,9 +1468,19 @@ void Solid::populate(vector<string> args) {
 void Solid::update_particle_domain() {
   int dim = domain->dimension;
 
-  for (int ip=0; ip<np; ip++){
-    rp[dim*ip] = F[ip]*rp0[dim*ip];
-    if (dim >= 2) rp[dim*ip+1] = F[ip]*rp0[dim*ip+1];
-    if (dim == 3) rp[dim*ip+2] = F[ip]*rp0[dim*ip+2];
+  if (update->method->style == 0) { // CPDI-R4
+    for (int ip=0; ip<np; ip++){
+      rp[dim*ip] = F[ip]*rp0[dim*ip];
+      if (dim >= 2) rp[dim*ip+1] = F[ip]*rp0[dim*ip+1];
+      if (dim == 3) rp[dim*ip+2] = F[ip]*rp0[dim*ip+2];
+    }
   }
+  // if (update->method->style == 1) { // CPDI-Q4
+  //   for (int ip=0; ip<np; ip++) {
+  //     for(int ic=0; ic<nc; ic++) {
+  // 	xpc[nc*ip + ic] += update->dt*v_update[ip];
+  //     }
+  //   }
+  // }
 }
+  

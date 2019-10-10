@@ -20,7 +20,6 @@ class ULCPDI : public Method {
   string method_type;
   double FLIP;
   string shape_function;
-  int style;
 
   ULCPDI(class MPM *, vector<string>);
   ~ULCPDI();
