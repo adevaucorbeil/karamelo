@@ -943,14 +943,14 @@ void Solid::update_deformation_gradient()
 	exit(1);
     }
 
-    // if (vol_cpdi) {
-    //   vol[ip] = 0.5*(xpc[nc*ip+0][0]*xpc[nc*ip+1][1] - xpc[nc*ip+1][0]*xpc[nc*ip+0][1] + xpc[nc*ip+1][0]*xpc[nc*ip+2][1] - xpc[nc*ip+2][0]*xpc[nc*ip+1][1] + xpc[nc*ip+2][0]*xpc[nc*ip+3][1] - xpc[nc*ip+3][0]*xpc[nc*ip+2][1] + xpc[nc*ip+3][0]*xpc[nc*ip+0][1] - xpc[nc*ip+0][0]*xpc[nc*ip+3][1]);
-    //   //rho[ip] = rho0[ip];
-    //   J[ip] = vol[ip]/vol0[ip];
-    // } else {
-    J[ip] = F[ip].determinant();
-    vol[ip] = J[ip] * vol0[ip];
-    // }
+    if (vol_cpdi) {
+      vol[ip] = 0.5*(xpc[nc*ip+0][0]*xpc[nc*ip+1][1] - xpc[nc*ip+1][0]*xpc[nc*ip+0][1] + xpc[nc*ip+1][0]*xpc[nc*ip+2][1] - xpc[nc*ip+2][0]*xpc[nc*ip+1][1] + xpc[nc*ip+2][0]*xpc[nc*ip+3][1] - xpc[nc*ip+3][0]*xpc[nc*ip+2][1] + xpc[nc*ip+3][0]*xpc[nc*ip+0][1] - xpc[nc*ip+0][0]*xpc[nc*ip+3][1]);
+      //rho[ip] = rho0[ip];
+      J[ip] = vol[ip]/vol0[ip];
+    } else {
+      J[ip] = F[ip].determinant();
+      vol[ip] = J[ip] * vol0[ip];
+    }
     rho[ip] = rho0[ip] / J[ip];
 
     if (nh) {
