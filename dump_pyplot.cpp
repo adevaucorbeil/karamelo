@@ -18,13 +18,22 @@ namespace plt = matplotlibcpp;
 DumpPyPlot::DumpPyPlot(MPM *mpm, vector<string> args) : Dump(mpm, args)
 {
   cout << "In DumpPyPlot::DumpPyPlot()" << endl;
+
+  if (args.size() < 5) {
+    cout << "Error: not enough arguments. Example: dump(dump-ID, region_ID, pyplot, N, filename.*.png, xsize, ysize)\n";
+    exit(1);
+  }
+
   if (domain->dimension != 1 && domain->dimension != 2) {
     cout << "Error: cannot use dump_pyplot with dimensions different than 1 or 2!\n";
     exit(1);
   }
 
   if (args.size() > 5) {
-    if (args.size() > 7) {
+    if (args.size() < 7) {
+    cout << "Error: not enough arguments. Example: dump(dump-ID, region_ID, pyplot, N, filename.*.png, xsize, ysize)\n";
+    exit(1);
+    } else if (args.size() > 7) {
       cout << "Error: too many options given to dump_pyplot\n.";
       exit(1);
     } else {
