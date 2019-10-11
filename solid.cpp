@@ -1154,12 +1154,10 @@ void Solid::copy_particle(int i, int j) {
   if (method_type.compare("tlcpdi") == 0
       || method_type.compare("ulcpdi") == 0) {
     if (update->method->style == 0) { // CPDI-R4
-      rp0[domain->dimension*j] = rp0[domain->dimension*i];
-      rp0[domain->dimension*j+1] = rp0[domain->dimension*i+1];
-      rp0[domain->dimension*j+2] = rp0[domain->dimension*i+2];
-      rp[domain->dimension*j] = rp[domain->dimension*i];
-      rp[domain->dimension*j+1] = rp[domain->dimension*i+1];
-      rp[domain->dimension*j+2] = rp[domain->dimension*i+2];
+      for (int id=0; id<domain->dimension; id++) {
+	rp0[domain->dimension*j+id] = rp0[domain->dimension*i+id];
+	rp[domain->dimension*j+id] = rp[domain->dimension*i+id];
+      }
     }
     if (update->method->style == 1) { // CPDI-Q4
       for (int ic=0; ic<nc; ic++) {
