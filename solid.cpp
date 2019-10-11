@@ -1150,6 +1150,24 @@ void Solid::copy_particle(int i, int j) {
   Finv[j] = Finv[i];
   Fdot[j] = Fdot[i];
   J[j] = J[i];
+  
+  if (method_type.compare("tlcpdi") == 0
+      || method_type.compare("ulcpdi") == 0) {
+    if (update->method->style == 0) { // CPDI-R4
+      rp0[domain->dimension*j] = rp0[domain->dimension*i];
+      rp0[domain->dimension*j+1] = rp0[domain->dimension*i+1];
+      rp0[domain->dimension*j+2] = rp0[domain->dimension*i+2];
+      rp[domain->dimension*j] = rp[domain->dimension*i];
+      rp[domain->dimension*j+1] = rp[domain->dimension*i+1];
+      rp[domain->dimension*j+2] = rp[domain->dimension*i+2];
+    }
+    if (update->method->style == 1) { // CPDI-Q4
+      for (int ic=0; ic<nc; ic++) {
+	xpc0[nc*j+ic] = xpc0[nc*i+ic];
+	xpc[nc*j+ic] = xpc[nc*i+ic];
+      }
+    }
+  }
 }
 
 void Solid::populate(vector<string> args) {

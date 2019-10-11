@@ -191,6 +191,7 @@ void DumpPyPlot::write()
 
   // Save the image (file format is determined by the extension)
   plt::axis("equal");
+  plt::axis("off");
   plt::save(fdump);
   //plt::show();
   plt::close();
