@@ -805,7 +805,7 @@ void Solid::update_deformation_gradient()
     vol[ip] = J[ip] * vol0[ip];
     rho[ip] = rho0[ip] / J[ip];
 
-    if (nh) {
+    if (!nh) {
       // Only done if not Neo-Hookean:
       if (update->method_style.compare("tlmpm") == 0)
 	L[ip] = Fdot[ip] * Finv[ip];
