@@ -193,13 +193,18 @@ void Material::add_material(vector<string> args){
     exit(1);
   }
 
-  if (args[1].compare("neo-hookean")==0) {
+  if (args[1].compare("linear")==0 || args[1].compare("neo-hookean")==0) {
     if (args.size()<5) {
       cout << "Error: material command not enough arguments" << endl;
       exit(1);
     }
-    Mat new_material(args[0], input->parsev(args[2]), input->parsev(args[3]), input->parsev(args[4]));
-      materials.push_back(new_material);
+
+    int type;
+    if (args[1].compare("linear")==0) type = LINEAR;
+    else type = NEO_HOOKEAN;
+
+    Mat new_material(args[0], type, input->parsev(args[2]), input->parsev(args[3]), input->parsev(args[4]));
+    materials.push_back(new_material);
     
   } else {
     // create the Material
@@ -222,10 +227,10 @@ void Material::add_material(vector<string> args){
 	cout << "Error: could not find damage named: " << args[3] << endl;
 	exit(1);
       }
-      Mat new_material(args[0], EOSs[iEOS], strengths[iStrength], damages[iDamage]);
+      Mat new_material(args[0], SHOCK, EOSs[iEOS], strengths[iStrength], damages[iDamage]);
       materials.push_back(new_material);
     } else {
-      Mat new_material(args[0], EOSs[iEOS], strengths[iStrength]);
+      Mat new_material(args[0], SHOCK, EOSs[iEOS], strengths[iStrength]);
       materials.push_back(new_material);
     }
   }
@@ -272,8 +277,9 @@ Damage *Material::damage_creator(MPM *mpm, vector<string> args)
 }
 
 
-Mat::Mat(string id_, class EOS* eos_, class Strength* strength_, class Damage* damage_){
+Mat::Mat(string id_, int type_, class EOS* eos_, class Strength* strength_, class Damage* damage_){
   id = id_;
+  type = type_;
   eos = eos_;
   strength = strength_;
   damage = damage_;
@@ -295,8 +301,9 @@ Mat::Mat(string id_, class EOS* eos_, class Strength* strength_, class Damage* d
   cout << "\tSignal velocity: " << signal_velocity << endl;
 }
 
-Mat::Mat(string id_, double rho0_, double E_, double nu_){
+Mat::Mat(string id_, int type_, double rho0_, double E_, double nu_){
   id = id_;
+  type = type_;
   eos = NULL;
   strength = NULL;
   damage = NULL;

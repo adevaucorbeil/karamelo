@@ -11,6 +11,7 @@
 #include "input.h"
 #include "var.h"
 #include "method.h"
+#include "material.h"
 
 using namespace std;
 using namespace Eigen;
@@ -981,11 +982,14 @@ void Solid::update_stress()
 {
   min_inv_p_wave_speed = 1.0e22;
   double pH, plastic_strain_increment;
-  Matrix3d eye, sigma_dev, FinvT, PK1;
-  bool tl, nh;
+  Matrix3d eye, sigma_dev, FinvT, PK1, strain_increment;
+  bool lin, tl, nh;
 
-  if ((mat->eos!=NULL) && (mat->strength!=NULL)) nh = false;
-  else nh = true;
+  if (mat->type == material->constitutive_model::LINEAR) lin = true;
+  else lin = false;
+
+  if (mat->type == material->constitutive_model::NEO_HOOKEAN) nh = true;
+  else nh = false;
 
   if (update->method_type.compare("tlmpm") == 0) tl = true;
   else tl = false;
@@ -994,7 +998,12 @@ void Solid::update_stress()
 
   //# pragma omp parallel for
   for (int ip=0; ip<np; ip++){
-    if (nh) {
+    if (lin) {
+      strain_increment = update->dt * D[ip];
+      strain_el[ip] += strain_increment;
+      sigma[ip] +=  2*mat->G*strain_increment + mat->lambda*strain_increment.trace()*eye;
+      if (tl) vol0PK1[ip] = vol0[ip]*J[ip] * (R[ip] * sigma[ip] * R[ip].transpose()) * Finv[ip].transpose();
+    } else if (nh) {
 
       // Neo-Hookean material:
       FinvT = Finv[ip].transpose();

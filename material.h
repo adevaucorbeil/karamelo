@@ -12,12 +12,13 @@
 class Mat{
 public:
   string id;
+  int type;
   class EOS* eos;
   class Strength* strength;
   class Damage* damage;
   double rho0, E, nu, G, K, lambda, signal_velocity;
-  Mat(string, class EOS*, class Strength*, class Damage* = NULL);
-  Mat(string, double, double, double);
+  Mat(string, int, class EOS*, class Strength*, class Damage* = NULL);
+  Mat(string, int, double, double, double);
 };
 
 class Material : protected Pointers {
@@ -53,6 +54,12 @@ class Material : protected Pointers {
   typedef Damage *(*DamageCreator)(MPM *,vector<string>);
   typedef map<string,DamageCreator> DamageCreatorMap;
   DamageCreatorMap *damage_map;
+
+  enum constitutive_model {
+    LINEAR = 0,      // Linear elasticity
+    NEO_HOOKEAN = 1, // Neo-Hookean model
+    SHOCK = 2        // EOS + Strength
+  };
 
 private:
   template <typename T> static Strength *strength_creator(MPM *,vector<string>);
