@@ -73,7 +73,8 @@ void FixKineticEnergy::final_integrate() {
 
       for (int in = 0; in < nmax; in++) {
 	if (mask[in] & groupbit) {
-	  Ek += 0.5*mass[in]*v[in].norm();
+	  Ek += 0.5*mass[in]*square(v[in].norm());
+	  // cout << "in=" << in << "\tmass=" << mass[in] << "\tv[in]=[" << v[in](0) << "," << v[in](1) << "," << v[in](2) << "]\tdEk=" << 0.5*mass[in]*v[in].norm() << endl;
 	}
       }
     }
@@ -88,7 +89,7 @@ void FixKineticEnergy::final_integrate() {
 
     for (int in = 0; in < nmax; in++) {
       if (mask[in] & groupbit) {
-	Ek += 0.5*mass[in]*v[in].norm();
+	Ek += 0.5*mass[in]*square(v[in].norm());
       }
     }
 
