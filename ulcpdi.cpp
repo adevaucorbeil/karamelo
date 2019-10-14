@@ -406,7 +406,7 @@ void ULCPDI::update_grid_state()
 void ULCPDI::grid_to_points()
 {
   for (int isolid=0; isolid<domain->solids.size(); isolid++) {
-    domain->solids[isolid]->compute_particle_velocities();
+    domain->solids[isolid]->compute_particle_velocities_and_positions();
     domain->solids[isolid]->compute_particle_acceleration();
   }
 }
@@ -414,7 +414,6 @@ void ULCPDI::grid_to_points()
 void ULCPDI::advance_particles()
 {
   for (int isolid=0; isolid<domain->solids.size(); isolid++) {
-    domain->solids[isolid]->update_particle_position();
     domain->solids[isolid]->update_particle_velocities(FLIP);
   }
 }

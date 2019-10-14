@@ -97,7 +97,7 @@ class Solid : protected Pointers {
   void compute_external_forces_nodes(bool);
   void compute_internal_forces_nodes_TL();
   void compute_internal_forces_nodes_UL(bool);
-  void compute_particle_velocities();
+  void compute_particle_velocities_and_positions();
   void compute_particle_acceleration();
   void update_particle_position();
   void update_particle_velocities(double);

@@ -535,7 +535,7 @@ void Solid::compute_internal_forces_nodes_UL(bool reset)
 }
 
 
-void Solid::compute_particle_velocities()
+void Solid::compute_particle_velocities_and_positions()
 {
   Eigen::Vector3d *vn_update = grid->v_update;
 
@@ -544,7 +544,11 @@ void Solid::compute_particle_velocities()
 
   int in;
 
-  bool update_corners;
+  bool update_corners, ul;
+
+  if (update->method_type.compare("tlmpm") != 0) ul = true;
+  else ul = false;
+
   if ((method_type.compare("tlcpdi") == 0 || method_type.compare("ulcpdi") == 0)
       && (update->method->style == 1)) {
     update_corners = true;
@@ -558,12 +562,26 @@ void Solid::compute_particle_velocities()
     for (int j=0; j<numneigh_pn[ip]; j++){
       in = neigh_pn[ip][j];
       v_update[ip] += wf_pn[ip][j] * vn_update[in];
+      x[ip] += update->dt * wf_pn[ip][j] * vn_update[in];
+
+      if (ul) {
+	// Check if the particle is within the box's domain:
+	if (domain->inside(x[ip]) == 0) {
+	  cout << "Error: Particle " << ip << " left the domain (" <<
+	    domain->boxlo[0] << ","<< domain->boxhi[0] << "," <<
+	    domain->boxlo[1] << ","<< domain->boxhi[1] << "," <<
+	    domain->boxlo[2] << ","<< domain->boxhi[2] << ",):\n" << x[ip] << endl;
+	  exit(1);
+	}
+      }
+
       if (update_corners) {
 	for (int ic=0; ic<nc; ic++) {
 	  vc_update[ic] += wf_pn_corners[nc*ip+ic][j] * vn_update[in];
 	}
       }
     }
+
     if (update_corners) {
       for (int ic=0; ic<nc; ic++) {
 	xpc[nc*ip+ic] += update->dt*vc_update[ic];
@@ -589,28 +607,6 @@ void Solid::compute_particle_acceleration()
     }
     a[ip] *= inv_dt;
     f[ip] = a[ip] / mass[ip];
-  }
-}
-
-void Solid::update_particle_position()
-{
-  bool ul;
-
-  if (update->method_type.compare("tlmpm") != 0) ul = true;
-  else ul = false;
-
-  for (int ip=0; ip<np; ip++) {
-    x[ip] += update->dt*v_update[ip];
-    if (ul) {
-      // Check if the particle is within the box's domain:
-      if (domain->inside(x[ip]) == 0) {
-	cout << "Error: Particle " << ip << " left the domain (" <<
-	  domain->boxlo[0] << ","<< domain->boxhi[0] << "," <<
-	  domain->boxlo[1] << ","<< domain->boxhi[1] << "," <<
-	  domain->boxlo[2] << ","<< domain->boxhi[2] << ",):\n" << x[ip] << endl;
-	exit(1);
-      }
-    }
   }
 }
 
@@ -959,13 +955,13 @@ void Solid::update_deformation_gradient()
 
     if (!nh) {
       // Only done if not Neo-Hookean:
-      if (update->method_type.compare("tlmpm") == 0)
+      if (tl)
 	L[ip] = Fdot[ip] * Finv[ip];
       // else
       //   Fdot[ip] = L[ip]*F[ip];
 
       status = PolDec(F[ip], R[ip], U, false); // polar decomposition of the deformation gradient, F = R * U
-      if (update->method_type.compare("tlmpm") == 0)
+      if (tl)
 	D[ip] = 0.5 * (R[ip].transpose() * (L[ip] + L[ip].transpose()) * R[ip]);
       else D[ip] = 0.5 * (L[ip] + L[ip].transpose());
 
