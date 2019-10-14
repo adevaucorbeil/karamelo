@@ -785,7 +785,7 @@ void Solid::update_deformation_gradient()
   if (update->method_style.compare("tlmpm") == 0) tl = true;
   else tl = false;
 
-  if ((mat->eos!=NULL) && (mat->strength!=NULL)) nh = true;
+  if ((mat->eos==NULL) && (mat->strength==NULL)) nh = true;
   else nh = false;
 
   for (int ip=0; ip<np_local; ip++){
