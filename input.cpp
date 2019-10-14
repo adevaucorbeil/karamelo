@@ -213,6 +213,7 @@ Var Input::evaluate_function(string func, string arg){
   if (func.compare("set_dt") == 0 ) return Var(set_dt(args));
   if (func.compare("value") == 0) return value(args);
   if (func.compare("plot") == 0) return Var(plot(args));
+  if (func.compare("save_plot") == 0) return Var(save_plot(args));
 
   // invoke commands added via style_command.h
 
@@ -774,6 +775,19 @@ Var Input::value(vector<string> args){
 
 int Input::plot(vector<string> args){
   output->add_plot(args);
+  return 0;
+}
+
+int Input::save_plot(vector<string> args){
+  if (args.size() < 1) {
+    cout << "Error: too few arguments for save_plot(). Should be save_plot(filename)" << endl;
+    exit(1);
+  } else if (args.size() >1) {
+    cout << "Error: too many arguments for save_plot(). Should be save_plot(filename)" << endl;
+    exit(1);
+  }
+  output->save_plot = true;
+  output->ofile_plot = args[0];
   return 0;
 }
 

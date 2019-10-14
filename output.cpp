@@ -22,6 +22,8 @@ Output::Output(MPM *mpm) : Pointers(mpm)
   next_dump_any = 0;
   next_plot_any = 0;
 
+  save_plot = false;
+
   // create default Log class
 
   vector<string> log_args;
@@ -146,19 +148,22 @@ void Output::write(bigint ntimestep){
     }
   }
 
-  if (ntimestep == nsteps) {
-    if (nplots !=0 ) {
-      for (int iplot = 0; iplot < nplots; iplot++) {
-	plt::named_plot(plots[iplot]->id, plots[iplot]->x, plots[iplot]->y);
-      }
-
-      plt::grid(true);
-      plt::legend();
-      plt::show();
-    }
-  }
   
   if (next_plot_any!=0) next = MIN(next,next_plot_any);
+}
+
+void Output::show_plot() {
+  if (nplots !=0 ) {
+    for (int iplot = 0; iplot < nplots; iplot++) {
+      plt::named_plot(plots[iplot]->id, plots[iplot]->x, plots[iplot]->y);
+    }
+
+    plt::grid(true);
+    plt::legend();
+    plt::save(ofile_plot);
+    plt::show();
+    plt::close();
+  }
 }
 
 void Output::set_log(vector<string> args){
