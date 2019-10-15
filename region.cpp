@@ -26,8 +26,9 @@ void Region::options(vector<string> *args, vector<string>::iterator it)
 
   cout << "In region::options()" << endl;
   if (args->end() < it) {
-    cout << "Error: not enough arguments" << endl;
-    exit(1);
+    // cout << "Error: not enough arguments" << endl;
+    // exit(1);
+    return;
   }
   if (args->end() > it) {
     for (it; it != args->end(); ++it){

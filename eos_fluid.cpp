@@ -18,8 +18,8 @@ EOSFluid::EOSFluid(MPM *mpm, vector<string> args) : EOS(mpm, args)
 {
   cout << "Initiate EOSFluid" << endl;
 
-  if (args.size()<55) {
-    cout << "Error: region command not enough arguments" << endl;
+  if (args.size()<5) {
+    cout << "Error: eos command not enough arguments" << endl;
     exit(1);
   }
   //options(&args, args.begin()+3);

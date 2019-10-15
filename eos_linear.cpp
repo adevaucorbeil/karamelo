@@ -16,7 +16,7 @@ EOSLinear::EOSLinear(MPM *mpm, vector<string> args) : EOS(mpm, args)
   cout << "Initiate EOSLinear" << endl;
 
   if (args.size()<3) {
-    cout << "Error: region command not enough arguments" << endl;
+    cout << "Error: eos command not enough arguments" << endl;
     exit(1);
   }
   //options(&args, args.begin()+3);

@@ -88,7 +88,7 @@ void FixBodyforce::post_particles_to_grid() {
   Eigen::Vector3d *x;
   Eigen::Matrix3d *R;
 
-  double mtot = 0;
+  // double mtot = 0;
   ftot.setZero();
 
   if (solid == -1) {
@@ -118,7 +118,7 @@ void FixBodyforce::post_particles_to_grid() {
 	      f *= mass[in];
 	      mb[in] += f;
 	      ftot += f;
-	      mtot += mass[in];
+	      // mtot += mass[in];
 	  }
 	}
       }
@@ -151,7 +151,7 @@ void FixBodyforce::post_particles_to_grid() {
 	  f *= mass[in];
 	  mb[in] += f;
 	  ftot += f;
-	  mtot += mass[in];
+	  // mtot += mass[in];
 	}
       }
     }

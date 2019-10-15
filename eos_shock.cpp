@@ -18,7 +18,7 @@ EOSShock::EOSShock(MPM *mpm, vector<string> args) : EOS(mpm, args)
   cout << "Initiate EOSShock" << endl;
 
   if (args.size()<8) {
-    cout << "Error: region command not enough arguments" << endl;
+    cout << "Error: eos command not enough arguments" << endl;
     exit(1);
   }
   //options(&args, args.begin()+3);
