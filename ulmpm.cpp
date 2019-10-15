@@ -322,6 +322,13 @@ void ULMPM::particles_to_grid()
 
     domain->solids[isolid]->compute_mass_nodes(grid_reset);
     //domain->solids[isolid]->compute_node_rotation_matrix(grid_reset);
+  }
+
+  for (int isolid=0; isolid<domain->solids.size(); isolid++){
+
+    if (isolid == 0) grid_reset = true;
+    else grid_reset = false;
+
     if (method_type.compare("APIC") == 0) domain->solids[isolid]->compute_velocity_nodes_APIC(grid_reset);
     else domain->solids[isolid]->compute_velocity_nodes(grid_reset);
     domain->solids[isolid]->compute_external_forces_nodes(grid_reset);
