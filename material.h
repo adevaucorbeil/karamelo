@@ -58,7 +58,7 @@ class Material : protected Pointers {
   enum constitutive_model {
     LINEAR = 0,      // Linear elasticity
     NEO_HOOKEAN = 1, // Neo-Hookean model
-    SHOCK = 2        // EOS + Strength
+    SHOCK = 2       // EOS + Strength or fluids
   };
 
 private:

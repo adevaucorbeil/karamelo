@@ -982,7 +982,7 @@ void Solid::update_stress()
   min_inv_p_wave_speed = 1.0e22;
   double pH, plastic_strain_increment;
   Matrix3d eye, sigma_dev, FinvT, PK1, strain_increment;
-  bool lin, tl, nh;
+  bool lin, tl, nh, fluid;
 
   if (mat->type == material->constitutive_model::LINEAR) lin = true;
   else lin = false;
