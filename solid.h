@@ -115,6 +115,7 @@ class Solid : protected Pointers {
 
 private:
   void populate(vector<string>);
+  void read_mesh(string);
 };
 
 #endif

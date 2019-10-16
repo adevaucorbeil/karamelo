@@ -13,9 +13,17 @@
 #include "method.h"
 #include "material.h"
 
+#include <boost/algorithm/string.hpp>
+#include <boost/lexical_cast.hpp>
+
 using namespace std;
 using namespace Eigen;
 using namespace MPM_Math;
+
+#ifdef DEBUG
+#include <matplotlibcpp.h>
+namespace plt = matplotlibcpp;
+#endif
 
 Solid::Solid(MPM *mpm, vector<string> args) :
   Pointers(mpm)
@@ -25,8 +33,16 @@ Solid::Solid(MPM *mpm, vector<string> args) :
     cout << "Error: a method should be defined before creating a solid!" << endl;
     exit(1);
   }
+
   if (args.size() < 3) {
-    cout << "Error: solid command not enough arguments" << endl;
+    cout << "Error: solid command not enough arguments. " << endl;
+    cout << "Usage: solid(solid-ID, region, region-ID, N_ppc1D, material-ID, grid-cell-size) or solid(solid-ID, mesh, meshfile, material-ID, grid-cell-size)\n";
+    exit(1);
+  }
+
+  if (args[1].compare("region")!=0 && args[1].compare("mesh")!=0) {
+    cout << "Error: solid command not understood. " << endl;
+    cout << "Usage: solid(solid-ID, \033[1;32mregion\033[0m, region-ID, N_ppc1D, material-ID, cell-size) or solid(solid-ID, \033[1;32mmesh\033[0m, meshfile)\n";
     exit(1);
   }
 
@@ -80,11 +96,25 @@ Solid::Solid(MPM *mpm, vector<string> args) :
   dtCFL = 1.0e22;
   vtot = 0;
 
-  // Set material and cellsize:
-  options(&args, args.begin()+3);
+  if (args[1].compare("region")==0) {
+    // Set material and cellsize:
+    options(&args, args.begin()+4);
 
-  // Create particles:
-  populate(args);
+    // Create particles:
+    populate(args);
+  } else {
+    // Set material and cellsize:
+    options(&args, args.begin()+3);
+
+    read_mesh(args[2]);
+  }
+
+#ifdef DEBUG
+  plt::axis("equal");
+  plt::save("debug.png");
+  plt::close();
+  //exit(1);
+#endif
 }
 
 Solid::~Solid()
@@ -944,7 +974,10 @@ void Solid::update_deformation_gradient()
     }
 
     if (vol_cpdi) {
-      vol[ip] = 0.5*(xpc[nc*ip+0][0]*xpc[nc*ip+1][1] - xpc[nc*ip+1][0]*xpc[nc*ip+0][1] + xpc[nc*ip+1][0]*xpc[nc*ip+2][1] - xpc[nc*ip+2][0]*xpc[nc*ip+1][1] + xpc[nc*ip+2][0]*xpc[nc*ip+3][1] - xpc[nc*ip+3][0]*xpc[nc*ip+2][1] + xpc[nc*ip+3][0]*xpc[nc*ip+0][1] - xpc[nc*ip+0][0]*xpc[nc*ip+3][1]);
+      vol[ip] = 0.5*(xpc[nc*ip+0][0]*xpc[nc*ip+1][1] - xpc[nc*ip+1][0]*xpc[nc*ip+0][1]
+		     + xpc[nc*ip+1][0]*xpc[nc*ip+2][1] - xpc[nc*ip+2][0]*xpc[nc*ip+1][1]
+		     + xpc[nc*ip+2][0]*xpc[nc*ip+3][1] - xpc[nc*ip+3][0]*xpc[nc*ip+2][1]
+		     + xpc[nc*ip+3][0]*xpc[nc*ip+0][1] - xpc[nc*ip+0][0]*xpc[nc*ip+3][1]);
       //rho[ip] = rho0[ip];
       J[ip] = vol[ip]/vol0[ip];
     } else {
@@ -1178,12 +1211,12 @@ void Solid::copy_particle(int i, int j) {
 
 void Solid::populate(vector<string> args) {
 
-  cout << "Solid delimitated by region ID: " << args[1] << endl;
+  cout << "Solid delimitated by region ID: " << args[2] << endl;
 
   // Look for region ID:
-  int iregion = domain->find_region(args[1]);
+  int iregion = domain->find_region(args[2]);
   if (iregion == -1) {
-    cout << "Error: region ID " << args[1] << " not does not exist" << endl;
+    cout << "Error: region ID " << args[2] << " does not exist" << endl;
     exit(1);
   }
 
@@ -1265,7 +1298,7 @@ void Solid::populate(vector<string> args) {
 
   double mass_ = mat->rho0 * vol_;
 
-  int np_per_cell = (int) input->parsev(args[2]);
+  int np_per_cell = (int) input->parsev(args[3]);
 
   double xi = 0.5;
   double lp = delta;
@@ -1344,7 +1377,7 @@ void Solid::populate(vector<string> args) {
 		 xi, xi, xi};
 
   } else {
-    cout << "Error: solid command 4th argument should be 1 or 2, but " << (int) input->parsev(args[3]) << "received.\n";
+    cout << "Error: solid command 4th argument should be 1,  2 or 3, but " << (int) input->parsev(args[3]) << "received.\n";
     exit(1);
   }
   
@@ -1508,3 +1541,245 @@ void Solid::update_particle_domain() {
   // }
 }
   
+void Solid::read_mesh(string fileName) {
+
+  string          line;
+
+  int             id;
+  int             length;
+  int             elemType;
+  vector<string>  splitLine;
+  array<double,3> xn;
+
+  int             nodeCount; // Count the number of nodes
+  vector<array<double,3>> nodes;
+
+#ifdef DEBUG
+  std::vector<double> x2plot, y2plot;
+  std::vector<double> xcplot, ycplot;
+#endif
+
+  ifstream file ( fileName, std::ios::in );
+
+  if ( !file ) {
+    cout << "Error: unable to open mesh file " << fileName << endl;
+    exit(1);
+  }
+
+  cout << "Reading Gmsh mesh file ...\n";
+
+  while (getline(file, line)) {
+
+    if (line.compare("$MeshFormat")==0) {
+      // Read mesh format informations:
+      double version;
+      file >> version;
+
+      if (version >= 3.0) {
+	cout << "Gmsh mesh file version >=3.0 not supported.\n";
+	exit(1);
+      }
+
+      getline(file, line);
+      if (line.compare("$EndMeshFormat")==0) {
+	cout << "Reading format...done!\n";
+	break;
+      }
+      else cout << "Unexpected line: " << line << ". $EndMeshFormat expected!!\n";
+    }
+
+    if (line.compare("$Nodes")==0) {
+      cout << "Reading nodes...\n";
+      // Read mesh node informations:
+      file >> nodeCount;
+
+      nodes.resize(nodeCount);
+
+      for ( int in = 0; in < nodeCount; in++ ){
+	file >> id >> xn[0] >> xn[1] >> xn[2];
+	if (abs(xn[0]) < 1.0e-12) xn[0] = 0;
+	if (abs(xn[1]) < 1.0e-12) xn[1] = 0;
+	if (abs(xn[2]) < 1.0e-12) xn[2] = 0;
+
+	if (domain->dimension==1 && (xn[1]!=0. || xn[2]!=0.)) {
+	  cout << "Error: node " << id << " has non 1D component.\n";
+	  exit(1);
+	}
+
+	if (domain->dimension==2 && xn[2]!=0.) {
+	  cout << "Error: node " << id << " has non zero z component.\n";
+	  exit(1);
+	}
+
+	nodes[in] = xn;
+
+	// Adjust solid bounds:
+	if (xn[0] < solidlo[0]) solidlo[0] = xn[0];
+	if (xn[1] < solidlo[1]) solidlo[1] = xn[1];
+	if (xn[2] < solidlo[2]) solidlo[2] = xn[2];
+
+	if (xn[0] > solidhi[0]) solidhi[0] = xn[0];
+	if (xn[1] > solidhi[1]) solidhi[1] = xn[1];
+	if (xn[2] > solidhi[2]) solidhi[2] = xn[2];
+      }
+
+      getline(file, line);
+      if (line.compare("$EndNodes")==0) {
+	cout << "Reading nodes...done!\n";
+      }
+      else cout << "Unexpected line: " << line << ". $EndNodes expected!!\n";
+    }
+
+    
+
+    if (line.compare("$Elements")==0) {
+      cout << "Reading elements...\n";
+      file >> np; // Number of elements
+      getline ( file, line );
+
+      // Allocate the space in the vectors for np particles:
+      grow(np);
+      
+      for ( int ie = 0; ie < np; ie++ ) {
+	getline ( file, line );
+	
+	boost::split ( splitLine, line, boost::is_any_of("\t ") );
+
+	length       = splitLine.size ();
+
+	elemType     = boost::lexical_cast<int> ( splitLine[1] );
+	// elemType == 1: 2-node   line element
+	// elemType == 3: 4-node   quadrangle
+
+	if ( elemType == 1 ) {
+	  int no1 = boost::lexical_cast<int> ( splitLine[5] ) - 1;
+	  int no2 = boost::lexical_cast<int> ( splitLine[6] ) - 1;
+
+	  xpc0[nc*ie][0] = xpc[nc*ie][0] = nodes[no1][0];
+	  xpc0[nc*ie][1] = xpc[nc*ie][1] = nodes[no1][1];
+	  xpc0[nc*ie][2] = xpc[nc*ie][2] = nodes[no1][2];
+
+	  xpc0[nc*ie+1][0] = xpc[nc*ie+1][0] = nodes[no2][0];
+	  xpc0[nc*ie+1][1] = xpc[nc*ie+1][1] = nodes[no2][1];
+	  xpc0[nc*ie+1][2] = xpc[nc*ie+1][2] = nodes[no2][2];
+
+	  x0[ie][0] = x[ie][0] = 0.5*(nodes[no1][0]+nodes[no2][0]);
+	  x0[ie][1] = x[ie][1] = 0.5*(nodes[no1][1]+nodes[no2][1]);
+	  x0[ie][2] = x[ie][2] = 0.5*(nodes[no1][2]+nodes[no2][2]);
+
+	} else if (elemType == 3) {
+
+#ifdef DEBUG
+	  xcplot.clear();
+	  xcplot.resize(5,0);
+	  ycplot.clear();
+	  ycplot.resize(5,0);
+#endif
+
+	  int no1 = boost::lexical_cast<int> ( splitLine[5] ) - 1;
+	  int no2 = boost::lexical_cast<int> ( splitLine[6] ) - 1;
+	  int no3 = boost::lexical_cast<int> ( splitLine[7] ) - 1;
+	  int no4 = boost::lexical_cast<int> ( splitLine[8] ) - 1;
+
+	  xpc0[nc*ie][0] = xpc[nc*ie][0] = nodes[no1][0];
+	  xpc0[nc*ie][1] = xpc[nc*ie][1] = nodes[no1][1];
+	  xpc0[nc*ie][2] = xpc[nc*ie][2] = nodes[no1][2];
+
+	  xpc0[nc*ie+1][0] = xpc[nc*ie+1][0] = nodes[no2][0];
+	  xpc0[nc*ie+1][1] = xpc[nc*ie+1][1] = nodes[no2][1];
+	  xpc0[nc*ie+1][2] = xpc[nc*ie+1][2] = nodes[no2][2];
+
+	  xpc0[nc*ie+2][0] = xpc[nc*ie+2][0] = nodes[no3][0];
+	  xpc0[nc*ie+2][1] = xpc[nc*ie+2][1] = nodes[no3][1];
+	  xpc0[nc*ie+2][2] = xpc[nc*ie+2][2] = nodes[no3][2];
+
+	  xpc0[nc*ie+3][0] = xpc[nc*ie+3][0] = nodes[no4][0];
+	  xpc0[nc*ie+3][1] = xpc[nc*ie+3][1] = nodes[no4][1];
+	  xpc0[nc*ie+3][2] = xpc[nc*ie+3][2] = nodes[no4][2];
+
+#ifdef DEBUG
+	  xcplot[0] = xpc0[nc*ie][0];
+	  ycplot[0] = xpc0[nc*ie][1];
+	  xcplot[1] = xpc0[nc*ie+1][0];
+	  ycplot[1] = xpc0[nc*ie+1][1];
+	  xcplot[2] = xpc0[nc*ie+2][0];
+	  ycplot[2] = xpc0[nc*ie+2][1];
+	  xcplot[3] = xpc0[nc*ie+3][0];
+	  ycplot[3] = xpc0[nc*ie+3][1];
+	  xcplot[4] = xpc0[nc*ie][0];
+	  ycplot[4] = xpc0[nc*ie][1];
+	  plt::plot(xcplot, ycplot, "r-");
+#endif
+
+	  x0[ie][0] = x[ie][0] = 0.25*(nodes[no1][0]+nodes[no2][0]+nodes[no3][0]+nodes[no4][0]);
+	  x0[ie][1] = x[ie][1] = 0.25*(nodes[no1][1]+nodes[no2][1]+nodes[no3][1]+nodes[no4][1]);
+	  x0[ie][2] = x[ie][2] = 0.25*(nodes[no1][2]+nodes[no2][2]+nodes[no3][2]+nodes[no4][2]);
+
+	  vol0[ie] = vol[ie] = 0.5*(xpc[nc*ie+0][0]*xpc[nc*ie+1][1] - xpc[nc*ie+1][0]*xpc[nc*ie+0][1]
+				    + xpc[nc*ie+1][0]*xpc[nc*ie+2][1] - xpc[nc*ie+2][0]*xpc[nc*ie+1][1]
+				    + xpc[nc*ie+2][0]*xpc[nc*ie+3][1] - xpc[nc*ie+3][0]*xpc[nc*ie+2][1]
+				    + xpc[nc*ie+3][0]*xpc[nc*ie+0][1] - xpc[nc*ie+0][0]*xpc[nc*ie+3][1]);
+#ifdef DEBUG
+	  x2plot.push_back(x0[ie][0]);
+	  y2plot.push_back(x0[ie][1]);
+#endif
+	} else {
+	  cout << "Element type " << elemType << " not supported!!\n";
+	  exit(1);
+	}
+      }
+
+      getline(file, line);
+      if (line.compare("$EndElements")==0) {
+	cout << "Reading elements...done!\n";
+	break;
+      }
+      else cout << "Unexpected line: " << line << ". $EndElements expected!!\n";
+    }
+  }
+
+  cout << "np="<< np << endl;
+
+  for (int i=0; i<np;i++) {
+    a[i].setZero();
+    v[i].setZero();
+    f[i].setZero();
+    mb[i].setZero();
+    v_update[i].setZero();
+    rho0[i] = rho[i] = mat->rho0;
+    mass[i] = mat->rho0 * vol0[i];
+    eff_plastic_strain[i] = 0;
+    eff_plastic_strain_rate[i] = 0;
+    damage[i] = 0;
+    damage_init[i] = 0;
+    strain_el[i].setZero();
+    sigma[i].setZero();
+    vol0PK1[i].setZero();
+    L[i].setZero();
+    F[i].setIdentity();
+    R[i].setIdentity();
+    U[i].setZero();
+    D[i].setZero();
+    Finv[i].setZero();
+    Fdot[i].setZero();
+    Di[i].setZero();
+
+    J[i] = 1;
+
+    if (x0[i][0] < solidlo[0]) solidlo[0] = x0[i][0];
+    if (x0[i][1] < solidlo[1]) solidlo[1] = x0[i][1];
+    if (x0[i][2] < solidlo[2]) solidlo[2] = x0[i][2];
+
+    if (x0[i][0] > solidhi[0]) solidhi[0] = x0[i][0];
+    if (x0[i][1] > solidhi[1]) solidhi[1] = x0[i][1];
+    if (x0[i][2] > solidhi[2]) solidhi[2] = x0[i][2];
+  }
+  
+  if (grid->nnodes == 0) {
+    grid->init(solidlo, solidhi);
+  }
+
+#ifdef DEBUG
+  plt::plot(x2plot, y2plot, ".");
+#endif
+}

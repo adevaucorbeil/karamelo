@@ -629,7 +629,7 @@ int Input::dimension(vector<string> args){
   int dim = (int) parsev(args[0]);
 
 
-  if (dim!=1 &&dim != 2 && dim != 3) {
+  if (dim!=1 && dim != 2 && dim != 3) {
     cout << "Error: dimension argument: " << dim << endl;
     exit(1);
   }
@@ -639,7 +639,11 @@ int Input::dimension(vector<string> args){
 
   if (args.size() > 1) {
     if (dim ==1) {
-      if (args.size() > 4) {
+      if (args.size() < 4) {
+	cout << "Error: dimension received too few arguments!\n";
+	cout << "Usage: dimension(1, xmin, xmax, cell-size)\n";
+	exit(1);
+      } else if (args.size() > 4) {
 	cout << "Error: dimension received too many arguments: 6 maximum for 2D simulations (Dimension, domain xmin, domain xmax, cell size)" << endl;
 	exit(1);
       } else if (args.size() == 4) {
@@ -653,7 +657,11 @@ int Input::dimension(vector<string> args){
 	domain->grid->init(domain->boxlo, domain->boxhi);
       }
     } else if (dim == 2) {
-      if (args.size() > 6) {
+      if (args.size() < 6) {
+	cout << "Error: dimension received too few arguments!\n";
+	cout << "Usage: dimension(2, xmin, xmax, ymin, ymax, cell-size)\n";
+	exit(1);
+      } else if (args.size() > 6) {
 	cout << "Error: dimension received too many arguments: 6 maximum for 2D simulations (Dimension, domain xmin, domain xmax, domain ymin, domain ymax, cell size)" << endl;
 	exit(1);
       } else if (args.size() == 6) {
@@ -669,7 +677,11 @@ int Input::dimension(vector<string> args){
 	domain->grid->init(domain->boxlo, domain->boxhi);
       }
     } else {// dim ==3
-      if (args.size() == 8) {
+      if (args.size() < 8) {
+	cout << "Error: dimension received too few arguments!\n";
+	cout << "Usage: dimension(3, xmin, xmax, ymin, ymax, zmin, zmax, cell-size)\n";
+	exit(1);
+      } else if (args.size() == 8) {
 	domain->boxlo[0] = (double) parsev(args[1]);
 	domain->boxhi[0] = (double) parsev(args[2]);
 	domain->boxlo[1] = (double) parsev(args[3]);

@@ -10,6 +10,10 @@
 
 using namespace std;
 
+#ifdef DEBUG
+#include <matplotlibcpp.h>
+namespace plt = matplotlibcpp;
+#endif
 
 Grid::Grid(MPM *mpm) :
   Pointers(mpm)
@@ -48,6 +52,11 @@ Grid::~Grid()
 }
 
 void Grid::init(double *solidlo, double *solidhi){
+
+#ifdef DEBUG
+  std::vector<double> x2plot, y2plot;
+#endif
+
   double Lx = solidhi[0]-solidlo[0];//+2*cellsize;
 
   double h = cellsize;
@@ -110,12 +119,17 @@ void Grid::init(double *solidlo, double *solidhi){
 	mb[l].setZero();
 	mass[l] = 0;
 	// R[l].setIdentity();
-
+#ifdef DEBUG
+	x2plot.push_back(x0[l][0]);
+	y2plot.push_back(x0[l][1]);
+#endif
 	l++;
       }
     }
   }
-
+#ifdef DEBUG
+  plt::plot(x2plot, y2plot, "g+");
+#endif
   
 }
 
