@@ -15,7 +15,6 @@ class Dump : protected Pointers {
 
   Dump(class MPM *, vector<string>);
   virtual ~Dump();
-  void options(vector<string> *, vector<string>::iterator);
 
   // implemented by each dump
 
@@ -23,6 +22,7 @@ class Dump : protected Pointers {
 
  protected:
   string filename;
+  vector<string> output_var;
 };
 
 #endif
