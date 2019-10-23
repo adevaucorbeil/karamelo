@@ -40,8 +40,9 @@ double EOSLinear::K(){
   return K_;
 }
 
-double EOSLinear::compute_pressure(const double J, const double rho, const double e, const double damage){
-  return K_*(1-J)*(1-damage);
+void EOSLinear::compute_pressure(double &pFinal, double &e, const double J, const double rho, const double T, const double damage){
+  e = 0;
+  pFinal = K_*(1-J)*(1-damage);
 }
 
 

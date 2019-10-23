@@ -5,6 +5,7 @@
 #include "style_strength.h"
 #include "style_eos.h"
 #include "style_damage.h"
+#include "style_temperature.h"
 #include <vector>
 
 using namespace std;
@@ -15,6 +16,7 @@ Material::Material(MPM *mpm) : Pointers(mpm)
   strength_map = new StrengthCreatorMap();
   EOS_map = new EOSCreatorMap();
   damage_map = new DamageCreatorMap();
+  temperature_map = new TemperatureCreatorMap();
 
 #define STRENGTH_CLASS
 #define StrengthStyle(key,Class) \
@@ -36,6 +38,13 @@ Material::Material(MPM *mpm) : Pointers(mpm)
 #include "style_damage.h"
 #undef DamageStyle
 #undef DAMAGE_CLASS
+
+#define TEMPERATURE_CLASS
+#define TemperatureStyle(key,Class) \
+  (*temperature_map)[#key] = &temperature_creator<Class>;
+#include "style_temperature.h"
+#undef TemperatureStyle
+#undef TEMPERATURE_CLASS
 }
 
 Material::~Material()
@@ -43,10 +52,12 @@ Material::~Material()
   for (int i = 0; i < strengths.size(); i++) delete strengths[i];
   for (int i = 0; i < EOSs.size(); i++) delete EOSs[i];
   for (int i = 0; i < damages.size(); i++) delete damages[i];
+  for (int i = 0; i < temperatures.size(); i++) delete temperatures[i];
 
   delete strength_map;
   delete EOS_map;
   delete damage_map;
+  delete temperature_map;
 }
 
 
@@ -177,11 +188,47 @@ int Material::find_damage(string name)
 }
 
 /* ----------------------------------------------------------------------
+   create a new temperature
+------------------------------------------------------------------------- */
+
+void Material::add_temperature(vector<string> args){
+  cout << "In add_temperature" << endl;
+
+  if (find_temperature(args[0]) >= 0) {
+    cout << "Error: reuse of temperature ID" << endl;
+    exit(1);
+  }
+
+    // create the Temperature
+
+  string *estyle = &args[1];
+
+  if (temperature_map->find(*estyle) != temperature_map->end()) {
+    TemperatureCreator temperature_creator = (*temperature_map)[*estyle];
+    temperatures.push_back(temperature_creator(mpm, args));
+    //materials.back()->init();
+  }
+  else {
+    cout << "Unknown temperature style " << *estyle << endl;
+    exit(1);
+  }
+}
+
+int Material::find_temperature(string name)
+{
+  for (int itemperature = 0; itemperature < temperatures.size(); itemperature++)
+    if (name.compare(temperatures[itemperature]->id) == 0) return itemperature;
+  return -1;
+}
+
+/* ----------------------------------------------------------------------
    create a new material
 ------------------------------------------------------------------------- */
 
 void Material::add_material(vector<string> args){
   cout << "In add_material" << endl;
+
+  int iargs = 0;
 
   if (args.size()<3) {
     cout << "Error: material command not enough arguments" << endl;
@@ -205,6 +252,7 @@ void Material::add_material(vector<string> args){
 
     Mat new_material(args[0], type, input->parsev(args[2]), input->parsev(args[3]), input->parsev(args[4]));
     materials.push_back(new_material);
+    iargs = 5;
     
   } else {
     // create the Material
@@ -233,6 +281,17 @@ void Material::add_material(vector<string> args){
       Mat new_material(args[0], SHOCK, EOSs[iEOS], strengths[iStrength]);
       materials.push_back(new_material);
     }
+    iargs = 4;
+  }
+
+  int iTemp;
+  for(int i=iargs; i<args.size(); i++) {
+    iTemp = material->find_temperature(args[i]);
+    if (iTemp == -1) {
+      cout << "Error: could not find temperature named: " << args[i] << endl;
+      exit(1);
+    }
+    materials.back().temp.push_back(temperatures[iTemp]);
   }
 
   cout << "Creating new mat with ID: " << args[0] << endl;
@@ -272,6 +331,16 @@ EOS *Material::EOS_creator(MPM *mpm, vector<string> args)
 
 template <typename T>
 Damage *Material::damage_creator(MPM *mpm, vector<string> args)
+{
+  return new T(mpm, args);
+}
+
+/* ----------------------------------------------------------------------
+   one instance per temperature style in style_temperature.h
+------------------------------------------------------------------------- */
+
+template <typename T>
+Temperature *Material::temperature_creator(MPM *mpm, vector<string> args)
 {
   return new T(mpm, args);
 }

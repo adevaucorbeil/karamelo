@@ -25,7 +25,7 @@ class DumpParticle : public Dump {
 			      "seq", "volume", "mass",
 			      "damage", "damage_init",
 			      "bx", "by", "bz",
-			      "ep", "epdot"};
+			      "ep", "epdot", "T", "ienergy"};
 };
 
 #endif

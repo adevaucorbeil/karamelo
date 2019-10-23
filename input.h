@@ -44,6 +44,7 @@ private:
   int add_strength(vector<string>);
   int add_material(vector<string>);
   int add_damage(vector<string>);
+  int add_temperature(vector<string>);
   int dump(vector<string>);
   int group_command(vector<string>);
   int set_output(vector<string>);

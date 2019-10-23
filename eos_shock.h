@@ -22,10 +22,12 @@ public:
   double rho0();
   double K();
   double G();
-  double compute_pressure(const double, const double, const double, const double);
+  void compute_pressure(double &, double &, const double, const double, const double, const double);
 
 protected:
-  double rho0_, K_, e0, c0, S, Gamma;
+  double rho0_, K_, e0, c0, S, Gamma, Tr, cv, alpha;
+  string usage = "Usage: eos(eos-ID, shock, rho, K, c0, S, Gamma, cv, Tr)\n";
+  int Nargs = 9;
 };
 
 #endif

@@ -105,6 +105,8 @@ void DumpParticle::write()
 	  else if (v.compare("bz")==0) dumpstream << s->mb[i][2] << " ";
 	  else if (v.compare("ep")==0) dumpstream << s->eff_plastic_strain[i] << " ";
 	  else if (v.compare("epdot")==0) dumpstream << s->eff_plastic_strain_rate[i] << " ";
+	  else if (v.compare("T")==0) dumpstream << s->T[i] << " ";
+	  else if (v.compare("ienergy")==0) dumpstream << s->ienergy[i] << " ";
 	}
 	dumpstream << endl;
       }

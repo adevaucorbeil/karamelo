@@ -47,10 +47,10 @@ double EOSFluid::K(){
   return K_;
 }
 
-double EOSFluid::compute_pressure(const double J, const double rho, const double e, const double damage){
+void EOSFluid::compute_pressure(double &pH, double &e, const double J, const double rho, const double T, const double damage){
   double mu = rho / rho0_;
-  double pH = K_ * (pow(mu, Gamma) - 1.0);
+  pH = K_ * (pow(mu, Gamma) - 1.0);
 
-  return pH;
+  e = 0;
 }
 

@@ -25,6 +25,8 @@ using namespace MPM_Math;
 namespace plt = matplotlibcpp;
 #endif
 
+#define SQRT_3_OVER_2 1.224744871 // sqrt(3.0/2.0)
+
 Solid::Solid(MPM *mpm, vector<string> args) :
   Pointers(mpm)
 {
@@ -34,18 +36,18 @@ Solid::Solid(MPM *mpm, vector<string> args) :
     exit(1);
   }
 
-  if (args.size() < 3) {
+  if (args.size() < 6) {
     cout << "Error: solid command not enough arguments. " << endl;
-    cout << "Usage: solid(solid-ID, region, region-ID, N_ppc1D, material-ID, grid-cell-size) or solid(solid-ID, mesh, meshfile, material-ID, grid-cell-size)\n";
+    cout << usage;
     exit(1);
   }
 
   if (args[1].compare("region")!=0 && args[1].compare("mesh")!=0) {
     cout << "Error: solid command not understood. " << endl;
-    cout << "Usage: solid(solid-ID, \033[1;32mregion\033[0m, region-ID, N_ppc1D, material-ID, cell-size) or solid(solid-ID, \033[1;32mmesh\033[0m, meshfile)\n";
+    cout << usage;
     exit(1);
   }
-
+  
   cout << "Creating new solid with ID: " << args[0] << endl;
 
   method_type = update->method_type;
@@ -79,6 +81,8 @@ Solid::Solid(MPM *mpm, vector<string> args) :
   eff_plastic_strain_rate = NULL;
   damage = NULL;
   damage_init = NULL;
+  T = NULL;
+  ienergy = NULL;
   mask = NULL;
 
   mat = NULL;
@@ -97,13 +101,13 @@ Solid::Solid(MPM *mpm, vector<string> args) :
   vtot = 0;
 
   if (args[1].compare("region")==0) {
-    // Set material and cellsize:
+    // Set material, cellsize, and initial temperature:
     options(&args, args.begin()+4);
 
     // Create particles:
     populate(args);
   } else {
-    // Set material and cellsize:
+    // Set material and cellsize and initial temperature:
     options(&args, args.begin()+3);
 
     read_mesh(args[2]);
@@ -152,6 +156,8 @@ Solid::~Solid()
   memory->destroy(eff_plastic_strain_rate);
   memory->destroy(damage);
   memory->destroy(damage_init);
+  memory->destroy(T);
+  memory->destroy(ienergy);
   memory->destroy(mask);
 
   if (method_type.compare("tlmpm") == 0) delete grid;
@@ -212,7 +218,7 @@ void Solid::init()
 void Solid::options(vector<string> *args, vector<string>::iterator it)
 {
   cout << "In solid::options()" << endl;
-  if (args->end() < it+2) {
+  if (args->end() < it+3) {
     cout << "Error: not enough arguments" << endl;
     exit(1);
   }
@@ -224,16 +230,20 @@ void Solid::options(vector<string> *args, vector<string>::iterator it)
       exit(1);
     }
 
-    mat = &material->materials[iMat]; // point mat to the right material
+    mat = &material->materials[iMat];          // point mat to the right material
 
     it++;
 
     if (grid->cellsize == 0) grid->setup(*it); // set the grid cellsize
 
     it++;
+    T0 =  input->parsev(*it);                  // set initial temperature
+
+    it++;
 
     if (it != args->end()) {
       cout << "Error: too many arguments" << endl;
+      cout << usage;
       exit(1);
     }
   }
@@ -444,6 +454,14 @@ void Solid::grow(int nparticles){
   str = "solid-" + id + ":damage_init";
   cout << "Growing " << str << endl;
   damage_init = memory->grow(damage_init, np, str);
+
+  str = "solid-" + id + ":T";
+  cout << "Growing " << str << endl;
+  T = memory->grow(T, np, str);
+
+  str = "solid-" + id + ":ienergy";
+  cout << "Growing " << str << endl;
+  ienergy = memory->grow(ienergy, np, str);
 
   str = "solid-" + id + ":mask";
   cout << "Growing " << str << endl;
@@ -1013,9 +1031,9 @@ void Solid::update_deformation_gradient()
 void Solid::update_stress()
 {
   min_inv_p_wave_speed = 1.0e22;
-  double pH, plastic_strain_increment;
+  double pH, plastic_strain_increment, flow_stress;
   Matrix3d eye, sigma_dev, FinvT, PK1, strain_increment;
-  bool lin, tl, nh, fluid;
+  bool lin, tl, nh, fluid, temp;
 
   if (mat->type == material->constitutive_model::LINEAR) lin = true;
   else lin = false;
@@ -1026,7 +1044,12 @@ void Solid::update_stress()
   if (update->method_type.compare("tlmpm") == 0) tl = true;
   else tl = false;
 
+  if (mat->temp.size()) temp = true;
+  else temp = false;
+
   eye.setIdentity();
+  plastic_strain_increment = 0;
+  sigma_dev.setZero();
 
   //# pragma omp parallel for
   for (int ip=0; ip<np; ip++){
@@ -1034,6 +1057,7 @@ void Solid::update_stress()
       strain_increment = update->dt * D[ip];
       strain_el[ip] += strain_increment;
       sigma[ip] +=  2*mat->G*strain_increment + mat->lambda*strain_increment.trace()*eye;
+      if (temp) sigma_dev = Deviator(sigma[ip]);
       if (tl) vol0PK1[ip] = vol0[ip]*J[ip] * (R[ip] * sigma[ip] * R[ip].transpose()) * Finv[ip].transpose();
     } else if (nh) {
 
@@ -1042,11 +1066,12 @@ void Solid::update_stress()
       PK1 = mat->G*(F[ip] - FinvT) + mat->lambda*log(J[ip])*FinvT;
       vol0PK1[ip] = vol0[ip]*PK1;
       sigma[ip] = 1.0/J[ip]*(F[ip]*PK1.transpose());
+      if (temp) sigma_dev = Deviator(sigma[ip]);
       strain_el[ip] = 0.5*(F[ip].transpose()*F[ip] - eye);//update->dt * D[ip];
 
     } else {
 
-      pH = mat->eos->compute_pressure(J[ip], rho[ip], 0, damage[ip]);
+      mat->eos->compute_pressure(pH, ienergy[ip], J[ip], rho[ip], T[ip], damage[ip]);
       sigma_dev = mat->strength->update_deviatoric_stress(sigma[ip], D[ip], plastic_strain_increment, eff_plastic_strain[ip], eff_plastic_strain_rate[ip], damage[ip]);
 
       eff_plastic_strain[ip] += plastic_strain_increment;
@@ -1070,6 +1095,11 @@ void Solid::update_stress()
       if (tl) {
 	vol0PK1[ip] = vol0[ip]*J[ip] * (R[ip] * sigma[ip] * R[ip].transpose()) * Finv[ip].transpose();
       }
+    }
+
+    if (temp) {
+      flow_stress = SQRT_3_OVER_2 * sigma_dev.norm();
+      for (int itemp=0; itemp  <mat->temp.size(); itemp++) mat->temp[itemp]->compute_temperature(T[ip], flow_stress, plastic_strain_increment);
     }
   }
 
@@ -1181,6 +1211,8 @@ void Solid::copy_particle(int i, int j) {
   eff_plastic_strain_rate[j] = eff_plastic_strain_rate[i];
   damage[j] = damage[i];
   damage_init[j] = damage_init[i];
+  T[j] = T[i];
+  ienergy[j] = ienergy[i];
   sigma[j] = sigma[i];
   vol0PK1[j] = vol0PK1[i];
   L[j] = L[i];
@@ -1501,6 +1533,8 @@ void Solid::populate(vector<string> args) {
     eff_plastic_strain_rate[i] = 0;
     damage[i] = 0;
     damage_init[i] = 0;
+    T[i] = T0;
+    ienergy[i] = 0;
     strain_el[i].setZero();
     sigma[i].setZero();
     vol0PK1[i].setZero();
@@ -1752,6 +1786,8 @@ void Solid::read_mesh(string fileName) {
     eff_plastic_strain_rate[i] = 0;
     damage[i] = 0;
     damage_init[i] = 0;
+    T[i] = T0;
+    ienergy[i] = 0;
     strain_el[i].setZero();
     sigma[i].setZero();
     vol0PK1[i].setZero();
