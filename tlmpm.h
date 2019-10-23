@@ -50,6 +50,7 @@ class TLMPM : public Method {
   void update_stress();
   void adjust_dt();
   void reset();
+  void exchange_particles() {};
 
   int update_wf;
 };

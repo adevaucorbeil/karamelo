@@ -35,6 +35,7 @@ class Method : protected Pointers {
   virtual void update_stress() = 0;
   virtual void adjust_dt() = 0;
   virtual void reset() = 0;
+  virtual void exchange_particles() = 0;
 
   bool is_TL;         // true: the method is total Lagrangian; false: it is updated Lagrangian
   bool is_CPDI;       // true if the method is a CPDI-like

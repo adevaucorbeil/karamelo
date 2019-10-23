@@ -436,3 +436,14 @@ void ULMPM::reset()
     for (int ip = 0; ip < np; ip++) domain->solids[isolid]->mbp[ip].setZero();
   }
 }
+
+void ULMPM::exchange_particles()
+{
+  // int np;
+
+  // for (int isolid=0; isolid<domain->solids.size(); isolid++) {
+  //   domain->solids[isolid]->dtCFL = 1.0e22;
+  //   np = domain->solids[isolid]->np_local;
+  //   for (int ip = 0; ip < np; ip++) domain->solids[isolid]->mbp[ip].setZero();
+  // }
+}
