@@ -9,6 +9,7 @@ Region::Region(MPM *mpm, vector<string> args) :
 {
   cout << "Creating new region with ID: " << args[0] << endl;
   id = args[0];
+  interior = 1; // Interior by default
 }
 
 Region::~Region()
@@ -22,7 +23,6 @@ void Region::init()
 
 void Region::options(vector<string> *args, vector<string>::iterator it)
 {
-  interior = 1; // Interior by default
 
   cout << "In region::options()" << endl;
   if (args->end() < it) {
