@@ -31,6 +31,8 @@ public:
 
 protected:
   double G_, A, B, n, m, epsdot0, C;
+  string usage = "Usage: strength(strength-ID, johnson_cook, G, A, B, n, epsdot0, C, m)\n";
+  int Nargs = 9;
 };
 
 #endif

@@ -17,10 +17,12 @@ StrengthJohnsonCook::StrengthJohnsonCook(MPM *mpm, vector<string> args) : Streng
 {
   cout << "Initiate StrengthJohnsonCook" << endl;
 
-  if (args.size()<8) {
+  if (args.size() < Nargs) {
     cout << "Error: too few arguments for the strength command" << endl;
+    cout << usage;
     exit(1);
   }
+
   //options(&args, args.begin()+3);
   G_      = input->parsev(args[2]);
   A       = input->parsev(args[3]);
@@ -37,7 +39,7 @@ StrengthJohnsonCook::StrengthJohnsonCook(MPM *mpm, vector<string> args) : Streng
   cout << "\tn: exponent for plastic strain dependency " << n << endl;
   cout << "\tepsdot0: reference strain rate " << epsdot0 << endl;
   cout << "\tC: proportionality factor for logarithmic plastic strain rate dependency " << C << endl;
-  cout << "\tm: factor for thermal softening " << C << endl;
+  cout << "\tm: factor for thermal softening " << m << endl;
 }
 
 double StrengthJohnsonCook::G(){
