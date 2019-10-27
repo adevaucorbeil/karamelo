@@ -667,6 +667,7 @@ void Solid::update_particle_velocities(double FLIP)
 
 void Solid::compute_rate_deformation_gradient_TL()
 {
+  if (mat->rigid) return;
   int in;
   Eigen::Vector3d *vn = grid->v;
 
@@ -710,6 +711,7 @@ void Solid::compute_rate_deformation_gradient_TL()
 
 void Solid::compute_rate_deformation_gradient_UL_MUSL()
 {
+  if (mat->rigid) return;
   int in;
   Eigen::Vector3d *vn = grid->v;
 
@@ -753,6 +755,7 @@ void Solid::compute_rate_deformation_gradient_UL_MUSL()
 
 void Solid::compute_rate_deformation_gradient_UL_USL()
 {
+  if (mat->rigid) return;
   int in;
   Eigen::Vector3d *vn = grid->v_update;
 
@@ -796,6 +799,7 @@ void Solid::compute_rate_deformation_gradient_UL_USL()
 
 void Solid::compute_deformation_gradient()
 {
+  if (mat->rigid) return;
   int in;
   Eigen::Vector3d *xn = grid->x;
   Eigen::Vector3d *x0n = grid->x0;
@@ -855,6 +859,7 @@ void Solid::compute_deformation_gradient()
 
 void Solid::compute_rate_deformation_gradient_TL_APIC()
 {
+  if (mat->rigid) return;
   int in;
   Eigen::Vector3d *x0n = grid->x0;
   //Eigen::Vector3d *vn = grid->v;
@@ -907,6 +912,7 @@ void Solid::compute_rate_deformation_gradient_TL_APIC()
 
 void Solid::compute_rate_deformation_gradient_UL_APIC()
 {
+  if (mat->rigid) return;
   int in;
   Eigen::Vector3d *x0n = grid->x0;
   //Eigen::Vector3d *vn = grid->v;
@@ -959,6 +965,7 @@ void Solid::compute_rate_deformation_gradient_UL_APIC()
 
 void Solid::update_deformation_gradient()
 {
+  if (mat->rigid) return;
   bool status, tl, lin, nh, vol_cpdi;
   Eigen::Matrix3d U;
   Eigen::Matrix3d eye;
@@ -1030,6 +1037,8 @@ void Solid::update_deformation_gradient()
 
 void Solid::update_stress()
 {
+  if (mat->rigid) return;
+
   min_inv_p_wave_speed = 1.0e22;
   double pH, plastic_strain_increment, flow_stress;
   Matrix3d eye, sigma_dev, FinvT, PK1, strain_increment;
