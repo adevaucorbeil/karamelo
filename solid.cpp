@@ -36,15 +36,21 @@ Solid::Solid(MPM *mpm, vector<string> args) :
     exit(1);
   }
 
-  if (args.size() < 6) {
+  if (args.size() < 2) {
     cout << "Error: solid command not enough arguments. " << endl;
-    cout << usage;
+    for (auto& x: usage) cout << x.second;
     exit(1);
   }
 
-  if (args[1].compare("region")!=0 && args[1].compare("mesh")!=0) {
-    cout << "Error: solid command not understood. " << endl;
-    cout << usage;
+  if (usage.find(args[1]) == usage.end()) {
+    cout << "Error, keyword \033[1;31m" << args[1] << "\033[0m unknown!\n";
+    for (auto& x: usage) cout << x.second;
+    exit(1);
+  }
+
+  if (args.size() < Nargs.find(args[1])->second) {
+    cout << "Error: not enough arguments.\n";
+    cout << usage.find(args[1])->second;
     exit(1);
   }
   
@@ -243,7 +249,7 @@ void Solid::options(vector<string> *args, vector<string>::iterator it)
 
     if (it != args->end()) {
       cout << "Error: too many arguments" << endl;
-      cout << usage;
+      for (auto& x: usage) cout << x.second;
       exit(1);
     }
   }

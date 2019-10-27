@@ -117,7 +117,11 @@ class Solid : protected Pointers {
 private:
   void populate(vector<string>);
   void read_mesh(string);
-  string usage = "Usage: solid(solid-ID, \033[1;32mregion\033[0m, region-ID, N_ppc1D, material-ID, cell-size, T_room) or solid(solid-ID, \033[1;32mmesh\033[0m, meshfile, T0)\n";
+  const map<string, string> usage ={{"region", "Usage: solid(solid-ID, \033[1;32mregion\033[0m, region-ID, N_ppc1D, material-ID, cell-size, T_room)\n"},
+				    {"mesh",    "Usage: solid(solid-ID, \033[1;32mmesh\033[0m, meshfile, T0)\n"}};
+  const map<string, int>    Nargs = {{"region", 7},
+				     {"mesh",   4}};
+  
   double T0;                     // Initial temperature
 };
 
