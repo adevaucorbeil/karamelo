@@ -77,7 +77,7 @@ private:
   template <typename T> static EOS *EOS_creator(MPM *,vector<string>);
   template <typename T> static Damage *damage_creator(MPM *,vector<string>);
   template <typename T> static Temperature *temperature_creator(MPM *,vector<string>);
-  
+
   const map<string, string> usage = {{"rigid",        "Usage: material(material-ID, rigid)\n"},
 				     {"linear",       "Usage: material(material-ID, linear, rho, E, nu, optional: damage-ID)\n"},
 				     {"neo-hookean",  "Usage: material(material-ID, neo-hookean, rho, E, nu, optional: damage-ID)\n"},

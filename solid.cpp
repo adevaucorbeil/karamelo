@@ -499,8 +499,11 @@ void Solid::compute_velocity_nodes(bool reset)
   double *massn = grid->mass;
   int ip;
 
-  for (int in=0; in<grid->nnodes; in++) {
+  for (int in=0; in<grid->nnodes; in++) { 
     if (reset) vn[in].setZero();
+
+    if (grid->rigid[in] && !mat->rigid) continue;
+
     if (massn[in] > 0) {
       vtemp.setZero();
       for (int j=0; j<numneigh_np[in];j++){
@@ -523,6 +526,9 @@ void Solid::compute_velocity_nodes_APIC(bool reset)
 
   for (int in=0; in<grid->nnodes; in++) {
     if (reset) vn[in].setZero();
+
+    if (grid->rigid[in] && !mat->rigid) continue;
+
     if (massn[in] > 0) {
       for (int j=0; j<numneigh_np[in];j++){
 	ip = neigh_np[in][j];
@@ -540,6 +546,9 @@ void Solid::compute_external_forces_nodes(bool reset)
 
   for (int in=0; in<grid->nnodes; in++) {
     if (reset) mbn[in].setZero();
+
+    if (grid->rigid[in]) continue;
+
     if (massn[in] > 0) {
       for (int j=0; j<numneigh_np[in];j++){
 	ip = neigh_np[in][j];
@@ -556,12 +565,15 @@ void Solid::compute_internal_forces_nodes_TL()
   int ip;
 
   for (int in=0; in<grid->nnodes; in++) {
-    //fn[in].setZero();
+    if (grid->rigid[in]) {
+      fn[in].setZero();
+      continue;
+    }
+
     ftemp.setZero();
     for (int j=0; j<numneigh_np[in];j++){
       ip = neigh_np[in][j];
       ftemp -= vol0PK1[ip] * wfd_np[in][j];
-      //fn[in] -= (vol0PK1[ip] * wfd_np[in][j]);
     }
     fn[in] = ftemp;
   }
@@ -575,6 +587,9 @@ void Solid::compute_internal_forces_nodes_UL(bool reset)
 
   for (int in=0; in<grid->nnodes; in++) {
     if (reset) fn[in].setZero();
+
+    if (grid->rigid[in]) continue;
+
     for (int j=0; j<numneigh_np[in];j++){
       ip = neigh_np[in][j];
       fn[in] -= vol[ip] * (sigma[ip] * wfd_np[in][j]);
@@ -649,6 +664,7 @@ void Solid::compute_particle_acceleration()
 
   for (int ip=0; ip<np; ip++){
     a[ip].setZero();
+    if (mat->rigid) continue;
     for (int j=0; j<numneigh_pn[ip]; j++){
       in = neigh_pn[ip][j];
       a[ip] += wf_pn[ip][j] * (vn_update[in] - vn[in]);
@@ -660,6 +676,9 @@ void Solid::compute_particle_acceleration()
 
 void Solid::update_particle_velocities(double FLIP)
 {
+  
+  if (mat->rigid) return;
+
   for (int ip=0; ip<np; ip++) {
     v[ip] = (1 - FLIP) * v_update[ip] + FLIP*(v[ip] + update->dt*a[ip]);
   }
@@ -668,6 +687,7 @@ void Solid::update_particle_velocities(double FLIP)
 void Solid::compute_rate_deformation_gradient_TL()
 {
   if (mat->rigid) return;
+
   int in;
   Eigen::Vector3d *vn = grid->v;
 
@@ -712,6 +732,7 @@ void Solid::compute_rate_deformation_gradient_TL()
 void Solid::compute_rate_deformation_gradient_UL_MUSL()
 {
   if (mat->rigid) return;
+
   int in;
   Eigen::Vector3d *vn = grid->v;
 
@@ -756,6 +777,7 @@ void Solid::compute_rate_deformation_gradient_UL_MUSL()
 void Solid::compute_rate_deformation_gradient_UL_USL()
 {
   if (mat->rigid) return;
+
   int in;
   Eigen::Vector3d *vn = grid->v_update;
 
@@ -800,6 +822,7 @@ void Solid::compute_rate_deformation_gradient_UL_USL()
 void Solid::compute_deformation_gradient()
 {
   if (mat->rigid) return;
+
   int in;
   Eigen::Vector3d *xn = grid->x;
   Eigen::Vector3d *x0n = grid->x0;
@@ -860,6 +883,7 @@ void Solid::compute_deformation_gradient()
 void Solid::compute_rate_deformation_gradient_TL_APIC()
 {
   if (mat->rigid) return;
+
   int in;
   Eigen::Vector3d *x0n = grid->x0;
   //Eigen::Vector3d *vn = grid->v;
@@ -913,6 +937,7 @@ void Solid::compute_rate_deformation_gradient_TL_APIC()
 void Solid::compute_rate_deformation_gradient_UL_APIC()
 {
   if (mat->rigid) return;
+
   int in;
   Eigen::Vector3d *x0n = grid->x0;
   //Eigen::Vector3d *vn = grid->v;
@@ -966,6 +991,7 @@ void Solid::compute_rate_deformation_gradient_UL_APIC()
 void Solid::update_deformation_gradient()
 {
   if (mat->rigid) return;
+
   bool status, tl, lin, nh, vol_cpdi;
   Eigen::Matrix3d U;
   Eigen::Matrix3d eye;
@@ -1337,7 +1363,9 @@ void Solid::populate(vector<string> args) {
   else if (domain->dimension == 2) vol_ = delta*delta;
   else vol_ = delta*delta*delta;
 
-  double mass_ = mat->rho0 * vol_;
+  double mass_;
+  if (mat->rigid) mass_ = 1;
+  else mass_ = mat->rho0 * vol_;
 
   int np_per_cell = (int) input->parsev(args[3]);
 

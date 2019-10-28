@@ -129,7 +129,7 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
       Eigen::Vector3d wfd;
 
       int **ntype = domain->solids[isolid]->grid->ntype;
-      bool *rigid = domain->solids[isolid]->grid->rigid;
+      bool *nrigid = domain->solids[isolid]->grid->rigid;
 
       r.setZero();
       if (np && nnodes) {
@@ -254,7 +254,7 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
 	    else s[2] = 1;
 
 	    if (s[0] != 0 && s[1] != 0 && s[2] != 0) {
-	      if (mat->rigid) nrigid[in] = true;
+	      if (domain->solids[isolid]->mat->rigid) nrigid[in] = true;
 	      // // cout << in << "\t";
 	      // // Check if this node is in n_neigh:
 	      // if (find(n_neigh.begin(), n_neigh.end(), in) == n_neigh.end()) {
