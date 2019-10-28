@@ -400,6 +400,7 @@ Mat::Mat(string id_, int type_, double rho0_, double E_, double nu_){
 
 Mat::Mat(string id_, bool rigid_){
   id = id_;
+  rigid = rigid_;
   if (!rigid_) {
     cout << "Error in Mat::Mat(string id_, bool rigid_), rigid_==false.\n";
     exit(1);
