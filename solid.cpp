@@ -481,7 +481,7 @@ void Solid::compute_mass_nodes(bool reset)
   for (int in=0; in<grid->nnodes; in++){
     if (reset) grid->mass[in] = 0;
 
-    if (grid->rigid[in] && !mat->rigid) continue;
+    // if (grid->rigid[in] && !mat->rigid) continue;
 
     for (int j=0; j<numneigh_np[in];j++){
       ip = neigh_np[in][j];
@@ -497,26 +497,40 @@ void Solid::compute_mass_nodes(bool reset)
 void Solid::compute_velocity_nodes(bool reset)
 {
   Eigen::Vector3d *vn = grid->v;
-  Eigen::Vector3d vtemp;
+  Eigen::Vector3d *vn_update = grid->v_update;
+  Eigen::Vector3d vtemp, vtemp_rigid;
   double *massn = grid->mass;
+  double mass_rigid;
   int ip;
 
   for (int in=0; in<grid->nnodes; in++) { 
-    if (reset) vn[in].setZero();
+    if (reset) {
+      vn[in].setZero();
+      vn_update[in].setZero();
+    }
 
-    if (grid->rigid[in] && !mat->rigid) continue;
+    if (mat->rigid) mass_rigid = 0;
 
     if (massn[in] > 0) {
       vtemp.setZero();
+      if (mat->rigid) vtemp_rigid.setZero();
+
       for (int j=0; j<numneigh_np[in];j++){
 	ip = neigh_np[in][j];
 	vtemp += (wf_np[in][j] * mass[ip]) * v[ip];
+
+	if (grid->rigid[in] && mat->rigid) {
+	  vtemp_rigid += wf_np[in][j] * v[ip];
+	  mass_rigid += wf_np[in][j];
+	}
 	//vn[in] += (wf_np[in][j] * mass[ip]) * v[ip]/ massn[in];
       }
       vtemp /= massn[in];
       vn[in] += vtemp;
+
+      if (mat->rigid) vn_update[in] += vtemp_rigid/mass_rigid;
       // if (in==140)
-      // 	cout << "in=" << in << "\tvn=[" << vn[in][0] << ", "<< vn[in][1] << ", "<< vn[in][2] << "]\tvp=["<< v[ip][0] << ", "<< v[ip][1] << ", "<< v[ip][2] << "]\n";
+      //  	cout << "in=" << in << "\tvn=[" << vn[in][0] << ", "<< vn[in][1] << ", "<< vn[in][2] << "]\tvp=["<< v[ip][0] << ", "<< v[ip][1] << ", "<< v[ip][2] << "],\tvn_update=[" << vn_update[in][0] << ", "<< vn_update[in][1] << ", "<< vn_update[in][2] << "]\n";
     }
   }
 }
@@ -630,8 +644,8 @@ void Solid::compute_particle_velocities_and_positions()
       in = neigh_pn[ip][j];
       v_update[ip] += wf_pn[ip][j] * vn_update[in];
       x[ip] += update->dt * wf_pn[ip][j] * vn_update[in];
-      if (ip==234)
-	cout << "ip=" << ip << "\tv_update=[" << v_update[ip](0) << "," << v_update[ip](1) << "," << v_update[ip](2) << "]\tin=" << in << "\tvn_update=[" << vn_update[in](0) << "," << vn_update[in](1) << "," << vn_update[in](2) << "]\n";
+      // if (ip==234)
+      // 	cout << "ip=" << ip << "\tv_update=[" << v_update[ip](0) << "," << v_update[ip](1) << "," << v_update[ip](2) << "]\tin=" << in << "\tvn_update=[" << vn_update[in](0) << "," << vn_update[in](1) << "," << vn_update[in](2) << "]\n";
 
       if (ul) {
 	// Check if the particle is within the box's domain:
@@ -676,8 +690,8 @@ void Solid::compute_particle_acceleration()
       a[ip] += wf_pn[ip][j] * (vn_update[in] - vn[in]);
     }
     a[ip] *= inv_dt;
-    if (ip==234)
-      cout << "ip=" << ip << "\ta=[" << a[ip](0) << "," << a[ip](1) << "," << a[ip](2) << "]\n";
+    // if (ip==234)
+    //   cout << "ip=" << ip << "\ta=[" << a[ip](0) << "," << a[ip](1) << "," << a[ip](2) << "]\n";
     f[ip] = a[ip] / mass[ip];
   }
 }
