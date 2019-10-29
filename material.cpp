@@ -226,12 +226,11 @@ int Material::find_temperature(string name)
 ------------------------------------------------------------------------- */
 
 void Material::add_material(vector<string> args){
-  cout << "In add_material" << endl;
+  // cout << "In add_material" << endl;
 
-  int iargs = 0;
-
-  if (args.size()<3) {
+  if (args.size()<2) {
     cout << "Error: material command not enough arguments" << endl;
+    for (auto& x: usage) cout << x.second;
     exit(1);
   }
 
@@ -240,20 +239,35 @@ void Material::add_material(vector<string> args){
     exit(1);
   }
 
-  if (args[1].compare("linear")==0 || args[1].compare("neo-hookean")==0) {
-    if (args.size()<5) {
-      cout << "Error: material command not enough arguments" << endl;
-      exit(1);
-    }
+  if (usage.find(args[1]) == usage.end()) {
+    cout << "Error, keyword \033[1;31m" << args[1] << "\033[0m unknown!\n";
+    for (auto& x: usage) cout << x.second;
+    exit(1);
+  }
 
+  if (args.size() < Nargs.find(args[1])->second) {
+    cout << "Error: not enough arguments.\n";
+    cout << usage.find(args[1])->second;
+    exit(1);
+  }
+
+  // if (args.size() > Nargs.find(args[1])->second) {
+  //   cout << "Error: too many arguments.\n";
+  //   cout << usage.find(args[1])->second;
+  //   exit(1);
+  // }
+
+  if (args[1].compare("linear")==0 || args[1].compare("neo-hookean")==0) {
     int type;
     if (args[1].compare("linear")==0) type = LINEAR;
     else type = NEO_HOOKEAN;
 
     Mat new_material(args[0], type, input->parsev(args[2]), input->parsev(args[3]), input->parsev(args[4]));
     materials.push_back(new_material);
-    iargs = 5;
     
+  } else if (args[1].compare("rigid")==0) {
+    Mat new_material(args[0], true);
+    materials.push_back(new_material);
   } else {
     // create the Material
     int iEOS = material->find_EOS(args[1]);
@@ -281,11 +295,10 @@ void Material::add_material(vector<string> args){
       Mat new_material(args[0], SHOCK, EOSs[iEOS], strengths[iStrength]);
       materials.push_back(new_material);
     }
-    iargs = 4;
   }
 
   int iTemp;
-  for(int i=iargs; i<args.size(); i++) {
+  for(int i=Nargs.find(args[1])->second; i<args.size(); i++) {
     iTemp = material->find_temperature(args[i]);
     if (iTemp == -1) {
       cout << "Error: could not find temperature named: " << args[i] << endl;
@@ -383,4 +396,13 @@ Mat::Mat(string id_, int type_, double rho0_, double E_, double nu_){
   lambda = E*nu/((1+nu)*(1-2*nu));
   K = E/(3*(1-2*nu));
   signal_velocity = sqrt(K/rho0);
+}
+
+Mat::Mat(string id_, bool rigid_){
+  id = id_;
+  rigid = rigid_;
+  if (!rigid_) {
+    cout << "Error in Mat::Mat(string id_, bool rigid_), rigid_==false.\n";
+    exit(1);
+  }
 }

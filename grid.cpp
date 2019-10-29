@@ -20,13 +20,14 @@ Grid::Grid(MPM *mpm) :
 {
   cout << "Creating new grid" << endl;
 
-  x = x0 = NULL;
-  v = v_update = NULL;
-  mb = f = NULL;
+  x  = x0       = NULL;
+  v  = v_update = NULL;
+  mb = f        = NULL;
 
-  mass = NULL;
-  mask = NULL;
+  mass  = NULL;
+  mask  = NULL;
   ntype = NULL;
+  rigid = NULL;
 
   // R = NULL;
 
@@ -47,8 +48,7 @@ Grid::~Grid()
   memory->destroy(mass);
   memory->destroy(mask);
   memory->destroy(ntype);
-  // memory->destroy(R);
-  // memory->destroy(C);
+  memory->destroy(rigid);
 }
 
 void Grid::init(double *solidlo, double *solidhi){
@@ -118,6 +118,7 @@ void Grid::init(double *solidlo, double *solidhi){
 	f[l].setZero();
 	mb[l].setZero();
 	mass[l] = 0;
+	rigid[l] = false;
 	// R[l].setIdentity();
 #ifdef DEBUG
 	x2plot.push_back(x0[l][0]);
@@ -202,13 +203,20 @@ void Grid::grow(int nn){
   str = "grid-ntype";
   cout << "Growing " << str << endl;
   ntype = memory->grow(ntype, nn, 3, str);
+  
+  str = "grid-rigid";
+  cout << "Growing " << str << endl;
+  rigid = memory->grow(rigid, nn, str);
+
 }
 
 void Grid::update_grid_velocities()
 {
   for (int i=0; i<nnodes; i++){
-    if (mass[i] > 1e-12) v_update[i] = v[i] + update->dt * (f[i] + mb[i])/mass[i];
-    else v_update[i] = v[i];
+    if (!rigid[i]) {
+      if (mass[i] > 1e-12) v_update[i] = v[i] + update->dt * (f[i] + mb[i])/mass[i];
+      else v_update[i] = v[i];
+    }
     // if (update->ntimestep>450)
     //   if (i==0)
     // 	cout << "update_grid_velocities: in=" << i << ", vn=[" << v[i][0] << "," << v[i][1] << "," << v[i][2] << "], f=[" << f[i][0] << "," << f[i][1] << "," << f[i][2] << "], b=[" << b[i][0] << "," << b[i][1] << "," << b[i][2] << "], dt=" << update->dt << ", mass[i]=" << mass[i] << endl;

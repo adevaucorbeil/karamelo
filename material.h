@@ -14,6 +14,7 @@ class Mat{
 public:
   string id;
   int type;
+  bool rigid = false;
   class EOS* eos;
   class Strength* strength;
   class Damage* damage;
@@ -21,6 +22,7 @@ public:
   double rho0, E, nu, G, K, lambda, signal_velocity;
   Mat(string, int, class EOS*, class Strength*, class Damage* = NULL);
   Mat(string, int, double, double, double);
+  Mat(string, bool);
 };
 
 class Material : protected Pointers {
@@ -75,6 +77,15 @@ private:
   template <typename T> static EOS *EOS_creator(MPM *,vector<string>);
   template <typename T> static Damage *damage_creator(MPM *,vector<string>);
   template <typename T> static Temperature *temperature_creator(MPM *,vector<string>);
+
+  const map<string, string> usage = {{"rigid",        "Usage: material(material-ID, rigid)\n"},
+				     {"linear",       "Usage: material(material-ID, linear, rho, E, nu, optional: damage-ID)\n"},
+				     {"neo-hookean",  "Usage: material(material-ID, neo-hookean, rho, E, nu, optional: damage-ID)\n"},
+				     {"eos-strength", "Usage: material(material-ID, eos-strength, eos-ID, strength-ID, optional: damage-ID)\n"}};
+  const map<string, int>    Nargs = {{"rigid",        2},
+				     {"linear",       5},
+				     {"neo-hookean",  5},
+				     {"eos-strength", 4}};
 };
 
 
