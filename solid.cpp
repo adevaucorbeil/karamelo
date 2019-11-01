@@ -1093,7 +1093,7 @@ void Solid::update_stress()
 {
   if (mat->rigid) return;
 
-  min_inv_p_wave_speed = 1.0e22;
+  max_p_wave_speed = 0;
   double pH, plastic_strain_increment, flow_stress;
   Matrix3d eye, sigma_dev, FinvT, PK1, strain_increment;
   bool lin, tl, nh, fluid, temp;
@@ -1169,26 +1169,28 @@ void Solid::update_stress()
   double min_h_ratio = 1.0e22;
   double four_third = 1.333333333333333333333333333333333333333;
   for (int ip=0; ip<np; ip++){
-    min_inv_p_wave_speed = MIN(min_inv_p_wave_speed, rho[ip] / (mat->K + four_third * mat->G));
+    max_p_wave_speed = MAX(max_p_wave_speed,
+			   sqrt((mat->K + four_third * mat->G)/rho[ip])
+			   + MAX(MAX(abs(v[ip](0)),abs(v[ip](1))),abs(v[ip](2))));
 
     min_h_ratio = MIN(min_h_ratio, F[ip](0,0)*F[ip](0,0) + F[ip](0,1)*F[ip](0,1) + F[ip](0,2)*F[ip](0,2));
     min_h_ratio = MIN(min_h_ratio, F[ip](1,0)*F[ip](1,0) + F[ip](1,1)*F[ip](1,1) + F[ip](1,2)*F[ip](1,2));
     min_h_ratio = MIN(min_h_ratio, F[ip](2,0)*F[ip](2,0) + F[ip](2,1)*F[ip](2,1) + F[ip](2,2)*F[ip](2,2));
 
-    if (std::isnan(min_inv_p_wave_speed)) {
-      cout << "Error: min_inv_p_wave_speed is nan with ip=" << ip << ", rho[ip]=" << rho[ip] << ", K=" << mat->K << ", G=" << mat->G << endl;
+    if (std::isnan(max_p_wave_speed)) {
+      cout << "Error: max_p_wave_speed is nan with ip=" << ip << ", rho[ip]=" << rho[ip] << ", K=" << mat->K << ", G=" << mat->G << endl;
       exit(1);
-    } else if (min_inv_p_wave_speed < 0.0) {
-      cout << "Error: min_inv_p_wave_speed= " << min_inv_p_wave_speed << " with ip=" << ip << ", rho[ip]=" << rho[ip] << ", K=" << mat->K << ", G=" << mat->G << endl;
+    } else if (max_p_wave_speed < 0.0) {
+      cout << "Error: max_p_wave_speed= " << max_p_wave_speed << " with ip=" << ip << ", rho[ip]=" << rho[ip] << ", K=" << mat->K << ", G=" << mat->G << endl;
       exit(1);
     }
 
   }
-  min_inv_p_wave_speed = sqrt(min_inv_p_wave_speed);
-  dtCFL = MIN(dtCFL, min_inv_p_wave_speed * grid->cellsize * sqrt(min_h_ratio));
+
+  dtCFL = MIN(dtCFL, grid->cellsize * sqrt(min_h_ratio) / max_p_wave_speed);
   if (std::isnan(dtCFL)) {
       cout << "Error: dtCFL = " << dtCFL << "\n";
-      cout << "min_inv_p_wave_speed = " << min_inv_p_wave_speed << ", grid->cellsize=" << grid->cellsize << endl;
+      cout << "max_p_wave_speed = " << max_p_wave_speed << ", grid->cellsize=" << grid->cellsize << endl;
       exit(1);
   }
 }

@@ -63,7 +63,7 @@ class Solid : protected Pointers {
   double *ienergy;                   // particles' internal energy
   int *mask;                         // particles' group mask
 
-  double min_inv_p_wave_speed;       // minimum of the inverse of the particle wave speed
+  double max_p_wave_speed;           // maximum of the particle wave speed
   double dtCFL;
   
   int *numneigh_pn;                  // number of nodes neighbouring a given particle

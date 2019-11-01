@@ -257,6 +257,7 @@ void Material::add_material(vector<string> args){
   //   exit(1);
   // }
 
+  int with_damage = 0;
   if (args[1].compare("linear")==0 || args[1].compare("neo-hookean")==0) {
     int type;
     if (args[1].compare("linear")==0) type = LINEAR;
@@ -270,27 +271,28 @@ void Material::add_material(vector<string> args){
     materials.push_back(new_material);
   } else {
     // create the Material
-    int iEOS = material->find_EOS(args[1]);
+    int iEOS = material->find_EOS(args[2]);
 
     if (iEOS == -1) {
-      cout << "Error: could not find EOS named: " << args[1] << endl;
+      cout << "Error: could not find EOS named: " << args[2] << endl;
       exit(1);
     }
 
-    int iStrength = material->find_strength(args[2]);
+    int iStrength = material->find_strength(args[3]);
     if (iStrength == -1) {
-      cout << "Error: could not find strength named: " << args[2] << endl;
+      cout << "Error: could not find strength named: " << args[3] << endl;
       exit(1);
     }
 
-    if (args.size() > 3) {
-      int iDamage = material->find_damage(args[3]);
+    if (args.size() > Nargs.find(args[1])->second) {
+      int iDamage = material->find_damage(args[4]);
       if (iDamage == -1) {
-	cout << "Error: could not find damage named: " << args[3] << endl;
+	cout << "Error: could not find damage named: " << args[4] << endl;
 	exit(1);
       }
       Mat new_material(args[0], SHOCK, EOSs[iEOS], strengths[iStrength], damages[iDamage]);
       materials.push_back(new_material);
+      with_damage++;
     } else {
       Mat new_material(args[0], SHOCK, EOSs[iEOS], strengths[iStrength]);
       materials.push_back(new_material);
@@ -298,7 +300,7 @@ void Material::add_material(vector<string> args){
   }
 
   int iTemp;
-  for(int i=Nargs.find(args[1])->second; i<args.size(); i++) {
+  for(int i=Nargs.find(args[1])->second + with_damage; i<args.size(); i++) {
     iTemp = material->find_temperature(args[i]);
     if (iTemp == -1) {
       cout << "Error: could not find temperature named: " << args[i] << endl;
