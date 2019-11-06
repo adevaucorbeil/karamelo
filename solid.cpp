@@ -650,24 +650,24 @@ void Solid::compute_particle_velocities_and_positions()
       in = neigh_pn[ip][j];
       v_update[ip] += wf_pn[ip][j] * vn_update[in];
       x[ip] += update->dt * wf_pn[ip][j] * vn_update[in];
-      // if (ip==234)
-      // 	cout << "ip=" << ip << "\tv_update=[" << v_update[ip](0) << "," << v_update[ip](1) << "," << v_update[ip](2) << "]\tin=" << in << "\tvn_update=[" << vn_update[in](0) << "," << vn_update[in](1) << "," << vn_update[in](2) << "]\n";
-
-      if (ul) {
-	// Check if the particle is within the box's domain:
-	if (domain->inside(x[ip]) == 0) {
-	  cout << "Error: Particle " << ip << " left the domain (" <<
-	    domain->boxlo[0] << ","<< domain->boxhi[0] << "," <<
-	    domain->boxlo[1] << ","<< domain->boxhi[1] << "," <<
-	    domain->boxlo[2] << ","<< domain->boxhi[2] << ",):\n" << x[ip] << endl;
-	  exit(1);
-	}
-      }
+      if (isnan(x[ip](0)))
+	cout << "ip=" << ip << "\tx=[" << x[ip](0) << "," << x[ip](1) << "," << x[ip](2) << "]\tin=" << in << "\tvn_update=[" << vn_update[in](0) << "," << vn_update[in](1) << "," << vn_update[in](2) << "]\twf_pn=" <<  wf_pn[ip][j] << "\n";
 
       if (update_corners) {
 	for (int ic=0; ic<nc; ic++) {
 	  vc_update[ic] += wf_pn_corners[nc*ip+ic][j] * vn_update[in];
 	}
+      }
+    }
+
+    if (ul) {
+      // Check if the particle is within the box's domain:
+      if (domain->inside(x[ip]) == 0) {
+	cout << "Error: Particle " << ip << " left the domain (" <<
+	  domain->boxlo[0] << ","<< domain->boxhi[0] << "," <<
+	  domain->boxlo[1] << ","<< domain->boxhi[1] << "," <<
+	  domain->boxlo[2] << ","<< domain->boxhi[2] << ",):\n" << x[ip] << endl;
+	exit(1);
       }
     }
 
@@ -1135,7 +1135,7 @@ void Solid::update_stress()
     } else {
 
       mat->eos->compute_pressure(pH, ienergy[ip], J[ip], rho[ip], T[ip], damage[ip]);
-      sigma_dev = mat->strength->update_deviatoric_stress(sigma[ip], D[ip], plastic_strain_increment, eff_plastic_strain[ip], eff_plastic_strain_rate[ip], damage[ip]);
+      sigma_dev = mat->strength->update_deviatoric_stress(sigma[ip], D[ip], plastic_strain_increment, eff_plastic_strain[ip], eff_plastic_strain_rate[ip], damage[ip], T[ip]);
 
       eff_plastic_strain[ip] += plastic_strain_increment;
 
@@ -1146,7 +1146,7 @@ void Solid::update_stress()
       eff_plastic_strain_rate[ip] = MAX(0.0, eff_plastic_strain_rate[ip]);
 
       if (mat->damage != NULL)
-	mat->damage->compute_damage(damage_init[ip], damage[ip], pH, sigma_dev, eff_plastic_strain_rate[ip], plastic_strain_increment);
+	mat->damage->compute_damage(damage_init[ip], damage[ip], pH, sigma_dev, eff_plastic_strain_rate[ip], plastic_strain_increment, T[ip]);
       sigma[ip] = -pH*eye + sigma_dev;
 
       if (damage[ip] > 1e-10) {
