@@ -534,9 +534,9 @@ void Solid::compute_velocity_nodes(bool reset)
       vtemp /= massn[in];
       vn[in] += vtemp;
 
-      if (mat->rigid) vn_update[in] += vtemp_rigid/mass_rigid;
-      // if (in==140)
-      //  	cout << "in=" << in << "\tvn=[" << vn[in][0] << ", "<< vn[in][1] << ", "<< vn[in][2] << "]\tvp=["<< v[ip][0] << ", "<< v[ip][1] << ", "<< v[ip][2] << "],\tvn_update=[" << vn_update[in][0] << ", "<< vn_update[in][1] << ", "<< vn_update[in][2] << "]\n";
+      if (mat->rigid && mass_rigid > 1.0e-12) vn_update[in] += vtemp_rigid/mass_rigid;
+      if (isnan(vn_update[in](0)))
+	  cout << "in=" << in << "\tvn=[" << vn[in][0] << ", "<< vn[in][1] << ", "<< vn[in][2] << "]\tvp=["<< v[ip][0] << ", "<< v[ip][1] << ", "<< v[ip][2] << "],\tvn_update=[" << vn_update[in][0] << ", "<< vn_update[in][1] << ", "<< vn_update[in][2] << "]\n";
     }
   }
 }
