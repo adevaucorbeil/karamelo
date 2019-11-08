@@ -1,0 +1,73 @@
+#####################################################
+#               UNITS: MPa, mm, s                   #
+#####################################################
+E      = 1e+3
+nu     = 0.3
+rho    = 1000
+K      = E/(3*(1-2*nu))
+mu     = E/(2*(1+nu))
+lambda = E*nu/((1+nu)*(1-2*nu))
+c      = sqrt(E/rho)
+
+L      = 1
+hL     = 0.5*L
+R      = 0.25
+t      = 0.1
+H      = 2*R+t
+
+alpha  = 0.99
+
+#---------- SET METHOD --------------#
+method(ulmpm, FLIP, linear, alpha)
+
+N        = 2      # 20 cells per direction
+cellsize = t/N    # cell size
+
+# 2D problem, the computational domain is
+dimension(2,-hL, hL, 0, H, cellsize)
+
+# solids (1 ball and one rigid compression tool)
+region(rBall,  cylinder, 0, R, R)
+region(rPlate, block   , -hL, hL, 2*R, 2*R+t)
+
+material(mat1, linear, rho, E, nu)
+material(matr, rigid)
+
+#---------- SET SOLID --------------#
+solid(sBall,  region, rBall,  2, mat1, cellsize, 0)
+solid(sPlate, region, rPlate, 2, matr, cellsize, 0)
+
+#---------- IMPOSE BOUNDARY CONDITIONS --------------#
+region(rBottom, block, INF, INF, INF, cellsize/4)
+group(gBottom, nodes, region, rBottom, solid, sBall)
+
+fix(fBCLY, velocity_nodes, gBottom, NULL, 0)
+
+#---------- IMPOSE INITIAL CONDITIONS --------------#
+group(gPlate, particles, region, rPlate, solid, sPlate)
+
+v = 0.1
+fix(v0Ball1, velocity_particles, gPlate, 0, -v)
+
+#-----------OUTPUTS------------------#
+N_log = 1
+dumping_interval = N_log*1
+
+dump(dump1, all, particle, dumping_interval, dump_p.*.LAMMPS, x, y, z, vx, vy, vz, s11, s22, s33, s12, s13, s23, seq, mass)
+dump(dump2, all, grid, dumping_interval, dump_g.*.LAMMPS, x, y, z, vx, vy, vz, mass)
+#dump(dump3, all, pyplot, dumping_interval, dump.*.pdf, 1000, 1000)
+
+fix(Ek, kinetic_energy, all)
+fix(Es, strain_energy, all)
+Etot = Ek_s + Es_s
+
+#----------- RUN --------------------#
+set_dt(0.001)
+log_modify(custom, step, dt, time, Ek_s, Es_s, Etot)
+#plot(Ek, N_log, time, Ek_s)
+#plot(Es, N_log, time, Es_s)
+#plot(Etot, N_log, time, Etot)
+#save_plot(plot.pdf)
+log(N_log)
+#run_time(3.5)
+run(1000)

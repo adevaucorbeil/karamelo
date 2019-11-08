@@ -1,0 +1,126 @@
+#####################################################
+#               UNITS: GPa, mm, ms, oC              #
+#####################################################
+# Metal cutting from Ambati et all
+# Application of material point methods for cutting process simulations
+
+# material properties for the steel plate
+
+E   = 207
+nu  = 0.3
+rho = 7.83e-06
+
+K = E/(3*(1-2*nu))
+G = E/(2*(1+nu))
+
+
+# Johnson-Cook flow parameters
+sigmay = 792e-3
+B      = 510e-3
+C      = 0.014
+epsdot0= 1.0
+n      = 0.26
+m      = 1.03
+
+# Johnson-Cook damage parameters
+d1 = 0.636
+d2 = 1.936
+d3 = -2.969
+d4 = 0
+d5 = 0
+
+Ep = 2070
+nup=0
+density=7.83e-5
+Kp = Ep/(3*(1-2*nup))
+Gp = Ep/(2*(1+nup))
+
+# problem dimensions
+l = 3
+h = 1
+lt= 0.5
+ht=1.0
+d = 0.3 # feed distance
+dd = 0.1
+
+L = 4
+H = 4
+
+S = 1.5
+c0 = 5030
+Gamma = 0
+
+chi = 0.9
+cp = 510
+cv = 510
+Tr = 25
+Tm = 1300
+
+FLIP=0.99
+
+method(ulmpm, FLIP, linear, FLIP)
+
+N = 50
+cellsize = L/N
+dimension(2,0,L,0,H,cellsize)
+
+
+# -----------GEOMETRIES ----------------#
+
+region(work-piece, block, 0, l, 0, h)
+region(tool,       block, l+dd, l+dd+lt, h-d, h-d+ht)
+
+# -----------MATERIALS ----------------#
+# EOS, strengh, dasmage and temperature
+
+eos(eosl, linear, density, Kp)
+eos(eoss, shock,  rho, K, c0, S, Gamma, cv, Tr)
+
+strength(strengthl, linear, Gp)
+strength(strengthjc, johnson_cook, G, sigmay, B, n, epsdot0, C, m, Tr, Tm)
+temperature(tpw, plastic_work, chi, rho, cp)
+
+damage(damagejc, damage_johnson_cook, d1, d2, d3, d4, d5, epsdot0, Tr, Tm)
+
+# Now as EOS, strength, damage and temperature done, build materials
+material(mat1, eos-strength, eosl, strengthl)
+material(mat2, eos-strength, eoss, strengthjc, damagejc, tpw)
+material(mat3, rigid )
+
+# -----------SOLIDS ----------------#
+# defined using: geometry, material, PPC per 1 direction
+
+ppc1d = 2
+solid(piece,  region, work-piece,  1,     mat2, cellsize, Tr)
+solid(tool,   region, tool,        ppc1d, mat3, cellsize, Tr)
+
+
+# ----------------- NODE GROUPS --------------------------
+region(region1, block, -INF, INF, -INF, cellsize/4)
+region(region2, block, -INF, cellsize/2, -INF, INF)
+
+group(groupn1, nodes, region, region1, solid, piece)
+group(groupn2, nodes, region, region2, solid, piece)
+
+fix(BC_bot,   velocity_nodes, groupn1, 0, 0)
+fix(BC_left,  velocity_nodes, groupn2, 0, 0)
+
+#---------- IMPOSE INITIAL CONDITIONS --------------#
+group(gProjectile, particles, region, tool, solid, tool)
+
+v = 50
+fix(v0Ball1, initial_velocity_particles, gProjectile, -v, NULL, NULL)
+
+N_dump = 10
+dump(dump1, all, particle, N_dump, dump_p.*.LAMMPS, x, y, z, damage, s11, s22, s33, s12, s13, s23, vx, T, ienergy)
+dump(dump2, all, grid, N_dump, dump_g.*.LAMMPS, x, y, z, vx)
+
+dt_factor(0.5)
+N_log = 10
+
+set_output(N_log)
+#log_modify(custom, step, dt, time, ft, fb, eps, stress)
+#run(1)
+#quit
+run(150000)
+
