@@ -61,12 +61,12 @@ Solid::Solid(MPM *mpm, vector<string> args) :
 
   np = 0;
 
-  x = x0 = NULL;
-  rp = rp0 = NULL;
+  x   = x0   = NULL;
+  rp  = rp0  = NULL;
   xpc = xpc0 = NULL;
 
-  if (method_type.compare("tlcpdi") == 0
-      || method_type.compare("ulcpdi") == 0) {
+  if (method_type.compare("tlcpdi") == 0 || 
+      method_type.compare("ulcpdi") == 0) {
     nc = pow(2, domain->dimension);
   } else nc = 0;
 
@@ -277,8 +277,8 @@ void Solid::grow(int nparticles){
     exit(1);
   }
 
-  if (method_type.compare("tlcpdi") == 0
-      || method_type.compare("ulcpdi") == 0) {
+  if (method_type.compare("tlcpdi") == 0|| 
+      method_type.compare("ulcpdi") == 0) {
 
     if (update->method->style == 0) { // CPDI-R4
       str = "solid-" + id + ":rp0";
@@ -502,7 +502,7 @@ void Solid::compute_mass_nodes(bool reset)
 
 void Solid::compute_velocity_nodes(bool reset)
 {
-  Eigen::Vector3d *vn = grid->v;
+  Eigen::Vector3d *vn        = grid->v;
   Eigen::Vector3d *vn_update = grid->v_update;
   Eigen::Vector3d vtemp, vtemp_rigid;
   double *massn = grid->mass;
@@ -511,7 +511,7 @@ void Solid::compute_velocity_nodes(bool reset)
 
   for (int in=0; in<grid->nnodes; in++) { 
     if (reset) {
-      vn[in].setZero();
+      vn[in]       .setZero();
       vn_update[in].setZero();
     }
 
@@ -521,14 +521,16 @@ void Solid::compute_velocity_nodes(bool reset)
       vtemp.setZero();
       if (mat->rigid) vtemp_rigid.setZero();
 
-      for (int j=0; j<numneigh_np[in];j++){
-	ip = neigh_np[in][j];
-	vtemp += (wf_np[in][j] * mass[ip]) * v[ip];
+      for (int j=0; j<numneigh_np[in];j++)
+      {
+      	ip     = neigh_np[in][j];
+      	vtemp += (wf_np[in][j] * mass[ip]) * v[ip];
 
-	if (grid->rigid[in] && mat->rigid) {
-	  vtemp_rigid += wf_np[in][j] * v[ip];
-	  mass_rigid += wf_np[in][j];
-	}
+      	if (grid->rigid[in] && mat->rigid) 
+        {
+      	  vtemp_rigid += wf_np[in][j] * v[ip];
+      	  mass_rigid += wf_np[in][j];
+      	}
 	//vn[in] += (wf_np[in][j] * mass[ip]) * v[ip]/ massn[in];
       }
       vtemp /= massn[in];
@@ -1289,18 +1291,22 @@ void Solid::copy_particle(int i, int j) {
   Fdot[j] = Fdot[i];
   J[j] = J[i];
   
-  if (method_type.compare("tlcpdi") == 0
-      || method_type.compare("ulcpdi") == 0) {
+  if (method_type.compare("tlcpdi") == 0|| 
+      method_type.compare("ulcpdi") == 0) 
+  {
     if (update->method->style == 0) { // CPDI-R4
-      for (int id=0; id<domain->dimension; id++) {
-	rp0[domain->dimension*j+id] = rp0[domain->dimension*i+id];
-	rp[domain->dimension*j+id] = rp[domain->dimension*i+id];
+      for (int id=0; id<domain->dimension; id++) 
+      {
+	      rp0[domain->dimension*j+id] = rp0[domain->dimension*i+id];
+	      rp[domain->dimension*j+id]  = rp[domain->dimension*i+id];
       }
     }
+
     if (update->method->style == 1) { // CPDI-Q4
-      for (int ic=0; ic<nc; ic++) {
-	xpc0[nc*j+ic] = xpc0[nc*i+ic];
-	xpc[nc*j+ic] = xpc[nc*i+ic];
+      for (int ic=0; ic<nc; ic++) 
+      {
+	       xpc0[nc*j+ic] = xpc0[nc*i+ic];
+	       xpc[nc*j+ic] = xpc[nc*i+ic];
       }
     }
   }
@@ -1751,6 +1757,7 @@ void Solid::read_mesh(string fileName) {
 	elemType     = boost::lexical_cast<int> ( splitLine[1] );
 	// elemType == 1: 2-node   line element
 	// elemType == 3: 4-node   quadrangle
+  // elemType == 4: 4-node   tetrahedra
 
 	if ( elemType == 1 ) {
 	  int no1 = boost::lexical_cast<int> ( splitLine[5] ) - 1;
@@ -1782,6 +1789,10 @@ void Solid::read_mesh(string fileName) {
 	  int no3 = boost::lexical_cast<int> ( splitLine[7] ) - 1;
 	  int no4 = boost::lexical_cast<int> ( splitLine[8] ) - 1;
 
+    if (method_type.compare("tlcpdi") == 0|| 
+        method_type.compare("ulcpdi") == 0)
+    {
+    
 	  xpc0[nc*ie][0] = xpc[nc*ie][0] = nodes[no1][0];
 	  xpc0[nc*ie][1] = xpc[nc*ie][1] = nodes[no1][1];
 	  xpc0[nc*ie][2] = xpc[nc*ie][2] = nodes[no1][2];
@@ -1797,6 +1808,7 @@ void Solid::read_mesh(string fileName) {
 	  xpc0[nc*ie+3][0] = xpc[nc*ie+3][0] = nodes[no4][0];
 	  xpc0[nc*ie+3][1] = xpc[nc*ie+3][1] = nodes[no4][1];
 	  xpc0[nc*ie+3][2] = xpc[nc*ie+3][2] = nodes[no4][2];
+    }
 
 #ifdef DEBUG
 	  xcplot[0] = xpc0[nc*ie][0];
@@ -1816,15 +1828,47 @@ void Solid::read_mesh(string fileName) {
 	  x0[ie][1] = x[ie][1] = 0.25*(nodes[no1][1]+nodes[no2][1]+nodes[no3][1]+nodes[no4][1]);
 	  x0[ie][2] = x[ie][2] = 0.25*(nodes[no1][2]+nodes[no2][2]+nodes[no3][2]+nodes[no4][2]);
 
-	  vol0[ie] = vol[ie] = 0.5*(xpc[nc*ie+0][0]*xpc[nc*ie+1][1] - xpc[nc*ie+1][0]*xpc[nc*ie+0][1]
-				    + xpc[nc*ie+1][0]*xpc[nc*ie+2][1] - xpc[nc*ie+2][0]*xpc[nc*ie+1][1]
-				    + xpc[nc*ie+2][0]*xpc[nc*ie+3][1] - xpc[nc*ie+3][0]*xpc[nc*ie+2][1]
-				    + xpc[nc*ie+3][0]*xpc[nc*ie+0][1] - xpc[nc*ie+0][0]*xpc[nc*ie+3][1]);
+	  // vol0[ie] = vol[ie] = 0.5*(xpc[nc*ie+0][0]*xpc[nc*ie+1][1] - xpc[nc*ie+1][0]*xpc[nc*ie+0][1]
+			// 	    + xpc[nc*ie+1][0]*xpc[nc*ie+2][1] - xpc[nc*ie+2][0]*xpc[nc*ie+1][1]
+			// 	    + xpc[nc*ie+2][0]*xpc[nc*ie+3][1] - xpc[nc*ie+3][0]*xpc[nc*ie+2][1]
+			// 	    + xpc[nc*ie+3][0]*xpc[nc*ie+0][1] - xpc[nc*ie+0][0]*xpc[nc*ie+3][1]);
+    
+    vol0[ie] = vol[ie] = 0.5*( nodes[no1][0]*nodes[no2][1]  - nodes[no2][0]*nodes[no1][1] 
+                             + nodes[no2][0]*nodes[no3][1]  - nodes[no3][0]*nodes[no2][1] 
+                             + nodes[no3][0]*nodes[no4][1]  - nodes[no4][0]*nodes[no3][1] 
+                             + nodes[no4][0]*nodes[no1][1]  - nodes[no1][0]*nodes[no4][1] );
+     
+      
 #ifdef DEBUG
 	  x2plot.push_back(x0[ie][0]);
 	  y2plot.push_back(x0[ie][1]);
 #endif
-	} else {
+	} 
+  else if ( elemType == 4 )
+  {
+
+    int no1 = boost::lexical_cast<int> ( splitLine[5] ) - 1;
+    int no2 = boost::lexical_cast<int> ( splitLine[6] ) - 1;
+    int no3 = boost::lexical_cast<int> ( splitLine[7] ) - 1;
+    int no4 = boost::lexical_cast<int> ( splitLine[8] ) - 1;
+
+    double x1   = nodes[no1][0]; double y1   = nodes[no1][1]; double z1   = nodes[no1][2];
+    double x2   = nodes[no2][0]; double y2   = nodes[no2][1]; double z2   = nodes[no2][2];
+    double x3   = nodes[no3][0]; double y3   = nodes[no3][1]; double z3   = nodes[no3][2];
+    double x4   = nodes[no4][0]; double y4   = nodes[no4][1]; double z4   = nodes[no4][2];
+    
+    double x21 = x2 - x1; double x32 = x3 - x2; double x43 = x4 - x3; double x42 = x4 - x2;
+    double y23 = y2 - y3; double y34 = y3 - y4; double y12 = y1 - y2; double y42 = y4 - y2;
+    double z34 = z3 - z4; double z23 = z2 - z3; double z12 = z1 - z2; double z42 = z4 - z2;
+
+
+    x0[ie][0] = x[ie][0] = 0.25*(x1 + x2 + x3 + x4);
+    x0[ie][1] = x[ie][1] = 0.25*(y1 + y2 + y3 + y4);
+    x0[ie][2] = x[ie][2] = 0.25*(z1 + z2 + z3 + z4);
+    
+    vol0[ie] = vol[ie] =  (1/6)*(x21*(y23*z34-y34*z23) + x32*(y34*z12-y12*z34) + x43*(y12*z23-y23*z12));
+  }
+  else {
 	  cout << "Element type " << elemType << " not supported!!\n";
 	  exit(1);
 	}
