@@ -67,7 +67,7 @@ Solid::Solid(MPM *mpm, vector<string> args) :
 
   mat = NULL;
 
-  if (method_style.compare("tlmpm") == 0) grid = new Grid(mpm);
+  if (method_style.compare("tlmpm") == 0 || update->method_style.compare("tlcpdi") == 0) grid = new Grid(mpm);
   else grid = domain->grid;
 
   numneigh_pn = numneigh_np = NULL;
@@ -124,7 +124,7 @@ Solid::~Solid()
   memory->destroy(damage_init);
   memory->destroy(mask);
 
-  if (method_style.compare("tlmpm") == 0) delete grid;
+  if (method_style.compare("tlmpm") == 0 || update->method_style.compare("tlcpdi") == 0) delete grid;
 
   delete [] numneigh_pn;
   delete [] numneigh_np;
@@ -570,8 +570,8 @@ void Solid::update_particle_position()
 {
   bool ul;
 
-  if (update->method_style.compare("tlmpm") != 0) ul = true;
-  else ul = false;
+  if (update->method_style.compare("tlmpm") == 0 || update->method_style.compare("tlcpdi") == 0) ul = false;
+  else ul = true;
 
   for (int ip=0; ip<np; ip++) {
     x[ip] += update->dt*v_update[ip];
@@ -894,7 +894,7 @@ void Solid::update_deformation_gradient()
   Eigen::Matrix3d eye;
   eye.setIdentity();
 
-  if (update->method_style.compare("tlmpm") == 0) tl = true;
+  if (update->method_style.compare("tlmpm") == 0 || update->method_style.compare("tlcpdi") == 0) tl = true;
   else tl = false;
 
   if ((mat->eos!=NULL) && (mat->strength!=NULL)) nh = true;
@@ -919,13 +919,13 @@ void Solid::update_deformation_gradient()
 
     if (nh) {
       // Only done if not Neo-Hookean:
-      if (update->method_style.compare("tlmpm") == 0)
+      if (update->method_style.compare("tlmpm") == 0 || update->method_style.compare("tlcpdi") == 0)
 	L[ip] = Fdot[ip] * Finv[ip];
       // else
       //   Fdot[ip] = L[ip]*F[ip];
 
       status = PolDec(F[ip], R[ip], U, false); // polar decomposition of the deformation gradient, F = R * U
-      if (update->method_style.compare("tlmpm") == 0)
+      if (update->method_style.compare("tlmpm") == 0 || update->method_style.compare("tlcpdi") == 0)
 	D[ip] = 0.5 * (R[ip].transpose() * (L[ip] + L[ip].transpose()) * R[ip]);
       else D[ip] = 0.5 * (L[ip] + L[ip].transpose());
 
@@ -951,7 +951,7 @@ void Solid::update_stress()
   if ((mat->eos!=NULL) && (mat->strength!=NULL)) nh = false;
   else nh = true;
 
-  if (update->method_style.compare("tlmpm") == 0) tl = true;
+  if (update->method_style.compare("tlmpm") == 0 || update->method_style.compare("tlcpdi") == 0) tl = true;
   else tl = false;
 
   eye.setIdentity();

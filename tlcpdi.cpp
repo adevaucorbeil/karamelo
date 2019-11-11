@@ -96,11 +96,12 @@ void TLCPDI::setup(vector<string> args)
 void TLCPDI::compute_grid_weight_functions_and_gradients()
 {
   if (!update_wf) return;
+
   if (domain->dimension !=2) {
     cout << "Error: ULCPDI is only 2D....\n";
     exit(1);
   }
-
+  cout << "In TLCPDI::compute_grid_weight_functions_and_gradients()\n";
   bigint nsolids, np, nnodes, nc;
 
   nsolids = domain->solids.size();
@@ -303,13 +304,15 @@ void TLCPDI::compute_grid_weight_functions_and_gradients()
       if (method_type.compare("APIC") == 0) domain->solids[isolid]->compute_inertia_tensor(shape_function);
     }
   }
+  update_wf = 0;
 }
 
 void TLCPDI::particles_to_grid()
 {
-  bool grid_reset = true; // Indicate if the grid quantities have to be set to zero
+  bool grid_reset = true; // Indicate if the grid quantities have to be reset
   for (int isolid=0; isolid<domain->solids.size(); isolid++){
     domain->solids[isolid]->compute_mass_nodes(grid_reset);
+    //domain->solids[isolid]->compute_node_rotation_matrix(grid_reset);
     if (method_type.compare("APIC") == 0) domain->solids[isolid]->compute_velocity_nodes_APIC(grid_reset);
     else domain->solids[isolid]->compute_velocity_nodes(grid_reset);
     domain->solids[isolid]->compute_external_forces_nodes(grid_reset);
@@ -320,7 +323,9 @@ void TLCPDI::particles_to_grid()
 
 void TLCPDI::update_grid_state()
 {
-  domain->grid->update_grid_velocities();
+  for (int isolid=0; isolid<domain->solids.size(); isolid++) {
+    domain->solids[isolid]->grid->update_grid_velocities();
+  }
 }
 
 void TLCPDI::grid_to_points()
@@ -341,12 +346,18 @@ void TLCPDI::advance_particles()
 
 void TLCPDI::velocities_to_grid()
 {
-  for (int isolid=0; isolid<domain->solids.size(); isolid++){
-    if (method_type.compare("APIC") != 0) { 
-      //domain->solids[isolid]->compute_mass_nodes(grid_reset);
+  if (method_type.compare("APIC") != 0) {
+    for (int isolid=0; isolid<domain->solids.size(); isolid++) {
+      //domain->solids[isolid]->compute_mass_nodes();
       domain->solids[isolid]->compute_velocity_nodes(true);
     }
-    // domain->solids[isolid]->grid->update_grid_positions();
+  }
+}
+
+void TLCPDI::update_grid_positions()
+{
+  for (int isolid=0; isolid<domain->solids.size(); isolid++) {
+    domain->solids[isolid]->grid->update_grid_positions();
   }
 }
 
@@ -363,7 +374,6 @@ void TLCPDI::update_deformation_gradient()
 {
   for (int isolid=0; isolid<domain->solids.size(); isolid++) {
     domain->solids[isolid]->update_deformation_gradient();
-    domain->solids[isolid]->update_particle_domain();
   }
 }
 
@@ -376,7 +386,6 @@ void TLCPDI::update_stress()
 
 void TLCPDI::adjust_dt()
 {
-  update->update_time();
   if (update->dt_constant) return; // dt is set as a constant, do not update
 
 
