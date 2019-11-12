@@ -1,0 +1,79 @@
+#####################################################
+#               UNITS: Pa, m, s                  #
+#####################################################
+
+E = 1e+6
+nu = 0.3
+K = E/(3*(1-2*nu))
+mu = E/(2*(1+nu))
+rho = 1050
+lambda = E*nu/((1+nu)*(1-2*nu))
+c = sqrt(E/rho)
+
+L = 1
+hL = 0.5*L
+A_zy = L*L
+
+FLIP=0.99
+
+#---------- SET METHOD --------------#
+method(tlmpm, FLIP, linear, FLIP)
+
+#method(tlmpm, FLIP, Bernstein-quadratic, FLIP)
+#method(tlmpm, FLIP, cubic-spline, FLIP)
+
+dimension(2)
+region(box, block, -hL, hL, -L, 0)
+
+#strength(strengthl, linear, mu)
+
+material(mat1, neo-hookean, rho, E, nu)
+
+
+#---------- SET SOLID --------------#
+N = 2
+cellsize = L/N
+solid(solid1, rectangle, box, 3, mat1, cellsize)
+#solid(solid1, block, box, N, N, N, mat1, cellsize)
+
+#---------- IMPOSE BOUNDARY CONDITIONS --------------#
+
+region(rBCLX, block, INF, INF, -cellsize/4, INF, INF, INF)
+group(gBCLX, nodes, region, rBCLX, solid, solid1)
+
+fix(fBCLX, velocity_nodes, gBCLX, NULL, 0, NULL)
+
+#region(rBCP, block, INF, INF, -cellsize*3/4, INF, INF, INF)
+#group(gBCP, particles, region, rBCP, solid, solid1)
+
+#fix(fBCLX, velocity, gBCP, 0, 0, 0)
+
+#---------- IMPOSE INITIAL CONDITIONS --------------#
+gravity = -1e+3 #m/s^2
+fix(fbody, body_force, all, 0, gravity, 0)
+
+N_log = 1
+N_dump = 1
+
+dump(dump1, all, particle, N_dump, dump_p.*.LAMMPS, x, y, z)
+dump(dump2, all, grid, N_dump, dump_g.*.LAMMPS, x, y, z)
+
+#----------- TIP --------------------#
+
+region(rTip, block, INF, -hL+cellsize/2, INF, -L+3*cellsize/4, INF, -hL+cellsize/2)
+group(gTip, particles, region, rTip, solid, solid1)
+
+x_tip = xcm(gTip, x)
+y_tip = xcm(gTip, y)
+z_tip = xcm(gTip, z)
+y0_tip = value(y_tip)
+dy_tip = y_tip-y0_tip
+
+#----------- RUN --------------------#
+dt_factor(0.2)
+
+log_modify(custom, step, dt, time, fbody_x, fbody_y, fbody_z, dy_tip)
+plot(dy_tip, N_log, time, dy_tip)
+#plot(theory, N_log, time, th)
+log(N_log)
+run_time(0.26)

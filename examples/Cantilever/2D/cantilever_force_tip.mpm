@@ -1,0 +1,71 @@
+#####################################################
+#               UNITS: Pa, m, s                  #
+#####################################################
+
+E = 1e+6
+nu = 0.3
+K = E/(3*(1-2*nu))
+mu = E/(2*(1+nu))
+rho = 1050
+lambda = E*nu/((1+nu)*(1-2*nu))
+c = sqrt(E/rho)
+
+L = 1
+A_zy = L*L
+
+FLIP=0.99
+
+#---------- SET METHOD --------------#
+method(tlmpm, FLIP, linear, FLIP)
+dimension(2)
+region(box, block, 0, 4*L, 0, L)
+
+#strength(strengthl, linear, mu)
+
+material(mat1, neo-hookean, rho, E, nu)
+
+N = 20
+cellsize = L/N
+solid(solid1, box, 2, mat1, cellsize)
+
+#---------- IMPOSE BOUNDARY CONDITIONS --------------#
+
+region(rBCLX, block, INF, cellsize/4, INF, INF)
+group(gBCLX, nodes, region, rBCLX, solid, solid1)
+
+fix(fBCLX, velocity_nodes, gBCLX, 0, 0)
+
+#---------- IMPOSE INITIAL CONDITIONS --------------#
+#gravity = -10 #m/s^2
+#fix(fbody, body_force_current_config, all, 0, gravity)
+
+region(rEND, block, 4*L-cellsize/4, INF, L-cellsize/4, INF)
+group(gEND, nodes, region, rEND, solid, solid1)
+
+F = -100
+fix(fEnd, force_nodes, gEND, 0, F, 0)
+
+N_log = 1
+
+dump(dump1, all, particle, N_log*200, dump_p.*.LAMMPS, x, y, z)
+dump(dump2, all, grid, N_log*200, dump_g.*.LAMMPS, x, y, z)
+
+#----------- TIP --------------------#
+
+region(rTip, block, 4*L - 2*cellsize/4, INF, L-2*cellsize/4, INF)
+group(gTip, particles, region, rTip, solid, solid1)
+
+
+x_tip = xcm(gTip, x)
+y_tip = xcm(gTip, y)
+z_tip = xcm(gTip, z)
+y0_tip = value(y_tip)
+dy_tip = y_tip-y0_tip
+
+#----------- RUN --------------------#
+dt_factor(0.5)
+
+log_modify(custom, step, dt, time, fEnd_x, fEnd_y, fEnd_z, dy_tip)
+plot(dy_tip, N_log, time, dy_tip)
+log(N_log)
+run_time(3)

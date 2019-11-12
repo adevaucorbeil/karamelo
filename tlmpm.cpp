@@ -77,7 +77,7 @@ void TLMPM::setup(vector<string> args)
       derivative_basis_function = &BasisFunction::derivative_bernstein_quadratic;
       n++;
     } else {
-      cout << "Illegal method_method argument: form function of type " << args[n] << " is unknown." << endl;
+      cout << "Illegal method_method argument: form function of type \033[1;31m" << args[n] << " is unknown. Available options are:  \033[1;32mlinear\033[0m, \033[1;32mcubic-spline\033[0m, \033[1;32mBernstein-quadratic\033[0m.\n";
       exit(1);
     }
   }
@@ -129,6 +129,7 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
       Eigen::Vector3d wfd;
 
       int **ntype = domain->solids[isolid]->grid->ntype;
+      bool *nrigid = domain->solids[isolid]->grid->rigid;
 
       r.setZero();
       if (np && nnodes) {
@@ -253,6 +254,7 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
 	    else s[2] = 1;
 
 	    if (s[0] != 0 && s[1] != 0 && s[2] != 0) {
+	      if (domain->solids[isolid]->mat->rigid) nrigid[in] = true;
 	      // // cout << in << "\t";
 	      // // Check if this node is in n_neigh:
 	      // if (find(n_neigh.begin(), n_neigh.end(), in) == n_neigh.end()) {
@@ -320,13 +322,14 @@ void TLMPM::particles_to_grid()
   bool grid_reset = true; // Indicate if the grid quantities have to be reset
   for (int isolid=0; isolid<domain->solids.size(); isolid++){
     domain->solids[isolid]->compute_mass_nodes(grid_reset);
-    //domain->solids[isolid]->compute_node_rotation_matrix(grid_reset);
+  }
+  for (int isolid=0; isolid<domain->solids.size(); isolid++){
     if (method_type.compare("APIC") == 0) domain->solids[isolid]->compute_velocity_nodes_APIC(grid_reset);
     else domain->solids[isolid]->compute_velocity_nodes(grid_reset);
     domain->solids[isolid]->compute_external_forces_nodes(grid_reset);
     domain->solids[isolid]->compute_internal_forces_nodes_TL();
     /*compute_thermal_energy_nodes();*/
-    }
+  }
 }
 
 void TLMPM::update_grid_state()
@@ -339,7 +342,7 @@ void TLMPM::update_grid_state()
 void TLMPM::grid_to_points()
 {
   for (int isolid=0; isolid<domain->solids.size(); isolid++) {
-    domain->solids[isolid]->compute_particle_velocities();
+    domain->solids[isolid]->compute_particle_velocities_and_positions();
     domain->solids[isolid]->compute_particle_acceleration();
   }
 }
@@ -347,7 +350,6 @@ void TLMPM::grid_to_points()
 void TLMPM::advance_particles()
 {
   for (int isolid=0; isolid<domain->solids.size(); isolid++) {
-    domain->solids[isolid]->update_particle_position();
     domain->solids[isolid]->update_particle_velocities(FLIP);
   }
 }

@@ -1,0 +1,82 @@
+#####################################################
+#               UNITS: GPa, mm, ms                  #
+#####################################################
+
+E = 211
+nu = 0.33
+K = E/(3*(1-2*nu))
+G = E/(2*(1+nu))
+rho = 7.75e-06
+sigmay = 0.499
+B = 0.382
+n = 0.458
+
+hLx = 10
+hLy = 1.2
+hLz = 1.2
+A_zy = (2*hLy)*(2*hLz)
+
+S = 1.5
+c0 = 5030
+
+FLIP=0.99
+
+dimension(3)
+method(tlmpm, FLIP, cubic-spline, FLIP)
+
+region(box, block, -hLx, hLx, -hLy, hLy, -hLz, hLz)
+eos(eosl, linear, rho, K)
+eos(eoss, shock, rho, K, c0, 0, S, 0)
+
+strength(strengthl, linear, G)
+strength(strengthp, plastic, G, sigmay)
+strength(strengthjc, johnson_cook, G, sigmay, B, n, 0, 0)
+
+d1 = 0.636
+d2 = 1.936
+d3 = -2.969
+d4 = 0
+epsdot0 = 1
+
+damage(damagejc, damage_johnson_cook, d1, d2, d3, d4, epsdot0)
+
+material(mat1, eosl, strengthl)
+material(mat2, eoss, strengthp)
+material(mat3, eoss, strengthjc)
+material(mat4, eoss, strengthjc, damagejc)
+
+cellsize = 0.4
+solid(solid1, rectangle, box, 1, mat4, cellsize)
+
+xBC = 9.7 - cellsize
+
+region(region1, block, INF, -xBC, INF, INF, INF, INF)
+group(group1, particles, region, region1, solid, solid1)
+group(groupn1, nodes, region, region1, solid, solid1)
+
+xb = xcm(group1, x)
+fb = internal_force(groupn1, x)
+
+region(region2, block, xBC, INF, INF, INF, INF, INF)
+group(group2, particles, region, region2, solid, solid1)
+group(groupn2, nodes, region, region2, solid, solid1)
+
+xt = xcm(group2, x)
+ft = internal_force(groupn2, x)
+l = xt-xb
+l0 = value(l)
+eps = (l-l0)/l0
+stress = 0.5*(fb-ft)/A_zy
+
+
+v = 1.0-exp(-time)
+
+fix(BC_left, velocity_nodes, groupn1, -v, NULL, NULL)
+fix(BC_right, velocity_nodes, groupn2, v, NULL, NULL)
+
+dump(dump1, all, particle, 100, dump_p.*.LAMMPS, x, y, z)
+dump(dump2, all, grid, 100, dump_g.*.LAMMPS, x, y, z)
+
+set_output(100)
+log_modify(custom, step, dt, time, ft, fb, eps, stress)
+run(100000)

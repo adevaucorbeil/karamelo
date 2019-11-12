@@ -76,5 +76,6 @@ void MUSL::run(Var condition){
     }
     
   }
+  output->show_plot();
 }
 

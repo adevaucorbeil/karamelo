@@ -1,0 +1,5 @@
+/*.LAMMPS
+/*.LAMMPS.gz
+/dump.*.pdf
+/plot.*.pdf
+/log.mpm

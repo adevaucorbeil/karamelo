@@ -85,15 +85,17 @@ void FixBodyforce::post_particles_to_grid() {
   double *mass;
   Eigen::Vector3d ftot;
   Eigen::Vector3d *x0;
+  Eigen::Vector3d *x;
   Eigen::Matrix3d *R;
 
-  double mtot = 0;
+  // double mtot = 0;
   ftot.setZero();
 
   if (solid == -1) {
     for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
       mb = domain->solids[isolid]->grid->mb;
       x0 = domain->solids[isolid]->grid->x0;
+      x = domain->solids[isolid]->grid->x;
       nmax = domain->solids[isolid]->grid->nnodes;
       mask = domain->solids[isolid]->grid->mask;
       mass = domain->solids[isolid]->grid->mass;
@@ -101,9 +103,12 @@ void FixBodyforce::post_particles_to_grid() {
       for (int in = 0; in < nmax; in++) {
 	if (mass[in] > 0) {
 	  if (mask[in] & groupbit) {
-	      (*input->vars)["x"] = Var("x", x0[in][0]);
-	      (*input->vars)["y"] = Var("y", x0[in][1]);
-	      (*input->vars)["z"] = Var("z", x0[in][2]);
+	      (*input->vars)["x"] = Var("x", x[in][0]);
+	      (*input->vars)["y"] = Var("y", x[in][1]);
+	      (*input->vars)["z"] = Var("z", x[in][2]);
+	      (*input->vars)["x0"] = Var("x0", x[in][0]);
+	      (*input->vars)["y0"] = Var("y0", x[in][1]);
+	      (*input->vars)["z0"] = Var("z0", x[in][2]);
 
 	      f.setZero();
 	      if (xset) f[0] = xvalue.result(mpm);
@@ -113,7 +118,7 @@ void FixBodyforce::post_particles_to_grid() {
 	      f *= mass[in];
 	      mb[in] += f;
 	      ftot += f;
-	      mtot += mass[in];
+	      // mtot += mass[in];
 	  }
 	}
       }
@@ -146,7 +151,7 @@ void FixBodyforce::post_particles_to_grid() {
 	  f *= mass[in];
 	  mb[in] += f;
 	  ftot += f;
-	  mtot += mass[in];
+	  // mtot += mass[in];
 	}
       }
     }

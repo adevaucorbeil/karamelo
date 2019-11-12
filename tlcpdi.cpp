@@ -331,7 +331,7 @@ void TLCPDI::update_grid_state()
 void TLCPDI::grid_to_points()
 {
   for (int isolid=0; isolid<domain->solids.size(); isolid++) {
-    domain->solids[isolid]->compute_particle_velocities();
+    domain->solids[isolid]->compute_particle_velocities_and_positions();
     domain->solids[isolid]->compute_particle_acceleration();
   }
 }
@@ -339,7 +339,6 @@ void TLCPDI::grid_to_points()
 void TLCPDI::advance_particles()
 {
   for (int isolid=0; isolid<domain->solids.size(); isolid++) {
-    domain->solids[isolid]->update_particle_position();
     domain->solids[isolid]->update_particle_velocities(FLIP);
   }
 }

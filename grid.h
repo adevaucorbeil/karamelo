@@ -33,6 +33,7 @@ class Grid : protected Pointers {
   double *mass;              // nodes' current mass
   int *mask;                 // nodes' group mask
   int **ntype;               // node type in x, y, and z directions (False for an edge, True otherwise)
+  bool *rigid;               // are the nodes in the area of influence of a rigid body?
 
   Grid(class MPM *);
   virtual ~Grid();

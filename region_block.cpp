@@ -27,40 +27,52 @@ RegBlock::RegBlock(MPM *mpm, vector<string> args) : Region(mpm, args)
   else if (domain->dimension == 2) options(&args, args.begin()+6);
   else if (domain->dimension == 1) options(&args, args.begin()+4);
 
-  if (args[2].compare("INF") == 0 || args[2].compare("EDGE") == 0) {
+  if (args[2].compare("INF") == 0 || args[2].compare("-INF") == 0 || args[2].compare("EDGE") == 0) {
     if (domain->regions.size() == 0) {
       cout << "Cannot use region INF or EDGE when box does not exist" << endl;
       exit(1);
     }
     xlo = -BIG;
-  } else xlo = input->parsev(args[2]);
+  } else {
+    xlo = input->parsev(args[2]);
+    if (domain->boxlo[0] > xlo) domain->boxlo[0] = xlo;
+  }
 
-  if (args[3].compare("INF") == 0 || args[3].compare("EDGE") == 0) {
+  if (args[3].compare("INF") == 0 || args[3].compare("+INF") == 0 || args[3].compare("EDGE") == 0) {
     if (domain->regions.size() == 0) {
       cout << "Cannot use region INF or EDGE when box does not exist" << endl;
       exit(1);
     }
     xhi = BIG;
-  } else xhi = input->parsev(args[3]);
+  } else {
+    xhi = input->parsev(args[3]);
+    if (domain->boxhi[0] < xhi) domain->boxhi[0] = xhi;
+  }
 
   cout << "xlo xhi = " << xlo << "\t" << xhi << endl;
 
   if (domain->dimension >= 2) {
-    if (args[4].compare("INF") == 0 || args[4].compare("EDGE") == 0) {
+    if (args[4].compare("-INF") == 0 || args[4].compare("INF") == 0 || args[4].compare("EDGE") == 0) {
       if (domain->regions.size() == 0) {
 	cout << "Cannot use region INF or EDGE when box does not exist" << endl;
 	exit(1);
       }
       ylo = -BIG;
-    } else ylo = input->parsev(args[4]);
+    } else {
+      ylo = input->parsev(args[4]);
+      if (domain->boxlo[1] > ylo) domain->boxlo[1] = ylo;
+    }
 
-    if (args[5].compare("INF") == 0 || args[5].compare("EDGE") == 0) {
+    if (args[5].compare("INF") == 0 || args[5].compare("+INF") == 0 || args[5].compare("EDGE") == 0) {
       if (domain->regions.size() == 0) {
 	cout << "Cannot use region INF or EDGE when box does not exist" << endl;
 	exit(1);
       }
       yhi = BIG;
-    } else yhi = input->parsev(args[5]);
+    } else {
+      yhi = input->parsev(args[5]);
+      if (domain->boxhi[1] < yhi) domain->boxhi[1] = yhi;
+    }
 
     cout << "ylo yhi = " << ylo << "\t" << yhi << endl;
   } else {
@@ -69,21 +81,27 @@ RegBlock::RegBlock(MPM *mpm, vector<string> args) : Region(mpm, args)
   }
 
   if (domain->dimension == 3) {
-    if (args[6].compare("INF") == 0 || args[6].compare("EDGE") == 0) {
+    if (args[6].compare("+INF") == 0 || args[6].compare("INF") == 0 || args[6].compare("EDGE") == 0) {
       if (domain->regions.size() == 0) {
 	cout << "Cannot use region INF or EDGE when box does not exist" << endl;
 	exit(1);
       }
       zlo = -BIG;
-    } else zlo = input->parsev(args[6]);
+    } else {
+      zlo = input->parsev(args[6]);
+      if (domain->boxlo[2] > zlo) domain->boxlo[2] = zlo;
+    }
 
-    if (args[7].compare("INF") == 0 || args[7].compare("EDGE") == 0) {
+    if (args[7].compare("+INF") == 0 || args[7].compare("INF") == 0 || args[7].compare("EDGE") == 0) {
       if (domain->regions.size() == 0) {
 	cout << "Cannot use region INF or EDGE when box does not exist" << endl;
 	exit(1);
       }
       zhi = BIG;
-    } else zhi = input->parsev(args[7]);
+    } else {
+      zhi = input->parsev(args[7]);
+      if (domain->boxhi[2] < zhi) domain->boxhi[2] = zhi;
+    }
 
     cout << "zlo zhi = " << zlo << "\t" << zhi << endl;
   } else {
@@ -95,28 +113,6 @@ RegBlock::RegBlock(MPM *mpm, vector<string> args) : Region(mpm, args)
   if (xlo > xhi || ylo > yhi || zlo > zhi) {
     cout << "Illegal region block command" << endl;
     exit(1);
-  }
-
-  if (args[2].compare("INF") != 0 && args[2].compare("EDGE") != 0)
-    if (domain->boxlo[0] > xlo) domain->boxlo[0] = xlo;
-  if (domain->dimension >= 2) {
-    if (args[4].compare("INF") != 0 && args[4].compare("EDGE") != 0)
-    if (domain->boxlo[1] > ylo) domain->boxlo[1] = ylo;
-  }
-  if (domain->dimension == 3) {
-    if (args[6].compare("INF") != 0 && args[6].compare("EDGE") != 0)
-      if (domain->boxlo[2] > zlo) domain->boxlo[2] = zlo;
-  }
-
-  if (args[3].compare("INF") != 0 && args[3].compare("EDGE") != 0)
-    if (domain->boxhi[0] < xhi) domain->boxhi[0] = xhi;
-  if (domain->dimension >= 2) {
-    if (args[5].compare("INF") != 0 && args[5].compare("EDGE") != 0)
-    if (domain->boxhi[1] < yhi) domain->boxhi[1] = yhi;
-  }
-  if (domain->dimension == 3) {
-    if (args[7].compare("INF") != 0 && args[7].compare("EDGE") != 0)
-      if (domain->boxhi[2] < zhi) domain->boxhi[2] = zhi;
   }
 }
 

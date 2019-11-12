@@ -6,6 +6,11 @@
 
 using namespace std;
 
+#ifdef DEBUG
+#include <matplotlibcpp.h>
+namespace plt = matplotlibcpp;
+#endif
+
 Domain::Domain(MPM *mpm) : Pointers(mpm)
 {
   dimension = 3;
@@ -15,6 +20,10 @@ Domain::Domain(MPM *mpm) : Pointers(mpm)
 
   region_map = new RegionCreatorMap();
   // solid_map = new SolidCreatorMap();
+
+#ifdef DEBUG
+  plt::figure_size(1200, 780);
+#endif
 
   grid = new Grid(mpm);
 
@@ -31,6 +40,7 @@ Domain::Domain(MPM *mpm) : Pointers(mpm)
 // #include "style_solid.h"
 // #undef SolidStyle
 // #undef SOLID_CLASS
+
 }
 
 Domain::~Domain()

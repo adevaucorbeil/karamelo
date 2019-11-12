@@ -35,6 +35,9 @@ Input::Input(MPM *mpm, int argc, char **argv) : Pointers(mpm)
   (*vars)["x"] = Var("x", 0);
   (*vars)["y"] = Var("y", 0);
   (*vars)["z"] = Var("z", 0);
+  (*vars)["x0"] = Var("x0", 0);
+  (*vars)["y0"] = Var("y0", 0);
+  (*vars)["z0"] = Var("z0", 0);
   (*vars)["PI"] = Var(M_PI);
 
 
@@ -200,6 +203,7 @@ Var Input::evaluate_function(string func, string arg){
   if (func.compare("strength") == 0) return Var(add_strength(args));
   if (func.compare("material") == 0) return Var(add_material(args));
   if (func.compare("damage") == 0) return Var(add_damage(args));
+  if (func.compare("temperature") == 0) return Var(add_temperature(args));
   if (func.compare("dump") == 0) return Var(dump(args));
   if (func.compare("group") == 0) return Var(group_command(args));
   if (func.compare("set_output") == 0) return Var(set_output(args));
@@ -210,6 +214,7 @@ Var Input::evaluate_function(string func, string arg){
   if (func.compare("set_dt") == 0 ) return Var(set_dt(args));
   if (func.compare("value") == 0) return value(args);
   if (func.compare("plot") == 0) return Var(plot(args));
+  if (func.compare("save_plot") == 0) return Var(save_plot(args));
 
   // invoke commands added via style_command.h
 
@@ -625,7 +630,7 @@ int Input::dimension(vector<string> args){
   int dim = (int) parsev(args[0]);
 
 
-  if (dim!=1 &&dim != 2 && dim != 3) {
+  if (dim!=1 && dim != 2 && dim != 3) {
     cout << "Error: dimension argument: " << dim << endl;
     exit(1);
   }
@@ -635,7 +640,11 @@ int Input::dimension(vector<string> args){
 
   if (args.size() > 1) {
     if (dim ==1) {
-      if (args.size() > 4) {
+      if (args.size() < 4) {
+	cout << "Error: dimension received too few arguments!\n";
+	cout << "Usage: dimension(1, xmin, xmax, cell-size)\n";
+	exit(1);
+      } else if (args.size() > 4) {
 	cout << "Error: dimension received too many arguments: 6 maximum for 2D simulations (Dimension, domain xmin, domain xmax, cell size)" << endl;
 	exit(1);
       } else if (args.size() == 4) {
@@ -649,7 +658,11 @@ int Input::dimension(vector<string> args){
 	domain->grid->init(domain->boxlo, domain->boxhi);
       }
     } else if (dim == 2) {
-      if (args.size() > 6) {
+      if (args.size() < 6) {
+	cout << "Error: dimension received too few arguments!\n";
+	cout << "Usage: dimension(2, xmin, xmax, ymin, ymax, cell-size)\n";
+	exit(1);
+      } else if (args.size() > 6) {
 	cout << "Error: dimension received too many arguments: 6 maximum for 2D simulations (Dimension, domain xmin, domain xmax, domain ymin, domain ymax, cell size)" << endl;
 	exit(1);
       } else if (args.size() == 6) {
@@ -665,7 +678,11 @@ int Input::dimension(vector<string> args){
 	domain->grid->init(domain->boxlo, domain->boxhi);
       }
     } else {// dim ==3
-      if (args.size() == 8) {
+      if (args.size() < 8) {
+	cout << "Error: dimension received too few arguments!\n";
+	cout << "Usage: dimension(3, xmin, xmax, ymin, ymax, zmin, zmax, cell-size)\n";
+	exit(1);
+      } else if (args.size() == 8) {
 	domain->boxlo[0] = (double) parsev(args[1]);
 	domain->boxhi[0] = (double) parsev(args[2]);
 	domain->boxlo[1] = (double) parsev(args[3]);
@@ -707,6 +724,11 @@ int Input::add_strength(vector<string> args){
 
 int Input::add_damage(vector<string> args){
   material->add_damage(args);
+  return 0;
+}
+
+int Input::add_temperature(vector<string> args){
+  material->add_temperature(args);
   return 0;
 }
 
@@ -771,6 +793,19 @@ Var Input::value(vector<string> args){
 
 int Input::plot(vector<string> args){
   output->add_plot(args);
+  return 0;
+}
+
+int Input::save_plot(vector<string> args){
+  if (args.size() < 1) {
+    cout << "Error: too few arguments for save_plot(). Should be save_plot(filename)" << endl;
+    exit(1);
+  } else if (args.size() >1) {
+    cout << "Error: too many arguments for save_plot(). Should be save_plot(filename)" << endl;
+    exit(1);
+  }
+  output->save_plot = true;
+  output->ofile_plot = args[0];
   return 0;
 }
 

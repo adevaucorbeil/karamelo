@@ -14,31 +14,30 @@ using namespace Eigen;
 
 class Solid : protected Pointers {
  public:
-  string id;                 // solid id
-  bigint np;                 // number of particles
-  double solidlo[3], solidhi[3]; // solid bounds
+  string id;                         // solid id
+  bigint np;                         // number of particles
+  double solidlo[3], solidhi[3];     // solid bounds
 
-  Eigen::Vector3d *x;        // particles' current position
-  Eigen::Vector3d *x0;       // particles' reference position
+  Eigen::Vector3d *x;                // particles' current position
+  Eigen::Vector3d *x0;               // particles' reference position
 
   
-  Eigen::Vector3d *rp;       // current domain vector (CPDI1)
-  Eigen::Vector3d *rp0;      // reference domain vector (CPDI1)
-  Eigen::Vector3d *xpc;      // current position of the corners of the particles' domain (CPDI2)
-  Eigen::Vector3d *xpc0;     // reference position of the corners of the particles' domain (CPDI2)
-  int nc;                    // number of corners per particles: 2^dimension
+  Eigen::Vector3d *rp;               // current domain vector (CPDI1)
+  Eigen::Vector3d *rp0;              // reference domain vector (CPDI1)
+  Eigen::Vector3d *xpc;              // current position of the corners of the particles' domain (CPDI2)
+  Eigen::Vector3d *xpc0;             // reference position of the corners of the particles' domain (CPDI2)
+  int nc;                            // number of corners per particles: 2^dimension
   
-  Eigen::Vector3d *v;        // particles' current velocity
-  Eigen::Vector3d *v_update; // particles' velocity at time t+dt
+  Eigen::Vector3d *v;                // particles' current velocity
+  Eigen::Vector3d *v_update;         // particles' velocity at time t+dt
 
-  Eigen::Vector3d *a;        // particles' acceleration
+  Eigen::Vector3d *a;                // particles' acceleration
 
-  Eigen::Vector3d *mb;        // particles' external forces times mass
-  Eigen::Vector3d *f;        // particles' internal forces
+  Eigen::Vector3d *mb;               // particles' external forces times mass
+  Eigen::Vector3d *f;                // particles' internal forces
 
   Eigen::Matrix3d *sigma;            // stress matrix
   Eigen::Matrix3d *strain_el;        // elastic strain matrix
-  // Eigen::Matrix3d *PK1;              // 1st Piola-Kirchhoff matrix
   Eigen::Matrix3d *vol0PK1;          // Transpose of the 1st Piola-Kirchhoff matrix times vol0
   Eigen::Matrix3d *L;                // velocity gradient matrix
   Eigen::Matrix3d *F;                // deformation gradient matrix
@@ -60,26 +59,31 @@ class Solid : protected Pointers {
   double *eff_plastic_strain_rate;   // particles' effective plastic strain rate
   double *damage;                    // particles' damage variable
   double *damage_init;               // particles' damage initiation variable
+  double *T;                         // particles' temperature
+  double *ienergy;                   // particles' internal energy
   int *mask;                         // particles' group mask
 
-  double min_inv_p_wave_speed;   // minimum of the inverse of the particle wave speed
+  double max_p_wave_speed;           // maximum of the particle wave speed
   double dtCFL;
   
-  int *numneigh_pn;   // number of nodes neighbouring a given particle
-  int *numneigh_np;   // number of nodes neighbouring a given node
-  vector<int> *neigh_pn;     // List of the nodes neighbouring a given particle
-  vector<int> *neigh_np;     // List of the particles neighbouring a given node
+  int *numneigh_pn;                  // number of nodes neighbouring a given particle
+  int *numneigh_np;                  // number of nodes neighbouring a given node
+  vector<int> *neigh_pn;             // List of the nodes neighbouring a given particle
+  vector<int> *neigh_np;             // List of the particles neighbouring a given node
 
   vector< double > *wf_pn;
   vector< double > *wf_np;
+  vector< double > *wf_pn_corners;
+
   vector< Eigen::Vector3d > *wfd_pn;
   vector< Eigen::Vector3d > *wfd_np;
+
 
   struct Mat *mat;                     // Material
 
   class Grid *grid;                   // background grid
 
-  string method_style;
+  string method_type;
 
   Solid(class MPM *, vector<string>);
   virtual ~Solid();
@@ -94,9 +98,8 @@ class Solid : protected Pointers {
   void compute_external_forces_nodes(bool);
   void compute_internal_forces_nodes_TL();
   void compute_internal_forces_nodes_UL(bool);
-  void compute_particle_velocities();
+  void compute_particle_velocities_and_positions();
   void compute_particle_acceleration();
-  void update_particle_position();
   void update_particle_velocities(double);
   void compute_rate_deformation_gradient_TL();
   void compute_rate_deformation_gradient_TL_APIC();
@@ -112,6 +115,13 @@ class Solid : protected Pointers {
 
 private:
   void populate(vector<string>);
+  void read_mesh(string);
+  const map<string, string> usage ={{"region", "Usage: solid(solid-ID, \033[1;32mregion\033[0m, region-ID, N_ppc1D, material-ID, cell-size, T_room)\n"},
+				    {"mesh",    "Usage: solid(solid-ID, \033[1;32mmesh\033[0m, meshfile, T0)\n"}};
+  const map<string, int>    Nargs = {{"region", 7},
+				     {"mesh",   4}};
+  
+  double T0;                     // Initial temperature
 };
 
 #endif

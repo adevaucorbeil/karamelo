@@ -35,7 +35,7 @@ Var Run::command(vector<string> args)
   }
 
   int nsteps = (int) input->parsev(args[0]);
-  update->nsteps = INT_MAX;
+  update->nsteps = nsteps;//INT_MAX;
   update->maxtime = -1;
   update->firststep = update->ntimestep;
   update->laststep = update->firststep + nsteps;

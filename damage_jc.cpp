@@ -17,26 +17,40 @@ DamageJohnsonCook::DamageJohnsonCook(MPM *mpm, vector<string> args) : Damage(mpm
 {
   cout << "Initiate DamageJohnsonCook" << endl;
 
-  if (args.size()<7) {
-    cout << "Error: too few arguments for the damage command" << endl;
+  if (args.size() < Nargs) {
+    cout << "Error: too few arguments for the strength command" << endl;
+    cout << usage;
     exit(1);
   }
+
   //options(&args, args.begin()+3);
   d1 = input->parsev(args[2]);
   d2 = input->parsev(args[3]);
   d3 = input->parsev(args[4]);
   d4 = input->parsev(args[5]);
+  d5 = input->parsev(args[6]);
   epsdot0 = input->parsev(args[6]);
+  Tr      = input->parsev(args[7]);
+  Tm      = input->parsev(args[8]);
 
   cout << "Johnson Cook material damage model:\n";
   cout << "\tparameter d1:" << d1 << endl;
   cout << "\tparameter d2:" << d2 << endl;
   cout << "\tparameter d3:" << d3 << endl;
   cout << "\tparameter d4:" << d4 << endl;
+  cout << "\tparameter d5:" << d5 << endl;
   cout << "\tepsdot0: reference strain rate " << epsdot0 << endl;
+  cout << "\tTr: reference temperature " << Tr << endl;
+  cout << "\tTm: melting temperature " << Tm << endl;
+  
+  if (Tr == Tm) {
+    cout << "Error: reference temperature Tr=" << Tr << " equals melting temperature Tm=" << Tm << endl;
+    exit(1);
+  }
+  Tmr = Tm - Tr;
 }
 
-void DamageJohnsonCook::compute_damage(double &damage_init, double &damage, const double pH, const Eigen::Matrix3d Sdev, const double epsdot, const double plastic_strain_increment)
+void DamageJohnsonCook::compute_damage(double &damage_init, double &damage, const double pH, const Eigen::Matrix3d Sdev, const double epsdot, const double plastic_strain_increment, const double T)
 {
   double vm = SQRT_3_OVER_2 * Sdev.norm(); // von-Mises equivalent stress
   if (vm < 0.0) {
@@ -63,6 +77,8 @@ void DamageJohnsonCook::compute_damage(double &damage_init, double &damage, cons
       jc_failure_strain *= (1.0 + d4 * log(epdot_ratio));
     }
   }
+
+  if (d5 > 0.0 && T >= Tr) jc_failure_strain *= 1 + d5*(T-Tr)/Tmr;
 
   damage_init += plastic_strain_increment/jc_failure_strain;
 

@@ -26,7 +26,7 @@ class Update : protected Pointers {
   string scheme_style;
 
   class Method *method;
-  string method_style;
+  string method_type;
   string method_shape_function;
 
   Update(class MPM *);
