@@ -15,7 +15,7 @@
 using namespace std;
 
 TLCPDI::TLCPDI(MPM *mpm, vector<string> args) : Method(mpm) {
-  cout << "In ULCPDI::ULCPDI()" << endl;
+  cout << "In TLCPDI::TLCPDI()" << endl;
 
   update_wf = 1;
   method_type = "FLIP";
@@ -82,8 +82,8 @@ void TLCPDI::setup(vector<string> args)
     }
   }
 
-  if (args.size() > n + isFLIP) {
-    cout << "Illegal modify_method command: too many arguments: " << n + isFLIP << " expected, " << args.size() << " received." << endl;
+  if (args.size() > n + isFLIP + 1) {
+    cout << "Illegal modify_method command: too many arguments: " << n + isFLIP + 1 << " expected, " << args.size() << " received." << endl;
       exit(1);    
   }
 
@@ -91,6 +91,30 @@ void TLCPDI::setup(vector<string> args)
   // cout << "shape_function = " << shape_function << endl;
   // cout << "method_type = " << method_type << endl;
   // cout << "FLIP = " << FLIP << endl;
+  
+  n++;
+
+  if (n<args.size()) {
+    bool found_style = false;
+    for (int i=0; i<sizeof(known_styles)/sizeof(string); i++) {
+      if (known_styles[i].compare(args[n])==0) {
+        style = i;
+  found_style = true;
+        break;
+      }
+    }
+    if (!found_style) {
+      cout << "CPDI style \033[1;31m" << args[n] << "\033[0m unknown. Available options are:";
+      for (int i=0; i<sizeof(known_styles)/sizeof(string); i++) {
+  if (i) cout << ",";
+  cout << " \033[1;32m" << known_styles[i] << "\033[0m";
+      }
+      cout << ".\n";
+      exit(1);
+    }
+  }
+
+  cout << "Using CPDI-" << known_styles[style] << endl;
 }
 
 void TLCPDI::compute_grid_weight_functions_and_gradients()
