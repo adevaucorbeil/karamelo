@@ -20,6 +20,7 @@ TLCPDI::TLCPDI(MPM *mpm, vector<string> args) : Method(mpm) {
   update_wf = 1;
   method_type = "FLIP";
   FLIP = 0.99;
+  style = 0;    //Default CPDI style is known_styles[style]="R4"; 
 
   // Default base function (linear):
   shape_function = "linear";
@@ -144,12 +145,14 @@ void TLCPDI::compute_grid_weight_functions_and_gradients()
       vector<int> *neigh_np = domain->solids[isolid]->neigh_np;
 
       vector< double > *wf_pn = domain->solids[isolid]->wf_pn;
+      vector< double > *wf_pn_corners = domain->solids[isolid]->wf_pn_corners;
       vector< double > *wf_np = domain->solids[isolid]->wf_np;
 
       vector< Eigen::Vector3d > *wfd_pn = domain->solids[isolid]->wfd_pn;
       vector< Eigen::Vector3d > *wfd_np = domain->solids[isolid]->wfd_np;
 
       Eigen::Vector3d *xp = domain->solids[isolid]->x0;
+      Eigen::Vector3d *xpc = domain->solids[isolid]->xpc;
       Eigen::Vector3d *xn = domain->solids[isolid]->grid->x0;
       Eigen::Vector3d *rp = domain->solids[isolid]->rp;
 
@@ -162,6 +165,15 @@ void TLCPDI::compute_grid_weight_functions_and_gradients()
       Eigen::Vector3d r, wfd;
       vector<Eigen::Vector3d> xcorner(nc, Eigen::Vector3d::Zero());
       vector<double> wfc(nc, 0);
+
+      bool linear, cubic, bernstein;
+      linear = cubic = bernstein = false;
+
+      if (update->method_shape_function.compare("linear")==0) linear = true;
+      if (update->method_shape_function.compare("cubic-spline")==0) cubic = true;
+      if (update->method_shape_function.compare("Bernstein-quadratic")==0) bernstein = true;
+
+      double a, b, inv_Vp, alpha_over_Vp, sixVp;
 
       for (int in=0; in<nnodes; in++) {
 	neigh_np[in].clear();
@@ -186,37 +198,44 @@ void TLCPDI::compute_grid_weight_functions_and_gradients()
 	  vector<int> n_neigh;
 	  int m;
 
+	  if (style==0) { //CPDI-R4
+	    // Calculate the coordinates of the particle domain's corners:
+	    if (domain->dimension == 1) {
+	      xcorner[0] = xp[ip] - rp[ip];
+	      xcorner[1] = xp[ip] + rp[ip];
+	    }
 
-	  // Calculate the coordinates of the particle domain's corners:
-	  if (domain->dimension == 1) {
-	    xcorner[0] = xp[ip] - rp[ip];
-	    xcorner[1] = xp[ip] + rp[ip];
-	  }
+	    if (domain->dimension == 2) {
+	      xcorner[0] = xp[ip] - rp[2*ip] - rp[2*ip+1];
+	      xcorner[1] = xp[ip] + rp[2*ip] - rp[2*ip+1];
+	      xcorner[2] = xp[ip] + rp[2*ip] + rp[2*ip+1];
+	      xcorner[3] = xp[ip] - rp[2*ip] + rp[2*ip+1];
+	    }
 
-	  if (domain->dimension == 2) {
-	    xcorner[0] = xp[ip] - rp[2*ip] - rp[2*ip+1];
-	    xcorner[1] = xp[ip] + rp[2*ip] - rp[2*ip+1];
-	    xcorner[2] = xp[ip] + rp[2*ip] + rp[2*ip+1];
-	    xcorner[3] = xp[ip] - rp[2*ip] + rp[2*ip+1];
-	  }
-
-	  if (domain->dimension == 3) {
-	    cout << "Unsupported!\n";
-	    exit(1);
+	    if (domain->dimension == 3) {
+	      cout << "Unsupported!\n";
+	      exit(1);
+	    }
 	  }
 
 	  for (int ic=0; ic<nc; ic++) { // Do this for all corners
 
+	    if (style==1) { // CPDI-Q4
+	      xcorner[ic][0] = xpc[nc*ip+ic][0];
+	      xcorner[ic][1] = xpc[nc*ip+ic][1];
+	      xcorner[ic][2] = xpc[nc*ip+ic][2];
+	    }
+
 	    int i0, j0, k0;
 
-	    if (update->method_shape_function.compare("linear")==0) {
+	    if (linear) {
 	      i0 = (int) ((xcorner[ic][0] - domain->boxlo[0])*inv_cellsize);
 	      j0 = (int) ((xcorner[ic][1] - domain->boxlo[1])*inv_cellsize);
 	      k0 = (int) ((xcorner[ic][2] - domain->boxlo[2])*inv_cellsize);
 
 	      m = 2;
 
-	    } else if (update->method_shape_function.compare("Bernstein-quadratic")==0){
+	    } else if (bernstein){
 	      i0 = 2*(int) ((xcorner[ic][0] - domain->boxlo[0])*inv_cellsize);
 	      j0 = 2*(int) ((xcorner[ic][1] - domain->boxlo[1])*inv_cellsize);
 	      k0 = 2*(int) ((xcorner[ic][2] - domain->boxlo[2])*inv_cellsize);
@@ -227,7 +246,7 @@ void TLCPDI::compute_grid_weight_functions_and_gradients()
 
 	      m = 3;
 
-	    } else if (update->method_shape_function.compare("cubic-spline")==0){
+	    } else if (cubic){
 	      i0 = (int) ((xcorner[ic][0] - domain->boxlo[0])*inv_cellsize - 1);
 	      j0 = (int) ((xcorner[ic][1] - domain->boxlo[1])*inv_cellsize - 1);
 	      k0 = (int) ((xcorner[ic][2] - domain->boxlo[2])*inv_cellsize - 1);
@@ -275,6 +294,19 @@ void TLCPDI::compute_grid_weight_functions_and_gradients()
 	  //   cout << ii << ' ';
 	  // cout << "]\n";
 
+	  inv_Vp = 1.0/vol[ip];
+
+	  if (style==1) {
+	    a = (xcorner[3][0]-xcorner[0][0])*(xcorner[1][1]-xcorner[2][1])
+	      - (xcorner[1][0]-xcorner[2][0])*(xcorner[3][1]-xcorner[0][1]);
+
+	    b = (xcorner[2][0]-xcorner[3][0])*(xcorner[0][1]-xcorner[1][1])
+	      - (xcorner[0][0]-xcorner[1][0])*(xcorner[2][1]-xcorner[3][1]);
+
+	    alpha_over_Vp = 0.0417*inv_Vp;
+	    sixVp = 6*vol[ip];
+	  }
+
 	  //for (int in=0; in<nnodes; in++) {
 	  for (auto in: n_neigh) {
 	    wf = 0;
@@ -290,25 +322,47 @@ void TLCPDI::compute_grid_weight_functions_and_gradients()
 
 	      wfc[ic] = s[0]*s[1]*s[2]; // Shape function of the corner node
 
-	      if (wfc[ic] > 1.0e-12) wf += wfc[ic];
+	      if (style==0 && wfc[ic] > 1.0e-12) wf += wfc[ic];
 	    }
 
-	    wf *= 0.25;
+	    if (style==0) wf *= 0.25;
+	    if (style==1) {
+	      wf = alpha_over_Vp*((sixVp - a - b)*wfc[0]
+				  + (sixVp - a + b)*wfc[1]
+				  + (sixVp + a + b)*wfc[2]
+				  + (sixVp + a - b)*wfc[3]);
+	    }
 
+	    
 	    if (wf > 1.0e-12) {
-	      if (domain->dimension == 2) {
+	      if (style==0) {
 		wfd[0] = (wfc[0] - wfc[2]) * (rp[domain->dimension*ip][1] - rp[domain->dimension*ip+1][1])
 		  + (wfc[1] - wfc[3]) * (rp[domain->dimension*ip][1] + rp[domain->dimension*ip+1][1]);
 		
 		wfd[1] = (wfc[0] - wfc[2]) * (rp[domain->dimension*ip+1][0] - rp[domain->dimension*ip][0])
 		  - (wfc[1] - wfc[3]) * (rp[domain->dimension*ip][0] + rp[domain->dimension*ip+1][0]);
+
 		wfd[2] = 0;
+
+		wfd *= inv_Vp;
 	      }
 
-	      double inv_Vp = 1.0/vol[ip];
-	      wfd[0] *= inv_Vp;
-	      wfd[1] *= inv_Vp;
-	      wfd[2] *= inv_Vp;
+	      if (style==1) {
+		wfd[0] = wfc[0] * (xcorner[1][1]-xcorner[3][1])
+		  + wfc[1] * (xcorner[2][1]-xcorner[0][1])
+		  + wfc[2] * (xcorner[3][1]-xcorner[1][1])
+		  + wfc[3] * (xcorner[0][1]-xcorner[2][1]);
+		
+		wfd[1] = wfc[0] * (xcorner[3][0]-xcorner[1][0])
+		  + wfc[1] * (xcorner[0][0]-xcorner[2][0])
+		  + wfc[2] * (xcorner[1][0]-xcorner[3][0])
+		  + wfc[3] * (xcorner[2][0]-xcorner[0][0]);
+
+		wfd[2] = 0;
+
+		wfd *= 0.5*inv_Vp;
+		for(int ic=0; ic<nc; ic++) wf_pn_corners[nc*ip+ic].push_back(wfc[ic]);
+	      }
 
 	      neigh_pn[ip].push_back(in);
 	      neigh_np[in].push_back(ip);
