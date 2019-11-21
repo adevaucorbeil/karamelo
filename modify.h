@@ -10,15 +10,16 @@
 
 using namespace std;
 
-class Modify : protected Pointers {
- public:
-  int restart_pbc_any;            // 1 if any fix sets restart_pbc
-  int nfix_restart_global;        // stored fix global info from restart file
-  int nfix_restart_peratom;       // stored fix peratom info from restart file
+class Modify : protected Pointers
+{
+public:
+  int restart_pbc_any;      // 1 if any fix sets restart_pbc
+  int nfix_restart_global;  // stored fix global info from restart file
+  int nfix_restart_peratom; // stored fix peratom info from restart file
 
-  vector<class Fix*> fix;         // list of fixes
+  vector<class Fix *> fix; // list of fixes
 
-  vector<class Compute*> compute; // list of computes
+  vector<class Compute *> compute; // list of computes
 
   Modify(class MPM *);
   virtual ~Modify();
@@ -30,7 +31,7 @@ class Modify : protected Pointers {
   void delete_fix(string);
   void delete_fix(int);
   int find_fix(string);
-  //int check_package(const char *);
+  // int check_package(const char *);
 
   void add_compute(vector<string>);
   void modify_compute(vector<string>);
@@ -50,9 +51,7 @@ class Modify : protected Pointers {
   void post_velocities_to_grid();
   void final_integrate();
 
-
- protected:
-
+protected:
   // lists of fixes to apply at different stages of timestep
   vector<int> list_initial_integrate;
   vector<int> list_post_particles_to_grid;
@@ -64,33 +63,32 @@ class Modify : protected Pointers {
 
   int *end_of_step_every;
 
-  int n_timeflag;            // list of computes that store time invocation
+  int n_timeflag; // list of computes that store time invocation
   int *list_timeflag;
 
-  char **id_restart_global;           // stored fix global info
-  char **style_restart_global;        // from read-in restart file
+  char **id_restart_global;    // stored fix global info
+  char **style_restart_global; // from read-in restart file
   char **state_restart_global;
 
-  char **id_restart_peratom;          // stored fix peratom info
-  char **style_restart_peratom;       // from read-in restart file
+  char **id_restart_peratom;    // stored fix peratom info
+  char **style_restart_peratom; // from read-in restart file
   int *index_restart_peratom;
 
-  int index_permanent;        // fix/compute index returned to library call
+  int index_permanent; // fix/compute index returned to library call
 
   void list_init(int, vector<int> &);
 
- private:
+private:
   typedef Compute *(*ComputeCreator)(MPM *, vector<string>);
-  typedef map<string,ComputeCreator> ComputeCreatorMap;
+  typedef map<string, ComputeCreator> ComputeCreatorMap;
   ComputeCreatorMap *compute_map;
 
   typedef Fix *(*FixCreator)(MPM *, vector<string>);
-  typedef map<string,FixCreator> FixCreatorMap;
+  typedef map<string, FixCreator> FixCreatorMap;
   FixCreatorMap *fix_map;
 
   template <typename T> static Compute *compute_creator(MPM *, vector<string>);
   template <typename T> static Fix *fix_creator(MPM *, vector<string>);
 };
-
 
 #endif
