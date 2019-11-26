@@ -53,7 +53,7 @@ MAIN = karamelo_${BRANCH}
 .PHONY: depend clean
 
 all:    $(MAIN)
-	@echo  Simple compiler named mpm has been compiled
+	@echo  Simple compiler named ${MAIN} has been compiled
 
 $(MAIN): $(OBJ) #dump_particle.o
 	$(CC) $(CFLAGS) $(INCLUDES) $(OBJ) $(LFLAGS) $(LIBS) -o $(MAIN) 
