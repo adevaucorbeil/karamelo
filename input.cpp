@@ -805,7 +805,7 @@ int Input::dimension(vector<string> args)
 
   if (args.size() > 9)
   {
-    cout << "Error: dimension received too many arguments: 8 maximum for 2D "
+    cout << "Error: dimension received too many arguments: 8 maximum for 3D "
             "simulations (Dimension, domain xmin, domain xmax, domain ymin, "
             "domain ymax, domain zmin, domain zmax, cell size)"
          << endl;
@@ -858,6 +858,14 @@ int Input::dimension(vector<string> args)
     }
     else if (dim == 2)
     {
+      if (args[1].compare("axisymmetric") == 0)
+      {
+        domain->axisymmetric = true;
+        cout << "Axi-symmetric is ON " << domain->axisymmetric << endl;
+
+        return 0;
+      }
+
       if (args.size() < 6)
       {
         cout << "Error: dimension received too few arguments!\n";
@@ -891,7 +899,7 @@ int Input::dimension(vector<string> args)
         if (args[6].compare("axisymmetric") == 0)
         {
           domain->axisymmetric = true;
-          cout << "Axi-symmetric is ON " << domain->axisymmetric;
+          cout << "Axi-symmetric is ON " << domain->axisymmetric << endl;
         }
 
         domain->grid->init(domain->boxlo, domain->boxhi);
