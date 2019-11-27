@@ -235,14 +235,19 @@ void Solid::init()
   cout << "ylo yhi: " << solidlo[1] << " " << solidhi[1] << endl;
   cout << "zlo zhi: " << solidlo[2] << " " << solidhi[2] << endl;
 
-  // Calculate total volume:
-  vtot = 0;
+  // Calculate total volume and mass
+  vtot = 0.;
+
+  double mtot(0.);
+
   for (int ip = 0; ip < np; ip++)
   {
     vtot += vol[ip];
+    mtot += mass[ip];
   }
 
   cout << "Solid " << id << " total volume = " << vtot << endl;
+  cout << "Solid " << id << " total mass = " << mtot << endl;
 
   if (grid->nnodes == 0)
     grid->init(solidlo, solidhi);
@@ -734,6 +739,11 @@ void Solid::compute_internal_forces_nodes_TL()
     {
       ip = neigh_np[in][j];
       ftemp -= vol0PK1[ip] * wfd_np[in][j];
+
+      if (domain->axisymmetric == true)
+      {
+        ftemp[0] -= vol0PK1[ip](2, 2) * wf_np[in][j] / x0[ip][0];
+      }
     }
 
     fn[in] = ftemp;
@@ -920,6 +930,9 @@ void Solid::compute_rate_deformation_gradient_TL()
         Fdot[ip](0, 1) += vn[in][0] * wfd_pn[ip][j][1];
         Fdot[ip](1, 0) += vn[in][1] * wfd_pn[ip][j][0];
         Fdot[ip](1, 1) += vn[in][1] * wfd_pn[ip][j][1];
+
+        if (domain->axisymmetric == true)
+          Fdot[ip](2, 2) += vn[in][0] * wf_pn[ip][j] / x0[ip][0];
       }
     }
   }
@@ -1352,8 +1365,16 @@ void Solid::update_deformation_gradient()
     {
       // Only done if not Neo-Hookean:
 
+      // TLMPM. L is computed from Fdot
       if (tl)
+      {
+        // cout << Finv[ip] << endl;
+        // pocout << Fdot[ip] << endl;
         L[ip] = Fdot[ip] * Finv[ip];
+
+        // if  ( domain->axisymmetric == true ) L[ip](2, 2) += vn[in][0] *
+        // wf_pn[ip][j] / x[ip][0];
+      }
       // else
       //   Fdot[ip] = L[ip]*F[ip];
 
@@ -1988,7 +2009,10 @@ void Solid::populate(vector<string> args)
     rho0[i] = rho[i] = mat->rho0;
 
     if (domain->axisymmetric == true)
+    {
       mass[i] = mass_ * x0[i][0];
+      vol0[i] = vol[i] = mass[i] / rho0[i];
+    }
     else
       mass[i] = mass_;
 
