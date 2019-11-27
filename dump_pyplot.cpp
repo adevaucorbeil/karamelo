@@ -12,11 +12,14 @@
  * ----------------------------------------------------------------------- */
 
 #include <iostream>
+#include <vector>
+#include <matplotlibcpp.h>
 #include "output.h"
 #include "dump_pyplot.h"
 #include "update.h"
 #include "domain.h"
 #include "solid.h"
+#include "method.h"
 #include "mpmtype.h"
 #include "mpm_math.h"
 #include <vector>
@@ -31,12 +34,20 @@ namespace plt = matplotlibcpp;
 DumpPyPlot::DumpPyPlot(MPM *mpm, vector<string> args) : Dump(mpm, args)
 {
   cout << "In DumpPyPlot::DumpPyPlot()" << endl;
+
+  if (args.size() < 5) {
+    cout << "Error: not enough arguments. Example: dump(dump-ID, region_ID, pyplot, N, filename.*.png, xsize, ysize)\n";
+    exit(1);
+  }
+
   if (domain->dimension != 1 && domain->dimension != 2) {
     error->all(FLERR, "Error: cannot use dump_pyplot with dimensions different than 1 or 2!\n");
   }
 
   if (args.size() > 5) {
     if (args.size() > 7) {
+      error->all(FLERR, "Error: too many options given to dump_pyplot\n.");
+    } else if (args.size() > 7) {
       error->all(FLERR, "Error: too many options given to dump_pyplot\n.");
     } else {
       xsize = stoi(args[5]);
@@ -126,8 +137,8 @@ void DumpPyPlot::write()
   plt::plot(xg, yg, "+");
   plt::plot(xp, yp, ".");
 
-  if (update->method_style.compare("tlcpdi") == 0
-      || update->method_style.compare("ulcpdi") == 0) {
+  if (update->method_type.compare("tlcpdi") == 0
+      || update->method_type.compare("ulcpdi") == 0) {
 
     for (int isolid=0; isolid < domain->solids.size(); isolid++) {
       Solid *s = domain->solids[isolid];
@@ -137,7 +148,8 @@ void DumpPyPlot::write()
       vector<double> ycorner(s->nc+1, 0.0);
 
       for (bigint ip=0; ip<s->np;ip++) {
-	// Calculate the coordinates of the particle domain's corners:
+	if (update->method->style == 0) {
+	  // Calculate the coordinates of the particle domain's corners:
 	  if (domain->dimension == 1) {
 	    // 1st corner:
 	    corner = s->x[ip] - s->rp[ip];
@@ -174,7 +186,17 @@ void DumpPyPlot::write()
 	    xcorner[4] = corner[0];
 	    ycorner[4] = corner[1];
 	  }
+	}
 
+	if (update->method->style == 1) {
+	  for (int ic=0; ic<s->nc; ic++) {
+	    corner = s->xpc[s->nc*ip + ic];
+	    xcorner[ic] = corner[0];
+	    ycorner[ic] = corner[1];
+	  }
+	  xcorner[s->nc] = xcorner[0]; // Close the loop
+	  ycorner[s->nc] = ycorner[0]; // Close the loop
+	}
 	plt::plot(xcorner, ycorner, "r-");
       }
     }
@@ -182,6 +204,7 @@ void DumpPyPlot::write()
 
   // Save the image (file format is determined by the extension)
   plt::axis("equal");
+  plt::axis("off");
   plt::save(fdump);
   //plt::show();
   plt::close();

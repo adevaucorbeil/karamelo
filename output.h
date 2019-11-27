@@ -39,12 +39,15 @@ public:
   vector<bigint> last_plot;    // last timestep each snapshot was output
   int nplots;                  // number of defined Plots, should always be equal to plots.size()
   vector<class Plot *> plots;  // list of defined Plots
+  bool save_plot;              // true to save plot in file
+  string ofile_plot;           // filename to save the plot to
 
   Output(class MPM *);
   ~Output();
 
   void setup();
   void write(bigint);                  // output for current timestep
+  void show_plot();                    // show plot
 
   void set_log(vector<string>);        // set log output frequency
 

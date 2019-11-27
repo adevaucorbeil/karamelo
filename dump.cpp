@@ -12,6 +12,7 @@
  * ----------------------------------------------------------------------- */
 
 #include <iostream>
+#include <algorithm>
 #include "dump.h"
 #include "error.h"
 
@@ -36,20 +37,3 @@ Dump::Dump(MPM *mpm, vector<string> args) :
 Dump::~Dump()
 {
 }
-
-
-void Dump::options(vector<string> *args, vector<string>::iterator it)
-{
-  cout << "In dump::options()" << endl;
-  if (args->end() < it) {
-    error->all(FLERR, "Error: not enough arguments.\n");
-  }
-  if (args->end() > it) {
-    cout << "Ignoring optional arguments: ";
-    for (it; it != args->end(); ++it){
-      cout << *it << "\t";
-    }
-    cout << endl;
-  }
-}
-

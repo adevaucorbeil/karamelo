@@ -73,7 +73,7 @@ void DeleteParticles::delete_region(vector<string> args, int isolid) {
   int np;
   for(int is=0; is<ns; is++){
     if ((isolid < 0) || (is == isolid)) {
-      np = domain->solids[isolid]->np;
+      np = domain->solids[is]->np;
       dlist[is] = new int[np];
 
       for(int ip=0; ip<np; ip++){

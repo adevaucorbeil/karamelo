@@ -144,6 +144,7 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
       Eigen::Vector3d wfd;
 
       vector<array<int, 3>> *ntype = &domain->solids[isolid]->grid->ntype;
+      vector<bool> *nrigid = &domain->solids[isolid]->grid->rigid;
 
       map<int, int> *map_ntag = &domain->solids[isolid]->grid->map_ntag;
       map<int, int>::iterator it;
@@ -273,6 +274,7 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
 	    else s[2] = 1;
 
 	    if (s[0] != 0 && s[1] != 0 && s[2] != 0) {
+	      if (domain->solids[isolid]->mat->rigid) (*nrigid)[in] = true;
 	      // // cout << in << "\t";
 	      // // Check if this node is in n_neigh:
 	      // if (find(n_neigh.begin(), n_neigh.end(), in) == n_neigh.end()) {
@@ -295,9 +297,6 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
 	      if (domain->dimension == 2) wf = s[0]*s[1];
 	      if (domain->dimension == 3) wf = s[0]*s[1]*s[2];
 
-	      // if ((domain->solids[isolid]->grid->ntag[in]==5) && (domain->solids[isolid]->ptag[ip] == 201)) {
-	      // 	cout << "ntag=" << domain->solids[isolid]->grid->ntag[in] << "\tptag=" << domain->solids[isolid]->ptag[ip] << "\twf=" << wf << "\tr=[" << r[0] << "," << r[1] << "," << r[2] << "\txp=" << (*xp)[ip][0] << ","  << (*xp)[ip][1] << "," << (*xp)[ip][2] << "]\txn=["<< (*xn)[in][0] << "," << (*xn)[in][1] << "," << (*xn)[in][2] << "]\tntype=[" << (*ntype)[in][0] << "," << (*ntype)[in][1] << "," << (*ntype)[in][2] << "]\n";
-	      // }
 	      wf_pn[ip].push_back(wf);
 	      wf_np[in].push_back(wf);
 
@@ -338,17 +337,19 @@ void TLMPM::particles_to_grid()
 {
   bool grid_reset = true; // Indicate if the grid quantities have to be reset
   for (int isolid=0; isolid<domain->solids.size(); isolid++){
-    if (update->ntimestep==1) {
-      domain->solids[isolid]->compute_mass_nodes(grid_reset);
-      domain->solids[isolid]->grid->reduce_mass_ghost_nodes();
-    }
-    //domain->solids[isolid]->compute_node_rotation_matrix(grid_reset);
+    if (update->ntimestep==1)
+      {
+	domain->solids[isolid]->compute_mass_nodes(grid_reset);
+	domain->solids[isolid]->grid->reduce_mass_ghost_nodes();
+      }
+  }
+
+  for (int isolid=0; isolid<domain->solids.size(); isolid++){
     if (method_type.compare("APIC") == 0) domain->solids[isolid]->compute_velocity_nodes_APIC(grid_reset);
     else domain->solids[isolid]->compute_velocity_nodes(grid_reset);
     domain->solids[isolid]->compute_external_forces_nodes(grid_reset);
     domain->solids[isolid]->compute_internal_forces_nodes_TL();
     /*compute_thermal_energy_nodes();*/
-
     domain->solids[isolid]->grid->reduce_ghost_nodes();
   }
 }
@@ -363,7 +364,7 @@ void TLMPM::update_grid_state()
 void TLMPM::grid_to_points()
 {
   for (int isolid=0; isolid<domain->solids.size(); isolid++) {
-    domain->solids[isolid]->compute_particle_velocities();
+    domain->solids[isolid]->compute_particle_velocities_and_positions();
     domain->solids[isolid]->compute_particle_acceleration();
   }
 }
@@ -371,7 +372,6 @@ void TLMPM::grid_to_points()
 void TLMPM::advance_particles()
 {
   for (int isolid=0; isolid<domain->solids.size(); isolid++) {
-    domain->solids[isolid]->update_particle_position();
     domain->solids[isolid]->update_particle_velocities(FLIP);
   }
 }

@@ -1,0 +1,97 @@
+#####################################################
+#               UNITS: GPa, mm, ms                  #
+#####################################################
+
+E = 115
+nu = 0.31
+K = E/(3*(1-2*nu))
+G = E/(2*(1+nu))
+rho = 8.94e-06
+sigmay = 0.065
+B = 0.356
+C = 0#0.013
+n = 0.37
+eps0dot = 1e-3
+S = 1.5
+c0 = 3933 #4222
+
+Lx = 2
+Ly = 1
+Lz = 2
+hLx = 0.5*Lx
+hLy = 0.5*Ly
+hLz = 0.5*Lz
+#A_zy = L*L
+
+FLIP=0.99
+
+#---------- SET METHOD --------------#
+method(tlmpm, FLIP, linear, FLIP)
+
+dimension(3)
+
+region(box, block, -hLx, hLx, -hLy, hLy, -hLz, hLz)
+
+
+#---------- SET MATERIAL --------------#
+eos(eoss, shock, rho, K, c0, 0, S, 0)
+
+strength(strengthJC, johnson_cook, G, sigmay, B, n, eps0dot, C)
+
+material(mat1, eoss, strengthJC)
+
+
+#---------- SET SOLID --------------#
+N = 10
+cellsize = Ly/N
+
+solid(solid1, box, 1, mat1, cellsize)
+
+#---------- IMPOSE BOUNDARY CONDITIONS --------------#
+region(bot, block, INF, INF, INF, -hLy+0.6*cellsize, INF, INF)
+group(botp, particles, region, bot, solid, solid1)
+group(botn, nodes, region, bot, solid, solid1)
+
+fix(BC_bot, velocity_nodes, botn, 0, 0, 0)
+
+#------------------ INDENTER ------------------#
+K = 1000
+R = 0.5
+v0 = -0.1
+xind = 0
+xind0 = evaluate(xind)
+
+yind = hLy + R - 0.5*cellsize + v0*(time + exp(-time) - 1)
+yind0 = evaluate(yind)
+
+dyind = yind - yind0
+dxind = xind - xind0
+zind = 0
+
+fix(indenter, indent, all, sphere, K, xind, yind, zind, R)
+
+
+#------------------ DUMPS ------------------#
+N_log = 100
+dumping_interval = N_log*1
+
+dump(dump1, all, particle, dumping_interval, dump_p.*.LAMMPS, x, y, z)
+#dump(dump2, all, grid, dumping_interval, dump_g.*.LAMMPS, x, y, z)
+
+#----------- RUN --------------------#
+dt_factor(1)
+
+set_output(N_log)
+log_modify(custom, step, dt, time, dxind, dyind, indenter_x, indenter_y)
+#plot(ind, N_log, yind, indenter_y)
+
+run_while(dyind > -0.15)
+
+
+t1 = evaluate(time)
+xind = evaluate(xind) + v0*(time-t1 + exp(-(time-t1)) - 1)
+yind = evaluate(yind)
+
+dyind = yind - yind0
+dxind = xind - xind0
+run_while(dxind > -0.9)

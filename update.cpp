@@ -106,7 +106,7 @@ void Update::create_method(vector<string> args){
 
   new_method(args);
 
-  method_style = args[0];
+  method_type = args[0];
   method_shape_function = args[2];
 }
 

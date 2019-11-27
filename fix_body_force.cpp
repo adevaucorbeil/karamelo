@@ -94,8 +94,9 @@ void FixBodyforce::post_particles_to_grid() {
   Grid *g;
 
   Eigen::Vector3d ftot, ftot_reduced;
+  Eigen::Matrix3d *R;
 
-  double mtot = 0;
+  // double mtot = 0;
   ftot.setZero();
 
   if (solid == -1) {
@@ -105,9 +106,12 @@ void FixBodyforce::post_particles_to_grid() {
       for (int in = 0; in < g->nnodes_local + g->nnodes_ghost; in++) {
 	if (g->mass[in] > 0) {
 	  if (g->mask[in] & groupbit) {
-	      (*input->vars)["x"] = Var("x", g->x0[in][0]);
-	      (*input->vars)["y"] = Var("y", g->x0[in][1]);
-	      (*input->vars)["z"] = Var("z", g->x0[in][2]);
+	      (*input->vars)["x"] = Var("x", g->x[in][0]);
+	      (*input->vars)["y"] = Var("y", g->x[in][1]);
+	      (*input->vars)["z"] = Var("z", g->x[in][2]);
+	      (*input->vars)["x0"] = Var("x0", g->x0[in][0]);
+	      (*input->vars)["y0"] = Var("y0", g->x0[in][1]);
+	      (*input->vars)["z0"] = Var("z0", g->x0[in][2]);
 
 	      f.setZero();
 	      if (xset) f[0] = xvalue.result(mpm);
@@ -119,7 +123,7 @@ void FixBodyforce::post_particles_to_grid() {
 
 	      if (in < g->nnodes_local) {
 		ftot += f;
-		mtot += g->mass[in];
+		// mtot += g->mass[in];
 	      }
 	  }
 	}
@@ -131,9 +135,12 @@ void FixBodyforce::post_particles_to_grid() {
     for (int in = 0; in < g->nnodes_local + g->nnodes_ghost; in++) {
       if (g->mass[in] > 0) {
 	if (g->mask[in] & groupbit) {
-	  (*input->vars)["x"] = Var("x", g->x0[in][0]);
-	  (*input->vars)["y"] = Var("y", g->x0[in][1]);
-	  (*input->vars)["z"] = Var("z", g->x0[in][2]);
+	  (*input->vars)["x"] = Var("x", g->x[in][0]);
+	  (*input->vars)["y"] = Var("y", g->x[in][1]);
+	  (*input->vars)["z"] = Var("z", g->x[in][2]);
+	  (*input->vars)["x0"] = Var("x0", g->x0[in][0]);
+	  (*input->vars)["y0"] = Var("y0", g->x0[in][1]);
+	  (*input->vars)["z0"] = Var("z0", g->x0[in][2]);
 
 	  f.setZero();
 	  if (xset) f[0] = xvalue.result(mpm);
@@ -145,7 +152,7 @@ void FixBodyforce::post_particles_to_grid() {
 
 	  if (in < g->nnodes_local) {
 	    ftot += f;
-	    mtot += g->mass[in];
+	    // mtot += g->mass[in];
 	  }
 	}
       }

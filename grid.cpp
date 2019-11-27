@@ -36,6 +36,10 @@ namespace plt = matplotlibcpp;
 using namespace std;
 using namespace Eigen;
 
+#ifdef DEBUG
+#include <matplotlibcpp.h>
+namespace plt = matplotlibcpp;
+#endif
 
 Grid::Grid(MPM *mpm) :
   Pointers(mpm)
@@ -74,6 +78,12 @@ Grid::~Grid()
 }
 
 void Grid::init(double *solidlo, double *solidhi){
+
+#ifdef DEBUG
+  std::vector<double> x2plot, y2plot;
+#endif
+
+  double Lx = solidhi[0]-solidlo[0];//+2*cellsize;
 
   cout << "In Grid::init()\n";
   bool cubic = false;
@@ -275,6 +285,7 @@ void Grid::init(double *solidlo, double *solidhi){
 	f[l].setZero();
 	mb[l].setZero();
 	mass[l] = 0;
+	rigid[l] = false;
 	// R[l].setIdentity();
 
 	ntag[l] = nz_global*ny_global*(i+noffsetlo[0]) + nz_global*(j+noffsetlo[1]) + k+noffsetlo[2];
@@ -469,16 +480,24 @@ void Grid::grow(int nn){
   str = "grid-ntype";
   cout << "Growing " << str << endl;
   ntype.resize(nn);
+  
+  str = "grid-rigid";
+  cout << "Growing " << str << endl;
+  rigid.resize(nn);
+
 }
 
 void Grid::update_grid_velocities()
 {
   // Update all particles (even the ghost to not have to communicate the result)
   for (int i=0; i<nnodes_local + nnodes_ghost; i++){
-    if (mass[i] > 1e-12) v_update[i] = v[i] + update->dt * (f[i] + mb[i])/mass[i];
-    else v_update[i] = v[i];
-    // if (ntag[i]==65)
-    //   printf("proc %d - update_grid_velocities: tag=%d, v_update=[%.10e, %.10e, %.10e], f=[%.10e, %.10e, %.10e], mb=[%.10e, %.10e, %.10e], dt=%f, mass[i]=%f\n", universe->me, ntag[i], v_update[i][0], v_update[i][1], v_update[i][2], f[i][0], f[i][1],f[i][2],mb[i][0],mb[i][1],mb[i][2],update->dt,mass[i]);
+    if (!rigid[i]) {
+      if (mass[i] > 1e-12) v_update[i] = v[i] + update->dt * (f[i] + mb[i])/mass[i];
+      else v_update[i] = v[i];
+    }
+    // if (update->ntimestep>450)
+    if (isnan(v_update[i](0)))
+      cout << "update_grid_velocities: in=" << i << ", vn=[" << v[i][0] << "," << v[i][1] << "," << v[i][2] << "], f=[" << f[i][0] << "," << f[i][1] << "," << f[i][2] << "], mb=[" << mb[i][0] << "," << mb[i][1] << "," << mb[i][2] << "], dt=" << update->dt << ", mass[i]=" << mass[i] << endl;
   }
 }
 

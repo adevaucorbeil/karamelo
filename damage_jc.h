@@ -30,10 +30,18 @@ public:
   DamageJohnsonCook(class MPM *, vector<string>);
   ~DamageJohnsonCook() {};
 
-  void compute_damage(double &damage_init, double &damage, const double pH, const Eigen::Matrix3d Sdev, const double epsdot, const double plastic_strain_increment);
+  void compute_damage(double &damage_init,
+			      double &damage,
+			      const double pH,
+			      const Eigen::Matrix3d Sdev,
+			      const double epsdot,
+			      const double plastic_strain_increment,
+			      const double temperature);
 
 protected:
-  double d1, d2, d3, d4, epsdot0;
+  double d1, d2, d3, d4, d5, epsdot0,Tr, Tm, Tmr;
+  string usage = "Usage: damage(damage-ID, damage_johnson_cook, d1, d2, d3, d4, d5, epsdot0, Tr, Tm)\n";
+  int Nargs = 9;
 };
 
 #endif

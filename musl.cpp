@@ -89,5 +89,6 @@ void MUSL::run(Var condition){
       output->write(ntimestep);
     }
   }
+  output->show_plot();
 }
 

@@ -74,11 +74,7 @@ void FixKineticEnergy::final_integrate() {
 
   Solid *s;
 
-  int nmax;
-  int *mask;
-  double *mass;
   double Ek, Ek_reduced;
-  vector<Eigen::Vector3d> *v;
 
   Ek = 0;
   if (solid == -1) {
@@ -87,7 +83,7 @@ void FixKineticEnergy::final_integrate() {
 
       for (int in = 0; in < s->np_local; in++) {
 	if (s->mask[in] & groupbit) {
-	  Ek += 0.5*s->mass[in]*s->v[in].norm();
+	  Ek += 0.5*s->mass[in]*square(s->v[in].norm());
 	}
       }
     }
@@ -96,7 +92,7 @@ void FixKineticEnergy::final_integrate() {
 
     for (int in = 0; in < s->np_local; in++) {
       if (s->mask[in] & groupbit) {
-	Ek += 0.5*s->mass[in]*s->v[in].norm();
+	Ek += 0.5*s->mass[in]*square(s->v[in].norm());
       }
     }
   }

@@ -1,0 +1,67 @@
+#####################################################
+#               UNITS: GPa, mm, ms                  #
+#####################################################
+
+E = 115
+nu = 0.31
+K = E/(3*(1-2*nu))
+G = E/(2*(1+nu))
+rho = 8.94e-06
+sigmay = 0.065
+B = 0.356
+C = 0#0.013
+n = 0.37
+eps0dot = 1e-3
+
+hLx = 25.4/2
+R = 3.8
+A_zy = PI*R*R
+
+FLIP=0.99
+
+S = 1.5
+c0 = 3933 #4222
+
+FLIP=0.99
+
+dimension(3)
+region(cyl, cylinder, x, 0, 0, R, -hLx, hLx)
+
+
+eos(eoss, shock, rho, K, c0, 0, S, 0)
+
+strength(strengthJC, johnson_cook, G, sigmay, B, n, eps0dot, C)
+
+material(mat, eoss, strengthJC)
+
+N = 4
+cellsize = 1/N
+
+solid(solid1, cylinder, cyl, 1, mat, cellsize)
+x_wall = -hLx + cellsize/2
+
+region(region1, block, INF, -x_wall, INF, INF, INF, INF)
+group(group1, particles, region, region1, solid, solid1)
+group(groupn1, nodes, region, region1, solid, solid1)
+
+region(region2, block, -x_wall, INF, INF, INF, INF, INF)
+group(group2, particles, region, region2, solid, solid1)
+group(groupn2, nodes, region, region2, solid, solid1)
+
+v = 190
+
+fix(vinit, initial_velocity_nodes, groupn1, v, 0, 0)
+#fix(BC_Tip, velocity_nodes, groupn2, -v, NULL, NULL)
+
+N_log = 1
+
+dump(dump1, all, particle, N_log*10, dump_p.*.LAMMPS, x, y, z)
+dump(dump2, all, grid, N_log*10, dump_g.*.LAMMPS, x, y, z)
+
+method_modify(FLIP,linear,FLIP)
+log(N_log)
+dt_factor(0.25)
+log_modify(custom, step, dt, time)
+run(1)
+fix(BC_Wall, velocity_nodes, groupn2, 0, NULL, NULL)
+run(20000)

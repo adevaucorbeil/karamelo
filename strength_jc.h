@@ -31,10 +31,20 @@ public:
   ~StrengthJohnsonCook() {};
 
   double G();
-  Eigen::Matrix3d update_deviatoric_stress(const Eigen::Matrix3d sigma, const Eigen::Matrix3d D, double &plastic_strain_increment, const double eff_plastic_strain, const double epsdot, const double damage);
+  
+  Eigen::Matrix3d  update_deviatoric_stress
+  ( const Eigen::Matrix3d& sigma,
+    const Eigen::Matrix3d& D,
+    double &               plastic_strain_increment,
+    const double           eff_plastic_strain,
+    const double           epsdot,
+    const double           damage,
+    const double           temperature);
 
 protected:
-  double G_, A, B, n, epsdot0, C;
+  double G_, A, B, n, m, epsdot0, C, Tr, Tm, Tmr;
+  string usage = "Usage: strength(strength-ID, johnson_cook, G, A, B, n, epsdot0, C, m, Tr, Tm)\n";
+  int Nargs = 11;
 };
 
 #endif

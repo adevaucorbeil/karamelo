@@ -77,7 +77,7 @@ void FixInitialVelocityParticles::setmask() {
 
 void FixInitialVelocityParticles::initial_integrate() {
   if (update->ntimestep !=1) return;
-  cout << "In FixInitialVelocityParticles::initial_integrate()" << endl;
+  // cout << "In FixInitialVelocityParticles::initial_integrate()" << endl;
 
   // Go through all the particles in the group and set v to the right value:
   double vx, vy, vz;

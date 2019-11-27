@@ -33,7 +33,7 @@ public:
   double rho0();
   double K();
   double G();
-  double compute_pressure(const double J, const double rho, const double e, const double damage);
+  void compute_pressure(double &, double &, const double, const double, const double, const double);
 
 protected:
   double rho0_, K_;

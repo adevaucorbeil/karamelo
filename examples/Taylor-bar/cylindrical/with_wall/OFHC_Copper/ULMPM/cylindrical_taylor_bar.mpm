@@ -1,0 +1,60 @@
+#####################################################
+#               UNITS: GPa, mm, ms                  #
+#####################################################
+# run this by doing:
+# ../../karamelo/karamelo_f6637d7 -i cylindrical_taylor_bar.mpm
+E  = 115
+nu = 0.31
+v  = 190            # impact velocity
+K = E/(3*(1-2*nu))
+G = E/(2*(1+nu))
+rho = 8.94e-06
+sigmay = 0.065
+B = 0.356
+C = 0#0.013
+n = 0.37
+eps0dot = 1e-3
+hLx  = 25.4/2    # length/2 of the cylinder
+R    = 3.8       # radius of the cylinder
+A_zy = PI*R*R
+Df   = 15.0/2    # final diameter
+FLIP=0.99
+S = 1.5
+c0 = 3933 #4222
+# ULMPM (Updated Lagrangian MPM) with hat functions
+FLIP=0.99
+method(ulmpm, FLIP, linear, FLIP)
+N        = 4
+cellsize = 1/N
+# 3D problem,
+x_wall = hLx + 3*cellsize
+dimension(3,-hLx,x_wall,-Df,Df,-Df,Df,cellsize)
+# making a ‘cyl’ cylinder object, this is just a GEOMETRY object
+region(cyl, cylinder, x, 0, 0, R, -hLx, hLx)
+# defining material model
+eos(eoss, shock, rho, K, c0, 0, S, 0)
+strength(strengthJC, johnson_cook, G, sigmay, B, n, eps0dot, C)
+material(mat, eoss, strengthJC)
+ppc1d = 1 # PPC = ppc1d x ppc1d x ppc1d
+# This is the simulated solid named ‘solid1’ of geometry ‘cyl’, material ‘mat’
+solid(solid1, cyl, ppc1d, mat, cellsize)
+# region1 is a selecting domain, used to define node/particle groups
+#region(region1, block, INF, -x_wall, INF, INF, INF, INF)
+#group(group1, particles, region, region1, solid, solid1)
+#group(groupn1, nodes, region, region1, solid, solid1)
+region(region2, block, x_wall-cellsize, INF, INF, INF, INF, INF)
+group(group2, particles, region, region2, solid, solid1)
+group(groupn2, nodes, region, region2, solid, solid1)
+# apply initial velocity v to all particles
+# first, make a particle group, then apply V to it
+group(gBall1, particles, region, cyl, solid, solid1)
+fix(v0Ball1, initial_velocity_particles, gBall1, v, NULL, NULL)
+N_log = 1
+dump(dump1, all, particle, N_log*10, dump_p.*.LAMMPS, x, y, z)
+dump(dump2, all, grid, N_log*10, dump_g.*.LAMMPS, x, y, z)
+log(N_log)
+dt_factor(0.25)
+log_modify(custom, step, dt, time)
+run(1)
+fix(BC_Wall, velocity_nodes, groupn2, 0, NULL, NULL)
+run(20000)

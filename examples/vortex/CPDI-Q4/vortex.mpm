@@ -1,0 +1,94 @@
+#####################################################
+#               UNITS: Pa, m, s                  #
+#####################################################
+
+E  = 1e+6
+nu = 0.3
+K  = E/(3*(1-2*nu))
+mu = E/(2*(1+nu))
+rho0   = 1050
+lambda = E*nu/((1+nu)*(1-2*nu))
+c      = sqrt(E/rho0)
+
+Ro = 1.25
+Ri = 0.75
+
+FLIP=0.99
+
+# 2D UL CPDI with quadratic Bernstein functions
+
+method(ulcpdi, FLIP, linear, FLIP, Q4)
+ad = 1.5*Ro
+dimension(2,-ad, ad, -ad, ad)
+
+# two cylinders (in 2D actually circles)
+region(cyl,    cylinder, 0, 0, Ro)
+region(cyl_in, cylinder, 0, 0, Ri)
+
+#strength(strengthl, linear, mu)
+
+material(mat1, neo-hookean, rho0, E, nu)
+
+N        = 5
+L        = 1
+cellsize = (Ro-Ri)/N
+ppc1d    = 2
+
+solid(solid1, region, cyl, ppc1d, mat1, cellsize)
+solid(solid1, mesh, meshfile,  mat1, cellsize)
+delete_particles(solid1, region, cyl_in)
+
+
+#--------- BODY FORCES ----------#
+G     = 1
+T     = 1
+r     = sqrt(x0*x0+y0*y0)
+theta = atan2(y0,x0)
+R     = (Ri+Ro)/2
+s     = (r - R)/(Ri-Ro)
+h     = 1 - 8*((r - R)/(Ri-Ro))^2 +16*((r - R)/(Ri-Ro))^4
+hp    = - 16*(r - R)/(Ri-Ro)^2 + 16*4*(r - R)^3/(Ri-Ro)^4
+hpp   = - 16/(Ri-Ro)^2 + 16*4*3*(r - R)^2/(Ri-Ro)^4
+g     = G * sin(PI*time/T)
+gp    = G*PI/T*cos(PI*time/T)
+gpp   = -PI*PI/(T*T)*g
+alpha = g*h
+mdr   = mu/rho0
+
+br    = ( mdr*(3*g*hp+r*g*hpp) - r*gpp*h)*sin(alpha) + (mdr*r*(g*hp)^2 - r*(gp*h)^2)*cos(alpha)
+bt    = (-mdr*(3*g*hp+r*g*hpp) + r*gpp*h)*cos(alpha) + (mdr*r*(g*hp)^2 + r*(gp*h)^2)*sin(alpha)
+
+bx    = br*cos(theta) - bt*sin(theta)
+by    = br*sin(theta) + bt*cos(theta)
+
+fix(fbody, body_force, all, bx, by, 0)
+
+
+region(cyl_ext, cylinder, 0, 0, Ro, exterior)
+group(gcyl_ext, nodes, region, cyl_ext, solid, solid1)
+fix(fo, velocity_nodes, gcyl_ext, 0, 0, 0)
+
+group(gcyl_in, nodes, region, cyl_in, solid, solid1)
+fix(fin, velocity_nodes, gcyl_in, 0, 0, 0)
+
+u1 = (cos(alpha)-1)*x - sin(alpha)*y
+u2 = sin(alpha)*x + (cos(alpha)-1)*y
+u3 = 0
+fix(error, check_solution, all, u1, u2, 0)
+
+#--------- OUTPUT ----------#
+N_log = 1
+
+fd = 20
+dump(dump1, all, particle, N_log*fd, dump_p.*.LAMMPS, x, y, z, x0, y0, z0)
+dump(dump2, all, grid, N_log*fd, dump_g.*.LAMMPS, x, y, z)
+dump(dump3, all, pyplot, N_log*fd, dump.*.pdf, 1000, 1000)
+#dump(dump3, all, pyplot, 1, dump.*.pdf, 1000, 1000)
+#---------- SET METHOD --------------#
+dt_factor(0.2)
+
+#plot(dy_tip, N_log, time, dy_tip)
+log_modify(custom, step, dt, time, error_s, error_x, error_y, error_z)
+set_output(1)
+#run(1)
+run_time(1)

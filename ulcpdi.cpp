@@ -30,12 +30,14 @@
 using namespace std;
 
 ULCPDI::ULCPDI(MPM *mpm, vector<string> args) : Method(mpm) {
+
   cout << "In ULCPDI::ULCPDI()" << endl;
 
   update_wf = 1;
   method_type = "FLIP";
   FLIP = 0.99;
   is_CPDI = true;
+  style = 0;   //Default CPDI style is known_styles[style]="R4";
 
   // Default base function (linear):
   shape_function = "linear";
@@ -100,6 +102,30 @@ void ULCPDI::setup(vector<string> args)
   }
 
   if (isFLIP) FLIP = input->parsev(args[n]);
+
+  n++;
+
+  if (n<args.size()) {
+    bool found_style = false;
+    for (int i=0; i<sizeof(known_styles)/sizeof(string); i++) {
+      if (known_styles[i].compare(args[n])==0) {
+       	style = i;
+	found_style = true;
+      	break;
+      }
+    }
+    if (!found_style) {
+      cout << "CPDI style \033[1;31m" << args[n] << "\033[0m unknown. Available options are:";
+      for (int i=0; i<sizeof(known_styles)/sizeof(string); i++) {
+	if (i) cout << ",";
+	cout << " \033[1;32m" << known_styles[i] << "\033[0m";
+      }
+      cout << ".\n";
+      exit(1);
+    }
+  }
+
+  cout << "Using CPDI-" << known_styles[style] << endl;
   // cout << "shape_function = " << shape_function << endl;
   // cout << "method_type = " << method_type << endl;
   // cout << "FLIP = " << FLIP << endl;
@@ -108,8 +134,10 @@ void ULCPDI::setup(vector<string> args)
 void ULCPDI::compute_grid_weight_functions_and_gradients()
 {
   if (!update_wf) return;
+
   if (domain->dimension !=2) {
     error->all(FLERR, "Error: ULCPDI is only 2D....\n");
+
   }
 
   bigint nsolids, np_local, nnodes, nc;
@@ -133,14 +161,16 @@ void ULCPDI::compute_grid_weight_functions_and_gradients()
       vector<int> *neigh_np = s->neigh_np;
 
       vector< double > *wf_pn = s->wf_pn;
+      vector< double > *wf_pn_corners = s->wf_pn_corners;
       vector< double > *wf_np = s->wf_np;
 
       vector< Eigen::Vector3d > *wfd_pn = s->wfd_pn;
       vector< Eigen::Vector3d > *wfd_np = s->wfd_np;
 
-      vector<Eigen::Vector3d> *xp = &s->x;
-      vector<Eigen::Vector3d> *xn = &s->grid->x0;
-      vector<Eigen::Vector3d> *rp = &s->rp;
+      vector<Eigen::Vector3d> *xp  = &s->x;
+      vector<Eigen::Vector3d> *xpc = &s->xpc;
+      vector<Eigen::Vector3d> *xn  = &s->grid->x0;
+      vector<Eigen::Vector3d> *rp  = &s->rp;
 
       double inv_cellsize = 1.0 / s->grid->cellsize;
       vector<array<int, 3>> *ntype = &domain->solids[isolid]->grid->ntype;
@@ -150,6 +180,15 @@ void ULCPDI::compute_grid_weight_functions_and_gradients()
       Eigen::Vector3d r, wfd;
       vector<Eigen::Vector3d> xcorner(nc, Eigen::Vector3d::Zero());
       vector<double> wfc(nc, 0);
+
+      bool linear, cubic, bernstein;
+      linear = cubic = bernstein = false;
+
+      if (update->method_shape_function.compare("linear")==0) linear = true;
+      if (update->method_shape_function.compare("cubic-spline")==0) cubic = true;
+      if (update->method_shape_function.compare("Bernstein-quadratic")==0) bernstein = true;
+
+      double a, b, inv_Vp, alpha_over_Vp, sixVp;
 
       for (int in=0; in<nnodes; in++) {
 	neigh_np[in].clear();
@@ -164,6 +203,7 @@ void ULCPDI::compute_grid_weight_functions_and_gradients()
 	  neigh_pn[ip].clear();
 	  numneigh_pn[ip] = 0;
 	  wf_pn[ip].clear();
+	  for(int ic=0; ic<nc; ic++) wf_pn_corners[nc*ip+ic].clear();
 	  wfd_pn[ip].clear();
 
 	  // Calculate what nodes the corner of Omega_p will interact with:
@@ -175,35 +215,42 @@ void ULCPDI::compute_grid_weight_functions_and_gradients()
 	  int m;
 
 
-	  // Calculate the coordinates of the particle domain's corners:
-	  if (domain->dimension == 1) {
-	    xcorner[0] = (*xp)[ip] - (*rp)[ip];
-	    xcorner[1] = (*xp)[ip] + (*rp)[ip];
-	  }
+	  if (style==0) { //CPDI-R4
+	    // Calculate the coordinates of the particle domain's corners:
+	    if (domain->dimension == 1) {
+	      xcorner[0] = (*xp)[ip] - (*rp)[ip];
+	      xcorner[1] = (*xp)[ip] + (*rp)[ip];
+	    }
 
-	  if (domain->dimension == 2) {
-	    xcorner[0] = (*xp)[ip] - (*rp)[2*ip] - (*rp)[2*ip+1];
-	    xcorner[1] = (*xp)[ip] + (*rp)[2*ip] - (*rp)[2*ip+1];
-	    xcorner[2] = (*xp)[ip] + (*rp)[2*ip] + (*rp)[2*ip+1];
-	    xcorner[3] = (*xp)[ip] - (*rp)[2*ip] + (*rp)[2*ip+1];
-	  }
+	    if (domain->dimension == 2) {
+	      xcorner[0] = (*xp)[ip] - (*rp)[2*ip] - (*rp)[2*ip+1];
+	      xcorner[1] = (*xp)[ip] + (*rp)[2*ip] - (*rp)[2*ip+1];
+	      xcorner[2] = (*xp)[ip] + (*rp)[2*ip] + (*rp)[2*ip+1];
+	      xcorner[3] = (*xp)[ip] - (*rp)[2*ip] + (*rp)[2*ip+1];
+	    }
 
-	  if (domain->dimension == 3) {
-	    error->all(FLERR, "Unsupported!\n");
+	    if (domain->dimension == 3) {
+	      error->all(FLERR, "Unsupported!\n");
 	  }
 
 	  for (int ic=0; ic<nc; ic++) { // Do this for all corners
 
+	    if (style==1) { // CPDI-Q4
+	      xcorner[ic][0] = (*xpc)[nc*ip+ic][0];
+	      xcorner[ic][1] = (*xpc)[nc*ip+ic][1];
+	      xcorner[ic][2] = (*xpc)[nc*ip+ic][2];
+	    }
+
 	    int i0, j0, k0;
 
-	    if (update->method_shape_function.compare("linear")==0) {
+	    if (linear) {
 	      i0 = (int) ((xcorner[ic][0] - domain->boxlo[0])*inv_cellsize);
 	      j0 = (int) ((xcorner[ic][1] - domain->boxlo[1])*inv_cellsize);
 	      k0 = (int) ((xcorner[ic][2] - domain->boxlo[2])*inv_cellsize);
 
 	      m = 2;
 
-	    } else if (update->method_shape_function.compare("Bernstein-quadratic")==0){
+	    } else if (bernstein){
 	      i0 = 2*(int) ((xcorner[ic][0] - domain->boxlo[0])*inv_cellsize);
 	      j0 = 2*(int) ((xcorner[ic][1] - domain->boxlo[1])*inv_cellsize);
 	      k0 = 2*(int) ((xcorner[ic][2] - domain->boxlo[2])*inv_cellsize);
@@ -214,7 +261,7 @@ void ULCPDI::compute_grid_weight_functions_and_gradients()
 
 	      m = 3;
 
-	    } else if (update->method_shape_function.compare("cubic-spline")==0){
+	    } else if (cubic){
 	      i0 = (int) ((xcorner[ic][0] - domain->boxlo[0])*inv_cellsize - 1);
 	      j0 = (int) ((xcorner[ic][1] - domain->boxlo[1])*inv_cellsize - 1);
 	      k0 = (int) ((xcorner[ic][2] - domain->boxlo[2])*inv_cellsize - 1);
@@ -261,6 +308,19 @@ void ULCPDI::compute_grid_weight_functions_and_gradients()
 	  //   cout << ii << ' ';
 	  // cout << "]\n";
 
+	  inv_Vp = 1.0/s->vol[ip];
+
+	  if (style==1) {
+	    a = (xcorner[3][0]-xcorner[0][0])*(xcorner[1][1]-xcorner[2][1])
+	      - (xcorner[1][0]-xcorner[2][0])*(xcorner[3][1]-xcorner[0][1]);
+
+	    b = (xcorner[2][0]-xcorner[3][0])*(xcorner[0][1]-xcorner[1][1])
+	      - (xcorner[0][0]-xcorner[1][0])*(xcorner[2][1]-xcorner[3][1]);
+
+	    alpha_over_Vp = 0.0417*inv_Vp;
+	    sixVp = 6*vol[ip];
+	  }
+
 	  //for (int in=0; in<nnodes; in++) {
 	  for (auto in: n_neigh) {
 	    wf = 0;
@@ -276,25 +336,45 @@ void ULCPDI::compute_grid_weight_functions_and_gradients()
 
 	      wfc[ic] = phi[0]*phi[1]*phi[2]; // Shape function of the corner node
 
-	      if (wfc[ic] > 1.0e-12) wf += wfc[ic];
+	      if (style==0 && wfc[ic] > 1.0e-12) wf += wfc[ic];
 	    }
 
-	    wf *= 0.25;
+	    if (style==0) wf *= 0.25;
+	    if (style==1) {
+	      wf = alpha_over_Vp*((sixVp - a - b)*wfc[0]
+				  + (sixVp - a + b)*wfc[1]
+				  + (sixVp + a + b)*wfc[2]
+				  + (sixVp + a - b)*wfc[3]);
+	    }
 
 	    if (wf > 1.0e-12) {
-	      if (domain->dimension == 2) {
+	      if (style==0) {
 		wfd[0] = (wfc[0] - wfc[2]) * ((*rp)[domain->dimension*ip][1] - (*rp)[domain->dimension*ip+1][1])
 		  + (wfc[1] - wfc[3]) * ((*rp)[domain->dimension*ip][1] + (*rp)[domain->dimension*ip+1][1]);
 		
 		wfd[1] = (wfc[0] - wfc[2]) * ((*rp)[domain->dimension*ip+1][0] - (*rp)[domain->dimension*ip][0])
 		  - (wfc[1] - wfc[3]) * ((*rp)[domain->dimension*ip][0] + (*rp)[domain->dimension*ip+1][0]);
 		wfd[2] = 0;
+
+		wfd *= inv_Vp;
 	      }
 
-	      double inv_Vp = 1.0/s->vol[ip];
-	      wfd[0] *= inv_Vp;
-	      wfd[1] *= inv_Vp;
-	      wfd[2] *= inv_Vp;
+	      if (style==1) {
+		wfd[0] = wfc[0] * (xcorner[1][1]-xcorner[3][1])
+		  + wfc[1] * (xcorner[2][1]-xcorner[0][1])
+		  + wfc[2] * (xcorner[3][1]-xcorner[1][1])
+		  + wfc[3] * (xcorner[0][1]-xcorner[2][1]);
+		
+		wfd[1] = wfc[0] * (xcorner[3][0]-xcorner[1][0])
+		  + wfc[1] * (xcorner[0][0]-xcorner[2][0])
+		  + wfc[2] * (xcorner[1][0]-xcorner[3][0])
+		  + wfc[3] * (xcorner[2][0]-xcorner[0][0]);
+
+		wfd[2] = 0;
+
+		wfd *= 0.5*inv_Vp;
+		for(int ic=0; ic<nc; ic++) wf_pn_corners[nc*ip+ic].push_back(wfc[ic]);
+	      }
 
 	      neigh_pn[ip].push_back(in);
 	      neigh_np[in].push_back(ip);
@@ -325,12 +405,18 @@ void ULCPDI::particles_to_grid()
     else grid_reset = false;
 
     domain->solids[isolid]->compute_mass_nodes(grid_reset);
+  }
+  for (int isolid=0; isolid<domain->solids.size(); isolid++){
+
+    if (isolid == 0) grid_reset = true;
+    else grid_reset = false;
+
     if (method_type.compare("APIC") == 0) domain->solids[isolid]->compute_velocity_nodes_APIC(grid_reset);
     else domain->solids[isolid]->compute_velocity_nodes(grid_reset);
     domain->solids[isolid]->compute_external_forces_nodes(grid_reset);
     domain->solids[isolid]->compute_internal_forces_nodes_UL(grid_reset);
     /*compute_thermal_energy_nodes();*/
-    }
+  }
 }
 
 void ULCPDI::update_grid_state()
@@ -341,7 +427,7 @@ void ULCPDI::update_grid_state()
 void ULCPDI::grid_to_points()
 {
   for (int isolid=0; isolid<domain->solids.size(); isolid++) {
-    domain->solids[isolid]->compute_particle_velocities();
+    domain->solids[isolid]->compute_particle_velocities_and_positions();
     domain->solids[isolid]->compute_particle_acceleration();
   }
 }
@@ -349,7 +435,6 @@ void ULCPDI::grid_to_points()
 void ULCPDI::advance_particles()
 {
   for (int isolid=0; isolid<domain->solids.size(); isolid++) {
-    domain->solids[isolid]->update_particle_position();
     domain->solids[isolid]->update_particle_velocities(FLIP);
   }
 }

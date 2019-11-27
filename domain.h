@@ -11,18 +11,17 @@
  *
  * ----------------------------------------------------------------------- */
 
-
 #ifndef LMP_DOMAIN_H
 #define LMP_DOMAIN_H
 
-#include <math.h>
 #include "pointers.h"
 #include "region.h"
 #include "solid.h"
+#include <Eigen/Eigen>
 #include <map>
+#include <math.h>
 #include <string>
 #include <vector>
-#include <Eigen/Eigen>
 
 using namespace std;
 
@@ -30,14 +29,15 @@ class Domain : protected Pointers {
  public:
   int dimension;                         // 2 = 2d, 3 = 3d
   bool created;                          // has the domain been created?
+  bool axisymmetric;                     // true or false
 
   double boxlo[3],boxhi[3];              // orthogonal box global bounds
   double sublo[3],subhi[3];              // sub-box bounds on this proc
 
-  vector<class Region *> regions;        // list of defined Regions
-  vector<class Solid *> solids;          // list of defined Solids
+  vector<class Region *> regions; // list of defined Regions
+  vector<class Solid *> solids;   // list of defined Solids
 
-  class Grid *grid;                      // common background grid
+  class Grid *grid; // common background grid
 
   Domain(class MPM *);
   virtual ~Domain();
@@ -51,8 +51,8 @@ class Domain : protected Pointers {
   void add_solid(vector<string>);
   int find_solid(string);
 
-  typedef Region *(*RegionCreator)(MPM *,vector<string>);
-  typedef map<string,RegionCreator> RegionCreatorMap;
+  typedef Region *(*RegionCreator)(MPM *, vector<string>);
+  typedef map<string, RegionCreator> RegionCreatorMap;
   RegionCreatorMap *region_map;
 
   // typedef Solid *(*SolidCreator)(MPM *,vector<string>);
@@ -61,8 +61,8 @@ class Domain : protected Pointers {
 
   int inside(Eigen::Vector3d);
 
- private:
-  template <typename T> static Region *region_creator(MPM *,vector<string>);
+private:
+  template <typename T> static Region *region_creator(MPM *, vector<string>);
   // template <typename T> static Solid *solid_creator(MPM *,vector<string>);
 };
 
