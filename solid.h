@@ -28,6 +28,7 @@ class Solid : protected Pointers {
   string id;                 // solid id
   bigint np;                 // total number of particles in the domain
   int np_local;              // number of local particles (in this CPU)
+  int comm_n;                // number of double to pack for particle exchange between CPU
 
   vector<tagint> ptag;              // unique identifier for particles in the system
 
@@ -123,6 +124,10 @@ class Solid : protected Pointers {
   void compute_inertia_tensor(string);
   void compute_deformation_gradient();
   void update_particle_domain();
+
+  void copy_particle(int, int);
+  void pack_particle(int, vector<double> &);
+  void unpack_particle(int &, vector<int>, double[]);
 
 private:
   void populate(vector<string>);

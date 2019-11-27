@@ -80,6 +80,8 @@ Solid::Solid(MPM *mpm, vector<string> args) :
 
   // Create particles:
   populate(args);
+
+  comm_n = 47; // Number of double to pack for particle exchange between CPUs.
 }
 
 Solid::~Solid()
@@ -975,6 +977,240 @@ void Solid::compute_inertia_tensor(string form_function) {
   }
 }
 
+void Solid::copy_particle(int i, int j)
+{
+  x0[j]                      = x0[i];
+  x[j]                       = x[i];
+  v[j]                       = v[i];
+  v_update[j]                = v_update[i];
+  a[j]                       = a[i];
+  mbp[j]                     = mbp[i];
+  f[j]                       = f[i];
+  vol0[j]                    = vol0[i];
+  vol[j]                     = vol[i];
+  rho0[j]                    = rho0[i];
+  rho[j]                     = rho[i];
+  mass[j]                    = mass[i];
+  eff_plastic_strain[j]      = eff_plastic_strain[i];
+  eff_plastic_strain_rate[j] = eff_plastic_strain_rate[i];
+  damage[j]                  = damage[i];
+  damage_init[j]             = damage_init[i];
+  // T[j]                       = T[i];
+  // ienergy[j]                 = ienergy[i];
+  sigma[j]                   = sigma[i];
+  vol0PK1[j]                 = vol0PK1[i];
+  L[j]                       = L[i];
+  F[j]                       = F[i];
+  R[j]                       = R[i];
+  U[j]                       = U[i];
+  D[j]                       = D[i];
+  Finv[j]                    = Finv[i];
+  Fdot[j]                    = Fdot[i];
+  J[j]                       = J[i];
+
+  // if (method_type.compare("tlcpdi") == 0 || method_type.compare("ulcpdi") == 0)
+  //   {
+  //     if (update->method->style == 0)
+  // 	{ // CPDI-R4
+  // 	  for (int id = 0; id < domain->dimension; id++)
+  // 	    {
+  // 	      rp0[domain->dimension * j + id] = rp0[domain->dimension * i + id];
+  // 	      rp[domain->dimension * j + id]  = rp[domain->dimension * i + id];
+  // 	    }
+  // 	}
+
+  //     if (update->method->style == 1)
+  // 	{ // CPDI-Q4
+  // 	  for (int ic = 0; ic < nc; ic++)
+  // 	    {
+  // 	      xpc0[nc * j + ic] = xpc0[nc * i + ic];
+  // 	      xpc[nc * j + ic]  = xpc[nc * i + ic];
+  // 	    }
+  // 	}
+  //   }
+}
+
+void Solid::pack_particle(int i, vector<double> &buf)
+{
+  int n[2];
+  n[0] = buf.size();
+
+  buf.push_back(x0[i](0));
+  buf.push_back(x0[i](1));
+  buf.push_back(x0[i](2));
+
+  buf.push_back(x[i](0));
+  buf.push_back(x[i](1));
+  buf.push_back(x[i](2));
+
+  buf.push_back(v[i](0));
+  buf.push_back(v[i](1));
+  buf.push_back(v[i](2));
+
+  buf.push_back(v_update[i](0));
+  buf.push_back(v_update[i](1));
+  buf.push_back(v_update[i](2));
+
+  buf.push_back(a[i](0));
+  buf.push_back(a[i](1));
+  buf.push_back(a[i](2));
+
+  buf.push_back(mbp[i](0));
+  buf.push_back(mbp[i](1));
+  buf.push_back(mbp[i](2));
+
+  buf.push_back(f[i](0));
+  buf.push_back(f[i](1));
+  buf.push_back(f[i](2));
+
+  buf.push_back(vol0[i]);
+  buf.push_back(vol[i]);
+  
+  buf.push_back(rho0[i]);
+  buf.push_back(rho[i]);
+
+  buf.push_back(mass[i]);
+  buf.push_back(eff_plastic_strain[i]);
+  buf.push_back(eff_plastic_strain_rate[i]);
+  buf.push_back(damage[i]);
+  buf.push_back(damage_init[i]);
+  // buf.push_back(T[i]);
+  // buf.push_back(ienergy[i]);
+
+  buf.push_back(sigma[i](0,0));
+  buf.push_back(sigma[i](1,1));
+  buf.push_back(sigma[i](2,2));
+  buf.push_back(sigma[i](0,1));
+  buf.push_back(sigma[i](0,2));
+  buf.push_back(sigma[i](1,2));
+
+  // buf.push_back(vol0PK1[i](0,0));
+  // buf.push_back(vol0PK1[i](0,1));
+  // buf.push_back(vol0PK1[i](0,2));
+  // buf.push_back(vol0PK1[i](1,0));
+  // buf.push_back(vol0PK1[i](1,1));
+  // buf.push_back(vol0PK1[i](1,2));
+  // buf.push_back(vol0PK1[i](2,0));
+  // buf.push_back(vol0PK1[i](2,1));
+  // buf.push_back(vol0PK1[i](2,2));
+
+  // buf.push_back(L[i](0,0));
+  // buf.push_back(L[i](0,1));
+  // buf.push_back(L[i](0,2));
+  // buf.push_back(L[i](1,0));
+  // buf.push_back(L[i](1,1));
+  // buf.push_back(L[i](1,2));
+  // buf.push_back(L[i](2,0));
+  // buf.push_back(L[i](2,1));
+  // buf.push_back(L[i](2,2));
+
+  buf.push_back(F[i](0,0));
+  buf.push_back(F[i](0,1));
+  buf.push_back(F[i](0,2));
+  buf.push_back(F[i](1,0));
+  buf.push_back(F[i](1,1));
+  buf.push_back(F[i](1,2));
+  buf.push_back(F[i](2,0));
+  buf.push_back(F[i](2,1));
+  buf.push_back(F[i](2,2));
+
+  buf.push_back(J[i]);
+}
+
+void Solid::unpack_particle(int &i, vector<int> list, double buf[])
+{
+  int m;
+  for (auto j: list)
+    {
+      m = j;
+      x0[i](0) = buf[m++];
+      x0[i](1) = buf[m++];
+      x0[i](2) = buf[m++];
+
+      x[i](0) = buf[m++];
+      x[i](1) = buf[m++];
+      x[i](2) = buf[m++];
+
+      v[i](0) = buf[m++];
+      v[i](1) = buf[m++];
+      v[i](2) = buf[m++];
+
+      v_update[i](0) = buf[m++];
+      v_update[i](1) = buf[m++];
+      v_update[i](2) = buf[m++];
+
+      a[i](0) = buf[m++];
+      a[i](1) = buf[m++];
+      a[i](2) = buf[m++];
+
+      mbp[i](0) = buf[m++];
+      mbp[i](1) = buf[m++];
+      mbp[i](2) = buf[m++];
+
+      f[i](0) = buf[m++];
+      f[i](1) = buf[m++];
+      f[i](2) = buf[m++];
+
+      vol0[i] = buf[m++];
+      vol[i] = buf[m++];
+
+      rho0[i] = buf[m++];
+      rho[i] = buf[m++];
+
+      mass[i] = buf[m++];
+      eff_plastic_strain[i] = buf[m++];
+      eff_plastic_strain_rate[i] = buf[m++];
+      damage[i] = buf[m++];
+      damage_init[i] = buf[m++];
+      // T[i] = buf[m++];
+      // ienergy[i] = buf[m++];
+
+      sigma[i](0,0) = buf[m++];
+      sigma[i](1,1) = buf[m++];
+      sigma[i](2,2) = buf[m++];
+      sigma[i](0,1) = buf[m++];
+      sigma[i](0,2) = buf[m++];
+      sigma[i](1,2) = buf[m++];
+      sigma[i](1,0) = sigma[i](0,1);
+      sigma[i](2,0) = sigma[i](0,2);
+      sigma[i](2,1) = sigma[i](1,2);
+
+      // vol0PK1[i](0,0) = buf[m++];
+      // vol0PK1[i](0,1) = buf[m++];
+      // vol0PK1[i](0,2) = buf[m++];
+      // vol0PK1[i](1,0) = buf[m++];
+      // vol0PK1[i](1,1) = buf[m++];
+      // vol0PK1[i](1,2) = buf[m++];
+      // vol0PK1[i](2,0) = buf[m++];
+      // vol0PK1[i](2,1) = buf[m++];
+      // vol0PK1[i](2,2) = buf[m++];
+
+      // L[i](0,0) = buf[m++];
+      // L[i](0,1) = buf[m++];
+      // L[i](0,2) = buf[m++];
+      // L[i](1,0) = buf[m++];
+      // L[i](1,1) = buf[m++];
+      // L[i](1,2) = buf[m++];
+      // L[i](2,0) = buf[m++];
+      // L[i](2,1) = buf[m++];
+      // L[i](2,2) = buf[m++];
+
+      F[i](0,0) = buf[m++];
+      F[i](0,1) = buf[m++];
+      F[i](0,2) = buf[m++];
+      F[i](1,0) = buf[m++];
+      F[i](1,1) = buf[m++];
+      F[i](1,2) = buf[m++];
+      F[i](2,0) = buf[m++];
+      F[i](2,1) = buf[m++];
+      F[i](2,2) = buf[m++];
+
+      J[i] = buf[m++];
+      i++;
+    }
+}
+
+
 void Solid::populate(vector<string> args) {
 
   cout << "Solid delimitated by region ID: " << args[1] << endl;
@@ -1358,3 +1594,4 @@ void Solid::update_particle_domain() {
     if (dim == 3) rp[dim*ip+2] = F[ip]*rp0[dim*ip+2];
   }
 }
+

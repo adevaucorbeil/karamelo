@@ -439,11 +439,83 @@ void ULMPM::reset()
 
 void ULMPM::exchange_particles()
 {
-  // int np;
+  int ip, np, size_buf_send, size_buf_recv;
+  vector<Eigen::Vector3d> *xp;
+  vector<double> buf_send;
+  vector<int> unpack_list;
+  
+  // Identify the particles that are not in the subdomain
+  // and transfer their variables to the buffer:
 
-  // for (int isolid=0; isolid<domain->solids.size(); isolid++) {
-  //   domain->solids[isolid]->dtCFL = 1.0e22;
-  //   np = domain->solids[isolid]->np_local;
-  //   for (int ip = 0; ip < np; ip++) domain->solids[isolid]->mbp[ip].setZero();
-  // }
+  for (int isolid=0; isolid<domain->solids.size(); isolid++)
+    {
+      buf_send.clear();
+      np = domain->solids[isolid]->np_local;
+      xp = &domain->solids[isolid]->x;
+
+      ip = 0;
+      while(ip < np)
+	{
+	  if (!domain->inside_subdomain((*xp)[ip][0], (*xp)[ip][1], (*xp)[ip][2]))
+	    {
+	      // The particle is not located in the subdomain anymore:
+	      // transfer it to the buffer
+	      domain->solids[isolid]->pack_particle(ip, buf_send);
+	      domain->solids[isolid]->copy_particle(np-1, ip);
+	      np--;
+	    }
+	  else
+	    {
+	      ip++;
+	    }
+	}
+
+      // Resize particle variables:
+      domain->solids[isolid]->grow(np);
+
+      // Exchange buffers:
+      for (int sproc=0; sproc<universe->nprocs; sproc++)
+	{
+	  if (sproc == universe->me)
+	    {
+	      size_buf_send = buf_send.size();
+
+	      for (int rproc=0; rproc<universe->nprocs; rproc++){
+		if (rproc != universe->me) {
+		  MPI_Send(&size_buf_send, 1, MPI_INT, rproc, 0, universe->uworld);
+		  if (size_buf_send)
+		    MPI_Send(buf_send.data(), size_buf_send, MPI_DOUBLE, rproc, 0, MPI_COMM_WORLD);
+		}
+	      }
+	    }
+	  else
+	    {
+	      // Receive buffer:
+	      MPI_Recv(&size_buf_recv, 1, MPI_INT, sproc, 0, universe->uworld, MPI_STATUS_IGNORE);
+
+	      if (size_buf_recv)
+		{
+		  double buf_recv[size_buf_recv];
+		  MPI_Recv(&buf_recv[0], size_buf_recv, MPI_DOUBLE, sproc, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+		  // Unpack buffer:
+
+		  // Check what particles are within the subdomain:
+		  unpack_list.clear();
+		  ip = 0;
+		  while(ip < size_buf_recv)
+		    {
+		      if (domain->inside_subdomain(buf_recv[ip], buf_recv[ip+1], buf_recv[ip+2]))
+			{
+			  unpack_list.push_back(ip);
+			}
+		      ip += domain->solids[isolid]->comm_n;
+		    }
+
+		  domain->solids[isolid]->grow(np+unpack_list.size());
+
+		  domain->solids[isolid]->unpack_particle(np, unpack_list, buf_recv);
+		}
+	    }
+	}
+    }
 }

@@ -432,3 +432,10 @@ void ULCPDI::reset()
     for (int ip = 0; ip < np; ip++) domain->solids[isolid]->mbp[ip].setZero();
   }
 }
+
+
+void ULCPDI::exchange_particles()
+{
+  cout << "Error: ULCPDI::exchange_particles() not coded\n";
+  error->all(FLERR, "");
+}
