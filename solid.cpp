@@ -1659,18 +1659,36 @@ void Solid::populate(vector<string> args)
   double hdelta;
   double Lsubx, Lsuby, Lsubz;
 
+  double *boundlo;
+
   delta = grid->cellsize;
   
-  if (grid->nnodes == 0)
+  if (update->method->is_TL)
     {
     // The grid will be ajusted to the solid's domain (good for TLMPM).
     // and we need to create the corresponding grid:
       grid->init(solidlo, solidhi);
-    }
 
-  Lsubx = solidsubhi[0] - solidsublo[0];
-  if (domain->dimension >= 2) Lsuby = solidsubhi[1] - solidsublo[1];
-  if (domain->dimension == 3) Lsubz = solidsubhi[2] - solidsublo[2];
+      boundlo = solidlo;
+
+      Lsubx = solidsubhi[0] - solidsublo[0];
+      if (domain->dimension >= 2) Lsuby = solidsubhi[1] - solidsublo[1];
+      if (domain->dimension == 3) Lsubz = solidsubhi[2] - solidsublo[2];
+    }
+  else
+    {
+      // The grid is most likely bigger than the solid's domain (good for ULMPM),
+      // so all particles created won't lie in the region, they will need to be
+      // checked:
+
+      boundlo = domain->sublo;
+
+      Lsubx = domain->subhi[0] - domain->sublo[0];
+      if (domain->dimension >= 2)
+	Lsuby = domain->subhi[1] - domain->sublo[1];
+      if (domain->dimension == 3)
+	Lsubz = domain->subhi[2] - domain->sublo[2];
+    }
 
   nsubx = (int) (Lsubx / delta);
   while (nsubx * delta <= Lsubx - 0.1 * delta) nsubx++;
@@ -1725,12 +1743,6 @@ void Solid::populate(vector<string> args)
     mass_ = mat->rho0 * vol_;
 
   int np_per_cell = (int) input->parsev(args[3]);
-
-  double *boundlo;
-  if (update->method->is_TL)
-    boundlo = solidlo;
-  else boundlo = domain->boxlo;
-
   double xi = 0.5;
   double lp = delta;
   int nip   = 1;
@@ -1881,8 +1893,9 @@ void Solid::populate(vector<string> args)
 		  else
 		    x0[l][2] = x[l][2] = 0;
 
-		  // cout << "x0[" << l << "]=[" << x0[l][0] << "," << x0[l][1] << "," << x0[l][2] << "]\n";;
-
+		  cout << "x0[" << l << "]=[" << x0[l][0] << "," << x0[l][1] << "," << x0[l][2] << "]\n";;
+		  cout << domain->inside_subdomain(x0[l][0], x0[l][1], x0[l][2]) << endl;
+		  cout << domain->regions[iregion]->inside(x0[l][0], x0[l][1], x0[l][2]) << endl;
 		  // Check if the particle is inside the region:
 		  if (domain->inside_subdomain(x0[l][0], x0[l][1], x0[l][2]) && domain->regions[iregion]->inside(x0[l][0], x0[l][1], x0[l][2]) == 1)
 		    {
