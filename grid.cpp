@@ -44,7 +44,7 @@ namespace plt = matplotlibcpp;
 Grid::Grid(MPM *mpm) :
   Pointers(mpm)
 {
-  cout << "Creating new grid" << endl;
+  // cout << "Creating new grid" << endl;
 
   nx = ny = nz = 0;
   nx_global = ny_global = nz_global = 0;

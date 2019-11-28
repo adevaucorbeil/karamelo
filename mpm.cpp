@@ -26,6 +26,7 @@
 #include "group.h"
 #include "universe.h"
 #include "error.h"
+#include "version.h"
 
 MPM::MPM(int narg, char **arg, MPI_Comm communicator)
 {
@@ -49,6 +50,13 @@ MPM::MPM(int narg, char **arg, MPI_Comm communicator)
 
   // Process command line arguments:
   int iarg = 1;
+
+  if (narg < 2)
+    {
+      if (universe->me == 0) help();
+      error->done(0);
+    }
+
   while (iarg < narg) {
     if (strcmp(arg[iarg],"-in") == 0 ||
 	strcmp(arg[iarg],"-i") == 0) {
@@ -64,17 +72,25 @@ MPM::MPM(int narg, char **arg, MPI_Comm communicator)
   wlogfile = NULL;
 
   if (universe->me == 0) {
-    if (inflag != 0) infile.open(arg[inflag], ios_base::in); // open in read only
+    cout << "Karamelo -- Parallel Material Point Methods Simulator version " << KARAMELO_VERSION << endl
+	 << "Running on " << universe->nprocs << " procs\n";
+
+    if (inflag != 0)
+      {
+	infile.open(arg[inflag], ios_base::in); // open in read only
+      }
     //logfile.open("log.mpm", ios_base::out); // open in write only
     wlogfile = new ofstream("log.mpm", ios_base::out);
 
-    if (!wlogfile->is_open()){
-      error->all(FLERR,"Cannot open file log.mpm\n");
-    }
-    if (!infile.is_open()) {
-      string problem(arg[inflag]);
-      error->all(FLERR,"Cannot open input script " + problem + ".\n");
-    }
+    if (!wlogfile->is_open())
+      {
+	error->one(FLERR,"Cannot open file log.mpm\n");
+      }
+    if (!infile.is_open())
+      {
+    	string problem(arg[inflag]);
+    	error->one(FLERR,"Cannot open input script " + problem + ".\n");
+      }
   }
 }
 
@@ -109,4 +125,12 @@ MPM::~MPM()
 
 void MPM::init() {
   modify->init();
+}
+
+void MPM::help()
+{
+  // general help message about command line and flags
+  cout << "Karamelo -- Parallel Material Point Methods Simulator version " << KARAMELO_VERSION << endl
+       << "Usage: karamelo -i input_file\n";
+
 }

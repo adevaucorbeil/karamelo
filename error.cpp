@@ -82,3 +82,10 @@ void Error::one(const char *file, int line, const string str)
   MPI_Abort(universe->uworld,1);
 }
 
+void Error::done(int status)
+{
+  MPI_Barrier(universe->uworld);
+
+  MPI_Finalize();
+  exit(status);
+}

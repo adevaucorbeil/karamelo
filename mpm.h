@@ -50,6 +50,11 @@ class MPM {
   MPM(int, char **, MPI_Comm);
   ~MPM();
   void init();
+
+private:
+  void help();
+  MPM() {};                   // prohibit using the default constructor
+  MPM(const MPM &) {};        // prohibit using the copy constructor
 };
 
 #endif

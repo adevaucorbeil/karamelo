@@ -99,7 +99,7 @@ Input::~Input()
 
 void Input::file()
 {
-  cout << "In Input::file()\n";
+  // cout << "In Input::file()\n";
   bool ignore = false;
   int end = 0;
 

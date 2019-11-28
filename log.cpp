@@ -33,7 +33,7 @@ Log::Log(MPM *mpm, vector<string> args) : Pointers(mpm)
   dvalue = 0;
   bivalue = 0;
 
-  cout << "In Log::Log" << endl;
+  // cout << "In Log::Log" << endl;
 
   style = args[0];
 

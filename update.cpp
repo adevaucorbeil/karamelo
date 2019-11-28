@@ -26,7 +26,7 @@ using namespace std;
 
 Update::Update(MPM *mpm) : Pointers(mpm)
 {
-  cout << "In Update::Update()" << endl;
+  // cout << "In Update::Update()" << endl;
 
   atime = 0;
   atimestep = 0;

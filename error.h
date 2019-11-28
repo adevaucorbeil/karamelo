@@ -22,6 +22,7 @@ class Error : protected Pointers {
 
   void all(const char *, int, const string);
   void one(const char *, int, const string);
+  void done(int = 0); // 1 would be fully backwards compatible
 };
 
 #endif
