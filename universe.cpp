@@ -131,14 +131,14 @@ void Universe::set_proc_grid() {
   procneigh[1][0] = procneigh[1][1] = 0;
   procneigh[2][0] = procneigh[2][1] = 0;
 
-  if (nprocs > 1 && dim == 1) {
+  if (dim == 1) {
     if (sublo[0] > boxlo[0] + 1.0e-12) procneigh[0][0] = me - 1;
     else procneigh[0][0] = -1;
     if (subhi[0] < boxhi[0] - 1.0e-12) procneigh[0][1] = me + 1;
     else procneigh[0][1] = -1;
   }
 
-  if (nprocs > 1 && dim == 2) {
+  if (dim == 2) {
     if (sublo[0] > boxlo[0] + 1.0e-12)
       procneigh[0][0] = me - 1;
     else
@@ -157,7 +157,7 @@ void Universe::set_proc_grid() {
       procneigh[1][1] = -1;
   }
 
-  if (nprocs > 1 && dim == 3) {
+  if (dim == 3) {
     if (sublo[0] > boxlo[0] + 1.0e-12)
       procneigh[0][0] = me - 1;
     else

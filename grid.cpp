@@ -109,8 +109,8 @@ void Grid::init(double *solidlo, double *solidhi){
 
 
  double Loffsetlo[3] = {MAX(0.0, sublo[0] - boundlo[0]),
-			 MAX(0.0, sublo[1] - boundlo[1]),
-			 MAX(0.0, sublo[2] - boundlo[2])};
+			MAX(0.0, sublo[1] - boundlo[1]),
+			MAX(0.0, sublo[2] - boundlo[2])};
 
   double Loffsethi[3] = {MIN(0.0, subhi[0] - boundhi[0]),
 			 MIN(0.0, subhi[1] - boundhi[1]),
@@ -130,17 +130,17 @@ void Grid::init(double *solidlo, double *solidhi){
 
   if (universe->procneigh[0][0] >= 0 && abs(boundlo[0]+ noffsetlo[0]*h - sublo[0])<1.0e-12) {
     // Some nodes would fall exactly on the subdomain lower x boundary
-    // they should below to procneigh[0][0]
+    // they should belong to procneigh[0][0]
     noffsetlo[0]++;
   }
   if (domain->dimension >= 2 && universe->procneigh[1][0] >= 0 && abs(boundlo[1]+ noffsetlo[1]*h - sublo[1])<1.0e-12) {
     // Some nodes would fall exactly on the subdomain lower y boundary
-    // they should below to procneigh[1][0]
+    // they should belong to procneigh[1][0]
     noffsetlo[1]++;
   }
   if (domain->dimension == 3 && universe->procneigh[2][0] >= 0 && abs(boundlo[2]+ noffsetlo[2]*h - sublo[2])<1.0e-12) {
     // Some nodes would fall exactly on the subdomain lower x boundary
-    // they should below to procneigh[2][0]
+    // they should belong to procneigh[2][0]
     noffsetlo[2]++;
   }
 
@@ -178,10 +178,6 @@ void Grid::init(double *solidlo, double *solidhi){
   // Create nodes that are inside the local subdomain:
   nnodes_local = nx*ny*nz;
   grow(nnodes_local);
-
-#ifdef DEBUG
-  std::vector<double> x2plot, y2plot;
-#endif
 
   double Lx_global = solidhi[0]-solidlo[0];//+2*cellsize;
 
@@ -423,6 +419,10 @@ void Grid::init(double *solidlo, double *solidhi){
 #ifdef DEBUG
   plt::plot(x2plot, y2plot, "g+");
 #endif
+  
+  // Determine the total number of nodes:
+  bigint nnodes_temp = nnodes_local;
+  MPI_Allreduce(&nnodes_temp, &nnodes, 1, MPI_MPM_BIGINT, MPI_SUM, universe->uworld);
 }
 
 void Grid::setup(string cs){

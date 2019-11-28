@@ -686,6 +686,7 @@ int Input::dimension(vector<string> args)
                << domain->grid->cellsize << endl;
           error->all(FLERR, "");
         }
+	universe->set_proc_grid();
         domain->grid->init(domain->boxlo, domain->boxhi);
       }
     }
@@ -735,6 +736,7 @@ int Input::dimension(vector<string> args)
           cout << "Axi-symmetric is ON " << domain->axisymmetric << endl;
         }
 
+	universe->set_proc_grid();
         domain->grid->init(domain->boxlo, domain->boxhi);
       }
     }
@@ -762,10 +764,13 @@ int Input::dimension(vector<string> args)
                << domain->grid->cellsize << endl;
           error->all(FLERR, "");
         }
+	universe->set_proc_grid();
         domain->grid->init(domain->boxlo, domain->boxhi);
       }
     }
   }
+  
+  domain->created = true;
   return 0;
 }
 
