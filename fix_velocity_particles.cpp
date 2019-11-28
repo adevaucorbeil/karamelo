@@ -119,34 +119,28 @@ void FixVelocityParticles::initial_integrate() {
   }
 
   int solid = group->solid[igroup];
+  Solid *s;
 
-  Eigen::Vector3d *v_update;
-  Eigen::Vector3d *v;
-  int nmax;
-  int *mask;
   int n = 0;
 
   if (solid == -1) {
     for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
+      s = domain->solids[isolid];
       n = 0;
-      v_update = domain->solids[isolid]->v_update;
-      v = domain->solids[isolid]->v;
-      nmax = domain->solids[isolid]->np;
-      mask = domain->solids[isolid]->mask;
 
-      for (int ip = 0; ip < nmax; ip++) {
-	if (mask[ip] & groupbit) {
+      for (int ip = 0; ip < s->np; ip++) {
+	if (s->mask[ip] & groupbit) {
 	  if (xset) {
-	    v_update[ip][0] = vx;
-	    v[ip][0] = vx_old;
+	    s->v_update[ip][0] = vx;
+	    s->v[ip][0] = vx_old;
 	  }
 	  if (yset) {
-	    v_update[ip][1] = vy;
-	    v[ip][1] = vy_old;
+	    s->v_update[ip][1] = vy;
+	    s->v[ip][1] = vy_old;
 	  }
 	  if (zset) {
-	    v_update[ip][2] = vz;
-	    v[ip][2] = vz_old;
+	    s->v_update[ip][2] = vz;
+	    s->v[ip][2] = vz_old;
 	  }
 	  n++;
 	}
@@ -154,25 +148,21 @@ void FixVelocityParticles::initial_integrate() {
       // cout << "v_update for " << n << " particles from solid " << domain->solids[isolid]->id << " set." << endl;
     }
   } else {
+    s = domain->solids[solid];
 
-    v_update = domain->solids[solid]->v_update;
-    v = domain->solids[solid]->v;
-    nmax = domain->solids[solid]->np;
-    mask = domain->solids[solid]->mask;
-
-    for (int ip = 0; ip < nmax; ip++) {
-      if (mask[ip] & groupbit) {
+    for (int ip = 0; ip < s->np; ip++) {
+      if (s->mask[ip] & groupbit) {
 	if (xset) {
-	  v_update[ip][0] = vx;
-	  v[ip][0] = vx_old;
+	  s->v_update[ip][0] = vx;
+	  s->v[ip][0] = vx_old;
 	}
 	if (yset) {
-	  v_update[ip][1] = vy;
-	  v[ip][1] = vy_old;
+	  s->v_update[ip][1] = vy;
+	  s->v[ip][1] = vy_old;
 	}
 	if (zset) {
-	  v_update[ip][2] = vz;
-	  v[ip][2] = vz_old;
+	  s->v_update[ip][2] = vz;
+	  s->v[ip][2] = vz_old;
 	}
 	n++;
       }
@@ -198,40 +188,33 @@ void FixVelocityParticles::post_advance_particles() {
   }
   
   int solid = group->solid[igroup];
+  Solid *s;
 
-  Eigen::Vector3d *v;
-  int nmax;
-  int *mask;
   int n = 0;
 
   if (solid == -1) {
     for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
+      s = domain->solids[isolid];
       n = 0;
-      v = domain->solids[isolid]->v;
-      nmax = domain->solids[isolid]->np;
-      mask = domain->solids[isolid]->mask;
 
-      for (int ip = 0; ip < nmax; ip++) {
-	if (mask[ip] & groupbit) {
-	  if (xset) v[ip][0] = vx;
-	  if (yset) v[ip][1] = vy;
-	  if (zset) v[ip][2] = vz;
+      for (int ip = 0; ip < s->np; ip++) {
+	if (s->mask[ip] & groupbit) {
+	  if (xset) s->v[ip][0] = vx;
+	  if (yset) s->v[ip][1] = vy;
+	  if (zset) s->v[ip][2] = vz;
 	  n++;
 	}
       }
       // cout << "v for " << n << " particles from solid " << domain->solids[isolid]->id << " set." << endl;
     }
   } else {
+    s = domain->solids[solid];
 
-    v = domain->solids[solid]->v;
-    nmax = domain->solids[solid]->np;
-    mask = domain->solids[solid]->mask;
-
-    for (int ip = 0; ip < nmax; ip++) {
-      if (mask[ip] & groupbit) {
-	if (xset) v[ip][0] = vx;
-	if (yset) v[ip][1] = vy;
-	if (zset) v[ip][2] = vz;
+    for (int ip = 0; ip < s->np; ip++) {
+      if (s->mask[ip] & groupbit) {
+	if (xset) s->v[ip][0] = vx;
+	if (yset) s->v[ip][1] = vy;
+	if (zset) s->v[ip][2] = vz;
 	n++;
       }
     }

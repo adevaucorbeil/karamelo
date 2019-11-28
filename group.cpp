@@ -97,12 +97,6 @@ void Group::assign(vector<string> args)
   } else {
     error->all(FLERR,"Error: do not understand keyword " + args[1] + ", \"particles\" or \"nodes\" expected.\n");
   }
-  else
-  {
-    cout << "Error: do not understand keyword " << args[1]
-         << ", \"particles\" or \"nodes\" expected" << endl;
-    exit(1);
-  }
 
   // style = region
   // add to group if atom is in region

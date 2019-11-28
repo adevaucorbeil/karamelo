@@ -108,7 +108,6 @@ void DumpGrid::write()
     int igrid = 0;
     for (auto g: grids) {
       for (bigint i=0; i<g->nnodes_local;i++) {
-	ID++;
 	dumpstream << g->ntag[i] << " "
 		   << igrid+1 << " ";
 	for (auto v: output_var) {

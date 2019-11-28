@@ -69,6 +69,7 @@ class Solid : protected Pointers {
   vector<double> vol0;                      // particles' reference volume
   vector<double> vol;                       // particles' current volume
   double vtot;                              // total volume
+  double mtot;                              // total mass
   vector<double> rho0;                      // particles' reference density
   vector<double> rho;                       // particles' current density
   vector<double> mass;                      // particles' current mass

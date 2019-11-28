@@ -151,14 +151,14 @@ void TLCPDI::compute_grid_weight_functions_and_gradients()
       vector< Eigen::Vector3d > *wfd_pn = domain->solids[isolid]->wfd_pn;
       vector< Eigen::Vector3d > *wfd_np = domain->solids[isolid]->wfd_np;
 
-      Eigen::Vector3d *xp = domain->solids[isolid]->x0;
-      Eigen::Vector3d *xpc = domain->solids[isolid]->xpc;
-      Eigen::Vector3d *xn = domain->solids[isolid]->grid->x0;
-      Eigen::Vector3d *rp = domain->solids[isolid]->rp;
+      vector<Eigen::Vector3d> *xp  = &domain->solids[isolid]->x0;
+      vector<Eigen::Vector3d> *xpc = &domain->solids[isolid]->xpc;
+      vector<Eigen::Vector3d> *xn  = &domain->solids[isolid]->grid->x0;
+      vector<Eigen::Vector3d> *rp  = &domain->solids[isolid]->rp;
 
-      double inv_cellsize = 1.0 / domain->solids[isolid]->grid->cellsize;
-      double *vol = domain->solids[isolid]->vol;
-      int **ntype = domain->solids[isolid]->grid->ntype;
+      double inv_cellsize          = 1.0 / domain->solids[isolid]->grid->cellsize;
+      vector<double> *vol          = &domain->solids[isolid]->vol;
+      vector<array<int, 3>> *ntype = &domain->solids[isolid]->grid->ntype;
 
       double wf;
       double s[3];
@@ -201,15 +201,15 @@ void TLCPDI::compute_grid_weight_functions_and_gradients()
 	  if (style==0) { //CPDI-R4
 	    // Calculate the coordinates of the particle domain's corners:
 	    if (domain->dimension == 1) {
-	      xcorner[0] = xp[ip] - rp[ip];
-	      xcorner[1] = xp[ip] + rp[ip];
+	      xcorner[0] = (*xp)[ip] - (*rp)[ip];
+	      xcorner[1] = (*xp)[ip] + (*rp)[ip];
 	    }
 
 	    if (domain->dimension == 2) {
-	      xcorner[0] = xp[ip] - rp[2*ip] - rp[2*ip+1];
-	      xcorner[1] = xp[ip] + rp[2*ip] - rp[2*ip+1];
-	      xcorner[2] = xp[ip] + rp[2*ip] + rp[2*ip+1];
-	      xcorner[3] = xp[ip] - rp[2*ip] + rp[2*ip+1];
+	      xcorner[0] = (*xp)[ip] - (*rp)[2*ip] - (*rp)[2*ip+1];
+	      xcorner[1] = (*xp)[ip] + (*rp)[2*ip] - (*rp)[2*ip+1];
+	      xcorner[2] = (*xp)[ip] + (*rp)[2*ip] + (*rp)[2*ip+1];
+	      xcorner[3] = (*xp)[ip] - (*rp)[2*ip] + (*rp)[2*ip+1];
 	    }
 
 	    if (domain->dimension == 3) {
@@ -221,9 +221,9 @@ void TLCPDI::compute_grid_weight_functions_and_gradients()
 	  for (int ic=0; ic<nc; ic++) { // Do this for all corners
 
 	    if (style==1) { // CPDI-Q4
-	      xcorner[ic][0] = xpc[nc*ip+ic][0];
-	      xcorner[ic][1] = xpc[nc*ip+ic][1];
-	      xcorner[ic][2] = xpc[nc*ip+ic][2];
+	      xcorner[ic][0] = (*xpc)[nc*ip+ic][0];
+	      xcorner[ic][1] = (*xpc)[nc*ip+ic][1];
+	      xcorner[ic][2] = (*xpc)[nc*ip+ic][2];
 	    }
 
 	    int i0, j0, k0;
@@ -294,7 +294,7 @@ void TLCPDI::compute_grid_weight_functions_and_gradients()
 	  //   cout << ii << ' ';
 	  // cout << "]\n";
 
-	  inv_Vp = 1.0/vol[ip];
+	  inv_Vp = 1.0 / (*vol)[ip];
 
 	  if (style==1) {
 	    a = (xcorner[3][0]-xcorner[0][0])*(xcorner[1][1]-xcorner[2][1])
@@ -303,8 +303,8 @@ void TLCPDI::compute_grid_weight_functions_and_gradients()
 	    b = (xcorner[2][0]-xcorner[3][0])*(xcorner[0][1]-xcorner[1][1])
 	      - (xcorner[0][0]-xcorner[1][0])*(xcorner[2][1]-xcorner[3][1]);
 
-	    alpha_over_Vp = 0.0417*inv_Vp;
-	    sixVp = 6*vol[ip];
+	    alpha_over_Vp = 0.0417 * inv_Vp;
+	    sixVp = 6 * (*vol)[ip];
 	  }
 
 	  //for (int in=0; in<nnodes; in++) {
@@ -313,11 +313,11 @@ void TLCPDI::compute_grid_weight_functions_and_gradients()
 
 	    for(int ic=0; ic<nc; ic++) {
 	      // Calculate the distance between each pair of particle/node:
-	      r = (xcorner[ic] - xn[in]) * inv_cellsize;
+	      r = (xcorner[ic] - (*xn)[in]) * inv_cellsize;
 
-	      s[0] = basis_function(r[0], ntype[in][0]);
-	      s[1] = basis_function(r[1], ntype[in][1]);
-	      if (domain->dimension == 3) s[2] = basis_function(r[2], ntype[in][2]);
+	      s[0] = basis_function(r[0], (*ntype)[in][0]);
+	      s[1] = basis_function(r[1], (*ntype)[in][1]);
+	      if (domain->dimension == 3) s[2] = basis_function(r[2], (*ntype)[in][2]);
 	      else s[2] = 1;
 
 	      wfc[ic] = s[0]*s[1]*s[2]; // Shape function of the corner node
@@ -336,11 +336,11 @@ void TLCPDI::compute_grid_weight_functions_and_gradients()
 	    
 	    if (wf > 1.0e-12) {
 	      if (style==0) {
-		wfd[0] = (wfc[0] - wfc[2]) * (rp[domain->dimension*ip][1] - rp[domain->dimension*ip+1][1])
-		  + (wfc[1] - wfc[3]) * (rp[domain->dimension*ip][1] + rp[domain->dimension*ip+1][1]);
+		wfd[0] = (wfc[0] - wfc[2]) * ((*rp)[domain->dimension*ip][1] - (*rp)[domain->dimension*ip+1][1])
+		  + (wfc[1] - wfc[3]) * ((*rp)[domain->dimension*ip][1] + (*rp)[domain->dimension*ip+1][1]);
 		
-		wfd[1] = (wfc[0] - wfc[2]) * (rp[domain->dimension*ip+1][0] - rp[domain->dimension*ip][0])
-		  - (wfc[1] - wfc[3]) * (rp[domain->dimension*ip][0] + rp[domain->dimension*ip+1][0]);
+		wfd[1] = (wfc[0] - wfc[2]) * ((*rp)[domain->dimension*ip+1][0] - (*rp)[domain->dimension*ip][0])
+		  - (wfc[1] - wfc[3]) * ((*rp)[domain->dimension*ip][0] + (*rp)[domain->dimension*ip+1][0]);
 
 		wfd[2] = 0;
 
@@ -373,7 +373,7 @@ void TLCPDI::compute_grid_weight_functions_and_gradients()
 	      wf_np[in].push_back(wf);
 	      wfd_pn[ip].push_back(wfd);
 	      wfd_np[in].push_back(wfd);
-	      // cout << "node: " << in << " [ " << xn[in][0] << "," << xn[in][1] << "," << xn[in][2] << "]" <<
+	      // cout << "node: " << in << " [ " << (*xn)[in][0] << "," << (*xn)[in][1] << "," << (*xn)[in][2] << "]" <<
 	      // 	" with\twf=" << wf << " and\twfd=["<< wfd[0] << "," << wfd[1] << "," << wfd[2] << "]\n";
 	    }
 	  }
@@ -491,6 +491,6 @@ void TLCPDI::reset()
   for (int isolid=0; isolid<domain->solids.size(); isolid++) {
     domain->solids[isolid]->dtCFL = 1.0e22;
     np = domain->solids[isolid]->np;
-    for (int ip = 0; ip < np; ip++) domain->solids[isolid]->mb[ip].setZero();
+    for (int ip = 0; ip < np; ip++) domain->solids[isolid]->mbp[ip].setZero();
   }
 }

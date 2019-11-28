@@ -83,8 +83,6 @@ void Grid::init(double *solidlo, double *solidhi){
   std::vector<double> x2plot, y2plot;
 #endif
 
-  double Lx = solidhi[0]-solidlo[0];//+2*cellsize;
-
   cout << "In Grid::init()\n";
   bool cubic = false;
   bool bernstein = false;

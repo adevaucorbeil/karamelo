@@ -135,246 +135,277 @@ void ULCPDI::compute_grid_weight_functions_and_gradients()
 {
   if (!update_wf) return;
 
-  if (domain->dimension !=2) {
-    error->all(FLERR, "Error: ULCPDI is only 2D....\n");
-
-  }
+  if (domain->dimension !=2)
+    {
+      error->all(FLERR, "Error: ULCPDI is only 2D....\n");
+    }
 
   bigint nsolids, np_local, nnodes, nc;
 
   nsolids = domain->solids.size();
 
-  if (nsolids) {
-    for (int isolid=0; isolid<nsolids; isolid++){
+  if (nsolids)
+    {
+    for (int isolid=0; isolid<nsolids; isolid++)
+      {
+	Solid *s = domain->solids[isolid];
 
-      Solid *s = domain->solids[isolid];
+	np_local = s->np_local;
+	nc = s->nc;
+	nnodes = s->grid->nnodes_local + s->grid->nnodes_ghost;
 
-      np_local = s->np_local;
-      nc = s->nc;
-      nnodes = s->grid->nnodes_local + s->grid->nnodes_ghost;
+	int *numneigh_pn = s->numneigh_pn;
+	int *numneigh_np = s->numneigh_np;
 
+	vector<int> *neigh_pn = s->neigh_pn;
+	vector<int> *neigh_np = s->neigh_np;
 
-      int *numneigh_pn = s->numneigh_pn;
-      int *numneigh_np = s->numneigh_np;
+	vector< double > *wf_pn = s->wf_pn;
+	vector< double > *wf_pn_corners = s->wf_pn_corners;
+	vector< double > *wf_np = s->wf_np;
 
-      vector<int> *neigh_pn = s->neigh_pn;
-      vector<int> *neigh_np = s->neigh_np;
+	vector< Eigen::Vector3d > *wfd_pn = s->wfd_pn;
+	vector< Eigen::Vector3d > *wfd_np = s->wfd_np;
 
-      vector< double > *wf_pn = s->wf_pn;
-      vector< double > *wf_pn_corners = s->wf_pn_corners;
-      vector< double > *wf_np = s->wf_np;
+	vector<Eigen::Vector3d> *xp  = &s->x;
+	vector<Eigen::Vector3d> *xpc = &s->xpc;
+	vector<Eigen::Vector3d> *xn  = &s->grid->x0;
+	vector<Eigen::Vector3d> *rp  = &s->rp;
 
-      vector< Eigen::Vector3d > *wfd_pn = s->wfd_pn;
-      vector< Eigen::Vector3d > *wfd_np = s->wfd_np;
+	double inv_cellsize          = 1.0 / s->grid->cellsize;
+	vector<array<int, 3>> *ntype = &s->grid->ntype;
 
-      vector<Eigen::Vector3d> *xp  = &s->x;
-      vector<Eigen::Vector3d> *xpc = &s->xpc;
-      vector<Eigen::Vector3d> *xn  = &s->grid->x0;
-      vector<Eigen::Vector3d> *rp  = &s->rp;
+	double wf;
+	double phi[3];
+	Eigen::Vector3d r, wfd;
+	vector<Eigen::Vector3d> xcorner(nc, Eigen::Vector3d::Zero());
+	vector<double> wfc(nc, 0);
 
-      double inv_cellsize = 1.0 / s->grid->cellsize;
-      vector<array<int, 3>> *ntype = &domain->solids[isolid]->grid->ntype;
+	bool linear, cubic, bernstein;
+	linear = cubic = bernstein = false;
 
-      double wf;
-      double phi[3];
-      Eigen::Vector3d r, wfd;
-      vector<Eigen::Vector3d> xcorner(nc, Eigen::Vector3d::Zero());
-      vector<double> wfc(nc, 0);
+	if (update->method_shape_function.compare("linear")==0) linear = true;
+	if (update->method_shape_function.compare("cubic-spline")==0) cubic = true;
+	if (update->method_shape_function.compare("Bernstein-quadratic")==0) bernstein = true;
 
-      bool linear, cubic, bernstein;
-      linear = cubic = bernstein = false;
+	double a, b, inv_Vp, alpha_over_Vp, sixVp;
 
-      if (update->method_shape_function.compare("linear")==0) linear = true;
-      if (update->method_shape_function.compare("cubic-spline")==0) cubic = true;
-      if (update->method_shape_function.compare("Bernstein-quadratic")==0) bernstein = true;
-
-      double a, b, inv_Vp, alpha_over_Vp, sixVp;
-
-      for (int in=0; in<nnodes; in++) {
-	neigh_np[in].clear();
-	numneigh_np[in]=0;
-	wf_np[in].clear();
-	wfd_np[in].clear();
-      }
-
-      if (np_local && nnodes) {
-	for (int ip=0; ip<np_local; ip++) {
-
-	  neigh_pn[ip].clear();
-	  numneigh_pn[ip] = 0;
-	  wf_pn[ip].clear();
-	  for(int ic=0; ic<nc; ic++) wf_pn_corners[nc*ip+ic].clear();
-	  wfd_pn[ip].clear();
-
-	  // Calculate what nodes the corner of Omega_p will interact with:
-	  int nx = s->grid->nx;
-	  int ny = s->grid->ny;
-	  int nz = s->grid->nz;
-
-	  vector<int> n_neigh;
-	  int m;
-
-
-	  if (style==0) { //CPDI-R4
-	    // Calculate the coordinates of the particle domain's corners:
-	    if (domain->dimension == 1) {
-	      xcorner[0] = (*xp)[ip] - (*rp)[ip];
-	      xcorner[1] = (*xp)[ip] + (*rp)[ip];
-	    }
-
-	    if (domain->dimension == 2) {
-	      xcorner[0] = (*xp)[ip] - (*rp)[2*ip] - (*rp)[2*ip+1];
-	      xcorner[1] = (*xp)[ip] + (*rp)[2*ip] - (*rp)[2*ip+1];
-	      xcorner[2] = (*xp)[ip] + (*rp)[2*ip] + (*rp)[2*ip+1];
-	      xcorner[3] = (*xp)[ip] - (*rp)[2*ip] + (*rp)[2*ip+1];
-	    }
-
-	    if (domain->dimension == 3) {
-	      error->all(FLERR, "Unsupported!\n");
+	for (int in = 0; in < nnodes; in++)
+	  {
+	    neigh_np[in].clear();
+	    numneigh_np[in] = 0;
+	    wf_np[in].clear();
+	    wfd_np[in].clear();
 	  }
 
-	  for (int ic=0; ic<nc; ic++) { // Do this for all corners
+	if (np_local && nnodes)
+	  {
+	  for (int ip = 0; ip < np_local; ip++)
+	    {
+	      neigh_pn[ip].clear();
+	      numneigh_pn[ip] = 0;
+	      wf_pn[ip].clear();
+	      for(int ic=0; ic<nc; ic++) wf_pn_corners[nc*ip+ic].clear();
+	      wfd_pn[ip].clear();
 
-	    if (style==1) { // CPDI-Q4
-	      xcorner[ic][0] = (*xpc)[nc*ip+ic][0];
-	      xcorner[ic][1] = (*xpc)[nc*ip+ic][1];
-	      xcorner[ic][2] = (*xpc)[nc*ip+ic][2];
-	    }
+	      // Calculate what nodes the corner of Omega_p will interact with:
+	      int nx = s->grid->nx;
+	      int ny = s->grid->ny;
+	      int nz = s->grid->nz;
 
-	    int i0, j0, k0;
+	      vector<int> n_neigh;
+	      int m;
 
-	    if (linear) {
-	      i0 = (int) ((xcorner[ic][0] - domain->boxlo[0])*inv_cellsize);
-	      j0 = (int) ((xcorner[ic][1] - domain->boxlo[1])*inv_cellsize);
-	      k0 = (int) ((xcorner[ic][2] - domain->boxlo[2])*inv_cellsize);
 
-	      m = 2;
-
-	    } else if (bernstein){
-	      i0 = 2*(int) ((xcorner[ic][0] - domain->boxlo[0])*inv_cellsize);
-	      j0 = 2*(int) ((xcorner[ic][1] - domain->boxlo[1])*inv_cellsize);
-	      k0 = 2*(int) ((xcorner[ic][2] - domain->boxlo[2])*inv_cellsize);
-
-	      if ((i0 >= 1) && (i0 % 2 != 0)) i0--;
-	      if ((j0 >= 1) && (j0 % 2 != 0)) j0--;
-	      if (nz>1) if ((k0 >= 1) && (k0 % 2 != 0)) k0--;
-
-	      m = 3;
-
-	    } else if (cubic){
-	      i0 = (int) ((xcorner[ic][0] - domain->boxlo[0])*inv_cellsize - 1);
-	      j0 = (int) ((xcorner[ic][1] - domain->boxlo[1])*inv_cellsize - 1);
-	      k0 = (int) ((xcorner[ic][2] - domain->boxlo[2])*inv_cellsize - 1);
-
-	      m = 4;
-
-	    } else {
-	      error->all(FLERR, "Shape function type not supported by TLMPM::compute_grid_weight_functions_and_gradients(): " + update->method_shape_function + ".\n");
-	    }
-
-	    // cout << "corner " << ic << " of particle " << ip << ": [" << xcorner[ic][0] << "," << xcorner[ic][1] << "," << xcorner[ic][2] << "], i0=" << i0 << ", j0=" << j0 << ", k0=" << k0 << endl;
-	    for(int i=i0; i<i0+m;i++){
-	      if (ny>1) {
-		for(int j=j0; j<j0+m;j++){
-		  if (nz>1){
-		    for(int k=k0; k<k0+m;k++){
-		      int n = nz*ny*i+nz*j+k;
-		      if (n < nnodes)
-			n_neigh.push_back(n);
+	      if (style==0)
+		{ //CPDI-R4
+		  // Calculate the coordinates of the particle domain's corners:
+		  if (domain->dimension == 1)
+		    {
+		      xcorner[0] = (*xp)[ip] - (*rp)[ip];
+		      xcorner[1] = (*xp)[ip] + (*rp)[ip];
 		    }
-		  } else {
-		    int n = ny*i+j;
-		    if (n < nnodes) {
-		      // cout << "nodes:" << n << endl;
-		      n_neigh.push_back(n);
-		    }
+
+		if (domain->dimension == 2)
+		  {
+		    xcorner[0] = (*xp)[ip] - (*rp)[2*ip] - (*rp)[2*ip+1];
+		    xcorner[1] = (*xp)[ip] + (*rp)[2*ip] - (*rp)[2*ip+1];
+		    xcorner[2] = (*xp)[ip] + (*rp)[2*ip] + (*rp)[2*ip+1];
+		    xcorner[3] = (*xp)[ip] - (*rp)[2*ip] + (*rp)[2*ip+1];
+		  }
+
+		if (domain->dimension == 3)
+		  {
+		    error->all(FLERR, "Unsupported!\n");
 		  }
 		}
-	      } else {
-		if (i < nnodes)
-		  n_neigh.push_back(i);
-	      }
-	    }
-	  }
 
-	  // Keep only unique values of in in n_neigh:
-	  vector<int>::iterator it;
-	  sort(n_neigh.begin(), n_neigh.end());           // Sort all values
-	  it = unique (n_neigh.begin(), n_neigh.end());   // Remove indentical consecutive values
-	  n_neigh.resize( distance(n_neigh.begin(),it) ); // Resize vector.
+	      for (int ic=0; ic<nc; ic++)
+		{ // Do this for all corners
 
-	  // cout << "[";
-	  // for (auto ii: n_neigh)
-	  //   cout << ii << ' ';
-	  // cout << "]\n";
+		  if (style==1)
+		    { // CPDI-Q4
+		      xcorner[ic][0] = (*xpc)[nc*ip+ic][0];
+		      xcorner[ic][1] = (*xpc)[nc*ip+ic][1];
+		      xcorner[ic][2] = (*xpc)[nc*ip+ic][2];
+		    }
 
-	  inv_Vp = 1.0/s->vol[ip];
+		  int i0, j0, k0;
 
-	  if (style==1) {
-	    a = (xcorner[3][0]-xcorner[0][0])*(xcorner[1][1]-xcorner[2][1])
-	      - (xcorner[1][0]-xcorner[2][0])*(xcorner[3][1]-xcorner[0][1]);
+		  if (linear)
+		    {
+		      i0 = (int) ((xcorner[ic][0] - domain->boxlo[0])*inv_cellsize);
+		      j0 = (int) ((xcorner[ic][1] - domain->boxlo[1])*inv_cellsize);
+		      k0 = (int) ((xcorner[ic][2] - domain->boxlo[2])*inv_cellsize);
 
-	    b = (xcorner[2][0]-xcorner[3][0])*(xcorner[0][1]-xcorner[1][1])
-	      - (xcorner[0][0]-xcorner[1][0])*(xcorner[2][1]-xcorner[3][1]);
+		      m = 2;
 
-	    alpha_over_Vp = 0.0417*inv_Vp;
-	    sixVp = 6*vol[ip];
-	  }
+		    }
+		  else if (bernstein)
+		    {
+		      i0 = 2*(int) ((xcorner[ic][0] - domain->boxlo[0])*inv_cellsize);
+		      j0 = 2*(int) ((xcorner[ic][1] - domain->boxlo[1])*inv_cellsize);
+		      k0 = 2*(int) ((xcorner[ic][2] - domain->boxlo[2])*inv_cellsize);
 
-	  //for (int in=0; in<nnodes; in++) {
-	  for (auto in: n_neigh) {
-	    wf = 0;
+		      if ((i0 >= 1) && (i0 % 2 != 0)) i0--;
+		      if ((j0 >= 1) && (j0 % 2 != 0)) j0--;
+		      if (nz>1) if ((k0 >= 1) && (k0 % 2 != 0)) k0--;
 
-	    for(int ic=0; ic<nc; ic++) {
-	      // Calculate the distance between each pair of particle/node:
-	      r = (xcorner[ic] - (*xn)[in]) * inv_cellsize;
+		      m = 3;
 
-	      phi[0] = basis_function(r[0], (*ntype)[in][0]);
-	      phi[1] = basis_function(r[1], (*ntype)[in][1]);
-	      if (domain->dimension == 3) phi[2] = basis_function(r[2], (*ntype)[in][2]);
-	      else phi[2] = 1;
+		    }
+		  else if (cubic)
+		    {
+		      i0 = (int) ((xcorner[ic][0] - domain->boxlo[0])*inv_cellsize - 1);
+		      j0 = (int) ((xcorner[ic][1] - domain->boxlo[1])*inv_cellsize - 1);
+		      k0 = (int) ((xcorner[ic][2] - domain->boxlo[2])*inv_cellsize - 1);
 
-	      wfc[ic] = phi[0]*phi[1]*phi[2]; // Shape function of the corner node
+		      m = 4;
 
-	      if (style==0 && wfc[ic] > 1.0e-12) wf += wfc[ic];
-	    }
+		    }
+		  else
+		    {
+		      error->all(FLERR, "Shape function type not supported by TLMPM::compute_grid_weight_functions_and_gradients(): " + update->method_shape_function + ".\n");
+		    }
 
-	    if (style==0) wf *= 0.25;
-	    if (style==1) {
-	      wf = alpha_over_Vp*((sixVp - a - b)*wfc[0]
-				  + (sixVp - a + b)*wfc[1]
-				  + (sixVp + a + b)*wfc[2]
-				  + (sixVp + a - b)*wfc[3]);
-	    }
+		  for(int i = i0; i < i0 + m; i++)
+		    {
+		      if (ny > 1)
+			{
+			  for(int j = j0; j < j0 + m; j++)
+			    {
+			      if (nz > 1)
+				{
+				  for(int k = k0; k < k0 + m; k++)
+				    {
+				      int n = nz * ny * i + nz * j + k;
+				      if (n < nnodes)
+					n_neigh.push_back(n);
+				    }
+				}
+			      else
+				{
+				  int n = ny * i + j;
+				  if (n < nnodes)
+				    {
+				      n_neigh.push_back(n);
+				    }
+				}
+			    }
+			}
+		      else
+			{
+			  if (i < nnodes)
+			    n_neigh.push_back(i);
+			}
+		    }
+		}
 
-	    if (wf > 1.0e-12) {
-	      if (style==0) {
-		wfd[0] = (wfc[0] - wfc[2]) * ((*rp)[domain->dimension*ip][1] - (*rp)[domain->dimension*ip+1][1])
-		  + (wfc[1] - wfc[3]) * ((*rp)[domain->dimension*ip][1] + (*rp)[domain->dimension*ip+1][1]);
+	      // Keep only unique values of in in n_neigh:
+	      vector<int>::iterator it;
+	      sort(n_neigh.begin(), n_neigh.end());           // Sort all values
+	      it = unique (n_neigh.begin(), n_neigh.end());   // Remove indentical consecutive values
+	      n_neigh.resize( distance(n_neigh.begin(),it) ); // Resize vector.
+
+	      // cout << "[";
+	      // for (auto ii: n_neigh)
+	      //   cout << ii << ' ';
+	      // cout << "]\n";
+
+	      inv_Vp = 1.0 / s->vol[ip];
+
+	      if (style==1)
+		{
+		  a = (xcorner[3][0]-xcorner[0][0])*(xcorner[1][1]-xcorner[2][1])
+		    - (xcorner[1][0]-xcorner[2][0])*(xcorner[3][1]-xcorner[0][1]);
+
+		  b = (xcorner[2][0]-xcorner[3][0])*(xcorner[0][1]-xcorner[1][1])
+		    - (xcorner[0][0]-xcorner[1][0])*(xcorner[2][1]-xcorner[3][1]);
+
+		  alpha_over_Vp = 0.0417 * inv_Vp;
+		  sixVp = 6 * s->vol[ip];
+		}
+
+	      //for (int in=0; in<nnodes; in++) {
+	      for (auto in: n_neigh)
+		{
+		  wf = 0;
+
+		  for(int ic=0; ic<nc; ic++)
+		    {
+		      // Calculate the distance between each pair of particle/node:
+		      r = (xcorner[ic] - (*xn)[in]) * inv_cellsize;
+
+		      phi[0] = basis_function(r[0], (*ntype)[in][0]);
+		      phi[1] = basis_function(r[1], (*ntype)[in][1]);
+		      if (domain->dimension == 3) phi[2] = basis_function(r[2], (*ntype)[in][2]);
+		      else phi[2] = 1;
+
+		      wfc[ic] = phi[0]*phi[1]*phi[2]; // Shape function of the corner node
+
+		      if (style==0 && wfc[ic] > 1.0e-12) wf += wfc[ic];
+		    }
+
+		  if (style==0) wf *= 0.25;
+		  if (style==1)
+		    {
+		      wf = alpha_over_Vp*((sixVp - a - b)*wfc[0]
+					  + (sixVp - a + b)*wfc[1]
+					  + (sixVp + a + b)*wfc[2]
+					  + (sixVp + a - b)*wfc[3]);
+		    }
+
+		  if (wf > 1.0e-12)
+		    {
+		      if (style==0)
+			{
+			  wfd[0] = (wfc[0] - wfc[2]) * ((*rp)[domain->dimension*ip][1] - (*rp)[domain->dimension*ip+1][1])
+			    + (wfc[1] - wfc[3]) * ((*rp)[domain->dimension*ip][1] + (*rp)[domain->dimension*ip+1][1]);
 		
-		wfd[1] = (wfc[0] - wfc[2]) * ((*rp)[domain->dimension*ip+1][0] - (*rp)[domain->dimension*ip][0])
-		  - (wfc[1] - wfc[3]) * ((*rp)[domain->dimension*ip][0] + (*rp)[domain->dimension*ip+1][0]);
-		wfd[2] = 0;
+			  wfd[1] = (wfc[0] - wfc[2]) * ((*rp)[domain->dimension*ip+1][0] - (*rp)[domain->dimension*ip][0])
+			    - (wfc[1] - wfc[3]) * ((*rp)[domain->dimension*ip][0] + (*rp)[domain->dimension*ip+1][0]);
+			  wfd[2] = 0;
 
-		wfd *= inv_Vp;
-	      }
+			  wfd *= inv_Vp;
+			}
 
-	      if (style==1) {
-		wfd[0] = wfc[0] * (xcorner[1][1]-xcorner[3][1])
-		  + wfc[1] * (xcorner[2][1]-xcorner[0][1])
-		  + wfc[2] * (xcorner[3][1]-xcorner[1][1])
-		  + wfc[3] * (xcorner[0][1]-xcorner[2][1]);
-		
-		wfd[1] = wfc[0] * (xcorner[3][0]-xcorner[1][0])
-		  + wfc[1] * (xcorner[0][0]-xcorner[2][0])
-		  + wfc[2] * (xcorner[1][0]-xcorner[3][0])
-		  + wfc[3] * (xcorner[2][0]-xcorner[0][0]);
+	      if (style==1)
+		{
+		  wfd[0] = wfc[0] * (xcorner[1][1]-xcorner[3][1])
+		    + wfc[1] * (xcorner[2][1]-xcorner[0][1])
+		    + wfc[2] * (xcorner[3][1]-xcorner[1][1])
+		    + wfc[3] * (xcorner[0][1]-xcorner[2][1]);
 
-		wfd[2] = 0;
+		  wfd[1] = wfc[0] * (xcorner[3][0]-xcorner[1][0])
+		    + wfc[1] * (xcorner[0][0]-xcorner[2][0])
+		    + wfc[2] * (xcorner[1][0]-xcorner[3][0])
+		    + wfc[3] * (xcorner[2][0]-xcorner[0][0]);
 
-		wfd *= 0.5*inv_Vp;
-		for(int ic=0; ic<nc; ic++) wf_pn_corners[nc*ip+ic].push_back(wfc[ic]);
-	      }
+		  wfd[2] = 0;
+
+		  wfd *= 0.5*inv_Vp;
+		  for(int ic=0; ic<nc; ic++) wf_pn_corners[nc*ip+ic].push_back(wfc[ic]);
+		}
 
 	      neigh_pn[ip].push_back(in);
 	      neigh_np[in].push_back(ip);
@@ -385,15 +416,13 @@ void ULCPDI::compute_grid_weight_functions_and_gradients()
 	      wf_np[in].push_back(wf);
 	      wfd_pn[ip].push_back(wfd);
 	      wfd_np[in].push_back(wfd);
-	      // cout << "node: " << in << " [ " << (*xn)[in][0] << "," << (*xn)[in][1] << "," << (*xn)[in][2] << "]" <<
-	      // 	" with\twf=" << wf << " and\twfd=["<< wfd[0] << "," << wfd[1] << "," << wfd[2] << "]\n";
+		    }
+		}
 	    }
 	  }
-	}
+	if (method_type.compare("APIC") == 0) s->compute_inertia_tensor(shape_function);
       }
-      if (method_type.compare("APIC") == 0) s->compute_inertia_tensor(shape_function);
     }
-  }
 }
 
 void ULCPDI::particles_to_grid()

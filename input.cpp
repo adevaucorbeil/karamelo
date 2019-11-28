@@ -575,8 +575,8 @@ Var Input::parsev(string str)
 
           if (!values.empty() || !ops.empty())
           {
-	    error->all(FLERR, "Error: I do not understand when '=' is located in the "
-		       + "middle of an expression\n");
+	    error->all(FLERR, (string) "Error: I do not understand when = is located in the "
+		       + (string) "middle of an expression\n");
           }
 
           else
@@ -761,9 +761,9 @@ int Input::dimension(vector<string> args)
 
   if (args.size() > 9)
   {
-    error->all(FLERR, "Error: dimension received too many arguments: 8 maximum for 3D "
-	       + "simulations (Dimension, domain xmin, domain xmax, domain ymin, "
-	       + "domain ymax, domain zmin, domain zmax, cell size)\n");
+    error->all(FLERR, (string) "Error: dimension received too many arguments: 8 maximum for 3D "
+	       + (string) "simulations (Dimension, domain xmin, domain xmax, domain ymin, "
+	       + (string) "domain ymax, domain zmin, domain zmax, cell size)\n");
   }
 
   int dim = (int)parsev(args[0]);
@@ -1003,11 +1003,11 @@ int Input::save_plot(vector<string> args)
 {
   if (args.size() < 1)
   {
-    error->all(FLERR, "Error: too few arguments for save_plot(). Should be save_plot(filename)\n";
+    error->all(FLERR, "Error: too few arguments for save_plot(). Should be save_plot(filename)\n");
   }
   else if (args.size() > 1)
   {
-    error->all(FLERR, "Error: too few arguments for save_plot(). Should be save_plot(filename)\n";
+    error->all(FLERR, "Error: too few arguments for save_plot(). Should be save_plot(filename)\n");
   }
   output->save_plot  = true;
   output->ofile_plot = args[0];
