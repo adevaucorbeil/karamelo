@@ -179,7 +179,7 @@ void Solid::init()
 
   if (grid->nnodes_local == 0) grid->init(solidlo, solidhi);
 
-  if (np_local == 0) {
+  if (np == 0) {
     error->one(FLERR,"Error: solid does not have any particles.\n");
   } else {
       bigint nnodes = grid->nnodes_local + grid->nnodes_ghost;

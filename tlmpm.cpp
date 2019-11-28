@@ -446,11 +446,11 @@ void TLMPM::adjust_dt()
 
 void TLMPM::reset()
 {
-  int np;
+  int np_local;
 
   for (int isolid=0; isolid<domain->solids.size(); isolid++) {
     domain->solids[isolid]->dtCFL = 1.0e22;
-    np = domain->solids[isolid]->np_local;
-    for (int ip = 0; ip < np; ip++) domain->solids[isolid]->mbp[ip].setZero();
+    np_local = domain->solids[isolid]->np_local;
+    for (int ip = 0; ip < np_local; ip++) domain->solids[isolid]->mbp[ip].setZero();
   }
 }

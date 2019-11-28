@@ -127,14 +127,14 @@ void TLCPDI::compute_grid_weight_functions_and_gradients()
     exit(1);
   }
   cout << "In TLCPDI::compute_grid_weight_functions_and_gradients()\n";
-  bigint nsolids, np, nnodes, nc;
+  bigint nsolids, np_local, nnodes, nc;
 
   nsolids = domain->solids.size();
 
   if (nsolids) {
     for (int isolid=0; isolid<nsolids; isolid++){
 
-      np = domain->solids[isolid]->np;
+      np_local = domain->solids[isolid]->np_local;
       nc = domain->solids[isolid]->nc;
       nnodes = domain->solids[isolid]->grid->nnodes;
 
@@ -182,8 +182,8 @@ void TLCPDI::compute_grid_weight_functions_and_gradients()
 	wfd_np[in].clear();
       }
 
-      if (np && nnodes) {
-	for (int ip=0; ip<np; ip++) {
+      if (np_local && nnodes) {
+	for (int ip=0; ip<np_local; ip++) {
 
 	  neigh_pn[ip].clear();
 	  numneigh_pn[ip] = 0;
@@ -486,11 +486,11 @@ void TLCPDI::adjust_dt()
 
 void TLCPDI::reset()
 {
-  int np;
+  int np_local;
 
   for (int isolid=0; isolid<domain->solids.size(); isolid++) {
     domain->solids[isolid]->dtCFL = 1.0e22;
-    np = domain->solids[isolid]->np;
-    for (int ip = 0; ip < np; ip++) domain->solids[isolid]->mbp[ip].setZero();
+    np_local = domain->solids[isolid]->np_local;
+    for (int ip = 0; ip < np_local; ip++) domain->solids[isolid]->mbp[ip].setZero();
   }
 }
