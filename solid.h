@@ -81,11 +81,11 @@ class Solid : protected Pointers {
   vector<double> ienergy;                   // particles' internal energy
   vector<int> mask;                         // particles' group mask
 
-  double max_p_wave_speed;           // maximum of the particle wave speed
+  double max_p_wave_speed;                  // maximum of the particle wave speed
   double dtCFL;
   
-  int *numneigh_pn;                  // number of nodes neighbouring a given particle
-  int *numneigh_np;                  // number of nodes neighbouring a given node
+  vector<int> numneigh_pn;                  // number of nodes neighbouring a given particle
+  vector<int> numneigh_np;                  // number of nodes neighbouring a given node
   vector<int> *neigh_pn;             // List of the nodes neighbouring a given particle
   vector<int> *neigh_np;             // List of the particles neighbouring a given node
 

@@ -123,8 +123,8 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
       nnodes_local = domain->solids[isolid]->grid->nnodes_local;
       nnodes_ghost = domain->solids[isolid]->grid->nnodes_ghost;
 
-      int *numneigh_pn = domain->solids[isolid]->numneigh_pn;
-      int *numneigh_np = domain->solids[isolid]->numneigh_np;
+      vector<int> *numneigh_pn = &domain->solids[isolid]->numneigh_pn;
+      vector<int> *numneigh_np = &domain->solids[isolid]->numneigh_np;
 
       vector<int> *neigh_pn = domain->solids[isolid]->neigh_pn;
       vector<int> *neigh_np = domain->solids[isolid]->neigh_np;
@@ -291,8 +291,8 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
 
 	      neigh_pn[ip].push_back(in);
 	      neigh_np[in].push_back(ip);
-	      numneigh_pn[ip]++;
-	      numneigh_np[in]++;
+	      (*numneigh_pn)[ip]++;
+	      (*numneigh_np)[in]++;
 	      if (domain->dimension == 1) wf = s[0];
 	      if (domain->dimension == 2) wf = s[0]*s[1];
 	      if (domain->dimension == 3) wf = s[0]*s[1]*s[2];

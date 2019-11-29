@@ -92,8 +92,6 @@ Solid::Solid(MPM *mpm, vector<string> args) : Pointers(mpm)
   if (update->method->is_TL) grid = new Grid(mpm);
   else grid = domain->grid;
 
-  numneigh_pn = numneigh_np = NULL;
-
   neigh_pn = neigh_np = NULL;
 
   wf_pn = wf_np = wf_pn_corners = NULL;
@@ -140,9 +138,6 @@ Solid::~Solid()
 {
   if (update->method->is_TL) delete grid;
 
-  delete[] numneigh_pn;
-  delete[] numneigh_np;
-
   delete[] neigh_pn;
   delete[] neigh_np;
 
@@ -184,7 +179,6 @@ void Solid::init()
   } else {
       bigint nnodes = grid->nnodes_local + grid->nnodes_ghost;
 
-      numneigh_pn = new int[np_local]();
       neigh_pn    = new vector<int>[np_local];
       wf_pn       = new vector<double>[np_local];
       if (nc != 0)
@@ -193,7 +187,6 @@ void Solid::init()
 
       if (nnodes)
 	{
-	  numneigh_np = new int[nnodes]();
 	  neigh_np    = new vector<int>[nnodes];
 	  wf_np       = new vector<double>[nnodes];
 	  wfd_np      = new vector< Vector3d >[nnodes];
@@ -299,6 +292,12 @@ void Solid::grow(int nparticles)
   ienergy.resize(nparticles);
   mask.resize(nparticles);
   J.resize(nparticles);
+
+  numneigh_pn.resize(nparticles);
+
+  bigint nnodes = grid->nnodes_local + grid->nnodes_ghost;
+
+  numneigh_np.resize(nnodes);
 }
 
 void Solid::compute_mass_nodes(bool reset)
