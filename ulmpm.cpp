@@ -523,11 +523,11 @@ void ULMPM::adjust_dt()
     {
       cout << "Error: dtCFL == 0\n";
       cout << "domain->solids[" << isolid << "]->dtCFL == 0\n";
-      error->all(FLERR, "");
+      error->one(FLERR, "");
     } else if (std::isnan(dtCFL)) {
       cout << "Error: dtCFL = " << dtCFL << "\n";
       cout << "domain->solids[" << isolid << "]->dtCFL == " << domain->solids[isolid]->dtCFL << "\n";
-      error->all(FLERR, "");
+      error->one(FLERR, "");
     }
   }
 
@@ -551,7 +551,7 @@ void ULMPM::reset()
 
 void ULMPM::exchange_particles()
 {
-  int ip, np_local, size_buf_send, size_buf_recv;
+  int ip, np_local_old, size_buf_send, size_buf_recv;
   vector<Eigen::Vector3d> *xp;
   vector<double> buf_send;
   vector<int> unpack_list;
@@ -562,19 +562,20 @@ void ULMPM::exchange_particles()
   for (int isolid=0; isolid<domain->solids.size(); isolid++)
     {
       buf_send.clear();
-      np_local = domain->solids[isolid]->np_local;
+      np_local_old = domain->solids[isolid]->np_local;
       xp = &domain->solids[isolid]->x;
 
       ip = 0;
-      while(ip < np_local)
+      while(ip < domain->solids[isolid]->np_local)
 	{
 	  if (!domain->inside_subdomain((*xp)[ip][0], (*xp)[ip][1], (*xp)[ip][2]))
 	    {
+	      cout << "particle " << domain->solids[isolid]->ptag[ip] << " left the subdomain of proc " << universe->me << endl;
 	      // The particle is not located in the subdomain anymore:
 	      // transfer it to the buffer
 	      domain->solids[isolid]->pack_particle(ip, buf_send);
-	      domain->solids[isolid]->copy_particle(np_local - 1, ip);
-	      np_local--;
+	      domain->solids[isolid]->copy_particle(domain->solids[isolid]->np_local - 1, ip);
+	      domain->solids[isolid]->np_local--;
 	    }
 	  else
 	    {
@@ -583,7 +584,15 @@ void ULMPM::exchange_particles()
 	}
 
       // Resize particle variables:
-      domain->solids[isolid]->grow(np_local);
+      if (np_local_old - domain->solids[isolid]->np_local != buf_send.size()/domain->solids[isolid]->comm_n)
+	{
+	  error->one(FLERR,"Size of buffer does not match the number of particles that left the domain: " + to_string(np_local_old - domain->solids[isolid]->np_local) + "!=" + to_string(buf_send.size()) + "\n");
+	}
+      if (buf_send.size())
+	{
+	  cout << np_local_old - domain->solids[isolid]->np_local << " particles left the subdomain of proc " << universe->me << endl;
+	  domain->solids[isolid]->grow(domain->solids[isolid]->np_local);
+	}
 
       // Exchange buffers:
       for (int sproc=0; sproc<universe->nprocs; sproc++)
@@ -607,27 +616,36 @@ void ULMPM::exchange_particles()
 
 	      if (size_buf_recv)
 		{
+		  cout << "Receiving " << size_buf_recv/domain->solids[isolid]->comm_n << " particles from proc " << sproc << endl;
 		  double buf_recv[size_buf_recv];
 		  MPI_Recv(&buf_recv[0], size_buf_recv, MPI_DOUBLE, sproc, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-		  // Unpack buffer:
+
 
 		  // Check what particles are within the subdomain:
 		  unpack_list.clear();
 		  ip = 0;
 		  while(ip < size_buf_recv)
 		    {
-		      if (domain->inside_subdomain(buf_recv[ip], buf_recv[ip+1], buf_recv[ip+2]))
+		      cout << "Check if particle " << buf_recv[ip] << " is in the subdomain\t";
+		      if (domain->inside_subdomain(buf_recv[ip+1], buf_recv[ip+2], buf_recv[ip+3]))
 			{
+			  cout << "true\t" << "ip=" << ip << endl;
 			  unpack_list.push_back(ip);
+			}
+		      else
+			{
+			  cout << "wrong\n";
 			}
 		      ip += domain->solids[isolid]->comm_n;
 		    }
 
-		  domain->solids[isolid]->grow(np_local + unpack_list.size());
+		  domain->solids[isolid]->grow(domain->solids[isolid]->np_local + unpack_list.size());
 
-		  domain->solids[isolid]->unpack_particle(np_local, unpack_list, buf_recv);
+		  // Unpack buffer:
+		  domain->solids[isolid]->unpack_particle(domain->solids[isolid]->np_local, unpack_list, buf_recv);
 		}
 	    }
 	}
+      cout << "np_local = " << domain->solids[isolid]->np_local << endl;
     }
 }

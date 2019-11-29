@@ -132,7 +132,7 @@ Solid::Solid(MPM *mpm, vector<string> args) : Pointers(mpm)
   plt::close();
 #endif
 
-  comm_n = 47; // Number of double to pack for particle exchange between CPUs.
+  comm_n = 49; // Number of double to pack for particle exchange between CPUs.
 
 }
 
@@ -239,21 +239,11 @@ void Solid::options(vector<string> *args, vector<string>::iterator it)
   }
 }
 
-void Solid::grow(int nparticles){
-  //np_local = nparticles;
-
-  string str;
-
-  str = "solid-" + id + ":ptag";
-  cout << "Growing " << str << endl;
+void Solid::grow(int nparticles)
+{
+  cout << "In Solid::grow(int)\n";
   ptag.resize(nparticles);
-
-  str = "solid-" + id + ":x0";
-  cout << "Growing " << str << endl;
   x0.resize(nparticles);
-
-  str = "solid-" + id + ":x";
-  cout << "Growing " << str << endl;
   x.resize(nparticles);
 
   if (method_type.compare("tlcpdi") == 0
@@ -262,22 +252,12 @@ void Solid::grow(int nparticles){
 
       if (update->method->style == 0)
 	{ // CPDI-R4
-	  str = "solid-" + id + ":rp0";
-	  cout << "Growing " << str << endl;
 	  rp0.resize(domain->dimension*nparticles);
-
-	  str = "solid-" + id + ":rp";
-	  cout << "Growing " << str << endl;
 	  rp.resize(domain->dimension*nparticles);
 	}
       if (update->method->style == 1)
 	{ // CPDI-Q4
-	  str = "solid-" + id + ":xpc0";
-	  cout << "Growing " << str << endl;
 	  xpc0.resize(nc * nparticles);
-
-	  str = "solid-" + id + ":xpc";
-	  cout << "Growing " << str << endl;
 	  xpc.resize(nc * nparticles);
 	}
     }
@@ -285,108 +265,39 @@ void Solid::grow(int nparticles){
   if (method_type.compare("tlcpdi2") == 0
       || method_type.compare("ulcpdi2") == 0)
     {
-      str = "solid-" + id + ":xpc0";
-      cout << "Growing " << str << endl;
       xpc0.resize(nparticles);
-
-      str = "solid-" + id + ":xpc";
-      cout << "Growing " << str << endl;
       xpc.resize(nparticles);
     }
 
-  str = "solid-" + id + ":v";
-  cout << "Growing " << str << endl;
   v.resize(nparticles);
-
-  str = "solid-" + id + ":v_update";
-  cout << "Growing " << str << endl;
   v_update.resize(nparticles);
-
-  str = "solid-" + id + ":a";
-  cout << "Growing " << str << endl;
   a.resize(nparticles);
-
-  str = "solid-" + id + ":mbp";
-  cout << "Growing " << str << endl;
   mbp.resize(nparticles);
-
-  str = "solid-" + id + ":f";
-  cout << "Growing " << str << endl;
   f.resize(nparticles);
-
   sigma.resize(nparticles);
-
   strain_el.resize(nparticles);
-
   vol0PK1.resize(nparticles);
-
   L.resize(nparticles);
-
   F.resize(nparticles);
-
   R.resize(nparticles);
-
   U.resize(nparticles);
-
   D.resize(nparticles);
-
   Finv.resize(nparticles);
-
   Fdot.resize(nparticles);
-
   Di.resize(nparticles);
 
-
-  str = "solid-" + id + ":vol0";
-  cout << "Growing " << str << endl;
   vol0.resize(nparticles);
-
-  str = "solid-" + id + ":vol";
-  cout << "Growing " << str << endl;
   vol.resize(nparticles);
-
-  str = "solid-" + id + ":rho0";
-  cout << "Growing " << str << endl;
   rho0.resize(nparticles);
-
-  str = "solid-" + id + ":rho";
-  cout << "Growing " << str << endl;
   rho.resize(nparticles);
-
-  str = "solid-" + id + ":mass";
-  cout << "Growing " << str << endl;
   mass.resize(nparticles);
-
-  str = "solid-" + id + ":eff_plastic_strain";
-  cout << "Growing " << str << endl;
   eff_plastic_strain.resize(nparticles);
-
-  str = "solid-" + id + ":eff_plastic_strain_rate";
-  cout << "Growing " << str << endl;
   eff_plastic_strain_rate.resize(nparticles);
-
-  str = "solid-" + id + ":damage";
-  cout << "Growing " << str << endl;
   damage.resize(nparticles);
-
-  str = "solid-" + id + ":damage_init";
-  cout << "Growing " << str << endl;
   damage_init.resize(nparticles);
-
-  str = "solid-" + id + ":T";
-  cout << "Growing " << str << endl;
   T.resize(nparticles);
-
-  str = "solid-" + id + ":ienergy";
-  cout << "Growing " << str << endl;
   ienergy.resize(nparticles);
-
-  str = "solid-" + id + ":mask";
-  cout << "Growing " << str << endl;
   mask.resize(nparticles);
-
-  str = "solid-" + id + ":J";
-  cout << "Growing " << str << endl;
   J.resize(nparticles);
 }
 
@@ -1299,7 +1210,7 @@ void Solid::update_stress()
     cout << "Error: dtCFL = " << dtCFL << "\n";
     cout << "max_p_wave_speed = " << max_p_wave_speed
          << ", grid->cellsize=" << grid->cellsize << endl;
-    error->all(FLERR, "");
+    error->one(FLERR, "");
   }
 }
 
@@ -1432,13 +1343,15 @@ void Solid::pack_particle(int i, vector<double> &buf)
   int n[2];
   n[0] = buf.size();
 
-  buf.push_back(x0[i](0));
-  buf.push_back(x0[i](1));
-  buf.push_back(x0[i](2));
+  buf.push_back(ptag[i]);
 
   buf.push_back(x[i](0));
   buf.push_back(x[i](1));
   buf.push_back(x[i](2));
+
+  buf.push_back(x0[i](0));
+  buf.push_back(x0[i](1));
+  buf.push_back(x0[i](2));
 
   buf.push_back(v[i](0));
   buf.push_back(v[i](1));
@@ -1471,8 +1384,8 @@ void Solid::pack_particle(int i, vector<double> &buf)
   buf.push_back(eff_plastic_strain_rate[i]);
   buf.push_back(damage[i]);
   buf.push_back(damage_init[i]);
-  // buf.push_back(T[i]);
-  // buf.push_back(ienergy[i]);
+  buf.push_back(T[i]);
+  buf.push_back(ienergy[i]);
 
   buf.push_back(sigma[i](0,0));
   buf.push_back(sigma[i](1,1));
@@ -1520,13 +1433,17 @@ void Solid::unpack_particle(int &i, vector<int> list, double buf[])
   for (auto j: list)
     {
       m = j;
-      x0[i](0) = buf[m++];
-      x0[i](1) = buf[m++];
-      x0[i](2) = buf[m++];
+
+      ptag[i] = (tagint) buf[m++];
+      cout << "Unpack particle " << ptag[i] << endl;
 
       x[i](0) = buf[m++];
       x[i](1) = buf[m++];
       x[i](2) = buf[m++];
+
+      x0[i](0) = buf[m++];
+      x0[i](1) = buf[m++];
+      x0[i](2) = buf[m++];
 
       v[i](0) = buf[m++];
       v[i](1) = buf[m++];
@@ -1559,8 +1476,8 @@ void Solid::unpack_particle(int &i, vector<int> list, double buf[])
       eff_plastic_strain_rate[i] = buf[m++];
       damage[i] = buf[m++];
       damage_init[i] = buf[m++];
-      // T[i] = buf[m++];
-      // ienergy[i] = buf[m++];
+      T[i] = buf[m++];
+      ienergy[i] = buf[m++];
 
       sigma[i](0,0) = buf[m++];
       sigma[i](1,1) = buf[m++];
@@ -1893,9 +1810,6 @@ void Solid::populate(vector<string> args)
 		  else
 		    x0[l][2] = x[l][2] = 0;
 
-		  cout << "x0[" << l << "]=[" << x0[l][0] << "," << x0[l][1] << "," << x0[l][2] << "]\n";;
-		  cout << domain->inside_subdomain(x0[l][0], x0[l][1], x0[l][2]) << endl;
-		  cout << domain->regions[iregion]->inside(x0[l][0], x0[l][1], x0[l][2]) << endl;
 		  // Check if the particle is inside the region:
 		  if (domain->inside_subdomain(x0[l][0], x0[l][1], x0[l][2]) && domain->regions[iregion]->inside(x0[l][0], x0[l][1], x0[l][2]) == 1)
 		    {

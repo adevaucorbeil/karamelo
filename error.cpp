@@ -38,7 +38,7 @@ void Error::all(const char *file, int line, const string str)
   int me;
   const char *lastcmd = (const char*)"(unknown)";
 
-  MPI_Comm_rank(universe->uworld,&me);
+  MPI_Comm_rank(universe->uworld, &me);
 
   // if (me == 0) {
   //   if (input && input->line) lastcmd = input->line;
@@ -66,7 +66,7 @@ void Error::one(const char *file, int line, const string str)
   int me;
   const char *lastcmd = (const char*)"(unknown)";
 
-  MPI_Comm_rank(universe->uworld,&me);
+  MPI_Comm_rank(universe->uworld, &me);
 
   // if (me == 0) {
   //   if (input && input->line) lastcmd = input->line;
@@ -79,7 +79,7 @@ void Error::one(const char *file, int line, const string str)
   // }
   cout << "Error at line " << input->line_number << ": " << str << " raised at (" << file << "," << line << ")\n";
   cout << "Last command: " << input->line << endl;
-  MPI_Abort(universe->uworld,1);
+  MPI_Abort(universe->uworld, 1);
 }
 
 void Error::done(int status)
