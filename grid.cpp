@@ -433,54 +433,21 @@ void Grid::setup(string cs){
 void Grid::grow(int nn){
   //nnodes_local = nn;
 
-  string str = "grid-ntag";
-  cout << "Growing " << str << endl;
   ntag.resize(nn);
-
-  str = "grid-nowner";
-  cout << "Growing " << str << endl;
   nowner.resize(nn);
 
-  str = "grid-x0";
-  cout << "Growing " << str << endl;
   x0.resize(nn);
-
-  str = "grid-x";
-  cout << "Growing " << str << endl;
   x.resize(nn);
-
-  str = "grid-v";
-  cout << "Growing " << str << endl;
   v.resize(nn);
-
-  str = "grid-v_update";
-  cout << "Growing " << str << endl;
   v_update.resize(nn);
-
-  str = "grid-mb";
-  cout << "Growing " << str << endl;
   mb.resize(nn);
-
-  str = "grid-f";
-  cout << "Growing " << str << endl;
   f.resize(nn);
-
-  str = "grid-mass";
-  cout << "Growing " << str << endl;
   mass.resize(nn);
-
-  str = "grid-mask";
-  cout << "Growing " << str << endl;
   mask.resize(nn);
 
   for (int i=0; i<nn; i++) mask[i] = 1;
 
-  str = "grid-ntype";
-  cout << "Growing " << str << endl;
   ntype.resize(nn);
-  
-  str = "grid-rigid";
-  cout << "Growing " << str << endl;
   rigid.resize(nn);
 
 }
