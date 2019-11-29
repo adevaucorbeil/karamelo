@@ -89,12 +89,12 @@ class Solid : protected Pointers {
   vector<vector<int>> neigh_pn;             // List of the nodes neighbouring a given particle
   vector<vector<int>> neigh_np;             // List of the particles neighbouring a given node
 
-  vector< double > *wf_pn;
-  vector< double > *wf_np;
-  vector< double > *wf_pn_corners;
+  vector<vector< double >> wf_pn;
+  vector<vector< double >> wf_np;
+  vector<vector< double >> wf_pn_corners;
 
-  vector< Eigen::Vector3d > *wfd_pn;
-  vector< Eigen::Vector3d > *wfd_np;
+  vector<vector< Eigen::Vector3d >> wfd_pn;
+  vector<vector< Eigen::Vector3d >> wfd_np;
 
 
   struct Mat *mat;                     // Material

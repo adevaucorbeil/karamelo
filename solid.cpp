@@ -92,9 +92,6 @@ Solid::Solid(MPM *mpm, vector<string> args) : Pointers(mpm)
   if (update->method->is_TL) grid = new Grid(mpm);
   else grid = domain->grid;
 
-  wf_pn = wf_np = wf_pn_corners = NULL;
-  wfd_pn = wfd_np = NULL;
-
   dtCFL = 1.0e22;
   vtot  = 0;
   mtot = 0;
@@ -135,14 +132,6 @@ Solid::Solid(MPM *mpm, vector<string> args) : Pointers(mpm)
 Solid::~Solid()
 {
   if (update->method->is_TL) delete grid;
-
-  delete[] wf_pn;
-  delete[] wf_np;
-  if (wf_pn_corners != NULL)
-    delete[] wf_pn_corners;
-
-  delete[] wfd_pn;
-  delete[] wfd_np;
 }
 
 void Solid::init()
@@ -171,19 +160,6 @@ void Solid::init()
 
   if (np == 0) {
     error->one(FLERR,"Error: solid does not have any particles.\n");
-  } else {
-      bigint nnodes = grid->nnodes_local + grid->nnodes_ghost;
-
-      wf_pn       = new vector<double>[np_local];
-      if (nc != 0)
-	wf_pn_corners = new vector<double>[nc * np_local];
-      wfd_pn      = new vector< Vector3d >[np_local];
-
-      if (nnodes)
-	{
-	  wf_np       = new vector<double>[nnodes];
-	  wfd_np      = new vector< Vector3d >[nnodes];
-	}
   }
 }
 
@@ -227,7 +203,6 @@ void Solid::options(vector<string> *args, vector<string>::iterator it)
 
 void Solid::grow(int nparticles)
 {
-  cout << "In Solid::grow(int)\n";
   ptag.resize(nparticles);
   x0.resize(nparticles);
   x.resize(nparticles);
@@ -288,11 +263,17 @@ void Solid::grow(int nparticles)
 
   numneigh_pn.resize(nparticles);
   neigh_pn.resize(nparticles);
+  wf_pn.resize(nparticles);
+  if (nc != 0)
+    wf_pn_corners.resize(nc * nparticles);
+  wfd_pn.resize(nparticles);
 
   bigint nnodes = grid->nnodes_local + grid->nnodes_ghost;
 
   numneigh_np.resize(nnodes);
   neigh_np.resize(nnodes);
+  wf_np.resize(nnodes);
+  wfd_np.resize(nnodes);
 }
 
 void Solid::compute_mass_nodes(bool reset)
@@ -1429,7 +1410,6 @@ void Solid::unpack_particle(int &i, vector<int> list, double buf[])
       m = j;
 
       ptag[i] = (tagint) buf[m++];
-      cout << "Unpack particle " << ptag[i] << endl;
 
       x[i](0) = buf[m++];
       x[i](1) = buf[m++];

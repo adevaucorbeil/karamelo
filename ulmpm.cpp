@@ -142,11 +142,11 @@ void ULMPM::compute_grid_weight_functions_and_gradients()
       vector<vector<int>> *neigh_pn = &domain->solids[isolid]->neigh_pn;
       vector<vector<int>> *neigh_np = &domain->solids[isolid]->neigh_np;
 
-      vector<double> *wf_pn = domain->solids[isolid]->wf_pn;
-      vector<double> *wf_np = domain->solids[isolid]->wf_np;
+      vector<vector<double>> *wf_pn = &domain->solids[isolid]->wf_pn;
+      vector<vector<double>> *wf_np = &domain->solids[isolid]->wf_np;
 
-      vector<Eigen::Vector3d> *wfd_pn = domain->solids[isolid]->wfd_pn;
-      vector<Eigen::Vector3d> *wfd_np = domain->solids[isolid]->wfd_np;
+      vector<vector<Eigen::Vector3d>> *wfd_pn = &domain->solids[isolid]->wfd_pn;
+      vector<vector<Eigen::Vector3d>> *wfd_np = &domain->solids[isolid]->wfd_np;
 
       Eigen::Vector3d r;
       double s[3], sd[3];
@@ -168,8 +168,8 @@ void ULMPM::compute_grid_weight_functions_and_gradients()
       {
         (*neigh_np)[in].clear();
         (*numneigh_np)[in] = 0;
-        wf_np[in].clear();
-        wfd_np[in].clear();
+        (*wf_np)[in].clear();
+        (*wfd_np)[in].clear();
       }
 
       if (np_local && (nnodes_local + nnodes_ghost))
@@ -178,8 +178,8 @@ void ULMPM::compute_grid_weight_functions_and_gradients()
         {
           (*neigh_pn)[ip].clear();
           (*numneigh_pn)[ip] = 0;
-          wf_pn[ip].clear();
-          wfd_pn[ip].clear();
+          (*wf_pn)[ip].clear();
+          (*wfd_pn)[ip].clear();
 
           // Calculate what nodes particle ip will interact with:
 	  int nx = domain->solids[isolid]->grid->nx_global;
@@ -372,8 +372,8 @@ void ULMPM::compute_grid_weight_functions_and_gradients()
               if (domain->dimension == 3)
                 wf = s[0] * s[1] * s[2];
 
-              wf_pn[ip].push_back(wf);
-              wf_np[in].push_back(wf);
+              (*wf_pn)[ip].push_back(wf);
+              (*wf_np)[in].push_back(wf);
 
               if (domain->dimension == 1)
               {
@@ -393,8 +393,8 @@ void ULMPM::compute_grid_weight_functions_and_gradients()
                 wfd[1] = s[0] * sd[1] * s[2];
                 wfd[2] = s[0] * s[1] * sd[2];
               }
-              wfd_pn[ip].push_back(wfd);
-              wfd_np[in].push_back(wfd);
+              (*wfd_pn)[ip].push_back(wfd);
+              (*wfd_np)[in].push_back(wfd);
               // cout << "ip=" << ip << ", in=" << in << ", wf=" << wf << ",
               // wfd=[" << wfd[0] << "," << wfd[1] << "," << wfd[2] << "]" <<
               // endl;
@@ -570,7 +570,6 @@ void ULMPM::exchange_particles()
 	{
 	  if (!domain->inside_subdomain((*xp)[ip][0], (*xp)[ip][1], (*xp)[ip][2]))
 	    {
-	      cout << "particle " << domain->solids[isolid]->ptag[ip] << " left the subdomain of proc " << universe->me << endl;
 	      // The particle is not located in the subdomain anymore:
 	      // transfer it to the buffer
 	      domain->solids[isolid]->pack_particle(ip, buf_send);
@@ -590,7 +589,6 @@ void ULMPM::exchange_particles()
 	}
       if (buf_send.size())
 	{
-	  cout << np_local_old - domain->solids[isolid]->np_local << " particles left the subdomain of proc " << universe->me << endl;
 	  domain->solids[isolid]->grow(domain->solids[isolid]->np_local);
 	}
 
@@ -616,7 +614,6 @@ void ULMPM::exchange_particles()
 
 	      if (size_buf_recv)
 		{
-		  cout << "Receiving " << size_buf_recv/domain->solids[isolid]->comm_n << " particles from proc " << sproc << endl;
 		  double buf_recv[size_buf_recv];
 		  MPI_Recv(&buf_recv[0], size_buf_recv, MPI_DOUBLE, sproc, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
@@ -626,15 +623,9 @@ void ULMPM::exchange_particles()
 		  ip = 0;
 		  while(ip < size_buf_recv)
 		    {
-		      cout << "Check if particle " << buf_recv[ip] << " is in the subdomain\t";
 		      if (domain->inside_subdomain(buf_recv[ip+1], buf_recv[ip+2], buf_recv[ip+3]))
 			{
-			  cout << "true\t" << "ip=" << ip << endl;
 			  unpack_list.push_back(ip);
-			}
-		      else
-			{
-			  cout << "wrong\n";
 			}
 		      ip += domain->solids[isolid]->comm_n;
 		    }
@@ -646,6 +637,5 @@ void ULMPM::exchange_particles()
 		}
 	    }
 	}
-      cout << "np_local = " << domain->solids[isolid]->np_local << endl;
     }
 }

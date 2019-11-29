@@ -160,12 +160,12 @@ void ULCPDI::compute_grid_weight_functions_and_gradients()
 	vector<vector<int>> *neigh_pn = &s->neigh_pn;
 	vector<vector<int>> *neigh_np = &s->neigh_np;
 
-	vector< double > *wf_pn = s->wf_pn;
-	vector< double > *wf_pn_corners = s->wf_pn_corners;
-	vector< double > *wf_np = s->wf_np;
+	vector<vector< double >> *wf_pn = &s->wf_pn;
+	vector<vector< double >> *wf_pn_corners = &s->wf_pn_corners;
+	vector<vector< double >> *wf_np = &s->wf_np;
 
-	vector< Eigen::Vector3d > *wfd_pn = s->wfd_pn;
-	vector< Eigen::Vector3d > *wfd_np = s->wfd_np;
+	vector<vector< Eigen::Vector3d >> *wfd_pn = &s->wfd_pn;
+	vector<vector< Eigen::Vector3d >> *wfd_np = &s->wfd_np;
 
 	vector<Eigen::Vector3d> *xp  = &s->x;
 	vector<Eigen::Vector3d> *xpc = &s->xpc;
@@ -194,8 +194,8 @@ void ULCPDI::compute_grid_weight_functions_and_gradients()
 	  {
 	    (*neigh_np)[in].clear();
 	    (*numneigh_np)[in] = 0;
-	    wf_np[in].clear();
-	    wfd_np[in].clear();
+	    (*wf_np)[in].clear();
+	    (*wfd_np)[in].clear();
 	  }
 
 	if (np_local && nnodes)
@@ -204,9 +204,9 @@ void ULCPDI::compute_grid_weight_functions_and_gradients()
 	    {
 	      (*neigh_pn)[ip].clear();
 	      (*numneigh_pn)[ip] = 0;
-	      wf_pn[ip].clear();
-	      for(int ic=0; ic<nc; ic++) wf_pn_corners[nc*ip+ic].clear();
-	      wfd_pn[ip].clear();
+	      (*wf_pn)[ip].clear();
+	      for(int ic=0; ic<nc; ic++) (*wf_pn_corners)[nc*ip+ic].clear();
+	      (*wfd_pn)[ip].clear();
 
 	      // Calculate what nodes the corner of Omega_p will interact with:
 	      int nx = s->grid->nx;
@@ -381,41 +381,42 @@ void ULCPDI::compute_grid_weight_functions_and_gradients()
 			{
 			  wfd[0] = (wfc[0] - wfc[2]) * ((*rp)[domain->dimension*ip][1] - (*rp)[domain->dimension*ip+1][1])
 			    + (wfc[1] - wfc[3]) * ((*rp)[domain->dimension*ip][1] + (*rp)[domain->dimension*ip+1][1]);
-		
+
 			  wfd[1] = (wfc[0] - wfc[2]) * ((*rp)[domain->dimension*ip+1][0] - (*rp)[domain->dimension*ip][0])
 			    - (wfc[1] - wfc[3]) * ((*rp)[domain->dimension*ip][0] + (*rp)[domain->dimension*ip+1][0]);
+
 			  wfd[2] = 0;
 
 			  wfd *= inv_Vp;
 			}
 
-	      if (style==1)
-		{
-		  wfd[0] = wfc[0] * (xcorner[1][1]-xcorner[3][1])
-		    + wfc[1] * (xcorner[2][1]-xcorner[0][1])
-		    + wfc[2] * (xcorner[3][1]-xcorner[1][1])
-		    + wfc[3] * (xcorner[0][1]-xcorner[2][1]);
+		      if (style==1)
+			{
+			  wfd[0] = wfc[0] * (xcorner[1][1]-xcorner[3][1])
+			    + wfc[1] * (xcorner[2][1]-xcorner[0][1])
+			    + wfc[2] * (xcorner[3][1]-xcorner[1][1])
+			    + wfc[3] * (xcorner[0][1]-xcorner[2][1]);
 
-		  wfd[1] = wfc[0] * (xcorner[3][0]-xcorner[1][0])
-		    + wfc[1] * (xcorner[0][0]-xcorner[2][0])
-		    + wfc[2] * (xcorner[1][0]-xcorner[3][0])
-		    + wfc[3] * (xcorner[2][0]-xcorner[0][0]);
+			  wfd[1] = wfc[0] * (xcorner[3][0]-xcorner[1][0])
+			    + wfc[1] * (xcorner[0][0]-xcorner[2][0])
+			    + wfc[2] * (xcorner[1][0]-xcorner[3][0])
+			    + wfc[3] * (xcorner[2][0]-xcorner[0][0]);
 
-		  wfd[2] = 0;
+			  wfd[2] = 0;
 
-		  wfd *= 0.5*inv_Vp;
-		  for(int ic=0; ic<nc; ic++) wf_pn_corners[nc*ip+ic].push_back(wfc[ic]);
-		}
+			  wfd *= 0.5*inv_Vp;
+			  for(int ic=0; ic<nc; ic++) (*wf_pn_corners)[nc*ip+ic].push_back(wfc[ic]);
+			}
 
-	      (*neigh_pn)[ip].push_back(in);
-	      (*neigh_np)[in].push_back(ip);
-	      (*numneigh_pn)[ip]++;
-	      (*numneigh_np)[in]++;
+		      (*neigh_pn)[ip].push_back(in);
+		      (*neigh_np)[in].push_back(ip);
+		      (*numneigh_pn)[ip]++;
+		      (*numneigh_np)[in]++;
 
-	      wf_pn[ip].push_back(wf);
-	      wf_np[in].push_back(wf);
-	      wfd_pn[ip].push_back(wfd);
-	      wfd_np[in].push_back(wfd);
+		      (*wf_pn)[ip].push_back(wf);
+		      (*wf_np)[in].push_back(wf);
+		      (*wfd_pn)[ip].push_back(wfd);
+		      (*wfd_np)[in].push_back(wfd);
 		    }
 		}
 	    }

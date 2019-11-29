@@ -144,12 +144,12 @@ void TLCPDI::compute_grid_weight_functions_and_gradients()
       vector<vector<int>> *neigh_pn = &domain->solids[isolid]->neigh_pn;
       vector<vector<int>> *neigh_np = &domain->solids[isolid]->neigh_np;
 
-      vector< double > *wf_pn = domain->solids[isolid]->wf_pn;
-      vector< double > *wf_pn_corners = domain->solids[isolid]->wf_pn_corners;
-      vector< double > *wf_np = domain->solids[isolid]->wf_np;
+      vector<vector< double >> *wf_pn = &domain->solids[isolid]->wf_pn;
+      vector<vector< double >> *wf_pn_corners = &domain->solids[isolid]->wf_pn_corners;
+      vector<vector< double >> *wf_np = &domain->solids[isolid]->wf_np;
 
-      vector< Eigen::Vector3d > *wfd_pn = domain->solids[isolid]->wfd_pn;
-      vector< Eigen::Vector3d > *wfd_np = domain->solids[isolid]->wfd_np;
+      vector<vector< Eigen::Vector3d >> *wfd_pn = &domain->solids[isolid]->wfd_pn;
+      vector<vector< Eigen::Vector3d >> *wfd_np = &domain->solids[isolid]->wfd_np;
 
       vector<Eigen::Vector3d> *xp  = &domain->solids[isolid]->x0;
       vector<Eigen::Vector3d> *xpc = &domain->solids[isolid]->xpc;
@@ -178,8 +178,8 @@ void TLCPDI::compute_grid_weight_functions_and_gradients()
       for (int in=0; in<nnodes; in++) {
 	(*neigh_np)[in].clear();
 	(*numneigh_np)[in] = 0;
-	wf_np[in].clear();
-	wfd_np[in].clear();
+	(*wf_np)[in].clear();
+	(*wfd_np)[in].clear();
       }
 
       if (np_local && nnodes) {
@@ -187,8 +187,8 @@ void TLCPDI::compute_grid_weight_functions_and_gradients()
 
 	  (*neigh_pn)[ip].clear();
 	  (*numneigh_pn)[ip] = 0;
-	  wf_pn[ip].clear();
-	  wfd_pn[ip].clear();
+	  (*wf_pn)[ip].clear();
+	  (*wfd_pn)[ip].clear();
 
 	  // Calculate what nodes the corner of Omega_p will interact with:
 	  int nx = domain->solids[isolid]->grid->nx;
@@ -361,7 +361,7 @@ void TLCPDI::compute_grid_weight_functions_and_gradients()
 		wfd[2] = 0;
 
 		wfd *= 0.5*inv_Vp;
-		for(int ic=0; ic<nc; ic++) wf_pn_corners[nc*ip+ic].push_back(wfc[ic]);
+		for(int ic=0; ic<nc; ic++) (*wf_pn_corners)[nc*ip+ic].push_back(wfc[ic]);
 	      }
 
 	      (*neigh_pn)[ip].push_back(in);
@@ -369,10 +369,10 @@ void TLCPDI::compute_grid_weight_functions_and_gradients()
 	      (*numneigh_pn)[ip]++;
 	      (*numneigh_np)[in]++;
 
-	      wf_pn[ip].push_back(wf);
-	      wf_np[in].push_back(wf);
-	      wfd_pn[ip].push_back(wfd);
-	      wfd_np[in].push_back(wfd);
+	      (*wf_pn)[ip].push_back(wf);
+	      (*wf_np)[in].push_back(wf);
+	      (*wfd_pn)[ip].push_back(wfd);
+	      (*wfd_np)[in].push_back(wfd);
 	      // cout << "node: " << in << " [ " << (*xn)[in][0] << "," << (*xn)[in][1] << "," << (*xn)[in][2] << "]" <<
 	      // 	" with\twf=" << wf << " and\twfd=["<< wfd[0] << "," << wfd[1] << "," << wfd[2] << "]\n";
 	    }
