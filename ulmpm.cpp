@@ -123,7 +123,7 @@ void ULMPM::compute_grid_weight_functions_and_gradients()
   if (!update_wf)
     return;
 
-  bigint nsolids, np, nnodes;
+  bigint nsolids, np_local, nnodes_local, nnodes_ghost;
 
   nsolids = domain->solids.size();
 
@@ -132,8 +132,9 @@ void ULMPM::compute_grid_weight_functions_and_gradients()
     for (int isolid = 0; isolid < nsolids; isolid++)
     {
 
-      np     = domain->solids[isolid]->np;
-      nnodes = domain->solids[isolid]->grid->nnodes;
+      np_local = domain->solids[isolid]->np_local;
+      nnodes_local = domain->solids[isolid]->grid->nnodes_local;
+      nnodes_ghost = domain->solids[isolid]->grid->nnodes_ghost;
 
       int *numneigh_pn = domain->solids[isolid]->numneigh_pn;
       int *numneigh_np = domain->solids[isolid]->numneigh_np;
@@ -158,7 +159,12 @@ void ULMPM::compute_grid_weight_functions_and_gradients()
       vector<array<int, 3>> *ntype = &domain->solids[isolid]->grid->ntype;
       vector<bool> *nrigid = &domain->solids[isolid]->grid->rigid;
 
-      for (int in = 0; in < nnodes; in++)
+      map<int, int> *map_ntag = &domain->solids[isolid]->grid->map_ntag;
+      map<int, int>::iterator it;
+
+      r.setZero();
+
+      for (int in = 0; in < nnodes_local + nnodes_ghost; in++)
       {
         neigh_np[in].clear();
         numneigh_np[in] = 0;
@@ -166,20 +172,19 @@ void ULMPM::compute_grid_weight_functions_and_gradients()
         wfd_np[in].clear();
       }
 
-      if (np && nnodes)
+      if (np_local && (nnodes_local + nnodes_ghost))
       {
-        for (int ip = 0; ip < np; ip++)
+        for (int ip = 0; ip < np_local; ip++)
         {
-
           neigh_pn[ip].clear();
           numneigh_pn[ip] = 0;
           wf_pn[ip].clear();
           wfd_pn[ip].clear();
 
           // Calculate what nodes particle ip will interact with:
-          int nx = domain->solids[isolid]->grid->nx;
-          int ny = domain->solids[isolid]->grid->ny;
-          int nz = domain->solids[isolid]->grid->nz;
+	  int nx = domain->solids[isolid]->grid->nx_global;
+	  int ny = domain->solids[isolid]->grid->ny_global;
+	  int nz = domain->solids[isolid]->grid->nz_global;
 
           vector<int> n_neigh;
 
@@ -199,22 +204,26 @@ void ULMPM::compute_grid_weight_functions_and_gradients()
                   {
                     for (int k = k0; k < k0 + 2; k++)
                     {
-                      int n = nz * ny * i + nz * j + k;
-                      if (n < nnodes)
-                        n_neigh.push_back(n);
+		      it = (*map_ntag).find(nz * ny * i + nz * j + k);
+		      if (it != (*map_ntag).end())
+			{
+			  n_neigh.push_back(it->second);
+			}
                     }
                   }
                   else
                   {
-                    int n = ny * i + j;
-                    if (n < nnodes)
-                      n_neigh.push_back(n);
+		    it = (*map_ntag).find(ny * i + j);
+		    if (it != (*map_ntag).end())
+		      {
+			n_neigh.push_back(it->second);
+		      }
                   }
                 }
               }
               else
               {
-                if (i < nnodes)
+		if (i < nnodes_local + nnodes_ghost)
                   n_neigh.push_back(i);
               }
             }
@@ -246,22 +255,26 @@ void ULMPM::compute_grid_weight_functions_and_gradients()
                   {
                     for (int k = k0; k < k0 + 3; k++)
                     {
-                      int n = nz * ny * i + nz * j + k;
-                      if (n < nnodes)
-                        n_neigh.push_back(n);
+		      it = (*map_ntag).find(nz * ny * i + nz * j + k);
+		      if (it != (*map_ntag).end())
+			{
+			  n_neigh.push_back(it->second);
+			}
                     }
                   }
                   else
                   {
-                    int n = ny * i + j;
-                    if (n < nnodes)
-                      n_neigh.push_back(n);
+		    it = (*map_ntag).find(ny * i + j);
+		    if (it != (*map_ntag).end())
+		      {
+			n_neigh.push_back(it->second);
+		      }
                   }
                 }
               }
               else
               {
-                if (i < nnodes)
+		if (i < nnodes_local + nnodes_ghost)
                   n_neigh.push_back(i);
               }
             }
@@ -282,22 +295,26 @@ void ULMPM::compute_grid_weight_functions_and_gradients()
                   {
                     for (int k = k0; k < k0 + 4; k++)
                     {
-                      int n = nz * ny * i + nz * j + k;
-                      if (n < nnodes)
-                        n_neigh.push_back(n);
+		      it = (*map_ntag).find(nz * ny * i + nz * j + k);
+		      if (it != (*map_ntag).end())
+			{
+			  n_neigh.push_back(it->second);
+			}
                     }
                   }
                   else
                   {
-                    int n = ny * i + j;
-                    if (n < nnodes)
-                      n_neigh.push_back(n);
+		    it = (*map_ntag).find(ny * i + j);
+		    if (it != (*map_ntag).end())
+		      {
+			n_neigh.push_back(it->second);
+		      }
                   }
                 }
               }
               else
               {
-                if (i < nnodes)
+		if (i < nnodes_local + nnodes_ghost)
                   n_neigh.push_back(i);
               }
             }
@@ -309,7 +326,7 @@ void ULMPM::compute_grid_weight_functions_and_gradients()
 
           // cout << "[";
           // for (auto ii: n_neigh)
-          //   cout << ii << ' ';
+          //   cout << domain->solids[isolid]->grid->ntag[ii] << ' ';
           // cout << "]\n";
 
           // for (int in=0; in<nnodes; in++) {
@@ -522,19 +539,19 @@ void ULMPM::adjust_dt()
 
 void ULMPM::reset()
 {
-  int np;
+  int np_local;
 
   for (int isolid = 0; isolid < domain->solids.size(); isolid++)
   {
     domain->solids[isolid]->dtCFL = 1.0e22;
-    np = domain->solids[isolid]->np_local;
-    for (int ip = 0; ip < np; ip++) domain->solids[isolid]->mbp[ip].setZero();
+    np_local = domain->solids[isolid]->np_local;
+    for (int ip = 0; ip < np_local; ip++) domain->solids[isolid]->mbp[ip].setZero();
   }
 }
 
 void ULMPM::exchange_particles()
 {
-  int ip, np, size_buf_send, size_buf_recv;
+  int ip, np_local, size_buf_send, size_buf_recv;
   vector<Eigen::Vector3d> *xp;
   vector<double> buf_send;
   vector<int> unpack_list;
@@ -545,19 +562,19 @@ void ULMPM::exchange_particles()
   for (int isolid=0; isolid<domain->solids.size(); isolid++)
     {
       buf_send.clear();
-      np = domain->solids[isolid]->np_local;
+      np_local = domain->solids[isolid]->np_local;
       xp = &domain->solids[isolid]->x;
 
       ip = 0;
-      while(ip < np)
+      while(ip < np_local)
 	{
 	  if (!domain->inside_subdomain((*xp)[ip][0], (*xp)[ip][1], (*xp)[ip][2]))
 	    {
 	      // The particle is not located in the subdomain anymore:
 	      // transfer it to the buffer
 	      domain->solids[isolid]->pack_particle(ip, buf_send);
-	      domain->solids[isolid]->copy_particle(np-1, ip);
-	      np--;
+	      domain->solids[isolid]->copy_particle(np_local - 1, ip);
+	      np_local--;
 	    }
 	  else
 	    {
@@ -566,7 +583,7 @@ void ULMPM::exchange_particles()
 	}
 
       // Resize particle variables:
-      domain->solids[isolid]->grow(np);
+      domain->solids[isolid]->grow(np_local);
 
       // Exchange buffers:
       for (int sproc=0; sproc<universe->nprocs; sproc++)
@@ -606,9 +623,9 @@ void ULMPM::exchange_particles()
 		      ip += domain->solids[isolid]->comm_n;
 		    }
 
-		  domain->solids[isolid]->grow(np+unpack_list.size());
+		  domain->solids[isolid]->grow(np_local + unpack_list.size());
 
-		  domain->solids[isolid]->unpack_particle(np, unpack_list, buf_recv);
+		  domain->solids[isolid]->unpack_particle(np_local, unpack_list, buf_recv);
 		}
 	    }
 	}
