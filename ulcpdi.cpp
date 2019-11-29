@@ -157,8 +157,8 @@ void ULCPDI::compute_grid_weight_functions_and_gradients()
 	vector<int> *numneigh_pn = &s->numneigh_pn;
 	vector<int> *numneigh_np = &s->numneigh_np;
 
-	vector<int> *neigh_pn = s->neigh_pn;
-	vector<int> *neigh_np = s->neigh_np;
+	vector<vector<int>> *neigh_pn = &s->neigh_pn;
+	vector<vector<int>> *neigh_np = &s->neigh_np;
 
 	vector< double > *wf_pn = s->wf_pn;
 	vector< double > *wf_pn_corners = s->wf_pn_corners;
@@ -192,7 +192,7 @@ void ULCPDI::compute_grid_weight_functions_and_gradients()
 
 	for (int in = 0; in < nnodes; in++)
 	  {
-	    neigh_np[in].clear();
+	    (*neigh_np)[in].clear();
 	    (*numneigh_np)[in] = 0;
 	    wf_np[in].clear();
 	    wfd_np[in].clear();
@@ -202,7 +202,7 @@ void ULCPDI::compute_grid_weight_functions_and_gradients()
 	  {
 	  for (int ip = 0; ip < np_local; ip++)
 	    {
-	      neigh_pn[ip].clear();
+	      (*neigh_pn)[ip].clear();
 	      (*numneigh_pn)[ip] = 0;
 	      wf_pn[ip].clear();
 	      for(int ic=0; ic<nc; ic++) wf_pn_corners[nc*ip+ic].clear();
@@ -407,8 +407,8 @@ void ULCPDI::compute_grid_weight_functions_and_gradients()
 		  for(int ic=0; ic<nc; ic++) wf_pn_corners[nc*ip+ic].push_back(wfc[ic]);
 		}
 
-	      neigh_pn[ip].push_back(in);
-	      neigh_np[in].push_back(ip);
+	      (*neigh_pn)[ip].push_back(in);
+	      (*neigh_np)[in].push_back(ip);
 	      (*numneigh_pn)[ip]++;
 	      (*numneigh_np)[in]++;
 

@@ -141,8 +141,8 @@ void TLCPDI::compute_grid_weight_functions_and_gradients()
       vector<int> *numneigh_pn = &domain->solids[isolid]->numneigh_pn;
       vector<int> *numneigh_np = &domain->solids[isolid]->numneigh_np;
 
-      vector<int> *neigh_pn = domain->solids[isolid]->neigh_pn;
-      vector<int> *neigh_np = domain->solids[isolid]->neigh_np;
+      vector<vector<int>> *neigh_pn = &domain->solids[isolid]->neigh_pn;
+      vector<vector<int>> *neigh_np = &domain->solids[isolid]->neigh_np;
 
       vector< double > *wf_pn = domain->solids[isolid]->wf_pn;
       vector< double > *wf_pn_corners = domain->solids[isolid]->wf_pn_corners;
@@ -176,7 +176,7 @@ void TLCPDI::compute_grid_weight_functions_and_gradients()
       double a, b, inv_Vp, alpha_over_Vp, sixVp;
 
       for (int in=0; in<nnodes; in++) {
-	neigh_np[in].clear();
+	(*neigh_np)[in].clear();
 	(*numneigh_np)[in] = 0;
 	wf_np[in].clear();
 	wfd_np[in].clear();
@@ -185,7 +185,7 @@ void TLCPDI::compute_grid_weight_functions_and_gradients()
       if (np_local && nnodes) {
 	for (int ip=0; ip<np_local; ip++) {
 
-	  neigh_pn[ip].clear();
+	  (*neigh_pn)[ip].clear();
 	  (*numneigh_pn)[ip] = 0;
 	  wf_pn[ip].clear();
 	  wfd_pn[ip].clear();
@@ -364,8 +364,8 @@ void TLCPDI::compute_grid_weight_functions_and_gradients()
 		for(int ic=0; ic<nc; ic++) wf_pn_corners[nc*ip+ic].push_back(wfc[ic]);
 	      }
 
-	      neigh_pn[ip].push_back(in);
-	      neigh_np[in].push_back(ip);
+	      (*neigh_pn)[ip].push_back(in);
+	      (*neigh_np)[in].push_back(ip);
 	      (*numneigh_pn)[ip]++;
 	      (*numneigh_np)[in]++;
 
