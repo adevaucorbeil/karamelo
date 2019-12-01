@@ -32,7 +32,7 @@ EOSShock::EOSShock(MPM *mpm, vector<string> args) : EOS(mpm, args)
   cout << "Initiate EOSShock" << endl;
 
   if (args.size() < Nargs) {
-    error->all(FLERR, "Error: not enough arguments.\n");
+    error->all(FLERR, "Error: not enough arguments.\n" + usage);
   }
   //options(&args, args.begin()+3);
   rho0_ = input->parsev(args[2]);

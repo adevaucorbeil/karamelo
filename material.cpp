@@ -246,9 +246,11 @@ void Material::add_material(vector<string> args){
   }
 
   if (usage.find(args[1]) == usage.end()) {
-    cout << "Error, keyword \033[1;31m" << args[1] << "\033[0m unknown!\n";
-    for (auto& x: usage) cout << x.second;
-    exit(1);
+    string error_str =
+        "Error, keyword \033[1;31m" + args[1] + "\033[0m unknown!\n";
+    for (auto &x : usage)
+      error_str += x.second;
+    error->all(FLERR, error_str);
   }
 
   if (args.size() < Nargs.find(args[1])->second) {

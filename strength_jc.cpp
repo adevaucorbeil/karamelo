@@ -32,9 +32,9 @@ StrengthJohnsonCook::StrengthJohnsonCook(MPM *mpm, vector<string> args)
 {
   cout << "Initiate StrengthJohnsonCook" << endl;
 
-  if (args.size() < Nargs)
-  {
-    error->all(FLERR, "Error: too few arguments for the strength command.\n");
+  if (args.size() < Nargs) {
+    error->all(FLERR,
+               "Error: too few arguments for the strength command.\n" + usage);
   }
 
   // options(&args, args.begin()+3);

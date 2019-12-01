@@ -13,6 +13,10 @@ C = 0#0.025
 n = 0.31
 S = 1.5
 c0 = 3933 #4222
+Gamma = 0
+Tr = 25
+Tm = 1000
+cv = 0
 
 d1 = 0.54
 d2 = 4.89
@@ -40,19 +44,19 @@ region(box, block, -hLx, hLx, -hLy, hLy, -hLz, hLz)
 
 
 #---------- SET MATERIAL --------------#
-eos(eoss, shock, rho, K, c0, 0, S, 0)
+eos(eoss, shock, rho, K, c0, S, Gamma, cv, Tr)
 
-strength(strengthJC, johnson_cook, G, sigmay, B, n, epsdot0, C)
-damage(damagejc, damage_johnson_cook, d1, d2, d3, d4, epsdot0)
+strength(strengthJC, johnson_cook, G, sigmay, B, n, epsdot0, C, 0, Tr, Tm)
+damage(damagejc, damage_johnson_cook, d1, d2, d3, d4, epsdot0, Tr, Tm)
 
-material(mat1, eoss, strengthJC, damagejc)
+material(mat1, eos-strength, eoss, strengthJC, damagejc)
 
 
 #---------- SET SOLID --------------#
 N = 10
 cellsize = Ly/N
 
-solid(solid1, box, 1, mat1, cellsize)
+solid(solid1, region, box, 1, mat1, cellsize, Tr)
 
 #---------- IMPOSE BOUNDARY CONDITIONS --------------#
 region(bot, block, INF, INF, INF, -hLy+0.6*cellsize, INF, INF)
