@@ -12,14 +12,14 @@
  * ----------------------------------------------------------------------- */
 
 #include "domain.h"
-#include "memory.h"
-#include "universe.h"
-#include "update.h"
-#include "method.h"
+#include "error.h"
 #include "input.h"
+#include "memory.h"
+#include "method.h"
 #include "region.h"
 #include "style_region.h"
-#include "error.h"
+#include "universe.h"
+#include "update.h"
 #include <Eigen/Eigen>
 
 using namespace std;
@@ -315,4 +315,68 @@ void Domain::create_domain(vector<string> args) {
   // Set proc grid
   universe->set_proc_grid();
   created = true;
+}
+
+void Domain::set_dimension(vector<string> args) {
+
+  if (args.size() == 0) {
+    string error_str = "Error: dimension did not receive enough arguments\n";
+    for (auto &x : usage_dimension)
+      error_str += x.second;
+    error->all(FLERR, error_str);
+  }
+
+  int m = 0;
+  int dim = (int)input->parsev(args[m]);
+
+  if (dim != 1 && dim != 2 && dim != 3) {
+    error->all(FLERR, "Error: dimension argument: " + args[m] + "\n.");
+  } else {
+    dimension = dim;
+  }
+
+  cout << "Set dimension to " << dim << endl;
+
+  if (args.size() < Nargs_dimension.find(args[m])->second) {
+    error->all(FLERR, "Error: not enough arguments.\n"
+	       + usage_dimension.find(args[m])->second);
+  } else if (args.size() > Nargs_dimension.find(args[m])->second) {
+    error->all(FLERR, "Error: too many arguments.\n"
+	       + usage_dimension.find(args[m])->second);
+  }
+
+  boxlo[0] = (double)input->parsev(args[++m]);
+  boxhi[0] = (double)input->parsev(args[++m]);
+  if (dim > 1) {
+    boxlo[1] = (double)input->parsev(args[++m]);
+    boxhi[1] = (double)input->parsev(args[++m]);
+  }
+  if (dim == 3) {
+    boxlo[2] = (double)input->parsev(args[++m]);
+    boxhi[2] = (double)input->parsev(args[++m]);
+  }
+
+  grid->cellsize = (double)input->parsev(args[++m]);
+
+  if (grid->cellsize < 0) {
+    error->all(FLERR, "Error: cellsize negative! You gave: " + to_string(grid->cellsize) + "\n.");
+  }
+
+  universe->set_proc_grid();
+  grid->init(boxlo, boxhi);
+  created = true;
+}
+
+void Domain::set_axisymmetric(vector<string> args) {
+  if (args.size() < 1) {
+    error->all(FLERR, "Error: not enough arguments.\n" + usage_axisymmetric);
+  } else if (args.size() > 1) {
+    error->all(FLERR, "Error: too many arguments.\n" + usage_axisymmetric);
+  }
+
+  if (args[0].compare("true") == 0) {
+    axisymmetric = true;
+  } else if (args[0].compare("false") == 0) {
+    axisymmetric = false;
+  }
 }

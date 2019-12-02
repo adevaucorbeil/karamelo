@@ -38,7 +38,9 @@ FLIP=0.99
 #---------- SET METHOD --------------#
 method(tlmpm, FLIP, linear, FLIP)
 
-dimension(3)
+N = 10
+cellsize = Ly/N
+dimension(3, -hLx, hLx, -hLy, hLy, -hLz, hLz, cellsize)
 
 region(box, block, -hLx, hLx, -hLy, hLy, -hLz, hLz)
 
@@ -53,8 +55,6 @@ material(mat1, eos-strength, eoss, strengthJC, damagejc)
 
 
 #---------- SET SOLID --------------#
-N = 10
-cellsize = Ly/N
 
 solid(solid1, region, box, 1, mat1, cellsize, Tr)
 

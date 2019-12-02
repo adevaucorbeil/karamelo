@@ -52,6 +52,7 @@ private:
   Var evaluate_function(string , string); // evaluate function with argument
   string remove_whitespace(string);          // remove white spaces from string
   int dimension(vector<string>);             // set the dimension of the simulation domain
+  int axisymmetric(vector<string>);          // set the simulation to axisymmetric
   int region(vector<string>);
   int solid(vector<string>);
   int add_EOS(vector<string>);

@@ -43,6 +43,8 @@ class Domain : protected Pointers {
   virtual ~Domain();
 
   void create_domain(vector<string>);
+  void set_dimension(vector<string>);
+  void set_axisymmetric(vector<string>);
   bool inside_subdomain(double, double, double);
   bool inside_subdomain_extended(double, double, double, double);
   void set_local_box();
@@ -64,6 +66,18 @@ class Domain : protected Pointers {
 private:
   template <typename T> static Region *region_creator(MPM *, vector<string>);
   // template <typename T> static Solid *solid_creator(MPM *,vector<string>);
+
+  const map<string, string> usage_dimension = {
+      {"1", "Usage: dimension(1, domain xmin, domain xmax, cell size)\n"},
+      {"2", "Usage: dimension(2, domain xmin, domain xmax, domain ymin, domain "
+            "ymax, cell size)\n"},
+      {"3", "Usage: dimension(3, domain xmin, domain xmax, domain ymin, domain "
+            "ymax, domain zmin, domain zmax, cell size)\n"}};
+
+  const map<string, int> Nargs_dimension = {
+      {"1", 4}, {"2", 6}, {"2_axis", 7}, {"3", 8}};
+
+  string usage_axisymmetric = "axisymmetric(true) or axisymmetric(false)\n";
 };
 
 #endif

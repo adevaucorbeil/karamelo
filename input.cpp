@@ -221,6 +221,7 @@ Var Input::evaluate_function(string func, string arg){
   }
 
   if (func.compare("dimension") == 0) return Var(dimension(args));
+  if (func.compare("axisymmetric") == 0) return Var(axisymmetric(args));
   if (func.compare("region") == 0) return Var(region(args));
   if (func.compare("solid") == 0) return Var(solid(args));
   if (func.compare("eos") == 0) return Var(add_EOS(args));
@@ -616,164 +617,22 @@ Var Input::parsev(string str)
   }
 }
 
-
-int Input::dimension(vector<string> args)
-{
-
+int Input::dimension(vector<string> args) {
   // Check that a method is available:
-  if (update->method == NULL)
-  {
-    cout << "Error: a method should be defined before calling dimension()!"
-         << endl;
-    error->all(FLERR, "");
+  if (update->method == NULL) {
+    error->all(
+        FLERR,
+        "Error: a method should be defined before calling dimension()!\n");
   }
 
-  if (args.size() == 0)
-  {
-    cout << "Error: dimension did not receive enough arguments: 1 minimum "
-            "required"
-         << endl;
-    error->all(FLERR, "");
-  }
-
-  if (args.size() > 9)
-  {
-    cout << "Error: dimension received too many arguments: 8 maximum for 3D "
-            "simulations (Dimension, domain xmin, domain xmax, domain ymin, "
-            "domain ymax, domain zmin, domain zmax, cell size)"
-         << endl;
-    error->all(FLERR, "");
-  }
-
-  int dim = (int)parsev(args[0]);
-
-  if (dim != 1 && dim != 2 && dim != 3)
-  {
-    cout << "Error: dimension argument: " << dim << endl;
-    error->all(FLERR, "");
-  }
-  else
-    domain->dimension = dim;
-
-  cout << "Set dimension to " << dim << endl;
-
-  if (args.size() > 1)
-  {
-    if (dim == 1)
-    {
-      if (args.size() < 4)
-      {
-        cout << "Error: dimension received too few arguments!\n";
-        cout << "Usage: dimension(1, xmin, xmax, cell-size)\n";
-        error->all(FLERR, "");
-      }
-      else if (args.size() > 4)
-      {
-        cout
-            << "Error: dimension received too many arguments: 6 maximum for 2D "
-               "simulations (Dimension, domain xmin, domain xmax, cell size)"
-            << endl;
-        error->all(FLERR, "");
-      }
-      else if (args.size() == 4)
-      {
-        domain->boxlo[0]       = (double)parsev(args[1]);
-        domain->boxhi[0]       = (double)parsev(args[2]);
-        domain->grid->cellsize = (double)parsev(args[4]);
-        if (domain->grid->cellsize < 0)
-        {
-          cout << "Error: cellsize negative! You gave: "
-               << domain->grid->cellsize << endl;
-          error->all(FLERR, "");
-        }
-	universe->set_proc_grid();
-        domain->grid->init(domain->boxlo, domain->boxhi);
-      }
-    }
-    else if (dim == 2)
-    {
-      if (args[1].compare("axisymmetric") == 0)
-      {
-        domain->axisymmetric = true;
-        cout << "Axi-symmetric is ON " << domain->axisymmetric << endl;
-
-        return 0;
-      }
-
-      if (args.size() < 6)
-      {
-        cout << "Error: dimension received too few arguments!\n";
-        cout << "Usage: dimension(2, xmin, xmax, ymin, ymax, cell-size)\n";
-	error->all(FLERR, "");
-      }
-      // else if (args.size() > 6)
-      // {
-      //   cout << "Error: dimension received too many arguments: 6 maximum for
-      //   "
-      //           "2D simulations (Dimension, domain xmin, domain xmax, domain
-      //           " "ymin, domain ymax, cell size)"
-      //        << endl;
-      //   error->all(FLERR, "");
-      // }
-      else if (args.size() >= 6)
-      {
-        domain->boxlo[0]       = (double)parsev(args[1]);
-        domain->boxhi[0]       = (double)parsev(args[2]);
-        domain->boxlo[1]       = (double)parsev(args[3]);
-        domain->boxhi[1]       = (double)parsev(args[4]);
-        domain->grid->cellsize = (double)parsev(args[5]);
-
-        if (domain->grid->cellsize < 0)
-        {
-          cout << "Error: cellsize negative! You gave: "
-               << domain->grid->cellsize << endl;
-          error->all(FLERR, "");
-        }
-
-        if (args[6].compare("axisymmetric") == 0)
-        {
-          domain->axisymmetric = true;
-          cout << "Axi-symmetric is ON " << domain->axisymmetric << endl;
-        }
-
-	universe->set_proc_grid();
-        domain->grid->init(domain->boxlo, domain->boxhi);
-      }
-    }
-    else
-    { // dim ==3
-      if (args.size() < 8)
-      {
-        cout << "Error: dimension received too few arguments!\n";
-        cout << "Usage: dimension(3, xmin, xmax, ymin, ymax, zmin, zmax, "
-                "cell-size)\n";
-        error->all(FLERR, "");
-      }
-      else if (args.size() == 8)
-      {
-        domain->boxlo[0]       = (double)parsev(args[1]);
-        domain->boxhi[0]       = (double)parsev(args[2]);
-        domain->boxlo[1]       = (double)parsev(args[3]);
-        domain->boxhi[1]       = (double)parsev(args[4]);
-        domain->boxlo[2]       = (double)parsev(args[5]);
-        domain->boxhi[2]       = (double)parsev(args[6]);
-        domain->grid->cellsize = (double)parsev(args[7]);
-        if (domain->grid->cellsize < 0)
-        {
-          cout << "Error: cellsize negative! You gave: "
-               << domain->grid->cellsize << endl;
-          error->all(FLERR, "");
-        }
-	universe->set_proc_grid();
-        domain->grid->init(domain->boxlo, domain->boxhi);
-      }
-    }
-  }
-  
-  domain->created = true;
+  domain->set_dimension(args);
   return 0;
 }
 
+int Input::axisymmetric(vector<string> args) {
+  domain->set_axisymmetric(args);
+  return 0;
+}
 
 int Input::region(vector<string> args){
   domain->add_region(args);
