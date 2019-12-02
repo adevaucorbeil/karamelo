@@ -6,4 +6,7 @@
 /examples/*.LAMMPS
 /examples/*/*/*.LAMMPS
 /#*
-
+/CMakeCache.txt
+/CMakeFiles
+/Makefile
+/cmake_install.cmake
