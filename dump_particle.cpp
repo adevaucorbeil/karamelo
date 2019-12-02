@@ -25,21 +25,19 @@
 using namespace std;
 using namespace MPM_Math;
 
-
-DumpParticle::DumpParticle(MPM *mpm, vector<string> args) : Dump(mpm, args)
-{
+DumpParticle::DumpParticle(MPM *mpm, vector<string> args) : Dump(mpm, args) {
   cout << "In DumpParticle::DumpParticle()" << endl;
-  for (int i=5; i<args.size(); i++){
+  for (int i = 5; i < args.size(); i++) {
     if (find(known_var.begin(), known_var.end(), args[i]) != known_var.end()) {
       output_var.push_back(args[i]);
     } else {
-      cout << "Error: output variable \033[1;31m" << args[i] << "\033[0m is unknown!\n";
-      cout << "Availabe output variables: ";
-      for (auto v: known_var) {
-	cout << v << ", ";
+      string error_str = "Error: output variable \033[1;31m" + args[i] +
+                         "\033[0m is unknown!\n";
+      error_str += "Availabe output variables: ";
+      for (auto v : known_var) {
+        error_str += v + ", ";
       }
-      cout << endl;
-      exit(1);
+      error->all(FLERR, error_str);
     }
   }
 }
