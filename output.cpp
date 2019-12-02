@@ -13,14 +13,15 @@
 
 #include "output.h"
 #include "dump.h"
-#include "input.h"
-#include "update.h"
-#include "log.h"
-#include "style_dump.h"
-#include "var.h"
-#include "plot.h"
-#include <matplotlibcpp.h>
 #include "error.h"
+#include "input.h"
+#include "log.h"
+#include "plot.h"
+#include "style_dump.h"
+#include "universe.h"
+#include "update.h"
+#include "var.h"
+#include <matplotlibcpp.h>
 
 namespace plt = matplotlibcpp;
 
@@ -165,16 +166,18 @@ void Output::write(bigint ntimestep){
 }
 
 void Output::show_plot() {
-  if (nplots !=0 ) {
-    for (int iplot = 0; iplot < nplots; iplot++) {
-      plt::named_plot(plots[iplot]->id, plots[iplot]->x, plots[iplot]->y);
-    }
+  if (universe->me == 0) {
+    if (nplots != 0) {
+      for (int iplot = 0; iplot < nplots; iplot++) {
+        plt::named_plot(plots[iplot]->id, plots[iplot]->x, plots[iplot]->y);
+      }
 
-    plt::grid(true);
-    plt::legend();
-    plt::save(ofile_plot);
-    plt::show();
-    plt::close();
+      plt::grid(true);
+      plt::legend();
+      plt::save(ofile_plot);
+      plt::show();
+      plt::close();
+    }
   }
 }
 

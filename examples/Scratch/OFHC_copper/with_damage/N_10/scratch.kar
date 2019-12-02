@@ -86,7 +86,7 @@ fix(indenter, indent, all, sphere, K, xind, yind, zind, R)
 N_log = 100
 dumping_interval = N_log*1
 
-dump(dump1, all, particle, dumping_interval, dump_p.*.LAMMPS, x, y, z)
+dump(dump1, all, particle, dumping_interval, dump_p.*.LAMMPS, x, y, z, vx, vy, vx, s11, s22, s33, s12, s13, s23, seq, damage)
 #dump(dump2, all, grid, dumping_interval, dump_g.*.LAMMPS, x, y, z)
 
 #----------- RUN --------------------#
