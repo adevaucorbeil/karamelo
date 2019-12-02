@@ -1743,6 +1743,8 @@ void Solid::populate(vector<string> args)
     // so all particles created won't lie in the region, they will need to be
     // checked:
 
+    cout << "Domain lower bound: "<< domain->boxlo[0] << endl;
+
     boundlo = domain->boxlo;
 
     Lx = domain->boxhi[0] - domain->boxlo[0];
