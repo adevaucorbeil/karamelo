@@ -113,13 +113,19 @@ RegCylinder::RegCylinder(MPM *mpm, vector<string> args) : Region(mpm, args)
     zhi = hi;
   }
 
-  if (domain->boxlo[0] > xlo) domain->boxlo[0] = xlo;
-  if (domain->boxlo[1] > ylo) domain->boxlo[1] = ylo;
-  if (domain->dimension == 3) if (domain->boxlo[2] > zlo) domain->boxlo[2] = zlo;
+  // modify the domain dimension based on the region dimension
+  // only for TLMPM
+  
+  //if ( update->method->is_TL ){
 
-  if (domain->boxhi[0] < xhi) domain->boxhi[0] = xhi;
-  if (domain->boxhi[1] < yhi) domain->boxhi[1] = yhi;
-  if (domain->dimension == 3) if (domain->boxhi[2] < zhi) domain->boxhi[2] = zhi;
+    if (domain->boxlo[0] > xlo) domain->boxlo[0] = xlo;
+    if (domain->boxlo[1] > ylo) domain->boxlo[1] = ylo;
+    if (domain->dimension == 3) if (domain->boxlo[2] > zlo) domain->boxlo[2] = zlo;
+
+    if (domain->boxhi[0] < xhi) domain->boxhi[0] = xhi;
+    if (domain->boxhi[1] < yhi) domain->boxhi[1] = yhi;
+    if (domain->dimension == 3) if (domain->boxhi[2] < zhi) domain->boxhi[2] = zhi;
+  //}
 }
 
 
