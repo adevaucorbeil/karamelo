@@ -14,6 +14,10 @@ n = 0.37
 eps0dot = 1e-3
 S = 1.5
 c0 = 3933 #4222
+Gamma = 0
+Tr = 25
+Tm = 1000
+cv = 0
 
 Lx = 4
 Ly = 0.4
@@ -24,28 +28,29 @@ hLz = 0.5*Lz
 #A_zy = L*L
 
 FLIP=0.99
+epsdot0 = 1
 
 #---------- SET METHOD --------------#
 method(tlmpm, FLIP, linear, FLIP)
 
-dimension(3)
+N = 10
+cellsize = Ly/N
+dimension(3, -hLx, hLx, -hLy, hLy, -hLz, hLz, cellsize)
 
 region(box, block, -hLx, hLx, -hLy, hLy, -hLz, hLz)
 
 
 #---------- SET MATERIAL --------------#
-eos(eoss, shock, rho, K, c0, 0, S, 0)
+eos(eoss, shock, rho, K, c0, S, Gamma, cv, Tr)
 
-strength(strengthJC, johnson_cook, G, sigmay, B, n, eps0dot, C)
+strength(strengthJC, johnson_cook, G, sigmay, B, n, epsdot0, C, 0, Tr, Tm)
 
-material(mat1, eoss, strengthJC)
+material(mat1, eos-strength, eoss, strengthJC)
 
 
 #---------- SET SOLID --------------#
-N = 10
-cellsize = Ly/N
 
-solid(solid1, box, 1, mat1, cellsize)
+solid(solid1, region, box, 1, mat1, cellsize, Tr)
 
 #---------- IMPOSE BOUNDARY CONDITIONS --------------#
 region(bot, block, INF, INF, INF, -hLy+0.6*cellsize, INF, INF)
@@ -75,8 +80,8 @@ fix(indenter, indent, all, sphere, K, xind, yind, zind, R)
 N_log = 100
 dumping_interval = N_log*10
 
-dump(dump1, all, particle, dumping_interval, dump_p.*.LAMMPS, x, y, z)
-dump(dump2, all, grid, dumping_interval, dump_g.*.LAMMPS, x, y, z)
+dump(dump1, all, particle, dumping_interval, dump_p.*.LAMMPS, x, y, z, vx, vy, vx, s11, s22, s33, s12, s13, s23, seq, ep, damage)
+#dump(dump2, all, grid, dumping_interval, dump_g.*.LAMMPS, x, y, z)
 
 #----------- RUN --------------------#
 dt_factor(1)

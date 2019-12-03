@@ -239,6 +239,8 @@ Var Input::evaluate_function(string func, string arg){
   if (func.compare("value") == 0) return value(args);
   if (func.compare("plot") == 0) return Var(plot(args));
   if (func.compare("create_domain") == 0) return Var(create_domain(args));
+  if (func.compare("save_plot") == 0)
+    return Var(save_plot(args));
 
   // invoke commands added via style_command.h
 
@@ -718,6 +720,17 @@ Var Input::value(vector<string> args){
 
 int Input::plot(vector<string> args){
   output->add_plot(args);
+  return 0;
+}
+
+int Input::save_plot(vector<string> args) {
+  if (args.size() < 1) {
+    error->all(FLERR, "Error: too few arguments for save_plot(). It should be save_plot(filename)\n");
+  } else if (args.size() > 1) {
+    error->all(FLERR, "Error: too many arguments for save_plot(). It should be save_plot(filename)\n");
+  }
+  output->save_plot = true;
+  output->ofile_plot = args[0];
   return 0;
 }
 

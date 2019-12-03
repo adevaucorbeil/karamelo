@@ -174,7 +174,8 @@ void Output::show_plot() {
 
       plt::grid(true);
       plt::legend();
-      plt::save(ofile_plot);
+      if (save_plot)
+        plt::save(ofile_plot);
       plt::show();
       plt::close();
     }
