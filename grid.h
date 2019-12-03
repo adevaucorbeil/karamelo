@@ -20,6 +20,7 @@
 #include <vector>
 #include <Eigen/Eigen>
 #include <map>
+#include <array>
 
 using namespace Eigen;
 
