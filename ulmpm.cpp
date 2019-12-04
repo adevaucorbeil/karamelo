@@ -421,6 +421,7 @@ void ULMPM::particles_to_grid()
       grid_reset = false;
 
     domain->solids[isolid]->compute_mass_nodes(grid_reset);
+    domain->solids[isolid]->grid->reduce_mass_ghost_nodes();
     // domain->solids[isolid]->compute_node_rotation_matrix(grid_reset);
   }
 
@@ -439,6 +440,7 @@ void ULMPM::particles_to_grid()
     domain->solids[isolid]->compute_external_forces_nodes(grid_reset);
     domain->solids[isolid]->compute_internal_forces_nodes_UL(grid_reset);
     /*compute_thermal_energy_nodes();*/
+    domain->solids[isolid]->grid->reduce_ghost_nodes();
   }
 }
 
@@ -476,6 +478,7 @@ void ULMPM::velocities_to_grid()
     {
       // domain->solids[isolid]->compute_mass_nodes(grid_reset);
       domain->solids[isolid]->compute_velocity_nodes(grid_reset);
+      domain->solids[isolid]->grid->reduce_ghost_nodes(grid_reset);
     }
     // domain->solids[isolid]->grid->update_grid_positions();
   }
@@ -561,7 +564,6 @@ void ULMPM::exchange_particles()
 
   for (int isolid=0; isolid<domain->solids.size(); isolid++)
     {
-      cout << "Solid" << isolid + 1 << endl;
       buf_send.clear();
       np_local_old = domain->solids[isolid]->np_local;
       xp = &domain->solids[isolid]->x;

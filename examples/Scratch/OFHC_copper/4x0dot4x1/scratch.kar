@@ -30,11 +30,17 @@ hLz = 0.5*Lz
 FLIP=0.99
 epsdot0 = 1
 
+N = 10
+cellsize = Ly/N
+
+cdil = sqrt((K + 4/3*G)/rho)
+Delta_t = cellsize/cdil
+quit
+
+
 #---------- SET METHOD --------------#
 method(tlmpm, FLIP, linear, FLIP)
 
-N = 10
-cellsize = Ly/N
 dimension(3, -hLx, hLx, -hLy, hLy, -hLz, hLz, cellsize)
 
 region(box, block, -hLx, hLx, -hLy, hLy, -hLz, hLz)

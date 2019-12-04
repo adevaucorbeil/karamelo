@@ -125,7 +125,7 @@ Solid::Solid(MPM *mpm, vector<string> args) : Pointers(mpm)
   plt::close();
 #endif
 
-  comm_n = 49; // Number of double to pack for particle exchange between CPUs.
+  comm_n = 50; // Number of double to pack for particle exchange between CPUs.
 
 }
 
@@ -1261,7 +1261,6 @@ void Solid::compute_inertia_tensor(string form_function)
 }
 
 void Solid::copy_particle(int i, int j) {
-  cout << "Copy particle " << ptag[i] << " at the place of particle " << ptag[j] << endl;
   ptag[j]                    = ptag[i];
   x0[j]                      = x0[i];
   x[j]                       = x[i];
@@ -1281,7 +1280,9 @@ void Solid::copy_particle(int i, int j) {
   damage_init[j]             = damage_init[i];
   T[j]                       = T[i];
   ienergy[j]                 = ienergy[i];
+  mask[j]                    = mask[i];
   sigma[j]                   = sigma[i];
+  strain_el[j]               = strain_el[i];
   vol0PK1[j]                 = vol0PK1[i];
   L[j]                       = L[i];
   F[j]                       = F[i];
@@ -1291,6 +1292,7 @@ void Solid::copy_particle(int i, int j) {
   Finv[j]                    = Finv[i];
   Fdot[j]                    = Fdot[i];
   J[j]                       = J[i];
+  Di[j]                      = Di[i];
 
   // if (method_type.compare("tlcpdi") == 0 || method_type.compare("ulcpdi") == 0)
   //   {
@@ -1321,8 +1323,6 @@ void Solid::pack_particle(int i, vector<double> &buf)
 
   buf.push_back(ptag[i]);
 
-
-  cout << "Pack particle " << ptag[i] << " with coordinates x=[" << x[i](0) << "," << x[i](1) << "," << x[i](2) << "]\n";
   buf.push_back(x[i](0));
   buf.push_back(x[i](1));
   buf.push_back(x[i](2));
@@ -1364,6 +1364,7 @@ void Solid::pack_particle(int i, vector<double> &buf)
   buf.push_back(damage_init[i]);
   buf.push_back(T[i]);
   buf.push_back(ienergy[i]);
+  buf.push_back(mask[i]);
 
   buf.push_back(sigma[i](0,0));
   buf.push_back(sigma[i](1,1));
@@ -1418,7 +1419,6 @@ void Solid::unpack_particle(int &i, vector<int> list, double buf[])
       x[i](1) = buf[m++];
       x[i](2) = buf[m++];
 
-      cout << "Unpack particle " << ptag[i] << " with coordinates x=[" << x[i](0) << "," << x[i](1) << "," << x[i](2) << "]\n";
       x0[i](0) = buf[m++];
       x0[i](1) = buf[m++];
       x0[i](2) = buf[m++];
@@ -1456,6 +1456,7 @@ void Solid::unpack_particle(int &i, vector<int> list, double buf[])
       damage_init[i] = buf[m++];
       T[i] = buf[m++];
       ienergy[i] = buf[m++];
+      mask[i] = buf[m++];
 
       sigma[i](0,0) = buf[m++];
       sigma[i](1,1) = buf[m++];
@@ -1867,14 +1868,6 @@ void Solid::populate(vector<string> args)
       grow(l);
     }
   np_local = l; // Adjust np_local to account for the particles outside the domain
-  
-
-  // Determine the total number of particles:
-  bigint np_temp = np_local;
-  MPI_Allreduce(&np_temp,&np,1,MPI_MPM_BIGINT,MPI_SUM,universe->uworld);
-#ifdef DEBUG
-  cout << "proc " << universe->me << "\tnp_local=" << np_local << "\tnp=" << np << endl;
-#endif
 
   tagint ptag0 = 0;
 
@@ -1895,7 +1888,7 @@ void Solid::populate(vector<string> args)
   cout << "proc " << universe->me << "\tptag0 = " << ptag0 << endl;
 #endif
   np_local = l; // Adjust np to account for the particles outside the domain
-  cout << "np=" << np_local << endl;
+  cout << "np_local=" << np_local << endl;
 
   for (int i = 0; i < np_local; i++)
   {
