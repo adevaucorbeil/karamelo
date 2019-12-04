@@ -561,6 +561,7 @@ void ULMPM::exchange_particles()
 
   for (int isolid=0; isolid<domain->solids.size(); isolid++)
     {
+      cout << "Solid" << isolid + 1 << endl;
       buf_send.clear();
       np_local_old = domain->solids[isolid]->np_local;
       xp = &domain->solids[isolid]->x;

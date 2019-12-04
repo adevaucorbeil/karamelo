@@ -1260,8 +1260,9 @@ void Solid::compute_inertia_tensor(string form_function)
     }
 }
 
-void Solid::copy_particle(int i, int j)
-{
+void Solid::copy_particle(int i, int j) {
+  cout << "Copy particle " << ptag[i] << " at the place of particle " << ptag[j] << endl;
+  ptag[j]                    = ptag[i];
   x0[j]                      = x0[i];
   x[j]                       = x[i];
   v[j]                       = v[i];
@@ -1320,6 +1321,8 @@ void Solid::pack_particle(int i, vector<double> &buf)
 
   buf.push_back(ptag[i]);
 
+
+  cout << "Pack particle " << ptag[i] << " with coordinates x=[" << x[i](0) << "," << x[i](1) << "," << x[i](2) << "]\n";
   buf.push_back(x[i](0));
   buf.push_back(x[i](1));
   buf.push_back(x[i](2));
@@ -1415,6 +1418,7 @@ void Solid::unpack_particle(int &i, vector<int> list, double buf[])
       x[i](1) = buf[m++];
       x[i](2) = buf[m++];
 
+      cout << "Unpack particle " << ptag[i] << " with coordinates x=[" << x[i](0) << "," << x[i](1) << "," << x[i](2) << "]\n";
       x0[i](0) = buf[m++];
       x0[i](1) = buf[m++];
       x0[i](2) = buf[m++];
@@ -1934,7 +1938,7 @@ void Solid::populate(vector<string> args)
     J[i] = 1;
     mask[i] = 1;
 
-    ptag[i] = ptag0 + i + 1;
+    ptag[i] = ptag0 + i + 1 + domain->np_total;
   }
 
   if (l != np_local)
@@ -1942,6 +1946,11 @@ void Solid::populate(vector<string> args)
     cout << "Error l=" << l << " != np_local=" << np_local << endl;
     exit(1);
   }
+
+  int np_local_reduced;
+  MPI_Allreduce(&np_local, &np_local_reduced, 1, MPI_INT, MPI_SUM, universe->uworld);
+  np += np_local_reduced;
+  domain->np_total += np;
 
 #ifdef DEBUG
   vector<double> xdomain, ydomain;
