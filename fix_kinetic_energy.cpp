@@ -77,6 +77,8 @@ void FixKineticEnergy::final_integrate() {
   double Ek, Ek_reduced;
 
   Ek = 0;
+  Ek_reduced = 0;
+
   if (solid == -1) {
     for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
       s = domain->solids[isolid];
