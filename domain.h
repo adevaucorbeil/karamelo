@@ -30,6 +30,7 @@ class Domain : protected Pointers {
   int dimension;                         // 2 = 2d, 3 = 3d
   bool created;                          // has the domain been created?
   bool axisymmetric;                     // true or false
+  tagint np_total;                       // total number of particles
 
   double boxlo[3],boxhi[3];              // orthogonal box global bounds
   double sublo[3],subhi[3];              // sub-box bounds on this proc

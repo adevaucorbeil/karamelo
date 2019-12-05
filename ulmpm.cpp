@@ -409,11 +409,9 @@ void ULMPM::compute_grid_weight_functions_and_gradients()
   }
 }
 
-void ULMPM::particles_to_grid()
-{
+void ULMPM::particles_to_grid() {
   bool grid_reset = false; // Indicate if the grid quantities have to be reset
-  for (int isolid = 0; isolid < domain->solids.size(); isolid++)
-  {
+  for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
 
     if (isolid == 0)
       grid_reset = true;
@@ -421,11 +419,11 @@ void ULMPM::particles_to_grid()
       grid_reset = false;
 
     domain->solids[isolid]->compute_mass_nodes(grid_reset);
-    // domain->solids[isolid]->compute_node_rotation_matrix(grid_reset);
   }
 
-  for (int isolid = 0; isolid < domain->solids.size(); isolid++)
-  {
+  domain->grid->reduce_mass_ghost_nodes();
+
+  for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
 
     if (isolid == 0)
       grid_reset = true;
@@ -440,6 +438,7 @@ void ULMPM::particles_to_grid()
     domain->solids[isolid]->compute_internal_forces_nodes_UL(grid_reset);
     /*compute_thermal_energy_nodes();*/
   }
+  domain->grid->reduce_ghost_nodes();
 }
 
 void ULMPM::update_grid_state() { domain->grid->update_grid_velocities(); }
@@ -477,8 +476,8 @@ void ULMPM::velocities_to_grid()
       // domain->solids[isolid]->compute_mass_nodes(grid_reset);
       domain->solids[isolid]->compute_velocity_nodes(grid_reset);
     }
-    // domain->solids[isolid]->grid->update_grid_positions();
   }
+  domain->grid->reduce_ghost_nodes(true);
 }
 
 void ULMPM::compute_rate_deformation_gradient()

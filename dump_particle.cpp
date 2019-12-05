@@ -82,7 +82,7 @@ void DumpParticle::write()
     dumpstream << domain->boxlo[0] << " " << domain->boxhi[0] << endl;
     dumpstream << domain->boxlo[1] << " " << domain->boxhi[1] << endl;
     dumpstream << domain->boxlo[2] << " " << domain->boxhi[2] << endl;
-    dumpstream << "ITEM: ATOMS id type ";
+    dumpstream << "ITEM: ATOMS id type tag ";
     for (auto v: output_var) {
       dumpstream << v << " ";
     }
@@ -93,6 +93,7 @@ void DumpParticle::write()
       for (bigint i=0; i<s->np_local;i++) {
 	dumpstream << s->ptag[i] << " ";
 	dumpstream << isolid+1 << " ";
+	dumpstream << s->ptag[i] << " ";
 	for (auto v: output_var) {
 	  if (v.compare("x")==0) dumpstream << s->x[i][0] << " ";
 	  else if (v.compare("y")==0) dumpstream << s->x[i][1] << " ";

@@ -29,6 +29,8 @@ class Solid : protected Pointers {
   bigint np;                                // total number of particles in the domain
   int np_local;                             // number of local particles (in this CPU)
   int comm_n;                               // number of double to pack for particle exchange between CPU
+  double vtot;                              // total volume
+  double mtot;                              // total mass
 
   vector<tagint> ptag;                      // unique identifier for particles in the system
 
@@ -68,8 +70,6 @@ class Solid : protected Pointers {
   vector<double> J;                         // determinant of the deformation matrix
   vector<double> vol0;                      // particles' reference volume
   vector<double> vol;                       // particles' current volume
-  double vtot;                              // total volume
-  double mtot;                              // total mass
   vector<double> rho0;                      // particles' reference density
   vector<double> rho;                       // particles' current density
   vector<double> mass;                      // particles' current mass

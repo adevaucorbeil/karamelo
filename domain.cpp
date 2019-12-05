@@ -34,6 +34,7 @@ Domain::Domain(MPM *mpm) : Pointers(mpm)
   dimension    = 3;
   created      = false;
   axisymmetric = false;
+  np_total     = 0;
 
   boxlo[0] = boxlo[1] = boxlo[2] = 0;
   boxhi[0] = boxhi[1] = boxhi[2] = 0;
