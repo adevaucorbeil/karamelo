@@ -4,6 +4,8 @@
 #include "input.h"
 #include "var.h"
 #include "math_special.h"
+#include "update.h"
+
 
 using namespace std;
 using namespace MathSpecial;
@@ -45,6 +47,8 @@ RegSphere::RegSphere(MPM *mpm, vector<string> args) : Region(mpm, args)
   zlo = c3 - R;
   zhi = c3 + R;
 
+if (  update->method_type.compare("tlmpm") == 0 )
+{
   if (domain->boxlo[0] > xlo) domain->boxlo[0] = xlo;
   if (domain->boxlo[1] > ylo) domain->boxlo[1] = ylo;
   if (domain->dimension == 3) if (domain->boxlo[2] > zlo) domain->boxlo[2] = zlo;
@@ -52,6 +56,13 @@ RegSphere::RegSphere(MPM *mpm, vector<string> args) : Region(mpm, args)
   if (domain->boxhi[0] < xhi) domain->boxhi[0] = xhi;
   if (domain->boxhi[1] < yhi) domain->boxhi[1] = yhi;
   if (domain->dimension == 3) if (domain->boxhi[2] < zhi) domain->boxhi[2] = zhi;
+}
+else
+{
+   if (domain->boxlo[0] > xlo) xlo = domain->boxlo[0];
+    if (domain->boxlo[1] > ylo) ylo = domain->boxlo[1];
+    if (domain->dimension == 3) if (domain->boxlo[2] > zlo) zlo = domain->boxlo[2];
+}
 }
 
 

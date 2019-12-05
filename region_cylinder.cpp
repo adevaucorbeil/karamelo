@@ -4,6 +4,8 @@
 #include "input.h"
 #include "var.h"
 #include "math_special.h"
+#include "method.h"
+#include "update.h"
 
 using namespace std;
 using namespace MathSpecial;
@@ -105,13 +107,27 @@ RegCylinder::RegCylinder(MPM *mpm, vector<string> args) : Region(mpm, args)
     zhi = hi;
   }
 
-  if (domain->boxlo[0] > xlo) domain->boxlo[0] = xlo;
-  if (domain->boxlo[1] > ylo) domain->boxlo[1] = ylo;
-  if (domain->dimension == 3) if (domain->boxlo[2] > zlo) domain->boxlo[2] = zlo;
+  if (  update->method_type.compare("tlmpm") == 0 )
+  {
+    if (domain->boxlo[0] > xlo) domain->boxlo[0] = xlo;
+    if (domain->boxlo[1] > ylo) domain->boxlo[1] = ylo;
+    if (domain->dimension == 3) if (domain->boxlo[2] > zlo) domain->boxlo[2] = zlo;
 
-  if (domain->boxhi[0] < xhi) domain->boxhi[0] = xhi;
-  if (domain->boxhi[1] < yhi) domain->boxhi[1] = yhi;
-  if (domain->dimension == 3) if (domain->boxhi[2] < zhi) domain->boxhi[2] = zhi;
+    if (domain->boxhi[0] < xhi) domain->boxhi[0] = xhi;
+    if (domain->boxhi[1] < yhi) domain->boxhi[1] = yhi;
+    if (domain->dimension == 3) if (domain->boxhi[2] < zhi) domain->boxhi[2] = zhi;
+  } 
+  else
+    // doing this allow to model 1/2 or 1/4 a cylinder
+  {
+    if (domain->boxlo[0] > xlo) xlo = domain->boxlo[0];
+    if (domain->boxlo[1] > ylo) ylo = domain->boxlo[1];
+    if (domain->dimension == 3) if (domain->boxlo[2] > zlo) zlo = domain->boxlo[2];
+
+    //if (domain->boxhi[0] < xhi) domain->boxhi[0] = xhi;
+    //if (domain->boxhi[1] < yhi) domain->boxhi[1] = yhi;
+    //if (domain->dimension == 3) if (domain->boxhi[2] < zhi) domain->boxhi[2] = zhi;
+  }
 }
 
 
