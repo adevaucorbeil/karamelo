@@ -62,7 +62,7 @@ fix(BC_bot, velocity_nodes, botn, 0, 0, 0)
 #------------------ INDENTER ------------------#
 K = 1000
 R = 0.2
-v0 = -0.1
+v0 = -50
 xind = -1.25
 xind0 = evaluate(xind)
 

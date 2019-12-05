@@ -4,12 +4,16 @@ from ovito.modifiers import *
 import glob
 import os
 
-filepattern = "/home/alban/karamelo/examples/Scratch/OFHC_copper/4x0dot4x1/dump_p.proc-*.*.LAMMPS"
+filepattern = "/mnt/monarch/karamelo/examples/Scratch/OFHC_copper/4x0dot4x1/dump_p.proc-*.*.LAMMPS"
 #dir = os.getcwd()
 #print(dir)
 #filepattern = dir + "/dump_p.proc-*.*.LAMMPS"
+#N_proc = int(sorted(glob.glob(filepattern))[-1].split(".proc-")[1].split(".")[0])+1
+
 pos_wildcard = filepattern.find('*');
-N_proc = int(sorted(glob.glob(filepattern))[-1].split(".proc-")[1].split(".")[0])+1
+N_proc = 0
+while glob.glob(filepattern[0:pos_wildcard] + str(N_proc) + filepattern[pos_wildcard+1:]):
+        N_proc += 1
 
 pipeline = import_file(filepattern[0:pos_wildcard] + "0" + filepattern[pos_wildcard+1:])
 for i in range(1, N_proc):
