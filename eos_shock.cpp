@@ -57,6 +57,7 @@ EOSShock::EOSShock(MPM *mpm, vector<string> args) : EOS(mpm, args)
   cout << "Set Tr to " << Tr << endl;
 
   alpha = cv*rho0_;
+  e0 = 0;
 }
 
 
@@ -76,6 +77,11 @@ double EOSShock::K(){
 void EOSShock::compute_pressure(double &pFinal, double &e, const double J, const double rho, const double T, const double damage){
   double mu = rho / rho0_ - 1.0;
   double pH = rho0_ * square(c0) * mu * (1.0 + mu) / square(1.0 - (S - 1.0) * mu);
+
+  if (T > Tr)
+    e = alpha * (T - Tr);
+  else
+    e = 0;
   pFinal = (pH + rho * Gamma * (e - e0));
 
   if ( damage > 0.0 ) {
@@ -89,7 +95,5 @@ void EOSShock::compute_pressure(double &pFinal, double &e, const double J, const
       }
     }
   }
-
-  e = alpha*(T - Tr);
 }
 

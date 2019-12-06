@@ -2,7 +2,7 @@
  *
  *                    ***       Karamelo       ***
  *               Parallel Material Point Method Simulator
- * 
+ *
  * Copyright (2019) Alban de Vaucorbeil, alban.devaucorbeil@monash.edu
  * Materials Science and Engineering, Monash University
  * Clayton VIC 3800, Australia
@@ -31,8 +31,7 @@ using namespace MathSpecial;
 using namespace Eigen;
 
 FixKineticEnergy::FixKineticEnergy(MPM *mpm, vector<string> args)
-    : Fix(mpm, args)
-{
+    : Fix(mpm, args) {
 
   if (args.size() < 3) {
     error->all(FLERR, "Error: too few arguments for fix_kinetic_energy: "
@@ -58,14 +57,12 @@ void FixKineticEnergy::init() {}
 
 void FixKineticEnergy::setup() {}
 
-void FixKineticEnergy::setmask()
-{
+void FixKineticEnergy::setmask() {
   mask = 0;
   mask |= FINAL_INTEGRATE;
 }
 
-void FixKineticEnergy::final_integrate()
-{
+void FixKineticEnergy::final_integrate() {
   if (update->ntimestep != output->next && update->ntimestep != update->nsteps)
     return;
   // cout << "In FixKineticEnergy::post_particles_to_grid()\n";
@@ -87,9 +84,9 @@ void FixKineticEnergy::final_integrate()
       s = domain->solids[isolid];
 
       for (int in = 0; in < s->np_local; in++) {
-	if (s->mask[in] & groupbit) {
-	  Ek += 0.5*s->mass[in]*square(s->v[in].norm());
-	}
+        if (s->mask[in] & groupbit) {
+          Ek += 0.5 * s->mass[in] * square(s->v[in].norm());
+        }
       }
     }
   } else {
@@ -97,12 +94,12 @@ void FixKineticEnergy::final_integrate()
 
     for (int in = 0; in < s->np_local; in++) {
       if (s->mask[in] & groupbit) {
-	Ek += 0.5*s->mass[in]*square(s->v[in].norm());
+        Ek += 0.5 * s->mass[in] * square(s->v[in].norm());
       }
     }
   }
 
   // Reduce Ek:
-  MPI_Allreduce(&Ek,&Ek_reduced,1,MPI_DOUBLE,MPI_SUM,universe->uworld);
-  (*input->vars)[id+"_s"]=Var(id+"_s", Ek_reduced);
+  MPI_Allreduce(&Ek, &Ek_reduced, 1, MPI_DOUBLE, MPI_SUM, universe->uworld);
+  (*input->vars)[id + "_s"] = Var(id + "_s", Ek_reduced);
 }

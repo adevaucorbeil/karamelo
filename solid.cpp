@@ -11,26 +11,26 @@
  *
  * ----------------------------------------------------------------------- */
 
-#include <mpi.h>
-#include "mpm.h"
 #include "solid.h"
 #include "domain.h"
+#include "error.h"
 #include "input.h"
 #include "material.h"
 #include "memory.h"
 #include "method.h"
+#include "mpm.h"
 #include "mpm_math.h"
-#include "update.h"
 #include "universe.h"
+#include "update.h"
 #include "var.h"
-#include "error.h"
-#include <vector>
-#include <string>
 #include <Eigen/Eigen>
-#include <math.h>
-#include <omp.h>
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
+#include <math.h>
+#include <mpi.h>
+#include <omp.h>
+#include <string>
+#include <vector>
 
 #ifdef DEBUG
 #include <matplotlibcpp.h>
@@ -89,8 +89,14 @@ Solid::Solid(MPM *mpm, vector<string> args) : Pointers(mpm)
 
   mat = NULL;
 
-  if (update->method->is_TL) grid = new Grid(mpm);
-  else grid = domain->grid;
+  if (update->method->is_TL) {
+    is_TL = true;
+    grid = new Grid(mpm);
+  }
+  else {
+    is_TL = false;
+    grid = domain->grid;
+  }
 
   dtCFL = 1.0e22;
   vtot  = 0;
@@ -131,7 +137,7 @@ Solid::Solid(MPM *mpm, vector<string> args) : Pointers(mpm)
 
 Solid::~Solid()
 {
-  if (update->method->is_TL) delete grid;
+  if (is_TL) delete grid;
 }
 
 void Solid::init()
@@ -1552,7 +1558,7 @@ void Solid::populate(vector<string> args)
 
   delta = grid->cellsize;
   
-  if (update->method->is_TL)
+  if (is_TL)
     {
     // The grid will be ajusted to the solid's domain (good for TLMPM).
     // and we need to create the corresponding grid:

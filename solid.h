@@ -151,6 +151,7 @@ private:
            };
   
   double T0;                     // Initial temperature
+  bool is_TL;
 };
 
 #endif

@@ -74,6 +74,7 @@ void DamageJohnsonCook::compute_damage(double &damage_init, double &damage,
                                        const double T)
 {
   double vm = SQRT_3_OVER_2 * Sdev.norm(); // von-Mises equivalent stress
+
   if (vm < 0.0)
   {
     cout << "this is sdev " << endl << Sdev << endl;
