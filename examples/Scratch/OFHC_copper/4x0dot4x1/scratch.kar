@@ -35,7 +35,7 @@ cellsize = Ly/N
 
 cdil = sqrt((K + 4/3*G)/rho)
 Delta_t = cellsize/cdil
-quit
+
 
 
 #---------- SET METHOD --------------#
