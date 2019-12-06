@@ -1054,11 +1054,6 @@ void Solid::update_stress()
   else
     tl = false;
 
-  if (mat->temp.size())
-    temp = true;
-  else
-    temp = false;
-
   eye.setIdentity();
   plastic_strain_increment = 0;
   sigma_dev.setZero();
@@ -1071,7 +1066,7 @@ void Solid::update_stress()
       strain_el[ip] += strain_increment;
       sigma[ip] += 2 * mat->G * strain_increment +
                    mat->lambda * strain_increment.trace() * eye;
-      if (temp)
+      if (mat->temp != NULL)
         sigma_dev = Deviator(sigma[ip]);
       if (tl)
         vol0PK1[ip] = vol0[ip] * J[ip] *
@@ -1085,7 +1080,7 @@ void Solid::update_stress()
       PK1         = mat->G * (F[ip] - FinvT) + mat->lambda * log(J[ip]) * FinvT;
       vol0PK1[ip] = vol0[ip] * PK1;
       sigma[ip]   = 1.0 / J[ip] * (F[ip] * PK1.transpose());
-      if (temp)
+      if (mat->temp != NULL)
         sigma_dev = Deviator(sigma[ip]);
       strain_el[ip] =
           0.5 * (F[ip].transpose() * F[ip] - eye); // update->dt * D[ip];
@@ -1135,12 +1130,10 @@ void Solid::update_stress()
       }
     }
 
-    if (temp)
-    {
+    if (mat->temp != NULL) {
       flow_stress = SQRT_3_OVER_2 * sigma_dev.norm();
-      for (int itemp = 0; itemp < mat->temp.size(); itemp++)
-        mat->temp[itemp]->compute_temperature(T[ip], flow_stress,
-                                              plastic_strain_increment);
+      mat->temp->compute_temperature(T[ip], flow_stress,
+                                     plastic_strain_increment);
     }
   }
 

@@ -11,16 +11,16 @@
  *
  * ----------------------------------------------------------------------- */
 
-#include "mpm.h"
 #include "material.h"
-#include "input.h"
-#include "var.h"
-#include "style_strength.h"
-#include "style_eos.h"
-#include "style_damage.h"
-#include "style_temperature.h"
-#include <vector>
 #include "error.h"
+#include "input.h"
+#include "mpm.h"
+#include "style_damage.h"
+#include "style_eos.h"
+#include "style_strength.h"
+#include "style_temperature.h"
+#include "var.h"
+#include <vector>
 
 using namespace std;
 
@@ -202,8 +202,7 @@ void Material::add_temperature(vector<string> args){
   cout << "In add_temperature" << endl;
 
   if (find_temperature(args[0]) >= 0) {
-    cout << "Error: reuse of temperature ID" << endl;
-    exit(1);
+    error->all(FLERR, "Error: reuse of temperature ID.\n");
   }
 
     // create the Temperature
@@ -216,8 +215,7 @@ void Material::add_temperature(vector<string> args){
     //materials.back()->init();
   }
   else {
-    cout << "Unknown temperature style " << *estyle << endl;
-    exit(1);
+    error->all(FLERR, "Error: unknown temperature style " + *estyle + "\n.");
   }
 }
 
@@ -232,12 +230,13 @@ int Material::find_temperature(string name)
    create a new material
 ------------------------------------------------------------------------- */
 
-void Material::add_material(vector<string> args){
+void Material::add_material(vector<string> args) {
   // cout << "In add_material" << endl;
 
-  if (args.size()<2) {
+  if (args.size() < 2) {
     string error_str = "Error: material command not enough arguments\n";
-    for (auto& x: usage) error_str +=x.second;
+    for (auto &x : usage)
+      error_str += x.second;
     error->all(FLERR, error_str);
   }
 
@@ -254,21 +253,23 @@ void Material::add_material(vector<string> args){
   }
 
   if (args.size() < Nargs.find(args[1])->second) {
-    error->all(FLERR,"Error: not enough arguments.\n"
-	       + usage.find(args[1])->second);
+    error->all(FLERR,
+               "Error: not enough arguments.\n" + usage.find(args[1])->second);
   }
 
-  int with_damage = 0;
-  if (args[1].compare("linear")==0 || args[1].compare("neo-hookean")==0) {
+  if (args[1].compare("linear") == 0 || args[1].compare("neo-hookean") == 0) {
     int type;
-    if (args[1].compare("linear")==0) type = LINEAR;
-    else type = NEO_HOOKEAN;
+    if (args[1].compare("linear") == 0)
+      type = LINEAR;
+    else
+      type = NEO_HOOKEAN;
 
-    Mat new_material(args[0], type, input->parsev(args[2]), input->parsev(args[3]), input->parsev(args[4]));
+    Mat new_material(args[0], type, input->parsev(args[2]),
+                     input->parsev(args[3]), input->parsev(args[4]));
     materials.push_back(new_material);
-    
-  } else if (args[1].compare("rigid")==0) {
-    Mat new_material(args[0], true);
+
+  } else if (args[1].compare("rigid") == 0) {
+    Mat new_material(args[0], true, error);
     materials.push_back(new_material);
   } else {
     // create the Material
@@ -280,35 +281,58 @@ void Material::add_material(vector<string> args){
 
     int iStrength = material->find_strength(args[3]);
     if (iStrength == -1) {
-      error->all(FLERR, "Error: could not find strength named: " + args[3] + ".\n");
+      error->all(FLERR,
+                 "Error: could not find strength named: " + args[3] + ".\n");
     }
+
+    Damage *damage_ = NULL;
+    Temperature *temp_ = NULL;
 
     if (args.size() > Nargs.find(args[1])->second) {
-      int iDamage = material->find_damage(args[4]);
+      int iDamage, iTemp;
+
+      iDamage = material->find_damage(args[4]);
+
       if (iDamage == -1) {
-	error->all(FLERR, "Error: could not find damage named: " + args[3] + ".\n");
+        // args[4] does not correspond to any damage law, maybe it is a
+        // temperature law.
+
+        iTemp = material->find_temperature(args[4]);
+
+        if (iTemp == -1) {
+          // It is not a temperature law either => error
+          error->all(FLERR,
+                     "Error: could not find damage named: " + args[4] + ".\n");
+          error->all(FLERR, "Error: could not find temperature named: " +
+                                args[4] + ".\n");
+        } else {
+          // It is a temperature law!
+          temp_ = temperatures[iTemp];
+        }
+
+      } else {
+        // args[4] corresponds to a damage law
+        damage_ = damages[iDamage];
+
+        if (args.size() == Nargs.find(args[1])->second + 2) {
+
+          iTemp = material->find_temperature(args[5]);
+
+          if (iTemp == -1) {
+            error->all(FLERR, "Error: could not find temperature named: " +
+                                  args[5] + ".\n");
+          } else {
+            temp_ = temperatures[iTemp];
+          }
+        }
       }
-      Mat new_material(args[0], SHOCK, EOSs[iEOS], strengths[iStrength], damages[iDamage]);
-      materials.push_back(new_material);
-      with_damage++;
-    } else {
-      Mat new_material(args[0], SHOCK, EOSs[iEOS], strengths[iStrength]);
-      materials.push_back(new_material);
     }
-  }
 
-  int iTemp;
-  for(int i=Nargs.find(args[1])->second + with_damage; i<args.size(); i++) {
-    iTemp = material->find_temperature(args[i]);
-    if (iTemp == -1) {
-      cout << "Error: could not find temperature named: " << args[i] << endl;
-      exit(1);
-    }
-    materials.back().temp.push_back(temperatures[iTemp]);
+    Mat new_material(args[0], SHOCK, EOSs[iEOS], strengths[iStrength], damage_,
+                     temp_);
+    materials.push_back(new_material);
   }
-
   cout << "Creating new mat with ID: " << args[0] << endl;
-  
 }
 
 int Material::find_material(string name)
@@ -359,12 +383,13 @@ Temperature *Material::temperature_creator(MPM *mpm, vector<string> args)
 }
 
 
-Mat::Mat(string id_, int type_, class EOS* eos_, class Strength* strength_, class Damage* damage_){
+Mat::Mat(string id_, int type_, class EOS* eos_, class Strength* strength_, class Damage* damage_, class Temperature* temp_){
   id = id_;
   type = type_;
   eos = eos_;
   strength = strength_;
   damage = damage_;
+  temp = temp_;
   rho0 = eos->rho0();
   K = eos->K();
   G = strength->G();
@@ -383,7 +408,7 @@ Mat::Mat(string id_, int type_, class EOS* eos_, class Strength* strength_, clas
   cout << "\tSignal velocity: " << signal_velocity << endl;
 }
 
-Mat::Mat(string id_, int type_, double rho0_, double E_, double nu_){
+Mat::Mat(string id_, int type_, double rho0_, double E_, double nu_) {
   id = id_;
   type = type_;
   eos = NULL;
@@ -392,17 +417,17 @@ Mat::Mat(string id_, int type_, double rho0_, double E_, double nu_){
   rho0 = rho0_;
   E = E_;
   nu = nu_;
-  G = E/(2*(1+nu));
-  lambda = E*nu/((1+nu)*(1-2*nu));
-  K = E/(3*(1-2*nu));
-  signal_velocity = sqrt(K/rho0);
+  G = E / (2 * (1 + nu));
+  lambda = E * nu / ((1 + nu) * (1 - 2 * nu));
+  K = E / (3 * (1 - 2 * nu));
+  signal_velocity = sqrt(K / rho0);
 }
 
-Mat::Mat(string id_, bool rigid_){
+Mat::Mat(string id_, bool rigid_, Error *error) {
   id = id_;
   rigid = rigid_;
   if (!rigid_) {
-    cout << "Error in Mat::Mat(string id_, bool rigid_), rigid_==false.\n";
-    exit(1);
+    error->all(FLERR,
+               "Error in Mat::Mat(string id_, bool rigid_), rigid_==false.\n");
   }
 }

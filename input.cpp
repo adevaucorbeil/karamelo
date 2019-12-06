@@ -220,25 +220,46 @@ Var Input::evaluate_function(string func, string arg){
     }
   }
 
-  if (func.compare("dimension") == 0) return Var(dimension(args));
-  if (func.compare("axisymmetric") == 0) return Var(axisymmetric(args));
-  if (func.compare("region") == 0) return Var(region(args));
-  if (func.compare("solid") == 0) return Var(solid(args));
-  if (func.compare("eos") == 0) return Var(add_EOS(args));
-  if (func.compare("strength") == 0) return Var(add_strength(args));
-  if (func.compare("material") == 0) return Var(add_material(args));
-  if (func.compare("damage") == 0) return Var(add_damage(args));
-  if (func.compare("dump") == 0) return Var(dump(args));
-  if (func.compare("group") == 0) return Var(group_command(args));
-  if (func.compare("set_output") == 0) return Var(set_output(args));
-  if (func.compare("log_modify") == 0) return Var(log_modify(args));
-  if (func.compare("method") == 0) return Var(method(args));
-  if (func.compare("fix") == 0) return Var(fix(args));
-  if (func.compare("dt_factor") == 0) return Var(set_dt_factor(args));
-  if (func.compare("set_dt") == 0 ) return Var(set_dt(args));
-  if (func.compare("value") == 0) return value(args);
-  if (func.compare("plot") == 0) return Var(plot(args));
-  if (func.compare("create_domain") == 0) return Var(create_domain(args));
+  if (func.compare("dimension") == 0)
+    return Var(dimension(args));
+  if (func.compare("axisymmetric") == 0)
+    return Var(axisymmetric(args));
+  if (func.compare("region") == 0)
+    return Var(region(args));
+  if (func.compare("solid") == 0)
+    return Var(solid(args));
+  if (func.compare("eos") == 0)
+    return Var(add_EOS(args));
+  if (func.compare("strength") == 0)
+    return Var(add_strength(args));
+  if (func.compare("material") == 0)
+    return Var(add_material(args));
+  if (func.compare("damage") == 0)
+    return Var(add_damage(args));
+  if (func.compare("temperature") == 0)
+    return Var(add_temperature(args));
+  if (func.compare("dump") == 0)
+    return Var(dump(args));
+  if (func.compare("group") == 0)
+    return Var(group_command(args));
+  if (func.compare("set_output") == 0)
+    return Var(set_output(args));
+  if (func.compare("log_modify") == 0)
+    return Var(log_modify(args));
+  if (func.compare("method") == 0)
+    return Var(method(args));
+  if (func.compare("fix") == 0)
+    return Var(fix(args));
+  if (func.compare("dt_factor") == 0)
+    return Var(set_dt_factor(args));
+  if (func.compare("set_dt") == 0)
+    return Var(set_dt(args));
+  if (func.compare("value") == 0)
+    return value(args);
+  if (func.compare("plot") == 0)
+    return Var(plot(args));
+  if (func.compare("create_domain") == 0)
+    return Var(create_domain(args));
   if (func.compare("save_plot") == 0)
     return Var(save_plot(args));
 
@@ -249,15 +270,24 @@ Var Input::evaluate_function(string func, string arg){
     return command_creator(mpm,args);
   }
 
-  else if (func.compare("exp") == 0) return expv(parsev(arg));
-  else if (func.compare("sqrt") == 0) return sqrtv(parsev(arg));
-  else if (func.compare("cos") == 0) return cosv(parsev(arg));
-  else if (func.compare("sin") == 0) return sinv(parsev(arg));
-  else if (func.compare("tan") == 0) return tanv(parsev(arg));
-  else if (func.compare("atan2") == 0) return atan2v(parsev(args[0]),parsev(args[1]));
-  else if (func.compare("log") == 0) return logv(parsev(arg));
-  else if (func.compare("evaluate") == 0) return Var(parsev(arg).result(mpm));
-  else if (func.compare("print") == 0) return Var(print(args));
+  else if (func.compare("exp") == 0)
+    return expv(parsev(arg));
+  else if (func.compare("sqrt") == 0)
+    return sqrtv(parsev(arg));
+  else if (func.compare("cos") == 0)
+    return cosv(parsev(arg));
+  else if (func.compare("sin") == 0)
+    return sinv(parsev(arg));
+  else if (func.compare("tan") == 0)
+    return tanv(parsev(arg));
+  else if (func.compare("atan2") == 0)
+    return atan2v(parsev(args[0]), parsev(args[1]));
+  else if (func.compare("log") == 0)
+    return logv(parsev(arg));
+  else if (func.compare("evaluate") == 0)
+    return Var(parsev(arg).result(mpm));
+  else if (func.compare("print") == 0)
+    return Var(print(args));
   error->all(FLERR, "Error: Unknown function " + func + "\n");
 }
 
@@ -636,77 +666,82 @@ int Input::axisymmetric(vector<string> args) {
   return 0;
 }
 
-int Input::region(vector<string> args){
+int Input::region(vector<string> args) {
   domain->add_region(args);
   return 0;
 }
 
-int Input::solid(vector<string> args){
+int Input::solid(vector<string> args) {
   domain->add_solid(args);
   return 0;
 }
 
-int Input::add_EOS(vector<string> args){
+int Input::add_EOS(vector<string> args) {
   material->add_EOS(args);
   return 0;
 }
 
-int Input::add_strength(vector<string> args){
+int Input::add_strength(vector<string> args) {
   material->add_strength(args);
   return 0;
 }
 
-int Input::add_damage(vector<string> args){
+int Input::add_damage(vector<string> args) {
   material->add_damage(args);
   return 0;
 }
 
-int Input::add_material(vector<string> args){
+int Input::add_temperature(vector<string> args) {
+  material->add_temperature(args);
+  return 0;
+}
+
+int Input::add_material(vector<string> args) {
   material->add_material(args);
   return 0;
 }
 
-int Input::dump(vector<string> args){
+int Input::dump(vector<string> args) {
   output->add_dump(args);
   return 0;
 }
 
-int Input::group_command(vector<string> args){
+int Input::group_command(vector<string> args) {
   group->assign(args);
   return 0;
 }
 
-int Input::set_output(vector<string> args){
+int Input::set_output(vector<string> args) {
   output->set_log(args);
   return 0;
 }
 
-int Input::log_modify(vector<string> args){
+int Input::log_modify(vector<string> args) {
   output->log->modify(args);
   return 0;
 }
 
-int Input::method(vector<string> args){
+int Input::method(vector<string> args) {
   update->create_method(args);
   return 0;
 }
 
-int Input::fix(vector<string> args){
+int Input::fix(vector<string> args) {
   modify->add_fix(args);
   return 0;
 }
 
-int Input::set_dt_factor(vector<string> args){
+int Input::set_dt_factor(vector<string> args) {
   update->set_dt_factor(args);
   return 0;
 }
 
-int Input::set_dt(vector<string> args){
+int Input::set_dt(vector<string> args) {
   update->set_dt(args);
   return 0;
 }
 
-Var Input::value(vector<string> args){
+Var Input::value(vector<string> args) {
   if (args.size() < 1) {
     error->all(FLERR, "Error: too few arguments for command value().\n");
   } else if (args.size() > 1) {
@@ -717,8 +752,7 @@ Var Input::value(vector<string> args){
   return v;
 }
 
-
-int Input::plot(vector<string> args){
+int Input::plot(vector<string> args) {
   output->add_plot(args);
   return 0;
 }
@@ -734,7 +768,7 @@ int Input::save_plot(vector<string> args) {
   return 0;
 }
 
-int Input::print(vector<string> args){
+int Input::print(vector<string> args) {
   if (args.size() < 1) {
     error->all(FLERR, "Error: too few arguments for command value().\n");
   } else if (args.size() > 1) {
@@ -742,13 +776,13 @@ int Input::print(vector<string> args){
   }
 
   Var v = parsev(args[0]);
-  cout << args[0] <<
-    " = {equation=\"" << v.eq() <<
-    "\", value=" << v.result(mpm) <<
-    ", constant=";
+  cout << args[0] << " = {equation=\"" << v.eq()
+       << "\", value=" << v.result(mpm) << ", constant=";
 
-  if(v.is_constant()) cout << "true";
-  else cout << "false";
+  if (v.is_constant())
+    cout << "true";
+  else
+    cout << "false";
 
   cout << "}\n";
 
@@ -759,20 +793,20 @@ int Input::print(vector<string> args){
 ------------------------------------------------------------------------- */
 
 template <typename T>
-Var Input::command_creator(MPM *mpm, vector<string> args)
-{
+Var Input::command_creator(MPM *mpm, vector<string> args) {
   T cmd(mpm);
   return cmd.command(args);
 }
 
 bool Input::protected_variable(string variable) {
-  for (int i=0; i<protected_vars.size();i++) {
-    if (variable.compare(protected_vars[i])==0) return 1;
+  for (int i = 0; i < protected_vars.size(); i++) {
+    if (variable.compare(protected_vars[i]) == 0)
+      return 1;
   }
   return 0;
 }
 
-int Input::create_domain(vector<string> args){
+int Input::create_domain(vector<string> args) {
   domain->create_domain(args);
   return 0;
 }

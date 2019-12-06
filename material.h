@@ -14,26 +14,27 @@
 #ifndef MPM_MATERIAL_H
 #define MPM_MATERIAL_H
 
-#include "pointers.h"
-#include <vector>
-#include "strength.h"
-#include "eos.h"
 #include "damage.h"
+#include "eos.h"
+#include "pointers.h"
+#include "strength.h"
 #include "temperature.h"
+#include <vector>
 
-class Mat{
+class Mat {
 public:
   string id;
   int type;
   bool rigid = false;
-  class EOS* eos;
-  class Strength* strength;
-  class Damage* damage;
-  vector<class Temperature*> temp;
+  class EOS *eos;
+  class Strength *strength;
+  class Damage *damage;
+  class Temperature *temp;
   double rho0, E, nu, G, K, lambda, signal_velocity;
-  Mat(string, int, class EOS*, class Strength*, class Damage* = NULL);
+  Mat(string, int, class EOS *, class Strength *, class Damage *,
+      class Temperature *);
   Mat(string, int, double, double, double);
-  Mat(string, bool);
+  Mat(string, bool, class Error *);
 };
 
 class Material : protected Pointers {
@@ -80,7 +81,7 @@ class Material : protected Pointers {
   enum constitutive_model {
     LINEAR = 0,      // Linear elasticity
     NEO_HOOKEAN = 1, // Neo-Hookean model
-    SHOCK = 2       // EOS + Strength or fluids
+    SHOCK = 2        // EOS + Strength or fluids
   };
 
 private:
@@ -92,7 +93,7 @@ private:
   const map<string, string> usage = {{"rigid",        "Usage: material(material-ID, \033[1;32mrigid\033[0m)\n"},
 				     {"linear",       "Usage: material(material-ID, \033[1;32mlinear\033[0m, rho, E, nu, optional: damage-ID)\n"},
 				     {"neo-hookean",  "Usage: material(material-ID, \033[1;32mneo-hookean\033[0m, rho, E, nu, optional: damage-ID)\n"},
-				     {"eos-strength", "Usage: material(material-ID, \033[1;32meos-strength\033[0m, eos-ID, strength-ID, optional: damage-ID)\n"}};
+				     {"eos-strength", "Usage: material(material-ID, \033[1;32meos-strength\033[0m, eos-ID, strength-ID, optional: damage-ID, optional: temperature-ID)\n"}};
   const map<string, int>    Nargs = {{"rigid",        2},
 				     {"linear",       5},
 				     {"neo-hookean",  5},
