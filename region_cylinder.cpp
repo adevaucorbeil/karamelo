@@ -11,13 +11,15 @@
  *
  * ----------------------------------------------------------------------- */
 
-#include <iostream>
-#include "domain.h"
 #include "region_cylinder.h"
-#include "input.h"
-#include "var.h"
-#include "math_special.h"
+#include "domain.h"
 #include "error.h"
+#include "input.h"
+#include "math_special.h"
+#include "method.h"
+#include "update.h"
+#include "var.h"
+#include <iostream>
 
 using namespace std;
 using namespace MathSpecial;
@@ -112,20 +114,6 @@ RegCylinder::RegCylinder(MPM *mpm, vector<string> args) : Region(mpm, args)
     zlo = lo;
     zhi = hi;
   }
-
-  // modify the domain dimension based on the region dimension
-  // only for TLMPM
-  
-  //if ( update->method->is_TL ){
-
-    if (domain->boxlo[0] > xlo) domain->boxlo[0] = xlo;
-    if (domain->boxlo[1] > ylo) domain->boxlo[1] = ylo;
-    if (domain->dimension == 3) if (domain->boxlo[2] > zlo) domain->boxlo[2] = zlo;
-
-    if (domain->boxhi[0] < xhi) domain->boxhi[0] = xhi;
-    if (domain->boxhi[1] < yhi) domain->boxhi[1] = yhi;
-    if (domain->dimension == 3) if (domain->boxhi[2] < zhi) domain->boxhi[2] = zhi;
-  //}
 }
 
 

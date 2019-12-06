@@ -11,65 +11,68 @@
  *
  * ----------------------------------------------------------------------- */
 
-#include <iostream>
-#include <vector>
-#include <string>
-#include <Eigen/Eigen>
 #include "fix_kinetic_energy.h"
-#include "input.h"
-#include "group.h"
 #include "domain.h"
-#include "input.h"
-#include "update.h"
-#include "output.h"
-#include "math_special.h"
-#include "universe.h"
 #include "error.h"
+#include "group.h"
+#include "input.h"
+#include "math_special.h"
+#include "output.h"
+#include "universe.h"
+#include "update.h"
+#include <Eigen/Eigen>
+#include <iostream>
+#include <string>
+#include <vector>
 
 using namespace std;
 using namespace FixConst;
 using namespace MathSpecial;
 using namespace Eigen;
 
-FixKineticEnergy::FixKineticEnergy(MPM *mpm, vector<string> args) : Fix(mpm, args)
+FixKineticEnergy::FixKineticEnergy(MPM *mpm, vector<string> args)
+    : Fix(mpm, args)
 {
+
   if (args.size() < 3) {
-    error->all(FLERR,"Error: too few arguments for fix_kinetic_energy: requires at least 3 arguments. " + to_string(args.size()) + " received.\n");
+    error->all(FLERR, "Error: too few arguments for fix_kinetic_energy: "
+                      "requires at least 3 arguments. " +
+                          to_string(args.size()) + " received.\n");
   }
 
-  if (group->pon[igroup].compare("particles") !=0 && group->pon[igroup].compare("all") !=0) {
-    error->all(FLERR, "fix_kinetic_energy needs to be given a group of particles" + group->pon[igroup] + ", " + args[2] + " is a group of " + group->pon[igroup] + ".\n");
+  if (group->pon[igroup].compare("particles") != 0 &&
+      group->pon[igroup].compare("all") != 0) {
+    error->all(FLERR,
+               "fix_kinetic_energy needs to be given a group of particles" +
+                   group->pon[igroup] + ", " + args[2] + " is a group of " +
+                   group->pon[igroup] + ".\n");
   }
 
   cout << "Creating new fix FixKineticEnergy with ID: " << args[0] << endl;
   id = args[0];
 }
 
-FixKineticEnergy::~FixKineticEnergy()
-{
-}
+FixKineticEnergy::~FixKineticEnergy() {}
 
-void FixKineticEnergy::init()
-{
-}
+void FixKineticEnergy::init() {}
 
-void FixKineticEnergy::setup()
-{
-}
+void FixKineticEnergy::setup() {}
 
-void FixKineticEnergy::setmask() {
+void FixKineticEnergy::setmask()
+{
   mask = 0;
   mask |= FINAL_INTEGRATE;
 }
 
-
-void FixKineticEnergy::final_integrate() {
-  if (update->ntimestep != output->next && update->ntimestep != update->nsteps) return;
+void FixKineticEnergy::final_integrate()
+{
+  if (update->ntimestep != output->next && update->ntimestep != update->nsteps)
+    return;
   // cout << "In FixKineticEnergy::post_particles_to_grid()\n";
 
   // Go through all the nodes in the group and set b to the right value:
   double ux, uy, uz;
-    
+
   int solid = group->solid[igroup];
 
   Solid *s;
