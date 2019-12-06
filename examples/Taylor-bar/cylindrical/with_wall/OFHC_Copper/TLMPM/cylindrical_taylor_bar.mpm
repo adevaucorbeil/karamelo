@@ -28,15 +28,15 @@ cv = 0
 Tr = 25
 
 #----------------- SETUP METHOD --------------------#
-# ULMPM (Updated Lagrangian MPM) with hat functions
+# TLMPM (Total Lagrangian MPM) with hat functions
 FLIP = 0.99
-method(ulmpm, FLIP, linear, FLIP)
+method(tlmpm, FLIP, linear, FLIP)
 
 #----------------- SETUP DOMAIN --------------------#
 N        = 4
 cellsize = 1/N
 # 3D problem,
-x_wall = hLx + 3*cellsize
+x_wall = hLx
 dimension(3, -hLx, x_wall, -Df, Df, -Df, Df, cellsize)
 
 #----------------- SETUP MATERIAL ------------------#
@@ -57,7 +57,7 @@ solid(solid1, region, cyl, ppc1d, mat, cellsize, Tr)
 
 #---------- IMPOSE INITIAL CONDITIONS --------------#
 
-region(region2, block, x_wall - cellsize, INF, INF, INF, INF, INF)
+region(region2, block, x_wall - 0.5*cellsize, INF, INF, INF, INF, INF)
 group(group2, particles, region, region2, solid, solid1)
 group(groupn2, nodes, region, region2, solid, solid1)
 
