@@ -41,7 +41,7 @@ public:
 protected:
   double d1, d2, d3, d4, d5, epsdot0,Tr, Tm, Tmr;
   string usage = "Usage: damage(damage-ID, damage_johnson_cook, d1, d2, d3, d4, d5, epsdot0, Tr, Tm)\n";
-  int Nargs = 9;
+  int Nargs = 10;
 };
 
 #endif

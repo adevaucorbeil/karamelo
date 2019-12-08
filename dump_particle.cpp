@@ -11,22 +11,22 @@
  *
  * ----------------------------------------------------------------------- */
 
-#include <iostream>
-#include "output.h"
 #include "dump_particle.h"
-#include "update.h"
 #include "domain.h"
-#include "solid.h"
-#include "mpmtype.h"
-#include "mpm_math.h"
-#include "universe.h"
 #include "error.h"
+#include "mpm_math.h"
+#include "mpmtype.h"
+#include "output.h"
+#include "solid.h"
+#include "universe.h"
+#include "update.h"
+#include <iostream>
 
 using namespace std;
 using namespace MPM_Math;
 
 DumpParticle::DumpParticle(MPM *mpm, vector<string> args) : Dump(mpm, args) {
-  cout << "In DumpParticle::DumpParticle()" << endl;
+  // cout << "In DumpParticle::DumpParticle()" << endl;
   for (int i = 5; i < args.size(); i++) {
     if (find(known_var.begin(), known_var.end(), args[i]) != known_var.end()) {
       output_var.push_back(args[i]);

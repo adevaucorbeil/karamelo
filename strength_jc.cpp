@@ -61,6 +61,14 @@ StrengthJohnsonCook::StrengthJohnsonCook(MPM *mpm, vector<string> args)
   cout << "\tm: factor for thermal softening " << m << endl;
   cout << "\tTr: reference temperature " << Tr << endl;
   cout << "\tTm: melting temperature " << Tm << endl;
+  cout << "\tFlow stress: sigma_f = [" << A << " + " << B << " * (eps_p)^" << n
+       << "]";
+  if (C != 0)
+    cout << "[1 + " << C << " * ln(eps_p_dot/" << epsdot0 << ")]";
+  if (m != 0)
+    cout << "[1 - ((T - " << Tr << ")/(" << Tm << " - " << Tr << "))^" << m
+         << "]";
+  cout << "(1 - D)\n";
 
   if (Tr == Tm)
   {

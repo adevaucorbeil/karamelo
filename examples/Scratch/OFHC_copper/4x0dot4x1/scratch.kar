@@ -23,7 +23,7 @@ d1       = 0.54
 d2       = 4.89
 d3       = -3.03
 d4       = 0 #0.014
-d5       = 1.12
+d5       = 0 #1.12
 epsdot0  = 1
 
 Lx       = 4
@@ -53,7 +53,7 @@ region(box, block, -hLx, hLx, -hLy, hLy, -hLz, hLz)
 #---------- SET MATERIAL --------------#
 eos(eoss, shock, rho, K, c0, S, Gamma, cv, Tr)
 strength(strengthJC, johnson_cook, G, sigmay, B, n, epsdot0, C, 0, Tr, Tm)
-damage(damagejc, damage_johnson_cook, d1, d2, d3, d4, epsdot0, Tr, Tm)
+damage(damagejc, damage_johnson_cook, d1, d2, d3, d4, d5, epsdot0, Tr, Tm)
 
 
 material(mat1, eos-strength, eoss, strengthJC, damagejc)

@@ -56,6 +56,14 @@ DamageJohnsonCook::DamageJohnsonCook(MPM *mpm, vector<string> args)
   cout << "\tepsdot0: reference strain rate " << epsdot0 << endl;
   cout << "\tTr: reference temperature " << Tr << endl;
   cout << "\tTm: melting temperature " << Tm << endl;
+  cout << "\tFailure strain equation: eps_f = [" << d1 << " + " << d2
+       << " * exp(" << d3 << "*sigma*)]";
+  if (d4 != 0)
+    cout << "[ 1 + " << d4 << " * ln(epsdot/" << epsdot0 << ")]";
+  if (d5 != 0)
+    cout << "[1 + " << d5 << " * (T - " << Tr << ")/(" << Tm << " - " << Tr
+         << ")]";
+  cout << endl;
 
   if (Tr == Tm)
   {

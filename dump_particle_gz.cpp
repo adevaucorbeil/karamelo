@@ -13,6 +13,7 @@
 
 #include "dump_particle_gz.h"
 #include "domain.h"
+#include "error.h"
 #include "mpm_math.h"
 #include "mpmtype.h"
 #include "output.h"
@@ -27,7 +28,19 @@ using namespace MPM_Math;
 
 DumpParticleGz::DumpParticleGz(MPM *mpm, vector<string> args)
     : Dump(mpm, args) {
-  // cout << "In DumpParticleGz::DumpParticleGz()" << endl;
+  for (int i = 5; i < args.size(); i++) {
+    if (find(known_var.begin(), known_var.end(), args[i]) != known_var.end()) {
+      output_var.push_back(args[i]);
+    } else {
+      string error_str = "Error: output variable \033[1;31m" + args[i] +
+                         "\033[0m is unknown!\n";
+      error_str += "Availabe output variables: ";
+      for (auto v : known_var) {
+        error_str += v + ", ";
+      }
+      error->all(FLERR, error_str);
+    }
+  }
 }
 
 DumpParticleGz::~DumpParticleGz() {}
