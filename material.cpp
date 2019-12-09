@@ -414,6 +414,7 @@ Mat::Mat(string id_, int type_, double rho0_, double E_, double nu_) {
   eos = NULL;
   strength = NULL;
   damage = NULL;
+  temp = NULL;
   rho0 = rho0_;
   E = E_;
   nu = nu_;
