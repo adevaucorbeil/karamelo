@@ -699,7 +699,8 @@ Var Input::parsev(string str)
         // cout << "Found function " << word << " with argument: " << arg <<
         // endl;
         i += k;
-        values.push(evaluate_function(word, arg));
+        if (negative) values.push(-evaluate_function(word, arg));
+	else values.push(evaluate_function(word, arg));
       }
 
       else
@@ -778,7 +779,7 @@ Var Input::parsev(string str)
     if (!returnvar.empty())
     {
       (*vars)[returnvar] = values.top();
-      cout << returnvar << " = " << (*vars)[returnvar].result() << endl;
+      cout << returnvar << " = " << (*vars)[returnvar].result(mpm) << endl;
     }
     return values.top();
   }
@@ -896,7 +897,7 @@ int Input::dimension(vector<string> args)
           exit(1);
         }
 
-        if (args[6].compare("axisymmetric") == 0)
+        if (args.size() > 6 && args[6].compare("axisymmetric") == 0)
         {
           domain->axisymmetric = true;
           cout << "Axi-symmetric is ON " << domain->axisymmetric << endl;
@@ -1039,7 +1040,7 @@ Var Input::value(vector<string> args)
     exit(1);
   }
   Var v = parsev(args[0]);
-  v.make_constant();
+  v.make_constant(mpm);
   return v;
 }
 

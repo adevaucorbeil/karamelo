@@ -2,12 +2,24 @@
 #include "input.h"
 #include "var.h"
 #include "math.h"
+#include <sstream>
 
 using namespace std;
 
+#define PRECISION 15
+
+template <typename T>
+std::string to_string_with_precision(const T a_value)
+{
+    std::ostringstream out;
+    out.precision(PRECISION);
+    out << std::fixed << a_value;
+    return out.str();
+}
+
 Var::Var(double v)
 {
-  equation = to_string(v);
+  equation = to_string_with_precision(v);
   value = v;
   constant = true;
 }
@@ -27,7 +39,7 @@ void Var::evaluate(MPM * mpm)
 {
   if (constant) return;
   if (mpm) value = mpm->input->parsev(equation).value;
-  if (constant) equation = to_string(value);
+  if (constant) equation = to_string_with_precision(value);
 }
 
 
@@ -43,14 +55,14 @@ double Var::result(MPM * mpm)
 string Var::str() const
 {
   if (equation != "") return equation;
-  else return to_string(value);
+  else return to_string_with_precision(value);
 }
 
 void Var::make_constant(MPM * mpm)
 {
   if (!constant) {
     if (mpm) value = mpm->input->parsev(equation).value;
-    equation = to_string(value);
+    equation = to_string_with_precision(value);
     constant = true;
   }
 }
@@ -211,7 +223,7 @@ Var powv(int base, Var p){
     Var result(pow(base, p.result()));
     return result;
   } else {
-    Var result("pow(" + to_string(base) + "," + p.str() + ")", pow(base, p.result()), p.is_constant());
+    Var result("pow(" + to_string_with_precision(base) + "," + p.str() + ")", pow(base, p.result()), p.is_constant());
     return result;
   }
 }
@@ -288,3 +300,5 @@ Var atan2v(Var x, Var y){
     return result;
   }
 }
+
+

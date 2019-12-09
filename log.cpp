@@ -149,7 +149,7 @@ void Log::modify(vector<string> args)
   } else if (style.compare("custom") == 0) {
     
     if (args.size() < 2) {
-      cout << "Erro: too few arguments given to log_modify(custom,...) command." << endl;
+      cout << "Error: too few arguments given to log_modify(custom,...) command." << endl;
       exit(1);
     }
 
