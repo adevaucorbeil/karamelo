@@ -567,27 +567,35 @@ Var Input::parsev(string str)
 	i++;
       }
 
-      else if (i+1 < str.length() && str[i+1]=='(') {
-	// It's a function:
-	i+=2;
+      else if (i + 1 < str.length() && str[i + 1] == '(')
+      {
+        // It's a function:
+        i += 2;
 
-	// Extract the argument:
-	int k = 0;
-	int nLparenthesis = 0;
-	int nRparenthesis = 0;
-	while(str[i+k]!=')' || nLparenthesis != nRparenthesis){
-	  if (str[i+k]=='(') nLparenthesis++;
-	  if (str[i+k]==')') nRparenthesis++;
-	  k++;
-	  if (i+k > str.length()) {
-	    error->all(FLERR, "Error: Unbalanced parenthesis '('.\n");
-	  }
-	}
-	string arg;
-	arg.append(&str[i],k);
-	//cout << "Found function " << word << " with argument: " << arg << endl;
-	i += k;
-	values.push(evaluate_function(word, arg));
+        // Extract the argument:
+        int k             = 0;
+        int nLparenthesis = 0;
+        int nRparenthesis = 0;
+        while (str[i + k] != ')' || nLparenthesis != nRparenthesis)
+        {
+          if (str[i + k] == '(')
+            nLparenthesis++;
+          if (str[i + k] == ')')
+            nRparenthesis++;
+          k++;
+          if (i + k > str.length())
+          {
+            cout << "Error: Unbalanced parenthesis '('" << endl;
+            exit(1);
+          }
+        }
+        string arg;
+        arg.append(&str[i], k);
+        // cout << "Found function " << word << " with argument: " << arg <<
+        // endl;
+        i += k;
+        if (negative) values.push(-evaluate_function(word, arg));
+	else values.push(evaluate_function(word, arg));
       }
 
       else {
@@ -643,7 +651,7 @@ Var Input::parsev(string str)
   else {
     if (!returnvar.empty()) {
       (*vars)[returnvar] = values.top();
-      cout << returnvar << " = " << (*vars)[returnvar].result() << endl;
+      cout << returnvar << " = " << (*vars)[returnvar].result(mpm) << endl;
     }
     return values.top();
   }
@@ -748,7 +756,7 @@ Var Input::value(vector<string> args) {
     error->all(FLERR, "Error: too many arguments for command value().\n");
   }
   Var v = parsev(args[0]);
-  v.make_constant();
+  v.make_constant(mpm);
   return v;
 }
 
