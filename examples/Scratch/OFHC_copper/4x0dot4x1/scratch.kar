@@ -88,11 +88,11 @@ fix(BC_bot,      velocity_nodes, botn,       0, 0, 0)
 #------------------ INDENTER ------------------#
 K     = 1000
 R     = 0.2
-v0    = -50
+v0    = 50
 xind  = -1.25
 xind0 = evaluate(xind)
 
-yind  = hLy + R - 0.5*cellsize + v0*(time + exp(-time) - 1)
+yind  = hLy + R - 0.5*cellsize - v0*(time + exp(-time) - 1)
 yind0 = evaluate(yind)
 
 dyind = yind - yind0
@@ -116,13 +116,22 @@ set_output(N_log)
 log_modify(custom, step, dt, time, dxind, dyind, indenter_x, indenter_y)
 #plot(ind, N_log, yind, indenter_y)
 
-run_while(dyind > -0.152)
+max_depth = 0.152
+run_while(dyind > -max_depth)
 
 
 t1   = evaluate(time)
-xind = evaluate(xind) - v0*(time-t1 + exp(-(time-t1)) - 1)
+xind = evaluate(xind) + v0*(time-t1 + exp(-(time-t1)) - 1)
 yind = evaluate(yind)
 
 dyind = yind - yind0
 dxind = xind - xind0
 run_while(dxind < -2*xind0)
+
+t2   = evaluate(time)
+xind = evaluate(xind)
+yind = evaluate(yind) + v0*(time - t2 + exp(-(time - t2)) - 1)
+
+dyind = yind - yind0
+dxind = xind - xind0
+run_while(dyind < 0)
