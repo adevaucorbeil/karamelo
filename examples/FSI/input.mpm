@@ -1,0 +1,101 @@
+#####################################################
+#               UNITS: Pa, m, s                     #
+#####################################################
+# FSI problem, water dam break flow past an elastic obstacle
+# Benchmarking the material point method for interaction problems between the free surface flow and elastic structure
+# by Sun, 2019
+
+gamma = 7
+K     = 1.4e+6
+G     = 0.001
+E     = 12e+6
+nu    = 0.4
+rhoS  = 1100
+rhoW  = 998
+
+L  = 200e-3
+H  = 140e-3
+l0 = 100e-3
+h0 = H
+h  = 79e-3#79e-3
+b  = 5e-3
+x0 = l0
+
+#---------- SET METHOD --------------#
+FLIP=1.0 
+method(ulmpm, FLIP, linear, FLIP)
+
+N = 100
+cellsize = l0/N
+# 2D problem, which the computational domain is
+dimension(2, -L, 0, 0, H, cellsize)
+
+
+#---------- SET MATERIALS --------------#
+eos(eosf, fluid, rhoW, K, gamma)
+strength(strengthf, fluid, G)
+material(mat1, eos-strength, eosf, strengthf) 
+# for the elastic obstacle
+material(mat2,  linear, rhoS, E, nu)
+
+
+#---------- SET SOLID --------------#
+region(water, block, -x0, 0, 0, h0)
+region(solid, block, -l0-b-2*cellsize, -l0-2*cellsize, cellsize/2, h)
+
+ppc1d  = 2
+ppc1ds = 2
+solid(solidW, region, water, ppc1d, mat1, cellsize,0)
+solid(solidS, region, solid, ppc1ds, mat2, cellsize,0)
+
+#---------- IMPOSE BOUNDARY CONDITIONS --------------#
+region(rBottomW, block, INF, INF, INF, cellsize/4)
+group(gBottomW, nodes, region, rBottomW, solid, solidW)
+
+
+region(rRight, block, -cellsize/4, INF, -INF, INF)
+group(gRight, nodes, region, rRight, solid, solidW)
+
+region(rLeft, block, -(l0+cellsize/4), -l0+cellsize/4, h, INF)
+group(gLeft, nodes, region, rLeft, solid, solidW)
+
+# top nodes at the fix of the gate
+#region(rTopS, block, -l0-2*b, -l0+cellsize/4, h-cellsize/4, h+cellsize/4)
+region(rTopS, block, -l0-2*b, -l0-2*cellsize, h-cellsize/4, h+cellsize/4)
+group(gTopS, nodes, region, rTopS, solid, solidS)
+
+fix(fBCLYW, velocity_nodes, gBottomW, NULL, 0)
+fix(fBCRX, velocity_nodes, gRight,  0, NULL)
+fix(fBCLX, velocity_nodes, gLeft,  0, NULL)
+
+fix(fBCXY, velocity_nodes, gTopS,  0, 0)
+
+#---------- RECORDING TIP DISPLACEMENT --------------#
+region(rULcorner, block, -l0-cellsize/2-2*cellsize, -l0-cellsize/2, cellsize/2, cellsize+cellsize/4)
+group(gULcorner, particles, region, rULcorner, solid, solidS)
+xcorner = xcm(gULcorner, x)
+ycorner = xcm(gULcorner, y)
+xcorner0=value(xcorner)
+ycorner0=value(ycorner)
+ut      = xcorner-xcorner0
+vt      = ycorner-ycorner0
+
+#---------- IMPOSE INITIAL CONDITIONS --------------#
+gravity = -9.81 #m/s^2
+fix(fbody, body_force, all, 0, gravity)
+
+N_log = 100
+
+dump(dump1, all, particle, N_log, dump_p.*.LAMMPS, x, y, z, vx, vy)
+dump(dump2, all, grid, N_log, dump_g.*.LAMMPS, x, y, z, vx,vy)
+
+
+#----------- RUN --------------------#
+#dt_factor(0.3*0.25)
+set_dt(1e-6)
+
+set_output(1)
+log_modify(custom, step, dt, time, ut, vt)
+#plot(ut,50,time,ut)
+run_time(0.5)
+
