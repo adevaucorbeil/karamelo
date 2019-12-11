@@ -18,6 +18,7 @@
 #include "input.h"
 #include "math_special.h"
 #include "output.h"
+#include "universe.h"
 #include "update.h"
 #include <Eigen/Eigen>
 #include <iostream>
@@ -75,7 +76,7 @@ void FixMaxPlasticStrain::final_integrate() {
 
   Solid *s;
 
-  double Es(0.), Tmax(0.);
+  double Es(0.), Es_reduced(0.), Tmax(0.), Tmax_reduced(0.);
 
   if (solid == -1) {
     for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
@@ -88,9 +89,6 @@ void FixMaxPlasticStrain::final_integrate() {
         }
       }
     }
-
-    (*input->vars)[id + "_1s"] = Var(id + "_1s", Es);
-    (*input->vars)[id + "_2s"] = Var(id + "_2s", Tmax);
   } else {
     s = domain->solids[solid];
 
@@ -101,7 +99,13 @@ void FixMaxPlasticStrain::final_integrate() {
       }
     }
 
-    (*input->vars)[id + "_1s"] = Var(id + "_1s", Es);
-    (*input->vars)[id + "_2s"] = Var(id + "_2s", Tmax);
   }
+
+  // Reduce Es:
+  MPI_Allreduce(&Es, &Es_reduced, 1, MPI_DOUBLE, MPI_MAX, universe->uworld);
+  (*input->vars)[id + "_1s"] = Var(id + "_1s", Es_reduced);
+
+  // Reduce Tmax:
+  MPI_Allreduce(&Tmax, &Tmax_reduced, 1, MPI_DOUBLE, MPI_MAX, universe->uworld);
+  (*input->vars)[id + "_2s"] = Var(id + "_2s", Tmax_reduced);
 }
