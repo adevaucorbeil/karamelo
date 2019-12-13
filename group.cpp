@@ -243,7 +243,6 @@ int Group::find_unused()
 
 double Group::xcm(int igroup, int dir)
 {
-  
   vector<Eigen::Vector3d> *x;
   vector<double> *mass;
   int nmax;
@@ -317,7 +316,7 @@ double Group::xcm(int igroup, int dir)
   MPI_Allreduce(&com,&com_reduced,1,MPI_DOUBLE,MPI_SUM,universe->uworld);
   MPI_Allreduce(&mass_tot,&mass_tot_reduced,1,MPI_DOUBLE,MPI_SUM,universe->uworld);
 
-  if (mass_tot) return com_reduced/mass_tot_reduced;
+  if (mass_tot_reduced) return com_reduced/mass_tot_reduced;
   else return 0;
 }
 
