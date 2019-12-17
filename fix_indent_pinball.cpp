@@ -122,18 +122,22 @@ void FixIndentPinball::initial_integrate() {
               if (r < Rs) {
                 p = Rs - r; // penetration
 
-                pdot = xsp.dot(vs - s->v[ip]); // Not yet normalized
+                // pdot = xsp.dot(vs - s->v[ip]); // Not yet normalized
 
-                if (pdot > 0) {
-                  pdot /= r; // Normalized only here to save computation time
-                  f1 = s->rho[ip] * Rp * Rp * Rp * pdot / update->dt;
-                } else {
-                  f1 = 0;
-                }
+                // if (pdot > 0) {
+                //   pdot /= r; // Normalized only here to save computation time
+                //   f1 = s->rho[ip] * Rp * Rp * Rp * pdot / update->dt;
+                // } else {
+                //   f1 = 0;
+                // }
 
-                f2 = s->mat->G * sqrt(Rp * p * p * p);
+                if (p > 0) {
+		  fmag = K * s->mat->G * sqrt(Rp * p * p * p);
+		} else {
+		  fmag = 0;
+		}
 
-                fmag = K * MIN(f1, f2);
+                // fmag = K * MIN(f1, f2);
 
                 f = fmag * xsp / r;
                 s->mbp[ip] += f;
@@ -165,18 +169,23 @@ void FixIndentPinball::initial_integrate() {
             if (r < Rs) {
               p = Rs - r; // penetration
 
-              pdot = xsp.dot(vs - s->v[ip]); // Not yet normalized
+              // pdot = xsp.dot(vs - s->v[ip]); // Not yet normalized
 
-              if (pdot > 0) {
-                pdot /= r; // Normalized only here to save computation time
-                f1 = s->rho[ip] * Rp * Rp * Rp * pdot / update->dt;
-              } else {
-                f1 = 0;
-              }
+              // if (pdot > 0) {
+              //   pdot /= r; // Normalized only here to save computation time
+              //   f1 = s->rho[ip] * Rp * Rp * Rp * pdot / update->dt;
+              // } else {
+              //   f1 = 0;
+              // }
 
-              f2 = s->mat->G * sqrt(Rp * p * p * p);
 
-              fmag = K * MIN(f1, f2);
+	      if (p > 0) {
+		fmag = K * s->mat->G * sqrt(Rp * p * p * p);
+	      } else {
+		fmag = 0;
+	      }
+
+              // fmag = K * MIN(f1, f2);
 
               f = fmag * xsp / r;
               s->mbp[ip] += f;
