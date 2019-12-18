@@ -35,15 +35,16 @@ hLz      = 0.5*Lz
 
 FLIP     = 0.99
 
-N        = 10
+N        = 4
 cellsize = Ly/N
+half_cellsize = cellsize/2
 
 cdil     = sqrt((K + 4/3*G)/rho)
 Delta_t  = cellsize/cdil
 
 
 #---------- SET METHOD --------------#
-method(tlmpm, FLIP, linear, FLIP)
+method(tlmpm, FLIP, Bernstein-quadratic, FLIP)
 
 dimension(3, -hLx, hLx, -hLy, hLy, -hLz, hLz, cellsize)
 
@@ -61,7 +62,7 @@ material(mat1, eos-strength, eoss, strengthJC, damagejc)
 
 #---------- SET SOLID --------------#
 
-solid(solid1, region, box, 1, mat1, cellsize, Tr)
+solid(solid1, region, box, 3, mat1, cellsize, Tr)
 
 #---------- IMPOSE BOUNDARY CONDITIONS --------------#
 region(sidexmin, block, INF, -hLx + 0.6 * cellsize, INF, INF, INF, INF)
@@ -86,25 +87,36 @@ fix(BC_sidezmax, velocity_nodes, sidezmax_n, 0, 0, 0)
 fix(BC_bot,      velocity_nodes, botn,       0, 0, 0)
 
 #------------------ INDENTER ------------------#
-K     = 1000
+Kind  = 8/3*(1+nu)/(1-nu*nu)
 R     = 0.2
 v0    = 50
-xind  = -1.25
+xind  = -hLx + hLz
 xind0 = evaluate(xind)
+vxind = 0
 
-yind  = hLy + R - 0.5*cellsize - v0*(time + exp(-time) - 1)
+yind  = hLy + R - v0*(time + exp(-time) - 1)
 yind0 = evaluate(yind)
+vyind = -v0 * (1 - exp(-time))
 
 dyind = yind - yind0
 dxind = xind - xind0
 zind  = 0
+vzind = 0
 
-fix(indenter, indent, all, sphere, K, xind, yind, zind, R)
+fix(indenter, indent/pinball, all, sphere, Kind, R, xind, yind, zind, vxind, vyind, vzind)
 
+# Select the region right under the indenter:
+region(r_under_ind, block, xind - 0.7*cellsize, xind + 0.7*cellsize, hLy - cellsize, INF, zind - 0.7*cellsize, zind + 0.7*cellsize)
+group(g_under_ind_p, particles, region, r_under_ind, solid, solid1)
+
+y_under_ind  = xcm(g_under_ind_p, y)
+dy_under_ind = y_under_ind - evaluate(y_under_ind)
+
+penetration = yind - R - y_under_ind - half_cellsize 
 
 #------------------ DUMPS ------------------#
 N_log = 100
-dumping_interval = N_log*10
+dumping_interval = N_log*20
 
 dump(dump1, all, particle/gz, dumping_interval, dump_p.*.LAMMPS.gz, x, y, z, vx, vy, vx, s11, s22, s33, s12, s13, s23, seq, ep, damage)
 #dump(dump2, all, grid/gz, dumping_interval, dump_g.*.LAMMPS.gz, x, y, z)
@@ -113,25 +125,32 @@ dump(dump1, all, particle/gz, dumping_interval, dump_p.*.LAMMPS.gz, x, y, z, vx,
 dt_factor(1)
 
 set_output(N_log)
-log_modify(custom, step, dt, time, dxind, dyind, indenter_x, indenter_y)
+log_modify(custom, step, dt, time, dxind, dyind, indenter_x, indenter_y, penetration)
 #plot(ind, N_log, yind, indenter_y)
 
-max_depth = 0.152
+max_depth = 0.041
 run_while(dyind > -max_depth)
 
+t1    = evaluate(time)
 
-t1   = evaluate(time)
-xind = evaluate(xind) + v0*(time-t1 + exp(-(time-t1)) - 1)
-yind = evaluate(yind)
+xind  = evaluate(xind) + v0*(time-t1 + exp(-(time-t1)) - 1)
+vxind = v0*(1 - exp(-(time-t1)))
+
+yind  = evaluate(yind)
+vyind = 0
 
 dyind = yind - yind0
 dxind = xind - xind0
 run_while(dxind < -2*xind0)
 
-t2   = evaluate(time)
-xind = evaluate(xind)
-yind = evaluate(yind) + v0*(time - t2 + exp(-(time - t2)) - 1)
+t2    = evaluate(time)
+
+xind  = evaluate(xind)
+vxind = 0
+
+yind  = evaluate(yind) + v0*(time - t2 + exp(-(time - t2)) - 1)
+vyind = v0*(1 - exp(-(time-t2)))
 
 dyind = yind - yind0
 dxind = xind - xind0
-run_while(dyind < maxdepth)
+run_while(dyind < max_depth)
