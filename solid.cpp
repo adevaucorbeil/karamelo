@@ -1167,14 +1167,14 @@ void Solid::update_stress()
       cout << "Error: max_p_wave_speed is nan with ip=" << ip
            << ", rho[ip]=" << rho[ip] << ", K=" << mat->K << ", G=" << mat->G
            << endl;
-      error->all(FLERR, "");
+      error->one(FLERR, "");
     }
     else if (max_p_wave_speed < 0.0)
     {
       cout << "Error: max_p_wave_speed= " << max_p_wave_speed
            << " with ip=" << ip << ", rho[ip]=" << rho[ip] << ", K=" << mat->K
            << ", G=" << mat->G << endl;
-      error->all(FLERR, "");
+      error->one(FLERR, "");
     }
   }
 

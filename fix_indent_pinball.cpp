@@ -28,8 +28,6 @@ using namespace std;
 using namespace FixConst;
 using namespace Eigen;
 
-#define HALF_SQRT_2 0.7071067811865476
-
 FixIndentPinball::FixIndentPinball(MPM *mpm, vector<string> args)
     : Fix(mpm, args) {
   if (args.size() < Nargs) {
@@ -111,7 +109,7 @@ void FixIndentPinball::initial_integrate() {
             // Gross screening:
             xsp = s->x[ip] - xs;
 
-            Rp = HALF_SQRT_2 * s->grid->cellsize;
+            Rp = pow(s->vol[ip], 0.333333333);
             Rs = R + Rp;
 
             if ((xsp[0] < Rs) && (xsp[1] < Rs) && (xsp[2] < Rs) &&
@@ -158,7 +156,7 @@ void FixIndentPinball::initial_integrate() {
           // Gross screening:
           xsp = s->x[ip] - xs;
 
-          Rp = HALF_SQRT_2 * s->grid->cellsize;
+	  Rp = pow(s->vol[ip], 0.333333333);
           Rs = R + Rp;
 
           if ((xsp[0] < Rs) && (xsp[1] < Rs) && (xsp[2] < Rs) &&

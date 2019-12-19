@@ -94,7 +94,7 @@ xind  = -hLx + hLz
 xind0 = evaluate(xind)
 vxind = 0
 
-yind  = hLy + R - v0*(time + exp(-time) - 1)
+yind  = hLy + R - v0*(time + exp(-time) - 1) + cellsize*0.3+0.00873
 yind0 = evaluate(yind)
 vyind = -v0 * (1 - exp(-time))
 
@@ -106,7 +106,7 @@ vzind = 0
 fix(indenter, indent/pinball, all, sphere, Kind, R, xind, yind, zind, vxind, vyind, vzind)
 
 # Select the region right under the indenter:
-region(r_under_ind, block, xind - 0.7*cellsize, xind + 0.7*cellsize, hLy - cellsize, INF, zind - 0.7*cellsize, zind + 0.7*cellsize)
+region(r_under_ind, block, xind - 0.15*cellsize, xind + 0.15*cellsize, hLy - 0.15*cellsize, INF, zind - 0.12*cellsize, zind + 0.12*cellsize)
 group(g_under_ind_p, particles, region, r_under_ind, solid, solid1)
 
 y_under_ind  = xcm(g_under_ind_p, y)
@@ -122,14 +122,14 @@ dump(dump1, all, particle/gz, dumping_interval, dump_p.*.LAMMPS.gz, x, y, z, vx,
 #dump(dump2, all, grid/gz, dumping_interval, dump_g.*.LAMMPS.gz, x, y, z)
 
 #----------- RUN --------------------#
-dt_factor(1)
+dt_factor(0.3)
 
 set_output(N_log)
 log_modify(custom, step, dt, time, dxind, dyind, indenter_x, indenter_y, penetration)
 #plot(ind, N_log, yind, indenter_y)
 
 max_depth = 0.041
-run_while(dyind > -max_depth)
+run_while(dy_under_ind > -max_depth)
 
 t1    = evaluate(time)
 
