@@ -65,6 +65,7 @@ private:
   int set_output(vector<string>);
   int log_modify(vector<string>);
   int method(vector<string>);
+  int scheme(vector<string>);
   int fix(vector<string>);
   int set_dt_factor(vector<string>);
   int set_dt(vector<string>);

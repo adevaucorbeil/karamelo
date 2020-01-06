@@ -11,27 +11,28 @@
  *
  * ----------------------------------------------------------------------- */
 
-#include "mpm.h"
 #include "input.h"
-#include "output.h"
-#include "style_command.h"
 #include "domain.h"
-#include "material.h"
-#include "group.h"
-#include "update.h"
-#include "log.h"
-#include "var.h" 
-#include "modify.h"
-#include "universe.h"
 #include "error.h"
-#include <iostream>
-#include <fstream>
-#include <string.h>
-#include <math.h>
-#include <stack>
-#include <map>
-#include <mpi.h>
+#include "group.h"
+#include "log.h"
+#include "material.h"
+#include "modify.h"
 #include "mpi_wrappers.h"
+#include "mpm.h"
+#include "output.h"
+#include "scheme.h"
+#include "style_command.h"
+#include "universe.h"
+#include "update.h"
+#include "var.h"
+#include <fstream>
+#include <iostream>
+#include <map>
+#include <math.h>
+#include <mpi.h>
+#include <stack>
+#include <string.h>
 
 #define DELTALINE 256
 #define DELTA 4
@@ -248,6 +249,8 @@ Var Input::evaluate_function(string func, string arg){
     return Var(log_modify(args));
   if (func.compare("method") == 0)
     return Var(method(args));
+  if (func.compare("scheme") == 0)
+    return Var(scheme(args));
   if (func.compare("fix") == 0)
     return Var(fix(args));
   if (func.compare("dt_factor") == 0)
@@ -731,6 +734,11 @@ int Input::log_modify(vector<string> args) {
 
 int Input::method(vector<string> args) {
   update->create_method(args);
+  return 0;
+}
+
+int Input::scheme(vector<string> args) {
+  update->create_scheme(args);
   return 0;
 }
 

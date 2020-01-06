@@ -73,7 +73,7 @@ void Update::set_dt(vector<string> args){
 
 void Update::create_scheme(vector<string> args){
   if (args.size() < 1) {
-    error->all(FLERR, "Illegal dt_factor command: not enough arguments.\n");
+    error->all(FLERR, "Illegal scheme command: not enough arguments.\n");
   }
 
   new_scheme(args);

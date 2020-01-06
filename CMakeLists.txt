@@ -11,7 +11,7 @@ include_directories(${MPI_INCLUDE_PATH})
 include_directories(${PROJECT_SOURCE_DIR})
 
 
-file(GLOB MyCSources *.cpp)
+file(GLOB MyCSources src/*.cpp)
 add_executable(karamelo ${MyCSources})
 
 find_package(Boost 1.67.0 COMPONENTS system filesystem)
