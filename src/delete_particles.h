@@ -20,7 +20,7 @@ CommandStyle(delete_particles,DeleteParticles)
 #ifndef MPM_DELETE_PARTICLES_H
 #define MPM_DELETE_PARTICLES_H
 
-#include "var.h"
+#include <vector>
 #include "pointers.h"
 
 class DeleteParticles : protected Pointers {
