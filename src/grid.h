@@ -50,6 +50,8 @@ class Grid : protected Pointers {
 
   int nshared;           // number of nodes that are shared (ghosts in other CPUs
   vector<tagint> shared; // tag of all shared nodes
+  map<int, vector<tagint>> dest_nshared;   // for each CPU, list the tags of shared nodes
+  map<int, vector<tagint>> origin_nshared; // for each CPU, list the tags of ghost nodes
 
   vector<int> nowner;    // which CPU owns each node (universe->me for local nodes, other CPU for ghost nodes
 
@@ -77,6 +79,7 @@ class Grid : protected Pointers {
   void init(double*, double*);
 
   void reduce_mass_ghost_nodes();
+  void reduce_mass_ghost_nodes_old();
   void reduce_ghost_nodes(bool only_v = false);
   void update_grid_velocities();
   void update_grid_positions();
