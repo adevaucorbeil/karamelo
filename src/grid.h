@@ -81,6 +81,7 @@ class Grid : protected Pointers {
   void reduce_mass_ghost_nodes();
   void reduce_mass_ghost_nodes_old();
   void reduce_ghost_nodes(bool only_v = false);
+  void reduce_ghost_nodes_old(bool only_v = false);
   void update_grid_velocities();
   void update_grid_positions();
 };
