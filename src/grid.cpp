@@ -83,7 +83,7 @@ void Grid::init(double *solidlo, double *solidhi){
   std::vector<double> x2plot, y2plot;
 #endif
 
-  cout << "In Grid::init()\n";
+  cout << "In Grid::init() with proc " << universe->me << "\n";
   bool cubic = false;
   bool bernstein = false;
   double h = cellsize;

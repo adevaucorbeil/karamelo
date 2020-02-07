@@ -364,7 +364,9 @@ void Domain::set_dimension(vector<string> args) {
   }
 
   universe->set_proc_grid();
-  grid->init(boxlo, boxhi);
+  if (!update->method->is_TL) {
+    grid->init(boxlo, boxhi);
+  }
   created = true;
 }
 
