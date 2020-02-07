@@ -46,8 +46,6 @@ Domain::Domain(MPM *mpm) : Pointers(mpm)
   plt::figure_size(1200, 780);
 #endif
 
-  grid = new Grid(mpm);
-
 #define REGION_CLASS
 #define RegionStyle(key, Class) (*region_map)[#key] = &region_creator<Class>;
 #include "style_region.h"
@@ -357,10 +355,12 @@ void Domain::set_dimension(vector<string> args) {
     boxhi[2] = (double)input->parsev(args[++m]);
   }
 
-  grid->cellsize = (double)input->parsev(args[++m]);
+  if (!update->method->is_TL) {
+    grid->cellsize = (double)input->parsev(args[++m]);
 
-  if (grid->cellsize < 0) {
-    error->all(FLERR, "Error: cellsize negative! You gave: " + to_string(grid->cellsize) + "\n.");
+    if (grid->cellsize < 0) {
+      error->all(FLERR, "Error: cellsize negative! You gave: " + to_string(grid->cellsize) + "\n.");
+    }
   }
 
   universe->set_proc_grid();
