@@ -71,13 +71,12 @@ Grid::Grid(MPM *mpm) :
 
 }
 
-Grid::~Grid()
-{
+Grid::~Grid() {
   // Destroy MPI type:
   MPI_Type_free(&Pointtype);
 }
 
-void Grid::init(double *solidlo, double *solidhi){
+void Grid::init(double *solidlo, double *solidhi) {
 
 #ifdef DEBUG
   std::vector<double> x2plot, y2plot;
@@ -88,8 +87,9 @@ void Grid::init(double *solidlo, double *solidhi){
   bool bernstein = false;
   double h = cellsize;
 
-  if (update->method_shape_function.compare("cubic-spline")==0) cubic = true;
-  if (update->method_shape_function.compare("Bernstein-quadratic")==0) {
+  if (update->method_shape_function.compare("cubic-spline") == 0)
+    cubic = true;
+  if (update->method_shape_function.compare("Bernstein-quadratic") == 0) {
     bernstein = true;
     h /= 2;
   }
@@ -101,79 +101,122 @@ void Grid::init(double *solidlo, double *solidhi){
   if (update->method->is_TL) {
     boundlo = solidlo;
     boundhi = solidhi;
-  }
-  else {
+  } else {
     boundlo = domain->boxlo;
     boundhi = domain->boxhi;
   }
 
-
- double Loffsetlo[3] = {MAX(0.0, sublo[0] - boundlo[0]),
-			MAX(0.0, sublo[1] - boundlo[1]),
-			MAX(0.0, sublo[2] - boundlo[2])};
+  double Loffsetlo[3] = {MAX(0.0, sublo[0] - boundlo[0]),
+                         MAX(0.0, sublo[1] - boundlo[1]),
+                         MAX(0.0, sublo[2] - boundlo[2])};
 
   double Loffsethi[3] = {MIN(0.0, subhi[0] - boundhi[0]),
-			 MIN(0.0, subhi[1] - boundhi[1]),
-			 MIN(0.0, subhi[2] - boundhi[2])};
+                         MIN(0.0, subhi[1] - boundhi[1]),
+                         MIN(0.0, subhi[2] - boundhi[2])};
 
-  if (Loffsethi[0] > -1.0e-12) Loffsethi[0] = 0;
-  if (Loffsethi[1] > -1.0e-12) Loffsethi[1] = 0;
-  if (Loffsethi[2] > -1.0e-12) Loffsethi[2] = 0;
+  if (Loffsethi[0] > -1.0e-12)
+    Loffsethi[0] = 0;
+  if (Loffsethi[1] > -1.0e-12)
+    Loffsethi[1] = 0;
+  if (Loffsethi[2] > -1.0e-12)
+    Loffsethi[2] = 0;
 
-  int noffsetlo[3] = {(int) ceil(Loffsetlo[0]/h),
-		      (int) ceil(Loffsetlo[1]/h),
-		      (int) ceil(Loffsetlo[2]/h)};
+  int noffsetlo[3] = {(int)ceil(Loffsetlo[0] / h), (int)ceil(Loffsetlo[1] / h),
+                      (int)ceil(Loffsetlo[2] / h)};
 
-  int noffsethi[3] = {(int) ceil(-Loffsethi[0]/h),
-		      (int) ceil(-Loffsethi[1]/h),
-		      (int) ceil(-Loffsethi[2]/h)};
+  int noffsethi[3] = {(int)ceil(-Loffsethi[0] / h),
+                      (int)ceil(-Loffsethi[1] / h),
+                      (int)ceil(-Loffsethi[2] / h)};
 
-  if (universe->procneigh[0][0] >= 0 && abs(boundlo[0]+ noffsetlo[0]*h - sublo[0])<1.0e-12) {
+  if (universe->procneigh[0][0] >= 0 &&
+      abs(boundlo[0] + noffsetlo[0] * h - sublo[0]) < 1.0e-12) {
     // Some nodes would fall exactly on the subdomain lower x boundary
     // they should belong to procneigh[0][0]
     noffsetlo[0]++;
   }
-  if (domain->dimension >= 2 && universe->procneigh[1][0] >= 0 && abs(boundlo[1]+ noffsetlo[1]*h - sublo[1])<1.0e-12) {
+  if (domain->dimension >= 2 && universe->procneigh[1][0] >= 0 &&
+      abs(boundlo[1] + noffsetlo[1] * h - sublo[1]) < 1.0e-12) {
     // Some nodes would fall exactly on the subdomain lower y boundary
     // they should belong to procneigh[1][0]
     noffsetlo[1]++;
   }
-  if (domain->dimension == 3 && universe->procneigh[2][0] >= 0 && abs(boundlo[2]+ noffsetlo[2]*h - sublo[2])<1.0e-12) {
-    // Some nodes would fall exactly on the subdomain lower x boundary
+  if (domain->dimension == 3 && universe->procneigh[2][0] >= 0 &&
+      abs(boundlo[2] + noffsetlo[2] * h - sublo[2]) < 1.0e-12) {
+    // Some nodes would fall exactly on the subdomain lower z boundary
     // they should belong to procneigh[2][0]
     noffsetlo[2]++;
   }
 
-  double Lx = (boundhi[0] - boundlo[0]) - (noffsetlo[0] + noffsethi[0])*h;
+  // double Lx = (boundhi[0] - boundlo[0]) - (noffsetlo[0] + noffsethi[0]) * h;
 
+  // nx = ((int)(Lx / h)) + 1;
+  // if (universe->procneigh[0][1] >= 0)
+  //   while ((nx * h <= Lx + 0.5 * h) &&
+  //          (boundlo[0] + (noffsetlo[0] + nx) * h <= subhi[0]))
+  //     nx++;
+  // else
+  //   while (nx * h <= Lx + 0.5 * h)
+  //     nx++;
 
-  nx = ((int) (Lx/h))+1;
-  if (universe->procneigh[0][1]>=0)
-    while ((nx*h <= Lx+0.5*h) && (boundlo[0] + (noffsetlo[0] + nx)*h <= subhi[0])) nx++;
-  else
-    while (nx*h <= Lx+0.5*h) nx++;
+  // if (domain->dimension >= 2) {
+  //   double Ly = (boundhi[1] - boundlo[1]) - (noffsetlo[1] + noffsethi[1]) * h;
+  //   ny = ((int)(Ly / h)) + 1;
+  //   if (universe->procneigh[1][1] >= 0)
+  //     while ((ny * h <= Ly + 0.5 * h) &&
+  //            (boundlo[1] + (noffsetlo[1] + ny) * h <= subhi[1]))
+  //       ny++;
+  //   else
+  //     while (ny * h <= Ly + 0.5 * h)
+  //       ny++;
+  // } else {
+  //   ny = 1;
+  // }
+
+  // if (domain->dimension == 3) {
+  //   double Lz = (boundhi[2] - boundlo[2]) - (noffsetlo[2] + noffsethi[2]) * h;
+  //   nz = ((int)(Lz / h)) + 1;
+  //   if (universe->procneigh[2][1] >= 0)
+  //     while ((nz * h <= Lz + 0.5 * h) &&
+  //            (boundlo[2] + (noffsetlo[2] + nz) * h <= subhi[2]))
+  //       nz++;
+  //   else
+  //     while (nz * h <= Lz + 0.5 * h)
+  //       nz++;
+  // } else {
+  //   nz = 1;
+  // }
+
+  if (universe->procneigh[0][0] == -1) {
+    nx = noffsethi[0] + noffsetlo[0];
+  } else {
+    nx = noffsethi[0] + noffsetlo[0] - 1;
+    while (boundlo[0] + h * (noffsetlo[0] + nx - 0.5) < boundhi[0])
+      nx++;
+  }
 
   if (domain->dimension >= 2) {
-    double Ly = (boundhi[1] - boundlo[1]) - (noffsetlo[1] + noffsethi[1])*h;
-    ny = ((int) (Ly/h))+1;
-    if (universe->procneigh[1][1]>=0)
-      while ((ny*h <= Ly+0.5*h) && (boundlo[1] + (noffsetlo[1] + ny)*h <= subhi[1])) ny++;
-    else
-      while (ny*h <= Ly+0.5*h) ny++;
-   } else {
+    if (universe->procneigh[1][0] == -1) {
+      ny = noffsethi[1] + noffsetlo[1];
+    } else {
+      ny = noffsethi[1] + noffsetlo[1] - 1;
+      while (boundlo[1] + h * (noffsetlo[1] + ny - 0.5) < boundhi[1])
+	ny++;
+    }
+  } else {
     ny = 1;
-   }
+  }
 
   if (domain->dimension == 3) {
-    double Lz = (boundhi[2] - boundlo[2]) - (noffsetlo[2] + noffsethi[2])*h;
-    nz = ((int) (Lz/h))+1;
-    if (universe->procneigh[2][1]>=0)
-      while ((nz*h <= Lz+0.5*h) && (boundlo[2] + (noffsetlo[2] + nz)*h <= subhi[2])) nz++;
-    else
-      while (nz*h <= Lz+0.5*h) nz++;
-   } else {
+    if (universe->procneigh[2][0] == -1) {
+      nz = noffsethi[2] + noffsetlo[2];
+    } else {
+      nz = noffsethi[2] + noffsetlo[2] - 1;
+      while (boundlo[2] + h * (noffsetlo[2] + nz - 0.5) < boundhi[2])
+	nz++;
+    }
+  } else {
     nz = 1;
-   }
+  }
 
   // Create nodes that are inside the local subdomain:
   nnodes_local = nx*ny*nz;
