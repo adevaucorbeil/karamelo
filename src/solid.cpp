@@ -190,8 +190,7 @@ void Solid::options(vector<string> *args, vector<string>::iterator it)
 
     it++;
 
-    if (grid->cellsize == 0)
-      grid->setup(*it); // set the grid cellsize
+    grid->setup(*it); // set the grid cellsize
 
     it++;
     T0 = input->parsev(*it); // set initial temperature
@@ -997,25 +996,15 @@ void Solid::update_deformation_gradient()
     {
       // Only done if not Neo-Hookean:
 
-      // TLMPM. L is computed from Fdot
-      if (tl)
-      {
-        // cout << Finv[ip] << endl;
-        // pocout << Fdot[ip] << endl;
-        L[ip] = Fdot[ip] * Finv[ip];
-
-        // if  ( domain->axisymmetric == true ) L[ip](2, 2) += vn[in][0] *
-        // wf_pn[ip][j] / x[ip][0];
-      }
-      // else
-      //   Fdot[ip] = L[ip]*F[ip];
-
       status = PolDec(
           F[ip], R[ip], U,
           false); // polar decomposition of the deformation gradient, F = R * U
 
-      if (tl)
+      if (tl) {
+	// In TLMPM. L is computed from Fdot:
+	L[ip] = Fdot[ip] * Finv[ip];
         D[ip] = 0.5 * (R[ip].transpose() * (L[ip] + L[ip].transpose()) * R[ip]);
+      }
       else
         D[ip] = 0.5 * (L[ip] + L[ip].transpose());
 

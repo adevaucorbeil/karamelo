@@ -345,18 +345,28 @@ void Grid::init(double *solidlo, double *solidhi){
 #endif
 
   // Send over the tag and coordinates of the nodes to send:
+  int size_n;
+  vector<Point> tmp_shared;
+
   for (int sproc = 0; sproc < universe->nprocs; sproc++) {
-    int size_nr = 0;
+    if (sproc == universe->me) {
+      size_n = ns.size();
+    } else {
+      size_n = 0;
+    }
+
+    MPI_Bcast(&size_n, 1, MPI_INT, sproc, universe->uworld);
 
     if (sproc == universe->me) {
-      int size_ns = ns.size();
+      tmp_shared = ns;
+    } else {
+      tmp_shared.resize(size_n);
+    }
 
-      for (int rproc = 0; rproc < universe->nprocs; rproc++) {
-        if (rproc != universe->me) {
-          MPI_Send(&size_ns, 1, MPI_INT, rproc, 0, universe->uworld);
-          MPI_Send(ns.data(), size_ns, Pointtype, rproc, 0, MPI_COMM_WORLD);
-        }
-      }
+    MPI_Bcast(tmp_shared.data(), size_n, Pointtype, sproc, universe->uworld);
+
+
+    if (sproc == universe->me) {
 
       // Receive destination lists:
 
@@ -378,26 +388,18 @@ void Grid::init(double *solidlo, double *solidhi){
         }
       }
     } else {
-      MPI_Recv(&size_nr, 1, MPI_INT, sproc, 0, universe->uworld,
-               MPI_STATUS_IGNORE);
-
-      Point buf_recv[size_nr];
-
-      MPI_Recv(&buf_recv[0], size_nr, Pointtype, sproc, 0, MPI_COMM_WORLD,
-               MPI_STATUS_IGNORE);
-
       vector<tagint> origin_gnodes;
 
       // Check if the nodes received are in the subdomain:
-      for (int i_recv = 0; i_recv < size_nr; i_recv++) {
-        if (domain->inside_subdomain_extended(buf_recv[i_recv].x[0],
-                                              buf_recv[i_recv].x[1],
-                                              buf_recv[i_recv].x[2], delta)) {
-          gnodes.push_back(buf_recv[i_recv]);
-          origin_gnodes.push_back(buf_recv[i_recv].tag);
+      for (int i_recv = 0; i_recv < size_n; i_recv++) {
+        if (domain->inside_subdomain_extended(tmp_shared[i_recv].x[0],
+                                              tmp_shared[i_recv].x[1],
+                                              tmp_shared[i_recv].x[2], delta)) {
+          gnodes.push_back(tmp_shared[i_recv]);
+          origin_gnodes.push_back(tmp_shared[i_recv].tag);
 #ifdef DEBUG
           cout << "proc " << universe->me << " received node "
-               << buf_recv[i_recv].tag << " from proc " << sproc << ".\n";
+               << tmp_shared[i_recv].tag << " from proc " << sproc << ".\n";
 #endif
         }
       }
