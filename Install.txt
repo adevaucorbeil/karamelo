@@ -7,7 +7,7 @@ sudo apt install make gcc g++ libz-dev cmake libopenmpi-dev libeigen3-dev libboo
 2. Download and install the extra external dependencies:
 2.1 Matplotlib-cpp:
 
-git clone git@github.com:lava/matplotlib-cpp.git
+git clone https://github.com/lava/matplotlib-cpp.git
 
 Select the right commit that allows karamelo to run without problems. More recent commits have been found to be buggy:
 
