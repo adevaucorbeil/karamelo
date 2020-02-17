@@ -71,25 +71,25 @@ Grid::Grid(MPM *mpm) :
 
 }
 
-Grid::~Grid()
-{
+Grid::~Grid() {
   // Destroy MPI type:
   MPI_Type_free(&Pointtype);
 }
 
-void Grid::init(double *solidlo, double *solidhi){
+void Grid::init(double *solidlo, double *solidhi) {
 
 #ifdef DEBUG
   std::vector<double> x2plot, y2plot;
 #endif
 
-  cout << "In Grid::init()\n";
+  cout << "In Grid::init() with proc " << universe->me << "\n";
   bool cubic = false;
   bool bernstein = false;
   double h = cellsize;
 
-  if (update->method_shape_function.compare("cubic-spline")==0) cubic = true;
-  if (update->method_shape_function.compare("Bernstein-quadratic")==0) {
+  if (update->method_shape_function.compare("cubic-spline") == 0)
+    cubic = true;
+  if (update->method_shape_function.compare("Bernstein-quadratic") == 0) {
     bernstein = true;
     h /= 2;
   }
@@ -101,83 +101,43 @@ void Grid::init(double *solidlo, double *solidhi){
   if (update->method->is_TL) {
     boundlo = solidlo;
     boundhi = solidhi;
-  }
-  else {
+  } else {
     boundlo = domain->boxlo;
     boundhi = domain->boxhi;
   }
 
+  double Loffsetlo[3] = {MAX(0.0, sublo[0] - boundlo[0]),
+                         MAX(0.0, sublo[1] - boundlo[1]),
+                         MAX(0.0, sublo[2] - boundlo[2])};
+  double Loffsethi_[3] = {MAX(0.0, MIN(subhi[0], boundhi[0]) - boundlo[0]),
+                          MAX(0.0, MIN(subhi[1], boundhi[1]) - boundlo[1]),
+                          MAX(0.0, MIN(subhi[2], boundhi[2]) - boundlo[2])};
 
- double Loffsetlo[3] = {MAX(0.0, sublo[0] - boundlo[0]),
-			MAX(0.0, sublo[1] - boundlo[1]),
-			MAX(0.0, sublo[2] - boundlo[2])};
+  int noffsetlo[3] = {(int)ceil(Loffsetlo[0] / h), (int)ceil(Loffsetlo[1] / h),
+                      (int)ceil(Loffsetlo[2] / h)};
 
-  double Loffsethi[3] = {MIN(0.0, subhi[0] - boundhi[0]),
-			 MIN(0.0, subhi[1] - boundhi[1]),
-			 MIN(0.0, subhi[2] - boundhi[2])};
+  int noffsethi_[3] = {(int)ceil(Loffsethi_[0] / h),
+                       (int)ceil(Loffsethi_[1] / h),
+                       (int)ceil(Loffsethi_[2] / h)};
 
-  if (Loffsethi[0] > -1.0e-12) Loffsethi[0] = 0;
-  if (Loffsethi[1] > -1.0e-12) Loffsethi[1] = 0;
-  if (Loffsethi[2] > -1.0e-12) Loffsethi[2] = 0;
-
-  int noffsetlo[3] = {(int) ceil(Loffsetlo[0]/h),
-		      (int) ceil(Loffsetlo[1]/h),
-		      (int) ceil(Loffsetlo[2]/h)};
-
-  int noffsethi[3] = {(int) ceil(-Loffsethi[0]/h),
-		      (int) ceil(-Loffsethi[1]/h),
-		      (int) ceil(-Loffsethi[2]/h)};
-
-  if (universe->procneigh[0][0] >= 0 && abs(boundlo[0]+ noffsetlo[0]*h - sublo[0])<1.0e-12) {
+  if (universe->procneigh[0][0] >= 0 &&
+      abs(boundlo[0] + noffsetlo[0] * h - sublo[0]) < 1.0e-12) {
     // Some nodes would fall exactly on the subdomain lower x boundary
     // they should belong to procneigh[0][0]
     noffsetlo[0]++;
   }
-  if (domain->dimension >= 2 && universe->procneigh[1][0] >= 0 && abs(boundlo[1]+ noffsetlo[1]*h - sublo[1])<1.0e-12) {
+  if (domain->dimension >= 2 && universe->procneigh[1][0] >= 0 &&
+      abs(boundlo[1] + noffsetlo[1] * h - sublo[1]) < 1.0e-12) {
     // Some nodes would fall exactly on the subdomain lower y boundary
     // they should belong to procneigh[1][0]
     noffsetlo[1]++;
   }
-  if (domain->dimension == 3 && universe->procneigh[2][0] >= 0 && abs(boundlo[2]+ noffsetlo[2]*h - sublo[2])<1.0e-12) {
-    // Some nodes would fall exactly on the subdomain lower x boundary
+  if (domain->dimension == 3 && universe->procneigh[2][0] >= 0 &&
+      abs(boundlo[2] + noffsetlo[2] * h - sublo[2]) < 1.0e-12) {
+    // Some nodes would fall exactly on the subdomain lower z boundary
     // they should belong to procneigh[2][0]
     noffsetlo[2]++;
   }
-
-  double Lx = (boundhi[0] - boundlo[0]) - (noffsetlo[0] + noffsethi[0])*h;
-
-
-  nx = ((int) (Lx/h))+1;
-  if (universe->procneigh[0][1]>=0)
-    while ((nx*h <= Lx+0.5*h) && (boundlo[0] + (noffsetlo[0] + nx)*h <= subhi[0])) nx++;
-  else
-    while (nx*h <= Lx+0.5*h) nx++;
-
-  if (domain->dimension >= 2) {
-    double Ly = (boundhi[1] - boundlo[1]) - (noffsetlo[1] + noffsethi[1])*h;
-    ny = ((int) (Ly/h))+1;
-    if (universe->procneigh[1][1]>=0)
-      while ((ny*h <= Ly+0.5*h) && (boundlo[1] + (noffsetlo[1] + ny)*h <= subhi[1])) ny++;
-    else
-      while (ny*h <= Ly+0.5*h) ny++;
-   } else {
-    ny = 1;
-   }
-
-  if (domain->dimension == 3) {
-    double Lz = (boundhi[2] - boundlo[2]) - (noffsetlo[2] + noffsethi[2])*h;
-    nz = ((int) (Lz/h))+1;
-    if (universe->procneigh[2][1]>=0)
-      while ((nz*h <= Lz+0.5*h) && (boundlo[2] + (noffsetlo[2] + nz)*h <= subhi[2])) nz++;
-    else
-      while (nz*h <= Lz+0.5*h) nz++;
-   } else {
-    nz = 1;
-   }
-
-  // Create nodes that are inside the local subdomain:
-  nnodes_local = nx*ny*nz;
-  grow(nnodes_local);
 
   double Lx_global = solidhi[0]-solidlo[0];//+2*cellsize;
 
@@ -200,53 +160,31 @@ void Grid::init(double *solidlo, double *solidhi){
     nz_global = 1;
   }
 
-//   // Need to receive from lower neighbouring CPUs what their nx, ny, and nz:
+  nx = noffsethi_[0] - noffsetlo[0];
+  ny = noffsethi_[1] - noffsetlo[1];
+  nz = noffsethi_[2] - noffsetlo[2];
 
-//   int nx0, ny0, nz0, nx_temp, ny_temp, nz_temp;
-//   nx0 = ny0 = nz0 = 0;
+  if (universe->procneigh[0][1] == -1) {
+    while (boundlo[0] + h * (noffsetlo[0] + nx - 0.5) < MIN(subhi[0], boundhi[0]))
+      nx++;
+  }
+  if (universe->procneigh[1][1] == -1) {
+    while (boundlo[1] + h * (noffsetlo[1] + ny - 0.5) < MIN(subhi[1], boundhi[1]))
+      ny++;
+  }
+  if (universe->procneigh[2][1] == -1) {
+    while (boundlo[2] + h * (noffsetlo[2] + nz - 0.5) < MIN(subhi[2], boundhi[2]))
+      nz++;
+  }
 
-//   for (int iproc=0; iproc<universe->nprocs; iproc++){
-//     if (iproc == universe->me) {
-//       if (universe->procneigh[0][1] >= 0) {
-// 	// Send nx to the neighbouring CPU in ascending x
-// 	nx_temp = nx0 + nx;
-// 	MPI_Send(&nx_temp, 1, MPI_INT, universe->procneigh[0][1], 0, universe->uworld);
-//       }
-
-//       if ((domain->dimension >= 2) && (universe->procneigh[1][1] >= 0)){
-// 	// Send ny to the neighbouring CPU in ascending y
-// 	ny_temp = ny0 + ny;
-// 	MPI_Send(&ny_temp, 1, MPI_INT, universe->procneigh[1][1], 0, universe->uworld);
-//       }
-
-//       if ((domain->dimension == 3) && (universe->procneigh[2][1] >= 0)){
-// 	// Send nz to the neighbouring CPU in ascending z
-// 	nz_temp = nz0 + nz;
-// 	MPI_Send(&nz_temp, 1, MPI_INT, universe->procneigh[2][1], 0, universe->uworld);
-//       }
-//     }
-
-//     if (iproc == universe->procneigh[0][0]) {
-//       // Receive nx0 from the neighbouring CPU in descending x
-//       MPI_Recv(&nx0, 1, MPI_INT, iproc, 0, universe->uworld, MPI_STATUS_IGNORE);
-//     }
-//     if ((domain->dimension >= 2) && iproc == universe->procneigh[1][0]) {
-//       // Receive ny0 from the neighbouring CPU in descending y
-//       MPI_Recv(&ny0, 1, MPI_INT, iproc, 0, universe->uworld, MPI_STATUS_IGNORE);
-//     }
-//     if ((domain->dimension == 3) && iproc == universe->procneigh[2][0]) {
-//       // Receive nz0 from the neighbouring CPU in descending y
-//       MPI_Recv(&nz0, 1, MPI_INT, iproc, 0, universe->uworld, MPI_STATUS_IGNORE);
-//     }
-//   }
+  // Create nodes that are inside the local subdomain:
+  nnodes_local = nx*ny*nz;
+  grow(nnodes_local);
 
 #ifdef DEBUG
   cout << "proc " << universe->me << " nx=" << nx << "\tny=" << ny << "\tnz=" << nz <<endl;
   cout << "proc " << universe->me << " noffsetlo=[" << noffsetlo[0] << "," << noffsetlo[1] << "," << noffsetlo[2] << "]\n";
-  cout << "proc " << universe->me << " noffsethi=[" << noffsethi[0] << "," << noffsethi[1] << "," << noffsethi[2] << "]\n";
-//   if (noffsetlo[0]!=nx0) error->all(FLERR, "noffsetlo[0]!=nx0:" + to_string(noffsetlo[0]) + "!=" + to_string(nx0) + "\n");
-//   if (noffsetlo[1]!=ny0) error->all(FLERR, "noffsetlo[1]!=ny0:" + to_string(noffsetlo[1]) + "!=" + to_string(ny0) + "\n");
-//   if (noffsetlo[2]!=nz0) error->all(FLERR, "noffsetlo[2]!=nz0:" + to_string(noffsetlo[2]) + "!=" + to_string(nz0) + "\n");
+  cout << "proc " << universe->me << " noffsethi_=[" << noffsethi_[0] << "," << noffsethi_[1] << "," << noffsethi_[2] << "]\n";
 #endif
 
   int l=0;
@@ -345,18 +283,28 @@ void Grid::init(double *solidlo, double *solidhi){
 #endif
 
   // Send over the tag and coordinates of the nodes to send:
+  int size_n;
+  vector<Point> tmp_shared;
+
   for (int sproc = 0; sproc < universe->nprocs; sproc++) {
-    int size_nr = 0;
+    if (sproc == universe->me) {
+      size_n = ns.size();
+    } else {
+      size_n = 0;
+    }
+
+    MPI_Bcast(&size_n, 1, MPI_INT, sproc, universe->uworld);
 
     if (sproc == universe->me) {
-      int size_ns = ns.size();
+      tmp_shared = ns;
+    } else {
+      tmp_shared.resize(size_n);
+    }
 
-      for (int rproc = 0; rproc < universe->nprocs; rproc++) {
-        if (rproc != universe->me) {
-          MPI_Send(&size_ns, 1, MPI_INT, rproc, 0, universe->uworld);
-          MPI_Send(ns.data(), size_ns, Pointtype, rproc, 0, MPI_COMM_WORLD);
-        }
-      }
+    MPI_Bcast(tmp_shared.data(), size_n, Pointtype, sproc, universe->uworld);
+
+
+    if (sproc == universe->me) {
 
       // Receive destination lists:
 
@@ -378,26 +326,18 @@ void Grid::init(double *solidlo, double *solidhi){
         }
       }
     } else {
-      MPI_Recv(&size_nr, 1, MPI_INT, sproc, 0, universe->uworld,
-               MPI_STATUS_IGNORE);
-
-      Point buf_recv[size_nr];
-
-      MPI_Recv(&buf_recv[0], size_nr, Pointtype, sproc, 0, MPI_COMM_WORLD,
-               MPI_STATUS_IGNORE);
-
       vector<tagint> origin_gnodes;
 
       // Check if the nodes received are in the subdomain:
-      for (int i_recv = 0; i_recv < size_nr; i_recv++) {
-        if (domain->inside_subdomain_extended(buf_recv[i_recv].x[0],
-                                              buf_recv[i_recv].x[1],
-                                              buf_recv[i_recv].x[2], delta)) {
-          gnodes.push_back(buf_recv[i_recv]);
-          origin_gnodes.push_back(buf_recv[i_recv].tag);
+      for (int i_recv = 0; i_recv < size_n; i_recv++) {
+        if (domain->inside_subdomain_extended(tmp_shared[i_recv].x[0],
+                                              tmp_shared[i_recv].x[1],
+                                              tmp_shared[i_recv].x[2], delta)) {
+          gnodes.push_back(tmp_shared[i_recv]);
+          origin_gnodes.push_back(tmp_shared[i_recv].tag);
 #ifdef DEBUG
           cout << "proc " << universe->me << " received node "
-               << buf_recv[i_recv].tag << " from proc " << sproc << ".\n";
+               << tmp_shared[i_recv].tag << " from proc " << sproc << ".\n";
 #endif
         }
       }
