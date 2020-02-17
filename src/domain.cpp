@@ -325,6 +325,8 @@ void Domain::set_dimension(vector<string> args) {
     error->all(FLERR, error_str);
   }
 
+  if (!update->method->is_TL) grid = new Grid(mpm);
+
   int m = 0;
   int dim = (int)input->parsev(args[m]);
 
