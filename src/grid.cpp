@@ -208,11 +208,11 @@ void Grid::init(double *solidlo, double *solidhi) {
   nnodes_local = nx*ny*nz;
   grow(nnodes_local);
 
-  //#ifdef DEBUG
+  // #ifdef DEBUG
   cout << "proc " << universe->me << " nx=" << nx << "\tny=" << ny << "\tnz=" << nz <<endl;
   cout << "proc " << universe->me << " noffsetlo=[" << noffsetlo[0] << "," << noffsetlo[1] << "," << noffsetlo[2] << "]\n";
   cout << "proc " << universe->me << " noffsethi_=[" << noffsethi_[0] << "," << noffsethi_[1] << "," << noffsethi_[2] << "]\n";
-  //#endif
+  // #endif
 
   int l=0;
   for (int i=0; i<nx; i++){
