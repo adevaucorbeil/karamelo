@@ -116,9 +116,13 @@ void Grid::init(double *solidlo, double *solidhi) {
   int noffsetlo[3] = {(int)ceil(Loffsetlo[0] / h), (int)ceil(Loffsetlo[1] / h),
                       (int)ceil(Loffsetlo[2] / h)};
 
+  // cout << "1--- proc " << universe->me << " noffsetlo=[" << noffsetlo[0] << "," << noffsetlo[1] << "," << noffsetlo[2] << "]\n";
+
   int noffsethi_[3] = {(int)ceil(Loffsethi_[0] / h),
                        (int)ceil(Loffsethi_[1] / h),
                        (int)ceil(Loffsethi_[2] / h)};
+
+  // cout << "1--- proc " << universe->me << " noffsethi_=[" << noffsethi_[0] << "," << noffsethi_[1] << "," << noffsethi_[2] << "]\n";
 
   if (universe->procneigh[0][0] >= 0 &&
       abs(boundlo[0] + noffsetlo[0] * h - sublo[0]) < 1.0e-12) {
@@ -138,6 +142,21 @@ void Grid::init(double *solidlo, double *solidhi) {
     // they should belong to procneigh[2][0]
     noffsetlo[2]++;
   }
+
+  if (universe->procneigh[0][0] >= 0 &&
+      abs(boundlo[0] + noffsethi_[0] * h - subhi[0]) < 1.0e-12) {
+    noffsethi_[0]++;
+  }
+  if (domain->dimension >= 2 && universe->procneigh[1][1] >= 0 &&
+      abs(boundlo[1] + noffsethi_[1] * h - subhi[1]) < 1.0e-12) {
+    noffsethi_[1]++;
+  }
+  if (domain->dimension == 3 && universe->procneigh[2][1] >= 0 &&
+      abs(boundlo[2] + noffsethi_[2] * h - subhi[2]) < 1.0e-12) {
+    noffsethi_[2]++;
+  }
+  // cout << "2--- proc " << universe->me << " noffsetlo=[" << noffsetlo[0] << "," << noffsetlo[1] << "," << noffsetlo[2] << "]\n";
+  // cout << "2--- proc " << universe->me << " noffsethi_=[" << noffsethi_[0] << "," << noffsethi_[1] << "," << noffsethi_[2] << "]\n";
 
   double Lx_global = solidhi[0]-solidlo[0];//+2*cellsize;
 
@@ -181,11 +200,11 @@ void Grid::init(double *solidlo, double *solidhi) {
   nnodes_local = nx*ny*nz;
   grow(nnodes_local);
 
-#ifdef DEBUG
+  // #ifdef DEBUG
   cout << "proc " << universe->me << " nx=" << nx << "\tny=" << ny << "\tnz=" << nz <<endl;
   cout << "proc " << universe->me << " noffsetlo=[" << noffsetlo[0] << "," << noffsetlo[1] << "," << noffsetlo[2] << "]\n";
   cout << "proc " << universe->me << " noffsethi_=[" << noffsethi_[0] << "," << noffsethi_[1] << "," << noffsethi_[2] << "]\n";
-#endif
+  // #endif
 
   int l=0;
   for (int i=0; i<nx; i++){
