@@ -98,6 +98,12 @@ Solid::Solid(MPM *mpm, vector<string> args) : Pointers(mpm)
     grid = domain->grid;
   }
 
+  if (update->method->method_type.compare("APIC") == 0) {
+    apic = true;
+  } else {
+    apic = false;
+  }
+
   dtCFL = 1.0e22;
   vtot  = 0;
   mtot = 0;
@@ -246,11 +252,11 @@ void Solid::grow(int nparticles)
   L.resize(nparticles);
   F.resize(nparticles);
   R.resize(nparticles);
-  U.resize(nparticles);
   D.resize(nparticles);
   Finv.resize(nparticles);
   Fdot.resize(nparticles);
-  Di.resize(nparticles);
+  if (apic)
+    Di.resize(nparticles);
 
   vol0.resize(nparticles);
   vol.resize(nparticles);
@@ -928,7 +934,6 @@ void Solid::update_deformation_gradient()
     return;
 
   bool status, tl, lin, nh, vol_cpdi;
-  Eigen::Matrix3d U;
   Eigen::Matrix3d eye;
   eye.setIdentity();
 
@@ -1273,12 +1278,12 @@ void Solid::copy_particle(int i, int j) {
   L[j]                       = L[i];
   F[j]                       = F[i];
   R[j]                       = R[i];
-  U[j]                       = U[i];
   D[j]                       = D[i];
   Finv[j]                    = Finv[i];
   Fdot[j]                    = Fdot[i];
   J[j]                       = J[i];
-  Di[j]                      = Di[i];
+  if (apic)
+    Di[j]                      = Di[i];
 
   // if (method_type.compare("tlcpdi") == 0 || method_type.compare("ulcpdi") == 0)
   //   {
@@ -1908,11 +1913,11 @@ void Solid::populate(vector<string> args)
     L[i].setZero();
     F[i].setIdentity();
     R[i].setIdentity();
-    U[i].setZero();
     D[i].setZero();
     Finv[i].setZero();
     Fdot[i].setZero();
-    Di[i].setZero();
+    if (apic)
+      Di[i].setZero();
 
     J[i] = 1;
     mask[i] = 1;
@@ -2312,11 +2317,11 @@ void Solid::read_mesh(string fileName)
     L[i].setZero();
     F[i].setIdentity();
     R[i].setIdentity();
-    U[i].setZero();
     D[i].setZero();
     Finv[i].setZero();
     Fdot[i].setZero();
-    Di[i].setZero();
+    if (apic)
+      Di[i].setZero();
 
     J[i] = 1;
 

@@ -20,6 +20,8 @@
 class Method : protected Pointers {
  public:
   int style = 0;
+  string method_type;
+
   Method(class MPM *);
   virtual ~Method();
 

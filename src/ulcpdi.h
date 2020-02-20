@@ -28,7 +28,6 @@ MethodStyle(ulcpdi,ULCPDI)
 
 class ULCPDI : public Method {
  public:
-  string method_type;
   double FLIP;
   string shape_function;
 

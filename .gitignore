@@ -1,6 +1,6 @@
 /*.o
 /karamelo*
-/*~
+/**/*~
 /*.LAMMPS
 /examples/*/*.LAMMPS
 /examples/*.LAMMPS
