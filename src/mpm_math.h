@@ -101,6 +101,37 @@ static inline bool PolDec(Matrix3d M, Matrix3d &R, Matrix3d &T, bool scaleF) {
 	}
 }
 
+static inline bool PolDec(Matrix3d M, Matrix3d &R) {
+
+  JacobiSVD<Matrix3d> svd(M, ComputeFullU | ComputeFullV); // SVD(A) = U S V*
+  Vector3d S_eigenvalues = svd.singularValues();
+  Matrix3d S = svd.singularValues().asDiagonal();
+  Matrix3d U = svd.matrixU();
+  Matrix3d V = svd.matrixV();
+  Matrix3d eye;
+  eye.setIdentity();
+
+  // now do polar decomposition into M = R * T, where R is rotation
+  // and T is translation matrix
+  R = U * V.transpose();
+
+  if (R.determinant() < 0.0) { // this is an improper rotation
+    // identify the smallest entry in S and flip its sign
+    int imin;
+    S_eigenvalues.minCoeff(&imin);
+    S(imin, imin) *= -1.0;
+
+    R = M * V * S.inverse() *
+        V.transpose(); // recompute R using flipped stretch eigenvalues
+  }
+
+  if (R.determinant() > 0.0) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
 /*
  * Pseudo-inverse via SVD
  */

@@ -61,7 +61,6 @@ class Solid : protected Pointers {
   vector<Eigen::Matrix3d> L;                // velocity gradient matrix
   vector<Eigen::Matrix3d> F;                // deformation gradient matrix
   vector<Eigen::Matrix3d> R;                // Rotation matrix
-  vector<Eigen::Matrix3d> U;
   vector<Eigen::Matrix3d> D;                // symmetric part of L
   vector<Eigen::Matrix3d> Finv;             // inverse of the deformation gradient matrix
   vector<Eigen::Matrix3d> Fdot;             // rate of deformation gradient matrix
@@ -151,7 +150,7 @@ private:
            };
   
   double T0;                     // Initial temperature
-  bool is_TL;
+  bool is_TL, apic;
 };
 
 #endif

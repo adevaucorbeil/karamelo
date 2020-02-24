@@ -98,6 +98,12 @@ Solid::Solid(MPM *mpm, vector<string> args) : Pointers(mpm)
     grid = domain->grid;
   }
 
+  if (update->method->method_type.compare("APIC") == 0) {
+    apic = true;
+  } else {
+    apic = false;
+  }
+
   dtCFL = 1.0e22;
   vtot  = 0;
   mtot = 0;
@@ -190,8 +196,7 @@ void Solid::options(vector<string> *args, vector<string>::iterator it)
 
     it++;
 
-    if (grid->cellsize == 0)
-      grid->setup(*it); // set the grid cellsize
+    grid->setup(*it); // set the grid cellsize
 
     it++;
     T0 = input->parsev(*it); // set initial temperature
@@ -247,11 +252,11 @@ void Solid::grow(int nparticles)
   L.resize(nparticles);
   F.resize(nparticles);
   R.resize(nparticles);
-  U.resize(nparticles);
   D.resize(nparticles);
   Finv.resize(nparticles);
   Fdot.resize(nparticles);
-  Di.resize(nparticles);
+  if (apic)
+    Di.resize(nparticles);
 
   vol0.resize(nparticles);
   vol.resize(nparticles);
@@ -341,11 +346,11 @@ void Solid::compute_velocity_nodes(bool reset)
 
       if (mat->rigid && mass_rigid > 1.0e-12)
         grid->v_update[in] += vtemp_rigid / mass_rigid;
-      if (isnan(grid->v_update[in](0)))
-        cout << "in=" << in << "\tvn=[" << grid->v[in][0] << ", " << grid->v[in][1]
-             << ", " << grid->v[in][2] << "]\tvp=[" << v[ip][0] << ", " << v[ip][1]
-             << ", " << v[ip][2] << "],\tvn_update=[" << grid->v_update[in][0]
-             << ", " << grid->v_update[in][1] << ", " << grid->v_update[in][2] << "]\n";
+      // if (isnan(grid->v_update[in][0]))
+      //   cout << "in=" << in << "\tvn=[" << grid->v[in][0] << ", " << grid->v[in][1]
+      //        << ", " << grid->v[in][2] << "]\tvp=[" << v[ip][0] << ", " << v[ip][1]
+      //        << ", " << v[ip][2] << "],\tvn_update=[" << grid->v_update[in][0]
+      //        << ", " << grid->v_update[in][1] << ", " << grid->v_update[in][2] << "]\n";
     }
   }
 }
@@ -491,11 +496,11 @@ void Solid::compute_particle_velocities_and_positions()
       in = neigh_pn[ip][j];
       v_update[ip] += wf_pn[ip][j] * grid->v_update[in];
       x[ip] += update->dt * wf_pn[ip][j] * grid->v_update[in];
-      if (isnan(x[ip](0)))
-        cout << "ip=" << ip << "\tx=[" << x[ip](0) << "," << x[ip](1) << ","
-             << x[ip](2) << "]\tin=" << in << "\tvn_update=["
-             << grid->v_update[in](0) << "," << grid->v_update[in](1) << ","
-             << grid->v_update[in](2) << "]\twf_pn=" << wf_pn[ip][j] << "\n";
+      // if (isnan(x[ip](0)))
+      //   cout << "ip=" << ip << "\tx=[" << x[ip](0) << "," << x[ip](1) << ","
+      //        << x[ip](2) << "]\tin=" << in << "\tvn_update=["
+      //        << grid->v_update[in](0) << "," << grid->v_update[in](1) << ","
+      //        << grid->v_update[in](2) << "]\twf_pn=" << wf_pn[ip][j] << "\n";
 
       if (update_corners)
       {
@@ -929,7 +934,6 @@ void Solid::update_deformation_gradient()
     return;
 
   bool status, tl, lin, nh, vol_cpdi;
-  Eigen::Matrix3d U;
   Eigen::Matrix3d eye;
   eye.setIdentity();
 
@@ -991,43 +995,31 @@ void Solid::update_deformation_gradient()
       J[ip]   = F[ip].determinant();
       vol[ip] = J[ip] * vol0[ip];
     }
+
     rho[ip] = rho0[ip] / J[ip];
 
-    if (!nh)
-    {
+    if (!nh) {
       // Only done if not Neo-Hookean:
 
-      // TLMPM. L is computed from Fdot
-      if (tl)
-      {
-        // cout << Finv[ip] << endl;
-        // pocout << Fdot[ip] << endl;
+      if (tl) {
+        status = PolDec(F[ip], R[ip]); // polar decomposition of the deformation
+                                       // gradient, F = R * U
+
+        // In TLMPM. L is computed from Fdot:
         L[ip] = Fdot[ip] * Finv[ip];
-
-        // if  ( domain->axisymmetric == true ) L[ip](2, 2) += vn[in][0] *
-        // wf_pn[ip][j] / x[ip][0];
-      }
-      // else
-      //   Fdot[ip] = L[ip]*F[ip];
-
-      status = PolDec(
-          F[ip], R[ip], U,
-          false); // polar decomposition of the deformation gradient, F = R * U
-
-      if (tl)
         D[ip] = 0.5 * (R[ip].transpose() * (L[ip] + L[ip].transpose()) * R[ip]);
-      else
-        D[ip] = 0.5 * (L[ip] + L[ip].transpose());
 
-      if (!status)
-      {
-        cout << "Polar decomposition of deformation gradient failed for "
-                "particle "
-             << ip << ".\n";
-        cout << "F:" << endl << F[ip] << endl;
-        cout << "timestep" << endl << update->ntimestep << endl;
-	error->all(FLERR,"");
-      }
+        if (!status) {
+          cout << "Polar decomposition of deformation gradient failed for "
+                  "particle "
+               << ip << ".\n";
+          cout << "F:" << endl << F[ip] << endl;
+          cout << "timestep" << endl << update->ntimestep << endl;
+          error->all(FLERR, "");
+        }
+
+      } else
+        D[ip] = 0.5 * (L[ip] + L[ip].transpose());
     }
 
     // strain_increment[ip] = update->dt * D[ip];
@@ -1286,12 +1278,12 @@ void Solid::copy_particle(int i, int j) {
   L[j]                       = L[i];
   F[j]                       = F[i];
   R[j]                       = R[i];
-  U[j]                       = U[i];
   D[j]                       = D[i];
   Finv[j]                    = Finv[i];
   Fdot[j]                    = Fdot[i];
   J[j]                       = J[i];
-  Di[j]                      = Di[i];
+  if (apic)
+    Di[j]                      = Di[i];
 
   // if (method_type.compare("tlcpdi") == 0 || method_type.compare("ulcpdi") == 0)
   //   {
@@ -1921,11 +1913,11 @@ void Solid::populate(vector<string> args)
     L[i].setZero();
     F[i].setIdentity();
     R[i].setIdentity();
-    U[i].setZero();
     D[i].setZero();
     Finv[i].setZero();
     Fdot[i].setZero();
-    Di[i].setZero();
+    if (apic)
+      Di[i].setZero();
 
     J[i] = 1;
     mask[i] = 1;
@@ -2325,11 +2317,11 @@ void Solid::read_mesh(string fileName)
     L[i].setZero();
     F[i].setIdentity();
     R[i].setIdentity();
-    U[i].setZero();
     D[i].setZero();
     Finv[i].setZero();
     Fdot[i].setZero();
-    Di[i].setZero();
+    if (apic)
+      Di[i].setZero();
 
     J[i] = 1;
 

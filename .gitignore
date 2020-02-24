@@ -1,6 +1,6 @@
 /*.o
 /karamelo*
-/*~
+/**/*~
 /*.LAMMPS
 /examples/*/*.LAMMPS
 /examples/*.LAMMPS
@@ -17,3 +17,4 @@
 /CMakeFiles
 /Makefile
 /cmake_install.cmake
+/**/dump*.LAMMPS

@@ -27,7 +27,6 @@ MethodStyle(tlmpm,TLMPM)
 
 class TLMPM : public Method {
  public:
-  string method_type;
   double FLIP;
   string shape_function;
 

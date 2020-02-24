@@ -116,9 +116,13 @@ void Grid::init(double *solidlo, double *solidhi) {
   int noffsetlo[3] = {(int)ceil(Loffsetlo[0] / h), (int)ceil(Loffsetlo[1] / h),
                       (int)ceil(Loffsetlo[2] / h)};
 
+  // cout << "1--- proc " << universe->me << " noffsetlo=[" << noffsetlo[0] << "," << noffsetlo[1] << "," << noffsetlo[2] << "]\n";
+
   int noffsethi_[3] = {(int)ceil(Loffsethi_[0] / h),
                        (int)ceil(Loffsethi_[1] / h),
                        (int)ceil(Loffsethi_[2] / h)};
+
+  // cout << "1--- proc " << universe->me << " noffsethi_=[" << noffsethi_[0] << "," << noffsethi_[1] << "," << noffsethi_[2] << "]\n";
 
   if (universe->procneigh[0][0] >= 0 &&
       abs(boundlo[0] + noffsetlo[0] * h - sublo[0]) < 1.0e-12) {
@@ -138,6 +142,21 @@ void Grid::init(double *solidlo, double *solidhi) {
     // they should belong to procneigh[2][0]
     noffsetlo[2]++;
   }
+
+  if (universe->procneigh[0][0] >= 0 &&
+      abs(boundlo[0] + noffsethi_[0] * h - subhi[0]) < 1.0e-12) {
+    noffsethi_[0]++;
+  }
+  if (domain->dimension >= 2 && universe->procneigh[1][1] >= 0 &&
+      abs(boundlo[1] + noffsethi_[1] * h - subhi[1]) < 1.0e-12) {
+    noffsethi_[1]++;
+  }
+  if (domain->dimension == 3 && universe->procneigh[2][1] >= 0 &&
+      abs(boundlo[2] + noffsethi_[2] * h - subhi[2]) < 1.0e-12) {
+    noffsethi_[2]++;
+  }
+  // cout << "2--- proc " << universe->me << " noffsetlo=[" << noffsetlo[0] << "," << noffsetlo[1] << "," << noffsetlo[2] << "]\n";
+  // cout << "2--- proc " << universe->me << " noffsethi_=[" << noffsethi_[0] << "," << noffsethi_[1] << "," << noffsethi_[2] << "]\n";
 
   double Lx_global = solidhi[0]-solidlo[0];//+2*cellsize;
 
@@ -291,18 +310,28 @@ void Grid::init(double *solidlo, double *solidhi) {
 #endif
 
   // Send over the tag and coordinates of the nodes to send:
+  int size_n;
+  vector<Point> tmp_shared;
+
   for (int sproc = 0; sproc < universe->nprocs; sproc++) {
-    int size_nr = 0;
+    if (sproc == universe->me) {
+      size_n = ns.size();
+    } else {
+      size_n = 0;
+    }
+
+    MPI_Bcast(&size_n, 1, MPI_INT, sproc, universe->uworld);
 
     if (sproc == universe->me) {
-      int size_ns = ns.size();
+      tmp_shared = ns;
+    } else {
+      tmp_shared.resize(size_n);
+    }
 
-      for (int rproc = 0; rproc < universe->nprocs; rproc++) {
-        if (rproc != universe->me) {
-          MPI_Send(&size_ns, 1, MPI_INT, rproc, 0, universe->uworld);
-          MPI_Send(ns.data(), size_ns, Pointtype, rproc, 0, MPI_COMM_WORLD);
-        }
-      }
+    MPI_Bcast(tmp_shared.data(), size_n, Pointtype, sproc, universe->uworld);
+
+
+    if (sproc == universe->me) {
 
       // Receive destination lists:
 
@@ -324,26 +353,18 @@ void Grid::init(double *solidlo, double *solidhi) {
         }
       }
     } else {
-      MPI_Recv(&size_nr, 1, MPI_INT, sproc, 0, universe->uworld,
-               MPI_STATUS_IGNORE);
-
-      Point buf_recv[size_nr];
-
-      MPI_Recv(&buf_recv[0], size_nr, Pointtype, sproc, 0, MPI_COMM_WORLD,
-               MPI_STATUS_IGNORE);
-
       vector<tagint> origin_gnodes;
 
       // Check if the nodes received are in the subdomain:
-      for (int i_recv = 0; i_recv < size_nr; i_recv++) {
-        if (domain->inside_subdomain_extended(buf_recv[i_recv].x[0],
-                                              buf_recv[i_recv].x[1],
-                                              buf_recv[i_recv].x[2], delta)) {
-          gnodes.push_back(buf_recv[i_recv]);
-          origin_gnodes.push_back(buf_recv[i_recv].tag);
+      for (int i_recv = 0; i_recv < size_n; i_recv++) {
+        if (domain->inside_subdomain_extended(tmp_shared[i_recv].x[0],
+                                              tmp_shared[i_recv].x[1],
+                                              tmp_shared[i_recv].x[2], delta)) {
+          gnodes.push_back(tmp_shared[i_recv]);
+          origin_gnodes.push_back(tmp_shared[i_recv].tag);
 #ifdef DEBUG
           cout << "proc " << universe->me << " received node "
-               << buf_recv[i_recv].tag << " from proc " << sproc << ".\n";
+               << tmp_shared[i_recv].tag << " from proc " << sproc << ".\n";
 #endif
         }
       }
@@ -460,8 +481,8 @@ void Grid::update_grid_velocities()
       else v_update[i] = v[i];
     }
     // if (update->ntimestep>450)
-    if (isnan(v_update[i](0)))
-      cout << "update_grid_velocities: in=" << i << ", vn=[" << v[i][0] << "," << v[i][1] << "," << v[i][2] << "], f=[" << f[i][0] << "," << f[i][1] << "," << f[i][2] << "], mb=[" << mb[i][0] << "," << mb[i][1] << "," << mb[i][2] << "], dt=" << update->dt << ", mass[i]=" << mass[i] << endl;
+    // if (isnan(v_update[i](0)))
+    //   cout << "update_grid_velocities: in=" << i << ", vn=[" << v[i][0] << "," << v[i][1] << "," << v[i][2] << "], f=[" << f[i][0] << "," << f[i][1] << "," << f[i][2] << "], mb=[" << mb[i][0] << "," << mb[i][1] << "," << mb[i][2] << "], dt=" << update->dt << ", mass[i]=" << mass[i] << endl;
   }
 }
 

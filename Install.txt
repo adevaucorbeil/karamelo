@@ -1,0 +1,38 @@
+Installing Karamelo on Ubuntu:
+
+1. Install all the dependencies shipped with ubuntu:
+sudo apt install make gcc g++ libz-dev cmake libopenmpi-dev libeigen3-dev libboost-dev python-dev python-matplotlib
+
+
+2. Download and install the extra external dependencies:
+2.1 Matplotlib-cpp:
+
+git clone https://github.com/lava/matplotlib-cpp.git
+
+Select the right commit that allows karamelo to run without problems. More recent commits have been found to be buggy:
+
+cd matplotlib-cpp/
+git checkout f4ad842e
+
+2.2 Download gzstream and compile it
+
+3. Add the path to Eigen, gzstream and matplotlib to your paths:
+
+Add to you .bash_profile:
+
+CPATH=$CPATH:/usr/include/eigen3:/home/alban/gzstream:/home/alban/matplotlib-cpp:/usr/include/python2.7
+export CPATH
+
+LIBRARY_PATH=$LIBRARY_PATH:/usr/include/eigen3:/home/alban/gzstream:/home/alban/matplotlib-cpp:/usr/include/python2.7
+export LIBRARY_PATH
+
+4. Download and install Karamelo:
+
+git clone https://github.com/adevaucorbeil/karamelo.git
+cd ~/karamelo
+cmake -DCMAKE_BUILD_TYPE=release build .
+make
+
+5. Enjoy!
+
+

@@ -27,7 +27,6 @@ MethodStyle(ulmpm,ULMPM)
 
 class ULMPM : public Method {
  public:
-  string method_type;
   double FLIP;
   string shape_function;
 

@@ -16,7 +16,6 @@ MethodStyle(tlcpdi,TLCPDI)
 
 class TLCPDI : public Method {
  public:
-  string method_type;
   double FLIP;
   string shape_function;
 
