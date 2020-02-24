@@ -111,7 +111,7 @@ void Universe::set_proc_grid() {
 
     // Sort values in l according to their dl:
     sort(l.begin(), l.end(),
-	 [](auto const &a, auto const &b) { return a.dl < b.dl; });
+	 [](boundsize const &a, boundsize const &b) { return a.dl < b.dl; });
 
     vector<int> tile = tile3d(nprocs);
     procgrid[l[0].rank] = tile[0];

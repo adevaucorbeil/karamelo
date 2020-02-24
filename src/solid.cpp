@@ -346,11 +346,11 @@ void Solid::compute_velocity_nodes(bool reset)
 
       if (mat->rigid && mass_rigid > 1.0e-12)
         grid->v_update[in] += vtemp_rigid / mass_rigid;
-      if (isnan(grid->v_update[in](0)))
-        cout << "in=" << in << "\tvn=[" << grid->v[in][0] << ", " << grid->v[in][1]
-             << ", " << grid->v[in][2] << "]\tvp=[" << v[ip][0] << ", " << v[ip][1]
-             << ", " << v[ip][2] << "],\tvn_update=[" << grid->v_update[in][0]
-             << ", " << grid->v_update[in][1] << ", " << grid->v_update[in][2] << "]\n";
+      // if (isnan(grid->v_update[in][0]))
+      //   cout << "in=" << in << "\tvn=[" << grid->v[in][0] << ", " << grid->v[in][1]
+      //        << ", " << grid->v[in][2] << "]\tvp=[" << v[ip][0] << ", " << v[ip][1]
+      //        << ", " << v[ip][2] << "],\tvn_update=[" << grid->v_update[in][0]
+      //        << ", " << grid->v_update[in][1] << ", " << grid->v_update[in][2] << "]\n";
     }
   }
 }
@@ -496,11 +496,11 @@ void Solid::compute_particle_velocities_and_positions()
       in = neigh_pn[ip][j];
       v_update[ip] += wf_pn[ip][j] * grid->v_update[in];
       x[ip] += update->dt * wf_pn[ip][j] * grid->v_update[in];
-      if (isnan(x[ip](0)))
-        cout << "ip=" << ip << "\tx=[" << x[ip](0) << "," << x[ip](1) << ","
-             << x[ip](2) << "]\tin=" << in << "\tvn_update=["
-             << grid->v_update[in](0) << "," << grid->v_update[in](1) << ","
-             << grid->v_update[in](2) << "]\twf_pn=" << wf_pn[ip][j] << "\n";
+      // if (isnan(x[ip](0)))
+      //   cout << "ip=" << ip << "\tx=[" << x[ip](0) << "," << x[ip](1) << ","
+      //        << x[ip](2) << "]\tin=" << in << "\tvn_update=["
+      //        << grid->v_update[in](0) << "," << grid->v_update[in](1) << ","
+      //        << grid->v_update[in](2) << "]\twf_pn=" << wf_pn[ip][j] << "\n";
 
       if (update_corners)
       {
