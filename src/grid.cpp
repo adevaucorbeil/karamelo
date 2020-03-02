@@ -213,7 +213,6 @@ void Grid::init(double *solidlo, double *solidhi) {
   cout << "proc " << universe->me << " noffsetlo=[" << noffsetlo[0] << "," << noffsetlo[1] << "," << noffsetlo[2] << "]\n";
   cout << "proc " << universe->me << " noffsethi_=[" << noffsethi_[0] << "," << noffsethi_[1] << "," << noffsethi_[2] << "]\n";
   //#endif
-  error->all(FLERR, "\n");
 
   int l=0;
   for (int i=0; i<nx; i++){
