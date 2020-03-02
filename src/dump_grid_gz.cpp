@@ -26,6 +26,19 @@ using namespace std;
 
 DumpGridGz::DumpGridGz(MPM *mpm, vector<string> args) : Dump(mpm, args) {
   // cout << "In DumpGridGz::DumpGridGz()" << endl;
+  for (int i=5; i<args.size(); i++){
+    if (find(known_var.begin(), known_var.end(), args[i]) != known_var.end()) {
+      output_var.push_back(args[i]);
+    } else {
+      cout << "Error: output variable \033[1;31m" << args[i] << "\033[0m is unknown!\n";
+      cout << "Availabe output variables: ";
+      for (auto v: known_var) {
+	cout << v << ", ";
+      }
+      cout << endl;
+      exit(1);
+    }
+  }
 }
 
 DumpGridGz::~DumpGridGz() {}
