@@ -37,7 +37,7 @@ FixVelocityNodes::FixVelocityNodes(MPM *mpm, vector<string> args) : Fix(mpm, arg
   }
 
   if (group->pon[igroup].compare("nodes") !=0 ) {
-    error->all(FLERR, "fix_velocity_nodes needs to be given a group of nodes" + group->pon[igroup] + ", " + args[2] + " is a group of "+ group->pon[igroup] + ".\n");
+    error->one(FLERR, "fix_velocity_nodes needs to be given a group of nodes" + group->pon[igroup] + ", " + args[2] + " is a group of "+ group->pon[igroup] + ".\n");
   }
   cout << "Creating new fix FixVelocityNodes with ID: " << args[0] << endl;
   id = args[0];

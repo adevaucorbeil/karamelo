@@ -102,6 +102,90 @@ void FixIndentPinball::initial_integrate() {
     for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
       s = domain->solids[isolid];
 
+      if (domain->dimension == 2) {
+        for (int ip = 0; ip < s->np_local; ip++) {
+          if (s->mass[ip] > 0) {
+            if (s->mask[ip] & groupbit) {
+
+              // Gross screening:
+              xsp = s->x[ip] - xs;
+
+
+              Rp = 0.5*sqrt(s->vol[ip]);
+              Rs = R + Rp;
+
+	      r = xsp.norm();
+	      
+
+              if ((xsp[0] < Rs) && (xsp[1] < Rs) && (xsp[0] > -Rs) &&
+                  (xsp[1] > -Rs)) {
+
+                r = xsp.norm();
+                // Finer screening:
+                if (r < Rs) {
+                  p = Rs - r; // penetration
+
+                  if (p > 0) {
+                    fmag = K * s->mat->G * p;
+
+                    // fmag = K * MIN(f1, f2);
+
+                    f = fmag * xsp / r;
+                    s->mbp[ip] += f;
+                    ftot += f;
+                  } else {
+                    fmag = 0;
+                    f.setZero();
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+
+      if (domain->dimension == 3) {
+        for (int ip = 0; ip < s->np_local; ip++) {
+          if (s->mass[ip] > 0) {
+            if (s->mask[ip] & groupbit) {
+
+              // Gross screening:
+              xsp = s->x[ip] - xs;
+
+              Rp = 0.5*pow(s->vol[ip], 0.333333333);
+              Rs = R + Rp;
+
+              if ((xsp[0] < Rs) && (xsp[1] < Rs) && (xsp[2] < Rs) &&
+                  (xsp[0] > -Rs) && (xsp[1] > -Rs) && (xsp[2] > -Rs)) {
+
+                r = xsp.norm();
+                // Finer screening:
+                if (r < Rs) {
+                  p = Rs - r; // penetration
+
+                  if (p > 0) {
+                    fmag = K * s->mat->G * sqrt(Rp * p * p * p);
+
+                    // fmag = K * MIN(f1, f2);
+
+                    f = fmag * xsp / r;
+                    s->mbp[ip] += f;
+                    ftot += f;
+                  } else {
+                    fmag = 0;
+                    f.setZero();
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  } else {
+    s = domain->solids[solid];
+
+    if (domain->dimension == 2) {
       for (int ip = 0; ip < s->np_local; ip++) {
         if (s->mass[ip] > 0) {
           if (s->mask[ip] & groupbit) {
@@ -109,7 +193,44 @@ void FixIndentPinball::initial_integrate() {
             // Gross screening:
             xsp = s->x[ip] - xs;
 
-            Rp = pow(s->vol[ip], 0.333333333);
+            Rp = 0.5*sqrt(s->vol[ip]);
+            Rs = R + Rp;
+
+            if ((xsp[0] < Rs) && (xsp[1] < Rs) && (xsp[0] > -Rs) &&
+                (xsp[1] > -Rs)) {
+
+              r = xsp.norm();
+              // Finer screening:
+              if (r < Rs) {
+                p = Rs - r; // penetration
+
+                if (p > 0) {
+                  fmag = K * s->mat->G * p;
+
+                  // fmag = K * MIN(f1, f2);
+
+                  f = fmag * xsp / r;
+                  s->mbp[ip] += f;
+                  ftot += f;
+                } else {
+                  fmag = 0;
+                  f.setZero();
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    if (domain->dimension == 3) {
+      for (int ip = 0; ip < s->np_local; ip++) {
+        if (s->mass[ip] > 0) {
+          if (s->mask[ip] & groupbit) {
+
+            // Gross screening:
+            xsp = s->x[ip] - xs;
+
+            Rp = 0.5*pow(s->vol[ip], 0.333333333);
             Rs = R + Rp;
 
             if ((xsp[0] < Rs) && (xsp[1] < Rs) && (xsp[2] < Rs) &&
@@ -120,74 +241,19 @@ void FixIndentPinball::initial_integrate() {
               if (r < Rs) {
                 p = Rs - r; // penetration
 
-                // pdot = xsp.dot(vs - s->v[ip]); // Not yet normalized
-
-                // if (pdot > 0) {
-                //   pdot /= r; // Normalized only here to save computation time
-                //   f1 = s->rho[ip] * Rp * Rp * Rp * pdot / update->dt;
-                // } else {
-                //   f1 = 0;
-                // }
-
                 if (p > 0) {
-		  fmag = K * s->mat->G * sqrt(Rp * p * p * p);
-		} else {
-		  fmag = 0;
-		}
+                  fmag = K * s->mat->G * sqrt(Rp * p * p * p);
 
-                // fmag = K * MIN(f1, f2);
+                  // fmag = K * MIN(f1, f2);
 
-                f = fmag * xsp / r;
-                s->mbp[ip] += f;
-                ftot += f;
+                  f = fmag * xsp / r;
+                  s->mbp[ip] += f;
+                  ftot += f;
+                } else {
+                  fmag = 0;
+                  f.setZero();
+                }
               }
-            }
-          }
-        }
-      }
-    }
-  } else {
-    s = domain->solids[solid];
-
-    for (int ip = 0; ip < s->np_local; ip++) {
-      if (s->mass[ip] > 0) {
-        if (s->mask[ip] & groupbit) {
-
-          // Gross screening:
-          xsp = s->x[ip] - xs;
-
-	  Rp = pow(s->vol[ip], 0.333333333);
-          Rs = R + Rp;
-
-          if ((xsp[0] < Rs) && (xsp[1] < Rs) && (xsp[2] < Rs) &&
-              (xsp[0] > -Rs) && (xsp[1] > -Rs) && (xsp[2] > -Rs)) {
-
-            r = xsp.norm();
-            // Finer screening:
-            if (r < Rs) {
-              p = Rs - r; // penetration
-
-              // pdot = xsp.dot(vs - s->v[ip]); // Not yet normalized
-
-              // if (pdot > 0) {
-              //   pdot /= r; // Normalized only here to save computation time
-              //   f1 = s->rho[ip] * Rp * Rp * Rp * pdot / update->dt;
-              // } else {
-              //   f1 = 0;
-              // }
-
-
-	      if (p > 0) {
-		fmag = K * s->mat->G * sqrt(Rp * p * p * p);
-	      } else {
-		fmag = 0;
-	      }
-
-              // fmag = K * MIN(f1, f2);
-
-              f = fmag * xsp / r;
-              s->mbp[ip] += f;
-              ftot += f;
             }
           }
         }
