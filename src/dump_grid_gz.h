@@ -28,7 +28,12 @@ class DumpGridGz : public Dump {
   ~DumpGridGz();
 
   void write();
-  //protected:
+ protected:
+  vector<string> known_var = {"x", "y", "z",
+			      "vx", "vy", "vz",
+			      "bx", "by", "bz",
+			      "mass",
+			      "ntypex", "ntypey", "ntypez"};
 };
 
 #endif
