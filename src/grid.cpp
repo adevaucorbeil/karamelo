@@ -143,7 +143,7 @@ void Grid::init(double *solidlo, double *solidhi) {
     noffsetlo[2]++;
   }
 
-  if (universe->procneigh[0][0] >= 0 &&
+  if (universe->procneigh[0][1] >= 0 &&
       abs(boundlo[0] + noffsethi_[0] * h - subhi[0]) < 1.0e-12) {
     noffsethi_[0]++;
   }
