@@ -81,6 +81,9 @@ void DamageJohnsonCook::compute_damage(double &damage_init, double &damage,
                                        const double plastic_strain_increment,
                                        const double T)
 {
+  if (plastic_strain_increment == 0)
+    return;
+
   double vm = SQRT_3_OVER_2 * Sdev.norm(); // von-Mises equivalent stress
 
   if (vm < 0.0)
@@ -95,15 +98,17 @@ void DamageJohnsonCook::compute_damage(double &damage_init, double &damage,
   double triax = 0.0;
   if (pH != 0.0 && vm != 0.0)
   {
-    triax = -pH / (vm + 0.01 * fabs(pH)); // have softening in denominator to
-                                          // avoid divison by zero
+    triax = -pH / (vm + 0.001 * fabs(pH)); // have softening in denominator to
+                                           // avoid divison by zero
   }
-  if (triax > 3.0)
-  {
-    triax = 3.0;
-  }
+
   // Johnson-Cook failure strain, dependence on stress triaxiality
-  double jc_failure_strain = d1 + d2 * exp(d3 * triax);
+  double jc_failure_strain;
+  if (triax > 0)
+    jc_failure_strain = d1 + d2 * exp(d3 * triax);
+  else
+    jc_failure_strain = d1 + d2;
+    
 
   // include strain rate dependency if parameter d4 is defined and current
   // plastic strain rate exceeds reference strain rate
