@@ -1033,7 +1033,7 @@ void Solid::update_stress()
     return;
 
   max_p_wave_speed = 0;
-  double plastic_strain_increment, flow_stress;
+  double flow_stress;
   Matrix3d eye, FinvT, PK1, strain_increment;
   bool lin, tl, nh, fluid, temp;
 
@@ -1054,7 +1054,7 @@ void Solid::update_stress()
     tl = false;
 
   eye.setIdentity();
-  plastic_strain_increment = 0;
+
   if (lin) {
     for (int ip = 0; ip < np_local; ip++) {
       strain_increment = update->dt * D[ip];
