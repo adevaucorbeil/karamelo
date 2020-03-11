@@ -269,6 +269,7 @@ void Solid::grow(int nparticles)
   damage_init.resize(nparticles);
   T.resize(nparticles);
   ienergy.resize(nparticles);
+  pH_regu.resize(nparticles);
   mask.resize(nparticles);
   J.resize(nparticles);
 
@@ -1032,8 +1033,8 @@ void Solid::update_stress()
     return;
 
   max_p_wave_speed = 0;
-  double pH, plastic_strain_increment, flow_stress;
-  Matrix3d eye, sigma_dev, FinvT, PK1, strain_increment;
+  double plastic_strain_increment, flow_stress;
+  Matrix3d eye, FinvT, PK1, strain_increment;
   bool lin, tl, nh, fluid, temp;
 
   if (mat->type == material->constitutive_model::LINEAR)
@@ -1054,84 +1055,103 @@ void Solid::update_stress()
 
   eye.setIdentity();
   plastic_strain_increment = 0;
-  sigma_dev.setZero();
-
-  for (int ip = 0; ip < np_local; ip++)
-  {
-    if (lin)
-    {
+  if (lin) {
+    for (int ip = 0; ip < np_local; ip++) {
       strain_increment = update->dt * D[ip];
       strain_el[ip] += strain_increment;
       sigma[ip] += 2 * mat->G * strain_increment +
                    mat->lambda * strain_increment.trace() * eye;
-      if (mat->temp != NULL)
-        sigma_dev = Deviator(sigma[ip]);
+
       if (tl)
         vol0PK1[ip] = vol0[ip] * J[ip] *
                       (R[ip] * sigma[ip] * R[ip].transpose()) *
                       Finv[ip].transpose();
     }
-    else if (nh)
-    {
+  } else if (nh) {
+    for (int ip = 0; ip < np_local; ip++) {
       // Neo-Hookean material:
-      FinvT       = Finv[ip].transpose();
-      PK1         = mat->G * (F[ip] - FinvT) + mat->lambda * log(J[ip]) * FinvT;
+      FinvT = Finv[ip].transpose();
+      PK1 = mat->G * (F[ip] - FinvT) + mat->lambda * log(J[ip]) * FinvT;
       vol0PK1[ip] = vol0[ip] * PK1;
-      sigma[ip]   = 1.0 / J[ip] * (F[ip] * PK1.transpose());
-      if (mat->temp != NULL)
-        sigma_dev = Deviator(sigma[ip]);
+      sigma[ip] = 1.0 / J[ip] * (F[ip] * PK1.transpose());
+
       strain_el[ip] =
           0.5 * (F[ip].transpose() * F[ip] - eye); // update->dt * D[ip];
     }
-    else
-    {
+  } else {
 
-      mat->eos->compute_pressure(pH, ienergy[ip], J[ip], rho[ip], T[ip],
+    vector<double> pH(np_local, 0);
+    vector<double> plastic_strain_increment(np_local, 0);
+    vector<Eigen::Matrix3d> sigma_dev;
+    sigma_dev.resize(np_local);
+
+    for (int ip = 0; ip < np_local; ip++) {
+
+      mat->eos->compute_pressure(pH[ip], ienergy[ip], J[ip], rho[ip], T[ip],
                                  damage[ip]);
-      sigma_dev = mat->strength->update_deviatoric_stress(
-          sigma[ip], D[ip], plastic_strain_increment, eff_plastic_strain[ip],
+      sigma_dev[ip] = mat->strength->update_deviatoric_stress(
+          sigma[ip], D[ip], plastic_strain_increment[ip], eff_plastic_strain[ip],
           eff_plastic_strain_rate[ip], damage[ip], T[ip]);
 
-      eff_plastic_strain[ip] += plastic_strain_increment;
+      eff_plastic_strain[ip] += plastic_strain_increment[ip];
 
       // // compute a characteristic time over which to average the plastic
       // strain
       double tav = 1000 * grid->cellsize / mat->signal_velocity;
       eff_plastic_strain_rate[ip] -=
           eff_plastic_strain_rate[ip] * update->dt / tav;
-      eff_plastic_strain_rate[ip] += plastic_strain_increment / tav;
+      eff_plastic_strain_rate[ip] += plastic_strain_increment[ip] / tav;
       eff_plastic_strain_rate[ip] = MAX(0.0, eff_plastic_strain_rate[ip]);
+    }
+
+    for (int in = 0; in < grid->nnodes_local + grid->nnodes_ghost; in++) {
+      grid->pH[in] = 0;
+      int ip;
+      for (int j = 0; j < numneigh_np[in]; j++) {
+        ip = neigh_np[in][j];
+        grid->pH[in] += (wf_np[in][j] * mass[ip]) * pH[ip];
+      }
+      grid->pH[in] /= grid->mass[in];
+    }
+
+    grid->reduce_regularized_variables();
+
+    int in;
+
+    for (int ip = 0; ip < np_local; ip++) {
+      pH_regu[ip] = 0;
+
+      for (int j = 0; j < numneigh_pn[ip]; j++) {
+        in = neigh_pn[ip][j];
+        pH_regu[ip] += wf_pn[ip][j] * grid->pH[in];
+      }
 
       if (mat->damage != NULL)
-        mat->damage->compute_damage(damage_init[ip], damage[ip], pH, sigma_dev,
-                                    eff_plastic_strain_rate[ip],
-                                    plastic_strain_increment, T[ip]);
-      sigma[ip] = -pH * eye + sigma_dev;
+        mat->damage->compute_damage(damage_init[ip], damage[ip], pH_regu[ip],
+                                    sigma_dev[ip], eff_plastic_strain_rate[ip],
+                                    plastic_strain_increment[ip], T[ip]);
+      sigma[ip] = -pH[ip] * eye + sigma_dev[ip];
 
-      if (damage[ip] > 1e-10)
-      {
+      if (damage[ip] > 1e-10) {
         strain_el[ip] =
             (update->dt * D[ip].trace() + strain_el[ip].trace()) / 3.0 * eye +
-            sigma_dev / (mat->G * (1 - damage[ip]));
-      }
-      else
-      {
+            sigma_dev[ip] / (mat->G * (1 - damage[ip]));
+      } else {
         strain_el[ip] =
             (update->dt * D[ip].trace() + strain_el[ip].trace()) / 3.0 * eye;
       }
 
-      if (tl)
-      {
+      if (tl) {
         vol0PK1[ip] = vol0[ip] * J[ip] *
                       (R[ip] * sigma[ip] * R[ip].transpose()) *
                       Finv[ip].transpose();
       }
-    }
 
-    if (mat->temp != NULL) {
-      flow_stress = SQRT_3_OVER_2 * sigma_dev.norm();
-      mat->temp->compute_temperature(T[ip], flow_stress,
-                                     plastic_strain_increment);
+      if (mat->temp != NULL) {
+        flow_stress = SQRT_3_OVER_2 * sigma_dev[ip].norm();
+        mat->temp->compute_temperature(T[ip], flow_stress,
+                                       plastic_strain_increment[ip]);
+      }
     }
   }
 
@@ -1271,6 +1291,7 @@ void Solid::copy_particle(int i, int j) {
   damage_init[j]             = damage_init[i];
   T[j]                       = T[i];
   ienergy[j]                 = ienergy[i];
+  pH_regu[j]                 = pH_regu[i];
   mask[j]                    = mask[i];
   sigma[j]                   = sigma[i];
   strain_el[j]               = strain_el[i];
@@ -1907,6 +1928,7 @@ void Solid::populate(vector<string> args)
     damage_init[i]             = 0;
     T[i]                       = T0;
     ienergy[i]                 = 0;
+    pH_regu[i] = 0;
     strain_el[i].setZero();
     sigma[i].setZero();
     vol0PK1[i].setZero();
@@ -2311,6 +2333,7 @@ void Solid::read_mesh(string fileName)
     damage_init[i]             = 0;
     T[i]                       = T0;
     ienergy[i]                 = 0;
+    pH_regu[i] = 0;
     strain_el[i].setZero();
     sigma[i].setZero();
     vol0PK1[i].setZero();
