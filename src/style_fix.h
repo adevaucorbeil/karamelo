@@ -1,5 +1,6 @@
 #include "fix_body_force.h"
 #include "fix_check_solution.h"
+#include "fix_cutting_tool.h"
 #include "fix_force_nodes.h"
 #include "fix_indent.h"
 #include "fix_indent_pinball.h"
