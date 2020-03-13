@@ -100,9 +100,14 @@ void FixCuttingTool::initial_integrate() {
 
   double line1[4], line2[4];
   line1[0] = xA[1] - xt[1];
-  line1[1] = xA[0] - xt[0];
+  line1[1] = -xA[0] + xt[0];
   line1[2] = xt[1] * xA[0] - xt[0] * xA[1];
   line1[3] = 1.0 / sqrt(line1[0] * line1[0] + line1[1] * line1[1]);
+
+  line2[0] = xB[1] - xt[1];
+  line2[1] = -xB[0] + xt[0];
+  line2[2] = xt[1] * xB[0] - xt[0] * xB[1];
+  line2[3] = 1.0 / sqrt(line2[0] * line2[0] + line2[1] * line2[1]);
 
   if (line1[0] * xB[0] + line1[1] * xB[1] + line1[2] < 0) {
     line1[0] *= -1;
@@ -129,6 +134,10 @@ void FixCuttingTool::initial_integrate() {
   ftot.setZero();
 
   double r, p, p1, p2, c1p, c2p, fmag;
+
+  // cout << "line 1: " << line1[0] << "x + " << line1[1] << "y + " << line1[2] << endl;
+  // cout << "line 2: " << line2[0] << "x + " << line2[1] << "y + " << line2[2] << endl;
+
   if (solid == -1) {
     for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
       s = domain->solids[isolid];
@@ -138,10 +147,19 @@ void FixCuttingTool::initial_integrate() {
           if (s->mass[ip] > 0) {
             if (s->mask[ip] & groupbit) {
 
-              c1p = line1[0] * s->x[ip][0] + line1[1] * s->x[ip][1] + line1[1];
-              c2p = line2[0] * s->x[ip][0] + line2[1] * s->x[ip][1] + line2[1];
+              c1p = line1[0] * s->x[ip][0] + line1[1] * s->x[ip][1] + line1[2];
+              c2p = line2[0] * s->x[ip][0] + line2[1] * s->x[ip][1] + line2[2];
+
+              // if (s->ptag[ip] == 158) {
+              //   cout << "Particle " << s->ptag[ip] << "\t";
+              // 	cout << "c1p = " << c1p * line1[3] << "\t";
+              // 	cout << "c2p = " << c2p * line1[3] << "\n";
+              // 	cout << s->x[ip] << endl;
+              // }
 
               if (c1p >= 0 && c2p >= 0) {
+                // cout << "Particle " << s->ptag[ip] << " is inside\n";
+
                 // The particle is inside the tool
                 p1 = fabs(c1p * line1[3]);
                 p2 = fabs(c2p * line2[3]);
@@ -216,7 +234,7 @@ void FixCuttingTool::initial_integrate() {
   }
   // Reduce ftot:
   MPI_Allreduce(ftot.data(), ftot_reduced.data(), 3, MPI_DOUBLE, MPI_SUM,
-		universe->uworld);
+                universe->uworld);
 
   (*input->vars)[id + "_x"] = Var(id + "_x", ftot_reduced[0]);
   (*input->vars)[id + "_y"] = Var(id + "_y", ftot_reduced[1]);

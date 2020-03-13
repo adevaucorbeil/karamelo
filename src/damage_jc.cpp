@@ -103,12 +103,7 @@ void DamageJohnsonCook::compute_damage(double &damage_init, double &damage,
   }
 
   // Johnson-Cook failure strain, dependence on stress triaxiality
-  double jc_failure_strain;
-  if (triax > 0)
-    jc_failure_strain = d1 + d2 * exp(d3 * triax);
-  else
-    jc_failure_strain = d1 + d2;
-    
+  double jc_failure_strain = d1 + d2 * exp(d3 * triax);
 
   // include strain rate dependency if parameter d4 is defined and current
   // plastic strain rate exceeds reference strain rate
