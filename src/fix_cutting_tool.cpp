@@ -35,19 +35,17 @@ FixCuttingTool::FixCuttingTool(MPM *mpm, vector<string> args)
   }
 
   int k = 2;
-  Kpos = k++;
-  xtpos = k++;
-  ytpos = k++;
-  ztpos = k++;
-  vtxpos = k++;
-  vtypos = k++;
-  vtzpos = k++;
-  xApos = k++;
-  yApos = k++;
-  xBpos = k++;
-  yBpos = k++;
-
-  cout << "yBpos = " << yBpos << endl;
+  Kpos = ++k;
+  xtpos = ++k;
+  ytpos = ++k;
+  ztpos = ++k;
+  vtxpos = ++k;
+  vtypos = ++k;
+  vtzpos = ++k;
+  xApos = ++k;
+  yApos = ++k;
+  xBpos = ++k;
+  yBpos = ++k;
 
   if (group->pon[igroup].compare("particles") != 0 &&
       group->pon[igroup].compare("all") != 0) {
