@@ -43,6 +43,7 @@ using namespace MPM_Math;
 
 
 #define SQRT_3_OVER_2 1.224744871 // sqrt(3.0/2.0)
+#define FOUR_THIRD 1.333333333333333333333333333333333333333
 
 Solid::Solid(MPM *mpm, vector<string> args) : Pointers(mpm)
 {
@@ -1156,12 +1157,14 @@ void Solid::update_stress()
   }
 
   double min_h_ratio = 1.0e22;
-  double four_third  = 1.333333333333333333333333333333333333333;
-  for (int ip = 0; ip < np_local; ip++)
-  {
+
+  for (int ip = 0; ip < np_local; ip++) {
+    if (damage[ip] >= 1.0)
+      continue;
+
     max_p_wave_speed =
         MAX(max_p_wave_speed,
-            sqrt((mat->K + four_third * mat->G) / rho[ip]) +
+            sqrt((mat->K + FOUR_THIRD * mat->G) / rho[ip]) +
                 MAX(MAX(abs(v[ip](0)), abs(v[ip](1))), abs(v[ip](2))));
 
     min_h_ratio =
@@ -1174,15 +1177,12 @@ void Solid::update_stress()
         MIN(min_h_ratio, F[ip](2, 0) * F[ip](2, 0) + F[ip](2, 1) * F[ip](2, 1) +
                              F[ip](2, 2) * F[ip](2, 2));
 
-    if (std::isnan(max_p_wave_speed))
-    {
+    if (std::isnan(max_p_wave_speed)) {
       cout << "Error: max_p_wave_speed is nan with ip=" << ip
            << ", rho[ip]=" << rho[ip] << ", K=" << mat->K << ", G=" << mat->G
            << endl;
       error->one(FLERR, "");
-    }
-    else if (max_p_wave_speed < 0.0)
-    {
+    } else if (max_p_wave_speed < 0.0) {
       cout << "Error: max_p_wave_speed= " << max_p_wave_speed
            << " with ip=" << ip << ", rho[ip]=" << rho[ip] << ", K=" << mat->K
            << ", G=" << mat->G << endl;

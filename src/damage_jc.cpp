@@ -79,9 +79,9 @@ void DamageJohnsonCook::compute_damage(double &damage_init, double &damage,
                                        const Eigen::Matrix3d Sdev,
                                        const double epsdot,
                                        const double plastic_strain_increment,
-                                       const double T)
-{
-  if (plastic_strain_increment == 0)
+                                       const double T) {
+
+  if (plastic_strain_increment == 0 && damage >= 1.0)
     return;
 
   double vm = SQRT_3_OVER_2 * Sdev.norm(); // von-Mises equivalent stress
