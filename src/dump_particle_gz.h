@@ -37,7 +37,7 @@ class DumpParticleGz : public Dump {
 			      "seq", "volume", "mass",
 			      "damage", "damage_init",
 			      "bx", "by", "bz",
-			      "ep", "epdot", "T", "ienergy"};
+			      "ep", "epdot", "T", "ienergy", "pH_regu"};
 };
 
 #endif

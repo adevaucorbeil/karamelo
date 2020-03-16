@@ -23,7 +23,7 @@ public:
 
 protected:
   double chi, rho, cp, alpha;
-  string usage = "Usage: temperature(temp-ID, plastic-work, chi, rho, cp)\n";
+  string usage = "Usage: temperature(temp-ID, plastic_work, chi, rho, cp)\n";
   int Nargs = 5;
 };
 
