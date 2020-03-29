@@ -2,6 +2,7 @@
 #include "domain.h"
 #include "group.h"
 #include "input.h"
+#include "universe.h"
 #include "update.h"
 #include <Eigen/Eigen>
 #include <iostream>
@@ -196,8 +197,11 @@ void FixVelocityParticles::post_advance_particles() {
   
   int solid = group->solid[igroup];
   Solid *s;
+  Eigen::Vector3d Dv, ftot, ftot_reduced;
 
   int n = 0;
+  ftot.setZero();
+  double inv_dt = 1.0/update->dt;
 
   if (solid == -1) {
     for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
@@ -205,21 +209,26 @@ void FixVelocityParticles::post_advance_particles() {
       n = 0;
 
       for (int ip = 0; ip < s->np; ip++) {
-	if (s->mask[ip] & groupbit) {
-	  if (xset) {
-	    s->v[ip][0] = vx;
-	    s->x[ip][0] = xold[n][0] + update->dt * vx;
-	  }
-	  if (yset) {
-	    s->v[ip][1] = vy;
-	    s->x[ip][1] = xold[n][1] + update->dt * vy;
-	  }
-	  if (zset) {
-	    s->v[ip][2] = vz;
-	    s->x[ip][2] = xold[n][2] + update->dt * vz;
-	  }	    
-	  n++;
-	}
+        if (s->mask[ip] & groupbit) {
+          Dv.setZero();
+          if (xset) {
+            Dv[0] = vx - s->v[ip][0];
+            s->v[ip][0] = vx;
+            s->x[ip][0] = xold[n][0] + update->dt * vx;
+          }
+          if (yset) {
+            Dv[1] = vy - s->v[ip][1];
+            s->v[ip][1] = vy;
+            s->x[ip][1] = xold[n][1] + update->dt * vy;
+          }
+          if (zset) {
+            Dv[2] = vz - s->v[ip][2];
+            s->v[ip][2] = vz;
+            s->x[ip][2] = xold[n][2] + update->dt * vz;
+          }
+          ftot += (inv_dt * s->mass[ip]) * Dv;
+          n++;
+        }
       }
       // cout << "v for " << n << " particles from solid " << domain->solids[isolid]->id << " set." << endl;
     }
@@ -228,21 +237,34 @@ void FixVelocityParticles::post_advance_particles() {
     n = 0;
     for (int ip = 0; ip < s->np; ip++) {
       if (s->mask[ip] & groupbit) {
-	if (xset) {
-	  s->v[ip][0] = vx;
-	  s->x[ip][0] = xold[n][0] + update->dt * vx;
-	}
-	if (yset) {
-	  s->v[ip][1] = vy;
-	  s->x[ip][1] = xold[n][1] + update->dt * vy;
-	}
-	if (zset) {
-	  s->v[ip][2] = vz;
-	  s->x[ip][2] = xold[n][2] + update->dt * vz;
-	}
-	n++;
+        Dv.setZero();
+        if (xset) {
+          Dv[0] = vx - s->v[ip][0];
+          s->v[ip][0] = vx;
+          s->x[ip][0] = xold[n][0] + update->dt * vx;
+        }
+        if (yset) {
+          Dv[1] = vy - s->v[ip][1];
+          s->v[ip][1] = vy;
+          s->x[ip][1] = xold[n][1] + update->dt * vy;
+        }
+        if (zset) {
+          Dv[2] = vz - s->v[ip][2];
+          s->v[ip][2] = vz;
+          s->x[ip][2] = xold[n][2] + update->dt * vz;
+        }
+        ftot += (inv_dt * s->mass[ip]) * Dv;
+        n++;
       }
     }
     // cout << "v for " << n << " particles from solid " << domain->solids[solid]->id << " set." << endl;
   }
+
+  // Reduce ftot:
+  MPI_Allreduce(ftot.data(), ftot_reduced.data(), 3, MPI_DOUBLE, MPI_SUM,
+                universe->uworld);
+
+  (*input->vars)[id + "_x"] = Var(id + "_x", ftot_reduced[0]);
+  (*input->vars)[id + "_y"] = Var(id + "_y", ftot_reduced[1]);
+  (*input->vars)[id + "_z"] = Var(id + "_z", ftot_reduced[2]);
 }

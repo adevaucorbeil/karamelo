@@ -553,7 +553,7 @@ void Solid::compute_particle_acceleration()
       a[ip] += wf_pn[ip][j] * (grid->v_update[in] - grid->v[in]);
     }
     a[ip] *= inv_dt;
-    f[ip] = a[ip] / mass[ip];
+    f[ip] = a[ip] * mass[ip];
   }
 }
 
