@@ -1,10 +1,11 @@
+#include "fix_velocity_particles.h"
+#include "domain.h"
+#include "group.h"
+#include "input.h"
+#include "update.h"
+#include <Eigen/Eigen>
 #include <iostream>
 #include <vector>
-#include "fix_velocity_particles.h"
-#include "input.h"
-#include "group.h"
-#include "domain.h"
-#include <Eigen/Eigen>
 
 using namespace std;
 using namespace FixConst;
@@ -96,6 +97,7 @@ void FixVelocityParticles::initial_integrate() {
   // Go through all the particles in the group and set v_update to the right value:
   double vx, vy, vz;
   double vx_old, vy_old, vz_old;
+  Vector3d xtemp;
 
   if (xset) {
     vx = input->parsev(args[xpos]).result(mpm);
@@ -122,6 +124,7 @@ void FixVelocityParticles::initial_integrate() {
   Solid *s;
 
   int n = 0;
+  xold.clear();
 
   if (solid == -1) {
     for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
@@ -130,6 +133,7 @@ void FixVelocityParticles::initial_integrate() {
 
       for (int ip = 0; ip < s->np; ip++) {
 	if (s->mask[ip] & groupbit) {
+	  xtemp = s->x[ip];
 	  if (xset) {
 	    s->v_update[ip][0] = vx;
 	    s->v[ip][0] = vx_old;
@@ -142,6 +146,7 @@ void FixVelocityParticles::initial_integrate() {
 	    s->v_update[ip][2] = vz;
 	    s->v[ip][2] = vz_old;
 	  }
+	  xold.push_back(xtemp);
 	  n++;
 	}
       }
@@ -152,6 +157,7 @@ void FixVelocityParticles::initial_integrate() {
 
     for (int ip = 0; ip < s->np; ip++) {
       if (s->mask[ip] & groupbit) {
+	xtemp = s->x[ip];
 	if (xset) {
 	  s->v_update[ip][0] = vx;
 	  s->v[ip][0] = vx_old;
@@ -164,6 +170,7 @@ void FixVelocityParticles::initial_integrate() {
 	  s->v_update[ip][2] = vz;
 	  s->v[ip][2] = vz_old;
 	}
+	xold.push_back(xtemp);
 	n++;
       }
     }
@@ -199,9 +206,18 @@ void FixVelocityParticles::post_advance_particles() {
 
       for (int ip = 0; ip < s->np; ip++) {
 	if (s->mask[ip] & groupbit) {
-	  if (xset) s->v[ip][0] = vx;
-	  if (yset) s->v[ip][1] = vy;
-	  if (zset) s->v[ip][2] = vz;
+	  if (xset) {
+	    s->v[ip][0] = vx;
+	    s->x[ip][0] = xold[n][0] + update->dt * vx;
+	  }
+	  if (yset) {
+	    s->v[ip][1] = vy;
+	    s->x[ip][1] = xold[n][1] + update->dt * vy;
+	  }
+	  if (zset) {
+	    s->v[ip][2] = vz;
+	    s->x[ip][2] = xold[n][2] + update->dt * vz;
+	  }	    
 	  n++;
 	}
       }
@@ -209,12 +225,21 @@ void FixVelocityParticles::post_advance_particles() {
     }
   } else {
     s = domain->solids[solid];
-
+    n = 0;
     for (int ip = 0; ip < s->np; ip++) {
       if (s->mask[ip] & groupbit) {
-	if (xset) s->v[ip][0] = vx;
-	if (yset) s->v[ip][1] = vy;
-	if (zset) s->v[ip][2] = vz;
+	if (xset) {
+	  s->v[ip][0] = vx;
+	  s->x[ip][0] = xold[n][0] + update->dt * vx;
+	}
+	if (yset) {
+	  s->v[ip][1] = vy;
+	  s->x[ip][1] = xold[n][1] + update->dt * vy;
+	}
+	if (zset) {
+	  s->v[ip][2] = vz;
+	  s->x[ip][2] = xold[n][2] + update->dt * vz;
+	}
 	n++;
       }
     }
