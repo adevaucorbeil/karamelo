@@ -48,6 +48,7 @@ FixContactHertz::FixContactHertz(MPM *mpm, vector<string> args)
 
   cout << "Creating new fix FixContactHertz with ID: " << args[0] << endl;
   id = args[0];
+  requires_ghost_particles = true;
 }
 
 FixContactHertz::~FixContactHertz() {}

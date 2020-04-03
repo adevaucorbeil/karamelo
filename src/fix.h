@@ -24,6 +24,8 @@ class Fix : protected Pointers {
   int mask;
   vector<string> args; // Store arguments
 
+  bool requires_ghost_particles = false;
+
   Fix(class MPM *, vector<string>);
   virtual ~Fix() {};
   virtual void init() = 0;
