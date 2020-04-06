@@ -21,7 +21,8 @@
 #include "domain.h"
 #include "grid.h"
 #include "error.h"
-
+#include "update.h"
+#include "universe.h"
 using namespace std;
 using namespace FixConst;
 using namespace Eigen;
@@ -135,6 +136,10 @@ void FixVelocityNodes::post_update_grid_state() {
   int solid = group->solid[igroup];
   Grid *g;
 
+  Eigen::Vector3d Dv, ftot, ftot_reduced;
+  ftot.setZero();
+  double inv_dt = 1.0/update->dt;
+
   if (solid == -1) {
     for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
       g = domain->solids[isolid]->grid;
@@ -142,17 +147,21 @@ void FixVelocityNodes::post_update_grid_state() {
       for (int ip = 0; ip < g->nnodes_local + g->nnodes_ghost; ip++) {
 	if (g->mask[ip] & groupbit) {
 	  if (xset) {
+	    Dv[0] = vx - g->v_update[ip][0];
 	    g->v_update[ip][0] = vx;
 	    g->v[ip][0] = vx_old;
 	  }
 	  if (yset) {
+	    Dv[1] = vy - g->v_update[ip][1];
 	    g->v_update[ip][1] = vy;
 	    g->v[ip][1] = vy_old;
 	  }
 	  if (zset) {
+	    Dv[2] = vz - g->v_update[ip][2];
 	    g->v_update[ip][2] = vz;
 	    g->v[ip][2] = vz_old;
 	  }
+          ftot += (inv_dt * g->mass[ip]) * Dv;
 	}
       }
     }
@@ -163,20 +172,32 @@ void FixVelocityNodes::post_update_grid_state() {
     for (int ip = 0; ip < g->nnodes_local + g->nnodes_ghost; ip++) {
       if (g->mask[ip] & groupbit) {
 	if (xset) {
+	  Dv[0] = vx - g->v_update[ip][0];
 	  g->v_update[ip][0] = vx;
 	  g->v[ip][0] = vx_old;
 	}
 	if (yset) {
+	  Dv[1] = vy - g->v_update[ip][1];
 	  g->v_update[ip][1] = vy;
 	  g->v[ip][1] = vy_old;
 	}
 	if (zset) {
+	  Dv[2] = vz - g->v_update[ip][2];
 	  g->v_update[ip][2] = vz;
 	  g->v[ip][2] = vz_old;
+          ftot += (inv_dt * g->mass[ip]) * Dv;
 	}
       }
     }
   }
+
+  // Reduce ftot:
+  MPI_Allreduce(ftot.data(), ftot_reduced.data(), 3, MPI_DOUBLE, MPI_SUM,
+                universe->uworld);
+
+  (*input->vars)[id + "_x"] = Var(id + "_x", ftot_reduced[0]);
+  (*input->vars)[id + "_y"] = Var(id + "_y", ftot_reduced[1]);
+  (*input->vars)[id + "_z"] = Var(id + "_z", ftot_reduced[2]);
 }
 
 void FixVelocityNodes::post_velocities_to_grid() {
