@@ -169,7 +169,7 @@ void Solid::init()
   cout << "Solid " << id << " total volume = " << vtot << endl;
   cout << "Solid " << id << " total mass = " << mtot << endl;
 
-  if (grid->nnodes_local == 0) grid->init(solidlo, solidhi);
+  if (grid->nnodes == 0) grid->init(solidlo, solidhi);
 
   if (np == 0) {
     error->one(FLERR,"Error: solid does not have any particles.\n");
