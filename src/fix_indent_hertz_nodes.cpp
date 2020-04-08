@@ -133,7 +133,7 @@ void FixIndentHertzNodes::post_particles_to_grid() {
                     // fmag = K * MIN(f1, f2);
 
                     f = fmag * xsn / r;
-                    g->mb[in] += g->mass[in] * f;
+                    g->mb[in] += f;
                     if (in < g->nnodes_local) ftot += f;
                   } else {
                     fmag = 0;
@@ -172,7 +172,7 @@ void FixIndentHertzNodes::post_particles_to_grid() {
                     // fmag = K * MIN(f1, f2);
 
                     f = fmag * xsn / r;
-                    g->mb[in] += g->mass[in] * f;
+                    g->mb[in] += f;
                     if (in < g->nnodes_local) ftot += f;
                   } else {
                     fmag = 0;
@@ -215,7 +215,7 @@ void FixIndentHertzNodes::post_particles_to_grid() {
                   // fmag = K * MIN(f1, f2);
 
                   f = fmag * xsn / r;
-                  g->mb[in] += g->mass[in] * f;
+                  g->mb[in] += f;
                   if (in < g->nnodes_local) ftot += f;
                 } else {
                   fmag = 0;
@@ -251,7 +251,7 @@ void FixIndentHertzNodes::post_particles_to_grid() {
                   // fmag = K * MIN(f1, f2);
 
                   f = fmag * xsn / r;
-                  g->mb[in] += g->mass[in] * f;
+                  g->mb[in] += f;
                   if (in < g->nnodes_local) ftot += f;
                 } else {
                   fmag = 0;

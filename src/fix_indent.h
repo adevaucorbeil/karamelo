@@ -42,8 +42,6 @@ class FixIndent : public Fix {
 
 private:
   string type; // sphere
-  string usage = "Usage: fix(fix-ID, indent, group, sphere, K, R, x_center, y_center, z_center)\n";
-  int Nargs = 9;
   int Kpos, xpos, ypos, zpos, Rpos; // Positions of K, the position of the sphere, and its radius in the argument list (args)
 };
 

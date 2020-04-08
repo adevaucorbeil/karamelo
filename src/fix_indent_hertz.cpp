@@ -129,13 +129,12 @@ void FixIndentHertz::initial_integrate() {
 
                   if (p > 0) {
 		    n++;
-		    s->check[ip] = true;
                     fmag = k * p;
 
                     // fmag = K * MIN(f1, f2);
 
                     f = fmag * xsp / r;
-                    s->mbp[ip] += s->mass[ip] * f;
+                    s->mbp[ip] += f;
                     ftot += f;
                   } else {
                     fmag = 0;
@@ -172,13 +171,12 @@ void FixIndentHertz::initial_integrate() {
 
                   if (p > 1.0e-10) {
 		    n++;
-		    s->check[ip] = true;
                     fmag = k * sqrt(R * p * p * p);
 
                     // fmag = K * MIN(f1, f2);
 
                     f = fmag * xsp / r;
-                    s->mbp[ip] += s->mass[ip] * f;
+                    s->mbp[ip] += f;
                     ftot += f;
                   } else {
                     fmag = 0;
@@ -218,13 +216,12 @@ void FixIndentHertz::initial_integrate() {
 
                 if (p > 0) {
 		  n++;
-		  s->check[ip] = true;
 		  fmag = k * p;
 
                   // fmag = K * MIN(f1, f2);
 
                   f = fmag * xsp / r;
-                  s->mbp[ip] += s->mass[ip] * f;
+                  s->mbp[ip] += f;
                   ftot += f;
                 } else {
                   fmag = 0;
@@ -260,12 +257,11 @@ void FixIndentHertz::initial_integrate() {
 
                 if (p > 0) {
 		  n++;
-		  s->check[ip] = true;
 		  fmag = k * sqrt(R * p * p * p);
                   // fmag = K * MIN(f1, f2);
 
                   f = fmag * xsp / r;
-                  s->mbp[ip] += s->mass[ip] * f;
+                  s->mbp[ip] += f;
                   ftot += f;
                 } else {
                   fmag = 0;

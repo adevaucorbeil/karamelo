@@ -131,7 +131,7 @@ void FixIndentGanz::initial_integrate() {
                     // fmag = K * MIN(f1, f2);
 
                     f = fmag * xsp / r;
-                    s->mbp[ip] += s->mass[ip] * f;
+                    s->mbp[ip] += f;
                     ftot += f;
                   } else {
                     fmag = 0;
@@ -169,7 +169,7 @@ void FixIndentGanz::initial_integrate() {
                     // fmag = K * MIN(f1, f2);
 
                     f = fmag * xsp / r;
-                    s->mbp[ip] += s->mass[ip] * f;
+                    s->mbp[ip] += f;
                     ftot += f;
                   } else {
                     fmag = 0;
@@ -210,7 +210,7 @@ void FixIndentGanz::initial_integrate() {
                   // fmag = K * MIN(f1, f2);
 
                   f = fmag * xsp / r;
-                  s->mbp[ip] += s->mass[ip] * f;
+                  s->mbp[ip] += f;
                   ftot += f;
                 } else {
                   fmag = 0;
@@ -247,7 +247,7 @@ void FixIndentGanz::initial_integrate() {
                   // fmag = K * MIN(f1, f2);
 
                   f = fmag * xsp / r;
-                  s->mbp[ip] += s->mass[ip] * f;
+                  s->mbp[ip] += f;
                   ftot += f;
                 } else {
                   fmag = 0;
