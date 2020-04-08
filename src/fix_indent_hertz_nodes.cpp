@@ -134,7 +134,7 @@ void FixIndentHertzNodes::post_particles_to_grid() {
 
                     f = fmag * xsn / r;
                     g->mb[in] += f;
-                    ftot += f;
+                    if (in < g->nnodes_local) ftot += f;
                   } else {
                     fmag = 0;
                     f.setZero();
@@ -173,7 +173,7 @@ void FixIndentHertzNodes::post_particles_to_grid() {
 
                     f = fmag * xsn / r;
                     g->mb[in] += f;
-                    ftot += f;
+                    if (in < g->nnodes_local) ftot += f;
                   } else {
                     fmag = 0;
                     f.setZero();
@@ -216,7 +216,7 @@ void FixIndentHertzNodes::post_particles_to_grid() {
 
                   f = fmag * xsn / r;
                   g->mb[in] += f;
-                  ftot += f;
+                  if (in < g->nnodes_local) ftot += f;
                 } else {
                   fmag = 0;
                   f.setZero();
@@ -252,7 +252,7 @@ void FixIndentHertzNodes::post_particles_to_grid() {
 
                   f = fmag * xsn / r;
                   g->mb[in] += f;
-                  ftot += f;
+                  if (in < g->nnodes_local) ftot += f;
                 } else {
                   fmag = 0;
                   f.setZero();
