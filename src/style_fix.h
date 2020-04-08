@@ -6,6 +6,7 @@
 #include "fix_indent.h"
 #include "fix_indent_ganz.h"
 #include "fix_indent_hertz.h"
+#include "fix_indent_hertz_nodes.h"
 #include "fix_indent_pinball.h"
 #include "fix_initial_velocity_nodes.h"
 #include "fix_initial_velocity_particles.h"
