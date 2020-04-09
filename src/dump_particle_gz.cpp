@@ -22,6 +22,7 @@
 #include "update.h"
 #include <gzstream.h>
 #include <iostream>
+#include <Eigen/Eigen>
 
 using namespace std;
 using namespace MPM_Math;
@@ -85,9 +86,17 @@ void DumpParticleGz::write() {
   }
   dumpstream << endl;
 
+
+  Eigen::Matrix3d sigma_;
+
   for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
     Solid *s = domain->solids[isolid];
     for (bigint i = 0; i < s->np_local; i++) {
+      if (update->method_type.compare("tlmpm") == 0 ||
+	  update->method_type.compare("tlcpdi") == 0)
+	sigma_ = s->R[i] * s->sigma[i] * s->R[i].transpose();
+      else
+	sigma_ = s->sigma[i];
       dumpstream << s->ptag[i] << " ";
       dumpstream << isolid + 1 << " ";
       dumpstream << s->ptag[i] << " ";
@@ -111,19 +120,19 @@ void DumpParticleGz::write() {
         else if (v.compare("vz") == 0)
           dumpstream << s->v[i][2] << " ";
         else if (v.compare("s11") == 0)
-          dumpstream << s->sigma[i](0, 0) << " ";
+          dumpstream << sigma_(0, 0) << " ";
         else if (v.compare("s22") == 0)
-          dumpstream << s->sigma[i](1, 1) << " ";
+          dumpstream << sigma_(1, 1) << " ";
         else if (v.compare("s33") == 0)
-          dumpstream << s->sigma[i](2, 2) << " ";
+          dumpstream << sigma_(2, 2) << " ";
         else if (v.compare("s12") == 0)
-          dumpstream << s->sigma[i](0, 1) << " ";
+          dumpstream << sigma_(0, 1) << " ";
         else if (v.compare("s13") == 0)
-          dumpstream << s->sigma[i](0, 2) << " ";
+          dumpstream << sigma_(0, 2) << " ";
         else if (v.compare("s23") == 0)
-          dumpstream << s->sigma[i](1, 2) << " ";
+          dumpstream << sigma_(1, 2) << " ";
         else if (v.compare("seq") == 0)
-          dumpstream << sqrt(3. / 2.) * Deviator(s->sigma[i]).norm() << " ";
+          dumpstream << sqrt(3. / 2.) * Deviator(sigma_).norm() << " ";
         else if (v.compare("damage") == 0)
           dumpstream << s->damage[i] << " ";
         else if (v.compare("damage_init") == 0)
@@ -148,6 +157,8 @@ void DumpParticleGz::write() {
           dumpstream << s->ienergy[i] << " ";
         else if (v.compare("pH_regu") == 0)
           dumpstream << s->pH_regu[i] << " ";
+	else if (v.compare("check") == 0)
+	  dumpstream << s->check[i] << " ";
       }
       dumpstream << endl;
     }
