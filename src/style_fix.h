@@ -16,3 +16,4 @@
 #include "fix_velocity.h"
 #include "fix_velocity_nodes.h"
 #include "fix_velocity_particles.h"
+#include "fix_indent_hertz_nodes_symz.h"
