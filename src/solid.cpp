@@ -1204,75 +1204,73 @@ void Solid::update_stress()
   }
 }
 
-void Solid::compute_inertia_tensor(string form_function)
-{
+void Solid::compute_inertia_tensor(string form_function) {
 
-  // int in;
-  // Eigen::Vector3d *x0n = grid->x0;
-  // Eigen::Vector3d *vn_update = grid->v_update;
-  // Eigen::Vector3d dx;
+  int in;
+  Eigen::Vector3d dx;
+  Eigen::Matrix3d Dtemp;
 
-  // if (domain->dimension == 2) {
-  //   for (int ip=0; ip<np_local; ip++){
-  //     Di[ip].setZero();
-  //     for (int j=0; j<numneigh_pn[ip]; j++){
-  // 	in = neigh_pn[ip][j];
-  // 	dx = x0n[in] - x0[ip];
-  // 	Di[ip](0,0) += wf_pn[ip][j]*(dx[0]*dx[0]);
-  // 	Di[ip](0,1) += wf_pn[ip][j]*(dx[0]*dx[1]);
-  // 	Di[ip](1,1) += wf_pn[ip][j]*(dx[1]*dx[1]);
-  //     }
-  //     Di[ip](1,0) = Di[ip](0,1);
-  //     cout << "Di[" << ip << "]=\n" << Di[ip] << endl;
-  //   }
-  // } else if (domain->dimension == 3) {
-  //   for (int ip=0; ip<np_local; ip++){
-  //     Di[ip].setZero();
-  //     for (int j=0; j<numneigh_pn[ip]; j++){
-  // 	in = neigh_pn[ip][j];
-  // 	dx = x0n[in] - x0[ip];
-  // 	Di[ip](0,0) += wf_pn[ip][j]*(dx[0]*dx[0]);
-  // 	Di[ip](0,1) += wf_pn[ip][j]*(dx[0]*dx[1]);
-  // 	Di[ip](0,2) += wf_pn[ip][j]*(dx[0]*dx[2]);
-  // 	Di[ip](1,1) += wf_pn[ip][j]*(dx[1]*dx[1]);
-  // 	Di[ip](1,2) += wf_pn[ip][j]*(dx[1]*dx[2]);
-  // 	Di[ip](2,2) += wf_pn[ip][j]*(dx[2]*dx[2]);
-  //     }
-  //     Di[ip](1,0) = Di[ip](0,1);
-  //     Di[ip](2,1) = Di[ip](1,2);
-  //     Di[ip](2,0) = Di[ip](0,2);
-  //     cout << "Di[" << ip << "]=\n" << Di[ip] << endl;
-  //   }
-  // }
-
-  // Di[ip] = Di[ip].inverse();
-
-  Eigen::Matrix3d eye;
-  eye.setIdentity();
-
-  double cellsizeSqInv = 1.0 / (grid->cellsize * grid->cellsize);
-
-  for (int ip = 0; ip < np_local; ip++)
-    {
-      if ( form_function.compare("linear") == 0)
-	{
-	  // If the form function is linear:
-	  Di[ip] = 16.0 / 3.0 * cellsizeSqInv * eye;
-	}
-      else if (form_function.compare("quadratic-spline") == 0)
-	{
-	  // If the form function is a quadratic spline:
-	  Di[ip] = 4.0 * cellsizeSqInv * eye;
-	}
-      else if (form_function.compare("cubic-spline") == 0)
-	{
-	  // If the form function is a cubic spline:
-	  Di[ip] = 3.0 * cellsizeSqInv * eye;
-	}
-      else if (form_function.compare("Bernstein-quadratic") == 0)
-	Di[ip] = 12.0 * cellsizeSqInv * eye;
-      // cout << "Di[" << ip << "]=\n" << Di[ip] << endl;
+  if (domain->dimension == 2) {
+    for (int ip = 0; ip < np_local; ip++) {
+      Dtemp.setZero();
+      for (int j = 0; j < numneigh_pn[ip]; j++) {
+        in = neigh_pn[ip][j];
+        dx = grid->x0[in] - x0[ip];
+        Dtemp(0, 0) += wf_pn[ip][j] * (dx[0] * dx[0]);
+        Dtemp(0, 1) += wf_pn[ip][j] * (dx[0] * dx[1]);
+        Dtemp(1, 1) += wf_pn[ip][j] * (dx[1] * dx[1]);
+      }
+      Dtemp(1, 0) = Dtemp(0, 1);
+      Di[ip] = Dtemp.inverse();
+      // cout << "1 - Di[" << ip << "]=\n" << Di[ip] << endl;
     }
+  } else if (domain->dimension == 3) {
+    for (int ip = 0; ip < np_local; ip++) {
+      Dtemp.setZero();
+      for (int j = 0; j < numneigh_pn[ip]; j++) {
+        in = neigh_pn[ip][j];
+        dx = grid->x0[in] - x0[ip];
+        Dtemp(0, 0) += wf_pn[ip][j] * (dx[0] * dx[0]);
+        Dtemp(0, 1) += wf_pn[ip][j] * (dx[0] * dx[1]);
+        Dtemp(0, 2) += wf_pn[ip][j] * (dx[0] * dx[2]);
+        Dtemp(1, 1) += wf_pn[ip][j] * (dx[1] * dx[1]);
+        Dtemp(1, 2) += wf_pn[ip][j] * (dx[1] * dx[2]);
+        Dtemp(2, 2) += wf_pn[ip][j] * (dx[2] * dx[2]);
+      }
+      Dtemp(1, 0) = Dtemp(0, 1);
+      Dtemp(2, 1) = Dtemp(1, 2);
+      Dtemp(2, 0) = Dtemp(0, 2);
+      Di[ip] = Dtemp.inverse();
+      // cout << "1 - Di[" << ip << "]=\n" << Di[ip] << endl;
+    }
+  }
+
+  // Eigen::Matrix3d eye;
+  // eye.setIdentity();
+
+  // double cellsizeSqInv = 1.0 / (grid->cellsize * grid->cellsize);
+
+  // for (int ip = 0; ip < np_local; ip++)
+  //   {
+  //     if ( form_function.compare("linear") == 0)
+  // 	{
+  // 	  // If the form function is linear:
+  // 	  Di[ip] = 16.0 / 4.0 * cellsizeSqInv * eye;
+  // 	}
+  //     else if (form_function.compare("quadratic-spline") == 0)
+  // 	{
+  // 	  // If the form function is a quadratic spline:
+  // 	  Di[ip] = 4.0 * cellsizeSqInv * eye;
+  // 	}
+  //     else if (form_function.compare("cubic-spline") == 0)
+  // 	{
+  // 	  // If the form function is a cubic spline:
+  // 	  Di[ip] = 3.0 * cellsizeSqInv * eye;
+  // 	}
+  //     else if (form_function.compare("Bernstein-quadratic") == 0)
+  // 	Di[ip] = 12.0 * cellsizeSqInv * eye;
+  //     //cout << "2 - Di[" << ip << "]=\n" << Di[ip] << endl;
+  //   }
 }
 
 void Solid::copy_particle(int i, int j) {
