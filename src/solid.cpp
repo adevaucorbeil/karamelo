@@ -336,6 +336,8 @@ void Solid::compute_velocity_nodes(bool reset)
       {
         ip = neigh_np[in][j];
         vtemp += (wf_np[in][j] * mass[ip]) * v[ip];
+        //vtemp += (wf_np[in][j] * mass[ip]) *
+	//  (v[ip] + Fdot[ip] * (grid->x0[in] - x0[ip]));
 
         if (grid->rigid[in] && mat->rigid)
         {
@@ -377,8 +379,9 @@ void Solid::compute_velocity_nodes_APIC(bool reset)
       {
         ip = neigh_np[in][j];
         grid->v[in] += (wf_np[in][j] * mass[ip]) *
-	  (v[ip] + Fdot[ip] * (grid->x0[in] - x0[ip])) / grid->mass[in];
+	  (v[ip] + Fdot[ip] * (grid->x0[in] - x0[ip]));
       }
+      grid->v[in] /= grid->mass[in];
     }
   }
 }
@@ -1241,7 +1244,7 @@ void Solid::compute_inertia_tensor(string form_function) {
       Dtemp(2, 1) = Dtemp(1, 2);
       Dtemp(2, 0) = Dtemp(0, 2);
       Di[ip] = Dtemp.inverse();
-      // cout << "1 - Di[" << ip << "]=\n" << Di[ip] << endl;
+      cout << "1 - Di[" << ip << "]=\n" << Di[ip] << endl;
     }
   }
 
