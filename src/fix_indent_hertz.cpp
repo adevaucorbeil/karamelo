@@ -71,10 +71,10 @@ void FixIndentHertz::setup() {}
 
 void FixIndentHertz::setmask() {
   mask = 0;
-  mask |= INITIAL_INTEGRATE;
+  mask |= POST_ADVANCE_PARTICLES;
 }
 
-void FixIndentHertz::initial_integrate() {
+void FixIndentHertz::post_advance_particles() {
   // cout << "In FixIndentHertz::initial_integrate()\n";
 
   // Go through all the particles in the group and set b to the right value:
@@ -83,7 +83,7 @@ void FixIndentHertz::initial_integrate() {
   int solid = group->solid[igroup];
 
   Solid *s;
-  Eigen::Vector3d ftot, ftot_reduced;
+  Eigen::Vector3d ftot, ftot_reduced, vtemp;
 
   double R = input->parsev(args[Rpos]).result(mpm);
   Eigen::Vector3d xs(input->parsev(args[xpos]).result(mpm),
@@ -134,7 +134,9 @@ void FixIndentHertz::initial_integrate() {
                     // fmag = K * MIN(f1, f2);
 
                     f = fmag * xsp / r;
-                    s->mbp[ip] += f;
+		    vtemp = update->dt * f / s->mass[ip];
+                    s->v[ip] += vtemp;
+		    s->x[ip] += update->dt * vtemp;
                     ftot += f;
                   } else {
                     fmag = 0;
@@ -176,7 +178,9 @@ void FixIndentHertz::initial_integrate() {
                     // fmag = K * MIN(f1, f2);
 
                     f = fmag * xsp / r;
-                    s->mbp[ip] += f;
+		    vtemp = update->dt * f / s->mass[ip];
+                    s->v[ip] += vtemp;
+		    s->x[ip] += update->dt * vtemp;
                     ftot += f;
                   } else {
                     fmag = 0;
@@ -221,7 +225,9 @@ void FixIndentHertz::initial_integrate() {
                   // fmag = K * MIN(f1, f2);
 
                   f = fmag * xsp / r;
-                  s->mbp[ip] += f;
+		  vtemp = update->dt * f / s->mass[ip];
+		  s->v[ip] += vtemp;
+		  s->x[ip] += update->dt * vtemp;
                   ftot += f;
                 } else {
                   fmag = 0;
@@ -261,7 +267,9 @@ void FixIndentHertz::initial_integrate() {
                   // fmag = K * MIN(f1, f2);
 
                   f = fmag * xsp / r;
-                  s->mbp[ip] += f;
+		  vtemp = update->dt * f / s->mass[ip];
+		  s->v[ip] += vtemp;
+		  s->x[ip] += update->dt * vtemp;
                   ftot += f;
                 } else {
                   fmag = 0;
