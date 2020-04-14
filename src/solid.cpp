@@ -1107,32 +1107,34 @@ void Solid::update_stress()
       eff_plastic_strain_rate[ip] = MAX(0.0, eff_plastic_strain_rate[ip]);
     }
 
-    for (int in = 0; in < grid->nnodes_local + grid->nnodes_ghost; in++) {
-      grid->pH[in] = 0;
-      int ip;
-      for (int j = 0; j < numneigh_np[in]; j++) {
-        ip = neigh_np[in][j];
-        grid->pH[in] += (wf_np[in][j] * mass[ip]) * pH[ip];
+    if (mat->damage != NULL) {
+      for (int in = 0; in < grid->nnodes_local + grid->nnodes_ghost; in++) {
+	grid->pH[in] = 0;
+	int ip;
+	for (int j = 0; j < numneigh_np[in]; j++) {
+	  ip = neigh_np[in][j];
+	  grid->pH[in] += (wf_np[in][j] * mass[ip]) * pH[ip];
+	}
+	grid->pH[in] /= grid->mass[in];
       }
-      grid->pH[in] /= grid->mass[in];
+
+      grid->reduce_regularized_variables();
     }
-
-    grid->reduce_regularized_variables();
-
     int in;
 
     for (int ip = 0; ip < np_local; ip++) {
       pH_regu[ip] = 0;
 
-      for (int j = 0; j < numneigh_pn[ip]; j++) {
-        in = neigh_pn[ip][j];
-        pH_regu[ip] += wf_pn[ip][j] * grid->pH[in];
-      }
+      if (mat->damage != NULL) {
+	for (int j = 0; j < numneigh_pn[ip]; j++) {
+	  in = neigh_pn[ip][j];
+	  pH_regu[ip] += wf_pn[ip][j] * grid->pH[in];
+	}
 
-      if (mat->damage != NULL)
-        mat->damage->compute_damage(damage_init[ip], damage[ip], pH_regu[ip],
+	mat->damage->compute_damage(damage_init[ip], damage[ip], pH_regu[ip],
                                     sigma_dev[ip], eff_plastic_strain_rate[ip],
                                     plastic_strain_increment[ip], T[ip]);
+      }
       sigma[ip] = -pH[ip] * eye + sigma_dev[ip];
 
       if (damage[ip] > 1e-10) {
