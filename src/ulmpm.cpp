@@ -68,6 +68,7 @@ void ULMPM::setup(vector<string> args)
   else if (args[n].compare("APIC") == 0)
   {
     method_type = "APIC";
+    FLIP = 0;
   }
   else
   {
