@@ -69,7 +69,7 @@ void FixContactHertz::initial_integrate() {
   Eigen::Vector3d f, dx;
 
   Solid *s1, *s2;
-  Eigen::Vector3d ftot, ftot_reduced;
+  Eigen::Vector3d ftot, ftot_reduced, vtemp1, vtemp2;
 
   double Rp, Rp1, Rp2, r, p, fmag, Estar, max_cellsize;
 
@@ -83,7 +83,7 @@ void FixContactHertz::initial_integrate() {
 
   max_cellsize = MAX(s1->grid->cellsize, s2->grid->cellsize);
 
-  if (domain->dimension == 3) {
+  if (domain->dimension == 2) {
     for (int ip1 = 0; ip1 < s1->np_local; ip1++) {
       for (int ip2 = 0; ip2 < s2->np_local; ip2++) {
         dx = s2->x[ip2] - s1->x[ip1];
@@ -96,6 +96,7 @@ void FixContactHertz::initial_integrate() {
 	  Rp2 = 0.5 * pow(s2->vol[ip2], 0.333333333);
 	  Rp = Rp1 + Rp2;
 
+
 	  // Gross screening:
 	  if ((dx[0] < Rp) && (dx[1] < Rp) && (dx[2] < Rp) && (dx[0] > -Rp) &&
 	      (dx[1] > -Rp) && (dx[2] > -Rp)) {
@@ -104,18 +105,70 @@ void FixContactHertz::initial_integrate() {
 
 	    // Finer screening:
 	    if (r < Rp) {
-	      p = Rp - r; // penetration
 
-	      fmag =
-                four_thirds * Estar * sqrt(Rp1 * Rp2 / (Rp1 + Rp2) * p * p * p);
+              p = Rp - r; // penetration
 
-	      f = fmag * dx / r;
+              fmag = 0.25 * M_PI * Estar *
+                     sqrt(Rp1 * Rp2 / (Rp1 + Rp2) * p * p * p);
+
+              f = fmag * dx / r;
+              ftot += f;
 	      s1->mbp[ip1] -= f;
 	      s2->mbp[ip2] += f;
-	      ftot += f;
-	    }
-	  }
-	}
+              // vtemp1 = -update->dt * f / s1->mass[ip1];
+              // s1->v[ip1] += vtemp1;
+              // s1->x[ip1] += update->dt * vtemp1;
+
+              // vtemp2 = update->dt * f / s2->mass[ip2];
+              // s2->v[ip2] += vtemp2;
+              // s2->x[ip2] += update->dt * vtemp2;
+            }
+          }
+        }
+      }
+    }
+  }
+  else if (domain->dimension == 3) {
+    for (int ip1 = 0; ip1 < s1->np_local; ip1++) {
+      for (int ip2 = 0; ip2 < s2->np_local; ip2++) {
+        dx = s2->x[ip2] - s1->x[ip1];
+
+	// Extremely gross screening:
+	if ((dx[0] < max_cellsize) && (dx[1] < max_cellsize) &&
+	    (dx[2] < max_cellsize) && (dx[0] > -max_cellsize) &&
+            (dx[1] > -max_cellsize) && (dx[2] > -max_cellsize)) {
+	  Rp1 = 0.5 * pow(s1->vol[ip1], 0.333333333);
+	  Rp2 = 0.5 * pow(s2->vol[ip2], 0.333333333);
+	  Rp = Rp1 + Rp2;
+
+
+	  // Gross screening:
+	  if ((dx[0] < Rp) && (dx[1] < Rp) && (dx[2] < Rp) && (dx[0] > -Rp) &&
+	      (dx[1] > -Rp) && (dx[2] > -Rp)) {
+
+	    r = dx.norm();
+
+	    // Finer screening:
+	    if (r < Rp) {
+              p = Rp - r; // penetration
+
+              fmag = four_thirds * Estar *
+                     sqrt(Rp1 * Rp2 / (Rp1 + Rp2) * p * p * p);
+
+              f = fmag * dx / r;
+	      s1->mbp[ip1] -= f;
+	      s2->mbp[ip2] += f;
+              ftot += f;
+              // vtemp1 = -update->dt * f / s1->mass[ip1];
+              // s1->v[ip1] += vtemp1;
+              // s1->x[ip1] += update->dt * vtemp1;
+
+              // vtemp2 = update->dt * f / s2->mass[ip2];
+              // s2->v[ip2] += vtemp2;
+              // s2->x[ip2] += update->dt * vtemp2;
+            }
+          }
+        }
       }
     }
   }
@@ -128,3 +181,123 @@ void FixContactHertz::initial_integrate() {
   (*input->vars)[id + "_y"] = Var(id + "_y", ftot_reduced[1]);
   (*input->vars)[id + "_z"] = Var(id + "_z", ftot_reduced[2]);
 }
+
+// void FixContactHertz::post_advance_particles() {
+//   // cout << "In FixContactHertz::initial_integrate()\n";
+
+//   // Go through all the particles in the group and set b to the right value:
+//   Eigen::Vector3d f, dx;
+
+//   Solid *s1, *s2;
+//   Eigen::Vector3d ftot, ftot_reduced, vtemp1, vtemp2;
+
+//   double Rp, Rp1, Rp2, r, p, fmag, Estar, max_cellsize;
+
+//   ftot.setZero();
+
+//   s1 = domain->solids[solid1];
+//   s2 = domain->solids[solid2];
+
+//   Estar = 1.0 / ((1 - s1->mat->nu * s1->mat->nu) / s1->mat->E +
+//                  (1 - s2->mat->nu * s2->mat->nu) / s2->mat->E);
+
+//   max_cellsize = MAX(s1->grid->cellsize, s2->grid->cellsize);
+
+//   if (domain->dimension == 2) {
+//     for (int ip1 = 0; ip1 < s1->np_local; ip1++) {
+//       for (int ip2 = 0; ip2 < s2->np_local; ip2++) {
+//         dx = s2->x[ip2] - s1->x[ip1];
+
+// 	// Extremely gross screening:
+// 	if ((dx[0] < max_cellsize) && (dx[1] < max_cellsize) &&
+// 	    (dx[2] < max_cellsize) && (dx[0] > -max_cellsize) &&
+//             (dx[1] > -max_cellsize) && (dx[2] > -max_cellsize)) {
+// 	  Rp1 = 0.5 * pow(s1->vol[ip1], 0.333333333);
+// 	  Rp2 = 0.5 * pow(s2->vol[ip2], 0.333333333);
+// 	  Rp = Rp1 + Rp2;
+
+
+// 	  // Gross screening:
+// 	  if ((dx[0] < Rp) && (dx[1] < Rp) && (dx[2] < Rp) && (dx[0] > -Rp) &&
+// 	      (dx[1] > -Rp) && (dx[2] > -Rp)) {
+
+// 	    r = dx.norm();
+
+// 	    // Finer screening:
+// 	    if (r < Rp) {
+
+//               p = Rp - r; // penetration
+
+//               fmag = 0.25 * M_PI * Estar *
+//                      sqrt(Rp1 * Rp2 / (Rp1 + Rp2) * p * p * p);
+
+//               f = fmag * dx / r;
+//               ftot += f;
+// 	      //s1->mbp[ip1] -= f;
+// 	      //s2->mbp[ip2] += f;
+//               vtemp1 = -update->dt * f / s1->mass[ip1];
+//               s1->v[ip1] += vtemp1;
+//               s1->x[ip1] += update->dt * vtemp1;
+
+//               vtemp2 = update->dt * f / s2->mass[ip2];
+//               s2->v[ip2] += vtemp2;
+//               s2->x[ip2] += update->dt * vtemp2;
+//             }
+//           }
+//         }
+//       }
+//     }
+//   }
+//   else if (domain->dimension == 3) {
+//     for (int ip1 = 0; ip1 < s1->np_local; ip1++) {
+//       for (int ip2 = 0; ip2 < s2->np_local; ip2++) {
+//         dx = s2->x[ip2] - s1->x[ip1];
+
+// 	// Extremely gross screening:
+// 	if ((dx[0] < max_cellsize) && (dx[1] < max_cellsize) &&
+// 	    (dx[2] < max_cellsize) && (dx[0] > -max_cellsize) &&
+//             (dx[1] > -max_cellsize) && (dx[2] > -max_cellsize)) {
+// 	  Rp1 = 0.5 * pow(s1->vol[ip1], 0.333333333);
+// 	  Rp2 = 0.5 * pow(s2->vol[ip2], 0.333333333);
+// 	  Rp = Rp1 + Rp2;
+
+
+// 	  // Gross screening:
+// 	  if ((dx[0] < Rp) && (dx[1] < Rp) && (dx[2] < Rp) && (dx[0] > -Rp) &&
+// 	      (dx[1] > -Rp) && (dx[2] > -Rp)) {
+
+// 	    r = dx.norm();
+
+// 	    // Finer screening:
+// 	    if (r < Rp) {
+//               p = Rp - r; // penetration
+
+//               fmag = four_thirds * Estar *
+//                      sqrt(Rp1 * Rp2 / (Rp1 + Rp2) * p * p * p);
+
+//               f = fmag * dx / r;
+// 	      s1->mbp[ip1] -= f;
+// 	      s2->mbp[ip2] += f;
+//               ftot += f;
+//               // vtemp1 = -update->dt * f / s1->mass[ip1];
+//               // s1->v[ip1] += vtemp1;
+//               // s1->x[ip1] += update->dt * vtemp1;
+
+//               // vtemp2 = update->dt * f / s2->mass[ip2];
+//               // s2->v[ip2] += vtemp2;
+//               // s2->x[ip2] += update->dt * vtemp2;
+//             }
+//           }
+//         }
+//       }
+//     }
+//   }
+
+//   // Reduce ftot:
+//   MPI_Allreduce(ftot.data(), ftot_reduced.data(), 3, MPI_DOUBLE, MPI_SUM,
+//                 universe->uworld);
+
+//   (*input->vars)[id + "_x"] = Var(id + "_x", ftot_reduced[0]);
+//   (*input->vars)[id + "_y"] = Var(id + "_y", ftot_reduced[1]);
+//   (*input->vars)[id + "_z"] = Var(id + "_z", ftot_reduced[2]);
+// }
