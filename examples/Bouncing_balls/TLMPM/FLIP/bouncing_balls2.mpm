@@ -1,0 +1,65 @@
+#####################################################
+#               UNITS: MPa, mm, s                   #
+#####################################################
+E   = 1e+3
+nu  = 0.3
+rho = 1000
+K      = E/(3*(1-2*nu))
+mu     = E/(2*(1+nu))
+lambda = E*nu/((1+nu)*(1-2*nu))
+c      = sqrt(E/rho)
+L    = 1
+hL   = 0.5*L
+A_zy = L*L
+FLIP=0.999
+#---------- SET METHOD --------------#
+method(tlmpm, FLIP, linear, FLIP)
+N        = 40     # 20 cells per direction
+cellsize = L/N    # cell size
+# 2D problem, which the computational domain is
+dimension(2,-hL, hL, -hL, hL, cellsize)
+# solids (2 balls)
+R = 0.2
+region(rBall1, cylinder, -hL+R, -hL+R, R)
+region(rBall2, cylinder, hL-R, hL-R, R)
+material(mat1, linear, rho, E, nu)
+
+#---------- SET SOLID --------------#
+ppc1d = 2
+solid(sBall1, region, rBall1, ppc1d, mat1, cellsize,0)
+solid(sBall2, region, rBall2, ppc1d, mat1, cellsize,0)
+#---------- IMPOSE BOUNDARY CONDITIONS --------------#
+#---------- IMPOSE INITIAL CONDITIONS --------------#
+group(gBall1, particles, region, rBall1, solid, sBall1)
+group(gBall2, particles, region, rBall2, solid, sBall2)
+v = 0.1
+fix(v0Ball1, initial_velocity_particles, gBall1, v, v, NULL)
+fix(v0Ball2, initial_velocity_particles, gBall2, -v, -v, NULL)
+
+#-----------CONTACT------------------------------------#
+
+fix(contact, contact/hertz, sBall1, sBall2)
+
+#-----------OUTPUT-------------------------------------#
+N_log = 50
+dumping_interval = N_log*1
+dump(dump1, all, particle, dumping_interval, dump_p.*.LAMMPS, x, y, z, s11, s22, s33, s12, s13, s23, seq)
+dump(dump2, all, grid, dumping_interval, dump_g.*.LAMMPS, x, y, z)
+#dump(dump3, all, pyplot, 1, dump.*.pdf, 500, 500)
+#-----------OUTPUTS------------------#
+fix(Ek, kinetic_energy, all)
+fix(Es, strain_energy, all)
+Etot = Ek_s + Es_s
+#----------- RUN --------------------#
+
+#dt_factor(0.1)  # => adaptive time step with CFL = 0.1
+set_dt(0.001)
+
+log_modify(custom, step, dt, time, Ek_s, Es_s)
+plot(Ek, N_log, time, Ek_s)
+plot(Es, N_log, time, Es_s)
+plot(Etot, N_log, time, Etot)
+save_plot(plot.pdf)
+log(N_log)
+run_time(3.5)
+#run(100)
