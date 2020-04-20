@@ -33,7 +33,7 @@ public:
   double rho0();
   double K();
   double G();
-  void compute_pressure(double &, double &, const double, const double, const double, const double);
+  void compute_pressure(double &, double &, const double, const double, const double, const double, const Eigen::Matrix3d, const double);
 
 protected:
   double rho0_, K_;

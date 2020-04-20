@@ -1094,7 +1094,7 @@ void Solid::update_stress()
     for (int ip = 0; ip < np_local; ip++) {
 
       mat->eos->compute_pressure(pH[ip], ienergy[ip], J[ip], rho[ip], T[ip],
-                                 damage[ip]);
+                                 damage[ip], D[ip], grid->cellsize);
       sigma_dev[ip] = mat->strength->update_deviatoric_stress(
           sigma[ip], D[ip], plastic_strain_increment[ip], eff_plastic_strain[ip],
           eff_plastic_strain_rate[ip], damage[ip], T[ip]);

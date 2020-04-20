@@ -56,6 +56,18 @@ EOSShock::EOSShock(MPM *mpm, vector<string> args) : EOS(mpm, args)
   Tr = input->parsev(args[8]);
   cout << "Set Tr to " << Tr << endl;
 
+  Q1 = input->parsev(args[9]);
+  cout << "Set the artificial vicosity coefficient Q1 to " << Q1 << endl;
+
+  Q2 = input->parsev(args[10]);
+  cout << "Set the artificial vicosity coefficient Q2 to " << Q2 << endl;
+
+  if (Q1 == 0 && Q2 == 0) {
+    artificial_viscosity = false;
+  } else {
+    artificial_viscosity = true;
+  }
+
   alpha = cv*rho0_;
   e0 = 0;
 }
@@ -74,7 +86,7 @@ double EOSShock::K(){
   return K_;
 }
 
-void EOSShock::compute_pressure(double &pFinal, double &e, const double J, const double rho, const double T, const double damage){
+void EOSShock::compute_pressure(double &pFinal, double &e, const double J, const double rho, const double T, const double damage, const Eigen::Matrix3d D, const double cellsize){
   double mu = rho / rho0_ - 1.0;
   double pH = rho0_ * square(c0) * mu * (1.0 + mu) / square(1.0 - (S - 1.0) * mu);
 
@@ -94,6 +106,14 @@ void EOSShock::compute_pressure(double &pFinal, double &e, const double J, const
 	pFinal = (pH_damaged + rho0_ * (1 + mu_damaged) * Gamma * (e - e0));;
       }
     }
+  }
+
+  if (artificial_viscosity) {
+    double tr_eps = D.trace();
+    double q = rho * cellsize *
+               (Q1 * cellsize * tr_eps * tr_eps - Q2 * c0 * sqrt(J) * tr_eps);
+
+    pFinal += q;
   }
 }
 

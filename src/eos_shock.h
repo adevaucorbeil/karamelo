@@ -33,12 +33,15 @@ public:
   double rho0();
   double K();
   double G();
-  void compute_pressure(double &, double &, const double, const double, const double, const double);
+  void compute_pressure(double &, double &, const double, const double, const double, const double, const Eigen::Matrix3d, const double);
 
 protected:
-  double rho0_, K_, e0, c0, S, Gamma, Tr, cv, alpha;
-  string usage = "Usage: eos(eos-ID, shock, rho, K, c0, S, Gamma, cv, Tr)\n";
-  int Nargs = 9;
+  double rho0_, K_, e0, c0, S, Gamma, Tr, cv, alpha, Q1, Q2;
+  string usage = "Usage: eos(eos-ID, shock, rho, K, c0, S, Gamma, cv, Tr, Q1, Q2)\n";
+  int Nargs = 11;
+
+private:
+  bool artificial_viscosity;
 };
 
 #endif
