@@ -133,6 +133,18 @@ void DumpParticleGz::write() {
           dumpstream << sigma_(1, 2) << " ";
         else if (v.compare("seq") == 0)
           dumpstream << sqrt(3. / 2.) * Deviator(sigma_).norm() << " ";
+        else if (v.compare("e11") == 0)
+          dumpstream << s->strain_el[i](0, 0) << " ";
+        else if (v.compare("e22") == 0)
+          dumpstream << s->strain_el[i](1, 1) << " ";
+        else if (v.compare("e33") == 0)
+          dumpstream << s->strain_el[i](2, 2) << " ";
+        else if (v.compare("e12") == 0)
+          dumpstream << s->strain_el[i](0, 1) << " ";
+        else if (v.compare("e13") == 0)
+          dumpstream << s->strain_el[i](0, 2) << " ";
+        else if (v.compare("e23") == 0)
+          dumpstream << s->strain_el[i](1, 2) << " ";
         else if (v.compare("damage") == 0)
           dumpstream << s->damage[i] << " ";
         else if (v.compare("damage_init") == 0)

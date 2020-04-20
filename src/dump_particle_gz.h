@@ -34,6 +34,8 @@ class DumpParticleGz : public Dump {
 			      "vx", "vy", "vz",
 			      "s11", "s22", "s33",
 			      "s12", "s13", "s23",
+			      "e11", "e22", "e33",
+			      "e12", "e13", "e23",
 			      "seq", "volume", "mass",
 			      "damage", "damage_init",
 			      "bx", "by", "bz",
