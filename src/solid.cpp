@@ -1000,7 +1000,7 @@ void Solid::update_deformation_gradient()
     {
       cout << "Error: J[" << ip << "]<=0.0 == " << J[ip] << endl;
       cout << "F[" << ip << "]:" << endl << F[ip] << endl;
-      error->all(FLERR,"");
+      error->one(FLERR,"");
     }
     rho[ip] = rho0[ip] / J[ip];
 
