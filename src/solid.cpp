@@ -1146,7 +1146,8 @@ void Solid::update_stress()
             sigma_dev[ip] / (mat->G * (1 - damage[ip]));
       } else {
         strain_el[ip] =
-            (update->dt * D[ip].trace() + strain_el[ip].trace()) / 3.0 * eye;
+            (update->dt * D[ip].trace() + strain_el[ip].trace()) / 3.0 * eye +
+            sigma_dev[ip] / mat->G;
       }
 
       if (tl) {
