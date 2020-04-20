@@ -110,10 +110,13 @@ void EOSShock::compute_pressure(double &pFinal, double &e, const double J, const
 
   if (artificial_viscosity) {
     double tr_eps = D.trace();
-    double q = rho * cellsize *
-               (Q1 * cellsize * tr_eps * tr_eps - Q2 * c0 * sqrt(J) * tr_eps);
 
-    pFinal += q;
+    if (tr_eps < 0) {
+      double q = rho * cellsize *
+	(Q1 * cellsize * tr_eps * tr_eps - Q2 * c0 * sqrt(J) * tr_eps);
+
+      pFinal += q;
+    }
   }
 }
 
