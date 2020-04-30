@@ -72,8 +72,9 @@ MPM::MPM(int narg, char **arg, MPI_Comm communicator)
   wlogfile = NULL;
 
   if (universe->me == 0) {
-    cout << "Karamelo -- Parallel Material Point Methods Simulator version " << KARAMELO_VERSION << endl
-	 << "Running on " << universe->nprocs << " procs\n";
+    cout << "Karamelo -- Parallel Material Point Methods Simulator Build SHA1:"
+         << Version::GIT_SHA1 << endl;
+    cout << "Running on " << universe->nprocs << " procs\n";
 
     if (inflag != 0)
       {
@@ -127,10 +128,9 @@ void MPM::init() {
   modify->init();
 }
 
-void MPM::help()
-{
+void MPM::help() {
   // general help message about command line and flags
-  cout << "Karamelo -- Parallel Material Point Methods Simulator version " << KARAMELO_VERSION << endl
+  cout << "Karamelo -- Parallel Material Point Methods Simulator Build SHA1:"
+       << Version::GIT_SHA1 << endl
        << "Usage: karamelo -i input_file\n";
-
 }

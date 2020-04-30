@@ -33,8 +33,6 @@ struct boundsize {
 
 Universe::Universe(MPM *mpm, MPI_Comm communicator) : Pointers(mpm)
 {
-  version = (const char *) KARAMELO_VERSION;
-
   uworld = communicator;
   MPI_Comm_rank(uworld,&me);
   MPI_Comm_size(uworld,&nprocs);

@@ -21,8 +21,6 @@ using namespace std;
 
 class Universe : protected Pointers {
  public:
-  const char *version;    // Karamelo version string = date
-
   MPI_Comm uworld;        // communicator for entire universe
   int me,nprocs;          // my place in universe
 
