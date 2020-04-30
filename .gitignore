@@ -18,3 +18,5 @@
 /Makefile
 /cmake_install.cmake
 /**/dump*.LAMMPS
+/src/version.cpp
+
