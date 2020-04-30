@@ -132,7 +132,7 @@ void FixVelocityParticles::initial_integrate() {
       s = domain->solids[isolid];
       n = 0;
 
-      for (int ip = 0; ip < s->np; ip++) {
+      for (int ip = 0; ip < s->np_local; ip++) {
 	if (s->mask[ip] & groupbit) {
 	  xtemp = s->x[ip];
 	  if (xset) {
@@ -156,7 +156,7 @@ void FixVelocityParticles::initial_integrate() {
   } else {
     s = domain->solids[solid];
 
-    for (int ip = 0; ip < s->np; ip++) {
+    for (int ip = 0; ip < s->np_local; ip++) {
       if (s->mask[ip] & groupbit) {
 	xtemp = s->x[ip];
 	if (xset) {
@@ -208,7 +208,7 @@ void FixVelocityParticles::post_advance_particles() {
       s = domain->solids[isolid];
       n = 0;
 
-      for (int ip = 0; ip < s->np; ip++) {
+      for (int ip = 0; ip < s->np_local; ip++) {
         if (s->mask[ip] & groupbit) {
           Dv.setZero();
           if (xset) {
@@ -235,7 +235,7 @@ void FixVelocityParticles::post_advance_particles() {
   } else {
     s = domain->solids[solid];
     n = 0;
-    for (int ip = 0; ip < s->np; ip++) {
+    for (int ip = 0; ip < s->np_local; ip++) {
       if (s->mask[ip] & groupbit) {
         Dv.setZero();
         if (xset) {
