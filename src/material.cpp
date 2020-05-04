@@ -427,6 +427,15 @@ Mat::Mat(string id_, int type_, double rho0_, double E_, double nu_) {
   lambda = E * nu / ((1 + nu) * (1 - 2 * nu));
   K = E / (3 * (1 - 2 * nu));
   signal_velocity = sqrt(K / rho0);
+
+  cout << "Properties for material " << id << endl;
+  cout << "\tReference density: " << rho0 << endl;
+  cout << "\tYoung\'s modulus: " << E << endl;
+  cout << "\tPoisson\'s ratio: " << nu << endl;
+  cout << "\tShear modulus: " << G << endl;
+  cout << "\tBulk modulus: " << K << endl;
+  cout << "\tLame first parameter (Lambda): " << lambda << endl;
+  cout << "\tSignal velocity: " << signal_velocity << endl;
 }
 
 Mat::Mat(string id_, bool rigid_, Error *error) {
