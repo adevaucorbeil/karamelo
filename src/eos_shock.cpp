@@ -94,16 +94,16 @@ void EOSShock::compute_pressure(double &pFinal, double &e, const double J, const
     e = alpha * (T - Tr);
   else
     e = 0;
-  pFinal = (pH + rho * Gamma * (e - e0));
+  pFinal = pH - rho * Gamma * (e - e0);
 
   if ( damage > 0.0 ) {
     if ( pFinal < 0.0 ) {
       if ( damage >= 1.0) {
-	pFinal = rho0_ * Gamma * (e - e0);
+	pFinal = -rho0_ * Gamma * (e - e0);
       } else {
 	double mu_damaged = (1.0 - damage) * mu;
 	double pH_damaged = rho0_ * (1.0 - damage) * square(c0) * mu_damaged * (1.0 + mu_damaged) / square(1.0 - (S - 1.0) * mu_damaged);
-	pFinal = (pH_damaged + rho0_ * (1 + mu_damaged) * Gamma * (e - e0));;
+	pFinal = pH_damaged - rho0_ * (1 + mu_damaged) * Gamma * (e - e0);
       }
     }
   }
