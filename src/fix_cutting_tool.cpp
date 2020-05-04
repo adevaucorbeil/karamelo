@@ -171,7 +171,7 @@ void FixCuttingTool::initial_integrate() {
                   p = p2;
                   n = n2;
                 }
-                fmag = K * s->mat->G * p;
+                fmag = K * s->mat->G * p * (1.0 - s->damage[ip]);
 
                 f = fmag * n;
                 s->mbp[ip] += f;
@@ -213,7 +213,7 @@ void FixCuttingTool::initial_integrate() {
                 p = p2;
                 n = n2;
               }
-              fmag = K * s->mat->G * p;
+              fmag = K * s->mat->G * p * (1.0 - s->damage[ip]);;
 
               f = fmag * n;
               s->mbp[ip] += f;
