@@ -1116,7 +1116,10 @@ void Solid::update_stress()
 	int ip;
 	for (int j = 0; j < numneigh_np[in]; j++) {
 	  ip = neigh_np[in][j];
-	  grid->pH[in] += (wf_np[in][j] * mass[ip]) * pH[ip];
+	  if (damage[ip] == 0 || pH[ip] >= 0)
+	    grid->pH[in] += (wf_np[in][j] * mass[ip]) * pH[ip];
+	  else
+	    grid->pH[in] += (wf_np[in][j] * mass[ip]) * pH[ip] * (1.0 - damage[ip]);
 	}
 	grid->pH[in] /= grid->mass[in];
       }
@@ -1138,7 +1141,11 @@ void Solid::update_stress()
                                     sigma_dev[ip], eff_plastic_strain_rate[ip],
                                     plastic_strain_increment[ip], T[ip]);
       }
-      sigma[ip] = -pH[ip] * eye + sigma_dev[ip];
+
+      if (damage[ip] == 0 || pH[ip] >= 0)
+	sigma[ip] = -pH[ip] * eye + sigma_dev[ip];
+      else
+	sigma[ip] = -pH[ip] * (1.0 - damage[ip])* eye + sigma_dev[ip];
 
       if (damage[ip] > 1e-10) {
         strain_el[ip] =
