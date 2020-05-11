@@ -67,6 +67,7 @@ private:
   int method(vector<string>);
   int scheme(vector<string>);
   int fix(vector<string>);
+  int delete_fix(vector<string>);
   int set_dt_factor(vector<string>);
   int set_dt(vector<string>);
   class Var value(vector<string>);

@@ -2,6 +2,7 @@
 #include "fix_check_solution.h"
 #include "fix_contact_hertz.h"
 #include "fix_contact_pinball.h"
+#include "fix_contact_min_penetration.h"
 #include "fix_cutting_tool.h"
 #include "fix_force_nodes.h"
 #include "fix_indent.h"

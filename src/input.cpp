@@ -253,6 +253,8 @@ Var Input::evaluate_function(string func, string arg){
     return Var(scheme(args));
   if (func.compare("fix") == 0)
     return Var(fix(args));
+  if (func.compare("delete_fix") == 0)
+    return Var(delete_fix(args));
   if (func.compare("dt_factor") == 0)
     return Var(set_dt_factor(args));
   if (func.compare("set_dt") == 0)
@@ -744,6 +746,11 @@ int Input::scheme(vector<string> args) {
 
 int Input::fix(vector<string> args) {
   modify->add_fix(args);
+  return 0;
+}
+
+int Input::delete_fix(vector<string> args) {
+  modify->delete_fix(args[0]);
   return 0;
 }
 

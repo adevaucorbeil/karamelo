@@ -141,7 +141,7 @@ void Modify::add_fix(vector<string> args){
 int Modify::find_fix(string name)
 {
   for (int ifix = 0; ifix < fix.size(); ifix++) {
-    cout << "fix["<< ifix <<"]->id=" << fix[ifix]->id << endl;
+    //cout << "fix["<< ifix <<"]->id=" << fix[ifix]->id << endl;
     if (name.compare(fix[ifix]->id) == 0) return ifix;
   }
   return -1;
