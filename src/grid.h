@@ -24,69 +24,84 @@
 
 using namespace Eigen;
 
+/*! This structure is used to duplicate a grid point to another CPU.
+ *  
+ * Each CPU create the series of grid points that lie in their respective domains.
+ * To insure the continuity of the simulation domain, each CPU need to be aware of
+ * of the grid points in the vicinity of its domain. 
+ * These points are communicated by the CPU whose domain they lie onto (owner).
+ * Each point has a unique identification number (tag), and a position vector (x).
+ * Moreover, it has a type that is used when B-splines and Bernstein quadratic shape 
+ * functions are used. This type changes in function of the position of the point with
+ * respect to the boundaries of the whole domain, or the quadratic cell.
+ */
 struct Point {
-  int owner;
-  tagint tag;
-  double x[3];
-  int ntype[3];
+  int owner;    ///< ID of the CPU who created the point
+  tagint tag;   ///< Unique identification number of the point
+  double x[3];  ///< Position vector of the point
+  int ntype[3]; ///< Type of the point (0, 1, or 2)
 };
 
+
+/*! This class holds all the variables and independent functions related the background grid(s).
+ * 
+ */
 class Grid : protected Pointers {
  public:
-  int ncells;            // number of cells
-  bigint nnodes;         // total number of nodes in the domain
-  bigint nnodes_local;   // number of nodes (in this CPU)
-  bigint nnodes_ghost;   // number of ghost nodes (in this CPU)
-  vector<tagint> ntag;   // unique identifier for nodes in the system.
-  map<int, int> map_ntag;// map_ntag[ntag[i]] = i;
+  int ncells;            ///< number of cells
+  bigint nnodes;         ///< total number of nodes in the domain
+  bigint nnodes_local;   ///< number of nodes (in this CPU)
+  bigint nnodes_ghost;   ///< number of ghost nodes (in this CPU)
+  vector<tagint> ntag;   ///< unique identifier for nodes in the system.
+  map<int, int> map_ntag;///< map_ntag[ntag[i]] = i;
 
-  int nx;                // number of nodes along x on this CPU
-  int ny;                // number of nodes along y on this CPU
-  int nz;                // number of nodes along z on this CPU
+  int nx;                ///< number of nodes along x on this CPU
+  int ny;                ///< number of nodes along y on this CPU
+  int nz;                ///< number of nodes along z on this CPU
 
-  int nx_global;         // number of nodes along x on all CPUs
-  int ny_global;         // number of nodes along y on all CPUs
-  int nz_global;         // number of nodes along z on all CPUs
+  int nx_global;         ///< number of nodes along x on all CPUs
+  int ny_global;         ///< number of nodes along y on all CPUs
+  int nz_global;         ///< number of nodes along z on all CPUs
 
-  int nshared;           // number of nodes that are shared (ghosts in other CPUs
-  vector<tagint> shared; // tag of all shared nodes
-  map<int, vector<tagint>> dest_nshared;   // for each CPU, list the tags of shared nodes
-  map<int, vector<tagint>> origin_nshared; // for each CPU, list the tags of ghost nodes
+  int nshared;           ///< number of nodes that are shared (ghosts in other CPUs
+  vector<tagint> shared; ///< tag of all shared nodes
+  map<int, vector<tagint>> dest_nshared;   ///< for each CPU, list the tags of shared nodes
+  map<int, vector<tagint>> origin_nshared; ///< for each CPU, list the tags of ghost nodes
 
-  vector<int> nowner;    // which CPU owns each node (universe->me for local nodes, other CPU for ghost nodes
+  vector<int> nowner;    ///< which CPU owns each node (universe->me for local nodes, other CPU for ghost nodes
 
-  double cellsize;       // size of the square cells forming the grid
+  double cellsize;       ///< size of the square cells forming the grid
 
-  vector<Eigen::Vector3d> x;            // nodes' current position
-  vector<Eigen::Vector3d> x0;           // nodes' reference position
-  vector<Eigen::Vector3d> v;            // nodes' velocity at time t
-  vector<Eigen::Vector3d> v_update;     // nodes' velocity at time t+dt
-  vector<Eigen::Vector3d> mb;           // nodes' external forces times the mass
-  vector<Eigen::Vector3d> f;            // nodes' internal forces
+  vector<Eigen::Vector3d> x;            ///< nodes' current position
+  vector<Eigen::Vector3d> x0;           ///< nodes' position in the reference coordinate system
+  vector<Eigen::Vector3d> v;            ///< nodes' velocity at time t
+  vector<Eigen::Vector3d> v_update;     ///< nodes' velocity at time t+dt
+  vector<Eigen::Vector3d> mb;           ///< nodes' external forces times the mass
+  vector<Eigen::Vector3d> f;            ///< nodes' internal forces
 
-  vector<double> mass;              // nodes' current mass
-  vector<int> mask;                 // nodes' group mask
-  vector<bool> rigid;               // are the nodes in the area of influence of a rigid body?
-  vector<array<int, 3>> ntype;      // node type in x, y, and z directions (False for an edge, True otherwise)
+  vector<double> mass;              ///< nodes' current mass
+  vector<int> mask;                 ///< nodes' group mask
+  vector<bool> rigid;               ///< are the nodes in the area of influence of a rigid body?
+  vector<array<int, 3>> ntype;      ///< node type in x, y, and z directions (False for an edge, True otherwise)
 
   vector<double> pH;
 
-  MPI_Datatype Pointtype;    // MPI type for struct Point
+  MPI_Datatype Pointtype;    ///< MPI type for struct Point
 
   Grid(class MPM *);
   virtual ~Grid();
-  void grow(int);
-  void grow_ghosts(int);
+  void grow(int);              ///< Allocate memory for the vectors used for local nodes or resize them  
+  void grow_ghosts(int);       ///< Allocate memory for the vectors used for ghost nodes or resize them
   void setup(string);
-  void init(double*, double*);
+  void init(double*, double*); ///< Create the array of nodes. Give them their position, tag, and type
 
-  void reduce_mass_ghost_nodes();
+  void reduce_mass_ghost_nodes();                  ///< Reduce the mass of all the ghost nodes from that computed on each CPU.
   void reduce_mass_ghost_nodes_old();
-  void reduce_ghost_nodes(bool only_v = false);
+  void reduce_ghost_nodes(bool only_v = false);    ///< Reduce the force and velocities of all the ghost nodes from that computed on each CPU. If only_v is true, it reduces only the velocities
   void reduce_ghost_nodes_old(bool only_v = false);
-  void update_grid_velocities();
-  void update_grid_positions();
-  void reduce_regularized_variables();
+  void update_grid_velocities();                   ///< Determine the temporary grid velocities \f$\tilde{v}_{n}\f$. 
+  void update_grid_positions();                    ///< Determine the new position of the grid nodes.
+  void reduce_regularized_variables();             ///< Reduce the pressure interpolated at the grid nodes.
 };
 
 #endif

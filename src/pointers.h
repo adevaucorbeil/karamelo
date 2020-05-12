@@ -11,6 +11,7 @@
  *
  * ----------------------------------------------------------------------- */
 
+
 #ifndef MPM_POINTERS_H
 #define MPM_POINTERS_H
 
@@ -24,6 +25,7 @@
 
 using namespace std;
 
+/*! Father of all classes.*/
 class Pointers {
  public:
  Pointers(MPM *ptr) :
