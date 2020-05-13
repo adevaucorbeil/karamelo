@@ -562,11 +562,11 @@ void Solid::compute_particle_acceleration()
 }
 
 
-void Solid::update_particle_velocities(double FLIP)
+void Solid::update_particle_velocities(double alpha)
 {
   for (int ip = 0; ip < np_local; ip++)
     {
-      v[ip] = (1 - FLIP) * v_update[ip] + FLIP * (v[ip] + update->dt * a[ip]);
+      v[ip] = (1 - alpha) * v_update[ip] + alpha * (v[ip] + update->dt * a[ip]);
   }
 }
 

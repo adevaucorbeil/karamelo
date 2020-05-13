@@ -45,6 +45,11 @@ struct Point {
 
 /*! This class holds all the variables and independent functions related the background grid(s).
  * 
+ * This class does not have as members functions related to the Particle to Grid (P2G) and Grid to Particle (G2P) steps of the MPM algorithm.
+ * This is due to the necessity to access the mass, velocity, body forces and stresses of particles held in the Solid class.
+ * Instead, these functions are members of the Solid Class since this class stores a pointer to the grid it uses. 
+ * Either a local grid, as used in the Total Lagrangian MPM, or the global grid, as used in the Updated Lagrangian MPM.
+ * This class has Pointers as parent in order to be accessible from anywhere within the MPM class.
  */
 class Grid : protected Pointers {
  public:
@@ -63,7 +68,7 @@ class Grid : protected Pointers {
   int ny_global;         ///< number of nodes along y on all CPUs
   int nz_global;         ///< number of nodes along z on all CPUs
 
-  int nshared;           ///< number of nodes that are shared (ghosts in other CPUs
+  int nshared;           ///< number of nodes that are shared (ghosts in other CPUs)
   vector<tagint> shared; ///< tag of all shared nodes
   map<int, vector<tagint>> dest_nshared;   ///< for each CPU, list the tags of shared nodes
   map<int, vector<tagint>> origin_nshared; ///< for each CPU, list the tags of ghost nodes
