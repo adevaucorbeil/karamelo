@@ -24,7 +24,10 @@
 
 using namespace std;
 
-
+/*! Creates the maps of the different known EOS, Strength, Damage, and Temperature.
+ * The list of these different laws are fetched in headers style_eos.h, style_strength.h, 
+ * style_damage.h, style_temperature.h
+ */
 Material::Material(MPM *mpm) : Pointers(mpm)
 {
   strength_map = new StrengthCreatorMap();
@@ -61,6 +64,8 @@ Material::Material(MPM *mpm) : Pointers(mpm)
 #undef TEMPERATURE_CLASS
 }
 
+/*! Destroys the vectors and maps of the known EOS, Strength, Damage, and Temperature.
+ */
 Material::~Material()
 {
   for (int i = 0; i < strengths.size(); i++) delete strengths[i];
@@ -75,25 +80,15 @@ Material::~Material()
 }
 
 
-void Material::options(vector<string> *args, vector<string>::iterator it)
-{
-  cout << "In material::options()" << endl;
-  if (args->end() < it) {
-    error->all(FLERR, "Error: not enough arguments.\n");
-  }
-  if (args->end() > it) {
-    cout << "Ignoring optional arguments: ";
-    for (it; it != args->end(); ++it){
-      cout << *it << "\t";
-    }
-    cout << endl;
-  }
-}
-
 /* ----------------------------------------------------------------------
    create the EOS
 ------------------------------------------------------------------------- */
 
+/*! This function is the C++ equivalent to the eos() user function.\n
+ * Syntax: eos(name, type, type specific arguments)\n
+ * This function checks if the EOS name was already used.\n
+ * If not, it creates an entry in the vector Material::EOSs and calls EOS::EOS()
+ */
 void Material::add_EOS(vector<string> args){
   cout << "In add_EOS" << endl;
 
@@ -111,14 +106,12 @@ void Material::add_EOS(vector<string> args){
   }
   else {
     error->all(FLERR, "Unknown EOS style " + args[1] + "\n");
-  }
-  
+  } 
 }
 
-void Material::set_EOS(vector<string> args){
-  cout << "In Material::set_EOS" << endl;
-}
-
+/*! This function checks if 'name' is already used for an EOS.\n
+ * If an EOS named 'name' exists, it returns its ID. It returns -1 otherwise.
+ */
 int Material::find_EOS(string name)
 {
   cout << "In find_EOS\n";
@@ -133,6 +126,11 @@ int Material::find_EOS(string name)
    create a new strength
 ------------------------------------------------------------------------- */
 
+/*! This function is the C++ equivalent to the strength() user function.\n
+ * Syntax: strength(name, type, type specific arguments)\n
+ * This function checks if the Strength name was already used.\n
+ * If not, it creates an entry in the vector Material::strengths and calls Strength::Strength()
+ */
 void Material::add_strength(vector<string> args){
   cout << "In add_strength" << endl;
 
@@ -154,6 +152,9 @@ void Material::add_strength(vector<string> args){
   }
 }
 
+/*! This function checks if 'name' is already used for a Strength.\n
+ * If a Strength named 'name' exists, it returns its ID. It returns -1 otherwise.
+ */
 int Material::find_strength(string name)
 {
   for (int istrength = 0; istrength < strengths.size(); istrength++)
@@ -166,6 +167,11 @@ int Material::find_strength(string name)
    create a new damage
 ------------------------------------------------------------------------- */
 
+/*! This function is the C++ equivalent to the damage() user function.\n
+ * Syntax: damage(name, type, type specific arguments)\n
+ * This function checks if the damage name was already used.\n
+ * If not, it creates an entry in the vector Material::damages and calls Damage::Damage()
+ */
 void Material::add_damage(vector<string> args){
   cout << "In add_damage" << endl;
 
@@ -187,6 +193,9 @@ void Material::add_damage(vector<string> args){
   }
 }
 
+/*! This function checks if 'name' is already used for a Damage.\n
+ * If a Damage named 'name' exists, it returns its ID. It returns -1 otherwise.
+ */
 int Material::find_damage(string name)
 {
   for (int idamage = 0; idamage < damages.size(); idamage++)
@@ -198,6 +207,11 @@ int Material::find_damage(string name)
    create a new temperature
 ------------------------------------------------------------------------- */
 
+/*! This function is the C++ equivalent to the temperature() user function.\n
+ * Syntax: temperature(name, type, type specific arguments)\n
+ * This function checks if the Temperature name was already used.\n
+ * If not, it creates an entry in the vector Material::temperatures and calls Temperature::Temperature()
+ */
 void Material::add_temperature(vector<string> args){
   cout << "In add_temperature" << endl;
 
@@ -219,6 +233,9 @@ void Material::add_temperature(vector<string> args){
   }
 }
 
+/*! This function checks if 'name' is already used for an EOS.\n
+ * If an EOS named 'name' exists, it returns its ID. It returns -1 otherwise.
+ */
 int Material::find_temperature(string name)
 {
   for (int itemperature = 0; itemperature < temperatures.size(); itemperature++)
@@ -230,6 +247,11 @@ int Material::find_temperature(string name)
    create a new material
 ------------------------------------------------------------------------- */
 
+/*! This function is the C++ equivalent to the eos() user function.\n
+ * Syntax: eos(name, type, type specific arguments)\n
+ * This function checks if the EOS name was already used.\n
+ * If not, it creates an entry in the vector Material::EOSs and calls EOS::EOS()
+ */
 void Material::add_material(vector<string> args) {
   // cout << "In add_material" << endl;
 
@@ -269,7 +291,7 @@ void Material::add_material(vector<string> args) {
     materials.push_back(new_material);
 
   } else if (args[1].compare("rigid") == 0) {
-    Mat new_material(args[0], true, error);
+    Mat new_material(args[0], RIGID);
     materials.push_back(new_material);
   } else {
     // create the Material
@@ -340,6 +362,9 @@ void Material::add_material(vector<string> args) {
   cout << "Creating new mat with ID: " << args[0] << endl;
 }
 
+/*! This function checks if 'name' is already used for a Material.\n
+ * If a Material named 'name' exists, it returns its ID. It returns -1 otherwise.
+ */
 int Material::find_material(string name)
 {
   for (int imaterial = 0; imaterial < materials.size(); imaterial++)
@@ -387,7 +412,10 @@ Temperature *Material::temperature_creator(MPM *mpm, vector<string> args)
   return new T(mpm, args);
 }
 
-
+/*! The arguments are: material ID, material type (see Material::constitutive_model)
+ * a pointer to an EOS, a pointer to a Strength, a pointer to a Damage, and pointer to a Temperature.
+ * The last two can be NULL.
+ */
 Mat::Mat(string id_, int type_, class EOS* eos_, class Strength* strength_, class Damage* damage_, class Temperature* temp_){
   id = id_;
   type = type_;
@@ -413,6 +441,9 @@ Mat::Mat(string id_, int type_, class EOS* eos_, class Strength* strength_, clas
   cout << "\tSignal velocity: " << signal_velocity << endl;
 }
 
+/*! The arguments are: material ID, material type (see Material::constitutive_model)
+ * the density in the reference state, the Young's modulus and Poisson's ratio.
+ */
 Mat::Mat(string id_, int type_, double rho0_, double E_, double nu_) {
   id = id_;
   type = type_;
@@ -429,11 +460,10 @@ Mat::Mat(string id_, int type_, double rho0_, double E_, double nu_) {
   signal_velocity = sqrt(K / rho0);
 }
 
-Mat::Mat(string id_, bool rigid_, Error *error) {
+/*! The arguments are: material ID, material type (see Material::constitutive_model)
+ */
+Mat::Mat(string id_, int type_) {
+  type = type_;
   id = id_;
-  rigid = rigid_;
-  if (!rigid_) {
-    error->all(FLERR,
-               "Error in Mat::Mat(string id_, bool rigid_), rigid_==false.\n");
-  }
+  rigid = true;
 }
