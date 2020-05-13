@@ -16,13 +16,16 @@
 
 #include "pointers.h"
 
+/*! This class handles all the errors that can occur during the execution of the code.
+ *  Terminates the process and prints all the corresponding error messages.
+ */
 class Error : protected Pointers {
  public:
   Error(class MPM *);
 
-  void all(const char *, int, const string);
-  void one(const char *, int, const string);
-  void done(int = 0); // 1 would be fully backwards compatible
+  void all(const char *, int, const string);      ///< Is used when all CPUs exit with an error.
+  void one(const char *, int, const string);      ///< Is used when one CPU exits with an error.
+  void done(int = 0);                             ///< Exit with status
 };
 
 #endif

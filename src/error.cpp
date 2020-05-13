@@ -24,11 +24,10 @@ Error::Error(MPM *mpm) : Pointers(mpm) {
 }
 
 
-/* ----------------------------------------------------------------------
-   called by all procs in universe
-   close all output, screen, and log files in world and universe
-   no abort, so insure all procs in universe call, else will hang
-------------------------------------------------------------------------- */
+/*! Called by all procs in universe
+ * close all output, screen, and log files in universe
+ * no abort, so insure all procs in universe call, else will hang
+ */
 
 
 void Error::all(const char *file, int line, const string str)
@@ -50,10 +49,9 @@ void Error::all(const char *file, int line, const string str)
   exit(1);
 }
 
-/* ----------------------------------------------------------------------
-   called by one proc in universe
-   forces abort of entire universe if any proc in universe calls
-------------------------------------------------------------------------- */
+/*! Called by one proc in universe
+ *  Forces abort of entire universe if any proc in universe calls
+ */
 
 void Error::one(const char *file, int line, const string str)
 {
