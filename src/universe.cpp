@@ -23,8 +23,8 @@
 
 using namespace std;
 
-static vector<int> tile2d(int);
-static vector<int> tile3d(int);
+static vector<int> tile2d(int); ///< Determines the tiling of p procs in 2D
+static vector<int> tile3d(int); ///< Determines the tiling of p proces in 3D
 
 struct boundsize { 
     double dl;
