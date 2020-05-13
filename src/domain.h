@@ -25,38 +25,46 @@
 
 using namespace std;
 
+/*! Stores the dimension and geometrical aspects of the simultion box.
+ *
+ * Stores the simulation dimensions (i.e. 1D, 2D or 3D), the simulation box geometry, 
+ * the list of the user defined geometric regions and solids, as well as the background 
+ * grid if updated Lagrangian is used.
+ */
 class Domain : protected Pointers {
  public:
-  int dimension;                         // 2 = 2d, 3 = 3d
-  bool created;                          // has the domain been created?
-  bool axisymmetric;                     // true or false
-  tagint np_total;                       // total number of particles
+  int dimension;                         ///< 1 == 1D, 2 == 2d, 3 == 3d
+  bool created;                          ///< has the domain been created?
+  bool axisymmetric;                     ///< true if axisymmetric,  false otherwise
+  tagint np_total;                       ///< total number of particles
 
-  double boxlo[3],boxhi[3];              // orthogonal box global bounds
-  double sublo[3],subhi[3];              // sub-box bounds on this proc
+  double boxlo[3];                       ///< Lower orthogonal box global bounds
+  double boxhi[3];                       ///< Higher orthogonal box global bounds
+  double sublo[3];                       ///< Lower sub-box bounds on this proc
+  double subhi[3];                       ///< Higher sub-box bounds on this proc
 
-  vector<class Region *> regions; // list of defined Regions
-  vector<class Solid *> solids;   // list of defined Solids
+  vector<class Region *> regions;        ///< list of defined Regions
+  vector<class Solid *> solids;          ///< list of defined Solids
 
-  class Grid *grid; // common background grid
+  class Grid *grid;                      ///< pointer to the common background grid (if using Updated Lagrangian)
 
-  Domain(class MPM *);
-  virtual ~Domain();
+  Domain(class MPM *);                   ///< Creator.
+  virtual ~Domain();                     ///< Destructor.
 
-  void create_domain(vector<string>);
-  void set_dimension(vector<string>);
-  void set_axisymmetric(vector<string>);
-  bool inside_subdomain(double, double, double);
-  bool inside_subdomain_extended(double, double, double, double);
-  void set_local_box();
-  void add_region(vector<string>);
-  int find_region(string);
-  void add_solid(vector<string>);
-  int find_solid(string);
+  void create_domain(vector<string>);    ///< Deprecated function
+  void set_dimension(vector<string>);    ///< Called when user calls dimension()
+  void set_axisymmetric(vector<string>); ///< Called when user calls axisymmetric()
+  bool inside_subdomain(double, double, double); ///< Checks if the set of coordinates lies in the simulation domain.
+  bool inside_subdomain_extended(double, double, double, double); ///< Checks if the set of coordinates lies in this proc sub-domain.
+  void set_local_box();                  ///< Determine the boundaries of this proc subdomain
+  void add_region(vector<string>);       ///< Create a new region
+  int find_region(string);               ///< Finds the ID of a region
+  void add_solid(vector<string>);        ///< Create a new solid
+  int find_solid(string);                ///< Finds the ID of a solid
 
   typedef Region *(*RegionCreator)(MPM *, vector<string>);
   typedef map<string, RegionCreator> RegionCreatorMap;
-  RegionCreatorMap *region_map;
+  RegionCreatorMap *region_map;          ///< Map of all the known region types
 
   // typedef Solid *(*SolidCreator)(MPM *,vector<string>);
   // typedef map<string,SolidCreator> SolidCreatorMap;
