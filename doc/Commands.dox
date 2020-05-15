@@ -1,0 +1,8 @@
+/*! \page Commands Commands
+
+These pages describe how a Karamelo input script is formatted and the commands in it are used to define a Karamelo simulation.
+<ul>
+  <li><a href=InputScripts.html>Input scripts</a></li>
+  <li><a href=modules.html>General commands</a></li>
+</ul>
+*/

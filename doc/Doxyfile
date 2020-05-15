@@ -26,7 +26,7 @@ DOXYFILE_ENCODING      = UTF-8
 # identify the project. Note that if you do not use Doxywizard you need
 # to put quotes around the project name if it contains spaces.
 
-PROJECT_NAME           = ${KARAMELO_DOXY_PROJECT_NAME}
+PROJECT_NAME           = Karamelo
 
 # The PROJECT_NUMBER tag can be used to enter a project or revision number.
 # This could be handy for archiving the generated documentation or
@@ -34,7 +34,7 @@ PROJECT_NAME           = ${KARAMELO_DOXY_PROJECT_NAME}
 
 # KARAMELO_VERSION is set in the root CMakeLists.txt
 
-PROJECT_NUMBER         = "${KARAMELO_VERSION}"
+PROJECT_NUMBER         = "5b95c290"
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer
@@ -47,14 +47,14 @@ PROJECT_BRIEF          = "Parallel Material Point Method Simulator"
 # exceed 55 pixels and the maximum width should not exceed 200 pixels.
 # Doxygen will copy the logo to the output directory.
 
-PROJECT_LOGO           = "${Karamelo_SOURCE_DIR}/doc/Karamelo_logo.png"
+PROJECT_LOGO           = "./doc/Karamelo_logo.png"
 
 # The OUTPUT_DIRECTORY tag is used to specify the (relative or absolute)
 # base path where the generated documentation will be put.
 # If a relative path is entered, it will be relative to the location
 # where doxygen was started. If left blank the current directory will be used.
 
-OUTPUT_DIRECTORY       = "${Karamelo_BINARY_DIR}/doc${KARAMELO_DOXY_OUTPUT_DIRECTORY_SUFFIX}"
+OUTPUT_DIRECTORY       = "./doc"
 
 # If the CREATE_SUBDIRS tag is set to YES, then doxygen will create
 # 4096 sub-directories (in 2 levels) under the output directory of each output
@@ -466,7 +466,7 @@ HIDE_IN_BODY_DOCS      = NO
 # to NO (the default) then the documentation will be excluded.
 # Set it to YES to include the internal documentation.
 
-INTERNAL_DOCS          = ${KARAMELO_DOXY_INTERNAL}
+INTERNAL_DOCS          = NO
 
 # If the CASE_SENSE_NAMES tag is set to NO then Doxygen will only generate
 # file names in lower-case letters. If set to YES upper-case letters are also
@@ -486,7 +486,7 @@ HIDE_SCOPE_NAMES       = NO
 # will put a list of the files that are included by a file in the documentation
 # of that file.
 
-SHOW_INCLUDE_FILES     = ${KARAMELO_DOXY_INTERNAL}
+SHOW_INCLUDE_FILES     = NO
 
 # If the FORCE_LOCAL_INCLUDES tag is set to YES then Doxygen
 # will list include files with double quotes in the documentation
@@ -552,7 +552,7 @@ STRICT_PROTO_MATCHING  = NO
 # disable (NO) the todo list. This list is created by putting \todo
 # commands in the documentation.
 
-GENERATE_TODOLIST      = ${KARAMELO_DOXY_INTERNAL}
+GENERATE_TODOLIST      = NO
 
 # The GENERATE_TESTLIST tag can be used to enable (YES) or
 # disable (NO) the test list. This list is created by putting \test
@@ -564,7 +564,7 @@ GENERATE_TESTLIST      = NO
 # disable (NO) the bug list. This list is created by putting \bug
 # commands in the documentation.
 
-GENERATE_BUGLIST       = ${KARAMELO_DOXY_INTERNAL}
+GENERATE_BUGLIST       = NO
 
 # The GENERATE_DEPRECATEDLIST tag can be used to enable (YES) or
 # disable (NO) the deprecated list. This list is created by putting
@@ -623,7 +623,7 @@ FILE_VERSION_FILTER    =
 # You can optionally specify a file name after the option, if omitted
 # DoxygenLayout.xml will be used as the name of the layout file.
 
-LAYOUT_FILE            = "${Karamelo_BINARY_DIR}/doc${KARAMELO_DOXY_OUTPUT_DIRECTORY_SUFFIX}/karamelodoxy_layout.xml"
+LAYOUT_FILE            = "./doc/karamelodoxy_layout.xml"
 
 # The CITE_BIB_FILES tag can be used to specify one or more bib files
 # containing the references data. This must be a list of .bib files. The
@@ -695,7 +695,7 @@ WARN_LOGFILE           =
 # directories like "/usr/src/myproject". Separate the files or directories
 # with spaces.
 
-INPUT                  = ${KARAMELO_DOXY_INPUT}
+INPUT                  = "./src" "./doc"
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding, which is
@@ -773,16 +773,16 @@ EXCLUDE_SYMBOLS        = internal::* \
 # directories that contain example code fragments that are included (see
 # the \include command).
 
-EXAMPLE_PATH           = "${Karamelo_SOURCE_DIR}/doc/snippets" \
-                         "${Karamelo_BINARY_DIR}/doc/snippets" \
-                         "${Karamelo_SOURCE_DIR}/doc/examples" \
-                         "${Karamelo_BINARY_DIR}/doc/examples" \
-                         "${Karamelo_SOURCE_DIR}/doc/special_examples" \
-                         "${Karamelo_BINARY_DIR}/doc/special_examples" \
-                         "${Karamelo_SOURCE_DIR}/unsupported/doc/snippets" \
-                         "${Karamelo_BINARY_DIR}/unsupported/doc/snippets" \
-                         "${Karamelo_SOURCE_DIR}/unsupported/doc/examples" \
-                         "${Karamelo_BINARY_DIR}/unsupported/doc/examples"
+EXAMPLE_PATH           = "./doc/snippets" \
+                         "./doc/snippets" \
+                         "./doc/examples" \
+                         "./doc/examples" \
+                         "./doc/special_examples" \
+                         "./doc/special_examples" \
+                         "./unsupported/doc/snippets" \
+                         "./unsupported/doc/snippets" \
+                         "./unsupported/doc/examples" \
+                         "./unsupported/doc/examples"
 
 # If the value of the EXAMPLE_PATH tag contains directories, you can use the
 # EXAMPLE_PATTERNS tag to specify one or more wildcard pattern (like *.cpp
@@ -802,7 +802,7 @@ EXAMPLE_RECURSIVE      = NO
 # directories that contain image that are included in the documentation (see
 # the \image command).
 
-IMAGE_PATH             = ${Karamelo_BINARY_DIR}/doc/html
+IMAGE_PATH             = ./doc/html
 
 # The INPUT_FILTER tag can be used to specify a program that doxygen should
 # invoke to filter for each input file. Doxygen will invoke the filter program
@@ -951,13 +951,13 @@ HTML_FILE_EXTENSION    = .html
 # have to redo this when upgrading to a newer version of doxygen or when
 # changing the value of configuration settings such as GENERATE_TREEVIEW!
 
-HTML_HEADER            = "${Karamelo_BINARY_DIR}/doc/karamelodoxy_header.html"
+HTML_HEADER            = "./doc/karamelodoxy_header.html"
 
 # The HTML_FOOTER tag can be used to specify a personal HTML footer for
 # each generated HTML page. If it is left blank doxygen will generate a
 # standard footer.
 
-HTML_FOOTER            = "${Karamelo_BINARY_DIR}/doc/karamelodoxy_footer.html"
+HTML_FOOTER            = "./doc/karamelodoxy_footer.html"
 
 # The HTML_STYLESHEET tag can be used to specify a user-defined cascading
 # style sheet that is used by each HTML page. It can be used to
@@ -975,7 +975,7 @@ HTML_STYLESHEET        =
 # files. In the HTML_STYLESHEET file, use the file name only. Also note that
 # the files will be copied as-is; there are no commands or markers available.
 
-HTML_EXTRA_FILES       = "${Karamelo_SOURCE_DIR}/doc/karamelodoxy.css"
+HTML_EXTRA_FILES       = "./doc/karamelodoxy.css"
 
 # The HTML_COLORSTYLE_HUE tag controls the color of the HTML output.
 # Doxygen will adjust the colors in the style sheet and background images
@@ -986,7 +986,7 @@ HTML_EXTRA_FILES       = "${Karamelo_SOURCE_DIR}/doc/karamelodoxy.css"
 # The allowed range is 0 to 359.
 # The default is 220.
 
-HTML_COLORSTYLE_HUE    = ${KARAMELO_DOXY_HTML_COLORSTYLE_HUE}
+HTML_COLORSTYLE_HUE    = 220
 
 # The HTML_COLORSTYLE_SAT tag controls the purity (or saturation) of
 # the colors in the HTML output. For a value of 0 the output will use
@@ -1650,12 +1650,12 @@ SKIP_FUNCTION_MACROS   = YES
 # doxygen is run, you must also specify the path to the tagfile here.
 
 TAGFILES               = 
-# "${Eigen_BINARY_DIR}/doc/eigen-unsupported.doxytags =unsupported"
+# "/doc/eigen-unsupported.doxytags =unsupported"
 
 # When a file name is specified after GENERATE_TAGFILE, doxygen will create
 # a tag file that is based on the input files it reads.
 
-GENERATE_TAGFILE       = "${Karamelo_BINARY_DIR}/doc/${KARAMELO_DOXY_PROJECT_NAME}.doxytags"
+GENERATE_TAGFILE       = "./doc/Karamelo.doxytags"
 
 # If the ALLEXTERNALS tag is set to YES all external classes will be listed
 # in the class index. If set to NO only the inherited external classes
