@@ -25,7 +25,7 @@
 
 using namespace std;
 
-/*! Stores the dimension and geometrical aspects of the simultion box.
+/*! Stores the dimension and geometrical aspects of the simulation box.
  *
  * Stores the simulation dimensions (i.e. 1D, 2D or 3D), the simulation box geometry, 
  * the list of the user defined geometric regions and solids, as well as the background 
@@ -90,3 +90,9 @@ private:
 };
 
 #endif
+
+/*! \defgroup dimension Dimension
+  
+\section Usage Usage
+dimension(1, domain xmin, domain xmax, cell size)
+*/

@@ -71,25 +71,23 @@ void Update::set_dt(vector<string> args){
   (*input->vars)["dt"] = Var("dt", dt);
 }
 
+
+/*! This function is the C++ equivalent to the scheme() user function.\n
+ * Syntax: scheme(type)\n
+ * It points the pointer Update::scheme to the desired Scheme type selected from style_scheme.h
+ */
 void Update::create_scheme(vector<string> args){
   if (args.size() < 1) {
     error->all(FLERR, "Illegal scheme command: not enough arguments.\n");
   }
 
-  new_scheme(args);
-
   scheme_style = args[0];
-}
-
-void Update::new_scheme(vector<string> args){
-
-  string style = args[0];
 
   if (0) return;
 
 #define SCHEME_CLASS
 #define SchemeStyle(key,Class) \
-  else if (style.compare(#key) == 0) scheme = new Class(mpm,args);
+  else if (scheme_style.compare(#key) == 0) scheme = new Class(mpm,args);
 #include "style_scheme.h"
 #undef SchemeStyle
 #undef SCHEME_CLASS
@@ -99,26 +97,23 @@ void Update::new_scheme(vector<string> args){
   }
 }
 
+/*! This function is the C++ equivalent to the method() user function.\n
+ * Syntax: method(type, type specific arguments)\n
+ * It points the pointer Update::method to the desired Method type selected from style_method.h
+ */
 void Update::create_method(vector<string> args){
   if (args.size() < 3) {
     error->all(FLERR, "Illegal method command: not enough arguments.\n");
   }
 
-  new_method(args);
-
   method_type = args[0];
   method_shape_function = args[2];
-}
-
-void Update::new_method(vector<string> args){
-
-  string style = args[0];
 
   if (0) return;
 
 #define METHOD_CLASS
 #define MethodStyle(key,Class) \
-  else if (style.compare(#key) == 0) method = new Class(mpm,args);
+  else if (method_type.compare(#key) == 0) method = new Class(mpm,args);
 #include "style_method.h"
 #undef MethodStyle
 #undef METHOD_CLASS
@@ -130,11 +125,9 @@ void Update::new_method(vector<string> args){
   method->setup(args);
 }
 
-/* ----------------------------------------------------------------------
-   update elapsed simulation time
-   called at end of runs or when timestep size changes
-------------------------------------------------------------------------- */
-
+/*! Update elapsed simulation time.
+ *  Called at end of runs or when timestep size changes.
+ */
 void Update::update_time()
 {
   atime += (ntimestep-atimestep) * dt;
@@ -143,6 +136,8 @@ void Update::update_time()
 }
 
 
+/*! Update simulation timestep.
+ */
 int Update::update_timestep()
 {
   update->ntimestep++;
