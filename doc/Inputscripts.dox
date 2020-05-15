@@ -1,5 +1,50 @@
 /*! \page InputScripts Input scripts
 
-LAMMPS executes by reading commands from a input script (text file), one line at a time. When the input script ends, LAMMPS exits. Each command causes LAMMPS to take some action. It may set an internal variable, read in a file, or run a simulation. Most commands have default settings, which means you only need to use the command if you wish to change the default.
+<b>Karamelo</b> executes by reading commands from a input script (a text file), one line at a time. When the input script ends, <b>Karamelo</b> exits. Each command causes <b>Karamelo</b> to take some action. It may set a variable, read in a file, or run a simulation. The syntax used is easy and flexible. One can for example intuitively add new variables that can be constant:
+\code
+E = 211
+\endcode
+or depend on internal variables such as time – using the time variable – or the particle positions – using the x, y or z
+variables:
+\code
+T = 1
+r = sqrt(x*x+y*y)
+g = sin(PI*time/T)
+\endcode
+Everything else is controlled through functions. For instance, the global dimensionality of the simulation, the domain’s
+size, and the background grid cell size are set by the dimension() command, for example:
+\code
+dimension(2, xlo, xhi, ylo, yhi, cellsize)
+\endcode
 
+Just like with programming languages, ordering of commands in an input script can be important. The following rules apply:
+<ol>
+<li><b>Karamelo</b> does not read your entire input script and then perform a simulation with all the settings. Rather, the input script is read one line at a time and each command takes effect when it is read. Thus this sequence of commands:</li>\n
+\code
+set_dt(0.001)
+run(100)
+run(100)
+\endcode
+
+does something different than:
+
+\code
+run(100)
+set_dt(0.001)
+run(100)
+\endcode
+
+In the first case, the specified timestep (0.001) is used for two simulations of 100 timesteps each. In the 2nd case, the timestep corresponding to the CFL condition is used for the 1st 100 step simulation and a 0.001 timestep is used for the 2nd one.
+
+<li>A user variable cannot be used before it's defined. Therefore this code</li>\n
+\code
+E = 2 * a
+\endcode
+returns
+\code
+Error at line 1: Error: a is unknown.
+\endcode
+</ol>
+
+But don't worry too much as many input script errors are detected by <b>Karamelo</b> and an ERROR or WARNING message is printed.
 */
