@@ -11,11 +11,29 @@ T = 1
 r = sqrt(x*x+y*y)
 g = sin(PI*time/T)
 \endcode
+The list of internal variable to date are:
+<table>
+<caption id="multi_row">Internal variables</caption>
+<tr><th>Variable       <th>Description
+<tr><td>x0             <td>Particle or node position in the x direction in the reference state.
+<tr><td>y0             <td>Particle or node position in the y direction in the reference state.
+<tr><td>z0             <td>Particle or node position in the z direction in the reference state.
+<tr><td>x              <td>Current particle or node position in the x direction.
+<tr><td>y              <td>Current particle or node position in the y direction.
+<tr><td>z              <td>Current particle or node position in the z direction.
+<tr><td>time           <td>Current simulation time.
+<tr><td>timestep       <td>Current time step.
+<tr><td>dt             <td>Current timestep, i.e. \f$\Delta t\f$.
+<tr><td>PI             <td>Number \f$\pi\f$.
+</table>
+
 Everything else is controlled through functions. For instance, the global dimensionality of the simulation, the domain’s
 size, and the background grid cell size are set by the dimension() command, for example:
 \code
 dimension(2, xlo, xhi, ylo, yhi, cellsize)
 \endcode
+
+
 
 Just like with programming languages, ordering of commands in an input script can be important. The following rules apply:
 <ol>
@@ -43,6 +61,12 @@ E = 2 * a
 returns
 \code
 Error at line 1: Error: a is unknown.
+\endcode
+
+<li>All characters from the first '#' character onward are treated as comment and discarded. Example:</li>
+\code
+# This is a comment
+dt_factor(0.1)  # This is another comment
 \endcode
 </ol>
 
