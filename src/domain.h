@@ -91,8 +91,39 @@ private:
 
 #endif
 
-/*! \defgroup dimension Dimension
+/*! \defgroup dimension dimension
   
-\section Usage Usage
-dimension(1, domain xmin, domain xmax, cell size)
+\section Syntax Syntax
+\code
+dimension(1, xmin, xmax, h)                         # Defines a 1D simulation
+dimension(2, xmin, xmax, ymin, ymax, h)             # Defines a 2D simulation
+dimension(3, xmin, xmax, ymin, ymax, zmin, zmax, h) # Defines a 3D simulation
+\endcode
+
+<ul>
+<li>xmin, xmax, ymin, ymax, zmin, zmax: domain boundaries.</li>
+<li>h: background grid cell size (not optional)</li>
+</ul>
+
+\section Examples Examples
+\code
+L = 1
+N = 20
+h = L / N
+dimension(2, -L, L, -L, L, h)
+\endcode
+
+\code
+Lx = 1
+Ly = 0.5
+Lz = 0.2
+N = 10
+h = Lz / N
+dimension(3, 0, Lx, 0, Ly, 0, Lz, h)
+\endcode
+
+\section Description Description
+
+Set the dimensionality of the simulation alongside the size of its domain and the background grid cell size (if using Updated Lagrangian MPM or Updated Lagrangian CPDI). The background grid cell size argument is however not optional if using Total Lagrangian.
+
 */
