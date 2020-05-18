@@ -1,20 +1,32 @@
-#include <iostream>
-#include "domain.h"
+/* ----------------------------------------------------------------------
+ *
+ *                    ***       Karamelo       ***
+ *               Parallel Material Point Method Simulator
+ * 
+ * Copyright (2019) Alban de Vaucorbeil, alban.devaucorbeil@monash.edu
+ * Materials Science and Engineering, Monash University
+ * Clayton VIC 3800, Australia
+
+ * This software is distributed under the GNU General Public License.
+ *
+ * ----------------------------------------------------------------------- */
+
 #include "region_sphere.h"
+#include "domain.h"
 #include "input.h"
-#include "var.h"
 #include "math_special.h"
 #include "update.h"
-
+#include "var.h"
+#include <iostream>
 
 using namespace std;
 using namespace MathSpecial;
 
 #define BIG 1.0e20
 
-RegSphere::RegSphere(MPM *mpm, vector<string> args) : Region(mpm, args)
+Sphere::Sphere(MPM *mpm, vector<string> args) : Region(mpm, args)
 {
-  cout << "Initiate RegSphere" << endl;
+  cout << "Initiate Sphere" << endl;
 
   c1 = c2 = c3 = 0;
   R = 0;
@@ -66,7 +78,7 @@ else
 }
 
 
-RegSphere::~RegSphere()
+Sphere::~Sphere()
 {
 
 }
@@ -76,7 +88,7 @@ RegSphere::~RegSphere()
    inside = 0 if x,y,z is outside and not on surface
 ------------------------------------------------------------------------- */
 
-int RegSphere::inside(double x, double y, double z)
+int Sphere::inside(double x, double y, double z)
 {
   //cout << "Check if point (" << x << ", " << y << ", " << z << ") is inside the region" << endl;
   double dSq;
@@ -90,7 +102,7 @@ int RegSphere::inside(double x, double y, double z)
 /* ----------------------------------------------------------------------
    return a vector that contains the limits of the box
 ------------------------------------------------------------------------- */
-vector<double> RegSphere::limits(){
+vector<double> Sphere::limits(){
   vector<double> lim;
   lim.push_back(xlo);
   lim.push_back(xhi);

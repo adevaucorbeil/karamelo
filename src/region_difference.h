@@ -66,7 +66,7 @@ class Difference : public Region {
   vector<int> iregions;
   double xlo, xhi, ylo, yhi, zlo, zhi;
   
-  const string usage = "Usage: material(material-ID, \033[1;32mrigid\033[0m)\n";
+  const string usage = "Usage: region(region-ID, difference, region-1, region-2)\n";
   const int Nargs = 4;
 };
 

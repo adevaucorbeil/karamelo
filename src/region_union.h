@@ -65,7 +65,7 @@ class Union : public Region {
   vector<int> iregions;
   double xlo, xhi, ylo, yhi, zlo, zhi;
   
-  const string usage = "Usage: material(material-ID, \033[1;32mrigid\033[0m)\n";
+  const string usage = "Usage: region(region-ID, union, region-1, region-2, ..., region-N)\n";
   const int Nargs = 4;
 };
 

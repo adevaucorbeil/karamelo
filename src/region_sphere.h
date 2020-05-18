@@ -1,9 +1,20 @@
-/* -*- c++ -*- ----------------------------------------------------------*/
+/* -*- c++ -*- ----------------------------------------------------------
+ *
+ *                    ***       Karamelo       ***
+ *               Parallel Material Point Method Simulator
+ * 
+ * Copyright (2019) Alban de Vaucorbeil, alban.devaucorbeil@monash.edu
+ * Materials Science and Engineering, Monash University
+ * Clayton VIC 3800, Australia
+
+ * This software is distributed under the GNU General Public License.
+ *
+ * ----------------------------------------------------------------------- */
 
 
 #ifdef REGION_CLASS
 
-RegionStyle(sphere,RegSphere)
+RegionStyle(sphere,Sphere)
 
 #else
 
@@ -12,11 +23,38 @@ RegionStyle(sphere,RegSphere)
 
 #include "region.h"
 
-class RegSphere : public Region {
+/*! \ingroup region regionblock region_block
+
+\section Syntax Syntax
+\code
+region(region-ID, sphere, x, y, z, R)
+\endcode
+
+<ul>
+<li>region-ID: name of the region to be created.</li>
+<li>x, y, z: coordinates of the sphere center. Only x is required in 1D, and x and y in 2D.</li>
+<li>R: sphere radius</li>
+</ul>
+
+\section Examples Examples
+\code
+R = 0.2
+region(rSph, sphere, 0, 0, 0, R)
+\endcode
+Defines a region called 'rSph' delimited by a sphere of radius \f$R=0.2\f$ centered around the origin.
+
+\section Description Description
+
+This command defines a spherical region of space.It is usually used by groups to find what nodes and/or particles lie within a specific region of space. A region does not select nodes or particles.
+
+\section Class Class description
+*/
+
+class Sphere : public Region {
 
  public:
-  RegSphere(class MPM *, vector<string>);
-  ~RegSphere();
+  Sphere(class MPM *, vector<string>);
+  ~Sphere();
   int inside(double, double, double);
   vector<double> limits();
 
