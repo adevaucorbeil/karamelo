@@ -92,10 +92,9 @@ void FixContactHertz::initial_integrate() {
 	if ((dx[0] < max_cellsize) && (dx[1] < max_cellsize) &&
 	    (dx[2] < max_cellsize) && (dx[0] > -max_cellsize) &&
             (dx[1] > -max_cellsize) && (dx[2] > -max_cellsize)) {
-	  Rp1 = 0.5 * pow(s1->vol[ip1], 0.333333333);
-	  Rp2 = 0.5 * pow(s2->vol[ip2], 0.333333333);
+	  Rp1 = 0.5 * sqrt(s1->vol[ip1]);
+	  Rp2 = 0.5 * sqrt(s2->vol[ip2]);
 	  Rp = Rp1 + Rp2;
-
 
 	  // Gross screening:
 	  if ((dx[0] < Rp) && (dx[1] < Rp) && (dx[2] < Rp) && (dx[0] > -Rp) &&
