@@ -2,7 +2,7 @@
  *
  *                    ***       Karamelo       ***
  *               Parallel Material Point Method Simulator
- * 
+ *
  * Copyright (2019) Alban de Vaucorbeil, alban.devaucorbeil@monash.edu
  * Materials Science and Engineering, Monash University
  * Clayton VIC 3800, Australia
@@ -13,6 +13,7 @@
 
 #include "region_sphere.h"
 #include "domain.h"
+#include "error.h"
 #include "input.h"
 #include "math_special.h"
 #include "update.h"
@@ -32,15 +33,11 @@ Sphere::Sphere(MPM *mpm, vector<string> args) : Region(mpm, args)
   R = 0;
 
   if (args.size() < Nargs[domain->dimension-1]) {
-    cout << "Error: region command not enough arguments" << endl;
-    cout << usage[domain->dimension-1];
-    exit(1);
+    error->all(FLERR, "Error: region command not enough arguments.\n" + usage[domain->dimension-1]);
   }
   
   if (args.size() > Nargs[domain->dimension-1]) {
-    cout << "Error: region command too many arguments" << endl;
-    cout << usage[domain->dimension-1];
-    exit(1);
+    error->all(FLERR, "Error: region command too many arguments.\n" + usage[domain->dimension-1]);
   }
 
   int iargs=2;
@@ -48,6 +45,11 @@ Sphere::Sphere(MPM *mpm, vector<string> args) : Region(mpm, args)
   if (domain->dimension >= 2) c2 = input->parsev(args[iargs++]);
   if (domain->dimension == 3) c3 = input->parsev(args[iargs++]);
   R = input->parsev(args[iargs++]);
+
+  // Chech if R is negative:
+  if (R < 0) {
+    error->all(FLERR, "Error: R cannot be negative, set to: " + to_string(R) + "\n.");
+  }
 
   RSq = R*R;
   cout << "c1, c2, c3, R = " << c1 << "\t" << c2 << "\t" << c3 << "\t" << R << endl;
