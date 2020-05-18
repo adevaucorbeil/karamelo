@@ -14,7 +14,7 @@
 
 #ifdef REGION_CLASS
 
-RegionStyle(block,RegBlock)
+RegionStyle(block,Block_)
 
 #else
 
@@ -23,11 +23,39 @@ RegionStyle(block,RegBlock)
 
 #include "region.h"
 
-class RegBlock : public Region {
+/*! \ingroup region regionblock region_block
+
+\section Syntax Syntax
+\code
+region(region-ID, block, xmin, xmax, ymin, ymax, zmin, zmax)
+\endcode
+
+<ul>
+<li>region-ID: name of the region to be created.</li>
+<li>xmin, xmax: lower and upper boundaries along the x axis.</li>
+<li>ymin, ymax: lower and upper boundaries along the y axis. Optional if dimension is 1D.</li>
+<li>zmin, zmax: lower and upper boundaries along the z axis. Optional if dimension is 1D or 2D.</li>
+</ul>
+
+\section Examples Examples
+\code
+region(A, block, 0, L, 0, 2*L)
+\endcode
+Defines a 2D rectangular region called 'A'. A point of coordinates (x, y, z) lies within the region if \f$0 \leq x \leq L\f$ and \f$0 \leq y \leq 2L\f$.
+
+\section Description Description
+
+This command defines a rectangle region of space. It is usually used by groups to find what nodes and/or particles lie within a specific region of space. A region does not select nodes or particles.
+
+\section Class Class description
+*/
+
+
+class Block_ : public Region {
 
  public:
-  RegBlock(class MPM *, vector<string>);
-  ~RegBlock();
+  Block_(class MPM *, vector<string>);
+  ~Block_();
   int inside(double, double, double);
   vector<double> limits();
 

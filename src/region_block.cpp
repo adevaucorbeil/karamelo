@@ -11,20 +11,20 @@
  *
  * ----------------------------------------------------------------------- */
 
-#include <iostream>
-#include "domain.h"
 #include "region_block.h"
+#include "domain.h"
+#include "error.h"
 #include "input.h"
 #include "var.h"
-#include "error.h"
+#include <iostream>
 
 using namespace std;
 
 #define BIG 1.0e20
 
-RegBlock::RegBlock(MPM *mpm, vector<string> args) : Region(mpm, args)
+Block_::Block_(MPM *mpm, vector<string> args) : Region(mpm, args)
 {
-  cout << "Initiate RegBlock" << endl;
+  cout << "Initiate Block_" << endl;
 
   if (domain->dimension == 3 && args.size()<8) {
     error->all(FLERR, "Error: region command not enough arguments.\n");
@@ -121,7 +121,7 @@ RegBlock::RegBlock(MPM *mpm, vector<string> args) : Region(mpm, args)
 }
 
 
-RegBlock::~RegBlock()
+Block_::~Block_()
 {
 
 }
@@ -131,7 +131,7 @@ RegBlock::~RegBlock()
    inside = 0 if x,y,z is outside and not on surface
 ------------------------------------------------------------------------- */
 
-int RegBlock::inside(double x, double y, double z)
+int Block_::inside(double x, double y, double z)
 {
   //cout << "Check if point (" << x << ", " << y << ", " << z << ") is inside the region" << endl;
   if (x >= xlo && x <= xhi && y >= ylo && y <= yhi && z >= zlo && z <= zhi)
@@ -142,7 +142,7 @@ int RegBlock::inside(double x, double y, double z)
 /* ----------------------------------------------------------------------
    return a vector that contains the limits of the box
 ------------------------------------------------------------------------- */
-vector<double> RegBlock::limits(){
+vector<double> Block_::limits(){
   vector<double> lim;
   lim.push_back(xlo);
   lim.push_back(xhi);
