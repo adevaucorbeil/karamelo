@@ -19,4 +19,15 @@
 /cmake_install.cmake
 /**/dump*.LAMMPS
 /src/version.cpp
+/doc/CMakeFiles/*
+/doc/Doxyfile
+/doc/Doxyfile_works
+/doc/Karamelo.doxytags
+/doc/Makefile
+/doc/cmake_install.cmake
+/doc/html/*
+/doc/karamelodoxy_footer.html
+/doc/karamelodoxy_header.html
+/doc/karamelodoxy_layout.xml
+/doc/latex/*
 
