@@ -24,6 +24,35 @@ EOSStyle(linear,EOSLinear)
 #include "eos.h"
 #include <Eigen/Eigen>
 
+
+/*! \ingroup eos eoslinear eos_linear
+
+\section Syntax Syntax
+\code
+eos(eos-ID, linear, rho0, K)
+\endcode
+
+<ul>
+<li>eos-ID: name of the eos to be created.</li>
+<li>rho0: reference bulk density</li>
+<li>K: bulk modulus. </li>
+</ul>
+
+\section Examples Examples
+\code
+eos(eosl, linear, rho, K)
+\endcode
+Defines a linear EOS called 'eosl' with a reference bulk density rho, a bulk modulus K
+
+\section Description Description
+
+This command defines a linear equation of state. The hydrostatic pressure is calculated according to:\n
+\f[ p = K \left(\frac{\rho}{\rho_0} - 1\right)\f]
+
+\section Class Class description
+*/
+
+
 class EOSLinear : public EOS {
 
 public:
