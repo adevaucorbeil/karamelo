@@ -155,14 +155,14 @@ private:
   void read_file(string);
 
   const map<string, string> usage ={
-    {"region", "Usage: solid(solid-ID, \033[1;32mregion\033[0m, region-ID, N_ppc1D, material-ID, cell-size, T_room)\n"},
-    {"mesh",    "Usage: solid(solid-ID, \033[1;32mmesh\033[0m, meshfile, T0)\n"},
-    {"file",    "Usage: solid(solid-ID, \033[1;32mfile\033[0m, filename, T0)\n"}
+    {"region", "Usage: solid(solid-ID, \033[1;32mregion\033[0m, region-ID, N_ppc1D, material-ID, cell-size, T0)\n"},
+    {"mesh",    "Usage: solid(solid-ID, \033[1;32mmesh\033[0m, meshfile, material-ID, h, T0)\n"},
+    {"file",    "Usage: solid(solid-ID, \033[1;32mfile\033[0m, filename, material-ID, h, T0)\n"}
   };
   const map<string, int>    Nargs = {
              {"region", 7},
-	     {"mesh",   4},
-             {"file",   4}
+	     {"mesh",   6},
+             {"file",   6}
            };
   
   double T0;                     ///< Initial temperature
@@ -170,3 +170,52 @@ private:
 };
 
 #endif
+
+/*! \defgroup solid solid
+
+\section Syntax Syntax
+\code
+solid(solid-ID, region, region-ID, N_ppc1D, material-ID, h, T0)
+solid(solid-ID, mesh, meshfile, material-ID, h, T0)
+solid(solid-ID, file, filename, material-ID, h, T0)
+\endcode
+
+<ul>
+<li>solid-ID: name of the solid to be created.</li>
+<li>region-ID: name of the region that occupies the solid.</li>
+<li>N_ppc1D: equivalent number of particles per cell in 1D (along one axis).</li>
+<li>material-ID: name of the material to be used by the solid.</li>
+<li>h: cell-size of the background grid.</li>
+<li>T0: temperature of the solid at the start of the simulation.</li>
+<li>meshfile: name of the file containing the mesh.</li>
+<li>filename: name of the file containing the list of particles as well as their positions.</li>
+</ul>
+
+\section Examples Examples
+\code
+E        = 115
+nu       = 0.31
+rho      = 8.94e-06
+ppc      = 1
+R        = 0.2
+xc       = R/2
+yc       = R/2
+zc       = 0
+region(rBall, sphere, xc, yc, zc, R)
+material(mat1, linear, rho, E, nu)
+solid(sBall, region, rBall, ppc, mat1, R / 10, 25)
+\endcode
+Defines a solid called 'sBall' delimited by region 'rBall', a sphere (Sphere) of radius 
+\f$R=0.2\f$ centered around (xc, yc, zc) which constitutive law (Material) is linear elastic.
+
+\section Description Description
+
+A solid is a collection of particles. These particles are created according to either:
+<ol>
+<li>a region: the region delimits the extends of the solid, and the particles are created within it,</li>
+<li>a mesh: the particles correspond to the integration points of the mesh,</li>
+<li>a file: the particles taken from the list found in the file.</li>
+</ol>
+
+When the solid is delimited by a region, the number of particles occupying a given background grid cell is given by the N_ppc1D parameter.
+*/
