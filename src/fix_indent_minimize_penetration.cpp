@@ -113,7 +113,11 @@ void FixIndentMinimizePenetration::initial_integrate() {
               // Gross screening:
               xsp = s->x[ip] - xs;
 
-              Rp = 0.5*sqrt(s->vol[ip]);
+	      if (domain->axisymmetric) {
+		Rp = 0.5*sqrt(s->vol0[ip] / s->x0[ip][0]);
+	      } else {
+		Rp = 0.5*sqrt(s->vol0[ip]);
+	      }
               Rs = R + Rp;
 
               if ((xsp[0] < Rs) && (xsp[1] < Rs) && (xsp[0] > -Rs) &&
@@ -152,8 +156,8 @@ void FixIndentMinimizePenetration::initial_integrate() {
               Rp = 0.5*cbrt(s->vol[ip]);
               Rs = R + Rp;
 
-              if ((xsp[0] < Rs) && (xsp[1] < Rs) && (xsp[0] > -Rs) &&
-                  (xsp[1] > -Rs)) {
+              if ((xsp[0] < Rs) && (xsp[1] < Rs) && (xsp[2] < Rs) &&
+                  (xsp[0] > -Rs) && (xsp[1] > -Rs) && (xsp[2] > -Rs)) {
 
                 r = xsp.norm();
                 // Finer screening:
@@ -188,7 +192,11 @@ void FixIndentMinimizePenetration::initial_integrate() {
 	    // Gross screening:
 	    xsp = s->x[ip] - xs;
 
-	    Rp = 0.5*sqrt(s->vol[ip]);
+	    if (domain->axisymmetric) {
+	      Rp = 0.5*sqrt(s->vol0[ip] / s->x0[ip][0]);
+	    } else {
+	      Rp = 0.5*sqrt(s->vol0[ip]);
+	    }
 	    Rs = R + Rp;
 
 	    if ((xsp[0] < Rs) && (xsp[1] < Rs) && (xsp[0] > -Rs) &&
@@ -227,8 +235,8 @@ void FixIndentMinimizePenetration::initial_integrate() {
 	    Rp = 0.5*cbrt(s->vol[ip]);
 	    Rs = R + Rp;
 
-	    if ((xsp[0] < Rs) && (xsp[1] < Rs) && (xsp[0] > -Rs) &&
-		(xsp[1] > -Rs)) {
+	    if ((xsp[0] < Rs) && (xsp[1] < Rs) && (xsp[2] < Rs) &&
+		(xsp[0] > -Rs) && (xsp[1] > -Rs) && (xsp[2] > -Rs)) {
 
 	      r = xsp.norm();
 	      // Finer screening:

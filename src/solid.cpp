@@ -1935,18 +1935,15 @@ void Solid::populate(vector<string> args)
     f[i].setZero();
     mbp[i].setZero();
     v_update[i].setZero();
-    vol0[i] = vol[i] = vol_;
     rho0[i] = rho[i] = mat->rho0;
 
-    if (domain->axisymmetric == true)
-    {
+    if (domain->axisymmetric == true) {
       mass[i] = mass_ * x0[i][0];
       vol0[i] = vol[i] = mass[i] / rho0[i];
+    } else {
+      mass[i] = mass_;
+      vol0[i] = vol[i] = vol_;
     }
-    else
-      {
-	mass[i] = mass_;
-      }
 
     eff_plastic_strain[i]      = 0;
     eff_plastic_strain_rate[i] = 0;
