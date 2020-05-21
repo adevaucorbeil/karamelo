@@ -146,6 +146,7 @@ void FixVelocityNodes::post_update_grid_state() {
 
       for (int ip = 0; ip < g->nnodes_local + g->nnodes_ghost; ip++) {
 	if (g->mask[ip] & groupbit) {
+	  Dv.setZero();
 	  if (xset) {
 	    Dv[0] = vx - g->v_update[ip][0];
 	    g->v_update[ip][0] = vx;
@@ -171,6 +172,7 @@ void FixVelocityNodes::post_update_grid_state() {
 
     for (int ip = 0; ip < g->nnodes_local + g->nnodes_ghost; ip++) {
       if (g->mask[ip] & groupbit) {
+	Dv.setZero();
 	if (xset) {
 	  Dv[0] = vx - g->v_update[ip][0];
 	  g->v_update[ip][0] = vx;
@@ -185,8 +187,8 @@ void FixVelocityNodes::post_update_grid_state() {
 	  Dv[2] = vz - g->v_update[ip][2];
 	  g->v_update[ip][2] = vz;
 	  g->v[ip][2] = vz_old;
-          ftot += (inv_dt * g->mass[ip]) * Dv;
 	}
+	ftot += (inv_dt * g->mass[ip]) * Dv;
       }
     }
   }
