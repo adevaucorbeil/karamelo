@@ -35,6 +35,9 @@ FixIndentMinimizePenetration::FixIndentMinimizePenetration(MPM *mpm, vector<stri
   if (args.size() < Nargs) {
     error->all(FLERR, "Error: not enough arguments.\n" + usage);
   }
+  if (args.size() > Nargs) {
+    error->all(FLERR, "Error: too many arguments.\n" + usage);
+  }
 
   type_pos = 3;
   Rpos = 4;
@@ -146,7 +149,7 @@ void FixIndentMinimizePenetration::initial_integrate() {
               // Gross screening:
               xsp = s->x[ip] - xs;
 
-              Rp = 0.5*sqrt(s->vol[ip]);
+              Rp = 0.5*cbrt(s->vol[ip]);
               Rs = R + Rp;
 
               if ((xsp[0] < Rs) && (xsp[1] < Rs) && (xsp[0] > -Rs) &&
@@ -185,7 +188,7 @@ void FixIndentMinimizePenetration::initial_integrate() {
 	    // Gross screening:
 	    xsp = s->x[ip] - xs;
 
-	    Rp = 0.5*cbrt(s->vol[ip]);
+	    Rp = 0.5*sqrt(s->vol[ip]);
 	    Rs = R + Rp;
 
 	    if ((xsp[0] < Rs) && (xsp[1] < Rs) && (xsp[0] > -Rs) &&
