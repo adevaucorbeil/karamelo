@@ -111,9 +111,9 @@ void FixIndentMinimizePenetration::initial_integrate() {
               xsp = s->x[ip] - xs;
 
 	      if (domain->axisymmetric) {
-		Rp = 0.5*sqrt(s->vol[ip] / s->x[ip][0]);
+		Rp = 0.5*sqrt(s->vol0[ip] / s->x0[ip][0]);
 	      } else {
-		Rp = 0.5*sqrt(s->vol[ip]);
+		Rp = 0.5*sqrt(s->vol0[ip]);
 	      }
               Rs = R + Rp;
 
@@ -190,9 +190,9 @@ void FixIndentMinimizePenetration::initial_integrate() {
 	    xsp = s->x[ip] - xs;
 
 	    if (domain->axisymmetric) {
-	      Rp = 0.5*sqrt(s->vol[ip] / s->x[ip][0]);
+	      Rp = 0.5*sqrt(s->vol0[ip] / s->x0[ip][0]);
 	    } else {
-	      Rp = 0.5*sqrt(s->vol[ip]);
+	      Rp = 0.5*sqrt(s->vol0[ip]);
 	    }
 	    Rs = R + Rp;
 
