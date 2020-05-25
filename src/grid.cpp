@@ -485,7 +485,7 @@ void Grid::update_grid_velocities()
   // Update all particles (even the ghost to not have to communicate the result)
   for (int i=0; i<nnodes_local + nnodes_ghost; i++){
     if (!rigid[i]) {
-      if (mass[i] > 1e-12) v_update[i] = v[i] + update->dt * (f[i] + mb[i])/mass[i];
+      if (mass[i] != 0) v_update[i] = v[i] + update->dt * (f[i] + mb[i])/mass[i];
       else v_update[i] = v[i];
     }
     // if (update->ntimestep>450)
