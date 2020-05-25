@@ -570,59 +570,61 @@ void Solid::update_particle_velocities(double alpha)
   }
 }
 
-void Solid::compute_rate_deformation_gradient_TL()
-{
+void Solid::compute_rate_deformation_gradient_TL() {
   if (mat->rigid)
     return;
 
   int in;
   vector<Eigen::Vector3d> *vn = &grid->v;
 
-  if (domain->dimension == 1)
-    {
-    for (int ip = 0; ip < np_local; ip++)
-      {
-	Fdot[ip].setZero();
-	for (int j = 0; j < numneigh_pn[ip]; j++)
-	  {
-	    in = neigh_pn[ip][j];
-	    Fdot[ip](0,0) += (*vn)[in][0] * wfd_pn[ip][j][0];
-	  }
+  if (domain->dimension == 1) {
+    for (int ip = 0; ip < np_local; ip++) {
+      Fdot[ip].setZero();
+      for (int j = 0; j < numneigh_pn[ip]; j++) {
+        in = neigh_pn[ip][j];
+        Fdot[ip](0, 0) += (*vn)[in][0] * wfd_pn[ip][j][0];
       }
-    } else if (domain->dimension == 2)
-    {
-      for (int ip = 0; ip < np_local; ip++)
-	{
-	  Fdot[ip].setZero();
-	  for (int j = 0; j < numneigh_pn[ip]; j++)
-	    {
-	      in = neigh_pn[ip][j];
-	      Fdot[ip](0,0) += (*vn)[in][0]*wfd_pn[ip][j][0];
-	      Fdot[ip](0,1) += (*vn)[in][0]*wfd_pn[ip][j][1];
-	      Fdot[ip](1,0) += (*vn)[in][1]*wfd_pn[ip][j][0];
-	      Fdot[ip](1,1) += (*vn)[in][1]*wfd_pn[ip][j][1];
-	    }
-	}
-    } else if (domain->dimension == 3)
-    {
-      for (int ip = 0; ip < np_local; ip++)
-	{
-	  Fdot[ip].setZero();
-	  for (int j = 0; j < numneigh_pn[ip]; j++)
-	    {
-	      in = neigh_pn[ip][j];
-	      Fdot[ip](0,0) += (*vn)[in][0]*wfd_pn[ip][j][0];
-	      Fdot[ip](0,1) += (*vn)[in][0]*wfd_pn[ip][j][1];
-	      Fdot[ip](0,2) += (*vn)[in][0]*wfd_pn[ip][j][2];
-	      Fdot[ip](1,0) += (*vn)[in][1]*wfd_pn[ip][j][0];
-	      Fdot[ip](1,1) += (*vn)[in][1]*wfd_pn[ip][j][1];
-	      Fdot[ip](1,2) += (*vn)[in][1]*wfd_pn[ip][j][2];
-	      Fdot[ip](2,0) += (*vn)[in][2]*wfd_pn[ip][j][0];
-	      Fdot[ip](2,1) += (*vn)[in][2]*wfd_pn[ip][j][1];
-	      Fdot[ip](2,2) += (*vn)[in][2]*wfd_pn[ip][j][2];
-	    }
-	}
     }
+  } else if ((domain->dimension == 2) && (domain->axisymmetric == true)) {
+    for (int ip = 0; ip < np_local; ip++) {
+      Fdot[ip].setZero();
+      for (int j = 0; j < numneigh_pn[ip]; j++) {
+        in = neigh_pn[ip][j];
+        Fdot[ip](0, 0) += (*vn)[in][0] * wfd_pn[ip][j][0];
+        Fdot[ip](0, 1) += (*vn)[in][0] * wfd_pn[ip][j][1];
+        Fdot[ip](1, 0) += (*vn)[in][1] * wfd_pn[ip][j][0];
+        Fdot[ip](1, 1) += (*vn)[in][1] * wfd_pn[ip][j][1];
+        Fdot[ip](2, 2) += (*vn)[in][0] * wf_pn[ip][j] / x0[ip][0];
+      }
+    }
+  } else if ((domain->dimension == 2) && (domain->axisymmetric == false)) {
+    for (int ip = 0; ip < np_local; ip++) {
+      Fdot[ip].setZero();
+      for (int j = 0; j < numneigh_pn[ip]; j++) {
+        in = neigh_pn[ip][j];
+        Fdot[ip](0, 0) += (*vn)[in][0] * wfd_pn[ip][j][0];
+        Fdot[ip](0, 1) += (*vn)[in][0] * wfd_pn[ip][j][1];
+        Fdot[ip](1, 0) += (*vn)[in][1] * wfd_pn[ip][j][0];
+        Fdot[ip](1, 1) += (*vn)[in][1] * wfd_pn[ip][j][1];
+      }
+    }
+  } else if (domain->dimension == 3) {
+    for (int ip = 0; ip < np_local; ip++) {
+      Fdot[ip].setZero();
+      for (int j = 0; j < numneigh_pn[ip]; j++) {
+        in = neigh_pn[ip][j];
+        Fdot[ip](0, 0) += (*vn)[in][0] * wfd_pn[ip][j][0];
+        Fdot[ip](0, 1) += (*vn)[in][0] * wfd_pn[ip][j][1];
+        Fdot[ip](0, 2) += (*vn)[in][0] * wfd_pn[ip][j][2];
+        Fdot[ip](1, 0) += (*vn)[in][1] * wfd_pn[ip][j][0];
+        Fdot[ip](1, 1) += (*vn)[in][1] * wfd_pn[ip][j][1];
+        Fdot[ip](1, 2) += (*vn)[in][1] * wfd_pn[ip][j][2];
+        Fdot[ip](2, 0) += (*vn)[in][2] * wfd_pn[ip][j][0];
+        Fdot[ip](2, 1) += (*vn)[in][2] * wfd_pn[ip][j][1];
+        Fdot[ip](2, 2) += (*vn)[in][2] * wfd_pn[ip][j][2];
+      }
+    }
+  }
 }
 
 void Solid::compute_rate_deformation_gradient_UL_MUSL()
