@@ -43,6 +43,8 @@ configure_file("${CMAKE_CURRENT_SOURCE_DIR}/src/version.cpp.in" "${CMAKE_CURRENT
 file(GLOB MyCSources src/*.cpp)
 add_executable(karamelo ${MyCSources})
 
+add_subdirectory(doc EXCLUDE_FROM_ALL)
+
 find_package(Boost 1.67.0 COMPONENTS system filesystem)
 find_package(OpenMP)
 include_directories(${Boost_INCLUDE_DIR})
