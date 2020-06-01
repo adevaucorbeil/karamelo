@@ -27,7 +27,8 @@ RegionStyle(cylinder,Cylinder)
 
 \section Syntax Syntax
 \code
-region(region-ID, cylinder, axis, c1, c2, R, lo, hi)
+region(region-ID, cylinder, axis, c1, c2, R, lo, hi) #in 3D
+region(region-ID, cylinder, c1, c2, R, lo, hi) #in 2D
 \endcode
 
 <ul>

@@ -25,7 +25,6 @@
 /doc/Karamelo.doxytags
 /doc/Makefile
 /doc/cmake_install.cmake
-/doc/html/*
 /doc/karamelodoxy_footer.html
 /doc/karamelodoxy_header.html
 /doc/karamelodoxy_layout.xml
