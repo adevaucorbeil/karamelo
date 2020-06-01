@@ -90,17 +90,33 @@ void FixContactMinPenetration::initial_integrate() {
 
         // Extremely gross screening:
         if ((dx[0] < max_cellsize) && (dx[1] < max_cellsize) &&
-            (dx[2] < max_cellsize) && (dx[0] > -max_cellsize) &&
-            (dx[1] > -max_cellsize) && (dx[2] > -max_cellsize)) {
-          Rp1 = 0.5 * sqrt(s1->vol[ip1]);
-          Rp2 = 0.5 * sqrt(s2->vol[ip2]);
+	    (dx[0] > -max_cellsize) && (dx[1] > -max_cellsize) ) {
+	  if (domain->axisymmetric) {
+	    Rp1 = 0.5 * sqrt(s1->vol[ip1]/s1->x[ip1][0]);
+	    Rp2 = 0.5 * sqrt(s2->vol[ip2]/s2->x[ip2][0]);
+	  } else {
+	    Rp1 = 0.5 * sqrt(s1->vol[ip1]);
+	    Rp2 = 0.5 * sqrt(s2->vol[ip2]);
+	  }
           Rp = Rp1 + Rp2;
 
+	  // if (s1->ptag[ip1]==24 && s2->ptag[ip2]==481) {
+	  //   cout << "Rp1=" << Rp1 << endl;
+	  //   cout << "Rp2=" << Rp2 << endl;
+	  //   cout << "dx=" << dx.norm() << endl;
+	  // }
+
           // Gross screening:
-          if ((dx[0] < Rp) && (dx[1] < Rp) && (dx[2] < Rp) && (dx[0] > -Rp) &&
-              (dx[1] > -Rp) && (dx[2] > -Rp)) {
+          if ((dx[0] < Rp) && (dx[1] < Rp) && (dx[0] > -Rp)
+	      && (dx[1] > -Rp)) {
 
             r = dx.norm();
+
+	    // if (s1->ptag[ip1]==24 && s2->ptag[ip2]==481) {
+	    //   cout << "Rp1=" << Rp1 << endl;
+	    //   cout << "Rp2=" << Rp2 << endl;
+	    //   cout << "r=" << r << endl;
+	    // }
 	    // Finer screening:
             if (r < Rp) {
               f = s1->mass[ip1] * s2->mass[ip2] /

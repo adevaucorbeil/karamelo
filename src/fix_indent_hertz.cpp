@@ -35,6 +35,9 @@ FixIndentHertz::FixIndentHertz(MPM *mpm, vector<string> args)
   if (args.size() < Nargs) {
     error->all(FLERR, "Error: not enough arguments.\n" + usage);
   }
+  if (args.size() > Nargs) {
+    error->all(FLERR, "Error: too many arguments.\n" + usage);
+  }
 
   type_pos = 3;
   Rpos = 4;
