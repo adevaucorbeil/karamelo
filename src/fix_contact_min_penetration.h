@@ -41,9 +41,10 @@ public:
   void final_integrate(){};
 
 private:
-  string usage = "Usage: fix(fix-ID, contact/hertz, solid1, solid2)\n";
-  int Nargs = 4;
+  string usage = "Usage: fix(fix-ID, contact/minimize_penetration, solid1, solid2, mu)\n";
+  int Nargs = 5;
   int solid1, solid2;
+  double mu;    // Friction coefficient
 };
 
 #endif

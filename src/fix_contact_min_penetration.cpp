@@ -49,6 +49,8 @@ FixContactMinPenetration::FixContactMinPenetration(MPM *mpm, vector<string> args
   cout << "Creating new fix FixContactMinPenetration with ID: " << args[0] << endl;
   id = args[0];
   requires_ghost_particles = true;
+
+  mu = input->parsev(args[4]);
 }
 
 FixContactMinPenetration::~FixContactMinPenetration() {}
@@ -69,9 +71,9 @@ void FixContactMinPenetration::initial_integrate() {
   Eigen::Vector3d f, dx;
 
   Solid *s1, *s2;
-  Eigen::Vector3d ftot, ftot_reduced, vtemp1, vtemp2;
+  Eigen::Vector3d ftot, ftot_reduced, vtemp1, vtemp2, dv, vt;
 
-  double Rp, Rp1, Rp2, r, p, Estar, max_cellsize;
+  double Rp, Rp1, Rp2, r, inv_r, p, Estar, max_cellsize, vtnorm, fmag;
 
   ftot.setZero();
 
@@ -100,11 +102,6 @@ void FixContactMinPenetration::initial_integrate() {
 	  }
           Rp = Rp1 + Rp2;
 
-	  // if (s1->ptag[ip1]==24 && s2->ptag[ip2]==481) {
-	  //   cout << "Rp1=" << Rp1 << endl;
-	  //   cout << "Rp2=" << Rp2 << endl;
-	  //   cout << "dx=" << dx.norm() << endl;
-	  // }
 
           // Gross screening:
           if ((dx[0] < Rp) && (dx[1] < Rp) && (dx[0] > -Rp)
@@ -112,20 +109,35 @@ void FixContactMinPenetration::initial_integrate() {
 
             r = dx.norm();
 
-	    // if (s1->ptag[ip1]==24 && s2->ptag[ip2]==481) {
-	    //   cout << "Rp1=" << Rp1 << endl;
-	    //   cout << "Rp2=" << Rp2 << endl;
-	    //   cout << "r=" << r << endl;
-	    // }
 	    // Finer screening:
             if (r < Rp) {
-              f = s1->mass[ip1] * s2->mass[ip2] /
-		((s1->mass[ip1] + s2->mass[ip2]) *
-		 update->dt * update->dt) *
-		(1 - Rp / r) * dx;
+	      inv_r = 1.0/r;
+              fmag =
+                  s1->mass[ip1] * s2->mass[ip2] /
+                  ((s1->mass[ip1] + s2->mass[ip2]) * update->dt * update->dt) *
+                  (1 - Rp * inv_r);
+              f = fmag * dx;
+
+	      if (mu != 0) {
+                dv = s2->v[ip2] - s1->v[ip1];
+                vt = dv - dv.dot(dx) * inv_r * inv_r* dx;
+                if (vtnorm != 0) {
+		  vt /= vtnorm;
+		  f += mu * fmag * vt;
+		}
+	      }
+
 	      s1->mbp[ip1] += f;
 	      s2->mbp[ip2] -= f;
               ftot += f;
+
+              // if ((s1->ptag[ip1] == 12862 && s2->ptag[ip2] == 12902) ||
+              //     (s1->ptag[ip1] == 12835 && s2->ptag[ip2] == 12875)) {
+              //   cout << "dx[" << s1->ptag[ip1] << "," << s2->ptag[ip2] << "]= ["
+              //        << dx[0] << "\t" << dx[1] << "\t" << dx[2] << "]\n";
+              //   cout << "f[" << s1->ptag[ip1] << "," << s2->ptag[ip2] << "]= ["
+              //        << f[0] << "\t" << f[1] << "\t" << f[2] << "]\n";
+              // }
             }
           }
         }
@@ -149,12 +161,24 @@ void FixContactMinPenetration::initial_integrate() {
               (dx[1] > -Rp) && (dx[2] > -Rp)) {
 
             r = dx.norm();
-            // Finer screening:
+
+	    // Finer screening:
             if (r < Rp) {
-              f = s1->mass[ip1] * s2->mass[ip2] /
-		((s1->mass[ip1] + s2->mass[ip2]) *
-		 update->dt * update->dt) *
-		(1 - Rp / r) * dx;
+	      inv_r = 1.0/r;
+              fmag =
+                  s1->mass[ip1] * s2->mass[ip2] /
+                  ((s1->mass[ip1] + s2->mass[ip2]) * update->dt * update->dt) *
+                  (1 - Rp * inv_r);
+              f = fmag * dx;
+
+	      if (mu != 0) {
+                dv = s2->v[ip2] - s1->v[ip1];
+                vt = dv - dv.dot(dx) * inv_r * inv_r* dx;
+                if (vtnorm != 0) {
+		  vt /= vtnorm;
+		  f += mu * fmag * vt;
+		}
+	      }
 	      s1->mbp[ip1] += f;
 	      s2->mbp[ip2] -= f;
               ftot += f;
