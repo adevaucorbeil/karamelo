@@ -1595,62 +1595,144 @@ void Solid::populate(vector<string> args)
   double hdelta;
   double Lsubx, Lsuby, Lsubz;
 
-  double *boundlo;
+  double *boundlo, *boundhi;
 
   delta = grid->cellsize;
+
+  //////////////////////////////////////////////////////////
   
-  if (is_TL)
-    {
-    // The grid will be ajusted to the solid's domain (good for TLMPM).
-    // and we need to create the corresponding grid:
+  // if (is_TL)
+  //   {
+  //   // The grid will be ajusted to the solid's domain (good for TLMPM).
+  //   // and we need to create the corresponding grid:
+  //     grid->init(solidlo, solidhi);
+
+  //     boundlo = solidlo;
+
+  //     Lsubx = solidsubhi[0] - solidsublo[0];
+  //     if (domain->dimension >= 2) Lsuby = solidsubhi[1] - solidsublo[1];
+  //     if (domain->dimension == 3) Lsubz = solidsubhi[2] - solidsublo[2];
+  //   }
+  // else
+  //   {
+  //     // The grid is most likely bigger than the solid's domain (good for ULMPM),
+  //     // so all particles created won't lie in the region, they will need to be
+  //     // checked:
+
+  //     boundlo = domain->sublo;
+
+  //     Lsubx = domain->subhi[0] - domain->sublo[0];
+  //     if (domain->dimension >= 2)
+  // 	Lsuby = domain->subhi[1] - domain->sublo[1];
+  //     if (domain->dimension == 3)
+  // 	Lsubz = domain->subhi[2] - domain->sublo[2];
+  //   }
+
+  // nsubx = (int) (Lsubx / delta);
+  // while (nsubx * delta <= Lsubx - 0.1 * delta) nsubx++;
+  // nsubx++;
+
+  // if (domain->dimension >= 2)
+  //   {
+  //     nsuby = (int) (Lsuby / delta);
+  //   while (nsuby * delta <= Lsuby - 0.1 * delta) nsuby++;
+  //   nsuby++;
+  //   }
+  // else
+  //   {
+  //     nsuby = 1;
+  //   }
+
+  // if (domain->dimension == 3)
+  //   {
+  //     nsubz = (int) (Lsubz/delta);
+  //     while (nsubz * delta <= Lsubz - 0.1 * delta) nsubz++;
+  //     nsubz++;
+  //   }
+  // else
+  //   {
+  //     nsubz = 1;
+  //   }
+
+  
+  // cout << "1--proc " << universe->me << "\t nsub=["<< nsubx << "," << nsuby << "," << nsubz << "]\n";
+  //////////////////////////////////////////////////////////
+
+  //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    if (is_TL) {
       grid->init(solidlo, solidhi);
-
       boundlo = solidlo;
-
-      Lsubx = solidsubhi[0] - solidsublo[0];
-      if (domain->dimension >= 2) Lsuby = solidsubhi[1] - solidsublo[1];
-      if (domain->dimension == 3) Lsubz = solidsubhi[2] - solidsublo[2];
-    }
-  else
-    {
-      // The grid is most likely bigger than the solid's domain (good for ULMPM),
-      // so all particles created won't lie in the region, they will need to be
-      // checked:
-
-      boundlo = domain->sublo;
-
-      Lsubx = domain->subhi[0] - domain->sublo[0];
-      if (domain->dimension >= 2)
-	Lsuby = domain->subhi[1] - domain->sublo[1];
-      if (domain->dimension == 3)
-	Lsubz = domain->subhi[2] - domain->sublo[2];
+      boundhi = solidhi;
+    } else {
+      boundlo = domain->boxlo;
+      boundhi = domain->boxhi;
     }
 
-  nsubx = (int) (Lsubx / delta);
-  while (nsubx * delta <= Lsubx - 0.1 * delta) nsubx++;
-  nsubx++;
+    double Loffsetlo[3] = {MAX(0.0, sublo[0] - boundlo[0]),
+                           MAX(0.0, sublo[1] - boundlo[1]),
+                           MAX(0.0, sublo[2] - boundlo[2])};
+    double Loffsethi[3] = {MAX(0.0, MIN(subhi[0], boundhi[0]) - boundlo[0]),
+                           MAX(0.0, MIN(subhi[1], boundhi[1]) - boundlo[1]),
+                           MAX(0.0, MIN(subhi[2], boundhi[2]) - boundlo[2])};
 
-  if (domain->dimension >= 2)
-    {
-      nsuby = (int) (Lsuby / delta);
-    while (nsuby * delta <= Lsuby - 0.1 * delta) nsuby++;
-    nsuby++;
+    int noffsetlo[3] = {(int)ceil(Loffsetlo[0] / delta),
+                        (int)ceil(Loffsetlo[1] / delta),
+                        (int)ceil(Loffsetlo[2] / delta)};
+
+    int noffsethi[3] = {(int)ceil(Loffsethi[0] / delta),
+                        (int)ceil(Loffsethi[1] / delta),
+                        (int)ceil(Loffsethi[2] / delta)};
+
+    // cout << "1--- proc " << universe->me << " noffsethi=[" << noffsethi[0]
+    //      << "," << noffsethi[1] << "," << noffsethi[2] << "]\n";
+
+    cout << "abs=" << abs(boundlo[0] + noffsethi[0] * delta - subhi[0])<< "]\n";
+    if (universe->procneigh[0][1] >= 0 &&
+        abs(boundlo[0] + noffsethi[0] * delta - subhi[0]) < 1.0e-12) {
+      noffsethi[0]++;
     }
-  else
-    {
+    if (domain->dimension >= 2 && universe->procneigh[1][1] >= 0 &&
+        abs(boundlo[1] + noffsethi[1] * delta - subhi[1]) < 1.0e-12) {
+      noffsethi[1]++;
+    }
+    if (domain->dimension == 3 && universe->procneigh[2][1] >= 0 &&
+        abs(boundlo[2] + noffsethi[2] * delta - subhi[2]) < 1.0e-12) {
+      noffsethi[2]++;
+    }
+
+    // cout << "2--- proc " << universe->me << " noffsethi=[" << noffsethi[0]
+    //      << "," << noffsethi[1] << "," << noffsethi[2] << "]\n";
+
+    nsubx = noffsethi[0] - noffsetlo[0];
+    if (domain->dimension >= 2) {
+      nsuby = noffsethi[1] - noffsetlo[1];
+    } else {
       nsuby = 1;
     }
-
-  if (domain->dimension == 3)
-    {
-      nsubz = (int) (Lsubz/delta);
-      while (nsubz * delta <= Lsubz - 0.1 * delta) nsubz++;
-      nsubz++;
-    }
-  else
-    {
+    if (domain->dimension >= 3) {
+      nsubz = noffsethi[2] - noffsetlo[2];
+    } else {
       nsubz = 1;
     }
+
+    if (universe->procneigh[0][1] == -1) {
+      while (boundlo[0] + delta * (noffsetlo[0] + nsubx - 0.5) <
+             MIN(subhi[0], boundhi[0]))
+        nsubx++;
+    }
+    if (universe->procneigh[1][1] == -1) {
+      while (boundlo[1] + delta * (noffsetlo[1] + nsuby - 0.5) <
+             MIN(subhi[1], boundhi[1]))
+        nsuby++;
+    }
+    if (universe->procneigh[2][1] == -1) {
+      while (boundlo[2] + delta * (noffsetlo[2] + nsubz - 0.5) <
+             MIN(subhi[2], boundhi[2]))
+        nsubz++;
+    }
+    // cout << "2--proc " << universe->me << "\t nsub=[" << nsubx << "," << nsuby
+    //      << "," << nsubz << "]\n";
+    //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 #ifdef DEBUG
   cout << "proc " << universe->me << "\tLsub=[" << Lsubx << "," << Lsuby << "," << Lsubz << "]\t nsub=["<< nsubx << "," << nsuby << "," << nsubz << "]\n";
@@ -1798,9 +1880,12 @@ void Solid::populate(vector<string> args)
 		       MAX(0.0, sublo[1] - boundlo[1]),
 		       MAX(0.0, sublo[2] - boundlo[2])};
 
-  int noffset[3] = {(int) (Loffset[0]/delta),
-		    (int) (Loffset[1]/delta),
-		    (int) (Loffset[2]/delta)};
+  int noffset[3] = {(int) Loffset[0],
+		    (int) Loffset[1],
+		    (int) Loffset[2]};
+
+  cout << "boundlo[0] = " << boundlo[0] << endl;
+  cout << "noffset[0] = " << noffset[0] << endl;
 
   for (int i = 0; i < nsubx; i++)
     {
@@ -1820,12 +1905,12 @@ void Solid::populate(vector<string> args)
 		    }
 
 		  x0[l][0] = x[l][0] =
-		    boundlo[0] + delta*(noffset[0] + i + 0.5 + intpoints[3*ip+0]);
+		    boundlo[0] + noffset[0] + delta*(i + 0.5 + intpoints[3*ip+0]);
 		  x0[l][1] = x[l][1] =
-		    boundlo[1] + delta*(noffset[1] + j + 0.5 + intpoints[3*ip+1]);
+		    boundlo[1] + noffset[1] + delta*(j + 0.5 + intpoints[3*ip+1]);
 		  if (dim == 3)
 		    x0[l][2] = x[l][2] =
-		      boundlo[2] + delta*(noffset[2] + k + 0.5 + intpoints[3*ip+2]);
+		      boundlo[2] + noffset[2] + delta*(k + 0.5 + intpoints[3*ip+2]);
 		  else
 		    x0[l][2] = x[l][2] = 0;
 
