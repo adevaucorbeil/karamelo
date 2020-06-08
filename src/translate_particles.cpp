@@ -33,7 +33,6 @@ Var TranslateParticles::command(vector<string> args) {
   int ns = domain->solids.size();
 
   int isolid = domain->find_solid(args[0]);
-  cout << "isolid=" << isolid << endl;
 
   if (isolid < 0) {
     if (args[0].compare("all")!=0) {
@@ -87,34 +86,34 @@ void TranslateParticles::translate_region(vector<string> args, int isolid) {
 
 	  for(int ip=0; ip < s->np_local; ip++)
 	    {
-	      cout << ip << endl;
-	      if (domain->regions[iregion]->inside(g->x[ip][0], g->x[ip][1], g->x[ip][2])==1)
+	      if (domain->regions[iregion]->inside(s->x[ip][0], s->x[ip][1], s->x[ip][2])==1)
 		{
-		  (*input->vars)["x0"] = Var("x0", g->x0[ip][0]);
-		  (*input->vars)["y0"] = Var("y0", g->x0[ip][1]);
-		  (*input->vars)["z0"] = Var("z0", g->x0[ip][2]);
+		  (*input->vars)["x0"] = Var("x0", s->x0[ip][0]);
+		  (*input->vars)["y0"] = Var("y0", s->x0[ip][1]);
+		  (*input->vars)["z0"] = Var("z0", s->x0[ip][2]);
 
-		  (*input->vars)["x"]  = Var("x", g->x[ip][0]);
-		  (*input->vars)["y"]  = Var("y", g->x[ip][1]);
-		  (*input->vars)["z"]  = Var("z", g->x[ip][2]);
+		  (*input->vars)["x"]  = Var("x", s->x[ip][0]);
+		  (*input->vars)["y"]  = Var("y", s->x[ip][1]);
+		  (*input->vars)["z"]  = Var("z", s->x[ip][2]);
 
 		  if (xset)
 		    {
 		      delx_value    = delx.result(mpm);
-		      g->x0[ip][0] += delx_value;
-		      g->x[ip][0]  += delx_value;
+		      cout << "delx_value = " << delx_value << endl;
+		      s->x0[ip][0] += delx_value;
+		      s->x[ip][0]  += delx_value;
 		    }
 		  if (yset)
 		    {
 		      dely_value    = dely.result(mpm);
-		      g->x0[ip][1] += dely_value;
-		      g->x[ip][1]  += dely_value;
+		      s->x0[ip][1] += dely_value;
+		      s->x[ip][1]  += dely_value;
 		    }
 		  if (zset)
 		    {
 		      delz_value    = delz.result(mpm);
-		      g->x0[ip][2] += delz_value;
-		      g->x[ip][2]  += delz_value;
+		      s->x0[ip][2] += delz_value;
+		      s->x[ip][2]  += delz_value;
 		    }
 		}
 	    }  
