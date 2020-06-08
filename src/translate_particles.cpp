@@ -1,37 +1,51 @@
-#include <iostream>
-#include "group.h"
+/* ----------------------------------------------------------------------
+ *
+ *                    ***       Karamelo       ***
+ *               Parallel Material Point Method Simulator
+ *
+ * Copyright (2019) Alban de Vaucorbeil, alban.devaucorbeil@monash.edu
+ * Materials Science and Engineering, Monash University
+ * Clayton VIC 3800, Australia
+
+ * This software is distributed under the GNU General Public License.
+ *
+ * ----------------------------------------------------------------------- */
+
 #include "translate_particles.h"
 #include "domain.h"
+#include "error.h"
+#include "group.h"
 #include "input.h"
 #include "var.h"
+#include <iostream>
 
 using namespace std;
 
 TranslateParticles::TranslateParticles(MPM *mpm) : Pointers(mpm) {}
 
 Var TranslateParticles::command(vector<string> args) {
-  cout << "In TranslateParticles::command()" << endl;
+  // cout << "In TranslateParticles::command()" << endl;
 
-  if (args.size() < 6) {
-    cout << "Illegal translate_particles command. Must be of the form: translate(solid-ID, region, region-ID, delx, dely, delz)" << endl;
-    exit(1);
+  if (args.size() < Nargs) {
+    error->all(FLERR, "Error: not enough arguments.\n" + usage);
   }
 
   int ns = domain->solids.size();
 
   int isolid = domain->find_solid(args[0]);
+  cout << "isolid=" << isolid << endl;
 
   if (isolid < 0) {
     if (args[0].compare("all")!=0) {
       cout << "Error: solid " << args[0] << " unknown.\n";
-      exit(1);
+      error->all(FLERR, "");
     }
   }
 
   if (args[1].compare("region")==0) translate_region(args, isolid);
   else {
     cout << "Error: use of illegal keyword for translate_particles command: " << args[1] << endl;
-    exit(1);
+    error->all(FLERR, "");
   }
 
   return Var(0);
@@ -71,8 +85,9 @@ void TranslateParticles::translate_region(vector<string> args, int isolid) {
 	  s = domain->solids[is];
 	  g = s->grid;
 
-	  for(int ip=0; ip < s->np; ip++)
+	  for(int ip=0; ip < s->np_local; ip++)
 	    {
+	      cout << ip << endl;
 	      if (domain->regions[iregion]->inside(g->x[ip][0], g->x[ip][1], g->x[ip][2])==1)
 		{
 		  (*input->vars)["x0"] = Var("x0", g->x0[ip][0]);
