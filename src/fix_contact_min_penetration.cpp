@@ -123,7 +123,7 @@ void FixContactMinPenetration::initial_integrate() {
                 vt = dv - dv.dot(dx) * inv_r * inv_r* dx;
                 if (vtnorm != 0) {
 		  vt /= vtnorm;
-		  f += mu * fmag * vt;
+		  f += mu * fmag * r * vt;
 		}
 	      }
 
@@ -176,7 +176,7 @@ void FixContactMinPenetration::initial_integrate() {
                 vt = dv - dv.dot(dx) * inv_r * inv_r* dx;
                 if (vtnorm != 0) {
 		  vt /= vtnorm;
-		  f += mu * fmag * vt;
+		  f += mu * fmag * r * vt;
 		}
 	      }
 	      s1->mbp[ip1] += f;
