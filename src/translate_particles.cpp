@@ -99,7 +99,6 @@ void TranslateParticles::translate_region(vector<string> args, int isolid) {
 		  if (xset)
 		    {
 		      delx_value    = delx.result(mpm);
-		      cout << "delx_value = " << delx_value << endl;
 		      s->x0[ip][0] += delx_value;
 		      s->x[ip][0]  += delx_value;
 		    }
