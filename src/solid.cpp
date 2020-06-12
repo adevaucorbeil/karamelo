@@ -1683,6 +1683,8 @@ void Solid::populate(vector<string> args)
                         (int)ceil(Loffsethi[1] / delta),
                         (int)ceil(Loffsethi[2] / delta)};
 
+    // cout << "1--- proc " << universe->me << " noffsetlo=[" << noffsetlo[0]
+    //      << "," << noffsetlo[1] << "," << noffsetlo[2] << "]\n";
     // cout << "1--- proc " << universe->me << " noffsethi=[" << noffsethi[0]
     //      << "," << noffsethi[1] << "," << noffsethi[2] << "]\n";
 
@@ -1868,25 +1870,6 @@ void Solid::populate(vector<string> args)
     }
   }
 
-  //checkIfInRegion = false;
-
-  // int nsubx0, nsuby0, nsubz0;
-  // nsubx0 = (int) (sublo[0] - boundlo[0])/delta;
-  // nsuby0 = (int) (sublo[1] - boundlo[1])/delta;
-  // nsubz0 = (int) (sublo[2] - boundlo[2])/delta;
-
-
-  double Loffset[3] = {MAX(0.0, sublo[0] - boundlo[0]),
-		       MAX(0.0, sublo[1] - boundlo[1]),
-		       MAX(0.0, sublo[2] - boundlo[2])};
-
-  int noffset[3] = {(int) Loffset[0],
-		    (int) Loffset[1],
-		    (int) Loffset[2]};
-
-  cout << "boundlo[0] = " << boundlo[0] << endl;
-  cout << "noffset[0] = " << noffset[0] << endl;
-
   for (int i = 0; i < nsubx; i++)
     {
       for (int j = 0; j < nsuby; j++)
@@ -1905,12 +1888,12 @@ void Solid::populate(vector<string> args)
 		    }
 
 		  x0[l][0] = x[l][0] =
-		    boundlo[0] + noffset[0] + delta*(i + 0.5 + intpoints[3*ip+0]);
+		    boundlo[0] + delta*(noffsetlo[0] + i + 0.5 + intpoints[3*ip+0]);
 		  x0[l][1] = x[l][1] =
-		    boundlo[1] + noffset[1] + delta*(j + 0.5 + intpoints[3*ip+1]);
+		    boundlo[1] + delta*(noffsetlo[1] + j + 0.5 + intpoints[3*ip+1]);
 		  if (dim == 3)
 		    x0[l][2] = x[l][2] =
-		      boundlo[2] + noffset[2] + delta*(k + 0.5 + intpoints[3*ip+2]);
+		      boundlo[2] + delta*(noffsetlo[2] + k + 0.5 + intpoints[3*ip+2]);
 		  else
 		    x0[l][2] = x[l][2] = 0;
 
