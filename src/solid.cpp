@@ -1579,15 +1579,15 @@ void Solid::populate(vector<string> args)
   solidsubhi[1] = MIN(solidhi[1], subhi[1]);
   solidsubhi[2] = MIN(solidhi[2], subhi[2]);
 
-#ifdef DEBUG
+  //#ifdef DEBUG
   cout << "proc " << universe->me
        << "\tsolidsublo=[" << solidsublo[0] << "," << solidsublo[1] << "," << solidsublo[2]
        << "]\t solidsubhi=["<< solidsubhi[0] << "," << solidsubhi[1] << "," << solidsubhi[2]
        << "]\n";
 
-  std::vector<double> x2plot, y2plot;
-  plt::figure_size(1200, 780);
-#endif
+//   std::vector<double> x2plot, y2plot;
+//   plt::figure_size(1200, 780);
+// #endif
 
   // Calculate total number of particles np_local:
   int nsubx, nsuby, nsubz;
@@ -1675,18 +1675,18 @@ void Solid::populate(vector<string> args)
                            MAX(0.0, MIN(subhi[1], boundhi[1]) - boundlo[1]),
                            MAX(0.0, MIN(subhi[2], boundhi[2]) - boundlo[2])};
 
-    int noffsetlo[3] = {(int)ceil(Loffsetlo[0] / delta),
-                        (int)ceil(Loffsetlo[1] / delta),
-                        (int)ceil(Loffsetlo[2] / delta)};
+    int noffsetlo[3] = {(int)floor(Loffsetlo[0] / delta),
+                        (int)floor(Loffsetlo[1] / delta),
+                        (int)floor(Loffsetlo[2] / delta)};
 
     int noffsethi[3] = {(int)ceil(Loffsethi[0] / delta),
                         (int)ceil(Loffsethi[1] / delta),
                         (int)ceil(Loffsethi[2] / delta)};
 
-    // cout << "1--- proc " << universe->me << " noffsetlo=[" << noffsetlo[0]
-    //      << "," << noffsetlo[1] << "," << noffsetlo[2] << "]\n";
-    // cout << "1--- proc " << universe->me << " noffsethi=[" << noffsethi[0]
-    //      << "," << noffsethi[1] << "," << noffsethi[2] << "]\n";
+    cout << "1--- proc " << universe->me << " noffsetlo=[" << noffsetlo[0]
+         << "," << noffsetlo[1] << "," << noffsetlo[2] << "]\n";
+    cout << "1--- proc " << universe->me << " noffsethi=[" << noffsethi[0]
+         << "," << noffsethi[1] << "," << noffsethi[2] << "]\n";
 
     cout << "abs=" << abs(boundlo[0] + noffsethi[0] * delta - subhi[0])<< "]\n";
     if (universe->procneigh[0][1] >= 0 &&
@@ -1702,8 +1702,8 @@ void Solid::populate(vector<string> args)
       noffsethi[2]++;
     }
 
-    // cout << "2--- proc " << universe->me << " noffsethi=[" << noffsethi[0]
-    //      << "," << noffsethi[1] << "," << noffsethi[2] << "]\n";
+    cout << "2--- proc " << universe->me << " noffsethi=[" << noffsethi[0]
+         << "," << noffsethi[1] << "," << noffsethi[2] << "]\n";
 
     nsubx = noffsethi[0] - noffsetlo[0];
     if (domain->dimension >= 2) {
@@ -1732,8 +1732,8 @@ void Solid::populate(vector<string> args)
              MIN(subhi[2], boundhi[2]))
         nsubz++;
     }
-    // cout << "2--proc " << universe->me << "\t nsub=[" << nsubx << "," << nsuby
-    //      << "," << nsubz << "]\n";
+    cout << "2--proc " << universe->me << "\t nsub=[" << nsubx << "," << nsuby
+         << "," << nsubz << "]\n";
     //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 #ifdef DEBUG
