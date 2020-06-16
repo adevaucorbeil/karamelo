@@ -29,14 +29,18 @@ using namespace Eigen;
 
 FixInitialVelocityParticles::FixInitialVelocityParticles(MPM *mpm, vector<string> args) : Fix(mpm, args)
 {
-  if (args.size() < 6) {
-    error->all(FLERR,"Error: too few arguments for fix_initial_velocity_particles: requires at least 6 arguments. " + to_string(args.size()) + " received.\n");
+  if (args.size() < Nargs) {
+    error->all(FLERR, "Error: not enough arguments.\n" + usage);
+  }
+
+  if (args.size() > Nargs) {
+    error->all(FLERR, "Error: too many arguments.\n" + usage);
   }
 
   if (group->pon[igroup].compare("particles") !=0 && group->pon[igroup].compare("all") !=0) {
     error->all(FLERR, "fix_initial_velocity_particles needs to be given a group of particles" + group->pon[igroup] + ", " + args[2] + " is a group of " + group->pon[igroup] + ".\n");
   }
-  cout << "Creating new fix FixInitialVelocityParticles with ID: " << args[0] << endl;
+
   id = args[0];
 
   xset = yset = zset = false;

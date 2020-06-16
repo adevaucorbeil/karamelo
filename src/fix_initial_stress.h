@@ -13,21 +13,21 @@
 
 #ifdef FIX_CLASS
 
-FixStyle(initial_velocity_particles,FixInitialVelocityParticles)
+FixStyle(initial_stress,FixInitialStress)
 
 #else
 
-#ifndef MPM_FIX_INITIAL_VELOCITY_PARTICLES_H
-#define MPM_FIX_INITIAL_VELOCITY_PARTICLES_H
+#ifndef MPM_FIX_INITIAL_STRESS_H
+#define MPM_FIX_INITIAL_STRESS_H
 
 #include "fix.h"
 #include "var.h"
 #include <vector>
 
-class FixInitialVelocityParticles : public Fix {
+class FixInitialStress : public Fix {
  public:
-  FixInitialVelocityParticles(class MPM *, vector<string>);
-  ~FixInitialVelocityParticles();
+  FixInitialStress(class MPM *, vector<string>);
+  ~FixInitialStress();
   void setmask();
   void init();
   void setup();
@@ -41,10 +41,11 @@ class FixInitialVelocityParticles : public Fix {
   void final_integrate() {};
 
 private:
-  string usage = "Usage: fix(fix-ID, initial_velocity_particles, group-ID, vx, vy, vz)\n";
-  int Nargs = 6;
-  class Var xvalue, yvalue, zvalue;    // Set velocities in x, y, and z directions.
-  bool xset, yset, zset;               // Does the fix set the x, y, and z velocities of the group?
+  string usage = "Usage: fix(fix-ID, initial_stress, group-ID, sigma_xx, sigma_yy, sigma_zz, sigma_yz, sigma_xz, sigma_xy)\n";
+  int Nargs = 9;
+
+  class Var s_value[6];
+  bool s_set[6];
 };
 
 #endif

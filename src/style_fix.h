@@ -13,6 +13,7 @@
 #include "fix_indent_hertz_nodes_symz.h"
 #include "fix_indent_minimize_penetration.h"
 #include "fix_indent_pinball.h"
+#include "fix_initial_stress.h"
 #include "fix_initial_velocity_nodes.h"
 #include "fix_initial_velocity_particles.h"
 #include "fix_kinetic_energy.h"
