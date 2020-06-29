@@ -330,7 +330,7 @@ void Material::add_material(vector<string> args) {
         } else {
           // It is a temperature law!
           temp_ = temperatures[iTemp];
-	  if (args.size() > Nargs.find(args[1])->second - 1) {
+	  if (args.size() > Nargs.find(args[1])->second + 1) {
 	    string error_str = "Error: the last argument of the material command should be the temperature\n";
 	    error_str += usage.find(args[1])->second;
 	    error->all(FLERR, error_str);
