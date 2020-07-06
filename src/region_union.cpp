@@ -75,7 +75,7 @@ Union::~Union()
 
 int Union::inside(double x, double y, double z)
 {
-  for(int i; i < iregions.size(); i++) {
+  for(int i=0; i < iregions.size(); i++) {
     if (domain->regions[iregions[i]]->inside(x, y, z) == 1)
       return 1;
   }
