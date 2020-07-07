@@ -22,6 +22,12 @@
 <script type="text/javascript">
   $(document).ready(function() { init_search(); });
 </script>
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    extensions: ["tex2jax.js", "TeX/AMSmath.js", "TeX/AMSsymbols.js"],
+    jax: ["input/TeX","output/HTML-CSS"],
+});
+</script><script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/MathJax.js?config=TeX-MML-AM_CHTML/MathJax.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
 <link href="karamelodoxy.css" rel="stylesheet" type="text/css">
 <!--  -->
@@ -36,7 +42,7 @@
   <td id="projectlogo"><a href="http://www.karamelo.org"><img alt="Logo" src="Karamelo_logo.png"/></a></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname"><a href="http://www.karamelo.org">Karamelo</a>
-   &#160;<span id="projectnumber">0d9302f0</span>
+   &#160;<span id="projectnumber">714599e9</span>
    </div>
    <div id="projectbrief">Parallel Material Point Method Simulator</div>
   </td>
@@ -113,13 +119,13 @@ region_specific_arguments: list of arguments specific to the region type used.  
 </ul>
 <h1><a class="anchor" id="Examples"></a>
 Examples</h1>
-<div class="fragment"><div class="line">R = 0.2</div><div class="line">region(rSph, sphere, 0, 0, 0, R)</div></div><!-- fragment --><p> Defines a region called 'rSph' delimited by a sphere of radius <img class="formulaInl" alt="$R=0.2$" src="form_21.png"/> centered around the origin.</p>
-<div class="fragment"><div class="line">region(A, block, 0, L, 0, 2*L)</div></div><!-- fragment --><p> Defines a 2D rectangular region called 'A'. A point of coordinates (x, y, z) lies within the region if <img class="formulaInl" alt="$0 \leq x \leq L$" src="form_18.png"/> and <img class="formulaInl" alt="$0 \leq y \leq 2L$" src="form_20.png"/>.</p>
+<div class="fragment"><div class="line">R = 0.2</div><div class="line">region(rSph, sphere, 0, 0, 0, R)</div></div><!-- fragment --><p> Defines a region called 'rSph' delimited by a sphere of radius \(R=0.2\) centered around the origin.</p>
+<div class="fragment"><div class="line">region(A, block, 0, L, 0, 2*L)</div></div><!-- fragment --><p> Defines a 2D rectangular region called 'A'. A point of coordinates (x, y, z) lies within the region if \(0 \leq x \leq L\) and \(0 \leq y \leq 2L\).</p>
 <h1><a class="anchor" id="Description"></a>
 Description</h1>
 <p>This command defines a geometric region of space. It is usually used by groups to find what nodes and/or particles lie within a specific region of space. A region does not select nodes or particles.</p>
-<h1><a class="anchor" id="Subclasses"></a>
-EOS types</h1>
+<h1><a class="anchor" id="Region_Subclasses"></a>
+Region types</h1>
 <p>To access the different region type supported, and how to use the region() command with them, refer to the corresponding class. </p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
@@ -142,7 +148,7 @@ Classes</h2></td></tr>
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="footer">Generated on Tue May 26 2020 22:47:35 for Karamelo by
+    <li class="footer">Generated on Tue Jul 7 2020 22:31:23 for Karamelo by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="doxygen.png" alt="doxygen"/></a> 1.8.13 </li>
   </ul>

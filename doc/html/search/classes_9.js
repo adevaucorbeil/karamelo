@@ -1,4 +1,5 @@
 var searchData=
 [
-  ['region',['Region',['../classRegion.html',1,'']]]
+  ['point',['Point',['../structPoint.html',1,'']]],
+  ['pointers',['Pointers',['../classPointers.html',1,'']]]
 ];

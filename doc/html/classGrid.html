@@ -22,6 +22,12 @@
 <script type="text/javascript">
   $(document).ready(function() { init_search(); });
 </script>
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    extensions: ["tex2jax.js", "TeX/AMSmath.js", "TeX/AMSsymbols.js"],
+    jax: ["input/TeX","output/HTML-CSS"],
+});
+</script><script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/MathJax.js?config=TeX-MML-AM_CHTML/MathJax.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
 <link href="karamelodoxy.css" rel="stylesheet" type="text/css">
 <!--  -->
@@ -36,7 +42,7 @@
   <td id="projectlogo"><a href="http://www.karamelo.org"><img alt="Logo" src="Karamelo_logo.png"/></a></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname"><a href="http://www.karamelo.org">Karamelo</a>
-   &#160;<span id="projectnumber">0d9302f0</span>
+   &#160;<span id="projectnumber">714599e9</span>
    </div>
    <div id="projectbrief">Parallel Material Point Method Simulator</div>
   </td>
@@ -148,7 +154,7 @@ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="clas
 <tr class="separator:a737e96fe193c3bf7425be60c556c2ab4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a206dd32ae2e20001e354610eb36b2738"><td class="memItemLeft" align="right" valign="top"><a id="a206dd32ae2e20001e354610eb36b2738"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classGrid.html#a206dd32ae2e20001e354610eb36b2738">update_grid_velocities</a> ()</td></tr>
-<tr class="memdesc:a206dd32ae2e20001e354610eb36b2738"><td class="mdescLeft">&#160;</td><td class="mdescRight">Determine the temporary grid velocities <img class="formulaInl" alt="$\tilde{v}_{n}$" src="form_0.png"/>. <br /></td></tr>
+<tr class="memdesc:a206dd32ae2e20001e354610eb36b2738"><td class="mdescLeft">&#160;</td><td class="mdescRight">Determine the temporary grid velocities \(\tilde{v}_{n}\). <br /></td></tr>
 <tr class="separator:a206dd32ae2e20001e354610eb36b2738"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
@@ -280,7 +286,7 @@ vector&lt; Eigen::Vector3d &gt;&#160;</td><td class="memItemRight" valign="botto
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="classGrid.html">Grid</a></li>
-    <li class="footer">Generated on Tue May 26 2020 22:47:35 for Karamelo by
+    <li class="footer">Generated on Tue Jul 7 2020 22:31:23 for Karamelo by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="doxygen.png" alt="doxygen"/></a> 1.8.13 </li>
   </ul>
