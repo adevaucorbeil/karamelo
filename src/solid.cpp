@@ -1184,7 +1184,7 @@ void Solid::update_stress()
     max_p_wave_speed =
         MAX(max_p_wave_speed,
             sqrt((mat->K + FOUR_THIRD * mat->G) / rho[ip]) +
-                MAX(MAX(abs(v[ip](0)), abs(v[ip](1))), abs(v[ip](2))));
+                MAX(MAX(fabs(v[ip](0)), fabs(v[ip](1))), fabs(v[ip](2))));
 
     min_h_ratio =
         MIN(min_h_ratio, F[ip](0, 0) * F[ip](0, 0) + F[ip](0, 1) * F[ip](0, 1) +
@@ -1211,9 +1211,9 @@ void Solid::update_stress()
 
     // dt should also be lower than the inverse of \dot{F}e_i.
     EigenSolver<Matrix3d> es(Fdot[ip], false);
-    double lambda = absf(es.eigenvalues()[0].real());
-    lambda = MAX(lambda, absf(es.eigenvalues()[1].real()));
-    lambda = MAX(lambda, absf(es.eigenvalues()[2].real()));
+    double lambda = fabs(es.eigenvalues()[0].real());
+    lambda = MAX(lambda, fabs(es.eigenvalues()[1].real()));
+    lambda = MAX(lambda, fabs(es.eigenvalues()[2].real()));
     dtCFL = MIN(dtCFL, 1.0/lambda);
     //dtCFL = MIN(dtCFL, 1.0/(Fdot[ip](0,0) + Fdot[ip](0,1) + Fdot[ip](0,2)));
     //dtCFL = MIN(dtCFL, 1.0/(Fdot[ip](1,0) + Fdot[ip](1,1) + Fdot[ip](1,2)));
