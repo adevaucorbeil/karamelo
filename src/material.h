@@ -131,3 +131,59 @@ private:
 
 
 #endif
+
+/*! \defgroup material material
+
+\section Syntax Syntax
+\code
+material(material-ID, rigid)
+material(material-ID, linear, rho, E, nu, optional: damage-ID)
+material(material-ID, neo-hookean, rho, E, nu, optional: damage-ID)
+material(material-ID, eos-strength, eos-ID, strength-ID, optional: damage-ID, optional: temperature-ID)
+\endcode
+
+<ul>
+<li>material-ID: name of the material to be created.</li>
+<li>rho: density of the material.</li>
+<li>E: Young's modulus.</li>
+<li>nu: Poisson's ration.</li>
+<li>damage-ID: name of the damage law to be used (see Damage).</li>
+<li>temperature-ID: name of the temperature law to be used (see Temperature).</li>
+<li>eos-ID: name of EOS (Equation of State) to be used.</li>
+<li>strength-ID: name of hardening law to be used (see Strength).</li>
+</ul>
+
+\section Examples Examples
+\code
+E        = 115
+nu       = 0.31
+rho      = 8.94e-06
+material(mat1, linear, rho, E, nu)
+\endcode
+Defines a linear elastic material called 'mat1'. Its density is 8.94e-06, Poisson's ration 0.31 and Young's modulus 115.
+
+\section Description Description
+
+Four different kinds of materials are supported:
+<ul>
+<li>Rigid. The material does not deform.</li>
+<li>Linear, defined by their density, Young's modulus \f$E\f$ and Poisson's ratio \f$\nu\f$. In this case, the stress is directly related to the strain increment:\n
+\f{equation}{
+  \boldsymbol{\sigma} = 2G \Delta \boldsymbol{\varepsilon} + \lambda \text{tr}(\Delta \boldsymbol{\varepsilon}) \boldsymbol{I}
+\f}
+where the shear modulus \f$G\f$ and Lame parameter \f$\lambda\f$ are obtained as follows:
+\f{equation}{
+G = \frac{E}{2 (1 + \nu)}\\
+\lambda = \frac{E  \nu}{(1 + \nu)  (1 - 2 \nu)}
+\f}</li>
+<li>Neo-Hookean, defined by their density, Young's modulus \f$E\f$ and Poisson's ratio \f$\nu\f$. In this model, the first Piola-Kirchhoff stress tensor is given by:
+\f{equation}{
+  \boldsymbol{P} = G (\boldsymbol{F} - \boldsymbol{F}^{-T}) + \lambda \left( \ln J \right)\boldsymbol{F}^{-T}
+\f} where \f$J\f$ is the determinant of \f$\boldsymbol{F}\f$. </li>
+<li>Elasto-plastic: defined by an equation of state (EOS) and a hardening law (Strength).</li>
+
+For all non-rigid materials, damage (Damage) is supported, to add allow for the use of a damage law, its ID, damage-ID, needs to be given.
+
+Finally, for elasto-plastic materials, the increase of temperature coming from the plastic work can be talken into account using a temperature law (Temperature). 
+
+*/
