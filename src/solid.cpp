@@ -24,6 +24,7 @@
 #include "update.h"
 #include "var.h"
 #include <Eigen/Eigen>
+#include <Eigen/Eigenvalues> 
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
 #include <math.h>
@@ -1002,6 +1003,7 @@ void Solid::update_deformation_gradient()
     {
       cout << "Error: J[" << ip << "]<=0.0 == " << J[ip] << endl;
       cout << "F[" << ip << "]:" << endl << F[ip] << endl;
+      cout << "Fdot[" << ip << "]:" << endl << Fdot[ip] << endl;
       error->one(FLERR,"");
     }
     rho[ip] = rho0[ip] / J[ip];
@@ -1196,8 +1198,8 @@ void Solid::update_stress()
 
     if (std::isnan(max_p_wave_speed)) {
       cout << "Error: max_p_wave_speed is nan with ip=" << ip
-           << ", rho[ip]=" << rho[ip] << ", K=" << mat->K << ", G=" << mat->G
-	   << ", J[ip]=" << J[ip]
+           << ", ptag[ip]=" << ptag[ip] << ", rho0[ip]=" << rho0[ip]<< ", rho[ip]=" << rho[ip]
+           << ", K=" << mat->K << ", G=" << mat->G << ", J[ip]=" << J[ip]
            << endl;
       error->one(FLERR, "");
     } else if (max_p_wave_speed < 0.0) {
@@ -1206,9 +1208,20 @@ void Solid::update_stress()
            << ", G=" << mat->G << endl;
       error->one(FLERR, "");
     }
+
+    // dt should also be lower than the inverse of \dot{F}e_i.
+    EigenSolver<Matrix3d> es(Fdot[ip], false);
+    double lambda = absf(es.eigenvalues()[0].real());
+    lambda = MAX(lambda, absf(es.eigenvalues()[1].real()));
+    lambda = MAX(lambda, absf(es.eigenvalues()[2].real()));
+    dtCFL = MIN(dtCFL, 1.0/lambda);
+    //dtCFL = MIN(dtCFL, 1.0/(Fdot[ip](0,0) + Fdot[ip](0,1) + Fdot[ip](0,2)));
+    //dtCFL = MIN(dtCFL, 1.0/(Fdot[ip](1,0) + Fdot[ip](1,1) + Fdot[ip](1,2)));
+    //dtCFL = MIN(dtCFL, 1.0/(Fdot[ip](2,0) + Fdot[ip](2,1) + Fdot[ip](2,2)));
   }
 
   dtCFL = MIN(dtCFL, grid->cellsize * sqrt(min_h_ratio) / max_p_wave_speed);
+
   if (std::isnan(dtCFL))
   {
     cout << "Error: dtCFL = " << dtCFL << "\n";
@@ -2052,48 +2065,48 @@ void Solid::populate(vector<string> args)
   np += np_local_reduced;
   domain->np_total += np;
 
-#ifdef DEBUG
-  vector<double> xdomain, ydomain;
-  vector<double> xsubdomain, ysubdomain;
+// #ifdef DEBUG
+//   vector<double> xdomain, ydomain;
+//   vector<double> xsubdomain, ysubdomain;
 
-  xdomain.push_back(domain->boxlo[0]);
-  ydomain.push_back(domain->boxlo[1]);
+//   xdomain.push_back(domain->boxlo[0]);
+//   ydomain.push_back(domain->boxlo[1]);
 
-  xdomain.push_back(domain->boxhi[0]);
-  ydomain.push_back(domain->boxlo[1]);
+//   xdomain.push_back(domain->boxhi[0]);
+//   ydomain.push_back(domain->boxlo[1]);
 
-  xdomain.push_back(domain->boxhi[0]);
-  ydomain.push_back(domain->boxhi[1]);
+//   xdomain.push_back(domain->boxhi[0]);
+//   ydomain.push_back(domain->boxhi[1]);
 
-  xdomain.push_back(domain->boxlo[0]);
-  ydomain.push_back(domain->boxhi[1]);
+//   xdomain.push_back(domain->boxlo[0]);
+//   ydomain.push_back(domain->boxhi[1]);
 
-  xdomain.push_back(domain->boxlo[0]);
-  ydomain.push_back(domain->boxlo[1]);
+//   xdomain.push_back(domain->boxlo[0]);
+//   ydomain.push_back(domain->boxlo[1]);
 
 
-  xsubdomain.push_back(sublo[0]);
-  ysubdomain.push_back(sublo[1]);
+//   xsubdomain.push_back(sublo[0]);
+//   ysubdomain.push_back(sublo[1]);
 
-  xsubdomain.push_back(subhi[0]);
-  ysubdomain.push_back(sublo[1]);
+//   xsubdomain.push_back(subhi[0]);
+//   ysubdomain.push_back(sublo[1]);
 
-  xsubdomain.push_back(subhi[0]);
-  ysubdomain.push_back(subhi[1]);
+//   xsubdomain.push_back(subhi[0]);
+//   ysubdomain.push_back(subhi[1]);
 
-  xsubdomain.push_back(sublo[0]);
-  ysubdomain.push_back(subhi[1]);
+//   xsubdomain.push_back(sublo[0]);
+//   ysubdomain.push_back(subhi[1]);
 
-  xsubdomain.push_back(sublo[0]);
-  ysubdomain.push_back(sublo[1]);
+//   xsubdomain.push_back(sublo[0]);
+//   ysubdomain.push_back(sublo[1]);
 
-  plt::plot(xdomain, ydomain, "b-");
-  plt::plot(xsubdomain, ysubdomain, "r-");
-  plt::plot(x2plot, y2plot, ".");
-  plt::axis("equal");
-  plt::save("debug-proc_" + to_string(universe->me) + ".png");
-  plt::close();
-#endif
+//   plt::plot(xdomain, ydomain, "b-");
+//   plt::plot(xsubdomain, ysubdomain, "r-");
+//   plt::plot(x2plot, y2plot, ".");
+//   plt::axis("equal");
+//   plt::save("debug-proc_" + to_string(universe->me) + ".png");
+//   plt::close();
+// #endif
 }
 
 void Solid::update_particle_domain()
@@ -2136,10 +2149,10 @@ void Solid::read_mesh(string fileName)
   int nodeCount; // Count the number of nodes
   vector<array<double, 3>> nodes;
 
-#ifdef DEBUG
-  std::vector<double> x2plot, y2plot;
-  std::vector<double> xcplot, ycplot;
-#endif
+// #ifdef DEBUG
+//   std::vector<double> x2plot, y2plot;
+//   std::vector<double> xcplot, ycplot;
+// #endif
 
   ifstream file(fileName, std::ios::in);
 
@@ -2275,12 +2288,12 @@ void Solid::read_mesh(string fileName)
         else if (elemType == 3)
         {
 
-#ifdef DEBUG
-          xcplot.clear();
-          xcplot.resize(5, 0);
-          ycplot.clear();
-          ycplot.resize(5, 0);
-#endif
+// #ifdef DEBUG
+//           xcplot.clear();
+//           xcplot.resize(5, 0);
+//           ycplot.clear();
+//           ycplot.resize(5, 0);
+// #endif
 
           int no1 = boost::lexical_cast<int>(splitLine[5]) - 1;
           int no2 = boost::lexical_cast<int>(splitLine[6]) - 1;
@@ -2308,19 +2321,19 @@ void Solid::read_mesh(string fileName)
             xpc0[nc * ie + 3][2] = xpc[nc * ie + 3][2] = nodes[no4][2];
           }
 
-#ifdef DEBUG
-          xcplot[0] = xpc0[nc * ie][0];
-          ycplot[0] = xpc0[nc * ie][1];
-          xcplot[1] = xpc0[nc * ie + 1][0];
-          ycplot[1] = xpc0[nc * ie + 1][1];
-          xcplot[2] = xpc0[nc * ie + 2][0];
-          ycplot[2] = xpc0[nc * ie + 2][1];
-          xcplot[3] = xpc0[nc * ie + 3][0];
-          ycplot[3] = xpc0[nc * ie + 3][1];
-          xcplot[4] = xpc0[nc * ie][0];
-          ycplot[4] = xpc0[nc * ie][1];
-          plt::plot(xcplot, ycplot, "r-");
-#endif
+// #ifdef DEBUG
+//           xcplot[0] = xpc0[nc * ie][0];
+//           ycplot[0] = xpc0[nc * ie][1];
+//           xcplot[1] = xpc0[nc * ie + 1][0];
+//           ycplot[1] = xpc0[nc * ie + 1][1];
+//           xcplot[2] = xpc0[nc * ie + 2][0];
+//           ycplot[2] = xpc0[nc * ie + 2][1];
+//           xcplot[3] = xpc0[nc * ie + 3][0];
+//           ycplot[3] = xpc0[nc * ie + 3][1];
+//           xcplot[4] = xpc0[nc * ie][0];
+//           ycplot[4] = xpc0[nc * ie][1];
+//           plt::plot(xcplot, ycplot, "r-");
+// #endif
 
           x0[ie][0] = x[ie][0] = 0.25 * (nodes[no1][0] + nodes[no2][0] +
                                          nodes[no3][0] + nodes[no4][0]);
@@ -2345,10 +2358,10 @@ void Solid::read_mesh(string fileName)
                nodes[no3][0] * nodes[no4][1] - nodes[no4][0] * nodes[no3][1] +
                nodes[no4][0] * nodes[no1][1] - nodes[no1][0] * nodes[no4][1]);
 
-#ifdef DEBUG
-          x2plot.push_back(x0[ie][0]);
-          y2plot.push_back(x0[ie][1]);
-#endif
+// #ifdef DEBUG
+//           x2plot.push_back(x0[ie][0]);
+//           y2plot.push_back(x0[ie][1]);
+// #endif
         }
         else if (elemType == 4)
         {
@@ -2462,8 +2475,8 @@ void Solid::read_mesh(string fileName)
     grid->init(solidlo, solidhi);
   }
 
-#ifdef DEBUG
-  plt::plot(x2plot, y2plot, ".");
-#endif
+// #ifdef DEBUG
+//   plt::plot(x2plot, y2plot, ".");
+// #endif
 }
 
