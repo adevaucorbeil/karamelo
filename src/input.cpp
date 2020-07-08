@@ -301,8 +301,12 @@ Var Input::evaluate_function(string func, string arg){
     return sinv(parsev(arg));
   else if (func.compare("tan") == 0)
     return tanv(parsev(arg));
-  else if (func.compare("atan2") == 0)
+  else if (func.compare("atan2") == 0) {
+    if ((args.size() < 2) || (args.size() > 2)) {
+      error->all(FLERR, "Error: atan2 takes exactly two positional arguments.\n");
+    }
     return atan2v(parsev(args[0]), parsev(args[1]));
+  }
   else if (func.compare("log") == 0)
     return logv(parsev(arg));
   else if (func.compare("evaluate") == 0)
