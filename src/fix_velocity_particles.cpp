@@ -204,11 +204,11 @@ void FixVelocityParticles::post_advance_particles() {
       for (int ip = 0; ip < s->np_local; ip++) {
         if (s->mask[ip] & groupbit) {
           Dv.setZero();
-	  (*input->vars)["x"] = Var("x", s->x[ip][0]);
+	  (*input->vars)["x"] = Var("x", xold[n][0]);
 	  (*input->vars)["x0"] = Var("x0", s->x0[ip][0]);
-	  (*input->vars)["y"] = Var("y", s->x[ip][1]);
+	  (*input->vars)["y"] = Var("y", xold[n][1]);
 	  (*input->vars)["y0"] = Var("y0", s->x0[ip][1]);
-	  (*input->vars)["z"] = Var("z", s->x[ip][2]);
+	  (*input->vars)["z"] = Var("z", xold[n][2]);
 	  (*input->vars)["z0"] = Var("z0", s->x0[ip][2]);
 
           if (xset) {
@@ -242,11 +242,11 @@ void FixVelocityParticles::post_advance_particles() {
     for (int ip = 0; ip < s->np_local; ip++) {
       if (s->mask[ip] & groupbit) {
         Dv.setZero();
-	(*input->vars)["x"] = Var("x", s->x[ip][0]);
+	(*input->vars)["x"] = Var("x", xold[n][0]);
 	(*input->vars)["x0"] = Var("x0", s->x0[ip][0]);
-	(*input->vars)["y"] = Var("y", s->x[ip][1]);
+	(*input->vars)["y"] = Var("y", xold[n][1]);
 	(*input->vars)["y0"] = Var("y0", s->x0[ip][1]);
-	(*input->vars)["z"] = Var("z", s->x[ip][2]);
+	(*input->vars)["z"] = Var("z", xold[n][2]);
 	(*input->vars)["z0"] = Var("z0", s->x0[ip][2]);
 
         if (xset) {
