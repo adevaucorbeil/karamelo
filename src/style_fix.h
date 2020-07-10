@@ -22,3 +22,4 @@
 #include "fix_velocity.h"
 #include "fix_velocity_nodes.h"
 #include "fix_velocity_particles.h"
+#include "fix_velocity_particles_exact_integration.h"
