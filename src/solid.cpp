@@ -1209,15 +1209,28 @@ void Solid::update_stress()
       error->one(FLERR, "");
     }
 
-    // dt should also be lower than the inverse of \dot{F}e_i.
-    EigenSolver<Matrix3d> es(Fdot[ip], false);
-    double lambda = fabs(es.eigenvalues()[0].real());
-    lambda = MAX(lambda, fabs(es.eigenvalues()[1].real()));
-    lambda = MAX(lambda, fabs(es.eigenvalues()[2].real()));
-    dtCFL = MIN(dtCFL, 1.0/lambda);
-    //dtCFL = MIN(dtCFL, 1.0/(Fdot[ip](0,0) + Fdot[ip](0,1) + Fdot[ip](0,2)));
-    //dtCFL = MIN(dtCFL, 1.0/(Fdot[ip](1,0) + Fdot[ip](1,1) + Fdot[ip](1,2)));
-    //dtCFL = MIN(dtCFL, 1.0/(Fdot[ip](2,0) + Fdot[ip](2,1) + Fdot[ip](2,2)));
+    if (tl) {
+      // dt should also be lower than the inverse of \dot{F}e_i.
+      EigenSolver<Matrix3d> es(Fdot[ip], false);
+      double lambda = fabs(es.eigenvalues()[0].real());
+      lambda = MAX(lambda, fabs(es.eigenvalues()[1].real()));
+      lambda = MAX(lambda, fabs(es.eigenvalues()[2].real()));
+      dtCFL = MIN(dtCFL, 1.0/lambda);
+      //dtCFL = MIN(dtCFL, 1.0/(Fdot[ip](0,0) + Fdot[ip](0,1) + Fdot[ip](0,2)));
+      //dtCFL = MIN(dtCFL, 1.0/(Fdot[ip](1,0) + Fdot[ip](1,1) + Fdot[ip](1,2)));
+      //dtCFL = MIN(dtCFL, 1.0/(Fdot[ip](2,0) + Fdot[ip](2,1) + Fdot[ip](2,2)));
+    } else {
+      // dt should also be lower than the inverse of Le_i.
+      EigenSolver<Matrix3d> es(L[ip], false);
+      double lambda = fabs(es.eigenvalues()[0].real());
+      lambda = MAX(lambda, fabs(es.eigenvalues()[1].real()));
+      lambda = MAX(lambda, fabs(es.eigenvalues()[2].real()));
+      dtCFL = MIN(dtCFL, 1.0/lambda);
+      //dtCFL = MIN(dtCFL, 1.0/(Fdot[ip](0,0) + Fdot[ip](0,1) + Fdot[ip](0,2)));
+      //dtCFL = MIN(dtCFL, 1.0/(Fdot[ip](1,0) + Fdot[ip](1,1) + Fdot[ip](1,2)));
+      //dtCFL = MIN(dtCFL, 1.0/(Fdot[ip](2,0) + Fdot[ip](2,1) + Fdot[ip](2,2)));
+
+    }
   }
 
   dtCFL = MIN(dtCFL, grid->cellsize * sqrt(min_h_ratio) / max_p_wave_speed);
