@@ -1,6 +1,5 @@
 var searchData=
 [
-  ['union',['Union',['../classUnion.html',1,'']]],
-  ['universe',['Universe',['../classUniverse.html',1,'']]],
-  ['update',['Update',['../classUpdate.html',1,'']]]
+  ['solid',['Solid',['../classSolid.html',1,'']]],
+  ['sphere',['Sphere',['../classSphere.html',1,'']]]
 ];

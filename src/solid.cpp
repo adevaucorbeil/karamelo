@@ -1224,16 +1224,24 @@ void Solid::update_stress()
       error->one(FLERR, "");
     }
 
-    // dt should also be lower than the inverse of \dot{F}e_i.
-    EigenSolver<Matrix3d> esFdot(Fdot[ip], false);
-    if (esFdot.info()!= Success) {
-      double lambda = fabs(esFdot.eigenvalues()[0].real());
-      lambda = MAX(lambda, fabs(esFdot.eigenvalues()[1].real()));
-      lambda = MAX(lambda, fabs(esFdot.eigenvalues()[2].real()));
-      dtCFL = MIN(dtCFL, 0.5/lambda);
-      //dtCFL = MIN(dtCFL, 1.0/(Fdot[ip](0,0) + Fdot[ip](0,1) + Fdot[ip](0,2)));
-      //dtCFL = MIN(dtCFL, 1.0/(Fdot[ip](1,0) + Fdot[ip](1,1) + Fdot[ip](1,2)));
-      //dtCFL = MIN(dtCFL, 1.0/(Fdot[ip](2,0) + Fdot[ip](2,1) + Fdot[ip](2,2)));
+    if (tl) {
+      // dt should also be lower than the inverse of \dot{F}e_i.
+      EigenSolver<Matrix3d> esFdot(Fdot[ip], false);
+      if (esFdot.info()!= Success) {
+	double lambda = fabs(esFdot.eigenvalues()[0].real());
+	lambda = MAX(lambda, fabs(esFdot.eigenvalues()[1].real()));
+	lambda = MAX(lambda, fabs(esFdot.eigenvalues()[2].real()));
+	dtCFL = MIN(dtCFL, 0.5/lambda);
+      }
+    } else {
+      // dt should also be lower than the inverse of Le_i.
+      EigenSolver<Matrix3d> esL(L[ip], false);
+      if (esL.info()!= Success) {
+	double lambda = fabs(esL.eigenvalues()[0].real());
+	lambda = MAX(lambda, fabs(esL.eigenvalues()[1].real()));
+	lambda = MAX(lambda, fabs(esL.eigenvalues()[2].real()));
+	dtCFL = MIN(dtCFL, 0.5/lambda);
+      }
     }
   }
 

@@ -77,7 +77,7 @@ Defines a 2D rectangular region called 'A'. A point of coordinates (x, y, z) lie
 
 This command defines a geometric region of space. It is usually used by groups to find what nodes and/or particles lie within a specific region of space. A region does not select nodes or particles.
 
-\section Subclasses Region types
+\section Region_Subclasses Region types
 
 To access the different region type supported, and how to use the region() command with them, refer to the corresponding class.
 */

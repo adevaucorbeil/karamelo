@@ -22,6 +22,12 @@
 <script type="text/javascript">
   $(document).ready(function() { init_search(); });
 </script>
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    extensions: ["tex2jax.js", "TeX/AMSmath.js", "TeX/AMSsymbols.js"],
+    jax: ["input/TeX","output/HTML-CSS"],
+});
+</script><script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/MathJax.js?config=TeX-MML-AM_CHTML/MathJax.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
 <link href="karamelodoxy.css" rel="stylesheet" type="text/css">
 <!--  -->
@@ -36,7 +42,7 @@
   <td id="projectlogo"><a href="http://www.karamelo.org"><img alt="Logo" src="Karamelo_logo.png"/></a></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname"><a href="http://www.karamelo.org">Karamelo</a>
-   &#160;<span id="projectnumber">0d9302f0</span>
+   &#160;<span id="projectnumber">714599e9</span>
    </div>
    <div id="projectbrief">Parallel Material Point Method Simulator</div>
   </td>
@@ -319,7 +325,7 @@ double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="cl
 <tr class="separator:a88fe233444aeb9e0c919bb1f9d64de93"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a68000a14e932c9d485959bbcdd696e35"><td class="memItemLeft" align="right" valign="top"><a id="a68000a14e932c9d485959bbcdd696e35"></a>
 int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSolid.html#a68000a14e932c9d485959bbcdd696e35">nc</a></td></tr>
-<tr class="memdesc:a68000a14e932c9d485959bbcdd696e35"><td class="mdescLeft">&#160;</td><td class="mdescRight">Number of corners per particles: <img class="formulaInl" alt="$2^{dimension}$" src="form_5.png"/>. <br /></td></tr>
+<tr class="memdesc:a68000a14e932c9d485959bbcdd696e35"><td class="mdescLeft">&#160;</td><td class="mdescRight">Number of corners per particles: \(2^{dimension}\). <br /></td></tr>
 <tr class="separator:a68000a14e932c9d485959bbcdd696e35"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a88e0782ec40502f1f2164eb00c137f08"><td class="memItemLeft" align="right" valign="top"><a id="a88e0782ec40502f1f2164eb00c137f08"></a>
 vector&lt; vector&lt; int &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSolid.html#a88e0782ec40502f1f2164eb00c137f08">neigh_np</a></td></tr>
@@ -419,23 +425,23 @@ double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="cl
 <tr class="separator:aee7225f643e57e61dd1d07942cb7b70e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa4fc6367904864de3ef61047a802c1df"><td class="memItemLeft" align="right" valign="top"><a id="aa4fc6367904864de3ef61047a802c1df"></a>
 vector&lt; vector&lt; double &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSolid.html#aa4fc6367904864de3ef61047a802c1df">wf_np</a></td></tr>
-<tr class="memdesc:aa4fc6367904864de3ef61047a802c1df"><td class="mdescLeft">&#160;</td><td class="mdescRight">Array of arrays (matrix) of the weight functions <img class="formulaInl" alt="$\Phi_{Ip}$" src="form_7.png"/> effectively the transpose of wf_pn. <br /></td></tr>
+<tr class="memdesc:aa4fc6367904864de3ef61047a802c1df"><td class="mdescLeft">&#160;</td><td class="mdescRight">Array of arrays (matrix) of the weight functions \(\Phi_{Ip}\) effectively the transpose of wf_pn. <br /></td></tr>
 <tr class="separator:aa4fc6367904864de3ef61047a802c1df"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:abaeff4d98b63626f93c36d9f7d2ec94e"><td class="memItemLeft" align="right" valign="top"><a id="abaeff4d98b63626f93c36d9f7d2ec94e"></a>
 vector&lt; vector&lt; double &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSolid.html#abaeff4d98b63626f93c36d9f7d2ec94e">wf_pn</a></td></tr>
-<tr class="memdesc:abaeff4d98b63626f93c36d9f7d2ec94e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Array of arrays (matrix) of the weight functions <img class="formulaInl" alt="$\Phi_{pI}$" src="form_6.png"/>. <br /></td></tr>
+<tr class="memdesc:abaeff4d98b63626f93c36d9f7d2ec94e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Array of arrays (matrix) of the weight functions \(\Phi_{pI}\). <br /></td></tr>
 <tr class="separator:abaeff4d98b63626f93c36d9f7d2ec94e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a647b5baad8530e1f8bc5a8feefd9125e"><td class="memItemLeft" align="right" valign="top"><a id="a647b5baad8530e1f8bc5a8feefd9125e"></a>
 vector&lt; vector&lt; double &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSolid.html#a647b5baad8530e1f8bc5a8feefd9125e">wf_pn_corners</a></td></tr>
-<tr class="memdesc:a647b5baad8530e1f8bc5a8feefd9125e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Array of arrays (matrix) of the weight functions <img class="formulaInl" alt="$\Phi_{Ic}$" src="form_8.png"/> evaluated at the corners of the particle's domain (used in CPDI) <br /></td></tr>
+<tr class="memdesc:a647b5baad8530e1f8bc5a8feefd9125e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Array of arrays (matrix) of the weight functions \(\Phi_{Ic}\) evaluated at the corners of the particle's domain (used in CPDI) <br /></td></tr>
 <tr class="separator:a647b5baad8530e1f8bc5a8feefd9125e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a915eb697bff70c2e891752c5fa7cf9ce"><td class="memItemLeft" align="right" valign="top"><a id="a915eb697bff70c2e891752c5fa7cf9ce"></a>
 vector&lt; vector&lt; Eigen::Vector3d &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSolid.html#a915eb697bff70c2e891752c5fa7cf9ce">wfd_np</a></td></tr>
-<tr class="memdesc:a915eb697bff70c2e891752c5fa7cf9ce"><td class="mdescLeft">&#160;</td><td class="mdescRight">Array of arrays (matrix) of the derivative of the weight functions <img class="formulaInl" alt="$\partial \Phi_{Ip}/ \partial x$" src="form_10.png"/> effectively the transpose of wfd_pn. <br /></td></tr>
+<tr class="memdesc:a915eb697bff70c2e891752c5fa7cf9ce"><td class="mdescLeft">&#160;</td><td class="mdescRight">Array of arrays (matrix) of the derivative of the weight functions \(\partial \Phi_{Ip}/ \partial x\) effectively the transpose of wfd_pn. <br /></td></tr>
 <tr class="separator:a915eb697bff70c2e891752c5fa7cf9ce"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a80a0ed28ead9c4874067d12460dda6db"><td class="memItemLeft" align="right" valign="top"><a id="a80a0ed28ead9c4874067d12460dda6db"></a>
 vector&lt; vector&lt; Eigen::Vector3d &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSolid.html#a80a0ed28ead9c4874067d12460dda6db">wfd_pn</a></td></tr>
-<tr class="memdesc:a80a0ed28ead9c4874067d12460dda6db"><td class="mdescLeft">&#160;</td><td class="mdescRight">Array of arrays (matrix) of the derivative of the weight functions <img class="formulaInl" alt="$\partial \Phi_{pI}/\partial x$" src="form_9.png"/>. <br /></td></tr>
+<tr class="memdesc:a80a0ed28ead9c4874067d12460dda6db"><td class="mdescLeft">&#160;</td><td class="mdescRight">Array of arrays (matrix) of the derivative of the weight functions \(\partial \Phi_{pI}/\partial x\). <br /></td></tr>
 <tr class="separator:a80a0ed28ead9c4874067d12460dda6db"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8c4f6f8682e7379f6bb1aab147b45188"><td class="memItemLeft" align="right" valign="top"><a id="a8c4f6f8682e7379f6bb1aab147b45188"></a>
 vector&lt; Eigen::Vector3d &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSolid.html#a8c4f6f8682e7379f6bb1aab147b45188">x</a></td></tr>
@@ -499,7 +505,7 @@ vector&lt; Eigen::Vector3d &gt;&#160;</td><td class="memItemRight" valign="botto
         </tr>
       </table>
 </div><div class="memdoc">
-<p><a class="el" href="classUpdate.html">Update</a> the particles' velocities based on either PIC and/or FLIP. The argument is the ratio <img class="formulaInl" alt="$\alpha$" src="form_11.png"/> used between PIC and FLIP. <img class="formulaInl" alt="$\alpha = 0$" src="form_12.png"/> for pure PIC, <img class="formulaInl" alt="$\alpha = 1$" src="form_13.png"/> for pure FLIP. </p>
+<p><a class="el" href="classUpdate.html">Update</a> the particles' velocities based on either PIC and/or FLIP. The argument is the ratio \(\alpha\) used between PIC and FLIP. \(\alpha = 0\) for pure PIC, \(\alpha = 1\) for pure FLIP. </p>
 
 </div>
 </div>
@@ -513,7 +519,7 @@ vector&lt; Eigen::Vector3d &gt;&#160;</td><td class="memItemRight" valign="botto
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="classSolid.html">Solid</a></li>
-    <li class="footer">Generated on Tue May 26 2020 22:47:35 for Karamelo by
+    <li class="footer">Generated on Tue Jul 7 2020 22:31:23 for Karamelo by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="doxygen.png" alt="doxygen"/></a> 1.8.13 </li>
   </ul>

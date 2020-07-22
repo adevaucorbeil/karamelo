@@ -22,6 +22,12 @@
 <script type="text/javascript">
   $(document).ready(function() { init_search(); });
 </script>
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    extensions: ["tex2jax.js", "TeX/AMSmath.js", "TeX/AMSsymbols.js"],
+    jax: ["input/TeX","output/HTML-CSS"],
+});
+</script><script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/MathJax.js?config=TeX-MML-AM_CHTML/MathJax.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
 <link href="karamelodoxy.css" rel="stylesheet" type="text/css">
 <!--  -->
@@ -36,7 +42,7 @@
   <td id="projectlogo"><a href="http://www.karamelo.org"><img alt="Logo" src="Karamelo_logo.png"/></a></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname"><a href="http://www.karamelo.org">Karamelo</a>
-   &#160;<span id="projectnumber">0d9302f0</span>
+   &#160;<span id="projectnumber">714599e9</span>
    </div>
    <div id="projectbrief">Parallel Material Point Method Simulator</div>
   </td>
@@ -156,15 +162,15 @@ double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="cl
 <tr class="separator:af322cf55ceb4272c7d320e9163c41eac"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa5046a1390287f1ef6c5d62b4d53d664"><td class="memItemLeft" align="right" valign="top"><a id="aa5046a1390287f1ef6c5d62b4d53d664"></a>
 double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classMat.html#aa5046a1390287f1ef6c5d62b4d53d664">lambda</a></td></tr>
-<tr class="memdesc:aa5046a1390287f1ef6c5d62b4d53d664"><td class="mdescLeft">&#160;</td><td class="mdescRight">1st Lame parameter <img class="formulaInl" alt="$\lambda$" src="form_3.png"/> <br /></td></tr>
+<tr class="memdesc:aa5046a1390287f1ef6c5d62b4d53d664"><td class="mdescLeft">&#160;</td><td class="mdescRight">1st Lame parameter \(\lambda\) <br /></td></tr>
 <tr class="separator:aa5046a1390287f1ef6c5d62b4d53d664"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6bfd44cc593a5065ed2dd70beb0cb6ed"><td class="memItemLeft" align="right" valign="top"><a id="a6bfd44cc593a5065ed2dd70beb0cb6ed"></a>
 double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classMat.html#a6bfd44cc593a5065ed2dd70beb0cb6ed">nu</a></td></tr>
-<tr class="memdesc:a6bfd44cc593a5065ed2dd70beb0cb6ed"><td class="mdescLeft">&#160;</td><td class="mdescRight">Poisson's ratio <img class="formulaInl" alt="$\nu$" src="form_2.png"/>. <br /></td></tr>
+<tr class="memdesc:a6bfd44cc593a5065ed2dd70beb0cb6ed"><td class="mdescLeft">&#160;</td><td class="mdescRight">Poisson's ratio \(\nu\). <br /></td></tr>
 <tr class="separator:a6bfd44cc593a5065ed2dd70beb0cb6ed"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab0208430f0d9e3d54e7a2d9ab6587dcd"><td class="memItemLeft" align="right" valign="top"><a id="ab0208430f0d9e3d54e7a2d9ab6587dcd"></a>
 double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classMat.html#ab0208430f0d9e3d54e7a2d9ab6587dcd">rho0</a></td></tr>
-<tr class="memdesc:ab0208430f0d9e3d54e7a2d9ab6587dcd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Density in the reference state <img class="formulaInl" alt="$\rho_0$" src="form_1.png"/>. <br /></td></tr>
+<tr class="memdesc:ab0208430f0d9e3d54e7a2d9ab6587dcd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Density in the reference state \(\rho_0\). <br /></td></tr>
 <tr class="separator:ab0208430f0d9e3d54e7a2d9ab6587dcd"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aad36ec4f010b95a0b96b95a769738925"><td class="memItemLeft" align="right" valign="top"><a id="aad36ec4f010b95a0b96b95a769738925"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classMat.html#aad36ec4f010b95a0b96b95a769738925">rigid</a></td></tr>
@@ -172,7 +178,7 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="clas
 <tr class="separator:aad36ec4f010b95a0b96b95a769738925"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a71a36f9faf871b40c37bd40248dcdc1e"><td class="memItemLeft" align="right" valign="top"><a id="a71a36f9faf871b40c37bd40248dcdc1e"></a>
 double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classMat.html#a71a36f9faf871b40c37bd40248dcdc1e">signal_velocity</a></td></tr>
-<tr class="memdesc:a71a36f9faf871b40c37bd40248dcdc1e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Signal velocity in the reference state <img class="formulaInl" alt="$c_0 = \sqrt{\frac{\lambda+2G}{\rho_0}}$" src="form_4.png"/>. <br /></td></tr>
+<tr class="memdesc:a71a36f9faf871b40c37bd40248dcdc1e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Signal velocity in the reference state \(c_0 = \sqrt{\frac{\lambda+2G}{\rho_0}}\). <br /></td></tr>
 <tr class="separator:a71a36f9faf871b40c37bd40248dcdc1e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2d21b341f4d7a12742beb7c5a001ba9d"><td class="memItemLeft" align="right" valign="top"><a id="a2d21b341f4d7a12742beb7c5a001ba9d"></a>
 class Strength *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classMat.html#a2d21b341f4d7a12742beb7c5a001ba9d">strength</a></td></tr>
@@ -333,7 +339,7 @@ int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="classMat.html">Mat</a></li>
-    <li class="footer">Generated on Tue May 26 2020 22:47:35 for Karamelo by
+    <li class="footer">Generated on Tue Jul 7 2020 22:31:23 for Karamelo by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="doxygen.png" alt="doxygen"/></a> 1.8.13 </li>
   </ul>

@@ -4,7 +4,7 @@ var searchData=
   ['mask',['mask',['../classGrid.html#a95db5faa3cfa48b813891708f7a1de0b',1,'Grid::mask()'],['../classSolid.html#af75c04b1ad8cec17173e8acaa6319568',1,'Solid::mask()']]],
   ['mass',['mass',['../classGrid.html#a918a9bbfb80c7e84d4990453d9320561',1,'Grid::mass()'],['../classSolid.html#a5732fbf51a00b533f04c62d6f310c646',1,'Solid::mass()']]],
   ['mat',['Mat',['../classMat.html',1,'Mat'],['../classMat.html#a7fbff3e61074eb1b828553d0a61b5cf3',1,'Mat::Mat(string, int, class EOS *, class Strength *, class Damage *, class Temperature *)'],['../classMat.html#adf56affe363c638510680c405c60d379',1,'Mat::Mat(string, int, double, double, double)'],['../classMat.html#ab14a618f95a44f0e21743bf1fa2febcb',1,'Mat::Mat(string, int)'],['../classSolid.html#a627d17d80ba3ab6ccf08379feff4e676',1,'Solid::mat()']]],
-  ['material',['Material',['../classMaterial.html',1,'Material'],['../classMPM.html#a23bc06e4fc159faf4ca89569397864fe',1,'MPM::material()'],['../classMaterial.html#a0ba6dc9b58ea6e687da374524afaa411',1,'Material::Material()']]],
+  ['material',['Material',['../classMaterial.html',1,'Material'],['../classMaterial.html#a0ba6dc9b58ea6e687da374524afaa411',1,'Material::Material()'],['../classMPM.html#a23bc06e4fc159faf4ca89569397864fe',1,'MPM::material()'],['../group__material.html',1,'(Global Namespace)']]],
   ['materials',['materials',['../classMaterial.html#a5b2ef735e923b52fb66ab45885a0a5d4',1,'Material']]],
   ['max_5fp_5fwave_5fspeed',['max_p_wave_speed',['../classSolid.html#a8c90f9e2e46fdcec899626dc09f10222',1,'Solid']]],
   ['maxtime',['maxtime',['../classUpdate.html#aedb253d5cec1b4e6fbc1fe8217d4694d',1,'Update']]],

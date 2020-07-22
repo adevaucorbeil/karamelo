@@ -5,13 +5,29 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.13"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>FixBodyforce Class Reference</title>
+<title>Karamelo: FixBodyforce Class Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
+<link href="navtree.css" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="resize.js"></script>
+<script type="text/javascript" src="navtreedata.js"></script>
+<script type="text/javascript" src="navtree.js"></script>
+<script type="text/javascript">
+  $(document).ready(initResizable);
+</script>
 <link href="search/search.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
+<script type="text/javascript">
+  $(document).ready(function() { init_search(); });
+</script>
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    extensions: ["tex2jax.js", "TeX/AMSmath.js", "TeX/AMSsymbols.js"],
+    jax: ["input/TeX","output/HTML-CSS"],
+});
+</script><script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/MathJax.js?config=TeX-MML-AM_CHTML/MathJax.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
 <link href="karamelodoxy.css" rel="stylesheet" type="text/css">
 <!--  -->
@@ -23,10 +39,28 @@
 <table cellspacing="0" cellpadding="0">
  <tbody>
  <tr style="height: 56px;">
-  <td id="projectlogo"><img alt="Logo" src="Karamelo_logo.png"/></td>
-    <td id="projectalign" style="padding-left: 0.5em;">
-    <div id="projectbrief">Parallel Material Point Method Simulator - 5b95c290</div>
-    </td>
+  <td id="projectlogo"><a href="http://www.karamelo.org"><img alt="Logo" src="Karamelo_logo.png"/></a></td>
+  <td id="projectalign" style="padding-left: 0.5em;">
+   <div id="projectname"><a href="http://www.karamelo.org">Karamelo</a>
+   &#160;<span id="projectnumber">714599e9</span>
+   </div>
+   <div id="projectbrief">Parallel Material Point Method Simulator</div>
+  </td>
+   <td>        <div id="MSearchBox" class="MSearchBoxInactive">
+        <span class="left">
+          <img id="MSearchSelect" src="search/mag_sel.png"
+               onmouseover="return searchBox.OnSearchSelectShow()"
+               onmouseout="return searchBox.OnSearchSelectHide()"
+               alt=""/>
+          <input type="text" id="MSearchField" value="Search" accesskey="S"
+               onfocus="searchBox.OnSearchFieldFocus(true)" 
+               onblur="searchBox.OnSearchFieldFocus(false)" 
+               onkeyup="searchBox.OnSearchFieldChange(event)"/>
+          </span><span class="right">
+            <a id="MSearchClose" href="javascript:searchBox.CloseResultsWindow()"><img id="MSearchCloseImg" border="0" src="search/close.png" alt=""/></a>
+          </span>
+        </div>
+</td>
  </tr>
  </tbody>
 </table>
@@ -36,15 +70,21 @@
 <script type="text/javascript">
 var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </script>
-<script type="text/javascript" src="menudata.js"></script>
-<script type="text/javascript" src="menu.js"></script>
+</div><!-- top -->
+<div id="side-nav" class="ui-resizable side-nav-resizable">
+  <div id="nav-tree">
+    <div id="nav-tree-contents">
+      <div id="nav-sync" class="sync"></div>
+    </div>
+  </div>
+  <div id="splitbar" style="-moz-user-select:none;" 
+       class="ui-resizable-handle">
+  </div>
+</div>
 <script type="text/javascript">
-$(function() {
-  initMenu('',true,false,'search.php','Search');
-  $(document).ready(function() { init_search(); });
-});
+$(document).ready(function(){initNavTree('classFixBodyforce.html','');});
 </script>
-<div id="main-nav"></div>
+<div id="doc-content">
 <!-- window showing the filter options -->
 <div id="MSearchSelectWindow"
      onmouseover="return searchBox.OnSearchSelectShow()"
@@ -59,560 +99,62 @@ $(function() {
 </iframe>
 </div>
 
-</div><!-- top -->
 <div class="header">
   <div class="summary">
-<a href="#pub-methods">Public Member Functions</a> &#124;
-<a href="#pri-attribs">Private Attributes</a>  </div>
+<a href="classFixBodyforce-members.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">FixBodyforce Class Reference</div>  </div>
+<div class="title">FixBodyforce Class Reference<div class="ingroups"><a class="el" href="group__fix.html">fix</a></div></div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="dynheader">
-Inheritance diagram for FixBodyforce:</div>
-<div class="dyncontent">
+<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<div class="textblock"><h1><a class="anchor" id="Syntax"></a>
+Syntax</h1>
+<div class="fragment"><div class="line">fix(fix-ID, body_force, group-ID, fx, fy, fz)</div></div><!-- fragment --><ul>
+<li>
+fix-ID: name of the fix to be created. </li>
+<li>
+fix-type: velocity_nodes, force_nodes, kinetic_energy, ... </li>
+<li>
+group-ID: name of the group onto which the fix will be applied. If 'all' is used, all particles will be selected. </li>
+<li>
+fx, fy and fz: x, y and z components of the body force to be applied, respectively.  </li>
+</ul>
+<h1><a class="anchor" id="Examples"></a>
+Examples</h1>
+<div class="fragment"><div class="line">fix(fbody, body_force, all, 0, -9.81, 0)</div></div><!-- fragment --><p> Applies a body force \(\boldsymbol{f}_b = [0, -9.81, 0]\) onto all particles in the simulation box.</p>
+<h1><a class="anchor" id="Description"></a>
+Description</h1>
+<p>This command defines a body force \(\boldsymbol{f}_b\) that is applied to all the particles in the group 'group-ID'non-linear equation of state: </p><p class="formulaDsp">
+\begin{equation} \boldsymbol{f}_b = \begin{bmatrix} fx\\ fy\\ fz \end{bmatrix} \end{equation}
+</p>
+<h1><a class="anchor" id="Class"></a>
+Class description</h1>
+</div><div id="dynsection-0" onclick="return toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;">
+  <img id="dynsection-0-trigger" src="closed.png" alt="+"/> Inheritance diagram for FixBodyforce:</div>
+<div id="dynsection-0-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-0-content" class="dyncontent" style="display:none;">
 <div class="center"><img src="classFixBodyforce__inherit__graph.png" border="0" usemap="#FixBodyforce_inherit__map" alt="Inheritance graph"/></div>
 <map name="FixBodyforce_inherit__map" id="FixBodyforce_inherit__map">
-<area shape="rect" id="node2" href="classFix.html" title="Fix" alt="" coords="35,80,75,107"/>
-<area shape="rect" id="node3" href="classPointers.html" title="Pointers" alt="" coords="19,5,90,32"/>
+<area shape="rect" id="node2" href="classFix.html" title="{Fix\n|+ args\l+ groupbit\l+ id\l+ igroup\l+ mask\l+ requires_ghost_particles\l|+ final_integrate()\l+ Fix()\l+ init()\l+ initial_integrate()\l+ post_advance_particles()\l+ post_grid_to_point()\l+ post_particles_to_grid()\l+ post_update_grid_state()\l+ post_velocities_to_grid()\l+ setmask()\l+ setup()\l+ ~Fix()\l}" alt="" coords="5,336,184,648"/>
+<area shape="rect" id="node3" href="classPointers.html" title="{Pointers\n|# domain\l# error\l# group\l# infile\l# input\l# logfile\l# material\l# memory\l# modify\l# mpm\l# output\l# universe\l# update\l# wlogfile\l|+ Pointers()\l+ ~Pointers()\l}" alt="" coords="45,5,144,288"/>
 </map>
-<center><span class="legend">[<a href="graph_legend.html">legend</a>]</span></center></div>
-<div class="dynheader">
-Collaboration diagram for FixBodyforce:</div>
-<div class="dyncontent">
-<div class="center"><img src="classFixBodyforce__coll__graph.png" border="0" usemap="#FixBodyforce_coll__map" alt="Collaboration graph"/></div>
-<map name="FixBodyforce_coll__map" id="FixBodyforce_coll__map">
-<area shape="rect" id="node2" href="classFix.html" title="Fix" alt="" coords="979,95,1019,121"/>
-<area shape="rect" id="node3" href="classPointers.html" title="Pointers" alt="" coords="678,5,749,32"/>
-<area shape="rect" id="node4" href="classUniverse.html" title="Universe" alt="" coords="5,95,80,121"/>
-<area shape="rect" id="node5" href="classDomain.html" title="Domain" alt="" coords="216,184,283,211"/>
-<area shape="rect" id="node6" href="classGrid.html" title="Grid" alt="" coords="199,95,246,121"/>
-<area shape="rect" id="node7" href="classMaterial.html" title="Material" alt="" coords="322,95,390,121"/>
-<area shape="rect" id="node8" href="classError.html" title="Error" alt="" coords="415,95,465,121"/>
-<area shape="rect" id="node9" href="classInput.html" title="Input" alt="" coords="489,95,540,121"/>
-<area shape="rect" id="node11" href="classModify.html" title="Modify" alt="" coords="564,95,625,121"/>
-<area shape="rect" id="node12" href="classUpdate.html" title="Update" alt="" coords="732,184,796,211"/>
-<area shape="rect" id="node13" href="classMethod.html" title="Method" alt="" coords="650,95,715,121"/>
-<area shape="rect" id="node14" href="classScheme.html" title="Scheme" alt="" coords="833,95,903,121"/>
-<area shape="rect" id="node15" href="classGroup.html" title="Group" alt="" coords="1110,95,1167,121"/>
-<area shape="rect" id="node16" href="classOutput.html" title="Output" alt="" coords="1208,184,1269,211"/>
-<area shape="rect" id="node17" href="classLog.html" title="Log" alt="" coords="1243,95,1285,121"/>
-<area shape="rect" id="node18" href="classMemory.html" title="Memory" alt="" coords="1399,95,1468,121"/>
-<area shape="rect" id="node10" href="classMPM.html" title="MPM" alt="" coords="588,273,641,300"/>
-<area shape="rect" id="node19" href="classVar.html" title="Var" alt="" coords="1043,95,1085,121"/>
-</map>
-<center><span class="legend">[<a href="graph_legend.html">legend</a>]</span></center></div>
-<table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
-Public Member Functions</h2></td></tr>
-<tr class="memitem:a0e2488af92188370b6d0831c094244f2"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classFixBodyforce.html#a0e2488af92188370b6d0831c094244f2">FixBodyforce</a> (class <a class="el" href="classMPM.html">MPM</a> *, vector&lt; string &gt;)</td></tr>
-<tr class="separator:a0e2488af92188370b6d0831c094244f2"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a721a383c0318887028c6ecbc545ce77f"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classFixBodyforce.html#a721a383c0318887028c6ecbc545ce77f">~FixBodyforce</a> ()</td></tr>
-<tr class="separator:a721a383c0318887028c6ecbc545ce77f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2f439ae02fc4de83ca652e5441105e2a"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classFixBodyforce.html#a2f439ae02fc4de83ca652e5441105e2a">setmask</a> ()</td></tr>
-<tr class="separator:a2f439ae02fc4de83ca652e5441105e2a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0f22e5f8642a003a50bfe2a13b278e78"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classFixBodyforce.html#a0f22e5f8642a003a50bfe2a13b278e78">init</a> ()</td></tr>
-<tr class="separator:a0f22e5f8642a003a50bfe2a13b278e78"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a51eed608537b67d2e1c012f89e6ecfa3"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classFixBodyforce.html#a51eed608537b67d2e1c012f89e6ecfa3">setup</a> ()</td></tr>
-<tr class="separator:a51eed608537b67d2e1c012f89e6ecfa3"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7a3c761e6994583c10eb760b1bee77b0"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classFixBodyforce.html#a7a3c761e6994583c10eb760b1bee77b0">initial_integrate</a> ()</td></tr>
-<tr class="separator:a7a3c761e6994583c10eb760b1bee77b0"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8bfbe5a1ff35cd907d3b20ec033e5b05"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classFixBodyforce.html#a8bfbe5a1ff35cd907d3b20ec033e5b05">post_particles_to_grid</a> ()</td></tr>
-<tr class="separator:a8bfbe5a1ff35cd907d3b20ec033e5b05"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6f77335f21e4d4d218656237c6de0d71"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classFixBodyforce.html#a6f77335f21e4d4d218656237c6de0d71">post_update_grid_state</a> ()</td></tr>
-<tr class="separator:a6f77335f21e4d4d218656237c6de0d71"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa712e3ff204e2ade86c3e816976f4ef8"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classFixBodyforce.html#aa712e3ff204e2ade86c3e816976f4ef8">post_grid_to_point</a> ()</td></tr>
-<tr class="separator:aa712e3ff204e2ade86c3e816976f4ef8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4167f9d09e58cee83904d95b7215bce3"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classFixBodyforce.html#a4167f9d09e58cee83904d95b7215bce3">post_advance_particles</a> ()</td></tr>
-<tr class="separator:a4167f9d09e58cee83904d95b7215bce3"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac6144935e4f92c4cd388fd784aed7fe5"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classFixBodyforce.html#ac6144935e4f92c4cd388fd784aed7fe5">post_velocities_to_grid</a> ()</td></tr>
-<tr class="separator:ac6144935e4f92c4cd388fd784aed7fe5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6706a7a4a7feefae07ec87659ec4de4e"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classFixBodyforce.html#a6706a7a4a7feefae07ec87659ec4de4e">final_integrate</a> ()</td></tr>
-<tr class="separator:a6706a7a4a7feefae07ec87659ec4de4e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="inherit_header pub_methods_classFix"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classFix')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classFix.html">Fix</a></td></tr>
-<tr class="memitem:a496b887339f3b1254b4c5d714f84300a inherit pub_methods_classFix"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classFix.html#a496b887339f3b1254b4c5d714f84300a">Fix</a> (class <a class="el" href="classMPM.html">MPM</a> *, vector&lt; string &gt;)</td></tr>
-<tr class="separator:a496b887339f3b1254b4c5d714f84300a inherit pub_methods_classFix"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a364fda794a8dc93b1018fa838378c642 inherit pub_methods_classFix"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classFix.html#a364fda794a8dc93b1018fa838378c642">~Fix</a> ()</td></tr>
-<tr class="separator:a364fda794a8dc93b1018fa838378c642 inherit pub_methods_classFix"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pri-attribs"></a>
-Private Attributes</h2></td></tr>
-<tr class="memitem:a5132854e2445b3b066b8a0b8881fbe4d"><td class="memItemLeft" align="right" valign="top">class <a class="el" href="classVar.html">Var</a> xvalue yvalue&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classFixBodyforce.html#a5132854e2445b3b066b8a0b8881fbe4d">zvalue</a></td></tr>
-<tr class="separator:a5132854e2445b3b066b8a0b8881fbe4d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a70572169204cc2d2ac91589f6b48e39f"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classFixBodyforce.html#a70572169204cc2d2ac91589f6b48e39f">xset</a></td></tr>
-<tr class="separator:a70572169204cc2d2ac91589f6b48e39f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae49110253dfa0adcb7ea9b98be542f19"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classFixBodyforce.html#ae49110253dfa0adcb7ea9b98be542f19">yset</a></td></tr>
-<tr class="separator:ae49110253dfa0adcb7ea9b98be542f19"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a212519b35307e42736c5305e1c909966"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classFixBodyforce.html#a212519b35307e42736c5305e1c909966">zset</a></td></tr>
-<tr class="separator:a212519b35307e42736c5305e1c909966"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="inherited"></a>
-Additional Inherited Members</h2></td></tr>
-<tr class="inherit_header pub_attribs_classFix"><td colspan="2" onclick="javascript:toggleInherit('pub_attribs_classFix')"><img src="closed.png" alt="-"/>&#160;Data Fields inherited from <a class="el" href="classFix.html">Fix</a></td></tr>
-<tr class="memitem:a5eb3b0baa5d28ec47e28dc015b985623 inherit pub_attribs_classFix"><td class="memItemLeft" align="right" valign="top">string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classFix.html#a5eb3b0baa5d28ec47e28dc015b985623">id</a></td></tr>
-<tr class="separator:a5eb3b0baa5d28ec47e28dc015b985623 inherit pub_attribs_classFix"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae3a99d1216353c484f2f27184a4ccf34 inherit pub_attribs_classFix"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classFix.html#ae3a99d1216353c484f2f27184a4ccf34">igroup</a></td></tr>
-<tr class="separator:ae3a99d1216353c484f2f27184a4ccf34 inherit pub_attribs_classFix"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3a2759c291b487f77181065d3e1ffe77 inherit pub_attribs_classFix"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classFix.html#a3a2759c291b487f77181065d3e1ffe77">groupbit</a></td></tr>
-<tr class="separator:a3a2759c291b487f77181065d3e1ffe77 inherit pub_attribs_classFix"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a647d4af24ab4e8fe0a6992805f6935d7 inherit pub_attribs_classFix"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classFix.html#a647d4af24ab4e8fe0a6992805f6935d7">mask</a></td></tr>
-<tr class="separator:a647d4af24ab4e8fe0a6992805f6935d7 inherit pub_attribs_classFix"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac594407522e40e8d4d4c49b4071d5ce8 inherit pub_attribs_classFix"><td class="memItemLeft" align="right" valign="top">vector&lt; string &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classFix.html#ac594407522e40e8d4d4c49b4071d5ce8">args</a></td></tr>
-<tr class="separator:ac594407522e40e8d4d4c49b4071d5ce8 inherit pub_attribs_classFix"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a03f022148d9acc1fe698d6cc51996da1 inherit pub_attribs_classFix"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classFix.html#a03f022148d9acc1fe698d6cc51996da1">requires_ghost_particles</a> = false</td></tr>
-<tr class="separator:a03f022148d9acc1fe698d6cc51996da1 inherit pub_attribs_classFix"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="inherit_header pro_methods_classPointers"><td colspan="2" onclick="javascript:toggleInherit('pro_methods_classPointers')"><img src="closed.png" alt="-"/>&#160;Protected Member Functions inherited from <a class="el" href="classPointers.html">Pointers</a></td></tr>
-<tr class="memitem:a0dda1d5c1f82dbd05e3c7d5725b7d4db inherit pro_methods_classPointers"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPointers.html#a0dda1d5c1f82dbd05e3c7d5725b7d4db">Pointers</a> (<a class="el" href="classMPM.html">MPM</a> *ptr)</td></tr>
-<tr class="separator:a0dda1d5c1f82dbd05e3c7d5725b7d4db inherit pro_methods_classPointers"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a52947c463c06fc4378f6760c241c82aa inherit pro_methods_classPointers"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPointers.html#a52947c463c06fc4378f6760c241c82aa">~Pointers</a> ()</td></tr>
-<tr class="separator:a52947c463c06fc4378f6760c241c82aa inherit pro_methods_classPointers"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="inherit_header pro_attribs_classPointers"><td colspan="2" onclick="javascript:toggleInherit('pro_attribs_classPointers')"><img src="closed.png" alt="-"/>&#160;Protected Attributes inherited from <a class="el" href="classPointers.html">Pointers</a></td></tr>
-<tr class="memitem:a0cd85ff5b6c7cd40f6677d829f888c8b inherit pro_attribs_classPointers"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classMPM.html">MPM</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPointers.html#a0cd85ff5b6c7cd40f6677d829f888c8b">mpm</a></td></tr>
-<tr class="separator:a0cd85ff5b6c7cd40f6677d829f888c8b inherit pro_attribs_classPointers"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a49237277a5bbe01f0017b38f21966cab inherit pro_attribs_classPointers"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classMemory.html">Memory</a> *&amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPointers.html#a49237277a5bbe01f0017b38f21966cab">memory</a></td></tr>
-<tr class="separator:a49237277a5bbe01f0017b38f21966cab inherit pro_attribs_classPointers"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad3191b72a6b9f329b524c4ea20b6b73f inherit pro_attribs_classPointers"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classError.html">Error</a> *&amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPointers.html#ad3191b72a6b9f329b524c4ea20b6b73f">error</a></td></tr>
-<tr class="separator:ad3191b72a6b9f329b524c4ea20b6b73f inherit pro_attribs_classPointers"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af0bbed0d08bca0f4183c3b49f85771f0 inherit pro_attribs_classPointers"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classUniverse.html">Universe</a> *&amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPointers.html#af0bbed0d08bca0f4183c3b49f85771f0">universe</a></td></tr>
-<tr class="separator:af0bbed0d08bca0f4183c3b49f85771f0 inherit pro_attribs_classPointers"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a46cfd265b93fbd6e7b5e4ccb032b3230 inherit pro_attribs_classPointers"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classInput.html">Input</a> *&amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPointers.html#a46cfd265b93fbd6e7b5e4ccb032b3230">input</a></td></tr>
-<tr class="separator:a46cfd265b93fbd6e7b5e4ccb032b3230 inherit pro_attribs_classPointers"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6a269a56ddc9830e2ed09d14f0b290ba inherit pro_attribs_classPointers"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classOutput.html">Output</a> *&amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPointers.html#a6a269a56ddc9830e2ed09d14f0b290ba">output</a></td></tr>
-<tr class="separator:a6a269a56ddc9830e2ed09d14f0b290ba inherit pro_attribs_classPointers"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a18866a70379c793aefc953b36a710035 inherit pro_attribs_classPointers"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classDomain.html">Domain</a> *&amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPointers.html#a18866a70379c793aefc953b36a710035">domain</a></td></tr>
-<tr class="separator:a18866a70379c793aefc953b36a710035 inherit pro_attribs_classPointers"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a42ef1fb67828bf66b49494fab3cedeea inherit pro_attribs_classPointers"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classMaterial.html">Material</a> *&amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPointers.html#a42ef1fb67828bf66b49494fab3cedeea">material</a></td></tr>
-<tr class="separator:a42ef1fb67828bf66b49494fab3cedeea inherit pro_attribs_classPointers"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2811c4a89979f4ca89f91a65a1a4eb92 inherit pro_attribs_classPointers"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classUpdate.html">Update</a> *&amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPointers.html#a2811c4a89979f4ca89f91a65a1a4eb92">update</a></td></tr>
-<tr class="separator:a2811c4a89979f4ca89f91a65a1a4eb92 inherit pro_attribs_classPointers"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:acc5a81a648fef4dfccd8452d7f2f33b5 inherit pro_attribs_classPointers"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classModify.html">Modify</a> *&amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPointers.html#acc5a81a648fef4dfccd8452d7f2f33b5">modify</a></td></tr>
-<tr class="separator:acc5a81a648fef4dfccd8452d7f2f33b5 inherit pro_attribs_classPointers"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a70ed421be542d68f23c62ff1475f6266 inherit pro_attribs_classPointers"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classGroup.html">Group</a> *&amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPointers.html#a70ed421be542d68f23c62ff1475f6266">group</a></td></tr>
-<tr class="separator:a70ed421be542d68f23c62ff1475f6266 inherit pro_attribs_classPointers"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a116f60669699282ae466bfaf3df72860 inherit pro_attribs_classPointers"><td class="memItemLeft" align="right" valign="top">filebuf *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPointers.html#a116f60669699282ae466bfaf3df72860">infile</a></td></tr>
-<tr class="separator:a116f60669699282ae466bfaf3df72860 inherit pro_attribs_classPointers"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2b3c5fa56942ebc0d5638603a3e83993 inherit pro_attribs_classPointers"><td class="memItemLeft" align="right" valign="top">filebuf *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPointers.html#a2b3c5fa56942ebc0d5638603a3e83993">logfile</a></td></tr>
-<tr class="separator:a2b3c5fa56942ebc0d5638603a3e83993 inherit pro_attribs_classPointers"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5cf3b5ebe3d9763ace470a3d5dd08fe3 inherit pro_attribs_classPointers"><td class="memItemLeft" align="right" valign="top">ofstream *&amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPointers.html#a5cf3b5ebe3d9763ace470a3d5dd08fe3">wlogfile</a></td></tr>
-<tr class="separator:a5cf3b5ebe3d9763ace470a3d5dd08fe3 inherit pro_attribs_classPointers"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table>
-<h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="a0e2488af92188370b6d0831c094244f2"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a0e2488af92188370b6d0831c094244f2">&#9670;&nbsp;</a></span>FixBodyforce()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">FixBodyforce::FixBodyforce </td>
-          <td>(</td>
-          <td class="paramtype">class <a class="el" href="classMPM.html">MPM</a> *&#160;</td>
-          <td class="paramname"><em>mpm</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">vector&lt; string &gt;&#160;</td>
-          <td class="paramname"><em>args</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="a721a383c0318887028c6ecbc545ce77f"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a721a383c0318887028c6ecbc545ce77f">&#9670;&nbsp;</a></span>~FixBodyforce()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">FixBodyforce::~FixBodyforce </td>
-          <td>(</td>
-          <td class="paramname"></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<h2 class="groupheader">Member Function Documentation</h2>
-<a id="a6706a7a4a7feefae07ec87659ec4de4e"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a6706a7a4a7feefae07ec87659ec4de4e">&#9670;&nbsp;</a></span>final_integrate()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">void FixBodyforce::final_integrate </td>
-          <td>(</td>
-          <td class="paramname"></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">virtual</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Implements <a class="el" href="classFix.html#aeb6a921431adadda0896e33be0386282">Fix</a>.</p>
-
-</div>
-</div>
-<a id="a0f22e5f8642a003a50bfe2a13b278e78"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a0f22e5f8642a003a50bfe2a13b278e78">&#9670;&nbsp;</a></span>init()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">void FixBodyforce::init </td>
-          <td>(</td>
-          <td class="paramname"></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">virtual</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Implements <a class="el" href="classFix.html#a44cff265afa2f8b4e47c02f48703b1fa">Fix</a>.</p>
-
-</div>
-</div>
-<a id="a7a3c761e6994583c10eb760b1bee77b0"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a7a3c761e6994583c10eb760b1bee77b0">&#9670;&nbsp;</a></span>initial_integrate()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">void FixBodyforce::initial_integrate </td>
-          <td>(</td>
-          <td class="paramname"></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">virtual</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Implements <a class="el" href="classFix.html#a6b7cf98cac51e46b2d2f24fd60220c21">Fix</a>.</p>
-
-</div>
-</div>
-<a id="a4167f9d09e58cee83904d95b7215bce3"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a4167f9d09e58cee83904d95b7215bce3">&#9670;&nbsp;</a></span>post_advance_particles()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">void FixBodyforce::post_advance_particles </td>
-          <td>(</td>
-          <td class="paramname"></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">virtual</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Implements <a class="el" href="classFix.html#a6075a5331f705c399b256c65ac6ab833">Fix</a>.</p>
-
-</div>
-</div>
-<a id="aa712e3ff204e2ade86c3e816976f4ef8"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa712e3ff204e2ade86c3e816976f4ef8">&#9670;&nbsp;</a></span>post_grid_to_point()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">void FixBodyforce::post_grid_to_point </td>
-          <td>(</td>
-          <td class="paramname"></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">virtual</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Implements <a class="el" href="classFix.html#a1ba90561bf841722d2adf9f9cef31ce3">Fix</a>.</p>
-
-</div>
-</div>
-<a id="a8bfbe5a1ff35cd907d3b20ec033e5b05"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a8bfbe5a1ff35cd907d3b20ec033e5b05">&#9670;&nbsp;</a></span>post_particles_to_grid()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">void FixBodyforce::post_particles_to_grid </td>
-          <td>(</td>
-          <td class="paramname"></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">virtual</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Implements <a class="el" href="classFix.html#abd4c95a4434dd444bbc58049fcd71a24">Fix</a>.</p>
-
-</div>
-</div>
-<a id="a6f77335f21e4d4d218656237c6de0d71"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a6f77335f21e4d4d218656237c6de0d71">&#9670;&nbsp;</a></span>post_update_grid_state()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">void FixBodyforce::post_update_grid_state </td>
-          <td>(</td>
-          <td class="paramname"></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">virtual</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Implements <a class="el" href="classFix.html#a3b5e741ab2e8f7c50f301da130e5e327">Fix</a>.</p>
-
-</div>
-</div>
-<a id="ac6144935e4f92c4cd388fd784aed7fe5"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ac6144935e4f92c4cd388fd784aed7fe5">&#9670;&nbsp;</a></span>post_velocities_to_grid()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">void FixBodyforce::post_velocities_to_grid </td>
-          <td>(</td>
-          <td class="paramname"></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">virtual</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Implements <a class="el" href="classFix.html#ac1b9456a3ecd91a43ef4c867cdc59642">Fix</a>.</p>
-
-</div>
-</div>
-<a id="a2f439ae02fc4de83ca652e5441105e2a"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a2f439ae02fc4de83ca652e5441105e2a">&#9670;&nbsp;</a></span>setmask()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">void FixBodyforce::setmask </td>
-          <td>(</td>
-          <td class="paramname"></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">virtual</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Implements <a class="el" href="classFix.html#a8254cd6e5c4fb77670a0ee2d3d1f2585">Fix</a>.</p>
-
-</div>
-</div>
-<a id="a51eed608537b67d2e1c012f89e6ecfa3"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a51eed608537b67d2e1c012f89e6ecfa3">&#9670;&nbsp;</a></span>setup()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">void FixBodyforce::setup </td>
-          <td>(</td>
-          <td class="paramname"></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">virtual</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Implements <a class="el" href="classFix.html#aade310ae5b2d15cb0e740c56e1c745f6">Fix</a>.</p>
-
-</div>
-</div>
-<h2 class="groupheader">Field Documentation</h2>
-<a id="a70572169204cc2d2ac91589f6b48e39f"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a70572169204cc2d2ac91589f6b48e39f">&#9670;&nbsp;</a></span>xset</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">bool FixBodyforce::xset</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">private</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="ae49110253dfa0adcb7ea9b98be542f19"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ae49110253dfa0adcb7ea9b98be542f19">&#9670;&nbsp;</a></span>yset</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">bool FixBodyforce::yset</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">private</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="a212519b35307e42736c5305e1c909966"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a212519b35307e42736c5305e1c909966">&#9670;&nbsp;</a></span>zset</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">bool FixBodyforce::zset</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">private</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="a5132854e2445b3b066b8a0b8881fbe4d"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a5132854e2445b3b066b8a0b8881fbe4d">&#9670;&nbsp;</a></span>zvalue</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">class <a class="el" href="classVar.html">Var</a> xvalue yvalue FixBodyforce::zvalue</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">private</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
 </div>
 <hr/>The documentation for this class was generated from the following files:<ul>
-<li>src/<a class="el" href="fix__body__force_8h_source.html">fix_body_force.h</a></li>
-<li>src/<a class="el" href="fix__body__force_8cpp.html">fix_body_force.cpp</a></li>
+<li><a class="el" href="fix__body__force_8h_source.html">fix_body_force.h</a></li>
+<li>fix_body_force.cpp</li>
 </ul>
 </div><!-- contents -->
+</div><!-- doc-content -->
 <!-- start footer part -->
-<hr class="footer"/><address class="footer"><small>
-Generated by &#160;<a href="http://www.doxygen.org/index.html">
-<img class="footer" src="doxygen.png" alt="doxygen"/>
-</a> 1.8.13
-</small></address>
+<div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
+  <ul>
+    <li class="navelem"><a class="el" href="classFixBodyforce.html">FixBodyforce</a></li>
+    <li class="footer">Generated on Tue Jul 7 2020 22:31:23 for Karamelo by
+    <a href="http://www.doxygen.org/index.html">
+    <img class="footer" src="doxygen.png" alt="doxygen"/></a> 1.8.13 </li>
+  </ul>
+</div>
 <!-- Matomo -->
 <script type="text/javascript">
   var _paq = _paq || [];

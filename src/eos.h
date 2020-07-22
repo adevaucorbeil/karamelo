@@ -73,7 +73,7 @@ volume cv, temperature of reference Tr, and artificial viscosity coefficients Q1
 
 This command defines an equation of state used to determine the hydrostatic pressure.
 
-\section Subclasses EOS types
+\section EOS_Subclasses EOS types
 
 To access the different eos type supported, and how to use the eos() command with them, refer to the corresponding class.
 */

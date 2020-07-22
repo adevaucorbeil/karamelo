@@ -32,3 +32,9 @@
 \form#31:\[ p = K \left[\left(\frac{\rho}{\rho_0}\right)^{\Gamma} - 1\right]\]
 \form#32:\[ p = K \left[\left(\frac{\rho}{\rho_0}\right)^{\gamma} - 1\right]\]
 \form#33:$\gamma$
+\form#34:\[ \bm{\sigma}\]
+\form#35:\[ \vm{\sigma}\]
+\form#36:\[ \sigma = 2G \Delta \varepsilon + \lambda \trace{\Delta \varepsilon} I\]
+\form#37:$ \sigma = 2G \Delta \varepsilon + \lambda trace(\Delta \varepsilon) I$
+\form#38:$ \sigma = 2G \Delta \varepsilon + \lambda \trace(\Delta \varepsilon) I$
+\form#39:$ \sigma = 2G \Delta \varepsilon + \lambda \Tr(\Delta \varepsilon) I$

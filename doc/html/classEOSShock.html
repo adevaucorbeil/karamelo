@@ -22,6 +22,12 @@
 <script type="text/javascript">
   $(document).ready(function() { init_search(); });
 </script>
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    extensions: ["tex2jax.js", "TeX/AMSmath.js", "TeX/AMSsymbols.js"],
+    jax: ["input/TeX","output/HTML-CSS"],
+});
+</script><script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/MathJax.js?config=TeX-MML-AM_CHTML/MathJax.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
 <link href="karamelodoxy.css" rel="stylesheet" type="text/css">
 <!--  -->
@@ -36,7 +42,7 @@
   <td id="projectlogo"><a href="http://www.karamelo.org"><img alt="Logo" src="Karamelo_logo.png"/></a></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname"><a href="http://www.karamelo.org">Karamelo</a>
-   &#160;<span id="projectnumber">0d9302f0</span>
+   &#160;<span id="projectnumber">714599e9</span>
    </div>
    <div id="projectbrief">Parallel Material Point Method Simulator</div>
   </td>
@@ -133,9 +139,9 @@ Examples</h1>
 Description</h1>
 <p>This command defines a Mie-Grüneisen equation of state. The hydrostatic pressure is calculated according to:<br />
  </p><p class="formulaDsp">
-<img class="formulaDsp" alt="\[ p = \dfrac{\rho_0c_0^2(\eta -1)\bigg[\eta - \dfrac{\Gamma_0}{2}(\eta - 1)\bigg]}{[\eta - S(\eta-1)]^2} + \Gamma_0e\]" src="form_29.png"/>
+\[ p = \dfrac{\rho_0c_0^2(\eta -1)\bigg[\eta - \dfrac{\Gamma_0}{2}(\eta - 1)\bigg]}{[\eta - S(\eta-1)]^2} + \Gamma_0e\]
 </p>
-<p> where <img class="formulaInl" alt="$\eta = \dfrac{\rho}{\rho_0}$" src="form_27.png"/> and <img class="formulaInl" alt="$e$" src="form_28.png"/> the internal energy.</p>
+<p> where \(\eta = \dfrac{\rho}{\rho_0}\) and \(e\) the internal energy.</p>
 <h1><a class="anchor" id="Class"></a>
 Class description</h1>
 </div><div id="dynsection-0" onclick="return toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;">
@@ -159,7 +165,7 @@ Class description</h1>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="classEOSShock.html">EOSShock</a></li>
-    <li class="footer">Generated on Tue May 26 2020 22:47:35 for Karamelo by
+    <li class="footer">Generated on Tue Jul 7 2020 22:31:23 for Karamelo by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="doxygen.png" alt="doxygen"/></a> 1.8.13 </li>
   </ul>
