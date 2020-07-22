@@ -1186,16 +1186,31 @@ void Solid::update_stress()
             sqrt((mat->K + FOUR_THIRD * mat->G) / rho[ip]) +
                 MAX(MAX(fabs(v[ip](0)), fabs(v[ip](1))), fabs(v[ip](2))));
 
-    min_h_ratio =
-        MIN(min_h_ratio, F[ip](0, 0) * F[ip](0, 0) + F[ip](0, 1) * F[ip](0, 1) +
-                             F[ip](0, 2) * F[ip](0, 2));
-    min_h_ratio =
-        MIN(min_h_ratio, F[ip](1, 0) * F[ip](1, 0) + F[ip](1, 1) * F[ip](1, 1) +
-                             F[ip](1, 2) * F[ip](1, 2));
-    min_h_ratio =
-        MIN(min_h_ratio, F[ip](2, 0) * F[ip](2, 0) + F[ip](2, 1) * F[ip](2, 1) +
-                             F[ip](2, 2) * F[ip](2, 2));
+    EigenSolver<Matrix3d> esF(F[ip], false);
+    if (esF.info()!= Success) {
+      min_h_ratio = MIN(min_h_ratio,1.0);
+    } else {
+      min_h_ratio = MIN(min_h_ratio,fabs(esF.eigenvalues()[0].real()));
+      min_h_ratio = MIN(min_h_ratio,fabs(esF.eigenvalues()[1].real()));
+      min_h_ratio = MIN(min_h_ratio,fabs(esF.eigenvalues()[2].real()));
+    }
+    // min_h_ratio =
+    //     MIN(min_h_ratio, F[ip](0, 0) * F[ip](0, 0) + F[ip](0, 1) * F[ip](0, 1) +
+    //                          F[ip](0, 2) * F[ip](0, 2));
+    // min_h_ratio =
+    //     MIN(min_h_ratio, F[ip](1, 0) * F[ip](1, 0) + F[ip](1, 1) * F[ip](1, 1) +
+    //                          F[ip](1, 2) * F[ip](1, 2));
+    // min_h_ratio =
+    //     MIN(min_h_ratio, F[ip](2, 0) * F[ip](2, 0) + F[ip](2, 1) * F[ip](2, 1) +
+    //                          F[ip](2, 2) * F[ip](2, 2));
 
+    if (min_h_ratio == 0) {
+      cout << "min_h_ratio == 0 with ip=" << ip
+	   << "F=\n" <<  F[ip] << endl
+	   << "eigenvalues of F:" << esF.eigenvalues()[0].real() << "\t" << esF.eigenvalues()[1].real() << "\t" << esF.eigenvalues()[2].real() << endl;
+      cout << "esF.info()=" << esF.info() << endl;
+      error->one(FLERR, "");
+     }
     if (std::isnan(max_p_wave_speed)) {
       cout << "Error: max_p_wave_speed is nan with ip=" << ip
            << ", ptag[ip]=" << ptag[ip] << ", rho0[ip]=" << rho0[ip]<< ", rho[ip]=" << rho[ip]
@@ -1210,17 +1225,19 @@ void Solid::update_stress()
     }
 
     // dt should also be lower than the inverse of \dot{F}e_i.
-    EigenSolver<Matrix3d> es(Fdot[ip], false);
-    double lambda = fabs(es.eigenvalues()[0].real());
-    lambda = MAX(lambda, fabs(es.eigenvalues()[1].real()));
-    lambda = MAX(lambda, fabs(es.eigenvalues()[2].real()));
-    dtCFL = MIN(dtCFL, 1.0/lambda);
-    //dtCFL = MIN(dtCFL, 1.0/(Fdot[ip](0,0) + Fdot[ip](0,1) + Fdot[ip](0,2)));
-    //dtCFL = MIN(dtCFL, 1.0/(Fdot[ip](1,0) + Fdot[ip](1,1) + Fdot[ip](1,2)));
-    //dtCFL = MIN(dtCFL, 1.0/(Fdot[ip](2,0) + Fdot[ip](2,1) + Fdot[ip](2,2)));
+    EigenSolver<Matrix3d> esFdot(Fdot[ip], false);
+    if (esFdot.info()!= Success) {
+      double lambda = fabs(esFdot.eigenvalues()[0].real());
+      lambda = MAX(lambda, fabs(esFdot.eigenvalues()[1].real()));
+      lambda = MAX(lambda, fabs(esFdot.eigenvalues()[2].real()));
+      dtCFL = MIN(dtCFL, 0.5/lambda);
+      //dtCFL = MIN(dtCFL, 1.0/(Fdot[ip](0,0) + Fdot[ip](0,1) + Fdot[ip](0,2)));
+      //dtCFL = MIN(dtCFL, 1.0/(Fdot[ip](1,0) + Fdot[ip](1,1) + Fdot[ip](1,2)));
+      //dtCFL = MIN(dtCFL, 1.0/(Fdot[ip](2,0) + Fdot[ip](2,1) + Fdot[ip](2,2)));
+    }
   }
 
-  dtCFL = MIN(dtCFL, grid->cellsize * sqrt(min_h_ratio) / max_p_wave_speed);
+  dtCFL = MIN(dtCFL, grid->cellsize * min_h_ratio / max_p_wave_speed);
 
   if (std::isnan(dtCFL))
   {
