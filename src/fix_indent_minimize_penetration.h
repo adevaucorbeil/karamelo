@@ -44,11 +44,12 @@ private:
   string type; // sphere
   string usage =
       "Usage: fix(fix-ID, indent/hertz, group, sphere, R, x_center, "
-      "y_center, z_center, vx_center, vy_center, vz_center)\n";
-  int Nargs = 11;
+      "y_center, z_center, vx_center, vy_center, vz_center, mu)\n";
+  int Nargs = 12;
   int type_pos, Kpos, Rpos, xpos, ypos, zpos, vxpos, vypos,
       vzpos; // Positions of K, the position of the sphere, and
              // its radius in the argument list (args)
+  double mu; // Friction coefficient
 };
 
 #endif

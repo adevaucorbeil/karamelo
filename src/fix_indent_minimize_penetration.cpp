@@ -64,6 +64,7 @@ FixIndentMinimizePenetration::FixIndentMinimizePenetration(MPM *mpm, vector<stri
     error->all(FLERR, "Error indent type " + args[type_pos] +
                           " unknown. Only type sphere is supported.\n");
   }
+  mu = input->parsev(args[11]);
 }
 
 FixIndentMinimizePenetration::~FixIndentMinimizePenetration() {}
@@ -93,9 +94,9 @@ void FixIndentMinimizePenetration::initial_integrate() {
   Eigen::Vector3d vs(input->parsev(args[vxpos]).result(mpm),
                      input->parsev(args[vypos]).result(mpm),
                      input->parsev(args[vzpos]).result(mpm));
-  Eigen::Vector3d xsp;
+  Eigen::Vector3d xsp, vps, vt;
 
-  double Rs, Rp, r, p, fmag;
+  double Rs, Rp, r, p, fmag, vtnorm;
 
   int n, n_reduced;
   ftot.setZero();
@@ -130,8 +131,20 @@ void FixIndentMinimizePenetration::initial_integrate() {
 
                   if (p > 0) {
 		    n++;
+		    xsp /= r;
                     fmag = s->mass[ip] * p / (update->dt * update->dt);
-                    f = fmag * xsp / r;
+                    f = fmag * xsp;// / r;
+
+		    if (mu != 0) {
+		      vps = vs - s->v[ip];
+		      vt = vps - vps.dot(xsp) * xsp;// / (r*r);
+		      vtnorm = vt.norm();
+		      if (vtnorm != 0) {
+			vt /= vtnorm;
+			f += mu * fmag * vt;
+		      }
+		    }
+
 		    s->mbp[ip] += f;
                     ftot += f;
                   } else {
@@ -166,8 +179,20 @@ void FixIndentMinimizePenetration::initial_integrate() {
 
                   if (p > 0) {
 		    n++;
+		    xsp /= r;
                     fmag = s->mass[ip] * p / (update->dt * update->dt);
-                    f = fmag * xsp / r;
+                    f = fmag * xsp;// / r;
+
+		    if (mu != 0) {
+		      vps = vs - s->v[ip];
+		      vt = vps - vps.dot(xsp) * xsp;// / (r*r);
+		      vtnorm = vt.norm();
+		      if (vtnorm != 0) {
+			vt /= vtnorm;
+			f += mu * fmag * vt;
+		      }
+		    }
+
 		    s->mbp[ip] += f;
                     ftot += f;
                   } else {
@@ -183,7 +208,6 @@ void FixIndentMinimizePenetration::initial_integrate() {
     }
   } else {
     s = domain->solids[solid];
-
     if (domain->dimension == 2) {
       for (int ip = 0; ip < s->np_local; ip++) {
 	if (s->mass[ip] > 0) {
@@ -209,8 +233,20 @@ void FixIndentMinimizePenetration::initial_integrate() {
 
 		if (p > 0) {
 		  n++;
+		  xsp /= r;
 		  fmag = s->mass[ip] * p / (update->dt * update->dt);
-		  f = fmag * xsp / r;
+		  f = fmag * xsp;// / r;
+
+		  if (mu != 0) {
+		    vps = vs - s->v[ip];
+		    vt = vps - vps.dot(xsp) * xsp;// / (r*r);
+		    vtnorm = vt.norm();
+		    if (vtnorm != 0) {
+		      vt /= vtnorm;
+		      f += mu * fmag * vt;
+		    }
+		  }
+
 		  s->mbp[ip] += f;
 		  ftot += f;
 		} else {
@@ -232,7 +268,7 @@ void FixIndentMinimizePenetration::initial_integrate() {
 	    // Gross screening:
 	    xsp = s->x[ip] - xs;
 
-	    Rp = 0.5*cbrt(s->vol[ip]);
+	    Rp = 0.5*cbrt(s->vol0[ip]);
 	    Rs = R + Rp;
 
 	    if ((xsp[0] < Rs) && (xsp[1] < Rs) && (xsp[2] < Rs) &&
@@ -245,8 +281,20 @@ void FixIndentMinimizePenetration::initial_integrate() {
 
 		if (p > 0) {
 		  n++;
+		  xsp /= r;
 		  fmag = s->mass[ip] * p / (update->dt * update->dt);
-		  f = fmag * xsp / r;
+		  f = fmag * xsp;// / r;
+
+		  if (mu != 0) {
+		    vps = vs - s->v[ip];
+		    vt = vps - vps.dot(xsp) * xsp;// / (r*r);
+		    vtnorm = vt.norm();
+		    if (vtnorm != 0) {
+		      vt /= vtnorm;
+		      f += mu * fmag * vt;
+		    }
+		  }
+
 		  s->mbp[ip] += f;
 		  ftot += f;
 		} else {
