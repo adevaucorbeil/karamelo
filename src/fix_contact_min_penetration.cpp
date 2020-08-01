@@ -121,6 +121,7 @@ void FixContactMinPenetration::initial_integrate() {
 	      if (mu != 0) {
                 dv = s2->v[ip2] - s1->v[ip1];
                 vt = dv - dv.dot(dx) * inv_r * inv_r* dx;
+		vtnorm = vt.norm();
                 if (vtnorm != 0) {
 		  vt /= vtnorm;
 		  f += mu * fmag * r * vt;
@@ -174,6 +175,7 @@ void FixContactMinPenetration::initial_integrate() {
 	      if (mu != 0) {
                 dv = s2->v[ip2] - s1->v[ip1];
                 vt = dv - dv.dot(dx) * inv_r * inv_r* dx;
+		vtnorm = vt.norm();
                 if (vtnorm != 0) {
 		  vt /= vtnorm;
 		  f += mu * fmag * r * vt;
