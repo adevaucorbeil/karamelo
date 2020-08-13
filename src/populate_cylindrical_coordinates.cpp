@@ -181,7 +181,6 @@ Var PopulateCylindricalCoordinates::command(vector<string> args) {
 
           s->J[l] = 1;
           s->mask[l] = 1;
-          s->check[l] = false;
           l++;
         }
         if (j == 0)

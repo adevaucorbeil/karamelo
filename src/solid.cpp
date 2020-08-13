@@ -273,7 +273,6 @@ void Solid::grow(int nparticles)
   ienergy.resize(nparticles);
   pH_regu.resize(nparticles);
   mask.resize(nparticles);
-  check.resize(nparticles);
   J.resize(nparticles);
 
   numneigh_pn.resize(nparticles);
@@ -1357,7 +1356,6 @@ void Solid::copy_particle(int i, int j) {
   ienergy[j]                 = ienergy[i];
   pH_regu[j]                 = pH_regu[i];
   mask[j]                    = mask[i];
-  check[j]                   = check[i];
   sigma[j]                   = sigma[i];
   strain_el[j]               = strain_el[i];
   vol0PK1[j]                 = vol0PK1[i];
@@ -1442,7 +1440,6 @@ void Solid::pack_particle(int i, vector<double> &buf)
   buf.push_back(T[i]);
   buf.push_back(ienergy[i]);
   buf.push_back(mask[i]);
-  buf.push_back(check[i]);
 
   buf.push_back(sigma[i](0,0));
   buf.push_back(sigma[i](1,1));
@@ -2074,7 +2071,6 @@ void Solid::populate(vector<string> args)
 
     J[i] = 1;
     mask[i] = 1;
-    check[i] = false;
 
     ptag[i] = ptag0 + i + 1 + domain->np_total;
   }

@@ -90,7 +90,6 @@ class Solid : protected Pointers {
   vector<double> ienergy;                   ///< Particles' internal energy
   vector<double> pH_regu;                   ///< Particles' regularized hydrostatic pressure
   vector<int> mask;                         ///< Particles' group mask
-  vector<bool> check;
 
   double max_p_wave_speed;                  ///< Maximum of the particle wave speed
   double dtCFL;
