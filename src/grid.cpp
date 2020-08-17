@@ -58,15 +58,15 @@ Grid::Grid(MPM *mpm) :
   MPI_Datatype type[4] = {MPI_INT, MPI_MPM_TAGINT, MPI_DOUBLE, MPI_INT};
   int blocklen[4] = {1, 1, 3, 3};
   MPI_Aint disp[4];
-  MPI_Address( &dummy.owner, &disp[0] );
-  MPI_Address( &dummy.tag, &disp[1] );
-  MPI_Address( &dummy.x, &disp[2] );
-  MPI_Address( &dummy.ntype, &disp[3] );
+  MPI_Get_address( &dummy.owner, &disp[0] );
+  MPI_Get_address( &dummy.tag, &disp[1] );
+  MPI_Get_address( &dummy.x, &disp[2] );
+  MPI_Get_address( &dummy.ntype, &disp[3] );
   disp[3] = disp[3] - disp[0];
   disp[2] = disp[2] - disp[0];
   disp[1] = disp[1] - disp[0];
   disp[0] = 0;
-  MPI_Type_struct(4, blocklen, disp, type, &Pointtype);
+  MPI_Type_create_struct(4, blocklen, disp, type, &Pointtype);
   MPI_Type_commit(&Pointtype);
 
 }
