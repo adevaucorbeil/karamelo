@@ -75,7 +75,7 @@ Domain::~Domain()
   delete region_map;
   // delete solid_map;
 
-  delete grid;
+  if (!update->method->is_TL) delete grid;
 }
 
 /* ----------------------------------------------------------------------
