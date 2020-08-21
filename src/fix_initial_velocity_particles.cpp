@@ -99,6 +99,9 @@ void FixInitialVelocityParticles::initial_integrate() {
 	  (*input->vars)["x"] = Var("x", s->x[ip][0]);
 	  (*input->vars)["y"] = Var("y", s->x[ip][1]);
 	  (*input->vars)["z"] = Var("z", s->x[ip][2]);
+	  (*input->vars)["x0"] = Var("x0", s->x0[ip][0]);
+	  (*input->vars)["y0"] = Var("y0", s->x0[ip][1]);
+	  (*input->vars)["z0"] = Var("z0", s->x0[ip][2]);
 	  if (xset) {
 	    vx = xvalue.result(mpm);
 	    s->v[ip][0] = vx;
@@ -122,6 +125,9 @@ void FixInitialVelocityParticles::initial_integrate() {
 	(*input->vars)["x"] = Var("x", s->x[ip][0]);
 	(*input->vars)["y"] = Var("y", s->x[ip][1]);
 	(*input->vars)["z"] = Var("z", s->x[ip][2]);
+	(*input->vars)["x0"] = Var("x0", s->x0[ip][0]);
+	(*input->vars)["y0"] = Var("y0", s->x0[ip][1]);
+	(*input->vars)["z0"] = Var("z0", s->x0[ip][2]);
 	if (xset) {
 	  vx = xvalue.result(mpm);
 	  s->v[ip][0] = vx;
