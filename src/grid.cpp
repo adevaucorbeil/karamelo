@@ -85,10 +85,13 @@ void Grid::init(double *solidlo, double *solidhi) {
   cout << "In Grid::init() with proc " << universe->me << "\n";
   bool cubic = false;
   bool bernstein = false;
+  bool quadratic = false;
   double h = cellsize;
 
   if (update->method_shape_function.compare("cubic-spline") == 0)
     cubic = true;
+  if (update->method_shape_function.compare("quadratic-spline") == 0)
+    quadratic = true;
   if (update->method_shape_function.compare("Bernstein-quadratic") == 0) {
     bernstein = true;
     h /= 2;
@@ -237,7 +240,7 @@ void Grid::init(double *solidlo, double *solidhi) {
 	  ntype[l][0] = (i+noffsetlo[0]) % 2;
 	  ntype[l][1] = (j+noffsetlo[1]) % 2;
 	  ntype[l][2] = (k+noffsetlo[2]) % 2;
-	} else if (cubic) {
+	} else if (cubic || quadratic) {
 	  ntype[l][0] = min(2,i+noffsetlo[0])-min(nx_global-1-i-noffsetlo[0],2);
 	  ntype[l][1] = min(2,j+noffsetlo[1])-min(ny_global-1-j-noffsetlo[1],2);
 	  ntype[l][2] = min(2,k+noffsetlo[2])-min(nz_global-1-k-noffsetlo[2],2);
@@ -280,7 +283,7 @@ void Grid::init(double *solidlo, double *solidhi) {
   vector<Point> gnodes;
 
   double delta;
-  if (cubic || bernstein) delta = 2*h - 1.0e-12;
+  if (cubic || quadratic || bernstein) delta = 2*h - 1.0e-12;
   else delta = h - 1.0e-12;
 
   cout << "delta=" << delta << endl;

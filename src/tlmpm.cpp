@@ -87,6 +87,12 @@ void TLMPM::setup(vector<string> args)
       basis_function = &BasisFunction::cubic_spline;
       derivative_basis_function = &BasisFunction::derivative_cubic_spline;
       n++;
+    } else if (args[n].compare("quadratic-spline") == 0) {
+      shape_function = "quadratic-spline";
+      cout << "Setting up quadratic-spline basis functions\n";
+      basis_function = &BasisFunction::quadratic_spline;
+      derivative_basis_function = &BasisFunction::derivative_quadratic_spline;
+      n++;
     } else if (args[n].compare("Bernstein-quadratic") == 0) {
       shape_function = "Bernstein-quadratic";
       cout << "Setting up Bernstein-quadratic basis functions\n";
@@ -94,7 +100,7 @@ void TLMPM::setup(vector<string> args)
       derivative_basis_function = &BasisFunction::derivative_bernstein_quadratic;
       n++;
     } else {
-      error->all(FLERR, "Illegal method_method argument: form function of type \033[1;31m" + args[n] + "\033[0m is unknown. Available options are:  \033[1;32mlinear\033[0m, \033[1;32mcubic-spline\033[0m, \033[1;32mBernstein-quadratic\033[0m.\n");
+      error->all(FLERR, "Illegal method_method argument: form function of type \033[1;31m" + args[n] + "\033[0m is unknown. Available options are:  \033[1;32mlinear\033[0m, \033[1;32mcubic-spline\033[0m, \033[1;32mquadratic-spline\033[0m, \033[1;32mBernstein-quadratic\033[0m.\n");
     }
   }
 
@@ -150,6 +156,14 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
       map<int, int> *map_ntag = &domain->solids[isolid]->grid->map_ntag;
       map<int, int>::iterator it;
 
+      bool linear, cubic, quadratic, bernstein;
+      linear = cubic = quadratic = bernstein = false;
+
+      if (update->method_shape_function.compare("linear")==0) linear = true;
+      if (update->method_shape_function.compare("cubic-spline")==0) cubic = true;
+      if (update->method_shape_function.compare("quadratic-spline")==0) quadratic = true;
+      if (update->method_shape_function.compare("Bernstein-quadratic")==0) bernstein = true;
+      
       r.setZero();
       if (np_local && (nnodes_local + nnodes_ghost)) {
 
@@ -162,7 +176,7 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
 
 	  vector<int> n_neigh;
 
-	  if (update->method_shape_function.compare("linear")==0) {
+	  if (linear) {
 	    int i0 = (int) (((*xp)[ip][0] - domain->solids[isolid]->solidlo[0])*inv_cellsize);
 	    int j0 = (int) (((*xp)[ip][1] - domain->solids[isolid]->solidlo[1])*inv_cellsize);
 	    int k0 = (int) (((*xp)[ip][2] - domain->solids[isolid]->solidlo[2])*inv_cellsize);
@@ -191,7 +205,7 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
 		  n_neigh.push_back(i);
 	      }
 	    }
-	  } else if (update->method_shape_function.compare("Bernstein-quadratic")==0){
+	  } else if (bernstein){
 	    int i0 = 2*(int) (((*xp)[ip][0] - domain->solids[isolid]->solidlo[0])*inv_cellsize);
 	    int j0 = 2*(int) (((*xp)[ip][1] - domain->solids[isolid]->solidlo[1])*inv_cellsize);
 	    int k0 = 2*(int) (((*xp)[ip][2] - domain->solids[isolid]->solidlo[2])*inv_cellsize);
@@ -224,7 +238,7 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
 		  n_neigh.push_back(i);
 	      }
 	    }
-	  } else if (update->method_shape_function.compare("cubic-spline")==0){
+	  } else if (cubic || quadratic) {
 	    int i0 = (int) (((*xp)[ip][0] - domain->solids[isolid]->solidlo[0])*inv_cellsize - 1);
 	    int j0 = (int) (((*xp)[ip][1] - domain->solids[isolid]->solidlo[1])*inv_cellsize - 1);
 	    int k0 = (int) (((*xp)[ip][2] - domain->solids[isolid]->solidlo[2])*inv_cellsize - 1);

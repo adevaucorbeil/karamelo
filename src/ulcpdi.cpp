@@ -86,6 +86,12 @@ void ULCPDI::setup(vector<string> args)
       basis_function = &BasisFunction::cubic_spline;
       derivative_basis_function = &BasisFunction::derivative_cubic_spline;
       n++;
+    } else if (args[n].compare("quadratic-spline") == 0) {
+      shape_function = "quadratic-spline";
+      cout << "Setting up quadratic-spline basis functions\n";
+      basis_function = &BasisFunction::quadratic_spline;
+      derivative_basis_function = &BasisFunction::derivative_quadratic_spline;
+      n++;
     } else if (args[n].compare("Bernstein-quadratic") == 0) {
       shape_function = "Bernstein-quadratic";
       cout << "Setting up Bernstein-quadratic basis functions\n";
@@ -93,7 +99,7 @@ void ULCPDI::setup(vector<string> args)
       derivative_basis_function = &BasisFunction::derivative_bernstein_quadratic;
       n++;
     } else {
-      error->all(FLERR, "Illegal method_method argument: form function of type \033[1;31m" + args[n] + "\033[0m is unknown. Available options are:  \033[1;32mlinear\033[0m, \033[1;32mcubic-spline\033[0m, \033[1;32mBernstein-quadratic\033[0m.\n");
+      error->all(FLERR, "Illegal method_method argument: form function of type \033[1;31m" + args[n] + "\033[0m is unknown. Available options are:  \033[1;32mlinear\033[0m, \033[1;32mcubic-spline\033[0m, \033[1;32mquadratic-spline\033[0m, \033[1;32mBernstein-quadratic\033[0m.\n");
     }
   }
 
@@ -181,11 +187,12 @@ void ULCPDI::compute_grid_weight_functions_and_gradients()
 	vector<Eigen::Vector3d> xcorner(nc, Eigen::Vector3d::Zero());
 	vector<double> wfc(nc, 0);
 
-	bool linear, cubic, bernstein;
-	linear = cubic = bernstein = false;
+	bool linear, cubic, quadratic, bernstein;
+	linear = cubic = quadratic = bernstein = false;
 
 	if (update->method_shape_function.compare("linear")==0) linear = true;
 	if (update->method_shape_function.compare("cubic-spline")==0) cubic = true;
+	if (update->method_shape_function.compare("quadratic-spline")==0) quadratic = true;
 	if (update->method_shape_function.compare("Bernstein-quadratic")==0) bernstein = true;
 
 	double a, b, inv_Vp, alpha_over_Vp, sixVp;
