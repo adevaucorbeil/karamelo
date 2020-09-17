@@ -11,8 +11,11 @@
  *
  * ----------------------------------------------------------------------- */
 
-#include <iostream>
 #include "compute.h"
+#include "group.h"
+#include "input.h"
+#include "var.h"
+#include <iostream>
 
 using namespace std;
 
@@ -22,4 +25,10 @@ Compute::Compute(MPM *mpm, vector<string> args) :
 {
   cout << "Creating new compute with ID: " << args[0] << endl;
   id = args[0];
+
+  igroup = group->find(args[2]);
+  if (igroup == -1) {
+    cout << "Could not find group ID " << args[2] << endl;
+  }
+  groupbit = group->bitmask[igroup];
 }

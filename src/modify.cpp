@@ -308,3 +308,9 @@ void Modify::final_integrate(){
   for (int i = 0; i < list_final_integrate.size(); i++)
     fix[list_final_integrate[i]]->final_integrate();
 }
+
+
+void Modify::run_computes(){
+  for (int i = 0; i < compute.size(); i++)
+    compute[i]->compute_value();
+}

@@ -65,6 +65,8 @@ public:
   void post_velocities_to_grid();
   void final_integrate();
 
+  void run_computes();
+
 protected:
   // lists of fixes to apply at different stages of timestep
   vector<int> list_initial_integrate;

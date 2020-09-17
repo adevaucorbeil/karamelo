@@ -271,6 +271,10 @@ Var Input::evaluate_function(string func, string arg){
     return Var(fix(args));
   if (func.compare("delete_fix") == 0)
     return Var(delete_fix(args));
+  if (func.compare("compute") == 0)
+    return Var(compute(args));
+  if (func.compare("delete_compute") == 0)
+    return Var(delete_compute(args));
   if (func.compare("dt_factor") == 0)
     return Var(set_dt_factor(args));
   if (func.compare("set_dt") == 0)
@@ -774,6 +778,16 @@ int Input::fix(vector<string> args) {
 
 int Input::delete_fix(vector<string> args) {
   modify->delete_fix(args[0]);
+  return 0;
+}
+
+int Input::compute(vector<string> args) {
+  modify->add_compute(args);
+  return 0;
+}
+
+int Input::delete_compute(vector<string> args) {
+  modify->delete_compute(args[0]);
   return 0;
 }
 

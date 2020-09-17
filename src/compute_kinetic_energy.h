@@ -11,38 +11,31 @@
  *
  * ----------------------------------------------------------------------- */
 
-#ifdef FIX_CLASS
+#ifdef COMPUTE_CLASS
 
-FixStyle(kinetic_energy,FixKineticEnergy)
+ComputeStyle(kinetic_energy,ComputeKineticEnergy)
 
 #else
 
-#ifndef MPM_FIX_KINETIC_ENERGY_H
-#define MPM_FIX_KINETIC_ENERGY_H
+#ifndef MPM_COMPUTE_KINETIC_ENERGY_H
+#define MPM_COMPUTE_KINETIC_ENERGY_H
 
-#include "fix.h"
+#include "compute.h"
 #include "var.h"
 #include <vector>
 
-class FixKineticEnergy : public Fix {
+class ComputeKineticEnergy : public Compute {
  public:
-  FixKineticEnergy(class MPM *, vector<string>);
-  ~FixKineticEnergy();
-  void setmask();
+  ComputeKineticEnergy(class MPM *, vector<string>);
+  ~ComputeKineticEnergy();
   void init();
   void setup();
-  
-  void initial_integrate() {};
-  void post_particles_to_grid() {};
-  void post_update_grid_state() {};
-  void post_grid_to_point() {};
-  void post_advance_particles() {};
-  void post_velocities_to_grid() {};
-  void final_integrate();
+
+  void compute_value();
 
 private:
   // class Var xvalue, yvalue, zvalue;    // Set force in x, y, and z directions.
-  // bool xset, yset, zset;               // Does the fix set the x, y, and z forces of the group?
+  // bool xset, yset, zset;               // Does the compute set the x, y, and z forces of the group?
 };
 
 #endif

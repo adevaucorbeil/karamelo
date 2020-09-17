@@ -76,6 +76,8 @@ private:
   int scheme(vector<string>);                ///< Creates a scheme, USL, or MUSL.
   int fix(vector<string>);                   ///< Creates a fix.
   int delete_fix(vector<string>);            ///< Deletes a fix.
+  int compute(vector<string>);               ///< Creates a compute.
+  int delete_compute(vector<string>);        ///< Deletes a compute.
   int set_dt_factor(vector<string>);         ///< Sets the factor to be applied to the CFL timestep
   int set_dt(vector<string>);                ///< Sets the timestep
   class Var value(vector<string>);           ///< Returns the current value of a user variable.

@@ -16,6 +16,7 @@
 #include "error.h"
 #include "input.h"
 #include "log.h"
+#include "modify.h"
 #include "plot.h"
 #include "style_dump.h"
 #include "universe.h"
@@ -134,10 +135,12 @@ void Output::write(bigint ntimestep){
   }
 
   if (next_log == ntimestep) {
+    modify->run_computes();
     log->write();
 
     next_log += every_log;
   } else if (ntimestep == 0) {
+    modify->run_computes();
     log->write();
   }
   

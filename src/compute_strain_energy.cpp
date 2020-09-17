@@ -15,7 +15,7 @@
 #include <vector>
 #include <string>
 #include <Eigen/Eigen>
-#include "fix_strain_energy.h"
+#include "compute_strain_energy.h"
 #include "input.h"
 #include "group.h"
 #include "domain.h"
@@ -28,45 +28,40 @@
 #include "solid.h"
 
 using namespace std;
-using namespace FixConst;
 using namespace MathSpecial;
 using namespace Eigen;
 
-FixStrainEnergy::FixStrainEnergy(MPM *mpm, vector<string> args) : Fix(mpm, args)
+ComputeStrainEnergy::ComputeStrainEnergy(MPM *mpm, vector<string> args) : Compute(mpm, args)
 {
   if (args.size() < 3) {
-    error->all(FLERR,"Error: too few arguments for fix_strain_energy: requires at least 3 arguments. " + to_string(args.size()) + " received.\n");
+    error->all(FLERR,"Error: too few arguments for compute_strain_energy: requires at least 3 arguments. " + to_string(args.size()) + " received.\n");
   }
 
   if (group->pon[igroup].compare("particles") !=0 && group->pon[igroup].compare("all") !=0) {
-    error->all(FLERR, "fix_strain_energy needs to be given a group of particles" + group->pon[igroup] + ", " + args[2] + " is a group of " + group->pon[igroup] + ".\n");
+    error->all(FLERR, "compute_strain_energy needs to be given a group of particles" + group->pon[igroup] + ", " + args[2] + " is a group of " + group->pon[igroup] + ".\n");
   }
 
-  cout << "Creating new fix FixStrainEnergy with ID: " << args[0] << endl;
+  cout << "Creating new compute ComputeStrainEnergy with ID: " << args[0] << endl;
   id = args[0];
+
+  (*input->vars)[id]=Var(id, 0);
 }
 
-FixStrainEnergy::~FixStrainEnergy()
+ComputeStrainEnergy::~ComputeStrainEnergy()
 {
 }
 
-void FixStrainEnergy::init()
+void ComputeStrainEnergy::init()
 {
 }
 
-void FixStrainEnergy::setup()
+void ComputeStrainEnergy::setup()
 {
 }
 
-void FixStrainEnergy::setmask() {
-  mask = 0;
-  mask |= FINAL_INTEGRATE;
-}
-
-
-void FixStrainEnergy::final_integrate() {
+void ComputeStrainEnergy::compute_value() {
   if (update->ntimestep != output->next && update->ntimestep != update->nsteps) return;
-  // cout << "In FixStrainEnergy::post_particles_to_grid()\n";
+  // cout << "In ComputeStrainEnergy::post_particles_to_grid()\n";
 
   // Go through all the nodes in the group and set b to the right value:
   double ux, uy, uz;
@@ -117,5 +112,5 @@ void FixStrainEnergy::final_integrate() {
 
   // Reduce Es:
   MPI_Allreduce(&Es,&Es_reduced,1,MPI_DOUBLE,MPI_SUM,universe->uworld);
-  (*input->vars)[id+"_s"]=Var(id+"_s", Es_reduced);
+  (*input->vars)[id]=Var(id, Es_reduced);
 }

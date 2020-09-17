@@ -20,12 +20,14 @@
 class Compute : protected Pointers {
  public:
   string id;
-  int igroup;
+  int igroup, groupbit;
 
   Compute(class MPM *, vector<string>);
   virtual ~Compute() {};
   virtual void init() = 0;
   virtual void setup() = 0;
+  
+  virtual void compute_value() = 0;
 };
 
 #endif

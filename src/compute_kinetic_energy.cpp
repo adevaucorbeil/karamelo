@@ -11,7 +11,7 @@
  *
  * ----------------------------------------------------------------------- */
 
-#include "fix_kinetic_energy.h"
+#include "compute_kinetic_energy.h"
 #include "domain.h"
 #include "error.h"
 #include "group.h"
@@ -26,15 +26,14 @@
 #include <vector>
 
 using namespace std;
-using namespace FixConst;
 using namespace MathSpecial;
 using namespace Eigen;
 
-FixKineticEnergy::FixKineticEnergy(MPM *mpm, vector<string> args)
-    : Fix(mpm, args) {
+ComputeKineticEnergy::ComputeKineticEnergy(MPM *mpm, vector<string> args)
+    : Compute(mpm, args) {
 
   if (args.size() < 3) {
-    error->all(FLERR, "Error: too few arguments for fix_kinetic_energy: "
+    error->all(FLERR, "Error: too few arguments for compute_kinetic_energy: "
                       "requires at least 3 arguments. " +
                           to_string(args.size()) + " received.\n");
   }
@@ -42,30 +41,27 @@ FixKineticEnergy::FixKineticEnergy(MPM *mpm, vector<string> args)
   if (group->pon[igroup].compare("particles") != 0 &&
       group->pon[igroup].compare("all") != 0) {
     error->all(FLERR,
-               "fix_kinetic_energy needs to be given a group of particles" +
+               "compute_kinetic_energy needs to be given a group of particles" +
                    group->pon[igroup] + ", " + args[2] + " is a group of " +
                    group->pon[igroup] + ".\n");
   }
 
-  cout << "Creating new fix FixKineticEnergy with ID: " << args[0] << endl;
+  cout << "Creating new compute ComputeKineticEnergy with ID: " << args[0] << endl;
   id = args[0];
+
+  (*input->vars)[id]=Var(id, 0);
 }
 
-FixKineticEnergy::~FixKineticEnergy() {}
+ComputeKineticEnergy::~ComputeKineticEnergy() {}
 
-void FixKineticEnergy::init() {}
+void ComputeKineticEnergy::init() {}
 
-void FixKineticEnergy::setup() {}
+void ComputeKineticEnergy::setup() {}
 
-void FixKineticEnergy::setmask() {
-  mask = 0;
-  mask |= FINAL_INTEGRATE;
-}
-
-void FixKineticEnergy::final_integrate() {
+void ComputeKineticEnergy::compute_value() {
   if (update->ntimestep != output->next && update->ntimestep != update->nsteps)
     return;
-  // cout << "In FixKineticEnergy::post_particles_to_grid()\n";
+  // cout << "In ComputeKineticEnergy::post_particles_to_grid()\n";
 
   // Go through all the nodes in the group and set b to the right value:
   double ux, uy, uz;
@@ -101,5 +97,5 @@ void FixKineticEnergy::final_integrate() {
 
   // Reduce Ek:
   MPI_Allreduce(&Ek, &Ek_reduced, 1, MPI_DOUBLE, MPI_SUM, universe->uworld);
-  (*input->vars)[id + "_s"] = Var(id + "_s", Ek_reduced);
+  (*input->vars)[id] = Var(id, Ek_reduced);
 }
