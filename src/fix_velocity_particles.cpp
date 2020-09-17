@@ -1,10 +1,12 @@
+#include "fix_velocity_particles.h"
+#include "domain.h"
+#include "group.h"
+#include "input.h"
+#include "universe.h"
+#include "update.h"
+#include <Eigen/Eigen>
 #include <iostream>
 #include <vector>
-#include "fix_velocity_particles.h"
-#include "input.h"
-#include "group.h"
-#include "domain.h"
-#include <Eigen/Eigen>
 
 using namespace std;
 using namespace FixConst;
@@ -96,52 +98,48 @@ void FixVelocityParticles::initial_integrate() {
   // Go through all the particles in the group and set v_update to the right value:
   double vx, vy, vz;
   double vx_old, vy_old, vz_old;
-
-  if (xset) {
-    vx = input->parsev(args[xpos]).result(mpm);
-    vx_old = input->parsev(args_previous_step[xpos]).result(mpm);
-    // cout << "Set v_update[0] to " << xvalue.eq() << "=" << vx << endl;
-    // cout << "Set v[0] to " << vx_old << endl;
-  }
-
-  if (yset) {
-    vy = input->parsev(args[ypos]).result(mpm);
-    vy_old = input->parsev(args_previous_step[ypos]).result(mpm);
-    // cout << "Set v_update[1] to " << "=" <<  vy << endl;
-    // cout << "Set v[1] to " << "=" <<  vy_old << endl;
-  }
-
-  if (zset) {
-    vz = input->parsev(args[zpos]).result(mpm);
-    vz_old = input->parsev(args_previous_step[zpos]).result(mpm);
-    // cout << "Set v_update[2] to " << "=" <<  vz << endl;
-    // cout << "Set v[2] to " << "=" <<  vz_old << endl;
-  }
+  Vector3d xtemp;
 
   int solid = group->solid[igroup];
   Solid *s;
 
   int n = 0;
+  xold.clear();
 
   if (solid == -1) {
     for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
       s = domain->solids[isolid];
       n = 0;
 
-      for (int ip = 0; ip < s->np; ip++) {
+      for (int ip = 0; ip < s->np_local; ip++) {
 	if (s->mask[ip] & groupbit) {
+	  xtemp = s->x[ip];
+	  (*input->vars)["x"] = Var("x", s->x[ip][0]);
+	  (*input->vars)["x0"] = Var("x0", s->x0[ip][0]);
+	  (*input->vars)["y"] = Var("y", s->x[ip][1]);
+	  (*input->vars)["y0"] = Var("y0", s->x0[ip][1]);
+	  (*input->vars)["z"] = Var("z", s->x[ip][2]);
+	  (*input->vars)["z0"] = Var("z0", s->x0[ip][2]);
+
 	  if (xset) {
+	    vx = input->parsev(args[xpos]).result(mpm);
+	    vx_old = input->parsev(args_previous_step[xpos]).result(mpm);
 	    s->v_update[ip][0] = vx;
 	    s->v[ip][0] = vx_old;
 	  }
 	  if (yset) {
+	    vy = input->parsev(args[ypos]).result(mpm);
+	    vy_old = input->parsev(args_previous_step[ypos]).result(mpm);
 	    s->v_update[ip][1] = vy;
 	    s->v[ip][1] = vy_old;
 	  }
 	  if (zset) {
+	    vz = input->parsev(args[zpos]).result(mpm);
+	    vz_old = input->parsev(args_previous_step[zpos]).result(mpm);
 	    s->v_update[ip][2] = vz;
 	    s->v[ip][2] = vz_old;
 	  }
+	  xold.push_back(xtemp);
 	  n++;
 	}
       }
@@ -150,20 +148,35 @@ void FixVelocityParticles::initial_integrate() {
   } else {
     s = domain->solids[solid];
 
-    for (int ip = 0; ip < s->np; ip++) {
+    for (int ip = 0; ip < s->np_local; ip++) {
       if (s->mask[ip] & groupbit) {
+	xtemp = s->x[ip];
+	(*input->vars)["x"] = Var("x", s->x[ip][0]);
+	(*input->vars)["x0"] = Var("x0", s->x0[ip][0]);
+	(*input->vars)["y"] = Var("y", s->x[ip][1]);
+	(*input->vars)["y0"] = Var("y0", s->x0[ip][1]);
+	(*input->vars)["z"] = Var("z", s->x[ip][2]);
+	(*input->vars)["z0"] = Var("z0", s->x0[ip][2]);
+
 	if (xset) {
+	  vx = input->parsev(args[xpos]).result(mpm);
+	  vx_old = input->parsev(args_previous_step[xpos]).result(mpm);
 	  s->v_update[ip][0] = vx;
 	  s->v[ip][0] = vx_old;
 	}
 	if (yset) {
+	  vy = input->parsev(args[ypos]).result(mpm);
+	  vy_old = input->parsev(args_previous_step[ypos]).result(mpm);
 	  s->v_update[ip][1] = vy;
 	  s->v[ip][1] = vy_old;
 	}
 	if (zset) {
+	  vz = input->parsev(args[zpos]).result(mpm);
+	  vz_old = input->parsev(args_previous_step[zpos]).result(mpm);
 	  s->v_update[ip][2] = vz;
 	  s->v[ip][2] = vz_old;
 	}
+	xold.push_back(xtemp);
 	n++;
       }
     }
@@ -174,50 +187,99 @@ void FixVelocityParticles::initial_integrate() {
 void FixVelocityParticles::post_advance_particles() {
   // Go through all the particles in the group and set v to the right value:
   double vx, vy, vz;
-
-  if (xset) {
-    vx = input->parsev(args[xpos]).result(mpm);
-  }
-
-  if (yset) {
-    vy = input->parsev(args[ypos]).result(mpm);
-  }
-
-  if (zset) {
-    vz = input->parsev(args[zpos]).result(mpm);
-  }
   
   int solid = group->solid[igroup];
   Solid *s;
+  Eigen::Vector3d Dv, ftot, ftot_reduced;
 
   int n = 0;
+  ftot.setZero();
+  double inv_dt = 1.0/update->dt;
 
   if (solid == -1) {
     for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
       s = domain->solids[isolid];
       n = 0;
 
-      for (int ip = 0; ip < s->np; ip++) {
-	if (s->mask[ip] & groupbit) {
-	  if (xset) s->v[ip][0] = vx;
-	  if (yset) s->v[ip][1] = vy;
-	  if (zset) s->v[ip][2] = vz;
-	  n++;
-	}
+      for (int ip = 0; ip < s->np_local; ip++) {
+        if (s->mask[ip] & groupbit) {
+          Dv.setZero();
+	  (*input->vars)["x"] = Var("x", xold[n][0]);
+	  (*input->vars)["x0"] = Var("x0", s->x0[ip][0]);
+	  (*input->vars)["y"] = Var("y", xold[n][1]);
+	  (*input->vars)["y0"] = Var("y0", s->x0[ip][1]);
+	  (*input->vars)["z"] = Var("z", xold[n][2]);
+	  (*input->vars)["z0"] = Var("z0", s->x0[ip][2]);
+
+          if (xset) {
+            vx = input->parsev(args[xpos]).result(mpm);
+            Dv[0] = vx - s->v[ip][0];
+            s->v[ip][0] = vx;
+            s->x[ip][0] = xold[n][0] + update->dt * vx;
+          }
+          if (yset) {
+            vy = input->parsev(args[ypos]).result(mpm);
+            Dv[1] = vy - s->v[ip][1];
+            s->v[ip][1] = vy;
+            s->x[ip][1] = xold[n][1] + update->dt * vy;
+          }
+          if (zset) {
+            vz = input->parsev(args[zpos]).result(mpm);
+            Dv[2] = vz - s->v[ip][2];
+            s->v[ip][2] = vz;
+            s->x[ip][2] = xold[n][2] + update->dt * vz;
+          }
+          ftot += (inv_dt * s->mass[ip]) * Dv;
+          n++;
+        }
       }
-      // cout << "v for " << n << " particles from solid " << domain->solids[isolid]->id << " set." << endl;
+      // cout << "v for " << n << " particles from solid " <<
+      // domain->solids[isolid]->id << " set." << endl;
     }
   } else {
     s = domain->solids[solid];
-
-    for (int ip = 0; ip < s->np; ip++) {
+    n = 0;
+    for (int ip = 0; ip < s->np_local; ip++) {
       if (s->mask[ip] & groupbit) {
-	if (xset) s->v[ip][0] = vx;
-	if (yset) s->v[ip][1] = vy;
-	if (zset) s->v[ip][2] = vz;
-	n++;
+        Dv.setZero();
+	(*input->vars)["x"] = Var("x", xold[n][0]);
+	(*input->vars)["x0"] = Var("x0", s->x0[ip][0]);
+	(*input->vars)["y"] = Var("y", xold[n][1]);
+	(*input->vars)["y0"] = Var("y0", s->x0[ip][1]);
+	(*input->vars)["z"] = Var("z", xold[n][2]);
+	(*input->vars)["z0"] = Var("z0", s->x0[ip][2]);
+
+        if (xset) {
+          vx = input->parsev(args[xpos]).result(mpm);
+          Dv[0] = vx - s->v[ip][0];
+          s->v[ip][0] = vx;
+          s->x[ip][0] = xold[n][0] + update->dt * vx;
+        }
+        if (yset) {
+          vy = input->parsev(args[ypos]).result(mpm);
+          Dv[1] = vy - s->v[ip][1];
+          s->v[ip][1] = vy;
+          s->x[ip][1] = xold[n][1] + update->dt * vy;
+        }
+        if (zset) {
+          vz = input->parsev(args[zpos]).result(mpm);
+          Dv[2] = vz - s->v[ip][2];
+          s->v[ip][2] = vz;
+          s->x[ip][2] = xold[n][2] + update->dt * vz;
+        }
+        ftot += (inv_dt * s->mass[ip]) * Dv;
+        n++;
       }
     }
-    // cout << "v for " << n << " particles from solid " << domain->solids[solid]->id << " set." << endl;
+    // cout << "v for " << n << " particles from solid " <<
+    // domain->solids[solid]->id << " set." << endl;
   }
+
+  // Reduce ftot:
+  MPI_Allreduce(ftot.data(), ftot_reduced.data(), 3, MPI_DOUBLE, MPI_SUM,
+                universe->uworld);
+
+  (*input->vars)[id + "_x"] = Var(id + "_x", ftot_reduced[0]);
+  (*input->vars)[id + "_y"] = Var(id + "_y", ftot_reduced[1]);
+  (*input->vars)[id + "_z"] = Var(id + "_z", ftot_reduced[2]);
 }

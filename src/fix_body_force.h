@@ -24,6 +24,40 @@ FixStyle(body_force,FixBodyforce)
 #include "var.h"
 #include <vector>
 
+/*! \ingroup fix fixbodyforce fix_body_force
+
+\section Syntax Syntax
+\code
+fix(fix-ID, body_force, group-ID, fx, fy, fz)
+\endcode
+
+<ul>
+<li>fix-ID: name of the fix to be created.</li>
+<li>fix-type: velocity_nodes, force_nodes, kinetic_energy, ...</li>
+<li>group-ID: name of the group onto which the fix will be applied. 
+If 'all' is used, all particles will be selected.</li>
+<li>fx, fy and fz: x, y and z components of the body force to be applied, respectively. </li>
+</ul>
+
+\section Examples Examples
+\code
+fix(fbody, body_force, all, 0, -9.81, 0)
+\endcode
+Applies a body force \f$\boldsymbol{f}_b = [0, -9.81, 0]\f$ onto all particles in the simulation box.
+
+\section Description Description
+
+This command defines a body force \f$\boldsymbol{f}_b\f$ that is applied to all the particles in the group 'group-ID'non-linear equation of state:
+\f{equation}{
+\boldsymbol{f}_b = \begin{bmatrix}
+fx\\
+fy\\
+fz
+\end{bmatrix}
+\f}
+
+\section Class Class description
+*/
 class FixBodyforce : public Fix {
  public:
   FixBodyforce(class MPM *, vector<string>);

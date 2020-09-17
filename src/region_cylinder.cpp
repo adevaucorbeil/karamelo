@@ -26,9 +26,9 @@ using namespace MathSpecial;
 
 #define BIG 1.0e20
 
-RegCylinder::RegCylinder(MPM *mpm, vector<string> args) : Region(mpm, args)
+Cylinder::Cylinder(MPM *mpm, vector<string> args) : Region(mpm, args)
 {
-  cout << "Initiate RegCylinder" << endl;
+  cout << "Initiate Cylinder" << endl;
 
   if (domain->dimension == 3) {
     if (args.size()<8) {
@@ -117,7 +117,7 @@ RegCylinder::RegCylinder(MPM *mpm, vector<string> args) : Region(mpm, args)
 }
 
 
-RegCylinder::~RegCylinder()
+Cylinder::~Cylinder()
 {
 
 }
@@ -127,7 +127,7 @@ RegCylinder::~RegCylinder()
    inside = 0 if x,y,z is outside and not on surface
 ------------------------------------------------------------------------- */
 
-int RegCylinder::inside(double x, double y, double z)
+int Cylinder::inside(double x, double y, double z)
 {
   //cout << "Check if point (" << x << ", " << y << ", " << z << ") is inside the region" << endl;
   double dSq;
@@ -153,7 +153,7 @@ int RegCylinder::inside(double x, double y, double z)
 /* ----------------------------------------------------------------------
    return a vector that contains the limits of the box
 ------------------------------------------------------------------------- */
-vector<double> RegCylinder::limits(){
+vector<double> Cylinder::limits(){
   vector<double> lim;
   lim.push_back(xlo);
   lim.push_back(xhi);

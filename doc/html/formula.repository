@@ -1,0 +1,40 @@
+\form#0:$\tilde{v}_{n}$
+\form#1:$\rho_0$
+\form#2:$\nu$
+\form#3:$\lambda$
+\form#4:$c_0 = \sqrt{\frac{\lambda+2G}{\rho_0}}$
+\form#5:$2^{dimension}$
+\form#6:$\Phi_{pI}$
+\form#7:$\Phi_{Ip}$
+\form#8:$\Phi_{Ic}$
+\form#9:$\partial \Phi_{pI}/\partial x$
+\form#10:$\partial \Phi_{Ip}/ \partial x$
+\form#11:$\alpha$
+\form#12:$\alpha = 0$
+\form#13:$\alpha = 1$
+\form#14:\[ v = \begin{bmatrix} 1 \\ 2 \\ 3 \end{bmatrix}. \]
+\form#15:$\Delta t$
+\form#16:$\pi$
+\form#17:$alpha=1$
+\form#18:$0 \leq x \leq L$
+\form#19:$0 \leq y \leq 2*L$
+\form#20:$0 \leq y \leq 2L$
+\form#21:$R=0.2$
+\form#22:$ p = K (\frac{rho}{rho_0} - 1)$
+\form#23:$ p = K (\frac{\rho}{\rho_0} - 1)$
+\form#24:\[ p = K (\frac{\rho}{\rho_0} - 1)\]
+\form#25:\[ p = K \left(\frac{\rho}{\rho_0} - 1\right)\]
+\form#26:\[ p = \dfrac{\rho_0c_0^2(\eta -1)\bigg[\eta - \dfrac{\Gamma_0}{2}(\eta - 1)\bigg]}{[\eta - S_{\alpha}(\eta-1)]^2} + \Gamma_0e\]
+\form#27:$\eta = \dfrac{\rho}{\rho_0}$
+\form#28:$e$
+\form#29:\[ p = \dfrac{\rho_0c_0^2(\eta -1)\bigg[\eta - \dfrac{\Gamma_0}{2}(\eta - 1)\bigg]}{[\eta - S(\eta-1)]^2} + \Gamma_0e\]
+\form#30:\[ p = K \left(\frac{\rho}{\rho_0}^{\Gamma} - 1\right)\]
+\form#31:\[ p = K \left[\left(\frac{\rho}{\rho_0}\right)^{\Gamma} - 1\right]\]
+\form#32:\[ p = K \left[\left(\frac{\rho}{\rho_0}\right)^{\gamma} - 1\right]\]
+\form#33:$\gamma$
+\form#34:\[ \bm{\sigma}\]
+\form#35:\[ \vm{\sigma}\]
+\form#36:\[ \sigma = 2G \Delta \varepsilon + \lambda \trace{\Delta \varepsilon} I\]
+\form#37:$ \sigma = 2G \Delta \varepsilon + \lambda trace(\Delta \varepsilon) I$
+\form#38:$ \sigma = 2G \Delta \varepsilon + \lambda \trace(\Delta \varepsilon) I$
+\form#39:$ \sigma = 2G \Delta \varepsilon + \lambda \Tr(\Delta \varepsilon) I$

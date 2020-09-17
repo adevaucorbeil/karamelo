@@ -68,6 +68,7 @@ void ULMPM::setup(vector<string> args)
   else if (args[n].compare("APIC") == 0)
   {
     method_type = "APIC";
+    FLIP = 0;
   }
   else
   {
@@ -94,6 +95,14 @@ void ULMPM::setup(vector<string> args)
       derivative_basis_function = &BasisFunction::derivative_cubic_spline;
       n++;
     }
+    else if (args[n].compare("quadratic-spline") == 0)
+    {
+      shape_function = "quadratic-spline";
+      cout << "Setting up quadratic-spline basis functions\n";
+      basis_function            = &BasisFunction::quadratic_spline;
+      derivative_basis_function = &BasisFunction::derivative_quadratic_spline;
+      n++;
+    }
     else if (args[n].compare("Bernstein-quadratic") == 0)
     {
       shape_function = "Bernstein-quadratic";
@@ -103,7 +112,7 @@ void ULMPM::setup(vector<string> args)
           &BasisFunction::derivative_bernstein_quadratic;
       n++;
     } else {
-      error->all(FLERR, "Illegal method_method argument: form function of type \033[1;31m" + args[n] + "\033[0m is unknown. Available options are:  \033[1;32mlinear\033[0m, \033[1;32mcubic-spline\033[0m, \033[1;32mBernstein-quadratic\033[0m.\n");
+      error->all(FLERR, "Illegal method_method argument: form function of type \033[1;31m" + args[n] + "\033[0m is unknown. Available options are:  \033[1;32mlinear\033[0m, \033[1;32mcubic-spline\033[0m, \033[1;32mquadratic-spline\033[0m, \033[1;32mBernstein-quadratic\033[0m.\n");
     }
   }
 
@@ -162,6 +171,14 @@ void ULMPM::compute_grid_weight_functions_and_gradients()
       map<int, int> *map_ntag = &domain->solids[isolid]->grid->map_ntag;
       map<int, int>::iterator it;
 
+      bool linear, cubic_or_quadratic, bernstein;
+      linear = cubic_or_quadratic = bernstein = false;
+
+      if (update->method_shape_function.compare("linear")==0) linear = true;
+      if (update->method_shape_function.compare("cubic-spline")==0) cubic_or_quadratic = true;
+      if (update->method_shape_function.compare("quadratic-spline")==0) cubic_or_quadratic = true;
+      if (update->method_shape_function.compare("Bernstein-quadratic")==0) bernstein = true;
+
       r.setZero();
 
       for (int in = 0; in < nnodes_local + nnodes_ghost; in++)
@@ -188,7 +205,7 @@ void ULMPM::compute_grid_weight_functions_and_gradients()
 
           vector<int> n_neigh;
 
-          if (update->method_shape_function.compare("linear") == 0)
+          if (linear)
           {
 	    int i0 = (int) (((*xp)[ip][0] - domain->boxlo[0])*inv_cellsize);
 	    int j0 = (int) (((*xp)[ip][1] - domain->boxlo[1])*inv_cellsize);
@@ -228,8 +245,7 @@ void ULMPM::compute_grid_weight_functions_and_gradients()
               }
             }
           }
-          else if (update->method_shape_function.compare(
-                       "Bernstein-quadratic") == 0)
+          else if (bernstein)
           {
 	    int i0 = 2 * (int) (((*xp)[ip][0] - domain->boxlo[0]) * inv_cellsize);
 	    int j0 = 2 * (int) (((*xp)[ip][1] - domain->boxlo[1]) * inv_cellsize);
@@ -278,26 +294,21 @@ void ULMPM::compute_grid_weight_functions_and_gradients()
                   n_neigh.push_back(i);
               }
             }
-          }
-          else if (update->method_shape_function.compare("cubic-spline") == 0)
-          {
-	    int i0 = (int) (((*xp)[ip][0] - domain->boxlo[0]) * inv_cellsize - 1);
-	    int j0 = (int) (((*xp)[ip][1] - domain->boxlo[1]) * inv_cellsize - 1);
-	    int k0 = (int) (((*xp)[ip][2] - domain->boxlo[2]) * inv_cellsize - 1);
+          } else if (cubic_or_quadratic) {
+              int i0 =
+                  (int)(((*xp)[ip][0] - domain->boxlo[0]) * inv_cellsize - 1);
+              int j0 =
+                  (int)(((*xp)[ip][1] - domain->boxlo[1]) * inv_cellsize - 1);
+              int k0 =
+                  (int)(((*xp)[ip][2] - domain->boxlo[2]) * inv_cellsize - 1);
 
-            for (int i = i0; i < i0 + 4; i++)
-            {
-              if (ny > 1)
-              {
-                for (int j = j0; j < j0 + 4; j++)
-                {
-                  if (nz > 1)
-                  {
-                    for (int k = k0; k < k0 + 4; k++)
-                    {
-		      it = (*map_ntag).find(nz * ny * i + nz * j + k);
-		      if (it != (*map_ntag).end())
-			{
+              for (int i = i0; i < i0 + 4; i++) {
+                if (ny > 1) {
+                  for (int j = j0; j < j0 + 4; j++) {
+                    if (nz > 1) {
+                      for (int k = k0; k < k0 + 4; k++) {
+                        it = (*map_ntag).find(nz * ny * i + nz * j + k);
+                        if (it != (*map_ntag).end()) {
 			  n_neigh.push_back(it->second);
 			}
                     }
@@ -318,7 +329,7 @@ void ULMPM::compute_grid_weight_functions_and_gradients()
                   n_neigh.push_back(i);
               }
             }
-          }
+            }
           else
           {
 	    error->all(FLERR, "Shape function type not supported by TLMPM::compute_grid_weight_functions_and_gradients(): " + update->method_shape_function + ".\n");

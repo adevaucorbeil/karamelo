@@ -47,7 +47,7 @@ double EOSFluid::K(){
   return K_;
 }
 
-void EOSFluid::compute_pressure(double &pH, double &e, const double J, const double rho, const double T, const double damage){
+void EOSFluid::compute_pressure(double &pH, double &e, const double J, const double rho, const double T, const double damage, const Eigen::Matrix3d D, const double cellsize){
   double mu = rho / rho0_;
   pH = K_ * (pow(mu, Gamma) - 1.0);
 

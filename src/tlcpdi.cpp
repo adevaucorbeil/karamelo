@@ -71,6 +71,12 @@ void TLCPDI::setup(vector<string> args)
       basis_function = &BasisFunction::cubic_spline;
       derivative_basis_function = &BasisFunction::derivative_cubic_spline;
       n++;
+    } else if (args[n].compare("quadratic-spline") == 0) {
+      shape_function = "quadratic-spline";
+      cout << "Setting up quadratic-spline basis functions\n";
+      basis_function = &BasisFunction::quadratic_spline;
+      derivative_basis_function = &BasisFunction::derivative_quadratic_spline;
+      n++;
     } else if (args[n].compare("Bernstein-quadratic") == 0) {
       shape_function = "Bernstein-quadratic";
       cout << "Setting up Bernstein-quadratic basis functions\n";
@@ -170,7 +176,8 @@ void TLCPDI::compute_grid_weight_functions_and_gradients()
       linear = cubic = bernstein = false;
 
       if (update->method_shape_function.compare("linear")==0) linear = true;
-      if (update->method_shape_function.compare("cubic-spline")==0) cubic = true;
+      if (update->method_shape_function.compare("cubic-spline")==0 ||
+	  update->method_shape_function.compare("quadratic-spline")==0 ) cubic = true;
       if (update->method_shape_function.compare("Bernstein-quadratic")==0) bernstein = true;
 
       double a, b, inv_Vp, alpha_over_Vp, sixVp;

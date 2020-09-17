@@ -11,17 +11,18 @@
  *
  * ----------------------------------------------------------------------- */
 
-#include <iostream>
+#include "log.h"
+#include "error.h"
+#include "input.h"
+#include "modify.h"
+#include "mpmtype.h"
+#include "universe.h"
+#include "update.h"
+#include "var.h"
 #include <fstream>
+#include <iostream>
 #include <sstream>
 #include <stdexcept>
-#include "log.h"
-#include "mpmtype.h"
-#include "update.h"
-#include "input.h"
-#include "var.h"
-#include "universe.h"
-#include "error.h"
 
 using namespace std;
 

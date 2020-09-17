@@ -21,6 +21,7 @@
 #include "domain.h"
 #include "input.h"
 #include "universe.h"
+#include "update.h"
 #include "solid.h"
 #include "error.h"
 
@@ -48,10 +49,10 @@ FixIndent::FixIndent(MPM *mpm, vector<string> args) : Fix(mpm, args)
   }
 
   Kpos = 4;
-  xpos = 5;
-  ypos = 6;
-  zpos = 7;
-  Rpos = 8;
+  Rpos = 5;
+  xpos = 6;
+  ypos = 7;
+  zpos = 8;
 }
 
 FixIndent::~FixIndent()
@@ -88,11 +89,19 @@ void FixIndent::initial_integrate() {
   Eigen::Vector3d xs(input->parsev(args[xpos]).result(mpm),
 		     input->parsev(args[ypos]).result(mpm),
 		     input->parsev(args[zpos]).result(mpm));
-  Eigen::Vector3d xsp;
+  Eigen::Vector3d xsp, n, ftemp;
 
-  double r, dr, fmag;
+  double r, dr, fmag, fsigma, fs;
 
   ftot.setZero();
+  fs = 0;
+
+  bool tl;
+  if (update->method_type.compare("tlmpm") == 0 ||
+      update->method_type.compare("tlcpdi") == 0)
+    tl = true;
+  else
+    tl = false;
 
   if (solid == -1) {
     for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
@@ -113,9 +122,15 @@ void FixIndent::initial_integrate() {
 		dr = r - R;
 		fmag = K*dr*dr;
 		// Maybe fmag should be inversely proportional to the mass of the particle!!
-		f = fmag*xsp/r;
+		n = xsp / r;
+		f = fmag * n;
 		s->mbp[ip] += f;
 		ftot += f;
+		if (tl)
+		  ftemp = (s->R[ip] * s->sigma[ip] * s->R[ip].transpose()) * n;
+		else
+		  ftemp = s->sigma[ip] * n;
+		fs += ftemp[1] * pow(s->vol[ip], 2./3.);
 	      }
 	    }
 	  }
@@ -139,9 +154,15 @@ void FixIndent::initial_integrate() {
 	      dr = r - R;
 	      fmag = K*dr*dr;
 	      // Maybe fmag should be inversely proportional to the mass of the particle!!
-	      f = fmag*xsp/r;
+	      n = xsp / r;
+	      f = fmag * n;
 	      s->mbp[ip] += f;
 	      ftot += f;
+	      if (tl)
+		ftemp = (s->R[ip] * s->sigma[ip] * s->R[ip].transpose()) * n;
+	      else
+		ftemp = s->sigma[ip] * n;
+	      fs += ftemp[1] * pow(s->vol[ip], 2./3.);
 	    }
 	  }
 	}
@@ -150,8 +171,11 @@ void FixIndent::initial_integrate() {
   }
 
   // Reduce ftot:
+  double fs_reduced;
+  MPI_Allreduce(&fs,&fs_reduced,1,MPI_DOUBLE,MPI_SUM,universe->uworld);
   MPI_Allreduce(ftot.data(),ftot_reduced.data(),3,MPI_DOUBLE,MPI_SUM,universe->uworld);
 
+  (*input->vars)[id+"_s"]=Var(id+"_s", fs_reduced);
   (*input->vars)[id+"_x"]=Var(id+"_x", ftot_reduced[0]);
   (*input->vars)[id+"_y"]=Var(id+"_y", ftot_reduced[1]);
   (*input->vars)[id+"_z"]=Var(id+"_z", ftot_reduced[2]);

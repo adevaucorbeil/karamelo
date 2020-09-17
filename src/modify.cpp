@@ -12,11 +12,12 @@
  * ----------------------------------------------------------------------- */
 
 #include "modify.h"
-#include "style_compute.h"
-#include "style_fix.h"
-#include "fix.h"
 #include "compute.h"
 #include "error.h"
+#include "fix.h"
+#include "style_compute.h"
+#include "style_fix.h"
+#include "update.h"
 
 using namespace FixConst;
 
@@ -109,29 +110,38 @@ void Modify::add_fix(vector<string> args){
 
   int ifix = find_fix(args[0]);
 
-  if (ifix >= 0) {
+  if (ifix >= 0) { // Fix already exists: modify it
     delete fix[ifix];
     FixCreator fix_creator = (*fix_map)[args[1]];
     fix[ifix] = fix_creator(mpm, args);
     fix[ifix]->init();
+    if (fix[ifix]->requires_ghost_particles)
+      ghost_particles_any = true;
   }
   else if (fix_map->find(args[1]) != fix_map->end()) {
     ifix = fix.size();
     FixCreator fix_creator = (*fix_map)[args[1]];
     fix.push_back(fix_creator(mpm, args));
     fix.back()->init();
+
+    if (update->method_type.compare("tlmpm") == 0 &&
+        fix.back()->requires_ghost_particles) {
+      ghost_particles_any = true;
+      cout << "Fix " << args[1] << " requires ghost particles.\n";
+    }
   }
   else {
     error->all(FLERR, "Unknown fix style " + args[1] + ".\n");
   }
 
   fix[ifix]->setmask();
+
 }
 
 int Modify::find_fix(string name)
 {
   for (int ifix = 0; ifix < fix.size(); ifix++) {
-    cout << "fix["<< ifix <<"]->id=" << fix[ifix]->id << endl;
+    //cout << "fix["<< ifix <<"]->id=" << fix[ifix]->id << endl;
     if (name.compare(fix[ifix]->id) == 0) return ifix;
   }
   return -1;
@@ -297,4 +307,10 @@ void Modify::post_velocities_to_grid(){
 void Modify::final_integrate(){
   for (int i = 0; i < list_final_integrate.size(); i++)
     fix[list_final_integrate[i]]->final_integrate();
+}
+
+
+void Modify::run_computes(){
+  for (int i = 0; i < compute.size(); i++)
+    compute[i]->compute_value();
 }

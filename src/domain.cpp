@@ -29,6 +29,8 @@ using namespace std;
 namespace plt = matplotlibcpp;
 #endif
 
+/*! Initializes variables and generates the map of known region types (at compile time).
+ */
 Domain::Domain(MPM *mpm) : Pointers(mpm)
 {
   dimension    = 3;
@@ -60,6 +62,9 @@ Domain::Domain(MPM *mpm) : Pointers(mpm)
   // #undef SOLID_CLASS
 }
 
+/*! Destroys the lists of regions and solids (Domain::regions, Domain::solids) 
+ * as well as the map of known region types.
+ */
 Domain::~Domain()
 {
   for (int i = 0; i < regions.size(); i++)
@@ -70,16 +75,21 @@ Domain::~Domain()
   delete region_map;
   // delete solid_map;
 
-  delete grid;
+  if (!update->method->is_TL) delete grid;
 }
 
 /* ----------------------------------------------------------------------
    create a new region
 ------------------------------------------------------------------------- */
 
+/*! This function is the C++ equivalent to the region() user function.\n
+ * Syntax: region(name, type, type specific arguments)\n
+ * This function checks if the region name was already used.\n
+ * If not, it creates an entry in the vector Domain::regions and calls Region::Region()
+ */
 void Domain::add_region(vector<string> args)
 {
-  cout << "In add_region" << endl;
+  // cout << "In add_region" << endl;
 
   if (find_region(args[0]) >= 0) error->all(FLERR, "Error: reuse of region ID.\n");
 
@@ -94,14 +104,16 @@ void Domain::add_region(vector<string> args)
   else error->all(FLERR, "Unknown region style " + args[1] + "\n");
 }
 
+/*! This function checks if 'name' is already used for a region.\n
+ * If a region named 'name' exists, it returns its ID. It returns -1 otherwise.
+ */
 int Domain::find_region(string name)
 {
-  cout << "regions.size = " << regions.size() << endl;
   if (regions.size() > 0)
   {
     for (int iregion = 0; iregion < regions.size(); iregion++)
     {
-      cout << "regions[" << iregion << "]->id=" << regions[iregion]->id << endl;
+      //cout << "regions[" << iregion << "]->id=" << regions[iregion]->id << endl;
       if (name.compare(regions[iregion]->id) == 0)
         return iregion;
     }
@@ -125,17 +137,24 @@ Region *Domain::region_creator(MPM *mpm, vector<string> args)
    create a new solid
 ------------------------------------------------------------------------- */
 
+/*! This function is the C++ equivalent to the solid() user function.\n
+ * This function checks if the solid name was already used.\n
+ * If not, it creates an entry in the vector Domain::solids.
+ */
 void Domain::add_solid(vector<string> args)
 {
-  cout << "In add_solid" << endl;
+  // cout << "In add_solid" << endl;
 
-  if (find_solid(args[0]) >= 0) error->all(FLERR, "Error: reuse of region ID.\n");
+  if (find_solid(args[0]) >= 0) error->all(FLERR, "Error: reuse of solid ID.\n");
 
   // create the Solid
   solids.push_back(new Solid(mpm, args));
   solids.back()->init();
 }
 
+/*! This function checks if 'name' is already used for a solid.\n
+ * If a solid named 'name' exists, it returns its ID. It returns -1 otherwise.
+ */
 int Domain::find_solid(string name)
 {
   for (int isolid = 0; isolid < solids.size(); isolid++)
@@ -154,11 +173,9 @@ int Domain::find_solid(string name)
 //   return new T(mpm, args);
 // }
 
-/* ----------------------------------------------------------------------
-   inside = 1 if x,y,z is inside or on surface
-   inside = 0 if x,y,z is outside and not on surface
-------------------------------------------------------------------------- */
-
+/*! inside = 1 if x,y,z is inside or on the boundary of the simulation domain.
+ *  inside = 0 if x,y,z is outside and not on boundary of the simulation domain.
+ */
 int Domain::inside(Eigen::Vector3d x)
 {
   // cout << "Check if point (" << x << ", " << y << ", " << z << ") is inside
@@ -169,6 +186,9 @@ int Domain::inside(Eigen::Vector3d x)
   return 0;
 }
 
+/*! inside = 1 if x,y,z is inside or on the boundary of this proc domain.
+ *  inside = 0 if x,y,z is outside and not on boundary of this proc domain.
+ */
 bool Domain::inside_subdomain(double x, double y, double z) {
   if (x < sublo[0]) return false;
   if (x > subhi[0]) return false;
@@ -179,6 +199,10 @@ bool Domain::inside_subdomain(double x, double y, double z) {
   return true;
 }
 
+
+/*! inside = 1 if x,y,z is inside or on the boundary of this proc domain, extended by h.
+ *  inside = 0 if x,y,z is outside and not on boundary of this proc domain, extended by h.
+ */
 bool Domain::inside_subdomain_extended(double x, double y, double z, double h) {
   if (x < sublo[0] - h) return false;
   if (x > subhi[0] + h) return false;
@@ -189,6 +213,9 @@ bool Domain::inside_subdomain_extended(double x, double y, double z, double h) {
   return true;
 }
 
+/*! The boundaries of the domain attributed to this proc are stored in 
+ * Domain::sublo and Domain::subhi variables.
+ */
 void Domain::set_local_box() {
   int *procgrid = universe->procgrid;
   int *myloc = universe->myloc;
@@ -316,6 +343,14 @@ void Domain::create_domain(vector<string> args) {
   created = true;
 }
 
+/*! This function is the C++ equivalent to the dimension() user function.\n
+ * Syntax: dimension(N, xmin, xmax, ymin, ymax, zmin, zmax, h)
+ * N: 1 for 1D, 2 for 2D, 3 for 3D\.n
+ * xmin, xmax: domain boundaries in x.\n
+ * ymin, ymax: domain boundaries in y -- Optional when N == 1.\n
+ * zmin, zmax: domain boundaries in z -- Optional when N == 2.\n
+ * h: background grid cell size. Not optional if using Total Lagrangian, but value not used.
+ */
 void Domain::set_dimension(vector<string> args) {
 
   if (args.size() == 0) {
@@ -372,6 +407,11 @@ void Domain::set_dimension(vector<string> args) {
   created = true;
 }
 
+
+/*! This function is the C++ equivalent to the axisymmetric() user function.\n
+ * Syntax: axisymmetric(true) or axisymmetric(false)\n
+ * Sets Domain::axisymmetric to true or false. Note that this variable is initialized as false.
+ */
 void Domain::set_axisymmetric(vector<string> args) {
   if (args.size() < 1) {
     error->all(FLERR, "Error: not enough arguments.\n" + usage_axisymmetric);

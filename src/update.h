@@ -16,40 +16,39 @@
 
 #include "pointers.h"
 #include <vector>
-
+/*! Stores everything related to time steps as well as the Scheme and Method classes.
+ */
 class Update : protected Pointers {
  public:
-  double run_duration;            // GCG stop simulation if elapsed simulation time exceeds this.
-  double elapsed_time_in_run;	  // elapsed simulation time for a single run;
-  double dt;                      // timestep
-  double dt_factor;               // timestep factor
-  bool dt_constant;               // is dt constant?
-  bigint ntimestep;               // current step
-  int nsteps;                     // # of steps to run
-  double atime;                   // simulation time at atime_step
-  double maxtime;                 // maximum simulation time (infinite if -1)
-  bigint atimestep;               // last timestep atime was updated
-  bigint firststep,laststep;      // 1st & last step of this run
-  bigint beginstep,endstep;       // 1st and last step of multiple runs
-  int first_update;               // 0 before initial update, 1 after
+  double run_duration;                ///< Stop simulation if elapsed simulation time exceeds this.
+  double elapsed_time_in_run;	      ///< Elapsed simulation time for a single run;
+  double dt;                          ///< Timestep
+  double dt_factor;                   ///< Timestep factor
+  bool dt_constant;                   ///< is dt constant?
+  bigint ntimestep;                   ///< current step
+  int nsteps;                         ///< Number of steps to run
+  double atime;                       ///< Simulation time at atime_step
+  double maxtime;                     ///< Maximum simulation time (infinite if -1)
+  bigint atimestep;                   ///< Last timestep atime was updated
+  bigint firststep,laststep;          ///< 1st & last step of this run
+  bigint beginstep,endstep;           ///< 1st and last step of multiple runs
+  int first_update;                   ///< 0 before initial update, 1 after
 
-  class Scheme *scheme;
-  string scheme_style;
+  class Scheme *scheme;               ///< Pointer to the type of Scheme used
+  string scheme_style;                ///< Name of the scheme style
 
-  class Method *method;
-  string method_type;
-  string method_shape_function;
+  class Method *method;               ///< Pointer to the type of Method used
+  string method_type;                 ///< Name of the method type
+  string method_shape_function;       ///< Type of shape function used
 
   Update(class MPM *);
   ~Update();
-  void set_dt_factor(vector<string>);
-  void set_dt(vector<string>);
-  void create_scheme(vector<string>);
-  void new_scheme(vector<string>);
-  void create_method(vector<string>);
-  void new_method(vector<string>);
-  void update_time();
-  int update_timestep();
+  void set_dt_factor(vector<string>); ///< Sets the factor to be applied to the CFL timestep
+  void set_dt(vector<string>);        ///< Sets the timestep
+  void create_scheme(vector<string>); ///< Creates a scheme: USL, or MUSL.
+  void create_method(vector<string>); ///< Creates a method: tlmpm, ulmpm, tlcpdi, ...
+  void update_time();                 ///< Update elapsed time
+  int update_timestep();              ///< Update timestep
 protected:
   
 };

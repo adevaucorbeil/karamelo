@@ -17,23 +17,23 @@
 #include "mpmtype.h"
 #include "pointers.h"
 
+/*! This class handles the allocation of all large vectors and arrays.
+ * This class is directly herited (aka copied) from LAMMPS.\n\n
+ * Create/grow/destroy vecs and multidim arrays with contiguous memory blocks
+ * only use with primitive data types, e.g. 1d vec of ints, 2d array of doubles
+ * fail() prevents use with pointers, 
+ * e.g. 1d vec of int*, due to mismatched destroy
+ * avoid use with non-primitive data types to avoid code bloat
+ * for these other cases, use smalloc/srealloc/sfree directly
+ */
 class Memory : protected Pointers {
  public:
   Memory(class MPM *);
 
-  void *smalloc(bigint n, string);
-  void *srealloc(void *, bigint n, string);
-  void sfree(void *);
-  void fail(string);
-
-/* ----------------------------------------------------------------------
-   create/grow/destroy vecs and multidim arrays with contiguous memory blocks
-   only use with primitive data types, e.g. 1d vec of ints, 2d array of doubles
-   fail() prevents use with pointers, 
-     e.g. 1d vec of int*, due to mismatched destroy
-   avoid use with non-primitive data types to avoid code bloat
-   for these other cases, use smalloc/srealloc/sfree directly
-------------------------------------------------------------------------- */
+  void *smalloc(bigint n, string);           ///< Safe malloc
+  void *srealloc(void *, bigint n, string);  ///< Safe reallocation
+  void sfree(void *);                        ///< Safe free
+  void fail(string);                         ///< Erroneous usage of templated create/grow functions
 
 /* ----------------------------------------------------------------------
    create a 1d array

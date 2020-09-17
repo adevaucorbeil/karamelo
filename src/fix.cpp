@@ -11,11 +11,11 @@
  *
  * ----------------------------------------------------------------------- */
 
-#include <iostream>
 #include "fix.h"
 #include "group.h"
 #include "input.h"
 #include "var.h"
+#include <iostream>
 
 using namespace std;
 

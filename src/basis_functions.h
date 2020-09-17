@@ -136,5 +136,108 @@ namespace BasisFunction {
       }
     }
   }
+
+  inline double quadratic_spline(double r, int ntype) {
+    if (ntype == -2) {
+      if (r >= 0. && r < 0.5) {
+        return 1 - r;
+      } else if (r >= 0.5 && r < 1.5) {
+        return 0.5 * r * r - 1.5 * r + 1.125;
+      } else {
+        return 0;
+      }
+    } else if (ntype == -1) {
+      if (r >= -1. && r < -0.5) {
+        return 1 + r;
+      } else if (r >= -0.5 && r < 0.5) {
+        return -r * r + 0.75;
+      } else if (r >= 0.5 && r < 1.5) {
+        return 0.5 * r * r - 1.5 * r + 1.125;
+      } else {
+        return 0;
+      }
+    } else if (ntype == 1) {
+      if (r >= -1.5 && r < -0.5) {
+        return 0.5 * r * r + 1.5 * r + 1.125;
+      } else if (r >= -0.5 && r < 0.5) {
+        return -r * r + 0.75;
+      } else if (r >= 0.5 && r < 1.) {
+        return 1 - r;
+      } else {
+        return 0;
+      }
+    } else if (ntype == 2) {
+      if (r >= -1.5 && r < -0.5) {
+        return 0.5 * r * r + 1.5 * r + 1.125;
+      } else if (r >= -0.5 && r <= 0.) {
+        return 1 + r;
+      } else {
+        return 0;
+      }
+    } else {
+      // ntype == 0!
+      if (r >= 0.5 && r < 1.5) {
+        return 0.5 * r * r - 1.5 * r + 1.125;
+      } else if (r >= -0.5 && r < 0.5) {
+        return -r * r + 0.75;
+      } else if (r >= -1.5 && r < 0.5) {
+        return 0.5 * r * r + 1.5 * r + 1.125;
+      } else {
+        return 0;
+      }
+    }
+  }
+
+  inline double derivative_quadratic_spline(double r, int ntype,
+                                            double icellsize) {
+    if (ntype == -2) {
+      if (r >= 0. && r < 0.5) {
+        return -icellsize;
+      } else if (r >= 0.5 && r < 1.5) {
+        return icellsize*(r - 1.5);
+      } else {
+        return 0;
+      }
+    } else if (ntype == -1) {
+      if (r >= -1. && r < -0.5) {
+        return icellsize;
+      } else if (r >= -0.5 && r < 0.5) {
+        return -2 * icellsize * r;
+      } else if (r >= 0.5 && r < 1.5) {
+        return icellsize*(r - 1.5);
+      } else {
+        return 0;
+      }
+    } else if (ntype == 1) {
+      if (r >= -1.5 && r < -0.5) {
+        return icellsize*(r + 1.5);
+      } else if (r >= -0.5 && r < 0.5) {
+        return - 2 * icellsize * r;
+      } else if (r >= 0.5 && r < 1.) {
+        return -icellsize;
+      } else {
+        return 0;
+      }
+    } else if (ntype == 2) {
+      if (r >= -1.5 && r < -0.5) {
+        return icellsize*(r + 1.5);
+      } else if (r >= -0.5 && r <= 0.) {
+        return icellsize;
+      } else {
+        return 0;
+      }
+    } else {
+      // ntype == 0!
+      if (r >= 0.5 && r < 1.5) {
+        return icellsize*(r - 1.5);
+      } else if (r >= -0.5 && r < 0.5) {
+        return - 2 * icellsize * r;
+      } else if (r >= -1.5 && r < 0.5) {
+        return icellsize*(r + 1.5);
+      } else {
+        return 0;
+      }
+    }
+  }
 }
 #endif

@@ -16,19 +16,17 @@
 #include "mpm.h"
 #include "input.h"
 
-/* ----------------------------------------------------------------------
-                        main program to drive MPM 
-------------------------------------------------------------------------- */
+/*! Main program to drive MPM. */
 
 int main(int argc, char **argv) {
 
-  MPI_Init(&argc,&argv);
+  MPI_Init(&argc,&argv);                        /// Initialized MPI
 
-  MPM *mpm = new MPM(argc,argv,MPI_COMM_WORLD);
-  mpm->input->file();
+  MPM *mpm = new MPM(argc,argv,MPI_COMM_WORLD); /// Create the MPM entity
+  mpm->input->file();                           /// Read input file and execute commands
 
   delete mpm;
 
   MPI_Barrier(MPI_COMM_WORLD);
-  MPI_Finalize();
+  MPI_Finalize();                               /// Finalize MPI
 }

@@ -141,8 +141,13 @@ void Input::file()
 
 }
 
-// Function to find precedence of  
-// operators. 
+/*! The higher the returned number, the higher the precedence of the operator.\n
+ * Precedence == 5 for the E operator for the nth power of 10.\n
+ * Precedence == 4 for the square operators '**' or '^'.\n
+ * Precedence == 3 for the multipication and division operators.\n
+ * Precedence == 2 for the addition and subtraction operators.\n
+ * Precedence == 1 for the other known operators.\n
+ * The function returns 0 if the operator is not known.*/
 double Input::precedence(string op){
     if(op == ">"||op == ">="||op == "<"||op == "<="||op == "=="||op == "!=") return 1;
     if(op == "+"||op == "-") return 2;
@@ -152,9 +157,13 @@ double Input::precedence(string op){
     return 0;
 }
 
-// Function to perform arithmetic operations.
-Var Input::applyOp(Var a, Var b, string op){
-  // cout << "in applyOp with a=" << a.eq() << "=" << a.result() << " b=" << b.eq() << "=" << b.result() << " op=" << op << endl;
+/*! This function takes performs the following operation: a 'op' b.\n
+ * For instance, if op == '+', it performs a + b.\n
+ * Known operators are: '+', '-', '*', '\', '**' and '^' for power, 
+ * 'e' and 'E' for the power of 10, and all the ordering operator like '<', '<=', '!=', '==', ...\n
+ * It returns the value of the operation, or generates an error if op is a parenthesis.  
+ */
+Var Input::applyOp(Var a, string op, Var b){
   if (op.compare("+")==0) return a + b;
   else if (op.compare("-")==0) return a - b;
   else if (op.compare("*")==0) return a * b;
@@ -176,6 +185,9 @@ Var Input::applyOp(Var a, Var b, string op){
   }
 }
 
+/*! This function checks if op is a known on-character operator: '+', '-', '*', '/', '^', '<', '>', '!'.\n
+ * It returns true if so, false if not.
+ */
 bool Input::is_operator(char op){
   if (op=='+') return true;
   if (op=='-') return true;
@@ -188,7 +200,9 @@ bool Input::is_operator(char op){
   return false;
 }
 
-// check if op is either of +-/*()
+/*! Checks if the argument is either of: '+', '-', '/', '*', '(', ')'.\n
+ * It returns true if so, and false otherwise.
+ */
 bool Input::is_math_char(char op){
   if (is_operator(op)) return true;
   if (op=='(') return true;
@@ -197,7 +211,9 @@ bool Input::is_math_char(char op){
   return false;
 }
 
-// evaluate function func with argument arg:
+/*! Evaluates the user function func with argument arg.\n
+ * An example of function is dimension() that sets the domain dimension, or run() which runs the code.
+ */
 Var Input::evaluate_function(string func, string arg){
   // cout << "Evaluate function " << func << " with argument: " << arg << endl;
 
@@ -253,6 +269,12 @@ Var Input::evaluate_function(string func, string arg){
     return Var(scheme(args));
   if (func.compare("fix") == 0)
     return Var(fix(args));
+  if (func.compare("delete_fix") == 0)
+    return Var(delete_fix(args));
+  if (func.compare("compute") == 0)
+    return Var(compute(args));
+  if (func.compare("delete_compute") == 0)
+    return Var(delete_compute(args));
   if (func.compare("dt_factor") == 0)
     return Var(set_dt_factor(args));
   if (func.compare("set_dt") == 0)
@@ -283,8 +305,12 @@ Var Input::evaluate_function(string func, string arg){
     return sinv(parsev(arg));
   else if (func.compare("tan") == 0)
     return tanv(parsev(arg));
-  else if (func.compare("atan2") == 0)
+  else if (func.compare("atan2") == 0) {
+    if ((args.size() < 2) || (args.size() > 2)) {
+      error->all(FLERR, "Error: atan2 takes exactly two positional arguments.\n");
+    }
     return atan2v(parsev(args[0]), parsev(args[1]));
+  }
   else if (func.compare("log") == 0)
     return logv(parsev(arg));
   else if (func.compare("evaluate") == 0)
@@ -308,6 +334,9 @@ double Input::parse(string str){
   error->all(FLERR, "Error: Input::parse deprecated function.\n");
 }
 
+/*! This function translates the input file syntax, either mathematical expressions or functions, 
+ * to C++ and evaluate or execute them.
+ */
 Var Input::parsev(string str)
 {
   // stack to store integer values.
@@ -405,7 +434,7 @@ Var Input::parsev(string str)
 	    ops.pop();
 	    //cout << val1 << " " << val2 << " " << op << endl;
 
-	    values.push(applyOp(val1, val2, op));
+	    values.push(applyOp(val1, op, val2));
 
 	    //cout << "Pushed number: " << values.top() << " to values stack" << endl;
 	    if (ops.empty()) {
@@ -468,7 +497,7 @@ Var Input::parsev(string str)
 	ops.pop();
 	//cout << val1 << " " << val2 << " " << op << endl;
 
-	values.push(applyOp(val1, val2, op));
+	values.push(applyOp(val1, op, val2));
       }
 
       // Push current token to 'ops'.
@@ -640,7 +669,7 @@ Var Input::parsev(string str)
       string op = ops.top();
       ops.pop();
 
-      values.push(applyOp(val1, val2, op));
+      values.push(applyOp(val1, op, val2));
     }
   }
 
@@ -747,16 +776,38 @@ int Input::fix(vector<string> args) {
   return 0;
 }
 
+int Input::delete_fix(vector<string> args) {
+  modify->delete_fix(args[0]);
+  return 0;
+}
+
+int Input::compute(vector<string> args) {
+  modify->add_compute(args);
+  return 0;
+}
+
+int Input::delete_compute(vector<string> args) {
+  modify->delete_compute(args[0]);
+  return 0;
+}
+
 int Input::set_dt_factor(vector<string> args) {
   update->set_dt_factor(args);
   return 0;
 }
 
+/* This function overruns the CFL timestep.\n
+ * By using the set_dt() function, users set their own timestep 
+ * that will be fixed during the whole simulation.
+ * Warning! This can create problems when the CFL condition is not respected.
+ */
 int Input::set_dt(vector<string> args) {
   update->set_dt(args);
   return 0;
 }
 
+/* The returned value is a constant user-variables that will no longer change.
+ */
 Var Input::value(vector<string> args) {
   if (args.size() < 1) {
     error->all(FLERR, "Error: too few arguments for command value().\n");
@@ -784,6 +835,8 @@ int Input::save_plot(vector<string> args) {
   return 0;
 }
 
+/* This command is for debugging purposes.
+ */
 int Input::print(vector<string> args) {
   if (args.size() < 1) {
     error->all(FLERR, "Error: too few arguments for command value().\n");

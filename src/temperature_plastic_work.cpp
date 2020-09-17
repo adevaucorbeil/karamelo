@@ -36,7 +36,7 @@ TemperaturePlasticWork::TemperaturePlasticWork(MPM *mpm, vector<string> args) : 
   cout << "Plastic work material temperature model:\n";
   cout << "\tTaylor-Quinney coefficient chi:" << chi << endl;
   cout << "\tdensity rho:" << rho << endl;
-  cout << "\tSpecific heat at constant volume cp:" << cp << endl;
+  cout << "\tSpecific heat at constant pressure cp:" << cp << endl;
   alpha = chi/(rho*cp);
 }
 

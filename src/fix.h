@@ -17,12 +17,20 @@
 #include "pointers.h"
 #include <vector>
 
+/*! Parent class of all the different kinds of fixes that can be used.
+ *
+ * Stores the fix id, the information about the group involved,  as well
+ * as the mask that select the nodes or particles  within this group.
+ */
+
 class Fix : protected Pointers {
  public:
   string id;
   int igroup, groupbit;
   int mask;
   vector<string> args; // Store arguments
+
+  bool requires_ghost_particles = false;
 
   Fix(class MPM *, vector<string>);
   virtual ~Fix() {};
@@ -50,3 +58,47 @@ namespace FixConst {
   static const int FINAL_INTEGRATE =         1<<6;
 }
 #endif
+
+
+/*! \defgroup fix fix
+
+\section Syntax Syntax
+\code
+fix(fix-ID, fix_type, group-ID, fix_specific_arguments)
+\endcode
+
+<ul>
+<li>fix-ID: name of the fix to be created.</li>
+<li>fix-type: velocity_nodes, force_nodes, kinetic_energy, ...</li>
+<li>group-ID: name of the group onto which the fix will be applied. 
+If 'all' is used, all particles or nodes will be selected.</li>
+<li>fix_specific_arguments: list of arguments specific to the fix type used. </li>
+</ul>
+
+\section Examples Examples
+\code
+group(sym2n, nodes, region, sym2, solid, solid1)
+fix(BC_sym2, velocity_nodes, sym2n, 0, 0, 0)
+\endcode
+Defines a fix 'BC_sym2' which sets the velocity of the nodes of the background grid linked to solid
+'solid1' and lying in region 'sym2' at the beginning of the simulation to 0.
+
+\code
+fix(Ek, kinetic_energy, all)
+\endcode
+Define a fix called 'Ek' which calculates the cumulative kinetic energy of all the particles in the simulation box.
+
+\section Description Description
+
+This command defines a fix. Fixes are used to change the behaviour of nodes or particles, 
+or to calculate some properties. Using fixes, users can implement many operations that can 
+alter the system such as: changing particles or node attributes (position, velocity, forces, etc.), 
+implement boundary conditions, reading/writing data, or even saving information about particles for 
+future use (previous positions, for instance).
+
+This command also generates three variables: fix-ID_s, fix-ID_x, fix-ID_y and fix-ID_z. They correspond to one scalar and the x, y, and z components of a vector. Each fix is free to allocate the desired quantities to these variables.
+
+\section Fix_Subclasses Fixes types
+
+To access the different fix types supported, and how to use the fix() command with them, refer to the corresponding class.
+*/

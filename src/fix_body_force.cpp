@@ -106,21 +106,16 @@ void FixBodyforce::post_particles_to_grid() {
       for (int in = 0; in < g->nnodes_local + g->nnodes_ghost; in++) {
 	if (g->mass[in] > 0) {
 	  if (g->mask[in] & groupbit) {
-	      (*input->vars)["x"] = Var("x", g->x[in][0]);
-	      (*input->vars)["y"] = Var("y", g->x[in][1]);
-	      (*input->vars)["z"] = Var("z", g->x[in][2]);
 	      (*input->vars)["x0"] = Var("x0", g->x0[in][0]);
 	      (*input->vars)["y0"] = Var("y0", g->x0[in][1]);
 	      (*input->vars)["z0"] = Var("z0", g->x0[in][2]);
-
-	      f.setZero();
+              f.setZero();
 	      if (xset) f[0] = xvalue.result(mpm);
 	      if (yset) f[1] = yvalue.result(mpm);
 	      if (zset) f[2] = zvalue.result(mpm);
 
 	      f *= g->mass[in];
 	      g->mb[in] += f;
-
 	      if (in < g->nnodes_local) {
 		ftot += f;
 		// mtot += g->mass[in];
@@ -135,9 +130,6 @@ void FixBodyforce::post_particles_to_grid() {
     for (int in = 0; in < g->nnodes_local + g->nnodes_ghost; in++) {
       if (g->mass[in] > 0) {
 	if (g->mask[in] & groupbit) {
-	  (*input->vars)["x"] = Var("x", g->x[in][0]);
-	  (*input->vars)["y"] = Var("y", g->x[in][1]);
-	  (*input->vars)["z"] = Var("z", g->x[in][2]);
 	  (*input->vars)["x0"] = Var("x0", g->x0[in][0]);
 	  (*input->vars)["y0"] = Var("y0", g->x0[in][1]);
 	  (*input->vars)["z0"] = Var("z0", g->x0[in][2]);

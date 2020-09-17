@@ -14,7 +14,7 @@
 
 #ifdef REGION_CLASS
 
-RegionStyle(cylinder,RegCylinder)
+RegionStyle(cylinder,Cylinder)
 
 #else
 
@@ -23,11 +23,39 @@ RegionStyle(cylinder,RegCylinder)
 
 #include "region.h"
 
-class RegCylinder : public Region {
+/*! \ingroup region regioncylinder region_cylinder
+
+\section Syntax Syntax
+\code
+region(region-ID, cylinder, axis, c1, c2, R, lo, hi) #in 3D
+region(region-ID, cylinder, c1, c2, R, lo, hi) #in 2D
+\endcode
+
+<ul>
+<li>region-ID: name of the region to be created.</li>
+<li>axis: direction of the cylinder's axis: 'x', 'y' or 'z'.</li>
+<li>c1, c2: coordinates of the cylinder's axis in the other direction.</li>
+<li>R: radius of the base of the cylinder.</li>
+<li>lo, hi: lower and upper limits of the cylinder in the direction of the axis.</li>
+</ul>
+
+\section Examples Examples
+\code
+region(rCyl, cylinder, x, 0, 0, 10, -1, 1)
+\endcode
+Defines a cylinder called 'rCyl' of radius 10 with axis x passing through the origin, i.e. (0,0) and spanning between x=-1 to x=+1.
+
+\section Description Description
+
+This command defines a cylindrical region of space. It is usually used by groups to find what nodes and/or particles lie within a specific region of space. A region does not select nodes or particles.
+
+\section Class Class description
+*/
+class Cylinder : public Region {
 
  public:
-  RegCylinder(class MPM *, vector<string>);
-  ~RegCylinder();
+  Cylinder(class MPM *, vector<string>);
+  ~Cylinder();
   int inside(double, double, double);
   vector<double> limits();
 

@@ -29,14 +29,18 @@ using namespace Eigen;
 
 FixInitialVelocityParticles::FixInitialVelocityParticles(MPM *mpm, vector<string> args) : Fix(mpm, args)
 {
-  if (args.size() < 6) {
-    error->all(FLERR,"Error: too few arguments for fix_initial_velocity_particles: requires at least 6 arguments. " + to_string(args.size()) + " received.\n");
+  if (args.size() < Nargs) {
+    error->all(FLERR, "Error: not enough arguments.\n" + usage);
+  }
+
+  if (args.size() > Nargs) {
+    error->all(FLERR, "Error: too many arguments.\n" + usage);
   }
 
   if (group->pon[igroup].compare("particles") !=0 && group->pon[igroup].compare("all") !=0) {
     error->all(FLERR, "fix_initial_velocity_particles needs to be given a group of particles" + group->pon[igroup] + ", " + args[2] + " is a group of " + group->pon[igroup] + ".\n");
   }
-  cout << "Creating new fix FixInitialVelocityParticles with ID: " << args[0] << endl;
+
   id = args[0];
 
   xset = yset = zset = false;
@@ -95,6 +99,9 @@ void FixInitialVelocityParticles::initial_integrate() {
 	  (*input->vars)["x"] = Var("x", s->x[ip][0]);
 	  (*input->vars)["y"] = Var("y", s->x[ip][1]);
 	  (*input->vars)["z"] = Var("z", s->x[ip][2]);
+	  (*input->vars)["x0"] = Var("x0", s->x0[ip][0]);
+	  (*input->vars)["y0"] = Var("y0", s->x0[ip][1]);
+	  (*input->vars)["z0"] = Var("z0", s->x0[ip][2]);
 	  if (xset) {
 	    vx = xvalue.result(mpm);
 	    s->v[ip][0] = vx;
@@ -118,6 +125,9 @@ void FixInitialVelocityParticles::initial_integrate() {
 	(*input->vars)["x"] = Var("x", s->x[ip][0]);
 	(*input->vars)["y"] = Var("y", s->x[ip][1]);
 	(*input->vars)["z"] = Var("z", s->x[ip][2]);
+	(*input->vars)["x0"] = Var("x0", s->x0[ip][0]);
+	(*input->vars)["y0"] = Var("y0", s->x0[ip][1]);
+	(*input->vars)["z0"] = Var("z0", s->x0[ip][2]);
 	if (xset) {
 	  vx = xvalue.result(mpm);
 	  s->v[ip][0] = vx;

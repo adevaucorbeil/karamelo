@@ -24,37 +24,39 @@
 
 using namespace std;
 
+/*! Main class creating all the others.*/
+
 class MPM {
 
  public:
 
-  class Memory *memory;          // memory allocation functions
-  class Error *error;            // error handling
-  class Universe *universe;      // universe of processors
-  class Input *input;            // input script processing
-  class Output *output;          // thermo/dump/restart
+  class Memory *memory;          ///< memory allocation functions
+  class Error *error;            ///< error handling
+  class Universe *universe;      ///< universe of processors
+  class Input *input;            ///< input script processing
+  class Output *output;          ///< logs/dump/restart
 
-  class Domain *domain;          // simulation box
-  class Material *material;      // material
-  class Update *update;          //
-  class Modify *modify;          // fixes and computes
-  class Group *group;            // groups of particles
+  class Domain *domain;          ///< simulation box
+  class Material *material;      ///< material
+  class Update *update;          ///< pointer to update 
+  class Modify *modify;          ///< fixes and computes
+  class Group *group;            ///< groups of particles
 
-  MPI_Comm world;                // MPI communicator
-  double initclock;              // wall clock at instantiation
+  MPI_Comm world;                ///< MPI communicator
+  double initclock;              ///< wall clock at instantiation
 
-  filebuf infile;                // infile
-  filebuf logfile;               // logfile
-  ofstream *wlogfile;
+  filebuf infile;                ///< input file
+  //filebuf logfile;               ///< logfile
+  ofstream *wlogfile;            ///< log file
 
-  MPM(int, char **, MPI_Comm);
-  ~MPM();
+  MPM(int, char **, MPI_Comm);   ///< Constructor
+  ~MPM();                        ///< Destructor
   void init();
 
 private:
   void help();
-  MPM() {};                   // prohibit using the default constructor
-  MPM(const MPM &) {};        // prohibit using the copy constructor
+  MPM() {};                   ///< prohibit using the default constructor
+  MPM(const MPM &) {};        ///< prohibit using the copy constructor
 };
 
 #endif

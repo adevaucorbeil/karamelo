@@ -53,7 +53,7 @@ double EOSLinear::K(){
   return K_;
 }
 
-void EOSLinear::compute_pressure(double &pFinal, double &e, const double J, const double rho, const double T, const double damage){
+void EOSLinear::compute_pressure(double &pFinal, double &e, const double J, const double rho, const double T, const double damage, const Eigen::Matrix3d D, const double cellsize){
   e = 0;
   pFinal = K_*(1-J)*(1-damage);
 }

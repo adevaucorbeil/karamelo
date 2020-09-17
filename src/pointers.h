@@ -11,6 +11,7 @@
  *
  * ----------------------------------------------------------------------- */
 
+
 #ifndef MPM_POINTERS_H
 #define MPM_POINTERS_H
 
@@ -24,6 +25,7 @@
 
 using namespace std;
 
+/*! Father of all classes.*/
 class Pointers {
  public:
  Pointers(MPM *ptr) :
@@ -34,7 +36,7 @@ class Pointers {
    input(ptr->input),
    output(ptr->output),
    infile(&ptr->infile),
-   logfile(&ptr->logfile),
+   //logfile(&ptr->logfile),
    wlogfile(ptr->wlogfile),
    domain(ptr->domain),
    material(ptr->material),

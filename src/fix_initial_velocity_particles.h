@@ -41,6 +41,8 @@ class FixInitialVelocityParticles : public Fix {
   void final_integrate() {};
 
 private:
+  string usage = "Usage: fix(fix-ID, initial_velocity_particles, group-ID, vx, vy, vz)\n";
+  int Nargs = 6;
   class Var xvalue, yvalue, zvalue;    // Set velocities in x, y, and z directions.
   bool xset, yset, zset;               // Does the fix set the x, y, and z velocities of the group?
 };
