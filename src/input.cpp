@@ -762,8 +762,6 @@ int Input::method(vector<string> args) {
   return 0;
 }
 
-/*! At the moment, this is not used. But it should!
- */
 int Input::scheme(vector<string> args) {
   update->create_scheme(args);
   return 0;
