@@ -11,7 +11,7 @@
  *
  * ----------------------------------------------------------------------- */
 
-#include "fix_max_plastic_strain.h"
+#include "compute_max_plastic_strain.h"
 #include "domain.h"
 #include "error.h"
 #include "group.h"
@@ -25,14 +25,13 @@
 #include <vector>
 
 using namespace std;
-using namespace FixConst;
 using namespace MathSpecial;
 using namespace Eigen;
 
-FixMaxPlasticStrain::FixMaxPlasticStrain(MPM *mpm, vector<string> args)
-    : Fix(mpm, args) {
+ComputeMaxPlasticStrain::ComputeMaxPlasticStrain(MPM *mpm, vector<string> args)
+    : Compute(mpm, args) {
   if (args.size() < 3) {
-    error->all(FLERR, "Error: too few arguments for fix_max_plastic_strain: "
+    error->all(FLERR, "Error: too few arguments for compute_max_plastic_strain: "
                       "requires at least 3 arguments. " +
                           to_string(args.size()) + " received\n");
   }
@@ -41,33 +40,28 @@ FixMaxPlasticStrain::FixMaxPlasticStrain(MPM *mpm, vector<string> args)
       group->pon[igroup].compare("all") != 0) {
     error->all(
         FLERR,
-        "fix_max_plastic_strain needs to be given a group of particles " +
+        "compute_max_plastic_strain needs to be given a group of particles " +
             group->pon[igroup] + ", " + args[2] + " is a group of " +
             group->pon[igroup] + ".\n");
   }
 
-  cout << "Creating new fix FixMaxPlasticStrain with ID: " << args[0] << endl;
+  cout << "Creating new compute ComputeMaxPlasticStrain with ID: " << args[0] << endl;
   id = args[0];
 
-  (*input->vars)[id + "_1s"] = Var(id + "_1s", 0);
-  (*input->vars)[id + "_2s"] = Var(id + "_2s", 0);
+  (*input->vars)[id + "_Epmax"] = Var(id + "_Epmax", 0);
+  (*input->vars)[id + "_Tmax"] = Var(id + "_Tmax", 0);
 }
 
-FixMaxPlasticStrain::~FixMaxPlasticStrain() {}
+ComputeMaxPlasticStrain::~ComputeMaxPlasticStrain() {}
 
-void FixMaxPlasticStrain::init() {}
+void ComputeMaxPlasticStrain::init() {}
 
-void FixMaxPlasticStrain::setup() {}
+void ComputeMaxPlasticStrain::setup() {}
 
-void FixMaxPlasticStrain::setmask() {
-  mask = 0;
-  mask |= FINAL_INTEGRATE;
-}
-
-void FixMaxPlasticStrain::final_integrate() {
+void ComputeMaxPlasticStrain::compute_value() {
   if (update->ntimestep != output->next && update->ntimestep != update->nsteps)
     return;
-  // cout << "In FixMaxPlasticStrain::post_particles_to_grid()\n";
+  // cout << "In ComputeMaxPlasticStrain::post_particles_to_grid()\n";
 
   // Go through all the nodes in the group and set b to the right value:
   double ux, uy, uz;
@@ -76,7 +70,7 @@ void FixMaxPlasticStrain::final_integrate() {
 
   Solid *s;
 
-  double Es(0.), Es_reduced(0.), Tmax(0.), Tmax_reduced(0.);
+  double Epmax(0.), Epmax_reduced(0.), Tmax(0.), Tmax_reduced(0.);
 
   if (solid == -1) {
     for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
@@ -84,7 +78,7 @@ void FixMaxPlasticStrain::final_integrate() {
 
       for (int in = 0; in < s->np_local; in++) {
         if (s->mask[in] & groupbit) {
-          Es = max(Es, s->eff_plastic_strain[in]);
+          Epmax = max(Epmax, s->eff_plastic_strain[in]);
           Tmax = max(Tmax, s->T[in]);
         }
       }
@@ -94,18 +88,18 @@ void FixMaxPlasticStrain::final_integrate() {
 
     for (int in = 0; in < s->np_local; in++) {
       if (s->mask[in] & groupbit) {
-	Es = max(Es, s->eff_plastic_strain[in]);
+	Epmax = max(Epmax, s->eff_plastic_strain[in]);
 	Tmax = max(Tmax, s->T[in]);
       }
     }
 
   }
 
-  // Reduce Es:
-  MPI_Allreduce(&Es, &Es_reduced, 1, MPI_DOUBLE, MPI_MAX, universe->uworld);
-  (*input->vars)[id + "_1s"] = Var(id + "_1s", Es_reduced);
+  // Reduce Epmax:
+  MPI_Allreduce(&Epmax, &Epmax_reduced, 1, MPI_DOUBLE, MPI_MAX, universe->uworld);
+  (*input->vars)[id + "_Epmax"] = Var(id + "_Epmax", Epmax_reduced);
 
   // Reduce Tmax:
   MPI_Allreduce(&Tmax, &Tmax_reduced, 1, MPI_DOUBLE, MPI_MAX, universe->uworld);
-  (*input->vars)[id + "_2s"] = Var(id + "_2s", Tmax_reduced);
+  (*input->vars)[id + "_Tmax"] = Var(id + "_Tmax", Tmax_reduced);
 }

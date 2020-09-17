@@ -11,38 +11,31 @@
  *
  * ----------------------------------------------------------------------- */
 
-#ifdef FIX_CLASS
+#ifdef COMPUTE_CLASS
 
-FixStyle(max_plastic_strain, FixMaxPlasticStrain)
+ComputeStyle(max_plastic_strain, ComputeMaxPlasticStrain)
 
 #else
 
-#ifndef MPM_FIX_MAX_PLASTIC_STRAIN_H
-#define MPM_FIX_MAX_PLASTIC_STRAIN_H
+#ifndef MPM_COMPUTE_MAX_PLASTIC_STRAIN_H
+#define MPM_COMPUTE_MAX_PLASTIC_STRAIN_H
 
-#include "fix.h"
+#include "compute.h"
 #include "var.h"
 #include <vector>
 
-class FixMaxPlasticStrain : public Fix {
+class ComputeMaxPlasticStrain : public Compute {
 public:
-  FixMaxPlasticStrain(class MPM *, vector<string>);
-  ~FixMaxPlasticStrain();
-  void setmask();
+  ComputeMaxPlasticStrain(class MPM *, vector<string>);
+  ~ComputeMaxPlasticStrain();
   void init();
   void setup();
 
-  void initial_integrate(){};
-  void post_particles_to_grid(){};
-  void post_update_grid_state(){};
-  void post_grid_to_point(){};
-  void post_advance_particles(){};
-  void post_velocities_to_grid(){};
-  void final_integrate();
+  void compute_value();
 
 private:
   // class Var xvalue, yvalue, zvalue;    // Set force in x, y, and z
-  // directions. bool xset, yset, zset;               // Does the fix set the x,
+  // directions. bool xset, yset, zset;               // Does the compute set the x,
   // y, and z forces of the group?
 };
 
