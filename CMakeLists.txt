@@ -40,20 +40,6 @@ execute_process(COMMAND
 # generate version.cpp
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/src/version.cpp.in" "${CMAKE_CURRENT_BINARY_DIR}/src/version.cpp" @ONLY)
 
-file(GLOB MyCSources src/*.cpp)
-add_executable(karamelo ${MyCSources})
-
-add_subdirectory(doc EXCLUDE_FROM_ALL)
-
-find_package(Boost 1.67.0 COMPONENTS system filesystem)
-find_package(OpenMP)
-include_directories(${Boost_INCLUDE_DIR})
-
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DDEBUG")
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
-
-
-
 # the commit's SHA1, and whether the building workspace was dirty or not
 execute_process(COMMAND
   "${GIT_EXECUTABLE}" describe --match=NeVeRmAtCh --always --abbrev=40 --dirty
@@ -78,7 +64,15 @@ execute_process(COMMAND
 # generate version.cpp
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/src/version.cpp.in" "${CMAKE_CURRENT_BINARY_DIR}/src/version.cpp" @ONLY)
 
-list(APPEND SOURCES "${CMAKE_CURRENT_BINARY_DIR}/src/version.cpp" version.h)
+file(GLOB MyCSources src/*.cpp)
+add_executable(karamelo ${MyCSources})
+
+find_package(Boost 1.67.0 COMPONENTS system filesystem)
+find_package(OpenMP)
+include_directories(${Boost_INCLUDE_DIR})
+
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DDEBUG")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
 
 
 target_compile_options(${PROJECT_NAME} PRIVATE ${MPI_CXX_COMPILE_FLAGS} "-DWITHOUT_NUMPY -march=native")
