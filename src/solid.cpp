@@ -322,7 +322,7 @@ void Solid::compute_velocity_nodes(bool reset)
     if (reset)
     {
       grid->v[in].setZero();
-      grid->v_update[in].setZero();
+      // grid->v_update[in].setZero();
     }
 
     if (grid->rigid[in] && !mat->rigid) continue;
