@@ -299,6 +299,8 @@ void Solid::compute_mass_nodes(bool reset)
     {
       if (reset) grid->mass[in] = 0;
 
+      if (grid->rigid[in] && !mat->rigid) continue;
+
       for (int j = 0; j < numneigh_np[in]; j++)
 	{
 	  ip = neigh_np[in][j];
@@ -310,8 +312,8 @@ void Solid::compute_mass_nodes(bool reset)
 
 void Solid::compute_velocity_nodes(bool reset)
 {
-  Eigen::Vector3d vtemp, vtemp_rigid;
-  double mass_rigid;
+  Eigen::Vector3d vtemp;//, vtemp_rigid;
+  //double mass_rigid;
   int ip;
   int nn = grid->nnodes_local + grid->nnodes_ghost;
 
@@ -323,14 +325,11 @@ void Solid::compute_velocity_nodes(bool reset)
       grid->v_update[in].setZero();
     }
 
-    if (mat->rigid)
-      mass_rigid = 0;
+    if (grid->rigid[in] && !mat->rigid) continue;
 
     if (grid->mass[in] > 0)
     {
       vtemp.setZero();
-      if (mat->rigid)
-        vtemp_rigid.setZero();
 
       for (int j = 0; j < numneigh_np[in]; j++)
       {
@@ -338,19 +337,10 @@ void Solid::compute_velocity_nodes(bool reset)
         vtemp += (wf_np[in][j] * mass[ip]) * v[ip];
         //vtemp += (wf_np[in][j] * mass[ip]) *
 	//  (v[ip] + Fdot[ip] * (grid->x0[in] - x0[ip]));
-
-        if (grid->rigid[in] && mat->rigid)
-        {
-          vtemp_rigid += wf_np[in][j] * v[ip];
-          mass_rigid += wf_np[in][j];
-        }
         // grid->v[in] += (wf_np[in][j] * mass[ip]) * v[ip]/ grid->mass[in];
       }
       vtemp /= grid->mass[in];
       grid->v[in] += vtemp;
-
-      if (mat->rigid && mass_rigid > 1.0e-12)
-        grid->v_update[in] += vtemp_rigid / mass_rigid;
       // if (isnan(grid->v_update[in][0]))
       //   cout << "in=" << in << "\tvn=[" << grid->v[in][0] << ", " << grid->v[in][1]
       //        << ", " << grid->v[in][2] << "]\tvp=[" << v[ip][0] << ", " << v[ip][1]
