@@ -1849,7 +1849,27 @@ void Solid::populate(vector<string> args)
 		 xi, xi, xi};
 
   } else {
-    error->all(FLERR, "Error: solid command 4th argument should be 1 or 2, but " + to_string((int) input->parsev(args[3])) + "received.\n");
+    lp *= 1.0 / (2 * np_per_cell);
+
+    if (domain->dimension == 1) {
+      nip = np_per_cell;
+    } else if (domain->dimension == 2) {
+      nip = np_per_cell * np_per_cell;
+    } else {
+      nip = np_per_cell * np_per_cell * np_per_cell;
+    }
+
+    double d = 1.0 / np_per_cell;
+
+    for (int k = 0; k < np_per_cell; k++) {
+      for (int i = 0; i < np_per_cell; i++) {
+	for (int j = 0; j < np_per_cell; j++) {
+	  intpoints.push_back((i + 0.5) * d - 0.5);
+	  intpoints.push_back((j + 0.5) * d - 0.5);
+	  intpoints.push_back((k + 0.5) * d - 0.5);
+	}
+      }
+    }
   }
 
   np_local *= nip;
