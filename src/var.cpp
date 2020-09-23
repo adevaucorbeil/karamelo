@@ -19,15 +19,13 @@
 
 using namespace std;
 
-#define PRECISION 15
+//#define PRECISION 15
 
-template <typename T>
-std::string to_string_with_precision(const T a_value)
-{
-    std::ostringstream out;
-    out.precision(PRECISION);
-    out << std::fixed << a_value;
-    return out.str();
+std::string to_string_with_precision(const double a_value){
+    std::string s(30, '\0');
+    auto written = std::snprintf(&s[0], s.size(), "%.15f", a_value);
+    s.resize(written);
+    return s;
 }
 
 Var::Var(double v)
@@ -236,7 +234,7 @@ Var powv(int base, Var p){
     Var result(pow(base, p.result()));
     return result;
   } else {
-    Var result("pow(" + to_string_with_precision(base) + "," + p.str() + ")", pow(base, p.result()), p.is_constant());
+    Var result("pow(" + to_string(base) + "," + p.str() + ")", pow(base, p.result()), p.is_constant());
     return result;
   }
 }
