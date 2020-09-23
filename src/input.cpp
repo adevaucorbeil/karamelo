@@ -148,13 +148,29 @@ void Input::file()
  * Precedence == 2 for the addition and subtraction operators.\n
  * Precedence == 1 for the other known operators.\n
  * The function returns 0 if the operator is not known.*/
-double Input::precedence(string op){
-    if(op == ">"||op == ">="||op == "<"||op == "<="||op == "=="||op == "!=") return 1;
-    if(op == "+"||op == "-") return 2;
-    if(op == "*"||op == "/") return 3;
-    if(op == "**" || op == "^") return 4;
-    if(op == "e"|| op == "E") return 5;
-    return 0;
+double Input::precedence(const string op){
+  if (op[0] == '>') return 1;
+  // if (op == ">=") return 1;
+  if (op[0] == '<') return 1;
+  //if (op == "<=") return 1;
+  if (op[0] == '=') return 1;
+  //if (op == "==") return 1;
+  if (op[0] == '!') return 1;  
+  //if (op == "!=") return 1;
+
+  if (op[0] == '+') return 2;
+  if (op[0] == '-') return 2;
+
+  if (op[0] == '/') return 3;
+
+  if (op[0] == '^') return 4;
+
+  if (op[0] == 'e') return 5;
+  if (op[0] == 'E') return 5;
+
+  if (op == "*") return 3;
+  if (op == "**") return 4;
+  return 0;
 }
 
 /*! This function takes performs the following operation: a 'op' b.\n
@@ -163,25 +179,32 @@ double Input::precedence(string op){
  * 'e' and 'E' for the power of 10, and all the ordering operator like '<', '<=', '!=', '==', ...\n
  * It returns the value of the operation, or generates an error if op is a parenthesis.  
  */
-Var Input::applyOp(Var a, string op, Var b){
-  if (op.compare("+")==0) return a + b;
-  else if (op.compare("-")==0) return a - b;
-  else if (op.compare("*")==0) return a * b;
-  else if (op.compare("/")==0) return a / b;
-  else if (op.compare("**")==0) return a ^ b;
-  else if (op.compare("^")==0) return a ^ b;
-  else if (op.compare("e")==0) return a*powv(10,b);
-  else if (op.compare("E")==0) return a*powv(10,b);
-  else if (op.compare(">")==0) return a > b;
-  else if (op.compare(">=")==0) return a >= b;
-  else if (op.compare("<")==0) return a < b;
-  else if (op.compare("<=")==0) return a <= b;
-  else if (op.compare("==")==0) return a == b;
-  else if (op.compare("!=")==0) return a != b;
-  else if (op.compare("(")==0) {
-    error->all(FLERR, "Error: unmatched parenthesis (\n");
+Var Input::applyOp(Var a, const string op, Var b){
+  int lop = op.length();
+  if (lop == 1) {
+    if (op[0]=='+') return a + b;
+    else if (op[0]=='-') return a - b;
+    else if (op[0]=='*') return a * b;
+    else if (op[0]=='/') return a / b;
+    else if (op[0]=='^') return a ^ b;
+    else if (op[0]=='e') return a*powv(10,b);
+    else if (op[0]=='E') return a*powv(10,b);
+    else if (op[0]=='>') return a > b;
+    else if (op[0]=='<') return a < b;
+    else if (op[0]=='(') {
+      error->all(FLERR, "Error: unmatched parenthesis (\n");
+    } else {
+      error->all(FLERR, "Error: unknown operator " + op + "\n");
+    }
   } else {
-    error->all(FLERR, "Error: unknown operator " + op + "\n");
+    if (op[0]=='*' && op[1]=='*') return a ^ b;
+    else if (op[0]=='>' && op[1]=='=') return a >= b;
+    else if (op[0]=='<' && op[1]=='=') return a <= b;
+    else if (op[0]=='=' && op[1]=='=') return a == b;
+    else if (op[0]=='!' && op[1]=='=') return a != b;
+    else {
+      error->all(FLERR, "Error: unknown operator " + op + "\n");
+    }
   }
 }
 
