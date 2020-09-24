@@ -36,9 +36,10 @@ ULMPM::ULMPM(MPM *mpm, vector<string> args) : Method(mpm)
   update_wf   = 1;
   method_type = "FLIP";
   FLIP        = 0.99;
+  apic        = false;
 
   // Default base function (linear):
-  shape_function            = "linear";
+  shape_function            = LINEAR;
   basis_function            = &BasisFunction::linear;
   derivative_basis_function = &BasisFunction::derivative_linear;
 }
@@ -68,6 +69,7 @@ void ULMPM::setup(vector<string> args)
   else if (args[n].compare("APIC") == 0)
   {
     method_type = "APIC";
+    apic = true;
     FLIP = 0;
   }
   else
@@ -81,7 +83,7 @@ void ULMPM::setup(vector<string> args)
   {
     if (args[n].compare("linear") == 0)
     {
-      shape_function = "linear";
+      shape_function = LINEAR;
       cout << "Setting up linear basis functions\n";
       basis_function            = &BasisFunction::linear;
       derivative_basis_function = &BasisFunction::derivative_linear;
@@ -89,7 +91,7 @@ void ULMPM::setup(vector<string> args)
     }
     else if (args[n].compare("cubic-spline") == 0)
     {
-      shape_function = "cubic-spline";
+      shape_function = CUBIC;
       cout << "Setting up cubic-spline basis functions\n";
       basis_function            = &BasisFunction::cubic_spline;
       derivative_basis_function = &BasisFunction::derivative_cubic_spline;
@@ -97,7 +99,7 @@ void ULMPM::setup(vector<string> args)
     }
     else if (args[n].compare("quadratic-spline") == 0)
     {
-      shape_function = "quadratic-spline";
+      shape_function = QUADRATIC;
       cout << "Setting up quadratic-spline basis functions\n";
       basis_function            = &BasisFunction::quadratic_spline;
       derivative_basis_function = &BasisFunction::derivative_quadratic_spline;
@@ -105,7 +107,7 @@ void ULMPM::setup(vector<string> args)
     }
     else if (args[n].compare("Bernstein-quadratic") == 0)
     {
-      shape_function = "Bernstein-quadratic";
+      shape_function = BERNSTEIN;
       cout << "Setting up Bernstein-quadratic basis functions\n";
       basis_function = &BasisFunction::bernstein_quadratic;
       derivative_basis_function =
@@ -171,14 +173,6 @@ void ULMPM::compute_grid_weight_functions_and_gradients()
       map<int, int> *map_ntag = &domain->solids[isolid]->grid->map_ntag;
       map<int, int>::iterator it;
 
-      bool linear, cubic_or_quadratic, bernstein;
-      linear = cubic_or_quadratic = bernstein = false;
-
-      if (update->method_shape_function.compare("linear")==0) linear = true;
-      if (update->method_shape_function.compare("cubic-spline")==0) cubic_or_quadratic = true;
-      if (update->method_shape_function.compare("quadratic-spline")==0) cubic_or_quadratic = true;
-      if (update->method_shape_function.compare("Bernstein-quadratic")==0) bernstein = true;
-
       r.setZero();
 
       for (int in = 0; in < nnodes_local + nnodes_ghost; in++)
@@ -205,7 +199,7 @@ void ULMPM::compute_grid_weight_functions_and_gradients()
 
           vector<int> n_neigh;
 
-          if (linear)
+          if (shape_function == LINEAR)
           {
 	    int i0 = (int) (((*xp)[ip][0] - domain->boxlo[0])*inv_cellsize);
 	    int j0 = (int) (((*xp)[ip][1] - domain->boxlo[1])*inv_cellsize);
@@ -245,7 +239,7 @@ void ULMPM::compute_grid_weight_functions_and_gradients()
               }
             }
           }
-          else if (bernstein)
+          else if (shape_function == BERNSTEIN)
           {
 	    int i0 = 2 * (int) (((*xp)[ip][0] - domain->boxlo[0]) * inv_cellsize);
 	    int j0 = 2 * (int) (((*xp)[ip][1] - domain->boxlo[1]) * inv_cellsize);
@@ -294,7 +288,7 @@ void ULMPM::compute_grid_weight_functions_and_gradients()
                   n_neigh.push_back(i);
               }
             }
-          } else if (cubic_or_quadratic) {
+          } else if (shape_function == CUBIC || shape_function == QUADRATIC) {
               int i0 =
                   (int)(((*xp)[ip][0] - domain->boxlo[0]) * inv_cellsize - 1);
               int j0 =
@@ -348,12 +342,21 @@ void ULMPM::compute_grid_weight_functions_and_gradients()
 	    r = ((*xp)[ip] - (*xn)[in]) * inv_cellsize;
 
 	    s[0] = basis_function(r[0], (*ntype)[in][0]);
-	    if (domain->dimension >= 2) s[1] = basis_function(r[1], (*ntype)[in][1]);
-	    else s[1] = 1;
-	    if (domain->dimension == 3) s[2] = basis_function(r[2], (*ntype)[in][2]);
-	    else s[2] = 1;
+	    wf = s[0];
+	    if (wf != 0) {
+	      if (domain->dimension >= 2) {
+		s[1] = basis_function(r[1], (*ntype)[in][1]);
+		wf *= s[1];
+	      }
+	      else s[1] = 1;
+	      if (domain->dimension == 3 && wf != 0) {
+		s[2] = basis_function(r[2], (*ntype)[in][2]);
+		wf *= s[2];
+	      }
+	      else s[2] = 1;
+	    }
 
-            if (s[0] != 0 && s[1] != 0 && s[2] != 0)
+	    if (wf != 0)
             {
               if (domain->solids[isolid]->mat->rigid)
                 (*nrigid)[in] = true;
@@ -376,21 +379,15 @@ void ULMPM::compute_grid_weight_functions_and_gradients()
               (*numneigh_pn)[ip]++;
               (*numneigh_np)[in]++;
 
-              if (domain->dimension == 1)
-                wf = s[0];
-              if (domain->dimension == 2)
-                wf = s[0] * s[1];
-              if (domain->dimension == 3)
-                wf = s[0] * s[1] * s[2];
-
               (*wf_pn)[ip].push_back(wf);
               (*wf_np)[in].push_back(wf);
 
-              if (domain->dimension == 1)
+              
+              if (domain->dimension == 3)
               {
-                wfd[0] = sd[0];
-                wfd[1] = 0;
-                wfd[2] = 0;
+                wfd[0] = sd[0] * s[1] * s[2];
+                wfd[1] = s[0] * sd[1] * s[2];
+                wfd[2] = s[0] * s[1] * sd[2];
               }
               else if (domain->dimension == 2)
               {
@@ -398,11 +395,11 @@ void ULMPM::compute_grid_weight_functions_and_gradients()
                 wfd[1] = s[0] * sd[1];
                 wfd[2] = 0;
               }
-              else if (domain->dimension == 3)
+	      else
               {
-                wfd[0] = sd[0] * s[1] * s[2];
-                wfd[1] = s[0] * sd[1] * s[2];
-                wfd[2] = s[0] * s[1] * sd[2];
+                wfd[0] = sd[0];
+                wfd[1] = 0;
+                wfd[2] = 0;
               }
               (*wfd_pn)[ip].push_back(wfd);
               (*wfd_np)[in].push_back(wfd);
@@ -414,8 +411,8 @@ void ULMPM::compute_grid_weight_functions_and_gradients()
           // cout << endl;
         }
       }
-      if (method_type.compare("APIC") == 0)
-        domain->solids[isolid]->compute_inertia_tensor(shape_function);
+      if (apic)
+        domain->solids[isolid]->compute_inertia_tensor();
     }
   }
 }
@@ -441,7 +438,7 @@ void ULMPM::particles_to_grid() {
     else
       grid_reset = false;
 
-    if (method_type.compare("APIC") == 0)
+    if (apic)
       domain->solids[isolid]->compute_velocity_nodes_APIC(grid_reset);
     else
       domain->solids[isolid]->compute_velocity_nodes(grid_reset);
@@ -482,7 +479,7 @@ void ULMPM::velocities_to_grid()
     else
       grid_reset = false;
 
-    if (method_type.compare("APIC") != 0)
+    if (!apic)
     {
       // domain->solids[isolid]->compute_mass_nodes(grid_reset);
       domain->solids[isolid]->compute_velocity_nodes(grid_reset);
@@ -495,7 +492,7 @@ void ULMPM::compute_rate_deformation_gradient()
 {
   for (int isolid = 0; isolid < domain->solids.size(); isolid++)
   {
-    if (method_type.compare("APIC") == 0)
+    if (apic)
       domain->solids[isolid]->compute_rate_deformation_gradient_UL_APIC();
     else
       domain->solids[isolid]->compute_rate_deformation_gradient_UL_MUSL();

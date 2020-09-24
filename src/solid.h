@@ -138,7 +138,7 @@ class Solid : protected Pointers {
   void compute_rate_deformation_gradient_UL_APIC(); ///< Compute the time derivative of the deformation matrix for TLMPM, when APIC is in use.
   void update_deformation_gradient();               ///< Update the deformation gradient, volume, density, and the necessary strain matrices
   void update_stress();                             ///< Calculate the stress, damage and temperature at each particle, and determine the maximum allowed time step.
-  void compute_inertia_tensor(string);              ///< Compute the inertia tensor necessary for the Affice PIC.
+  void compute_inertia_tensor();                    ///< Compute the inertia tensor necessary for the Affice PIC.
   void compute_deformation_gradient();              ///< Compute the deformation gradient directly from the grid nodes' positions
   void update_particle_domain();                    ///< Update the particle domain. Used with CPDI
 

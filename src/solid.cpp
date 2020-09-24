@@ -1228,7 +1228,7 @@ void Solid::update_stress()
   }
 }
 
-void Solid::compute_inertia_tensor(string form_function) {
+void Solid::compute_inertia_tensor() {
 
   int in;
   Eigen::Vector3d dx;

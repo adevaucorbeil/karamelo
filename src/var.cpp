@@ -42,10 +42,6 @@ Var::Var(string eq, double v, bool c)
   constant = c;
 }
 
-Var::~Var()
-{
-}
-
 void Var::evaluate(MPM * mpm)
 {
   if (constant) return;
@@ -119,11 +115,11 @@ Var Var::operator-()
 Var Var::operator*(const Var& right)
 {
   if (this->constant && right.constant) {
-    Var result(this->value * right.value);
-    return result;
+    return Var(this->value * right.value);
+    //return result;
   } else {
-    Var result("(" + this->str() + "*" + right.str() + ")", this->value * right.value, false);
-    return result;
+    return Var("(" + this->str() + "*" + right.str() + ")", this->value * right.value, false);
+    //return result;
   }
 }
 

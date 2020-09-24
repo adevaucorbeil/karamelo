@@ -341,7 +341,7 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
 	  // cout << endl;
 	}
       }
-      if (method_type.compare("APIC") == 0) domain->solids[isolid]->compute_inertia_tensor(shape_function);
+      if (method_type.compare("APIC") == 0) domain->solids[isolid]->compute_inertia_tensor();
     }
   }
 
