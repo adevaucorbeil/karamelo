@@ -199,7 +199,8 @@ void Output::add_dump(vector<string> args){
   }
 
   if (find_dump(args[0]) >= 0) {
-    error->all(FLERR,  "Error: reuse of dump ID.\n");
+    // error->all(FLERR,  "Error: reuse of dump ID.\n");
+    delete_dump(args[0]);
   }
 
   // create the Dump
@@ -226,7 +227,7 @@ void Output::modify_dump(vector<string> args){
   cout << "In modify_dump" << endl;
 
   int idump = find_dump(args[1]);
-  if (idump == 0) {
+  if (idump < 0) {
     error->all(FLERR, "Error: dump ID unknown.\n");
   }
 
@@ -237,11 +238,15 @@ void Output::delete_dump(string name){
   cout << "In delete_dump" << endl;
 
   int idump = find_dump(name);
-  if (idump == 0) {
+  if (idump < 0) {
     error->all(FLERR, "Error: dump ID unknown.\n");
   }
-
+  if (dumps[idump]) delete dumps[idump];
   dumps.erase(dumps.begin() + idump);
+  every_dump.erase(every_dump.begin() + idump);
+  last_dump.erase(last_dump.begin() + idump);
+  next_dump.erase(next_dump.begin() + idump);
+  ndumps--;
 }
 
 int Output::find_dump(string name){

@@ -133,12 +133,6 @@ Solid::Solid(MPM *mpm, vector<string> args) : Pointers(mpm)
     read_file(args[2]);
   }
 
-#ifdef DEBUG
-  plt::axis("equal");
-  plt::save("debug.png");
-  plt::close();
-#endif
-
   comm_n = 50; // Number of double to pack for particle exchange between CPUs.
 
 }
@@ -1083,6 +1077,7 @@ void Solid::update_stress()
     vector<double> plastic_strain_increment(np_local, 0);
     vector<Eigen::Matrix3d> sigma_dev;
     sigma_dev.resize(np_local);
+    double tav = 0;
 
     for (int ip = 0; ip < np_local; ip++) {
 
@@ -1096,7 +1091,9 @@ void Solid::update_stress()
 
       // // compute a characteristic time over which to average the plastic
       // strain
-      double tav = 1000 * grid->cellsize / mat->signal_velocity;
+
+      tav = 1000 * grid->cellsize / mat->signal_velocity;
+
       eff_plastic_strain_rate[ip] -=
           eff_plastic_strain_rate[ip] * update->dt / tav;
       eff_plastic_strain_rate[ip] += plastic_strain_increment[ip] / tav;
@@ -1366,9 +1363,6 @@ void Solid::copy_particle(int i, int j) {
 
 void Solid::pack_particle(int i, vector<double> &buf)
 {
-  int n[2];
-  n[0] = buf.size();
-
   buf.push_back(ptag[i]);
 
   buf.push_back(x[i](0));
@@ -1744,9 +1738,9 @@ void Solid::populate(vector<string> args)
          << "," << nsubz << "]\n";
     //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-#ifdef DEBUG
-  cout << "proc " << universe->me << "\tLsub=[" << Lsubx << "," << Lsuby << "," << Lsubz << "]\t nsub=["<< nsubx << "," << nsuby << "," << nsubz << "]\n";
-#endif
+// #ifdef DEBUG
+//   cout << "proc " << universe->me << "\tLsub=[" << Lsubx << "," << Lsuby << "," << Lsubz << "]\t nsub=["<< nsubx << "," << nsuby << "," << nsubz << "]\n";
+// #endif
 
   np_local = nsubx * nsuby * nsubz;
 
@@ -1873,9 +1867,9 @@ void Solid::populate(vector<string> args)
   }
 
   np_local *= nip;
-#ifdef DEBUG
-  cout << "proc " << universe->me << "\tnp_local=" << np_local << endl;
-#endif
+// #ifdef DEBUG
+//   cout << "proc " << universe->me << "\tnp_local=" << np_local << endl;
+// #endif
   mass_ /= (double) nip;
   vol_ /= (double) nip;
 
@@ -2020,9 +2014,9 @@ void Solid::populate(vector<string> args)
     if (universe->me > proc) ptag0 += np_local_bcast;
   }
 
-#ifdef DEBUG
-  cout << "proc " << universe->me << "\tptag0 = " << ptag0 << endl;
-#endif
+// #ifdef DEBUG
+//   cout << "proc " << universe->me << "\tptag0 = " << ptag0 << endl;
+// #endif
   np_local = l; // Adjust np to account for the particles outside the domain
   cout << "np_local=" << np_local << endl;
 

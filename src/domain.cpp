@@ -44,9 +44,6 @@ Domain::Domain(MPM *mpm) : Pointers(mpm)
   region_map = new RegionCreatorMap();
   // solid_map = new SolidCreatorMap();
 
-#ifdef DEBUG
-  plt::figure_size(1200, 780);
-#endif
 
 #define REGION_CLASS
 #define RegionStyle(key, Class) (*region_map)[#key] = &region_creator<Class>;
@@ -244,11 +241,6 @@ void Domain::set_local_box() {
   } else {
     sublo[2] = subhi[2] = 0;
   }
-
-#ifdef DEBUG
-  cout << "proc " << universe->me << "\tboxlo=[" << boxlo[0] << "," << boxlo[1] << "," << boxlo[2] << "]\t boxhi=["<< boxhi[0] << "," << boxhi[1] << "," << boxhi[2] << "]\n";
-  cout << "proc " << universe->me << "\tsublo=[" << sublo[0] << "," << sublo[1] << "," << sublo[2] << "]\t subhi=["<< subhi[0] << "," << subhi[1] << "," << subhi[2] << "]\n";
-#endif
 }
 
 void Domain::create_domain(vector<string> args) {
