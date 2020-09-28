@@ -331,6 +331,7 @@ void Output::create_restart(vector<string> args){
   } else {
     delete restart;
     restart = new WriteRestart(mpm);
-    restart->command(vector<string>(1, args[0]));
+    restart->command(vector<string>(1, args[1]));
+    next_restart = every_restart;
   }
 }
