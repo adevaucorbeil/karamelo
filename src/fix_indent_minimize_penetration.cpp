@@ -141,7 +141,7 @@ void FixIndentMinimizePenetration::initial_integrate() {
 		      vtnorm = vt.norm();
 		      if (vtnorm != 0) {
 			vt /= vtnorm;
-			f += mu * fmag * vt;
+			f += MIN(s->mass[ip] * vtnorm / update->dt, mu * fmag) * vt;
 		      }
 		    }
 
@@ -189,7 +189,7 @@ void FixIndentMinimizePenetration::initial_integrate() {
 		      vtnorm = vt.norm();
 		      if (vtnorm != 0) {
 			vt /= vtnorm;
-			f += mu * fmag * vt;
+			f += MIN(s->mass[ip] * vtnorm / update->dt, mu * fmag) * vt;
 		      }
 		    }
 
@@ -243,7 +243,7 @@ void FixIndentMinimizePenetration::initial_integrate() {
 		    vtnorm = vt.norm();
 		    if (vtnorm != 0) {
 		      vt /= vtnorm;
-		      f += mu * fmag * vt;
+		      f += MIN(s->mass[ip] * vtnorm / update->dt, mu * fmag) * vt;
 		    }
 		  }
 
@@ -291,7 +291,7 @@ void FixIndentMinimizePenetration::initial_integrate() {
 		    vtnorm = vt.norm();
 		    if (vtnorm != 0) {
 		      vt /= vtnorm;
-		      f += mu * fmag * vt;
+		      f += MIN(s->mass[ip] * vtnorm / update->dt, mu * fmag) * vt;
 		    }
 		  }
 
