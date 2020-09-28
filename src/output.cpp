@@ -22,6 +22,7 @@
 #include "universe.h"
 #include "update.h"
 #include "var.h"
+#include "write_restart.h"
 #include <matplotlibcpp.h>
 
 namespace plt = matplotlibcpp;
@@ -47,6 +48,12 @@ Output::Output(MPM *mpm) : Pointers(mpm)
   log = new Log(mpm, log_args);
 
   every_log = 1;
+  next_log = 1;
+
+  log = NULL;
+
+  every_restart = next_restart = restart_flag = 0;
+  restart = NULL;
 }
 
 
@@ -55,6 +62,7 @@ Output::~Output()
   for (int i=0; i<dumps.size();i++) delete dumps[i];
   for (int i=0; i<plots.size();i++) delete plots[i];
   delete log;
+  delete restart;
 }
 
 void Output::setup(){
@@ -302,4 +310,27 @@ int Output::find_plot(string name){
     if (name.compare(plots[iplot]->id) == 0) return iplot;
   }
   return -1;
+}
+
+//  restart(0) => do not write any restart
+//  restart(N, file-*.restart) => write a restart every N steps as file-timestep.restart
+void Output::create_restart(vector<string> args){
+  if (args.size()< 1) {
+    error->all(FLERR, "Illegal restart command: too few arguments.\n");
+  }
+  if (args.size()> 2) {
+    error->all(FLERR, "Illegal restart command: too many arguments.\n");
+  }
+
+  every_restart = (int) input->parsev(args[0]);
+
+  if (every_restart == 0) {
+    delete restart;
+    every_restart = 0;
+    next_restart = 0;
+  } else {
+    delete restart;
+    restart = new WriteRestart(mpm);
+    restart->command(vector<string>(1, args[0]));
+  }
 }

@@ -341,6 +341,8 @@ Var Input::evaluate_function(string func, string arg){
     return Var(parsev(arg).result(mpm));
   else if (func.compare("print") == 0)
     return Var(print(args));
+  else if (func.compare("restart") == 0)
+    return Var(restart(args));
   error->all(FLERR, "Error: Unknown function " + func + "\n");
 }
 
@@ -881,6 +883,13 @@ int Input::print(vector<string> args) {
 
   return 0;
 }
+
+
+int Input::restart(vector<string> args) {
+  output->create_restart(args);
+  return 0;
+}
+
 /* ----------------------------------------------------------------------
    one instance per command in style_command.h
 ------------------------------------------------------------------------- */
