@@ -36,6 +36,7 @@ Output::Output(MPM *mpm) : Pointers(mpm)
   ndumps = 0;
   nplots = 0;
 
+  next = 0;
   next_dump_any = 0;
   next_plot_any = 0;
 
@@ -103,6 +104,9 @@ void Output::setup(){
 
   next = MIN(next_dump_any,next_plot_any);
 
+  if (restart_flag && next_restart)
+    next = MIN(next, next_restart);
+
   log->init();
   log->header();
 
@@ -138,6 +142,11 @@ void Output::write(bigint ntimestep){
       if (idump) next_dump_any = MIN(next_dump_any,next_dump[idump]);
       else next_dump_any = next_dump[0];
     }
+  }
+
+  if (restart_flag && next_restart == ntimestep) {
+    restart->write();
+    next_restart += every_restart;
   }
 
   if (next_log == ntimestep) {
@@ -326,10 +335,15 @@ void Output::create_restart(vector<string> args){
     delete restart;
     every_restart = 0;
     next_restart = 0;
+    restart_flag = 0;
   } else {
     delete restart;
     restart = new WriteRestart(mpm);
     restart->command(vector<string>(1, args[1]));
-    next_restart = every_restart;
+    next_restart = (update->ntimestep/every_restart)*every_restart + every_restart;
+
+    restart_flag = 1;
+
+    if (next) next = MIN(next, next_restart);
   }
 }

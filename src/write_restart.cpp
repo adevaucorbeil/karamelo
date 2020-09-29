@@ -28,7 +28,7 @@ WriteRestart::WriteRestart(MPM *mpm) : Pointers(mpm) {}
 
 Var WriteRestart::command(vector<string> args)
 {
-  // cout << "In WriteRestart::command()" << endl;
+  cout << "In WriteRestart::command()" << endl;
 
   if (args.size() < 1) {
     error->all(FLERR, "Illegal write command.\n");
@@ -39,4 +39,5 @@ Var WriteRestart::command(vector<string> args)
 
 
 void WriteRestart::write(){
+  cout << "In WriteRestart::write()" << endl;
 }
