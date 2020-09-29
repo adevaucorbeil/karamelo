@@ -14,33 +14,31 @@
 
 #ifdef COMMAND_CLASS
 
-CommandStyle(write_restart,WriteRestart)
+CommandStyle(read_restart,ReadRestart)
 
 #else
 
-#ifndef MPM_WRITE_RESTART_H
-#define MPM_WRITE_RESTART_H
+#ifndef MPM_READ_RESTART_H
+#define MPM_READ_RESTART_H
 
 #include "pointers.h"
 #include <fstream>
 #include <vector>
 
-class WriteRestart : protected Pointers {
+class ReadRestart : protected Pointers {
  public:
-  WriteRestart(class MPM *);
-  ~WriteRestart();
+  ReadRestart(class MPM *);
+  ~ReadRestart();
   class Var command(vector<string>);
-  void write();
 
 private:
   string filename;
   size_t pos_asterisk;
-  ofstream *of;
+  ifstream *ifr;
   void header();
 
-  template <typename T> void write_variable(int, T);
-  void write_string(int flag, string value);
-  void write_int(int flag, int value);
+  int read_int();
+  string read_string();
 };
 
 #endif

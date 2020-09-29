@@ -144,3 +144,16 @@ int Update::update_timestep()
   (*input->vars)["timestep"] = Var("timestep", ntimestep);
   return update->ntimestep;
 }
+
+/*! Write method, scheme, timestep, dt... to restart file.
+ */
+void Update::write_restart(ofstream *of) {
+  // The informations to be stored in the restart file are:
+  // - The method type
+  // - The type of shape function
+  // - FLIP and/or PIC, or APIC
+  // - The scheme type
+  // - The timestep
+  // - dt
+  // - dt_factor
+}

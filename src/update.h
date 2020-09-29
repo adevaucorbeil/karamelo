@@ -49,6 +49,7 @@ class Update : protected Pointers {
   void create_method(vector<string>); ///< Creates a method: tlmpm, ulmpm, tlcpdi, ...
   void update_time();                 ///< Update elapsed time
   int update_timestep();              ///< Update timestep
+  void write_restart(ofstream*);       ///< Write method, scheme, timestep, dt... to restart file
 protected:
   
 };
