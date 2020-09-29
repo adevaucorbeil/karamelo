@@ -82,14 +82,19 @@ void ReadRestart::header() {
   // Karamelo version:
   int flag = read_int();
 
-  while (flag >=0) {
+  while (flag >= 0) {
     if (flag == VERSION) {
       string version = read_string();
       cout << "version = " << version << endl;
-    }
-    else if (flag == DIMENSION) {
+    } else if (flag == DIMENSION) {
       domain->dimension = read_int();
       cout << "dimension = " << domain->dimension << endl;
+    } else if (flag == NPROCS) {
+      int nprocs = read_int();
+      cout << "nprocs = " << nprocs << endl;
+      if (nprocs != universe->nprocs) {
+	error->one(FLERR, "Restart file written for " + to_string(nprocs) + " CPUs.\n");
+      }
     }
     //read_variable(DIMENSION, domain->dimension);
     //read_variable(NPROCS, universe->nprocs);

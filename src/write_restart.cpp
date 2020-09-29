@@ -86,25 +86,23 @@ void WriteRestart::write() {
 void WriteRestart::header() {
   // Karamelo version:
   write_string(VERSION, Version::GIT_SHA1);
-  write_int(DIMENSION, domain->dimension);
-  //write_variable(NPROCS, universe->nprocs);
+  write_variable(DIMENSION, domain->dimension);
+  write_variable(NPROCS, universe->nprocs);
 
   // -1 flag signals end of header
   int flag = -1;
   of->write(reinterpret_cast<const char *>(&flag), sizeof(int));
 }
 
-/*!  write a flag and a variable into restart file.
+/*!  write a flag and a variable (which is not a string) into restart file.
  */
 template <typename T> void WriteRestart::write_variable(int flag, T value) {
-  size_t N = sizeof(value);
   of->write(reinterpret_cast<const char *>(&flag), sizeof(int));
-  of->write(reinterpret_cast<const char *>(&N), sizeof(size_t));
-  of->write(reinterpret_cast<const char *>(&value), N);
+  of->write(reinterpret_cast<const char *>(&value), sizeof(value));
 }
 
 
-/*!  write a flag and a variable into restart file.
+/*!  write a flag and a string into restart file.
  */
 void WriteRestart::write_string(int flag, string value) {
   size_t N = value.size();
@@ -113,9 +111,9 @@ void WriteRestart::write_string(int flag, string value) {
   of->write(reinterpret_cast<const char *>(value.c_str()), N);
 }
 
-/*!  write a flag and a variable into restart file.
- */
-void WriteRestart::write_int(int flag, int value) {
-  of->write(reinterpret_cast<const char *>(&flag), sizeof(int));
-  of->write(reinterpret_cast<const char *>(&value), sizeof(int));
-}
+// /*!  write a flag and a variable into restart file.
+//  */
+// void WriteRestart::write_int(int flag, int value) {
+//   of->write(reinterpret_cast<const char *>(&flag), sizeof(int));
+//   of->write(reinterpret_cast<const char *>(&value), sizeof(int));
+// }

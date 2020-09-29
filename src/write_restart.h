@@ -40,7 +40,7 @@ private:
 
   template <typename T> void write_variable(int, T);
   void write_string(int flag, string value);
-  void write_int(int flag, int value);
+  //void write_int(int flag, int value);
 };
 
 #endif
