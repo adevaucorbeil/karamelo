@@ -22,6 +22,7 @@ CommandStyle(write_restart,WriteRestart)
 #define MPM_WRITE_RESTART_H
 
 #include "pointers.h"
+#include <vector>
 
 class WriteRestart : protected Pointers {
  public:
@@ -31,6 +32,7 @@ class WriteRestart : protected Pointers {
 
 protected:
   string filename;
+  size_t pos_asterisk;
 };
 
 #endif
