@@ -316,7 +316,10 @@ void Solid::compute_velocity_nodes(bool reset)
     if (reset)
     {
       grid->v[in].setZero();
-      grid->v_update[in].setZero();
+      //grid->v_update[in].setZero();
+      if (grid->rigid[in]) {
+	grid->mb[in].setZero();
+      }
     }
 
     if (grid->rigid[in] && !mat->rigid) continue;
@@ -342,7 +345,7 @@ void Solid::compute_velocity_nodes(bool reset)
       grid->v[in] += vtemp;
       if (grid->rigid[in]) {
 	vtemp_update /= grid->mass[in];
-	grid->v_update[in] += vtemp_update;
+	grid->mb[in] += vtemp_update; // This should be grid->v_update[in], but we are using mb to make the reduction of ghost particles easy. It will be copied to grid->v_update[in] in Grid::update_grid_velocities()
       }
       // if (isnan(grid->v_update[in][0]))
       //   cout << "in=" << in << "\tvn=[" << grid->v[in][0] << ", " << grid->v[in][1]
@@ -548,10 +551,10 @@ void Solid::compute_particle_acceleration()
     {
       in = neigh_pn[ip][j];
       a[ip] += wf_pn[ip][j] * (grid->v_update[in] - grid->v[in]);
-      if (ptag[ip] == 363) {
-	printf("dv[%d]=[%4.3e %4.3e %4.3e], ", grid->ntag[in], grid->v_update[in][0] - grid->v[in][0], grid->v_update[in][1] - grid->v[in][1], grid->v_update[in][2] - grid->v[in][2]);
-	cout << "rigid=" << grid->rigid[in] << endl;
-      }
+      // if (ptag[ip] == 363) {
+      // 	printf("dv[%d]=[%4.3e %4.3e %4.3e], ", grid->ntag[in], grid->v_update[in][0] - grid->v[in][0], grid->v_update[in][1] - grid->v[in][1], grid->v_update[in][2] - grid->v[in][2]);
+      // 	cout << "rigid=" << grid->rigid[in] << endl;
+      // }
     }
     a[ip] *= inv_dt;
     f[ip] = a[ip] * mass[ip];

@@ -493,6 +493,9 @@ void Grid::update_grid_velocities()
     if (!rigid[i]) {
       if (mass[i] != 0) v_update[i] = v[i] + update->dt * (f[i] + mb[i])/mass[i];
       else v_update[i] = v[i];
+    } else {
+      v_update[i] = mb[i];
+      mb[i].setZero();
     }
     // if (update->ntimestep>450)
     // if (isnan(v_update[i](0)))
