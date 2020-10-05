@@ -2,6 +2,7 @@
 #include "domain.h"
 #include "group.h"
 #include "input.h"
+#include "special_functions.h"
 #include "universe.h"
 #include "update.h"
 #include <Eigen/Eigen>
@@ -11,6 +12,7 @@
 using namespace std;
 using namespace FixConst;
 using namespace Eigen;
+
 
 FixVelocityParticles::FixVelocityParticles(MPM *mpm, vector<string> args) : Fix(mpm, args)
 {
@@ -44,9 +46,7 @@ FixVelocityParticles::FixVelocityParticles(MPM *mpm, vector<string> args) : Fix(
     xset = true;
 
     // Replace "time" by "time - dt" in the x argument:
-    while(args_previous_step[xpos].find(time)!=std::string::npos) {
-      args_previous_step[xpos].replace(args_previous_step[xpos].find(time),time.length(),"time - dt");
-    }
+    args_previous_step[xpos] = SpecialFunc::replace_all(input->parsev(args_previous_step[xpos]).str(), "time", "(time - dt)");
   }
 
   if (domain->dimension >= 2) {
@@ -55,9 +55,7 @@ FixVelocityParticles::FixVelocityParticles(MPM *mpm, vector<string> args) : Fix(
       // yvalue = input->parsev(args[4]);
       yset = true;
       // Replace "time" by "time - dt" in the y argument:
-      while(args_previous_step[ypos].find(time)!=std::string::npos) {
-	args_previous_step[ypos].replace(args_previous_step[ypos].find(time),time.length(),"time - dt");
-      }
+      args_previous_step[ypos] = SpecialFunc::replace_all(input->parsev(args_previous_step[ypos]).str(), "time", "(time - dt)");
     }
   }
 
@@ -68,9 +66,7 @@ FixVelocityParticles::FixVelocityParticles(MPM *mpm, vector<string> args) : Fix(
       zset = true;
 
       // Replace "time" by "time - dt" in the z argument:
-      while(args_previous_step[zpos].find(time)!=std::string::npos) {
-	args_previous_step[zpos].replace(args_previous_step[zpos].find(time),time.length(),"time - dt");
-      }
+      args_previous_step[zpos] = SpecialFunc::replace_all(input->parsev(args_previous_step[zpos]).str(), "time", "(time - dt)");
     }
   }
 }

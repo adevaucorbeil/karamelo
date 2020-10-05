@@ -3,6 +3,7 @@
 #include "error.h"
 #include "group.h"
 #include "input.h"
+#include "special_functions.h"
 #include "universe.h"
 #include "update.h"
 #include <Eigen/Eigen>
@@ -42,26 +43,16 @@ FixVelocityParticlesExactIntegration::FixVelocityParticlesExactIntegration(MPM *
     xset = true;
 
     // Replace "time" by "time - dt" in the vx argument:
-    while(args_previous_step[vxpos].find(time)!=std::string::npos) {
-      args_previous_step[vxpos].replace(args_previous_step[vxpos].find(time),time.length(),"time - dt");
-    }
-    // Replace "time" by "time + dt" in the x argument:
-    while(args_previous_step[xpos].find(time)!=std::string::npos) {
-      args_previous_step[xpos].replace(args_previous_step[xpos].find(time),time.length(),"time + dt");
-    }
+    args_previous_step[vxpos] = SpecialFunc::replace_all(input->parsev(args_previous_step[vxpos]).str(), "time", "(time - dt)");
+    args_previous_step[xpos] = SpecialFunc::replace_all(input->parsev(args_previous_step[xpos]).str(), "time", "(time - dt)");
   }
 
   if (domain->dimension >= 2) {
     if (args[ypos].compare("NULL") != 0) {
       yset = true;
       // Replace "time" by "time - dt" in the y argument:
-      while(args_previous_step[vypos].find(time)!=std::string::npos) {
-	args_previous_step[vypos].replace(args_previous_step[vypos].find(time),time.length(),"time - dt");
-      }
-      // Replace "time" by "time + dt" in the y argument:
-      while(args_next_step[ypos].find(time)!=std::string::npos) {
-	args_next_step[ypos].replace(args_next_step[ypos].find(time),time.length(),"time + dt");
-      }
+      args_previous_step[vypos] = SpecialFunc::replace_all(input->parsev(args_previous_step[vypos]).str(), "time", "(time - dt)");
+      args_previous_step[ypos] = SpecialFunc::replace_all(input->parsev(args_previous_step[ypos]).str(), "time", "(time - dt)");
     }
   }
 
@@ -70,14 +61,8 @@ FixVelocityParticlesExactIntegration::FixVelocityParticlesExactIntegration(MPM *
       // zvalue = input->parsev(args[5]);
       zset = true;
       // Replace "time" by "time - dt" in the y argument:
-      while(args_previous_step[vzpos].find(time)!=std::string::npos) {
-	args_previous_step[vzpos].replace(args_previous_step[vzpos].find(time),time.length(),"time - dt");
-      }
-      // Replace "time" by "time + dt" in the y argument:
-      while(args_next_step[zpos].find(time)!=std::string::npos) {
-	args_next_step[zpos].replace(args_next_step[zpos].find(time),time.length(),"time + dt");
-      }
-
+      args_previous_step[vzpos] = SpecialFunc::replace_all(input->parsev(args_previous_step[vzpos]).str(), "time", "(time - dt)");
+      args_previous_step[zpos] = SpecialFunc::replace_all(input->parsev(args_previous_step[zpos]).str(), "time", "(time - dt)");
     }
   }
 }
