@@ -127,6 +127,7 @@ void Update::create_method(vector<string> args){
   }
 
   bool isFLIP = false;
+  n++;
   // Method used: PIC, FLIP or APIC:
   if (map_sub_method_type.count(args[n]) > 0) {
     sub_method_type = map_sub_method_type.at(args[n]);
