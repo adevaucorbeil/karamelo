@@ -83,16 +83,19 @@ void Grid::init(double *solidlo, double *solidhi) {
 #endif
 
   cout << "In Grid::init() with proc " << universe->me << "\n";
+  bool linear = false;
   bool cubic = false;
   bool bernstein = false;
   bool quadratic = false;
   double h = cellsize;
 
-  if (update->method_shape_function.compare("cubic-spline") == 0)
+  if (update->shape_function == update->ShapeFunctions::LINEAR)
+    linear = true;
+  if (update->shape_function == update->ShapeFunctions::CUBIC_SPLINE)
     cubic = true;
-  if (update->method_shape_function.compare("quadratic-spline") == 0)
+  if (update->shape_function == update->ShapeFunctions::QUADRATIC_SPLINE)
     quadratic = true;
-  if (update->method_shape_function.compare("Bernstein-quadratic") == 0) {
+  if (update->shape_function == update->ShapeFunctions::BERNSTEIN) {
     bernstein = true;
     h /= 2;
   }
@@ -232,7 +235,7 @@ void Grid::init(double *solidlo, double *solidhi) {
 	if (domain->dimension == 3) x0[l][2] = boundlo[2] + (noffsetlo[2] + k)*h;
 	else x0[l][2] = 0;
 
-	if (update->method_shape_function.compare("linear")==0) {
+	if (linear) {
 	  ntype[l][0] = 0;
 	  ntype[l][1] = 0;
 	  ntype[l][2] = 0;

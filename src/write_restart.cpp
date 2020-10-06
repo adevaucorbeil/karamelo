@@ -70,9 +70,9 @@ void WriteRestart::write() {
     // proc 0 writes out header:
     if (universe->me == 0)
       header();
-    
+
     // Everyone writes the method, scheme, timestep, dt:
-    // update->write_restart(&restartstream);
+    update->write_restart(of);
 
 
     of->close();

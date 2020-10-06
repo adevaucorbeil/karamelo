@@ -1,16 +1,17 @@
 #include "tlcpdi.h"
+#include "basis_functions.h"
 #include "domain.h"
-#include "solid.h"
+#include "error.h"
 #include "grid.h"
 #include "input.h"
+#include "solid.h"
 #include "update.h"
-#include <iostream>
-#include <vector>
-#include <Eigen/Eigen>
-#include <math.h>
 #include "var.h"
+#include <Eigen/Eigen>
 #include <algorithm>
-#include "basis_functions.h"
+#include <iostream>
+#include <math.h>
+#include <vector>
 
 using namespace std;
 
@@ -18,12 +19,10 @@ TLCPDI::TLCPDI(MPM *mpm, vector<string> args) : Method(mpm) {
   cout << "In TLCPDI::TLCPDI()" << endl;
 
   update_wf = 1;
-  method_type = "FLIP";
-  FLIP = 0.99;
+  update->alpha = 0.99;
   style = 0;    //Default CPDI style is known_styles[style]="R4"; 
 
   // Default base function (linear):
-  shape_function = "linear";
   basis_function = &BasisFunction::linear;
   derivative_basis_function = &BasisFunction::derivative_linear;
 }
@@ -34,91 +33,52 @@ TLCPDI::~TLCPDI()
 
 void TLCPDI::setup(vector<string> args)
 {
-  int n = 1;
-  bool isFLIP = false;
-  // Method used: PIC, FLIP or APIC:
-  if (args[n].compare("PIC") == 0) {
-    method_type = "PIC";
-    FLIP = 0;
-  } else if (args[n].compare("FLIP") == 0) {
-    method_type = "FLIP";
-    isFLIP = true;
-
-    if (args.size() < 2) {
-      cout << "Illegal modify_method command: not enough arguments." << endl;
-      exit(1);
-    }
-
-  } else if (args[n].compare("APIC") == 0) {
-    method_type = "APIC";
+  if (update->shape_function == update->ShapeFunctions::LINEAR) {
+    cout << "Setting up linear basis functions\n";
+    basis_function = &BasisFunction::linear;
+    derivative_basis_function = &BasisFunction::derivative_linear;
+  } else if (update->shape_function == update->ShapeFunctions::CUBIC_SPLINE) {
+    cout << "Setting up cubic-spline basis functions\n";
+    basis_function = &BasisFunction::cubic_spline;
+    derivative_basis_function = &BasisFunction::derivative_cubic_spline;
+  } else if (update->shape_function == update->ShapeFunctions::QUADRATIC_SPLINE) {
+    cout << "Setting up quadratic-spline basis functions\n";
+    basis_function = &BasisFunction::quadratic_spline;
+    derivative_basis_function = &BasisFunction::derivative_quadratic_spline;
+  } else if (update->shape_function == update->ShapeFunctions::BERNSTEIN) {
+    cout << "Setting up Bernstein-quadratic basis functions\n";
+    basis_function = &BasisFunction::bernstein_quadratic;
+    derivative_basis_function = &BasisFunction::derivative_bernstein_quadratic;
   } else {
-    cout << "Error: method type " << args[n] << " not understood. Expect: PIC, FLIP or APIC\n";
-    exit(1);
+    error->all(FLERR, "Error: shape function not supported! Supported functions are:  \033[1;32mlinear\033[0m, \033[1;32mcubic-spline\033[0m, \033[1;32mquadratic-spline\033[0m, \033[1;32mBernstein-quadratic\033[0m.\n");
   }
 
-  n++;
-  
-  if (args.size() > 1 + isFLIP) {
-    if (args[n].compare("linear") == 0) {
-      shape_function = "linear";
-      cout << "Setting up linear basis functions\n";
-      basis_function = &BasisFunction::linear;
-      derivative_basis_function = &BasisFunction::derivative_linear;
-      n++;
-    } else if (args[n].compare("cubic-spline") == 0) {
-      shape_function = "cubic-spline";
-      cout << "Setting up cubic-spline basis functions\n";
-      basis_function = &BasisFunction::cubic_spline;
-      derivative_basis_function = &BasisFunction::derivative_cubic_spline;
-      n++;
-    } else if (args[n].compare("quadratic-spline") == 0) {
-      shape_function = "quadratic-spline";
-      cout << "Setting up quadratic-spline basis functions\n";
-      basis_function = &BasisFunction::quadratic_spline;
-      derivative_basis_function = &BasisFunction::derivative_quadratic_spline;
-      n++;
-    } else if (args[n].compare("Bernstein-quadratic") == 0) {
-      shape_function = "Bernstein-quadratic";
-      cout << "Setting up Bernstein-quadratic basis functions\n";
-      basis_function = &BasisFunction::bernstein_quadratic;
-      derivative_basis_function = &BasisFunction::derivative_bernstein_quadratic;
-      n++;
-    } else {
-      cout << "Illegal method_method argument: form function of type " << args[n] << " is unknown." << endl;
-      exit(1);
-    }
-  }
-
-  if (args.size() > n + isFLIP + 1) {
-    cout << "Illegal modify_method command: too many arguments: " << n + isFLIP + 1 << " expected, " << args.size() << " received." << endl;
-      exit(1);    
-  }
-
-  if (isFLIP) FLIP = input->parsev(args[n]);
-  // cout << "shape_function = " << shape_function << endl;
-  // cout << "method_type = " << method_type << endl;
-  // cout << "FLIP = " << FLIP << endl;
-  
-  n++;
-
-  if (n<args.size()) {
+  if (args.size() > 0) {
     bool found_style = false;
     for (int i=0; i<sizeof(known_styles)/sizeof(string); i++) {
-      if (known_styles[i].compare(args[n])==0) {
+      if (known_styles[i].compare(args[0])==0) {
         style = i;
-  found_style = true;
+	found_style = true;
         break;
       }
     }
     if (!found_style) {
-      cout << "CPDI style \033[1;31m" << args[n] << "\033[0m unknown. Available options are:";
+      string error_str = "CPDI style \033[1;31m" + args[0] + "\033[0m unknown. Available options are:";
       for (int i=0; i<sizeof(known_styles)/sizeof(string); i++) {
-  if (i) cout << ",";
-  cout << " \033[1;32m" << known_styles[i] << "\033[0m";
+	if (i) error_str += ",";
+	error_str += " \033[1;32m" + known_styles[i] + "\033[0m";
       }
-      cout << ".\n";
-      exit(1);
+      error_str += "\n";
+      error->all(FLERR, error_str);
     }
+  } else {
+    string error_str = "Error: CPDI style unspecified in the method() command.\n";
+    for (int i=0; i<sizeof(known_styles)/sizeof(string); i++) {
+	if (i) error_str += ",";
+	error_str += " \033[1;32m" + known_styles[i] + "\033[0m";
+      }
+    error_str += "\n";
+    error->all(FLERR, error_str);
   }
 
   cout << "Using CPDI-" << known_styles[style] << endl;
@@ -171,14 +131,6 @@ void TLCPDI::compute_grid_weight_functions_and_gradients()
       Eigen::Vector3d r, wfd;
       vector<Eigen::Vector3d> xcorner(nc, Eigen::Vector3d::Zero());
       vector<double> wfc(nc, 0);
-
-      bool linear, cubic, bernstein;
-      linear = cubic = bernstein = false;
-
-      if (update->method_shape_function.compare("linear")==0) linear = true;
-      if (update->method_shape_function.compare("cubic-spline")==0 ||
-	  update->method_shape_function.compare("quadratic-spline")==0 ) cubic = true;
-      if (update->method_shape_function.compare("Bernstein-quadratic")==0) bernstein = true;
 
       double a, b, inv_Vp, alpha_over_Vp, sixVp;
 
@@ -235,14 +187,14 @@ void TLCPDI::compute_grid_weight_functions_and_gradients()
 
 	    int i0, j0, k0;
 
-	    if (linear) {
+	    if (update->shape_function == update->ShapeFunctions::LINEAR) {
 	      i0 = (int) ((xcorner[ic][0] - domain->boxlo[0])*inv_cellsize);
 	      j0 = (int) ((xcorner[ic][1] - domain->boxlo[1])*inv_cellsize);
 	      k0 = (int) ((xcorner[ic][2] - domain->boxlo[2])*inv_cellsize);
 
 	      m = 2;
 
-	    } else if (bernstein){
+	    } else if (update->shape_function == update->ShapeFunctions::BERNSTEIN){
 	      i0 = 2*(int) ((xcorner[ic][0] - domain->boxlo[0])*inv_cellsize);
 	      j0 = 2*(int) ((xcorner[ic][1] - domain->boxlo[1])*inv_cellsize);
 	      k0 = 2*(int) ((xcorner[ic][2] - domain->boxlo[2])*inv_cellsize);
@@ -253,16 +205,13 @@ void TLCPDI::compute_grid_weight_functions_and_gradients()
 
 	      m = 3;
 
-	    } else if (cubic){
+	    } else {
+	      //(update->shape_function == update->ShapeFunctions::CUBIC_SPLINE || update->shape_function == update->ShapeFunctions::QUADRATIC_SPLINE){
 	      i0 = (int) ((xcorner[ic][0] - domain->boxlo[0])*inv_cellsize - 1);
 	      j0 = (int) ((xcorner[ic][1] - domain->boxlo[1])*inv_cellsize - 1);
 	      k0 = (int) ((xcorner[ic][2] - domain->boxlo[2])*inv_cellsize - 1);
 
 	      m = 4;
-
-	    } else {
-	      cout << "Shape function type not supported by ULCPDI::compute_grid_weight_functions_and_gradients(): " << update->method_shape_function << endl;
-	      exit(1);
 	    }
 
 	    // cout << "corner " << ic << " of particle " << ip << ": [" << xcorner[ic][0] << "," << xcorner[ic][1] << "," << xcorner[ic][2] << "], i0=" << i0 << ", j0=" << j0 << ", k0=" << k0 << endl;
@@ -424,7 +373,7 @@ void TLCPDI::grid_to_points()
 void TLCPDI::advance_particles()
 {
   for (int isolid=0; isolid<domain->solids.size(); isolid++) {
-    domain->solids[isolid]->update_particle_velocities(FLIP);
+    domain->solids[isolid]->update_particle_velocities(update->alpha);
   }
 }
 

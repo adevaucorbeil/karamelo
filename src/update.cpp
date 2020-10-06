@@ -44,6 +44,9 @@ Update::Update(MPM *mpm) : Pointers(mpm)
   create_scheme(scheme_args);
 
   method = NULL;
+  shape_function = ShapeFunctions::LINEAR;
+  sub_method_type = SubMethodType::FLIP;
+  alpha = 0.99;
   //vector<string> method_args;
   //method_args.push_back("tlmpm");
   //create_method(method_args);
@@ -106,8 +109,9 @@ void Update::create_method(vector<string> args){
     error->all(FLERR, "Illegal method command: not enough arguments.\n");
   }
 
+  int n = 0;
   method_type = args[0];
-  method_shape_function = args[2];
+  
 
   if (0) return;
 
@@ -122,7 +126,44 @@ void Update::create_method(vector<string> args){
     error->all(FLERR, "Illegal method style.\n");
   }
 
-  method->setup(args);
+  bool isFLIP = false;
+  // Method used: PIC, FLIP or APIC:
+  if (map_sub_method_type.count(args[n]) > 0) {
+    sub_method_type = map_sub_method_type.at(args[n]);
+    if (sub_method_type == SubMethodType::PIC)
+      alpha = 0;
+    else if (sub_method_type == SubMethodType::FLIP) {
+      isFLIP = true;
+      if (args.size() < 4) {
+	error->all(FLERR, "Illegal modify_method command: not enough arguments.\n");
+      }
+    }
+  } else {
+    error->all(FLERR, "Error: method type " + args[n] + " not understood. Expect: PIC, FLIP or APIC\n");
+  }
+
+  n++;
+  
+  // Check if the shape function given in the inputfile is recognized.
+  if (args.size() > 1 + isFLIP) {
+    if (map_shape_functions.count(args[n]) > 0) {
+      shape_function = map_shape_functions.at(args[n]);
+      cout << "Setting up " << args[n] << " basis functions\n";
+      n++;
+    } else {
+      error->all(FLERR, "Illegal method_method argument: form function of type \033[1;31m" + args[2] + "\033[0m is unknown. Available options are:  \033[1;32mlinear\033[0m, \033[1;32mcubic-spline\033[0m, \033[1;32mquadratic-spline\033[0m, \033[1;32mBernstein-quadratic\033[0m.\n");
+    }
+  }
+
+  if (args.size() > n + isFLIP) {
+    error->all(FLERR, "Illegal modify_method command: too many arguments: " + to_string(n + isFLIP) + " expected, " + to_string(args.size()) + " received.\n");
+  }
+
+  if (isFLIP) alpha = input->parsev(args[n]);
+
+  n++;
+
+  method->setup(vector<string>(args.begin() + n, args.end()));
 }
 
 /*! Update elapsed simulation time.
@@ -148,6 +189,23 @@ int Update::update_timestep()
 /*! Write method, scheme, timestep, dt... to restart file.
  */
 void Update::write_restart(ofstream *of) {
+  // The informations to be stored in the restart file are:
+  // - The method type
+  // - The type of shape function
+  // - FLIP and/or PIC, or APIC
+  // - The scheme type
+  // - The timestep
+  // - dt
+  // - dt_factor
+  
+
+  //of->write(reinterpret_cast<const char *>(&flag), sizeof(int));
+}
+
+
+/*! Write method, scheme, timestep, dt... to restart file.
+ */
+void Update::read_restart(ifstream *ifr) {
   // The informations to be stored in the restart file are:
   // - The method type
   // - The type of shape function

@@ -16,8 +16,6 @@ MethodStyle(tlcpdi,TLCPDI)
 
 class TLCPDI : public Method {
  public:
-  double FLIP;
-  string shape_function;
 
   TLCPDI(class MPM *, vector<string>);
   ~TLCPDI();

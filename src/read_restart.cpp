@@ -96,8 +96,6 @@ void ReadRestart::header() {
 	error->one(FLERR, "Restart file written for " + to_string(nprocs) + " CPUs.\n");
       }
     }
-    //read_variable(DIMENSION, domain->dimension);
-    //read_variable(NPROCS, universe->nprocs);
     flag = read_int();
   }
 }

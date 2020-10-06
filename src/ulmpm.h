@@ -27,8 +27,6 @@ MethodStyle(ulmpm,ULMPM)
 
 class ULMPM : public Method {
  public:
-  double FLIP;
-  int shape_function;
   bool apic;
   
   ULMPM(class MPM *, vector<string>);
@@ -52,15 +50,8 @@ class ULMPM : public Method {
   void reset();
   void exchange_particles();
 
+private:
   int update_wf;
-
-protected:
-  enum {
-    LINEAR = 0,
-    CUBIC = 1,
-    QUADRATIC = 2,
-    BERNSTEIN = 3
-  };
 };
 
 // double linear_basis_function(double, int);

@@ -24,12 +24,8 @@ MethodStyle(tlmpm,TLMPM)
 #include <vector>
 #include <Eigen/Eigen>
 
-
 class TLMPM : public Method {
- public:
-  double FLIP;
-  string shape_function;
-
+public:
   TLMPM(class MPM *, vector<string>);
   ~TLMPM();
 
@@ -49,8 +45,9 @@ class TLMPM : public Method {
   void update_stress();
   void adjust_dt();
   void reset();
-  void exchange_particles() {};
+  void exchange_particles(){};
 
+private:
   int update_wf;
 };
 
