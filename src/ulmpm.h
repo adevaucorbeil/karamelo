@@ -29,7 +29,7 @@ class ULMPM : public Method {
  public:
   bool apic;
   
-  ULMPM(class MPM *, vector<string>);
+  ULMPM(class MPM *);
   ~ULMPM();
 
   void setup(vector<string>);

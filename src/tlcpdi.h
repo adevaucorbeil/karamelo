@@ -17,7 +17,7 @@ MethodStyle(tlcpdi,TLCPDI)
 class TLCPDI : public Method {
  public:
 
-  TLCPDI(class MPM *, vector<string>);
+  TLCPDI(class MPM *);
   ~TLCPDI();
 
   void setup(vector<string>);

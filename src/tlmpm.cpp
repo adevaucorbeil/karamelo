@@ -31,7 +31,7 @@
 
 using namespace std;
 
-TLMPM::TLMPM(MPM *mpm, vector<string> args) : Method(mpm) {
+TLMPM::TLMPM(MPM *mpm) : Method(mpm) {
   cout << "In TLMPM::TLMPM()" << endl;
 
   update_wf = 1;
@@ -47,8 +47,13 @@ TLMPM::~TLMPM()
 {
 }
 
-void TLMPM::setup(vector<string>)
+void TLMPM::setup(vector<string> args)
 {
+
+  if (args.size() > 0) {
+    error->all(FLERR, "Illegal modify_method command: too many arguments.\n");
+  }
+  
   if (update->shape_function == update->ShapeFunctions::LINEAR) {
     cout << "Setting up linear basis functions\n";
     basis_function = &BasisFunction::linear;

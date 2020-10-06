@@ -76,6 +76,8 @@ private:
       {"cubic-spline", ShapeFunctions::CUBIC_SPLINE},
       {"quadratic-spline", ShapeFunctions::QUADRATIC_SPLINE},
       {"Bernstein-quadratic", ShapeFunctions::BERNSTEIN}};
+
+  vector<string> additional_args;     ///< Read method, scheme, timestep, dt... to restart file
 };
 
 #endif

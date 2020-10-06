@@ -15,7 +15,7 @@
 
 using namespace std;
 
-TLCPDI::TLCPDI(MPM *mpm, vector<string> args) : Method(mpm) {
+TLCPDI::TLCPDI(MPM *mpm) : Method(mpm) {
   cout << "In TLCPDI::TLCPDI()" << endl;
 
   update_wf = 1;
@@ -33,6 +33,9 @@ TLCPDI::~TLCPDI()
 
 void TLCPDI::setup(vector<string> args)
 {
+  if (args.size() > 1) {
+    error->all(FLERR, "Illegal modify_method command: too many arguments.\n");
+  }
   if (update->shape_function == update->ShapeFunctions::LINEAR) {
     cout << "Setting up linear basis functions\n";
     basis_function = &BasisFunction::linear;

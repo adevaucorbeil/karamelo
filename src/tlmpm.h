@@ -26,7 +26,7 @@ MethodStyle(tlmpm,TLMPM)
 
 class TLMPM : public Method {
 public:
-  TLMPM(class MPM *, vector<string>);
+  TLMPM(class MPM *);
   ~TLMPM();
 
   void setup(vector<string>);

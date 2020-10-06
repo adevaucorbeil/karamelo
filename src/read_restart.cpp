@@ -66,7 +66,7 @@ Var ReadRestart::command(vector<string> args) {
       header();
     
     // Everyone reads the method, scheme, timestep, dt:
-    // update->read_restart(&restartstream);
+    update->read_restart(ifr);
 
 
     ifr->close();

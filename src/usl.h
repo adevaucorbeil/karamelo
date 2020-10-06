@@ -26,7 +26,7 @@ SchemeStyle(usl,USL)
 
 class USL : public Scheme {
  public:
-  USL(class MPM *, vector<string>);
+  USL(class MPM *);
   ~USL() {}
   void setup();
   void run(class Var);

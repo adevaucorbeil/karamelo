@@ -23,7 +23,7 @@
 
 using namespace std;
 
-USL::USL(MPM *mpm, vector<string> args) : Scheme(mpm) {
+USL::USL(MPM *mpm) : Scheme(mpm) {
   // cout << "In USL::USL()" << endl;
 }
 

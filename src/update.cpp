@@ -90,7 +90,7 @@ void Update::create_scheme(vector<string> args){
 
 #define SCHEME_CLASS
 #define SchemeStyle(key,Class) \
-  else if (scheme_style.compare(#key) == 0) scheme = new Class(mpm,args);
+  else if (scheme_style.compare(#key) == 0) scheme = new Class(mpm);
 #include "style_scheme.h"
 #undef SchemeStyle
 #undef SCHEME_CLASS
@@ -117,7 +117,7 @@ void Update::create_method(vector<string> args){
 
 #define METHOD_CLASS
 #define MethodStyle(key,Class) \
-  else if (method_type.compare(#key) == 0) method = new Class(mpm,args);
+  else if (method_type.compare(#key) == 0) method = new Class(mpm);
 #include "style_method.h"
 #undef MethodStyle
 #undef METHOD_CLASS
@@ -156,14 +156,10 @@ void Update::create_method(vector<string> args){
     }
   }
 
-  if (args.size() > n + isFLIP) {
-    error->all(FLERR, "Illegal modify_method command: too many arguments: " + to_string(n + isFLIP) + " expected, " + to_string(args.size()) + " received.\n");
-  }
-
   if (isFLIP) alpha = input->parsev(args[n]);
-
   n++;
 
+  additional_args = vector<string>(args.begin() + n, args.end());
   method->setup(vector<string>(args.begin() + n, args.end()));
 }
 
@@ -192,27 +188,150 @@ int Update::update_timestep()
 void Update::write_restart(ofstream *of) {
   // The informations to be stored in the restart file are:
   // - The method type
-  // - The type of shape function
+  // - The scheme style
   // - FLIP and/or PIC, or APIC
-  // - The scheme type
+  // - alpha
+  // - The type of shape function
+  // - additional_args
   // - The timestep
   // - dt
   // - dt_factor
+  // - dt_contant
   
+  // Method type:
+  size_t N = method_type.size();
+  of->write(reinterpret_cast<const char *>(&N), sizeof(size_t));
+  of->write(reinterpret_cast<const char *>(method_type.c_str()), N);
 
-  //of->write(reinterpret_cast<const char *>(&flag), sizeof(int));
+  // Scheme style:
+  N = scheme_style.size();
+  of->write(reinterpret_cast<const char *>(&N), sizeof(size_t));
+  of->write(reinterpret_cast<const char *>(scheme_style.c_str()), N);
+
+  // Sub-method type (PIC and/or FLIP or APIC):
+  of->write(reinterpret_cast<const char *>(&sub_method_type), sizeof(int));
+
+  // alpha
+  of->write(reinterpret_cast<const char *>(&alpha), sizeof(double));
+  cout << "alpha=" << alpha << endl;
+
+  // The type of shape function:
+  of->write(reinterpret_cast<const char *>(&shape_function), sizeof(int));
+
+  // additional_args: 
+  N = additional_args.size();
+  of->write(reinterpret_cast<const char *>(&N), sizeof(size_t));
+  for (size_t i = 0; i < N; i++) {
+    size_t Ns = additional_args[i].size();
+    of->write(reinterpret_cast<const char *>(&Ns), sizeof(size_t));
+    of->write(reinterpret_cast<const char *>(additional_args[i].c_str()), Ns);    
+  }
+
+  // Timestep:
+  of->write(reinterpret_cast<const char *>(&ntimestep), sizeof(bigint));
+
+  // dt:
+  of->write(reinterpret_cast<const char *>(&dt), sizeof(double));
+
+  // dt_factor:
+  of->write(reinterpret_cast<const char *>(&dt_factor), sizeof(double));
+
+  // dt_contant:
+  of->write(reinterpret_cast<const char *>(&dt_constant), sizeof(bool));
 }
 
 
 /*! Write method, scheme, timestep, dt... to restart file.
  */
 void Update::read_restart(ifstream *ifr) {
-  // The informations to be stored in the restart file are:
-  // - The method type
-  // - The type of shape function
+  // The informations to be stored in the restart file are:  // - The method type
+  // - The scheme style
   // - FLIP and/or PIC, or APIC
-  // - The scheme type
+  // - alpha
+  // - The type of shape function
   // - The timestep
   // - dt
   // - dt_factor
+  // - dt_contant
+  
+  // Method type:
+  size_t N = 0;
+  ifr->read(reinterpret_cast<char *>(&N), sizeof(size_t));
+  method_type.resize(N);
+  ifr->read(reinterpret_cast<char *>(&method_type[0]), N);
+  cout << "method_type=" << method_type << endl;
+
+  if (0) return;
+
+#define METHOD_CLASS
+#define MethodStyle(key,Class) \
+  else if (method_type.compare(#key) == 0) method = new Class(mpm);
+#include "style_method.h"
+#undef MethodStyle
+#undef METHOD_CLASS
+
+  else {
+    error->all(FLERR, "Illegal method style.\n");
+  }
+
+
+  // Scheme style:
+  N = 0;
+  ifr->read(reinterpret_cast<char *>(&N), sizeof(size_t));
+  scheme_style.resize(N);
+  ifr->read(reinterpret_cast<char *>(&scheme_style[0]), N);
+  cout << "scheme_style=" << scheme_style << endl;
+
+  if (0) return;
+
+#define SCHEME_CLASS
+#define SchemeStyle(key,Class) \
+  else if (scheme_style.compare(#key) == 0) scheme = new Class(mpm);
+#include "style_scheme.h"
+#undef SchemeStyle
+#undef SCHEME_CLASS
+
+  else {
+    error->all(FLERR, "Illegal scheme style.\n");
+  }
+  // Sub-method type (PIC and/or FLIP or APIC):
+  ifr->read(reinterpret_cast<char *>(&sub_method_type), sizeof(int));
+  cout << "sub_method_type=" << sub_method_type << endl;
+
+  // alpha
+  ifr->read(reinterpret_cast<char *>(&alpha), sizeof(double));
+  cout << "alpha=" << alpha << endl;
+
+  // The type of shape function:
+  ifr->read(reinterpret_cast<char *>(&shape_function), sizeof(int));
+  cout << "shape_functions=" << shape_function << endl;
+
+  // additional_args: 
+  ifr->read(reinterpret_cast<char *>(&N), sizeof(size_t));
+  additional_args.resize(N);
+  for (size_t i = 0; i < N; i++) {
+    size_t Ns = 0;
+    ifr->read(reinterpret_cast<char *>(&Ns), sizeof(size_t));
+    additional_args[i].resize(Ns);
+    ifr->read(reinterpret_cast<char *>(&additional_args[i][0]), Ns);
+    cout << "additional_args[" << i << "]=" << additional_args[i] << endl;
+  }
+
+  // Timestep:
+  ifr->read(reinterpret_cast<char *>(&ntimestep), sizeof(bigint));
+  cout << "ntimestep=" << ntimestep << endl;
+
+  // dt:
+  ifr->read(reinterpret_cast<char *>(&dt), sizeof(double));
+  cout << "dt=" << dt << endl;
+
+  // dt_factor:
+  ifr->read(reinterpret_cast<char *>(&dt_factor), sizeof(double));
+  cout << "dt_factor=" << dt_factor << endl;
+
+  // dt_contant:
+  ifr->read(reinterpret_cast<char *>(&dt_constant), sizeof(bool));
+  cout << "dt_constant=" << dt_constant << endl;
+
+  
 }
