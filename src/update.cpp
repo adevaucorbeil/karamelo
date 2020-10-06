@@ -160,7 +160,7 @@ void Update::create_method(vector<string> args){
   n++;
 
   additional_args = vector<string>(args.begin() + n, args.end());
-  method->setup(vector<string>(args.begin() + n, args.end()));
+  method->setup(additional_args);
 }
 
 /*! Update elapsed simulation time.
@@ -316,6 +316,7 @@ void Update::read_restart(ifstream *ifr) {
     ifr->read(reinterpret_cast<char *>(&additional_args[i][0]), Ns);
     cout << "additional_args[" << i << "]=" << additional_args[i] << endl;
   }
+  method->setup(additional_args);
 
   // Timestep:
   ifr->read(reinterpret_cast<char *>(&ntimestep), sizeof(bigint));
