@@ -73,6 +73,7 @@ void WriteRestart::write() {
 
     // Everyone writes the method, scheme, timestep, dt:
     update->write_restart(of);
+    domain->write_restart(of);
 
 
     of->close();

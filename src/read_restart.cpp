@@ -67,6 +67,7 @@ Var ReadRestart::command(vector<string> args) {
     
     // Everyone reads the method, scheme, timestep, dt:
     update->read_restart(ifr);
+    domain->read_restart(ifr);
 
 
     ifr->close();

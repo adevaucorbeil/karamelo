@@ -329,7 +329,7 @@ void Domain::create_domain(vector<string> args) {
       grid->init(boxlo, boxhi);
     }
   }
-  
+
   // Set proc grid
   universe->set_proc_grid();
   created = true;
@@ -416,4 +416,71 @@ void Domain::set_axisymmetric(vector<string> args) {
   } else if (args[0].compare("false") == 0) {
     axisymmetric = false;
   }
+}
+
+/*! Write box bounds, list of regions and solids to restart file
+ */
+void Domain::write_restart(ofstream* of){
+
+  // Write boxlo:
+  of->write(reinterpret_cast<const char *>(&boxlo[0]), 3*sizeof(double));
+  
+  // Write boxhi:
+  of->write(reinterpret_cast<const char *>(&boxhi[0]), 3*sizeof(double));
+
+  // Write sublo:
+  of->write(reinterpret_cast<const char *>(&sublo[0]), 3*sizeof(double));
+
+  // Write subhi:
+  of->write(reinterpret_cast<const char *>(&subhi[0]), 3*sizeof(double));
+
+  // Write axisymmetric:
+  of->write(reinterpret_cast<const char *>(&axisymmetric), sizeof(bool));
+
+  // Write  np_total:
+  of->write(reinterpret_cast<const char *>(&np_total), sizeof(tagint));
+  cout << "np_total=" << np_total << endl;
+  
+  if (!update->method->is_TL) {
+    of->write(reinterpret_cast<const char *>(&grid->cellsize), sizeof(double));
+    cout << "cellsize=" << grid->cellsize << endl;
+  }
+}
+
+/*! Read box bounds, list of regions and solids to restart file
+ */
+void Domain::read_restart(ifstream* ifr){
+  // Write boxlo:
+  ifr->read(reinterpret_cast<char *>(&boxlo[0]), 3*sizeof(double));
+  cout << "boxlo=[" << boxlo[0] << "," << boxlo[1] << "," << boxlo[2] << endl;
+  
+  // Write boxhi:
+  ifr->read(reinterpret_cast<char *>(&boxhi[0]), 3*sizeof(double));
+  cout << "boxhi=[" << boxhi[0] << "," << boxhi[1] << "," << boxhi[2] << endl;
+
+  // Write sublo:
+  ifr->read(reinterpret_cast<char *>(&sublo[0]), 3*sizeof(double));
+  cout << "sublo=[" << sublo[0] << "," << sublo[1] << "," << sublo[2] << endl;
+
+  // Write subhi:
+  ifr->read(reinterpret_cast<char *>(&subhi[0]), 3*sizeof(double));
+  cout << "subhi=[" << subhi[0] << "," << subhi[1] << "," << subhi[2] << endl;
+
+  // Write axisymmetric:
+  ifr->read(reinterpret_cast<char *>(&axisymmetric), sizeof(bool));
+  cout << "axisymmetric=" << axisymmetric << endl;
+
+  // Write  np_total:
+  ifr->read(reinterpret_cast<char *>(&np_total), sizeof(tagint));
+  cout << "np_total=" << np_total << endl;
+  
+  universe->set_proc_grid();
+  if (!update->method->is_TL) {
+    grid = new Grid(mpm);
+    ifr->read(reinterpret_cast<char *>(&grid->cellsize), sizeof(double));
+    cout << "cellsize=" << grid->cellsize << endl;
+    
+    grid->init(boxlo, boxhi);
+  }
+  created = true;
 }

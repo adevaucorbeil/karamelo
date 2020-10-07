@@ -227,6 +227,9 @@ void Update::write_restart(ofstream *of) {
     of->write(reinterpret_cast<const char *>(additional_args[i].c_str()), Ns);    
   }
 
+  // atime:
+  of->write(reinterpret_cast<const char *>(&atime), sizeof(double));
+
   // Timestep:
   of->write(reinterpret_cast<const char *>(&ntimestep), sizeof(bigint));
 
@@ -318,9 +321,16 @@ void Update::read_restart(ifstream *ifr) {
   }
   method->setup(additional_args);
 
+  // atime:
+  ifr->read(reinterpret_cast<char *>(&atime), sizeof(double));
+  cout << "atime=" << atime << endl;
+  (*input->vars)["time"] = Var("time", atime);
+
   // Timestep:
   ifr->read(reinterpret_cast<char *>(&ntimestep), sizeof(bigint));
   cout << "ntimestep=" << ntimestep << endl;
+  atimestep = ntimestep;
+  (*input->vars)["timestep"] = Var("timestep", ntimestep);
 
   // dt:
   ifr->read(reinterpret_cast<char *>(&dt), sizeof(double));
@@ -334,5 +344,7 @@ void Update::read_restart(ifstream *ifr) {
   ifr->read(reinterpret_cast<char *>(&dt_constant), sizeof(bool));
   cout << "dt_constant=" << dt_constant << endl;
 
+  if (dt_constant)
+    (*input->vars)["dt"] = Var("dt", dt);
   
 }
