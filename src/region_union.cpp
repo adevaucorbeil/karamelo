@@ -26,6 +26,17 @@ Union::Union(MPM *mpm, vector<string> args) : Region(mpm, args)
 {
   cout << "Initiate Union" << endl;
 
+  if (args.size() < 3) {
+    error->all(FLERR, "Error: not enough arguments.\n");
+  }
+
+  if (args[2].compare("restart") ==
+      0) { // If the keyword restart, we are expecting to have read_restart()
+           // launched right after.
+    xlo, xhi, ylo, yhi, zlo, zhi = 0;
+    return;
+  }
+
   if (args.size() < Nargs) {
     error->all(FLERR,
                "Error: region_union command not enough arguments\n" + usage);
@@ -94,4 +105,38 @@ vector<double> Union::limits(){
   lim.push_back(zlo);
   lim.push_back(zhi);
   return lim;
+}
+
+void Union::write_restart(ofstream *of) {
+  size_t N = iregions.size();
+  of->write(reinterpret_cast<const char *>(&N), sizeof(int));
+  for (int i = 0; i < N; i++) {
+    of->write(reinterpret_cast<const char *>(&iregions[i]), sizeof(int));
+  }
+
+  of->write(reinterpret_cast<const char *>(&xlo), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&xhi), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&ylo), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&yhi), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&zlo), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&zhi), sizeof(double));
+}
+
+void Union::read_restart(ifstream *ifr) {
+  cout << "Restart Union" << endl;
+
+  size_t N;
+  ifr->read(reinterpret_cast<char *>(&N), sizeof(int));
+  iregions.resize(N);
+
+  for (int i = 0; i < N; i++) {
+  ifr->read(reinterpret_cast<char *>(&iregions[i]), sizeof(int));
+  }
+
+  ifr->read(reinterpret_cast<char *>(&xlo), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&xhi), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&ylo), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&yhi), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&zlo), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&zhi), sizeof(double));
 }

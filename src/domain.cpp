@@ -445,6 +445,23 @@ void Domain::write_restart(ofstream* of){
     of->write(reinterpret_cast<const char *>(&grid->cellsize), sizeof(double));
     cout << "cellsize=" << grid->cellsize << endl;
   }
+
+  // Save regions:
+  size_t N = regions.size();
+  of->write(reinterpret_cast<const char *>(&N), sizeof(int));
+
+  for (int i = 0; i < N; i++) {
+    size_t Nr = regions[i]->id.size();
+    of->write(reinterpret_cast<const char *>(&Nr), sizeof(size_t));
+    of->write(reinterpret_cast<const char *>(regions[i]->id.c_str()), Nr);
+    cout << "id = " << regions[i]->id << endl;
+
+    Nr = regions[i]->style.size();
+    of->write(reinterpret_cast<const char *>(&Nr), sizeof(size_t));
+    of->write(reinterpret_cast<const char *>(regions[i]->style.c_str()), Nr);
+    regions[i]->write_restart(of);
+    cout << "style = " << regions[i]->style << endl;
+  }
 }
 
 /*! Read box bounds, list of regions and solids to restart file
@@ -483,4 +500,32 @@ void Domain::read_restart(ifstream* ifr){
     grid->init(boxlo, boxhi);
   }
   created = true;
+
+
+  // Pull regions:
+  size_t N = 0;
+  ifr->read(reinterpret_cast<char *>(&N), sizeof(int));
+  regions.resize(N);
+
+  for (int i = 0; i < N; i++) {
+    size_t Nr = 0;
+    string id = "";
+
+    ifr->read(reinterpret_cast<char *>(&Nr), sizeof(size_t));
+    id.resize(Nr);
+
+    ifr->read(reinterpret_cast<char *>(&id[0]), Nr);
+    cout << "id = " << id << endl;
+
+    string style = "";
+    ifr->read(reinterpret_cast<char *>(&Nr), sizeof(size_t));
+    style.resize(Nr);
+
+    ifr->read(reinterpret_cast<char *>(&style[0]), Nr);
+    cout << "style = " << style << endl;
+    RegionCreator region_creator = (*region_map)[style];
+    regions.push_back(region_creator(mpm, vector<string>{id, style, "restart"}));
+    regions.back()->read_restart(ifr);
+    regions.back()->init();
+  }
 }

@@ -57,6 +57,8 @@ class Sphere : public Region {
   ~Sphere();
   int inside(double, double, double);
   vector<double> limits();
+  void write_restart(ofstream *);
+  void read_restart(ifstream *);
 
  protected:
   double c1, c2, c3, R, RSq;

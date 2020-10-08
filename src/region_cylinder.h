@@ -53,13 +53,15 @@ This command defines a cylindrical region of space. It is usually used by groups
 */
 class Cylinder : public Region {
 
- public:
+public:
   Cylinder(class MPM *, vector<string>);
   ~Cylinder();
   int inside(double, double, double);
   vector<double> limits();
+  void write_restart(ofstream *);
+  void read_restart(ifstream *);
 
- protected:
+protected:
   double c1, c2, R, RSq, lo, hi;
   char axis;
   double xlo, xhi, ylo, yhi, zlo, zhi;

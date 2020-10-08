@@ -25,7 +25,7 @@
 
 class Fix : protected Pointers {
  public:
-  string id;
+  string id, style;
   int igroup, groupbit;
   int mask;
   vector<string> args; // Store arguments

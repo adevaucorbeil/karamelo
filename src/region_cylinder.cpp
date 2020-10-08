@@ -28,6 +28,19 @@ using namespace MathSpecial;
 
 Cylinder::Cylinder(MPM *mpm, vector<string> args) : Region(mpm, args)
 {
+  if (args.size() < 3) {
+    error->all(FLERR, "Error: not enough arguments.\n");
+  }
+
+  if (args[2].compare("restart") ==
+      0) { // If the keyword restart, we are expecting to have read_restart()
+           // launched right after.
+    c1, c2, R, RSq, lo, hi = 0;
+    axis = 'x';
+    xlo, xhi, ylo, yhi, zlo, zhi = 0;
+    return;
+  }
+
   cout << "Initiate Cylinder" << endl;
 
   if (domain->dimension == 3) {
@@ -162,4 +175,37 @@ vector<double> Cylinder::limits(){
   lim.push_back(zlo);
   lim.push_back(zhi);
   return lim;
+}
+
+void Cylinder::write_restart(ofstream *of) {
+  of->write(reinterpret_cast<const char *>(&c1), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&c2), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&R), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&lo), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&hi), sizeof(double));
+  of->write(&axis, sizeof(char));
+  of->write(reinterpret_cast<const char *>(&xlo), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&xhi), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&ylo), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&yhi), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&zlo), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&zhi), sizeof(double));
+}
+
+void Cylinder::read_restart(ifstream *ifr)
+{
+  cout << "Restart Cylinder" << endl;
+  ifr->read(reinterpret_cast<char *>(&c1), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&c2), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&R), sizeof(double));
+  RSq = R * R;
+  ifr->read(reinterpret_cast<char *>(&lo), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&hi), sizeof(double));
+  ifr->read(&axis, sizeof(char));
+  ifr->read(reinterpret_cast<char *>(&xlo), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&xhi), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&ylo), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&yhi), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&zlo), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&zhi), sizeof(double));
 }
