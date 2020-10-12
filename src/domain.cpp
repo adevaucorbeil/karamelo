@@ -462,6 +462,18 @@ void Domain::write_restart(ofstream* of){
     regions[i]->write_restart(of);
     cout << "style = " << regions[i]->style << endl;
   }
+
+  // Save solids:
+  N = solids.size();
+  of->write(reinterpret_cast<const char *>(&N), sizeof(int));
+
+  for (int i = 0; i < N; i++) {
+    size_t Ns = solids[i]->id.size();
+    of->write(reinterpret_cast<const char *>(&Ns), sizeof(size_t));
+    of->write(reinterpret_cast<const char *>(solids[i]->id.c_str()), Ns);
+    cout << "id = " << solids[i]->id << endl;
+    solids[i]->write_restart(of);
+  }
 }
 
 /*! Read box bounds, list of regions and solids to restart file
@@ -524,8 +536,28 @@ void Domain::read_restart(ifstream* ifr){
     ifr->read(reinterpret_cast<char *>(&style[0]), Nr);
     cout << "style = " << style << endl;
     RegionCreator region_creator = (*region_map)[style];
-    regions.push_back(region_creator(mpm, vector<string>{id, style, "restart"}));
-    regions.back()->read_restart(ifr);
-    regions.back()->init();
+    regions[i] = region_creator(mpm, vector<string>{id, style, "restart"});
+    regions[i]->read_restart(ifr);
+    regions[i]->init();
+  }
+
+  // Read solids:
+  N = 0;
+  ifr->read(reinterpret_cast<char *>(&N), sizeof(int));
+  solids.resize(N);
+
+  for (int i = 0; i < N; i++) {
+    size_t Ns = 0;
+    string id = "";
+
+    ifr->read(reinterpret_cast<char *>(&Ns), sizeof(size_t));
+    id.resize(Ns);
+
+    ifr->read(reinterpret_cast<char *>(&id[0]), Ns);
+    cout << "id = " << id << endl;
+
+    solids[i] = new Solid(mpm, vector<string>{id, "restart"});
+    solids[i]->read_restart(ifr);
+    solids[i]->init();
   }
 }

@@ -62,6 +62,14 @@ Solid::Solid(MPM *mpm, vector<string> args) : Pointers(mpm)
     error->all(FLERR, error_str);
   }
 
+  id          = args[0];
+
+  if (args[1].compare("restart") == 0) {
+    // If the keyword restart, we are expecting to have read_restart()
+    // launched right after.
+    return;
+  }
+
   if (usage.find(args[1]) == usage.end())
   {
     string error_str = "Error, keyword \033[1;31m" + args[1] + "\033[0m unknown!\n";
@@ -76,10 +84,9 @@ Solid::Solid(MPM *mpm, vector<string> args) : Pointers(mpm)
 	       + usage.find(args[1])->second);
   }
 
-  cout << "Creating new solid with ID: " << args[0] << endl;
+  cout << "Creating new solid with ID: " << id << endl;
 
   method_type = update->method_type;
-  id          = args[0];
 
   np = 0;
 
@@ -2488,3 +2495,23 @@ void Solid::read_mesh(string fileName)
 // #endif
 }
 
+void Solid::write_restart(ofstream *of) {
+  // Write solid bounds:
+  of->write(reinterpret_cast<const char *>(&solidlo[0]), 3*sizeof(double));
+  of->write(reinterpret_cast<const char *>(&solidhi[0]), 3*sizeof(double));
+  of->write(reinterpret_cast<const char *>(&solidsublo[0]), 3*sizeof(double));
+  of->write(reinterpret_cast<const char *>(&solidsubhi[0]), 3*sizeof(double));
+
+}
+
+void Solid::read_restart(ifstream *ifr) {
+  // Read solid bounds:
+  ifr->read(reinterpret_cast<char *>(&solidlo[0]), 3*sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&solidhi[0]), 3*sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&solidsublo[0]), 3*sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&solidsubhi[0]), 3*sizeof(double));
+  cout << "solidlo=[" << solidlo[0] << "," << solidlo[1] << "," << solidlo[2] << endl;
+  cout << "solidhi=[" << solidhi[0] << "," << solidhi[1] << "," << solidhi[2] << endl;
+  cout << "solidsublo=[" << solidsublo[0] << "," << solidsublo[1] << "," << solidsublo[2] << endl;
+  cout << "solidsubhi=[" << solidsubhi[0] << "," << solidsubhi[1] << "," << solidsubhi[2] << endl;
+}

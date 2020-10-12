@@ -36,6 +36,10 @@ using namespace Eigen;
 class Solid : protected Pointers {
  public:
   string id;                                ///< Solid id
+
+  double solidlo[3], solidhi[3];            ///< Solid global bounds
+  double solidsublo[3], solidsubhi[3];      ///< Solid local bounds
+
   bigint np;                                ///< Total number of particles in the domain
   int np_local;                             ///< Number of local particles (in this CPU)
   int comm_n;                               ///< Number of double to pack for particle exchange between CPU
@@ -43,9 +47,6 @@ class Solid : protected Pointers {
   double mtot;                              ///< Total mass
 
   vector<tagint> ptag;                      ///< Unique identifier for particles in the system
-
-  double solidlo[3], solidhi[3];            ///< Solid global bounds
-  double solidsublo[3], solidsubhi[3];      ///< Solid local bounds
 
   vector<Eigen::Vector3d> x;                ///< Particles' current position
   vector<Eigen::Vector3d> x0;               ///< Particles' reference position
@@ -146,7 +147,10 @@ class Solid : protected Pointers {
                                                     ///< This function is used to re-order the memory arrangment of particles.
                                                     ///< Usually this is done when particle j is deleted.
   void pack_particle(int, vector<double> &);        ///< Pack particles attributes into a buffer (used for generating a restart).
-  void unpack_particle(int &, vector<int>, double[]); ///< Unpack particles attributes from a buffer (used when reading a restart). 
+  void unpack_particle(int &, vector<int>, double[]); ///< Unpack particles attributes from a buffer (used when reading a restart).
+
+  void write_restart(ofstream*);                    ///< Write solid information in the restart file
+  void read_restart(ifstream*);                     ///< Read solid information from the restart file
 
 private:
   void populate(vector<string>);
