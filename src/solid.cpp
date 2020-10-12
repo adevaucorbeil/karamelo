@@ -2502,6 +2502,13 @@ void Solid::write_restart(ofstream *of) {
   of->write(reinterpret_cast<const char *>(&solidsublo[0]), 3*sizeof(double));
   of->write(reinterpret_cast<const char *>(&solidsubhi[0]), 3*sizeof(double));
 
+  // Write number of particles:
+  of->write(reinterpret_cast<const char *>(&np), sizeof(bigint));
+  of->write(reinterpret_cast<const char *>(&np_local), sizeof(int));
+  of->write(reinterpret_cast<const char *>(&comm_n), sizeof(int));
+  of->write(reinterpret_cast<const char *>(&vtot), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&mtot), sizeof(double));
+
 }
 
 void Solid::read_restart(ifstream *ifr) {
@@ -2514,4 +2521,11 @@ void Solid::read_restart(ifstream *ifr) {
   cout << "solidhi=[" << solidhi[0] << "," << solidhi[1] << "," << solidhi[2] << endl;
   cout << "solidsublo=[" << solidsublo[0] << "," << solidsublo[1] << "," << solidsublo[2] << endl;
   cout << "solidsubhi=[" << solidsubhi[0] << "," << solidsubhi[1] << "," << solidsubhi[2] << endl;
+  
+  // Read number of particles:
+  ifr->read(reinterpret_cast<char *>(&np), sizeof(bigint));
+  ifr->read(reinterpret_cast<char *>(&np_local), sizeof(int));
+  ifr->read(reinterpret_cast<char *>(&comm_n), sizeof(int));
+  ifr->read(reinterpret_cast<char *>(&vtot), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&mtot), sizeof(double));
 }
