@@ -286,13 +286,11 @@ void Material::add_material(vector<string> args) {
     else
       type = NEO_HOOKEAN;
 
-    Mat new_material(args[0], type, input->parsev(args[2]),
-                     input->parsev(args[3]), input->parsev(args[4]));
-    materials.push_back(new_material);
+    materials.push_back(Mat{args[0], type, input->parsev(args[2]),
+                            input->parsev(args[3]), input->parsev(args[4])});
 
   } else if (args[1].compare("rigid") == 0) {
-    Mat new_material(args[0], RIGID);
-    materials.push_back(new_material);
+    materials.push_back(Mat{args[0], RIGID});
   } else {
     // create the Material
     int iEOS = material->find_EOS(args[2]);
@@ -355,9 +353,8 @@ void Material::add_material(vector<string> args) {
       }
     }
 
-    Mat new_material(args[0], SHOCK, EOSs[iEOS], strengths[iStrength], damage_,
-                     temp_);
-    materials.push_back(new_material);
+    materials.push_back(
+        Mat{args[0], SHOCK, EOSs[iEOS], strengths[iStrength], damage_, temp_});
   }
   cout << "Creating new mat with ID: " << args[0] << endl;
 }
@@ -440,6 +437,48 @@ void Material::write_restart(ofstream *of) {
     temperatures[i]->write_restart(of);
     cout << "style = " << temperatures[i]->style << endl;
   }
+
+  // Save materials:
+  N = materials.size();
+  of->write(reinterpret_cast<const char *>(&N), sizeof(int));
+
+  for (int i = 0; i < N; i++) {
+    size_t Nmats = materials[i].id.size();
+    of->write(reinterpret_cast<const char *>(&Nmats), sizeof(size_t));
+    of->write(reinterpret_cast<const char *>(materials[i].id.c_str()), Nmats);
+    cout << "id = " << materials[i].id << endl;
+
+    of->write(reinterpret_cast<const char *>(&materials[i].type), sizeof(int));
+    cout << "type = " << materials[i].type << endl;
+
+    if (materials[i].type == SHOCK) {
+      int iEOS = find_EOS(materials[i].eos->id);
+      of->write(reinterpret_cast<const char *>(&iEOS), sizeof(int));
+
+      int iStrength = find_strength(materials[i].strength->id);
+      of->write(reinterpret_cast<const char *>(&iStrength), sizeof(int));
+
+      int iDamage = -1;
+      if (materials[i].damage != NULL) {
+	iDamage = find_damage(materials[i].damage->id);
+      }
+      of->write(reinterpret_cast<const char *>(&iDamage), sizeof(int));
+
+      int iTemperature = -1;
+      if (materials[i].temp != NULL) {
+	iTemperature = find_temperature(materials[i].temp->id);
+      }
+      of->write(reinterpret_cast<const char *>(&iTemperature), sizeof(int));
+    } else if (materials[i].type == LINEAR || materials[i].type == NEO_HOOKEAN) {
+      of->write(reinterpret_cast<const char *>(&materials[i].rho0), sizeof(double));
+      of->write(reinterpret_cast<const char *>(&materials[i].E), sizeof(double));
+      of->write(reinterpret_cast<const char *>(&materials[i].nu), sizeof(double));
+    }
+  }
+
+  // -2 flag signals end of Material::write_restart()
+  int flag = -2;
+  of->write(reinterpret_cast<const char *>(&flag), sizeof(int));
 }
 
 
@@ -552,6 +591,68 @@ void Material::read_restart(ifstream *ifr) {
     temperatures[i] = temperature_creator(mpm, vector<string>{id, style, "restart"});
     temperatures[i]->read_restart(ifr);
     temperatures[i]->init();
+  }
+
+  // Pull Materials:
+  N = 0;
+  ifr->read(reinterpret_cast<char *>(&N), sizeof(int));
+
+  for (int i = 0; i < N; i++) {
+    size_t Nmaterials = 0;
+    string id = "";
+
+    ifr->read(reinterpret_cast<char *>(&Nmaterials), sizeof(size_t));
+    id.resize(Nmaterials);
+
+    ifr->read(reinterpret_cast<char *>(&id[0]), Nmaterials);
+    cout << "id = " << id << endl;
+
+    int type = 0;
+    ifr->read(reinterpret_cast<char *>(&type), sizeof(int));
+
+    if (type == SHOCK) {
+      int iEOS = -1;
+      int iStrength = -1;
+      int iDamage = -1;
+      int iTemp = -1;
+
+      ifr->read(reinterpret_cast<char *>(&iEOS), sizeof(int));
+      ifr->read(reinterpret_cast<char *>(&iStrength), sizeof(int));
+      ifr->read(reinterpret_cast<char *>(&iDamage), sizeof(int));
+      ifr->read(reinterpret_cast<char *>(&iTemp), sizeof(int));
+
+      Damage *damage_ = NULL;
+      Temperature *temp_ = NULL;
+
+      if (iDamage != -1) {
+        damage_ = damages[iDamage];
+      }
+      if (iTemp != -1) {
+        temp_ = temperatures[iTemp];
+      }
+
+      materials.push_back(
+          Mat{id, SHOCK, EOSs[iEOS], strengths[iStrength], damage_, temp_});
+    } else if (type == LINEAR || type == NEO_HOOKEAN) {
+      double rho0, E, nu = 0;
+      ifr->read(reinterpret_cast<char *>(&rho0), sizeof(double));
+      ifr->read(reinterpret_cast<char *>(&E), sizeof(double));
+      ifr->read(reinterpret_cast<char *>(&nu), sizeof(double));
+
+      materials.push_back(Mat{id, type, rho0, E, nu});
+    } else if (type == RIGID) {
+      materials.push_back(Mat{id, RIGID});
+    } else {
+      error->one(FLERR, "Error: unkown material type" + to_string(type) + ".\n");
+    }
+  }
+
+  // -2 flag signals end of Material::read_restart()
+  int flag = 0;
+  ifr->read(reinterpret_cast<char *>(&flag), sizeof(int));
+
+  if (flag != -2) {
+      error->one(FLERR, "Error: unexpected end to Material::read_restart(): flag = " + to_string(flag) + ". Number of read entities unexpected.\n");    
   }
 }
 

@@ -109,10 +109,10 @@ class Material : protected Pointers {
   TemperatureCreatorMap *temperature_map;
 
   enum constitutive_model {
-    LINEAR = 0,      ///< Linear elasticity
-    NEO_HOOKEAN = 1, ///< Neo-Hookean model
-    SHOCK = 2,       ///< EOS + Strength or fluids
-    RIGID = 3,       ///< Rigid material
+    RIGID = 0,       ///< Rigid material
+    LINEAR = 1,      ///< Linear elasticity
+    NEO_HOOKEAN = 2, ///< Neo-Hookean model
+    SHOCK = 3,       ///< EOS + Strength or fluids
   };
 
 private:
