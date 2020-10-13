@@ -64,26 +64,6 @@ Solid::Solid(MPM *mpm, vector<string> args) : Pointers(mpm)
 
   id          = args[0];
 
-  if (args[1].compare("restart") == 0) {
-    // If the keyword restart, we are expecting to have read_restart()
-    // launched right after.
-    return;
-  }
-
-  if (usage.find(args[1]) == usage.end())
-  {
-    string error_str = "Error, keyword \033[1;31m" + args[1] + "\033[0m unknown!\n";
-    for (auto &x : usage)
-      error_str += x.second;
-    error->all(FLERR, error_str);
-  }
-
-  if (args.size() < Nargs.find(args[1])->second)
-  {
-    error->all(FLERR, "Error: not enough arguments.\n"
-	       + usage.find(args[1])->second);
-  }
-
   cout << "Creating new solid with ID: " << id << endl;
 
   method_type = update->method_type;
@@ -116,6 +96,27 @@ Solid::Solid(MPM *mpm, vector<string> args) : Pointers(mpm)
   dtCFL = 1.0e22;
   vtot  = 0;
   mtot = 0;
+
+
+  if (args[1].compare("restart") == 0) {
+    // If the keyword restart, we are expecting to have read_restart()
+    // launched right after.
+    return;
+  }
+
+  if (usage.find(args[1]) == usage.end())
+  {
+    string error_str = "Error, keyword \033[1;31m" + args[1] + "\033[0m unknown!\n";
+    for (auto &x : usage)
+      error_str += x.second;
+    error->all(FLERR, error_str);
+  }
+
+  if (args.size() < Nargs.find(args[1])->second)
+  {
+    error->all(FLERR, "Error: not enough arguments.\n"
+	       + usage.find(args[1])->second);
+  }
 
   if (args[1].compare("region") == 0)
   {
@@ -2506,12 +2507,15 @@ void Solid::write_restart(ofstream *of) {
   of->write(reinterpret_cast<const char *>(&np), sizeof(bigint));
   of->write(reinterpret_cast<const char *>(&np_local), sizeof(int));
   of->write(reinterpret_cast<const char *>(&comm_n), sizeof(int));
+  of->write(reinterpret_cast<const char *>(&nc), sizeof(int));
 
   // Write particle's attributes:
   cout << x[0](0) << ", " << x[0](1) << ", " << x[0](2) << endl;
   for (int ip = 0; ip < np_local; ip++) {
     of->write(reinterpret_cast<const char *>(&ptag[ip]), sizeof(tagint));
+    of->write(reinterpret_cast<const char *>(&x0[ip]), sizeof(Eigen::Vector3d));
     of->write(reinterpret_cast<const char *>(&x[ip]), sizeof(Eigen::Vector3d));
+    of->write(reinterpret_cast<const char *>(&v[ip]), sizeof(Eigen::Vector3d));
   }
 }
 
@@ -2530,13 +2534,16 @@ void Solid::read_restart(ifstream *ifr) {
   ifr->read(reinterpret_cast<char *>(&np), sizeof(bigint));
   ifr->read(reinterpret_cast<char *>(&np_local), sizeof(int));
   ifr->read(reinterpret_cast<char *>(&comm_n), sizeof(int));
+  ifr->read(reinterpret_cast<char *>(&nc), sizeof(int));
 
   // Read particle's attributes:
-  ptag.resize(np_local);
-  x.resize(np_local);
+  grow(np_local);
+
   for (int ip = 0; ip < np_local; ip++) {
     ifr->read(reinterpret_cast<char *>(&ptag[ip]), sizeof(tagint));
+    ifr->read(reinterpret_cast<char *>(&x0[ip]), sizeof(Eigen::Vector3d));
     ifr->read(reinterpret_cast<char *>(&x[ip]), sizeof(Eigen::Vector3d));
+    ifr->read(reinterpret_cast<char *>(&v[ip]), sizeof(Eigen::Vector3d));
   }
   cout << x[0](0) << ", " << x[0](1) << ", " << x[0](2) << endl;
 }
