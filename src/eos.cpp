@@ -23,6 +23,7 @@ EOS::EOS(MPM *mpm, vector<string> args) :
 {
   cout << "Creating new EOS with ID: " << args[0] << endl;
   id = args[0];
+  style = args[1];
 }
 
 EOS::~EOS()

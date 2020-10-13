@@ -1,11 +1,12 @@
-#include <iostream>
 #include "strength_fluid.h"
-#include "input.h"
 #include "domain.h"
-#include "update.h"
+#include "error.h"
+#include "input.h"
 #include "mpm_math.h"
-#include <Eigen/Eigen>
+#include "update.h"
 #include "var.h"
+#include <Eigen/Eigen>
+#include <iostream>
 
 using namespace std;
 using namespace Eigen;
@@ -16,10 +17,17 @@ StrengthFluid::StrengthFluid(MPM *mpm, vector<string> args) : Strength(mpm, args
 {
   cout << "Initiate StrengthFluid" << endl;
 
-  if (args.size()<2) {
-    cout << "Error: too few arguments for the strength command" << endl;
-    exit(1);
+  if (args.size() < 3) {
+    error->all(FLERR, "Error: too few arguments for the strength command.\n");
   }
+
+  if (args[2].compare("restart") ==
+      0) { // If the keyword restart, we are expecting to have read_restart()
+           // launched right after.
+    G_ = 0;
+    return;
+  }
+
   //options(&args, args.begin()+3);
   G_ = input->parsev(args[2]);
   cout << "Fluid strength model:\n";
@@ -42,4 +50,13 @@ Matrix3d StrengthFluid::update_deviatoric_stress(const Matrix3d& sigma,
 
   dev_rate = 2.0 * G_ * Deviator(D);
   return dev_rate;
+}
+
+void StrengthFluid::write_restart(ofstream *of) {
+  of->write(reinterpret_cast<const char *>(&G_), sizeof(double));
+}
+
+void StrengthFluid::read_restart(ifstream *ifr) {
+  cout << "Restart StrengthFluid" << endl;
+  ifr->read(reinterpret_cast<char *>(&G_), sizeof(double));
 }

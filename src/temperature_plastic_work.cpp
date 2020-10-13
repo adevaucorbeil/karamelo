@@ -1,11 +1,12 @@
-#include <iostream>
 #include "temperature_plastic_work.h"
-#include "input.h"
 #include "domain.h"
-#include "update.h"
+#include "error.h"
+#include "input.h"
 #include "mpm_math.h"
-#include <Eigen/Eigen>
+#include "update.h"
 #include "var.h"
+#include <Eigen/Eigen>
+#include <iostream>
 
 using namespace std;
 using namespace Eigen;
@@ -16,6 +17,17 @@ using namespace MPM_Math;
 TemperaturePlasticWork::TemperaturePlasticWork(MPM *mpm, vector<string> args) : Temperature(mpm, args)
 {
   cout << "Initiate TemperaturePlasticWork" << endl;
+
+  if (args.size() < 3) {
+    error->all(FLERR, "Error: too few arguments for the strength command.\n");
+  }
+
+  if (args[2].compare("restart") ==
+      0) { // If the keyword restart, we are expecting to have read_restart()
+           // launched right after.
+    chi, rho, cp, alpha = 0;
+    return;
+  }
 
   if (args.size() < Nargs) {
     cout << "Error: too few arguments for the temperature command" << endl;
@@ -43,4 +55,18 @@ TemperaturePlasticWork::TemperaturePlasticWork(MPM *mpm, vector<string> args) : 
 void TemperaturePlasticWork::compute_temperature(double &T, const double &flow_stress, const double &plastic_strain_increment)
 {
   T += alpha*flow_stress*plastic_strain_increment;
+}
+
+void TemperaturePlasticWork::write_restart(ofstream *of) {
+  of->write(reinterpret_cast<const char *>(&chi), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&rho), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&cp), sizeof(double));
+}
+
+void TemperaturePlasticWork::read_restart(ifstream *ifr) {
+  cout << "Restart TemperaturePlasticWork" << endl;
+  ifr->read(reinterpret_cast<char *>(&chi), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&rho), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&cp), sizeof(double));
+  alpha = chi/(rho*cp);
 }

@@ -94,7 +94,7 @@ class Solid : protected Pointers {
 
   double max_p_wave_speed;                  ///< Maximum of the particle wave speed
   double dtCFL;
-  
+
   vector<int> numneigh_pn;                  ///< Number of nodes neighbouring a given particle
   vector<int> numneigh_np;                  ///< Number of nodes neighbouring a given node
   vector<vector<int>> neigh_pn;             ///< List of the nodes neighbouring a given particle

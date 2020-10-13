@@ -75,6 +75,8 @@ public:
   double K();
   double G();
   void compute_pressure(double &, double &, const double, const double, const double, const double, const Eigen::Matrix3d, const double);
+  void write_restart(ofstream *);
+  void read_restart(ifstream *);
 
 protected:
   double rho0_, K_, e0, c0, S, Gamma, Tr, cv, alpha, Q1, Q2;

@@ -69,7 +69,6 @@ public:
  */
 class Material : protected Pointers {
  public:
-  string id;                                    ///< Identification name of the material
   vector<Mat> materials;                        ///< List of defined materials
   vector<class EOS *> EOSs;                     ///< List of defined Equations of State
   vector<class Strength *> strengths;           ///< List of defined Strengths
@@ -89,6 +88,9 @@ class Material : protected Pointers {
   int find_damage(string);                      ///< Finds the ID of a Damage
   void add_temperature(vector<string>);         ///< Create a new Temperature
   int find_temperature(string);                 ///< Finds the ID of a Temperature
+
+  void write_restart(ofstream*);                ///< Write restart
+  void read_restart(ifstream*);                 ///< Read restart
 
   typedef Strength *(*StrengthCreator)(MPM *,vector<string>);
   typedef map<string,StrengthCreator> StrengthCreatorMap;

@@ -30,9 +30,17 @@ StrengthPlastic::StrengthPlastic(MPM *mpm, vector<string> args) : Strength(mpm, 
 {
   cout << "Initiate StrengthPlastic" << endl;
 
-  if (args.size()<3) {
+  if (args.size() < 3) {
     error->all(FLERR, "Error: too few arguments for the strength command.\n");
   }
+
+  if (args[2].compare("restart") ==
+      0) { // If the keyword restart, we are expecting to have read_restart()
+           // launched right after.
+    G_, yieldStress = 0;
+    return;
+  }
+
   //options(&args, args.begin()+3);
   G_ = input->parsev(args[2]);
   yieldStress = input->parsev(args[3]);
@@ -99,4 +107,15 @@ Matrix3d StrengthPlastic::update_deviatoric_stress(const Eigen::Matrix3d& sigma,
   }
 
   return sigmaFinal_dev;
+}
+
+void StrengthPlastic::write_restart(ofstream *of) {
+  of->write(reinterpret_cast<const char *>(&G_), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&yieldStress), sizeof(double));
+}
+
+void StrengthPlastic::read_restart(ifstream *ifr) {
+  cout << "Restart StrengthPlastic" << endl;
+  ifr->read(reinterpret_cast<char *>(&G_), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&yieldStress), sizeof(double));
 }

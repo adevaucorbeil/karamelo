@@ -32,6 +32,9 @@ public:
 
   double G();
 
+  void write_restart(ofstream *);
+  void read_restart(ifstream *);
+
   Eigen::Matrix3d  update_deviatoric_stress
   ( const Eigen::Matrix3d& sigma,
     const Eigen::Matrix3d& D,

@@ -32,6 +32,17 @@ StrengthJohnsonCook::StrengthJohnsonCook(MPM *mpm, vector<string> args)
 {
   cout << "Initiate StrengthJohnsonCook" << endl;
 
+  if (args.size() < 3) {
+    error->all(FLERR, "Error: too few arguments for the strength command.\n");
+  }
+
+  if (args[2].compare("restart") ==
+      0) { // If the keyword restart, we are expecting to have read_restart()
+           // launched right after.
+    G_, A, B, n, m, epsdot0, C, Tr, Tm, Tmr = 0;
+    return;
+  }
+
   if (args.size() < Nargs) {
     error->all(FLERR,
                "Error: too few arguments for the strength command.\n" + usage);
@@ -164,4 +175,30 @@ Matrix3d StrengthJohnsonCook::update_deviatoric_stress(
   }
 
   return sigmaFinal_dev;
+}
+
+void StrengthJohnsonCook::write_restart(ofstream *of) {
+  of->write(reinterpret_cast<const char *>(&G_), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&A), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&B), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&n), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&m), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&epsdot0), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&C), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&Tr), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&Tm), sizeof(double));
+}
+
+void StrengthJohnsonCook::read_restart(ifstream *ifr) {
+  cout << "Restart StrengthJohnsonCook" << endl;
+  ifr->read(reinterpret_cast<char *>(&G_), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&A), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&B), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&n), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&m), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&epsdot0), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&C), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&Tr), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&Tm), sizeof(double));
+  Tmr = Tm - Tr;
 }

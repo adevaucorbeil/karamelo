@@ -23,6 +23,7 @@ Strength::Strength(MPM *mpm, vector<string> args) :
 {
   cout << "Creating new Strength with ID: " << args[0] << endl;
   id = args[0];
+  style = args[1];
 }
 
 Strength::~Strength()

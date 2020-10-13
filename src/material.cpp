@@ -372,6 +372,189 @@ int Material::find_material(string name)
   return -1;
 }
 
+void Material::write_restart(ofstream *of) {
+  // Save EOSs:
+  size_t N = EOSs.size();
+  of->write(reinterpret_cast<const char *>(&N), sizeof(int));
+
+  for (int i = 0; i < N; i++) {
+    size_t Neos = EOSs[i]->id.size();
+    of->write(reinterpret_cast<const char *>(&Neos), sizeof(size_t));
+    of->write(reinterpret_cast<const char *>(EOSs[i]->id.c_str()), Neos);
+    cout << "id = " << EOSs[i]->id << endl;
+
+    Neos = EOSs[i]->style.size();
+    of->write(reinterpret_cast<const char *>(&Neos), sizeof(size_t));
+    of->write(reinterpret_cast<const char *>(EOSs[i]->style.c_str()), Neos);
+    EOSs[i]->write_restart(of);
+    cout << "style = " << EOSs[i]->style << endl;
+  }
+
+  // Save strengths:
+  N = strengths.size();
+  of->write(reinterpret_cast<const char *>(&N), sizeof(int));
+
+  for (int i = 0; i < N; i++) {
+    size_t Nstrengths = strengths[i]->id.size();
+    of->write(reinterpret_cast<const char *>(&Nstrengths), sizeof(size_t));
+    of->write(reinterpret_cast<const char *>(strengths[i]->id.c_str()), Nstrengths);
+    cout << "id = " << strengths[i]->id << endl;
+
+    Nstrengths = strengths[i]->style.size();
+    of->write(reinterpret_cast<const char *>(&Nstrengths), sizeof(size_t));
+    of->write(reinterpret_cast<const char *>(strengths[i]->style.c_str()), Nstrengths);
+    strengths[i]->write_restart(of);
+    cout << "style = " << strengths[i]->style << endl;
+  }
+
+  // Save damages:
+  N = damages.size();
+  of->write(reinterpret_cast<const char *>(&N), sizeof(int));
+
+  for (int i = 0; i < N; i++) {
+    size_t Ndamages = damages[i]->id.size();
+    of->write(reinterpret_cast<const char *>(&Ndamages), sizeof(size_t));
+    of->write(reinterpret_cast<const char *>(damages[i]->id.c_str()), Ndamages);
+    cout << "id = " << damages[i]->id << endl;
+
+    Ndamages = damages[i]->style.size();
+    of->write(reinterpret_cast<const char *>(&Ndamages), sizeof(size_t));
+    of->write(reinterpret_cast<const char *>(damages[i]->style.c_str()), Ndamages);
+    damages[i]->write_restart(of);
+    cout << "style = " << damages[i]->style << endl;
+  }
+
+  // Save temperatures:
+  N = temperatures.size();
+  of->write(reinterpret_cast<const char *>(&N), sizeof(int));
+
+  for (int i = 0; i < N; i++) {
+    size_t Ntemperatures = temperatures[i]->id.size();
+    of->write(reinterpret_cast<const char *>(&Ntemperatures), sizeof(size_t));
+    of->write(reinterpret_cast<const char *>(temperatures[i]->id.c_str()), Ntemperatures);
+    cout << "id = " << temperatures[i]->id << endl;
+
+    Ntemperatures = temperatures[i]->style.size();
+    of->write(reinterpret_cast<const char *>(&Ntemperatures), sizeof(size_t));
+    of->write(reinterpret_cast<const char *>(temperatures[i]->style.c_str()), Ntemperatures);
+    temperatures[i]->write_restart(of);
+    cout << "style = " << temperatures[i]->style << endl;
+  }
+}
+
+
+void Material::read_restart(ifstream *ifr) {
+  cout << "In Material::read_restart" << endl;
+
+  // Pull EOSs:
+  size_t N = 0;
+  ifr->read(reinterpret_cast<char *>(&N), sizeof(int));
+  EOSs.resize(N);
+
+  for (int i = 0; i < N; i++) {
+    size_t Neos = 0;
+    string id = "";
+
+    ifr->read(reinterpret_cast<char *>(&Neos), sizeof(size_t));
+    id.resize(Neos);
+
+    ifr->read(reinterpret_cast<char *>(&id[0]), Neos);
+    cout << "id = " << id << endl;
+
+    string style = "";
+    ifr->read(reinterpret_cast<char *>(&Neos), sizeof(size_t));
+    style.resize(Neos);
+
+    ifr->read(reinterpret_cast<char *>(&style[0]), Neos);
+    cout << "style = " << style << endl;
+    EOSCreator EOS_creator = (*EOS_map)[style];
+    EOSs[i] = EOS_creator(mpm, vector<string>{id, style, "restart"});
+    EOSs[i]->read_restart(ifr);
+    EOSs[i]->init();
+  }
+
+  // Pull Strengths:
+  N = 0;
+  ifr->read(reinterpret_cast<char *>(&N), sizeof(int));
+  strengths.resize(N);
+
+  for (int i = 0; i < N; i++) {
+    size_t Nstrengths = 0;
+    string id = "";
+
+    ifr->read(reinterpret_cast<char *>(&Nstrengths), sizeof(size_t));
+    id.resize(Nstrengths);
+
+    ifr->read(reinterpret_cast<char *>(&id[0]), Nstrengths);
+    cout << "id = " << id << endl;
+
+    string style = "";
+    ifr->read(reinterpret_cast<char *>(&Nstrengths), sizeof(size_t));
+    style.resize(Nstrengths);
+
+    ifr->read(reinterpret_cast<char *>(&style[0]), Nstrengths);
+    cout << "style = " << style << endl;
+    StrengthCreator strength_creator = (*strength_map)[style];
+    strengths[i] = strength_creator(mpm, vector<string>{id, style, "restart"});
+    strengths[i]->read_restart(ifr);
+    strengths[i]->init();
+  }
+
+  // Pull Damages:
+  N = 0;
+  ifr->read(reinterpret_cast<char *>(&N), sizeof(int));
+  damages.resize(N);
+
+  for (int i = 0; i < N; i++) {
+    size_t Ndamages = 0;
+    string id = "";
+
+    ifr->read(reinterpret_cast<char *>(&Ndamages), sizeof(size_t));
+    id.resize(Ndamages);
+
+    ifr->read(reinterpret_cast<char *>(&id[0]), Ndamages);
+    cout << "id = " << id << endl;
+
+    string style = "";
+    ifr->read(reinterpret_cast<char *>(&Ndamages), sizeof(size_t));
+    style.resize(Ndamages);
+
+    ifr->read(reinterpret_cast<char *>(&style[0]), Ndamages);
+    cout << "style = " << style << endl;
+    DamageCreator damage_creator = (*damage_map)[style];
+    damages[i] = damage_creator(mpm, vector<string>{id, style, "restart"});
+    damages[i]->read_restart(ifr);
+    damages[i]->init();
+  }
+
+  // Pull Temperatures:
+  N = 0;
+  ifr->read(reinterpret_cast<char *>(&N), sizeof(int));
+  temperatures.resize(N);
+
+  for (int i = 0; i < N; i++) {
+    size_t Ntemperatures = 0;
+    string id = "";
+
+    ifr->read(reinterpret_cast<char *>(&Ntemperatures), sizeof(size_t));
+    id.resize(Ntemperatures);
+
+    ifr->read(reinterpret_cast<char *>(&id[0]), Ntemperatures);
+    cout << "id = " << id << endl;
+
+    string style = "";
+    ifr->read(reinterpret_cast<char *>(&Ntemperatures), sizeof(size_t));
+    style.resize(Ntemperatures);
+
+    ifr->read(reinterpret_cast<char *>(&style[0]), Ntemperatures);
+    cout << "style = " << style << endl;
+    TemperatureCreator temperature_creator = (*temperature_map)[style];
+    temperatures[i] = temperature_creator(mpm, vector<string>{id, style, "restart"});
+    temperatures[i]->read_restart(ifr);
+    temperatures[i]->init();
+  }
+}
+
 /* ----------------------------------------------------------------------
    one instance per strength style in style_strength.h
 ------------------------------------------------------------------------- */

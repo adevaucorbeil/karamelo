@@ -463,6 +463,9 @@ void Domain::write_restart(ofstream* of){
     cout << "style = " << regions[i]->style << endl;
   }
 
+  // Save materials:
+  material->write_restart(of);
+
   // Save solids:
   N = solids.size();
   of->write(reinterpret_cast<const char *>(&N), sizeof(int));
@@ -540,6 +543,9 @@ void Domain::read_restart(ifstream* ifr){
     regions[i]->read_restart(ifr);
     regions[i]->init();
   }
+
+  // Save materials:
+  material->read_restart(ifr);
 
   // Read solids:
   N = 0;
