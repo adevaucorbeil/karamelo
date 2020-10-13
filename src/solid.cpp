@@ -94,6 +94,7 @@ Solid::Solid(MPM *mpm, vector<string> args) : Pointers(mpm)
   }
 
   dtCFL = 1.0e22;
+  max_p_wave_speed = 0;
   vtot  = 0;
   mtot = 0;
   comm_n = 50; // Number of double to pack for particle exchange between CPUs.
@@ -935,12 +936,6 @@ void Solid::update_deformation_gradient()
   Eigen::Matrix3d eye;
   eye.setIdentity();
 
-  if (update->method_type.compare("tlmpm") == 0 ||
-      update->method_type.compare("tlcpdi") == 0)
-    tl = true;
-  else
-    tl = false;
-
   // if (mat->type == material->constitutive_model::LINEAR) lin = true;
   // else lin = false;
 
@@ -961,7 +956,7 @@ void Solid::update_deformation_gradient()
   for (int ip = 0; ip < np_local; ip++)
   {
 
-    if (tl)
+    if (is_TL)
       F[ip] += update->dt * Fdot[ip];
     else
       F[ip] = (eye + update->dt * L[ip]) * F[ip];
@@ -1000,7 +995,7 @@ void Solid::update_deformation_gradient()
     if (!nh) {
       // Only done if not Neo-Hookean:
 
-      if (tl) {
+      if (is_TL) {
         status = PolDec(F[ip], R[ip]); // polar decomposition of the deformation
                                        // gradient, F = R * U
 
@@ -1060,7 +1055,7 @@ void Solid::update_stress()
       sigma[ip] += 2 * mat->G * strain_increment +
                    mat->lambda * strain_increment.trace() * eye;
 
-      if (tl) {
+      if (is_TL) {
 	vol0PK1[ip] = vol0[ip] * J[ip] *
 	  (R[ip] * sigma[ip] * R[ip].transpose()) *
 	  Finv[ip].transpose();
@@ -1153,7 +1148,7 @@ void Solid::update_stress()
             sigma_dev[ip] / mat->G;
       }
 
-      if (tl) {
+      if (is_TL) {
 	vol0PK1[ip] = vol0[ip] * J[ip] *
 	  (R[ip] * sigma[ip] * R[ip].transpose()) *
 	  Finv[ip].transpose();
@@ -1191,7 +1186,7 @@ void Solid::update_stress()
       error->one(FLERR, "");
     }
 
-    if (tl) {
+    if (is_TL) {
       EigenSolver<Matrix3d> esF(F[ip], false);
       if (esF.info()!= Success) {
 	min_h_ratio = MIN(min_h_ratio,1.0);
@@ -2513,6 +2508,22 @@ void Solid::write_restart(ofstream *of) {
     of->write(reinterpret_cast<const char *>(&x0[ip]), sizeof(Eigen::Vector3d));
     of->write(reinterpret_cast<const char *>(&x[ip]), sizeof(Eigen::Vector3d));
     of->write(reinterpret_cast<const char *>(&v[ip]), sizeof(Eigen::Vector3d));
+    of->write(reinterpret_cast<const char *>(&sigma[ip]), sizeof(Eigen::Matrix3d));
+    of->write(reinterpret_cast<const char *>(&strain_el[ip]), sizeof(Eigen::Matrix3d));
+    if (is_TL) {
+      of->write(reinterpret_cast<const char *>(&vol0PK1[ip]), sizeof(Eigen::Matrix3d));      
+    }
+    of->write(reinterpret_cast<const char *>(&F[ip]), sizeof(Eigen::Matrix3d));
+    of->write(reinterpret_cast<const char *>(&J[ip]), sizeof(double));
+    of->write(reinterpret_cast<const char *>(&vol0[ip]), sizeof(double));
+    of->write(reinterpret_cast<const char *>(&rho0[ip]), sizeof(double));
+    of->write(reinterpret_cast<const char *>(&eff_plastic_strain[ip]), sizeof(double));
+    of->write(reinterpret_cast<const char *>(&eff_plastic_strain_rate[ip]), sizeof(double));
+    of->write(reinterpret_cast<const char *>(&damage[ip]), sizeof(double));
+    of->write(reinterpret_cast<const char *>(&damage_init[ip]), sizeof(double));
+    of->write(reinterpret_cast<const char *>(&T[ip]), sizeof(double));
+    of->write(reinterpret_cast<const char *>(&ienergy[ip]), sizeof(double));
+    of->write(reinterpret_cast<const char *>(&mask[ip]), sizeof(int));
   }
 }
 
@@ -2540,6 +2551,36 @@ void Solid::read_restart(ifstream *ifr) {
     ifr->read(reinterpret_cast<char *>(&x0[ip]), sizeof(Eigen::Vector3d));
     ifr->read(reinterpret_cast<char *>(&x[ip]), sizeof(Eigen::Vector3d));
     ifr->read(reinterpret_cast<char *>(&v[ip]), sizeof(Eigen::Vector3d));
+    v_update[ip].setZero();
+    a[ip].setZero();
+    mbp[ip].setZero();
+    f[ip].setZero();
+    ifr->read(reinterpret_cast<char *>(&sigma[ip]), sizeof(Eigen::Matrix3d));
+    ifr->read(reinterpret_cast<char *>(&strain_el[ip]), sizeof(Eigen::Matrix3d));
+    if (is_TL) {
+      ifr->read(reinterpret_cast<char *>(&vol0PK1[ip]), sizeof(Eigen::Matrix3d));
+    }
+    L[ip].setZero();
+    ifr->read(reinterpret_cast<char *>(&F[ip]), sizeof(Eigen::Matrix3d));
+    R[ip].setZero();
+    D[ip].setZero();
+    Finv[ip].setZero();
+    Fdot[ip].setZero();
+    if (apic)
+      Di[ip].setZero();
+    ifr->read(reinterpret_cast<char *>(&J[ip]), sizeof(double));
+    ifr->read(reinterpret_cast<char *>(&vol0[ip]), sizeof(double));
+    vol[ip] = J[ip] * vol0[ip];
+    ifr->read(reinterpret_cast<char *>(&rho0[ip]), sizeof(double));
+    rho[ip] = rho0[ip] / J[ip];
+    mass[ip] = rho0[ip] * vol0[ip];
+    ifr->read(reinterpret_cast<char *>(&eff_plastic_strain[ip]), sizeof(double));
+    ifr->read(reinterpret_cast<char *>(&eff_plastic_strain_rate[ip]), sizeof(double));
+    ifr->read(reinterpret_cast<char *>(&damage[ip]), sizeof(double));
+    ifr->read(reinterpret_cast<char *>(&damage_init[ip]), sizeof(double));
+    ifr->read(reinterpret_cast<char *>(&T[ip]), sizeof(double));
+    ifr->read(reinterpret_cast<char *>(&ienergy[ip]), sizeof(double));
+    ifr->read(reinterpret_cast<char *>(&mask[ip]), sizeof(int));
   }
   cout << x[0](0) << ", " << x[0](1) << ", " << x[0](2) << endl;
 }

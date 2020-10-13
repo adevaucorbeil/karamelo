@@ -21,6 +21,8 @@ TLCPDI::TLCPDI(MPM *mpm) : Method(mpm) {
   update_wf = 1;
   update->alpha = 0.99;
   style = 0;    //Default CPDI style is known_styles[style]="R4"; 
+  is_TL = true;
+  is_CPDI = true;
 
   // Default base function (linear):
   basis_function = &BasisFunction::linear;
