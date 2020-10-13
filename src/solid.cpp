@@ -96,6 +96,7 @@ Solid::Solid(MPM *mpm, vector<string> args) : Pointers(mpm)
   dtCFL = 1.0e22;
   vtot  = 0;
   mtot = 0;
+  comm_n = 50; // Number of double to pack for particle exchange between CPUs.
 
 
   if (args[1].compare("restart") == 0) {
@@ -140,9 +141,6 @@ Solid::Solid(MPM *mpm, vector<string> args) : Pointers(mpm)
 
     read_file(args[2]);
   }
-
-  comm_n = 50; // Number of double to pack for particle exchange between CPUs.
-
 }
 
 Solid::~Solid()
@@ -2506,7 +2504,6 @@ void Solid::write_restart(ofstream *of) {
   // Write number of particles:
   of->write(reinterpret_cast<const char *>(&np), sizeof(bigint));
   of->write(reinterpret_cast<const char *>(&np_local), sizeof(int));
-  of->write(reinterpret_cast<const char *>(&comm_n), sizeof(int));
   of->write(reinterpret_cast<const char *>(&nc), sizeof(int));
 
   // Write particle's attributes:
@@ -2533,7 +2530,6 @@ void Solid::read_restart(ifstream *ifr) {
   // Read number of particles:
   ifr->read(reinterpret_cast<char *>(&np), sizeof(bigint));
   ifr->read(reinterpret_cast<char *>(&np_local), sizeof(int));
-  ifr->read(reinterpret_cast<char *>(&comm_n), sizeof(int));
   ifr->read(reinterpret_cast<char *>(&nc), sizeof(int));
 
   // Read particle's attributes:
