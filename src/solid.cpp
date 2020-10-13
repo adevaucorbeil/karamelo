@@ -2506,9 +2506,13 @@ void Solid::write_restart(ofstream *of) {
   of->write(reinterpret_cast<const char *>(&np), sizeof(bigint));
   of->write(reinterpret_cast<const char *>(&np_local), sizeof(int));
   of->write(reinterpret_cast<const char *>(&comm_n), sizeof(int));
-  of->write(reinterpret_cast<const char *>(&vtot), sizeof(double));
-  of->write(reinterpret_cast<const char *>(&mtot), sizeof(double));
 
+  // Write particle's attributes:
+  cout << x[0](0) << ", " << x[0](1) << ", " << x[0](2) << endl;
+  for (int ip = 0; ip < np_local; ip++) {
+    of->write(reinterpret_cast<const char *>(&ptag[ip]), sizeof(tagint));
+    of->write(reinterpret_cast<const char *>(&x[ip]), sizeof(Eigen::Vector3d));
+  }
 }
 
 void Solid::read_restart(ifstream *ifr) {
@@ -2526,6 +2530,13 @@ void Solid::read_restart(ifstream *ifr) {
   ifr->read(reinterpret_cast<char *>(&np), sizeof(bigint));
   ifr->read(reinterpret_cast<char *>(&np_local), sizeof(int));
   ifr->read(reinterpret_cast<char *>(&comm_n), sizeof(int));
-  ifr->read(reinterpret_cast<char *>(&vtot), sizeof(double));
-  ifr->read(reinterpret_cast<char *>(&mtot), sizeof(double));
+
+  // Read particle's attributes:
+  ptag.resize(np_local);
+  x.resize(np_local);
+  for (int ip = 0; ip < np_local; ip++) {
+    ifr->read(reinterpret_cast<char *>(&ptag[ip]), sizeof(tagint));
+    ifr->read(reinterpret_cast<char *>(&x[ip]), sizeof(Eigen::Vector3d));
+  }
+  cout << x[0](0) << ", " << x[0](1) << ", " << x[0](2) << endl;
 }
