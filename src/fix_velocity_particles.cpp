@@ -135,6 +135,9 @@ void FixVelocityParticles::initial_integrate() {
 	    s->v_update[ip][2] = vz;
 	    s->v[ip][2] = vz_old;
 	  }
+	  if (s->ptag[ip] == 533) {
+	    printf("fix: v=[%4.3e %4.3e %4.3e]\tv_update=[%4.3e %4.3e %4.3e]\ta=[%4.3e %4.3e %4.3e]\n", s->v[ip][0], s->v[ip][1], s->v[ip][2], s->v_update[ip][0], s->v_update[ip][1], s->v_update[ip][2], s->a[ip][0], s->a[ip][1], s->a[ip][2]);
+	  }
 	  xold.push_back(xtemp);
 	  n++;
 	}
@@ -171,6 +174,9 @@ void FixVelocityParticles::initial_integrate() {
 	  vz_old = input->parsev(args_previous_step[zpos]).result(mpm);
 	  s->v_update[ip][2] = vz;
 	  s->v[ip][2] = vz_old;
+	}
+	if (s->ptag[ip] == 533) {
+	  printf("fix: v=[%4.3e %4.3e %4.3e]\tv_update=[%4.3e %4.3e %4.3e]\ta=[%4.3e %4.3e %4.3e]\n", s->v[ip][0], s->v[ip][1], s->v[ip][2], s->v_update[ip][0], s->v_update[ip][1], s->v_update[ip][2], s->a[ip][0], s->a[ip][1], s->a[ip][2]);
 	}
 	xold.push_back(xtemp);
 	n++;

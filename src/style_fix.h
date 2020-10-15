@@ -6,6 +6,7 @@
 #include "fix_contact_pinball.h"
 #include "fix_cutting_tool.h"
 #include "fix_force_nodes.h"
+#include "fix_impenetrable_surface.h"
 #include "fix_indent.h"
 #include "fix_indent_ganz.h"
 #include "fix_indent_hertz.h"

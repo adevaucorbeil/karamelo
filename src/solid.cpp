@@ -551,8 +551,8 @@ void Solid::compute_particle_acceleration()
     {
       in = neigh_pn[ip][j];
       a[ip] += wf_pn[ip][j] * (grid->v_update[in] - grid->v[in]);
-      // if (ptag[ip] == 363) {
-      // 	printf("dv[%d]=[%4.3e %4.3e %4.3e], ", grid->ntag[in], grid->v_update[in][0] - grid->v[in][0], grid->v_update[in][1] - grid->v[in][1], grid->v_update[in][2] - grid->v[in][2]);
+      // if (ptag[ip] == 101) {
+      // 	printf("dv[%d]=[%4.3e %4.3e %4.3e], ", grid->ntag[in], (grid->v_update[in][0] - grid->v[in][0])*inv_dt, (grid->v_update[in][1] - grid->v[in][1])*inv_dt, (grid->v_update[in][2] - grid->v[in][2])*inv_dt);
       // 	cout << "rigid=" << grid->rigid[in] << endl;
       // }
     }
@@ -566,14 +566,10 @@ void Solid::update_particle_velocities(double alpha)
 {
   for (int ip = 0; ip < np_local; ip++)
     {
-      if (ptag[ip] == 363) {
-	printf("Before v=[%4.3e %4.3e %4.3e]\n", v[ip][0], v[ip][1], v[ip][2]);
-      }
       v[ip] = (1 - alpha) * v_update[ip] + alpha * (v[ip] + update->dt * a[ip]);
-      if (ptag[ip] == 363) {
-	printf("After v=[%4.3e %4.3e %4.3e]\n", v[ip][0], v[ip][1], v[ip][2]);
-	printf("After v_update=[%4.3e %4.3e %4.3e]\n", v_update[ip][0], v_update[ip][1], v_update[ip][2]);
-      }
+      // if (ptag[ip] == 101) {
+      // 	printf("v=[%4.3e %4.3e %4.3e]\tv_update=[%4.3e %4.3e %4.3e]\ta=[%4.3e %4.3e %4.3e]\n", v[ip][0], v[ip][1], v[ip][2], v_update[ip][0], v_update[ip][1], v_update[ip][2], a[ip][0], a[ip][1], a[ip][2]);
+      // }
   }
 }
 
