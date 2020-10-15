@@ -105,7 +105,7 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
 
       Eigen::Vector3d r;
       double s[3], sd[3];
-      vector<Eigen::Vector3d> *xp = &domain->solids[isolid]->x;
+      vector<Eigen::Vector3d> *xp = &domain->solids[isolid]->x0;
       vector<Eigen::Vector3d> *xn = &domain->solids[isolid]->grid->x0;
       double inv_cellsize = 1.0 / domain->solids[isolid]->grid->cellsize;
       double wf;
