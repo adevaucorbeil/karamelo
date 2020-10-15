@@ -2501,6 +2501,10 @@ void Solid::write_restart(ofstream *of) {
   of->write(reinterpret_cast<const char *>(&np_local), sizeof(int));
   of->write(reinterpret_cast<const char *>(&nc), sizeof(int));
 
+  // Write material's info:
+  int iMat = material->find_material(mat->id);
+  of->write(reinterpret_cast<const char *>(&iMat), sizeof(int));
+  
   // Write particle's attributes:
   cout << x[0](0) << ", " << x[0](1) << ", " << x[0](2) << endl;
   for (int ip = 0; ip < np_local; ip++) {
@@ -2542,6 +2546,11 @@ void Solid::read_restart(ifstream *ifr) {
   ifr->read(reinterpret_cast<char *>(&np), sizeof(bigint));
   ifr->read(reinterpret_cast<char *>(&np_local), sizeof(int));
   ifr->read(reinterpret_cast<char *>(&nc), sizeof(int));
+
+  // Read material's info:
+  int iMat = -1;
+  ifr->read(reinterpret_cast<char *>(&iMat), sizeof(int));
+  mat = &material->materials[iMat];
 
   // Read particle's attributes:
   grow(np_local);
