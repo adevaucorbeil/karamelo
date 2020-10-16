@@ -87,7 +87,7 @@ Solid::Solid(MPM *mpm, vector<string> args) : Pointers(mpm)
     grid = domain->grid;
   }
 
-  if (update->method->method_type.compare("APIC") == 0) {
+  if (update->sub_method_type == update->SubMethodType::APIC) {
     apic = true;
   } else {
     apic = false;
@@ -1244,7 +1244,7 @@ void Solid::compute_inertia_tensor() {
       }
       Dtemp(1, 0) = Dtemp(0, 1);
       Dtemp(2, 2) = 1;
-      if (ip==0) cout << "1 - Dtemp[" << ip << "]=\n" << Dtemp << endl;
+      cout << "1 - Dtemp[" << ip << "]=\n" << Dtemp << endl;
       Di[ip] = Dtemp.inverse();
       if (ip==0) cout << "1 - Di[" << ip << "]=\n" << Di[ip] << endl;
     }

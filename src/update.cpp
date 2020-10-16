@@ -156,10 +156,16 @@ void Update::create_method(vector<string> args){
     }
   }
 
-  if (isFLIP) alpha = input->parsev(args[n]);
-  n++;
+  if (isFLIP) {
+    alpha = input->parsev(args[n]);
+    n++;
+  }
 
-  additional_args = vector<string>(args.begin() + n, args.end());
+  if (n < args.size()) {
+    additional_args = vector<string>(args.begin() + n, args.end());
+  } else {
+    additional_args.clear();
+  }
   method->setup(additional_args);
 }
 
