@@ -1262,9 +1262,9 @@ void Solid::compute_inertia_tensor() {
       }
       Dtemp(1, 0) = Dtemp(0, 1);
       Dtemp(2, 2) = 1;
-      if (ip==0) cout << "1 - Dtemp[" << ip << "]=\n" << Dtemp << endl;
+      // if (ip==0) cout << "1 - Dtemp[" << ip << "]=\n" << Dtemp << endl;
       Di[ip] = Dtemp.inverse();
-      if (ip==0) cout << "1 - Di[" << ip << "]=\n" << Di[ip] << endl;
+      // if (ip==0) cout << "1 - Di[" << ip << "]=\n" << Di[ip] << endl;
     }
   } else if (domain->dimension == 3) {
     for (int ip = 0; ip < np_local; ip++) {
@@ -1283,7 +1283,7 @@ void Solid::compute_inertia_tensor() {
       Dtemp(2, 1) = Dtemp(1, 2);
       Dtemp(2, 0) = Dtemp(0, 2);
       Di[ip] = Dtemp.inverse();
-      if (ip==0) cout << "1 - Di[" << ip << "]=\n" << Di[ip] << endl;
+      // if (ip==0) cout << "1 - Di[" << ip << "]=\n" << Di[ip] << endl;
     }
   }
 
@@ -1807,7 +1807,7 @@ void Solid::populate(vector<string> args)
     else if (domain->dimension == 2) nip = 4;
     else                             nip = 8;
 
-    if (nc == 0)
+    if (is_TL && nc == 0)
       xi = 0.5 / sqrt(3.0);
     else
       xi = 0.25;

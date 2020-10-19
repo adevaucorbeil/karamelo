@@ -104,16 +104,16 @@ void FixImpenetrableSurface::initial_integrate() {
 	  if (s->mask[ip] & groupbit) {
 
 	    p = -(n[0]*s->x[ip][0] + n[1]*s->x[ip][1] + n[2]*s->x[ip][2] + D);
-	    if (s->ptag[ip] == 1) {
-	      cout << id << "- Particle " << s->ptag[ip] << "\t";
-	      cout << "p = " << p << "\t";
-	      cout << "xp = [" << s->x[ip][0] << "," << s->x[ip][1] << "," << s->x[ip][2] << "]\t" << endl;
-	      cout << "xs = [" << xs[0] << "," << xs[1] << "," << xs[2] << "]\t" << endl;
-	      cout << "n = [" << n[0] << "," << n[1] << "," << n[2] << "]" << endl;
-	    }
+	    // if (s->ptag[ip] == 1) {
+	    //   cout << id << "- Particle " << s->ptag[ip] << "\t";
+	    //   cout << "p = " << p << "\t";
+	    //   cout << "xp = [" << s->x[ip][0] << "," << s->x[ip][1] << "," << s->x[ip][2] << "]\t" << endl;
+	    //   cout << "xs = [" << xs[0] << "," << xs[1] << "," << xs[2] << "]\t" << endl;
+	    //   cout << "n = [" << n[0] << "," << n[1] << "," << n[2] << "]" << endl;
+	    // }
 
 	    if (p >= 0) {
-	      cout << "Particle " << s->ptag[ip] << " is inside "<< id << "\n";
+	      // cout << "Particle " << s->ptag[ip] << " is inside "<< id << "\n";
 	      fmag = K * s->mat->G * p * (1.0 - s->damage[ip]);
 
 	      f = fmag * n;
@@ -135,16 +135,16 @@ void FixImpenetrableSurface::initial_integrate() {
 	if (s->mask[ip] & groupbit) {
 
 	  p = -(n[0]*s->x[ip][0] + n[1]*s->x[ip][1] + n[2]*s->x[ip][2] + D);
-	  if (s->ptag[ip] == 1) {
-	    cout << id << "- Particle " << s->ptag[ip] << "\t";
-	    cout << "p = " << p << "\t";
-	    cout << "xp = [" << s->x[ip][0] << "," << s->x[ip][1] << "," << s->x[ip][2] << "]\t" << endl;
-	    cout << "xs = [" << xs[0] << "," << xs[1] << "," << xs[2] << "]\t" << endl;
-	    cout << "n = [" << n[0] << "," << n[1] << "," << n[2] << "]" << endl;
-	  }
+	  // if (s->ptag[ip] == 1) {
+	  //   cout << id << "- Particle " << s->ptag[ip] << "\t";
+	  //   cout << "p = " << p << "\t";
+	  //   cout << "xp = [" << s->x[ip][0] << "," << s->x[ip][1] << "," << s->x[ip][2] << "]\t" << endl;
+	  //   cout << "xs = [" << xs[0] << "," << xs[1] << "," << xs[2] << "]\t" << endl;
+	  //   cout << "n = [" << n[0] << "," << n[1] << "," << n[2] << "]" << endl;
+	  // }
 
 	  if (p >= 0) {
-	    cout << "Particle " << s->ptag[ip] << " is inside\n";
+	    // cout << "Particle " << s->ptag[ip] << " is inside\n";
 	    fmag = K * s->mat->G * p * (1.0 - s->damage[ip]);
 
 	    f = fmag * n;
