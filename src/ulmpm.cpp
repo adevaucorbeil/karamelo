@@ -70,8 +70,10 @@ void ULMPM::setup(vector<string> args)
     error->all(FLERR, "Error: shape function not supported! Supported functions are:  \033[1;32mlinear\033[0m, \033[1;32mcubic-spline\033[0m, \033[1;32mquadratic-spline\033[0m, \033[1;32mBernstein-quadratic\033[0m.\n");
   }
 
-  if (update->sub_method_type == update->SubMethodType::APIC)
+  if (update->sub_method_type == update->SubMethodType::APIC) {
     apic = true;
+    update->alpha = 0;
+  }
 }
 
 void ULMPM::compute_grid_weight_functions_and_gradients()
@@ -447,8 +449,7 @@ void ULMPM::compute_rate_deformation_gradient()
   {
     if (apic)
       domain->solids[isolid]->compute_rate_deformation_gradient_UL_APIC();
-    else
-      domain->solids[isolid]->compute_rate_deformation_gradient_UL_MUSL();
+    domain->solids[isolid]->compute_rate_deformation_gradient_UL_MUSL();
     // domain->solids[isolid]->compute_deformation_gradient();
   }
 }
