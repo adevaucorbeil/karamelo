@@ -891,7 +891,7 @@ void Solid::compute_rate_deformation_gradient_UL_APIC()
 
   if (domain->dimension == 1) {
     for (int ip=0; ip<np_local; ip++){
-      L[ip].setZero();
+      BDinv[ip].setZero();
       for (int j=0; j<numneigh_pn[ip]; j++){
 	in = neigh_pn[ip][j];
 	dx = (*x0n)[in] - x[ip];
