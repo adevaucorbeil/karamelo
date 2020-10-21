@@ -333,12 +333,15 @@ void Solid::compute_velocity_nodes(bool reset)
       for (int j = 0; j < numneigh_np[in]; j++)
       {
         ip = neigh_np[in][j];
-        vtemp += (wf_np[in][j] * mass[ip]) * v[ip];
 	if (grid->rigid[in]) {
 	  vtemp_update += (wf_np[in][j] * mass[ip]) * v_update[ip];
 	}
-        //vtemp += (wf_np[in][j] * mass[ip]) *
-	//  (v[ip] + Fdot[ip] * (grid->x0[in] - x0[ip]));
+	if (update->method->ge) {
+	  vtemp += (wf_np[in][j] * mass[ip]) *
+	    (v[ip] + L[ip] * (grid->x0[in] - x[ip]));
+	} else {
+	  vtemp += wf_np[in][j] * mass[ip] * v[ip];
+	}
         // grid->v[in] += (wf_np[in][j] * mass[ip]) * v[ip]/ grid->mass[in];
       }
       vtemp /= grid->mass[in];
