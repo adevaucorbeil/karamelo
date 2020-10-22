@@ -155,14 +155,15 @@ void FixMeldTool::initial_integrate() {
 	if (s->mass[ip] > 0) {
 	  if (s->mask[ip] & groupbit) {
 
-	    if (s->x[ip][dim] >= lo && s->x[ip][dim] <= hi &&
-		s->x[ip](axis0) <= Rmax && s->x[ip](axis0) >= -Rmax &&
-		s->x[ip](axis1) <= Rmax && s->x[ip](axis1) >= -Rmax) {
+	    xprime = s->x[ip] - c;
+	    if (xprime[dim] >= lo && xprime[dim] <= hi &&
+		xprime(axis0) <= Rmax && xprime(axis0) >= -Rmax &&
+		xprime(axis1) <= Rmax && xprime(axis1) >= -Rmax) {
 
-	      rSq = s->x[ip](axis0) * s->x[ip](axis0) + s->x[ip](axis1) * s->x[ip](axis1);
+	      rSq = xprime(axis0) * xprime(axis0) + xprime(axis1) * xprime(axis1);
 
 	      if (rSq <= RmaxSq) {
-		xprime = R * (s->x[ip] - c);
+		xprime = R * xprime;
 		p0 = xprime[axis0];
 		p1 = xprime[axis1];
 		p2 = xprime[dim];
@@ -213,14 +214,15 @@ void FixMeldTool::initial_integrate() {
       if (s->mass[ip] > 0) {
 	if (s->mask[ip] & groupbit) {
 
-	  if (s->x[ip][dim] >= lo && s->x[ip][dim] <= hi &&
-	      s->x[ip](axis0) <= Rmax && s->x[ip](axis0) >= -Rmax &&
-	      s->x[ip](axis1) <= Rmax && s->x[ip](axis1) >= -Rmax) {
+	  xprime = s->x[ip] - c;
+	  if (xprime[dim] >= lo && xprime[dim] <= hi &&
+	      xprime(axis0) <= Rmax && xprime(axis0) >= -Rmax &&
+	      xprime(axis1) <= Rmax && xprime(axis1) >= -Rmax) {
 
-	    rSq = s->x[ip](axis0) * s->x[ip](axis0) + s->x[ip](axis1) * s->x[ip](axis1);
+	    rSq = xprime(axis0) * xprime(axis0) + xprime(axis1) * xprime(axis1);
 
 	    if (rSq <= RmaxSq) {
-	      xprime = R * (s->x[ip] - c);
+	      xprime = R * xprime;
 	      p0 = xprime[axis0];
 	      p1 = xprime[axis1];
 	      p2 = xprime[dim];
@@ -257,6 +259,9 @@ void FixMeldTool::initial_integrate() {
 	      f = KG * (1.0 - s->damage[ip]) * (Rt * f);
 	      s->mbp[ip] += f;
 	      ftot += f;
+	      // if (f[dim] != 0) {
+	      // 	cout << "particle " << s->ptag[ip] << " force:" << f[0] << ", " << f[1] << ", " << f[2] << endl;
+	      // }
 	    }
 	  }
 	}
