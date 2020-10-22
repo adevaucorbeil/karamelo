@@ -260,7 +260,7 @@ void Solid::grow(int nparticles)
   Fdot.resize(nparticles);
   if (apic) {
     Di.resize(nparticles);
-    BDinv.resize(nparticles);
+    // BDinv.resize(nparticles);
   }
   vol0.resize(nparticles);
   vol.resize(nparticles);
@@ -336,9 +336,9 @@ void Solid::compute_velocity_nodes(bool reset)
       for (int j = 0; j < numneigh_np[in]; j++)
       {
         ip = neigh_np[in][j];
-        vtemp += (wf_np[in][j] * mass[ip]) * v[ip];
-        //vtemp += (wf_np[in][j] * mass[ip]) *
-	//  (v[ip] + Fdot[ip] * (grid->x0[in] - x0[ip]));
+        // vtemp += (wf_np[in][j] * mass[ip]) * v[ip];
+        vtemp += (wf_np[in][j] * mass[ip]) *
+	  (v[ip] + L[ip] * (grid->x0[in] - x[ip]));
         // grid->v[in] += (wf_np[in][j] * mass[ip]) * v[ip]/ grid->mass[in];
       }
       vtemp /= grid->mass[in];
@@ -365,7 +365,7 @@ void Solid::compute_velocity_nodes_APIC(bool reset) {
     C = &Fdot;
   } else {
     pos = &x;
-    C = &BDinv;
+    C = &L;
   }
 
   for (int in = 0; in < nn; in++) {
@@ -502,7 +502,7 @@ void Solid::compute_particle_velocities_and_positions()
     for (int j = 0; j < numneigh_pn[ip]; j++)
       {
       in = neigh_pn[ip][j];
-      v_update[ip] += wf_pn[ip][j] * grid->v_update[in];
+      v_update[ip] += wf_pn[ip][j] * (grid->v_update[in] + L[ip] * (x[ip] - grid->x0[in]));
       x[ip] += update->dt * wf_pn[ip][j] * grid->v_update[in];
       // if (isnan(x[ip](0)))
       //   cout << "ip=" << ip << "\tx=[" << x[ip](0) << "," << x[ip](1) << ","
@@ -556,7 +556,7 @@ void Solid::compute_particle_acceleration()
     for (int j = 0; j < numneigh_pn[ip]; j++)
     {
       in = neigh_pn[ip][j];
-      a[ip] += wf_pn[ip][j] * (grid->v_update[in] - grid->v[in]);
+      a[ip] += wf_pn[ip][j] * (grid->v_update[in] - grid->v[in] + L[ip] * (v[ip] - grid->v[in]));
     }
     a[ip] *= inv_dt;
     f[ip] = a[ip] * mass[ip];
@@ -891,44 +891,44 @@ void Solid::compute_rate_deformation_gradient_UL_APIC()
 
   if (domain->dimension == 1) {
     for (int ip=0; ip<np_local; ip++){
-      BDinv[ip].setZero();
+      L[ip].setZero();
       for (int j=0; j<numneigh_pn[ip]; j++){
 	in = neigh_pn[ip][j];
 	dx = (*x0n)[in] - x[ip];
-	BDinv[ip](0,0) += (*vn)[in][0]*dx[0]*wf_pn[ip][j];
+	L[ip](0,0) += (*vn)[in][0]*dx[0]*wf_pn[ip][j];
       }
-      BDinv[ip] *= Di[ip];
+      L[ip] *= Di[ip];
     }
   } else if (domain->dimension == 2) {
     for (int ip=0; ip<np_local; ip++){
-      BDinv[ip].setZero();
+      L[ip].setZero();
       for (int j=0; j<numneigh_pn[ip]; j++){
 	in = neigh_pn[ip][j];
 	dx = (*x0n)[in] - x[ip];
-	BDinv[ip](0,0) += (*vn)[in][0]*dx[0]*wf_pn[ip][j];
-	BDinv[ip](0,1) += (*vn)[in][0]*dx[1]*wf_pn[ip][j];
-	BDinv[ip](1,0) += (*vn)[in][1]*dx[0]*wf_pn[ip][j];
-	BDinv[ip](1,1) += (*vn)[in][1]*dx[1]*wf_pn[ip][j];
+	L[ip](0,0) += (*vn)[in][0]*dx[0]*wf_pn[ip][j];
+	L[ip](0,1) += (*vn)[in][0]*dx[1]*wf_pn[ip][j];
+	L[ip](1,0) += (*vn)[in][1]*dx[0]*wf_pn[ip][j];
+	L[ip](1,1) += (*vn)[in][1]*dx[1]*wf_pn[ip][j];
       }
-      BDinv[ip] *= Di[ip];
+      L[ip] *= Di[ip];
     }
   } else if (domain->dimension == 3) {
     for (int ip=0; ip<np_local; ip++){
-      BDinv[ip].setZero();
+      L[ip].setZero();
       for (int j=0; j<numneigh_pn[ip]; j++){
 	in = neigh_pn[ip][j];
 	dx = (*x0n)[in] - x[ip];
-	BDinv[ip](0,0) += (*vn)[in][0]*dx[0]*wf_pn[ip][j];
-	BDinv[ip](0,1) += (*vn)[in][0]*dx[1]*wf_pn[ip][j];
-	BDinv[ip](0,2) += (*vn)[in][0]*dx[2]*wf_pn[ip][j];
-	BDinv[ip](1,0) += (*vn)[in][1]*dx[0]*wf_pn[ip][j];
-	BDinv[ip](1,1) += (*vn)[in][1]*dx[1]*wf_pn[ip][j];
-	BDinv[ip](1,2) += (*vn)[in][1]*dx[2]*wf_pn[ip][j];
-	BDinv[ip](2,0) += (*vn)[in][2]*dx[0]*wf_pn[ip][j];
-	BDinv[ip](2,1) += (*vn)[in][2]*dx[1]*wf_pn[ip][j];
-	BDinv[ip](2,2) += (*vn)[in][2]*dx[2]*wf_pn[ip][j];
+	L[ip](0,0) += (*vn)[in][0]*dx[0]*wf_pn[ip][j];
+	L[ip](0,1) += (*vn)[in][0]*dx[1]*wf_pn[ip][j];
+	L[ip](0,2) += (*vn)[in][0]*dx[2]*wf_pn[ip][j];
+	L[ip](1,0) += (*vn)[in][1]*dx[0]*wf_pn[ip][j];
+	L[ip](1,1) += (*vn)[in][1]*dx[1]*wf_pn[ip][j];
+	L[ip](1,2) += (*vn)[in][1]*dx[2]*wf_pn[ip][j];
+	L[ip](2,0) += (*vn)[in][2]*dx[0]*wf_pn[ip][j];
+	L[ip](2,1) += (*vn)[in][2]*dx[1]*wf_pn[ip][j];
+	L[ip](2,2) += (*vn)[in][2]*dx[2]*wf_pn[ip][j];
       }
-      BDinv[ip] *= Di[ip];
+      L[ip] *= Di[ip];
     }
   }
 }
@@ -1369,7 +1369,7 @@ void Solid::copy_particle(int i, int j) {
   J[j]                       = J[i];
   if (apic) {
     Di[j]                      = Di[i];
-    BDinv[j]                   = BDinv[i];
+    //BDinv[j]                   = BDinv[i];
   }
   // if (method_type.compare("tlcpdi") == 0 || method_type.compare("ulcpdi") == 0)
   //   {
@@ -2087,7 +2087,7 @@ void Solid::populate(vector<string> args)
     Fdot[i].setZero();
     if (apic) {
       Di[i].setZero();
-      BDinv[i].setZero();
+      //BDinv[i].setZero();
     }
     J[i] = 1;
     mask[i] = 1;
@@ -2493,7 +2493,7 @@ void Solid::read_mesh(string fileName)
     Fdot[i].setZero();
     if (apic) {
       Di[i].setZero();
-      BDinv[i].setZero();
+      //BDinv[i].setZero();
     }
     J[i] = 1;
 
@@ -2610,7 +2610,7 @@ void Solid::read_restart(ifstream *ifr) {
     Fdot[ip].setZero();
     if (apic) {
       Di[ip].setZero();
-      BDinv[ip].setZero();
+      //BDinv[ip].setZero();
     }
     ifr->read(reinterpret_cast<char *>(&J[ip]), sizeof(double));
     ifr->read(reinterpret_cast<char *>(&vol0[ip]), sizeof(double));

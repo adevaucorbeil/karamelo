@@ -445,12 +445,12 @@ void ULMPM::velocities_to_grid()
   domain->grid->reduce_ghost_nodes(true);
 }
 
-void ULMPM::compute_rate_deformation_gradient()
-{
-  for (int isolid = 0; isolid < domain->solids.size(); isolid++)
-  {
-    domain->solids[isolid]->compute_rate_deformation_gradient_UL_MUSL();
-    // domain->solids[isolid]->compute_deformation_gradient();
+void ULMPM::compute_rate_deformation_gradient() {
+  if (!apic) {
+    for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
+      domain->solids[isolid]->compute_rate_deformation_gradient_UL_MUSL();
+      // domain->solids[isolid]->compute_deformation_gradient();
+    }
   }
 }
 

@@ -76,7 +76,7 @@ class Solid : protected Pointers {
   vector<Eigen::Matrix3d> Finv;             ///< Inverse of the deformation gradient matrix
   vector<Eigen::Matrix3d> Fdot;             ///< Rate of deformation gradient matrix
   vector<Eigen::Matrix3d> Di;               ///< Inertia tensor
-  vector<Eigen::Matrix3d> BDinv;            ///< APIC B*Dinv tensor
+  // vector<Eigen::Matrix3d> BDinv;            ///< APIC B*Dinv tensor
 
   vector<double> J;                         ///< Determinant of the deformation matrix
   vector<double> vol0;                      ///< Particles' reference volume
