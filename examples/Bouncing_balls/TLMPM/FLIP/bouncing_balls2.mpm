@@ -38,7 +38,7 @@ fix(v0Ball2, initial_velocity_particles, gBall2, -v, -v, NULL)
 
 #-----------CONTACT------------------------------------#
 
-fix(contact, contact/hertz, sBall1, sBall2)
+fix(contact, contact/minimize_penetration, sBall1, sBall2, 0)
 
 #-----------OUTPUT-------------------------------------#
 N_log = 50

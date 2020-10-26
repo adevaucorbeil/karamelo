@@ -13,20 +13,20 @@ c = sqrt(E/rho)
 L = 1
 A_zy = L*L
 
-FLIP=0.99
+alpha=0.99
 
+N = 20
+cellsize = L/N
 #---------- SET METHOD --------------#
-method(tlmpm, FLIP, linear, FLIP)
-dimension(2)
+method(tlmpm, FLIP, linear, alpha)
+dimension(2, 0, 4*L, 0, L, cellsize)
 region(box, block, 0, 4*L, 0, L)
 
 #strength(strengthl, linear, mu)
 
 material(mat1, neo-hookean, rho, E, nu)
 
-N = 20
-cellsize = L/N
-solid(solid1, box, 2, mat1, cellsize)
+solid(solid1, region, box, 2, mat1, cellsize, 0)
 
 #---------- IMPOSE BOUNDARY CONDITIONS --------------#
 

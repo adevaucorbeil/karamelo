@@ -74,7 +74,7 @@ region(tool,       block, l+dd, l+dd+lt, h-d, h-d+ht)
 # EOS, strengh, dasmage and temperature
 
 eos(eosl, linear, density, Kp)
-eos(eoss, shock,  rho, K, c0, S, Gamma, cv, Tr)
+eos(eoss, shock,  rho, K, c0, S, Gamma, cv, Tr, 0, 0)
 
 strength(strengthl, linear, Gp)
 strength(strengthjc, johnson_cook, G, sigmay, B, n, epsdot0, C, m, Tr, Tm)
