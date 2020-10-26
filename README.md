@@ -19,7 +19,8 @@ Parallel Material Point Method Simulator
 - Bernstein quadratic (for total Lagrangian MPM only)
 
 # Cite Karamelo:
-When you publish data obtained with the help of Karamelo, please cite A. de Vaucorbeil, V. P. Nguyen, and C. Nguyen-Thanh, “Karamelo: an open source parallel c++ package for the material point method,” Computational Particle Mechanics, oct 2020.
+When you publish data obtained with the help of Karamelo, please cite: A. de Vaucorbeil, V. P. Nguyen, and C. Nguyen-Thanh, “Karamelo: an open source parallel c++ package for the material point method,” Computational Particle Mechanics, oct 2020.
+
 This paper is availble only at https://www.researchgate.net/publication/343096803_Material_point_method_after_25_years_theory_implementation_and_applications or on the cite of the editor: https://link.springer.com/article/10.1007/s40571-020-00369-8
 
 # Documentation:
