@@ -1,0 +1,54 @@
+#####################################################
+#               UNITS: MPa, mm, s                   #
+#####################################################
+E   = 1e+3                     # Young's modulus
+nu  = 0.3                      # Poisson's ratio
+rho = 1000                     # density
+
+L   = 1                        # a dimension
+hL  = 0.5*L
+ 
+FLIP=1.0
+#---------- SET METHOD -----------------#
+method(ulmpm, FLIP, linear, FLIP)
+#---------- SET DIMENSION --------------#
+N        = 20     # 20 cells per direction
+cellsize = L/N    # cell size
+dimension(2,-hL, hL, -hL, hL, cellsize)  # 2D problem, which the computational domain is LxL
+#---------- SET REGIONS----------------#
+R = 0.2
+region(rBall1, cylinder, -hL+R, -hL+R, R)
+region(rBall2, cylinder,  hL-R,  hL-R, R)
+#---------- SET MATERIALS--------------#
+material(mat1, linear, rho, E, nu)
+#---------- SET SOLID -----------------#
+ppc1d = 2
+solid(sBall1, region, rBall1, ppc1d, mat1, cellsize,0) # the last param sets the initial temperature
+solid(sBall2, region, rBall2, ppc1d, mat1, cellsize,0)
+#---------- IMPOSE INITIAL CONDITIONS --------------#
+group(gBall1, particles, region, rBall1, solid, sBall1)  # define particle group1
+group(gBall2, particles, region, rBall2, solid, sBall2)  # define particle group2
+v = 0.1
+fix(v0Ball1, initial_velocity_particles, gBall1,  v,  v, NULL)
+fix(v0Ball2, initial_velocity_particles, gBall2, -v, -v, NULL)
+#-----------OUTPUT-------------------------------------#
+N_log = 10
+dumping_interval = N_log*1
+dump(dump1, all, particle, dumping_interval, dump_p.*.LAMMPS, x, y, z)
+dump(dump2, all, grid,     dumping_interval, dump_g.*.LAMMPS, x, y, z)
+dump(dump3, all, pyplot, 1, dump.*.pdf, 500, 500)
+#-----------OUTPUTS------------------#
+compute(Ek, kinetic_energy, all)
+compute(Es, strain_energy, all)
+Etot = Ek + Es
+#----------- RUN --------------------#
+set_dt(0.01)   # constant time increments of 0.001
+
+set_output(N_log)
+log_modify(custom, step, dt, time, Ek, Es)
+plot(Ek, N_log, time, Ek)
+plot(Es, N_log, time, Es)
+plot(Etot, N_log, time, Etot)
+save_plot(plot.pdf)
+log(N_log)
+run_time(3.5)  # run for a period of 3.5 seconds
