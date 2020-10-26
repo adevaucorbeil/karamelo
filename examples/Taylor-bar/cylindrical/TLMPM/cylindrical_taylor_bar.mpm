@@ -41,7 +41,7 @@ dimension(3, -hLx, x_wall, -Df, Df, -Df, Df, cellsize)
 
 #----------------- SETUP MATERIAL ------------------#
 # defining material model
-eos(eoss, shock, rho, K, c0, S, Gamma, cv, Tr)
+eos(eoss, shock, rho, K, c0, S, Gamma, cv, Tr, 0, 0)
 strength(strengthJC, johnson_cook, G, sigmay, B, n, eps0dot, C, m, Tr, Tm)
 material(mat, eos-strength, eoss, strengthJC)
 
