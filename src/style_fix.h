@@ -17,6 +17,7 @@
 #include "fix_initial_stress.h"
 #include "fix_initial_velocity_nodes.h"
 #include "fix_initial_velocity_particles.h"
+#include "fix_meld_tool.h"
 #include "fix_velocity.h"
 #include "fix_velocity_nodes.h"
 #include "fix_velocity_particles.h"
