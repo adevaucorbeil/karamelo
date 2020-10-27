@@ -15,6 +15,7 @@
 #include "domain.h"
 #include "error.h"
 #include "method.h"
+#include "modify.h"
 #include "universe.h"
 #include "update.h"
 #include "var.h"
@@ -68,6 +69,7 @@ Var ReadRestart::command(vector<string> args) {
     // Everyone reads the method, scheme, timestep, dt:
     update->read_restart(ifr);
     domain->read_restart(ifr);
+    modify->read_restart(ifr);
 
 
     ifr->close();

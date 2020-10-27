@@ -32,6 +32,21 @@ using namespace Eigen;
 
 FixContactMinPenetrationPlane::FixContactMinPenetrationPlane(MPM *mpm, vector<string> args)
     : Fix(mpm, args) {
+  if (args.size() < 3) {
+    error->all(FLERR, "Error: not enough arguments.\n");
+  }
+
+  if (args[2].compare("restart") ==
+      0) { // If the keyword restart, we are expecting to have read_restart()
+           // launched right after.
+    solid = -1;
+    D = 0;
+    xq.setZero();
+    n.setZero();
+    mu = 0;
+    return;
+  }
+
   if (args.size() < Nargs) {
     error->all(FLERR, "Error: not enough arguments.\n" + usage);
   }
@@ -150,5 +165,21 @@ void FixContactMinPenetrationPlane::initial_integrate() {
   (*input->vars)[id + "_x"] = Var(id + "_x", ftot_reduced[0]);
   (*input->vars)[id + "_y"] = Var(id + "_y", ftot_reduced[1]);
   (*input->vars)[id + "_z"] = Var(id + "_z", ftot_reduced[2]);
+}
+
+void FixContactMinPenetrationPlane::write_restart(ofstream *of) {
+  of->write(reinterpret_cast<const char *>(&solid), sizeof(int));
+  of->write(reinterpret_cast<const char *>(&D), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&mu), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&xq), sizeof(Eigen::Vector3d));
+  of->write(reinterpret_cast<const char *>(&n), sizeof(Eigen::Vector3d));
+}
+
+void FixContactMinPenetrationPlane::read_restart(ifstream *ifr) {
+  ifr->read(reinterpret_cast<char *>(&solid), sizeof(int));
+  ifr->read(reinterpret_cast<char *>(&D), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&mu), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&xq), sizeof(Eigen::Vector3d));
+  ifr->read(reinterpret_cast<char *>(&n), sizeof(Eigen::Vector3d));
 }
 

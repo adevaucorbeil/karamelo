@@ -32,6 +32,18 @@ using namespace Eigen;
 
 FixContactPinball::FixContactPinball(MPM *mpm, vector<string> args)
     : Fix(mpm, args) {
+  if (args.size() < 3) {
+    error->all(FLERR, "Error: not enough arguments.\n");
+  }
+
+  if (args[2].compare("restart") ==
+      0) { // If the keyword restart, we are expecting to have read_restart()
+           // launched right after.
+    solid1 = solid2 = -1;
+    K = 0;
+    return;
+  }
+
   if (args.size() < Nargs) {
     error->all(FLERR, "Error: not enough arguments.\n" + usage);
   }
@@ -184,3 +196,14 @@ void FixContactPinball::initial_integrate() {
   (*input->vars)[id + "_z"] = Var(id + "_z", ftot_reduced[2]);
 }
 
+void FixContactPinball::write_restart(ofstream *of) {
+  of->write(reinterpret_cast<const char *>(&solid1), sizeof(int));
+  of->write(reinterpret_cast<const char *>(&solid2), sizeof(int));
+  of->write(reinterpret_cast<const char *>(&K), sizeof(double));
+}
+
+void FixContactPinball::read_restart(ifstream *ifr) {
+  ifr->read(reinterpret_cast<char *>(&solid1), sizeof(int));
+  ifr->read(reinterpret_cast<char *>(&solid2), sizeof(int));
+  ifr->read(reinterpret_cast<char *>(&K), sizeof(double));
+}

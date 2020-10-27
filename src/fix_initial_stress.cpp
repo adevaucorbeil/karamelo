@@ -29,6 +29,16 @@ using namespace Eigen;
 
 FixInitialStress::FixInitialStress(MPM *mpm, vector<string> args) : Fix(mpm, args)
 {
+  if (args.size() < 3) {
+    error->all(FLERR, "Error: not enough arguments.\n");
+  }
+
+  if (args[2].compare("restart") ==
+      0) { // If the keyword restart, we are expecting to have read_restart()
+           // launched right after.
+    return;
+  }
+
   if (args.size() < Nargs) {
     error->all(FLERR, "Error: not enough arguments.\n" + usage);
   }

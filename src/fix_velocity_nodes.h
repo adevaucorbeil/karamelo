@@ -40,11 +40,19 @@ class FixVelocityNodes : public Fix {
   void post_velocities_to_grid();
   void final_integrate() {};
 
+  void write_restart(ofstream *);
+  void read_restart(ifstream *);
+
 private:
-  //class Var xvalue, yvalue, zvalue;    // Set velocities in x, y, and z directions.
-  bool xset, yset, zset;               // Does the fix set the x, y, and z velocities of the group?
-  int xpos, ypos, zpos;                // Positions of x, y and z in the argument list (args)
-  vector<string> args_previous_step;
+  const map<int, string> usage = {
+      {1, "Usage: fix(fix-ID, velocity_nodes, group, vx)\n"},
+      {2, "Usage: fix(fix-ID, velocity_nodes, group, vx, vy)\n"},
+      {3, "Usage: fix(fix-ID, velocity_nodes, group, vx, vy, vz)\n"}};
+  const map<int, int> Nargs = {{1, 4}, {2, 5}, {3, 6}};
+
+  class Var xvalue, yvalue, zvalue;                  //< Velocities in x, y, and z directions.
+  class Var xprevvalue, yprevvalue, zprevvalue;      //< Velocities in x, y, and z directions from previous time step.
+  bool xset, yset, zset;                             //< Does the fix set the x, y, and z velocities of the group?
 };
 
 #endif

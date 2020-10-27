@@ -32,21 +32,23 @@ using namespace Eigen;
 
 FixIndentMinimizePenetration::FixIndentMinimizePenetration(MPM *mpm, vector<string> args)
     : Fix(mpm, args) {
+  if (args.size() < 3) {
+    error->all(FLERR, "Error: not enough arguments.\n");
+  }
+
+  if (args[2].compare("restart") ==
+      0) { // If the keyword restart, we are expecting to have read_restart()
+           // launched right after.
+    R = mu = 0;
+    return;
+  }
+
   if (args.size() < Nargs) {
     error->all(FLERR, "Error: not enough arguments.\n" + usage);
   }
   if (args.size() > Nargs) {
     error->all(FLERR, "Error: too many arguments.\n" + usage);
   }
-
-  type_pos = 3;
-  Rpos = 4;
-  xpos = 5;
-  ypos = 6;
-  zpos = 7;
-  vxpos = 8;
-  vypos = 9;
-  vzpos = 10;
 
   if (group->pon[igroup].compare("particles") != 0 &&
       group->pon[igroup].compare("all") != 0) {
@@ -57,13 +59,21 @@ FixIndentMinimizePenetration::FixIndentMinimizePenetration(MPM *mpm, vector<stri
   cout << "Creating new fix FixIndentMinimizePenetration with ID: " << args[0] << endl;
   id = args[0];
 
-  type = args[type_pos];
-  if (args[type_pos].compare("sphere") == 0) {
+  type = args[3];
+  if (args[3].compare("sphere") == 0) {
     type = "sphere";
   } else {
-    error->all(FLERR, "Error indent type " + args[type_pos] +
+    error->all(FLERR, "Error indent type " + args[3] +
                           " unknown. Only type sphere is supported.\n");
   }
+
+  R = input->parsev(args[4]);
+  xvalue = input->parsev(args[5]);
+  yvalue = input->parsev(args[6]);
+  zvalue = input->parsev(args[7]);
+  vxvalue = input->parsev(args[8]);
+  vyvalue = input->parsev(args[9]);
+  vzvalue = input->parsev(args[10]);
   mu = input->parsev(args[11]);
 }
 
@@ -87,13 +97,12 @@ void FixIndentMinimizePenetration::initial_integrate() {
   Solid *s;
   Eigen::Vector3d ftot, ftot_reduced, vtemp;
 
-  double R = input->parsev(args[Rpos]).result(mpm);
-  Eigen::Vector3d xs(input->parsev(args[xpos]).result(mpm),
-                     input->parsev(args[ypos]).result(mpm),
-                     input->parsev(args[zpos]).result(mpm));
-  Eigen::Vector3d vs(input->parsev(args[vxpos]).result(mpm),
-                     input->parsev(args[vypos]).result(mpm),
-                     input->parsev(args[vzpos]).result(mpm));
+  Eigen::Vector3d xs(xvalue.result(mpm),
+                     yvalue.result(mpm),
+                     zvalue.result(mpm));
+  Eigen::Vector3d vs(vxvalue.result(mpm),
+                     vyvalue.result(mpm),
+                     vzvalue.result(mpm));
   Eigen::Vector3d xsp, vps, vt;
 
   double Rs, Rp, r, p, fmag, vtnorm;
@@ -318,4 +327,29 @@ void FixIndentMinimizePenetration::initial_integrate() {
   (*input->vars)[id + "_x"] = Var(id + "_x", ftot_reduced[0]);
   (*input->vars)[id + "_y"] = Var(id + "_y", ftot_reduced[1]);
   (*input->vars)[id + "_z"] = Var(id + "_z", ftot_reduced[2]);
+}
+
+void FixIndentMinimizePenetration::write_restart(ofstream *of) {
+  of->write(reinterpret_cast<const char *>(&R), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&mu), sizeof(double));
+  xvalue.write_to_restart(of);
+  yvalue.write_to_restart(of);
+  zvalue.write_to_restart(of);
+
+  vxvalue.write_to_restart(of);
+  vyvalue.write_to_restart(of);
+  vzvalue.write_to_restart(of);
+}
+
+void FixIndentMinimizePenetration::read_restart(ifstream *ifr) {
+  ifr->read(reinterpret_cast<char *>(&R), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&mu), sizeof(double));
+  xvalue.read_from_restart(ifr);
+  yvalue.read_from_restart(ifr);
+  zvalue.read_from_restart(ifr);
+
+  vxvalue.read_from_restart(ifr);
+  vyvalue.read_from_restart(ifr);
+  vzvalue.read_from_restart(ifr);
+  type = "sphere";
 }

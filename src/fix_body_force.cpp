@@ -30,6 +30,17 @@ using namespace Eigen;
 
 FixBodyforce::FixBodyforce(MPM *mpm, vector<string> args) : Fix(mpm, args)
 {
+  if (args.size() < 3) {
+    error->all(FLERR, "Error: not enough arguments.\n");
+  }
+
+  if (args[2].compare("restart") ==
+      0) { // If the keyword restart, we are expecting to have read_restart()
+           // launched right after.
+    xset = yset = zset = false;
+    return;
+  }
+
   if (domain->dimension == 3 && args.size()<6) {
     error->all(FLERR,"Error: too few arguments for fix_body_force: requires at least 6 arguments. " + to_string(args.size()) + " received.\n");
   } else if (domain->dimension == 2 && args.size()<5) {
@@ -158,4 +169,30 @@ void FixBodyforce::post_particles_to_grid() {
   if (yset) (*input->vars)[id+"_y"]=Var(id+"_y", ftot_reduced[1]);
   if (zset) (*input->vars)[id+"_z"]=Var(id+"_z", ftot_reduced[2]);
   // cout << "ftot = [" << ftot[0] << ", " << ftot[1] << ", " << ftot[2] << "], mass = " << mtot << "\n"; 
+}
+
+void FixBodyforce::write_restart(ofstream *of) {
+  of->write(reinterpret_cast<const char *>(&xset), sizeof(bool));
+  of->write(reinterpret_cast<const char *>(&yset), sizeof(bool));
+  of->write(reinterpret_cast<const char *>(&zset), sizeof(bool));
+
+  if (xset)
+    xvalue.write_to_restart(of);
+  if (yset)
+    yvalue.write_to_restart(of);
+  if (zset)
+    zvalue.write_to_restart(of);
+}
+
+void FixBodyforce::read_restart(ifstream *ifr) {
+  ifr->read(reinterpret_cast<char *>(&xset), sizeof(bool));
+  ifr->read(reinterpret_cast<char *>(&yset), sizeof(bool));
+  ifr->read(reinterpret_cast<char *>(&zset), sizeof(bool));
+
+  if (xset)
+    xvalue.read_from_restart(ifr);
+  if (yset)
+    yvalue.read_from_restart(ifr);
+  if (zset)
+    zvalue.read_from_restart(ifr);
 }

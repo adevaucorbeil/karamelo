@@ -481,7 +481,7 @@ void Domain::write_restart(ofstream* of){
 
 /*! Read box bounds, list of regions and solids to restart file
  */
-void Domain::read_restart(ifstream* ifr){
+void Domain::read_restart(ifstream *ifr) {
   // Write boxlo:
   ifr->read(reinterpret_cast<char *>(&boxlo[0]), 3*sizeof(double));
   cout << "boxlo=[" << boxlo[0] << "," << boxlo[1] << "," << boxlo[2] << endl;

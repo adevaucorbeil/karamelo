@@ -115,20 +115,12 @@ void Modify::add_fix(vector<string> args){
     FixCreator fix_creator = (*fix_map)[args[1]];
     fix[ifix] = fix_creator(mpm, args);
     fix[ifix]->init();
-    if (fix[ifix]->requires_ghost_particles)
-      ghost_particles_any = true;
   }
   else if (fix_map->find(args[1]) != fix_map->end()) {
     ifix = fix.size();
     FixCreator fix_creator = (*fix_map)[args[1]];
     fix.push_back(fix_creator(mpm, args));
     fix.back()->init();
-
-    if (update->method_type.compare("tlmpm") == 0 &&
-        fix.back()->requires_ghost_particles) {
-      ghost_particles_any = true;
-      cout << "Fix " << args[1] << " requires ghost particles.\n";
-    }
   }
   else {
     error->all(FLERR, "Unknown fix style " + args[1] + ".\n");
@@ -313,4 +305,58 @@ void Modify::final_integrate(){
 void Modify::run_computes(){
   for (int i = 0; i < compute.size(); i++)
     compute[i]->compute_value();
+}
+
+/*! Write fixes and computes to restart file
+ */
+void Modify::write_restart(ofstream *of) {
+
+  // Save fixes:
+  size_t N = fix.size();
+  of->write(reinterpret_cast<const char *>(&N), sizeof(int));
+
+  for (int i = 0; i < N; i++) {
+    size_t Nr = fix[i]->id.size();
+    of->write(reinterpret_cast<const char *>(&Nr), sizeof(size_t));
+    of->write(reinterpret_cast<const char *>(fix[i]->id.c_str()), Nr);
+    cout << "id = " << fix[i]->id << endl;
+
+    Nr = fix[i]->style.size();
+    of->write(reinterpret_cast<const char *>(&Nr), sizeof(size_t));
+    of->write(reinterpret_cast<const char *>(fix[i]->style.c_str()), Nr);
+    fix[i]->write_restart(of);
+    cout << "style = " << fix[i]->style << endl;
+  }
+}
+
+/*! Read fixes and computes from restart file
+ */
+void Modify::read_restart(ifstream *ifr) {
+
+  // Pull fix:
+  size_t N = 0;
+  ifr->read(reinterpret_cast<char *>(&N), sizeof(int));
+  fix.resize(N);
+
+  for (int i = 0; i < N; i++) {
+    size_t Nr = 0;
+    string id = "";
+
+    ifr->read(reinterpret_cast<char *>(&Nr), sizeof(size_t));
+    id.resize(Nr);
+
+    ifr->read(reinterpret_cast<char *>(&id[0]), Nr);
+    cout << "id = " << id << endl;
+
+    string style = "";
+    ifr->read(reinterpret_cast<char *>(&Nr), sizeof(size_t));
+    style.resize(Nr);
+
+    ifr->read(reinterpret_cast<char *>(&style[0]), Nr);
+    cout << "style = " << style << endl;
+    FixCreator fix_creator = (*fix_map)[style];
+    fix[i] = fix_creator(mpm, vector<string>{id, style, "restart"});
+    fix[i]->read_restart(ifr);
+    fix[i]->init();
+  }
 }

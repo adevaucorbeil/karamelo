@@ -15,6 +15,7 @@
 #include "domain.h"
 #include "error.h"
 #include "method.h"
+#include "modify.h"
 #include "universe.h"
 #include "update.h"
 #include "var.h"
@@ -74,6 +75,7 @@ void WriteRestart::write() {
     // Everyone writes the method, scheme, timestep, dt:
     update->write_restart(of);
     domain->write_restart(of);
+    modify->write_restart(of);
 
 
     of->close();
