@@ -1,0 +1,73 @@
+#####################################################
+#               UNITS: Pa, m, s                     #
+#####################################################
+# Water dam break
+
+gamma = 7
+K     = 0.36*1000
+rho0  = 1000
+G     = 0.001
+
+
+L = 1.61
+H = 0.8
+l0 = 0.6
+h0 = 0.6
+
+A_zy = L*L
+
+FLIP=0.99
+
+#---------- SET METHOD --------------#
+method(ulmpm, FLIP, cubic-spline, FLIP)
+
+N = 40
+cellsize = L/N
+# 2D problem, which the computational domain is
+dimension(2,0, L, 0, H, cellsize)
+
+
+eos(eosf, fluid, rho0, K, gamma)
+strength(strengthf, fluid, G)
+material(mat1, eos-strength, eosf, strengthf) 
+
+
+#material(mat1, neo-hookean, rho, E, nu)
+
+
+
+#---------- SET SOLID --------------#
+region(water, block, 0, l0, 0, h0)
+ppc1d = 2
+solid(solid1, region, water, ppc1d, mat1, cellsize, 0)
+
+
+#---------- IMPOSE BOUNDARY CONDITIONS --------------#
+
+region(rBottom, block, -INF, INF, INF, cellsize/4)
+region(rRight, block, -INF, cellsize/4, -INF, INF)
+
+group(gBottom, nodes, region, rBottom, solid, solid1)
+group(gRight, nodes, region, rRight, solid, solid1)
+
+fix(fBCLY, velocity_nodes, gBottom, NULL, 0)
+fix(fBCLX, velocity_nodes, gRight,  0, NULL)
+
+#---------- IMPOSE INITIAL CONDITIONS --------------#
+gravity = -9.81 #m/s^2
+fix(fbody, body_force, all, 0, gravity)
+
+
+N_log = 1
+
+dump(dump1, all, particle, N_log, dump_p.*.LAMMPS, x, y, z, x, vy, seq)
+dump(dump2, all, grid, N_log, dump_g.*.LAMMPS, x, y, z, vx, vy, bx, by, bz)
+
+
+#----------- RUN --------------------#
+dt_factor(0.1)
+
+log_modify(custom, step, dt, time)
+#plot(dy_tip, N_log, time, dy_tip)
+set_output(N_log)
+run_time(0.5)
