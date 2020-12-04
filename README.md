@@ -1,5 +1,6 @@
 <img src="https://github.com/adevaucorbeil/karamelo/blob/master/logo.svg">
-Parallel Material Point Method Simulator
+
+Karamelo is a parallel simulator for the Material Point Method (MPM).
 
 
 ### News
