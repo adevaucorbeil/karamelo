@@ -94,9 +94,9 @@ void FixIndentMinimizePenetration::initial_integrate() {
   Eigen::Vector3d vs(input->parsev(args[vxpos]).result(mpm),
                      input->parsev(args[vypos]).result(mpm),
                      input->parsev(args[vzpos]).result(mpm));
-  Eigen::Vector3d xsp, vps, vt;
+  Eigen::Vector3d xsp, vps, vt, contact_stress, tau, ffric;
 
-  double Rs, Rp, r, p, fmag, vtnorm;
+  double Rs, Rp, r, p, fmag, vtnorm, omega, tau_norm, damping_factor = 10.0;
 
   int n, n_reduced;
   ftot.setZero();
@@ -105,6 +105,7 @@ void FixIndentMinimizePenetration::initial_integrate() {
   if (solid == -1) {
     for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
       s = domain->solids[isolid];
+      omega = s->mat->signal_velocity / s->grid->cellsize;
 
       if (domain->dimension == 2) {
         for (int ip = 0; ip < s->np_local; ip++) {
@@ -136,12 +137,13 @@ void FixIndentMinimizePenetration::initial_integrate() {
                     f = fmag * xsp;// / r;
 
 		    if (mu != 0) {
-		      vps = vs - s->v[ip];
-		      vt = vps - vps.dot(xsp) * xsp;// / (r*r);
-		      vtnorm = vt.norm();
-		      if (vtnorm != 0) {
-			vt /= vtnorm;
-			f += MIN(s->mass[ip] * vtnorm / update->dt, mu * fmag) * vt;
+		      contact_stress = - s->sigma[ip] * xsp;
+		      tau = contact_stress - contact_stress.dot(xsp) * xsp;
+		      tau_norm = tau.norm();
+		      if (tau_norm > 0) {
+			tau /= tau_norm;
+			ffric = mu * fmag * tau;
+			f += ffric;
 		      }
 		    }
 
@@ -183,16 +185,29 @@ void FixIndentMinimizePenetration::initial_integrate() {
                     fmag = s->mass[ip] * p / (update->dt * update->dt);
                     f = fmag * xsp;// / r;
 
-		    if (mu != 0) {
-		      vps = vs - s->v[ip];
-		      vt = vps - vps.dot(xsp) * xsp;// / (r*r);
-		      vtnorm = vt.norm();
-		      if (vtnorm != 0) {
-			vt /= vtnorm;
-			f += MIN(s->mass[ip] * vtnorm / update->dt, mu * fmag) * vt;
+		    if (1) {//mu != 0) {
+		      contact_stress = - s->sigma[ip] * xsp;
+		      tau = contact_stress - contact_stress.dot(xsp) * xsp;
+		      tau_norm = tau.norm();
+		      if (tau_norm > 0) {
+			tau /= tau_norm;
+
+			ffric = mu * fmag * tau;
+
+			// cout << "Particle " << s->ptag[ip]
+			//      << " f_friction=[" << ffric[0] <<"," << ffric[1] <<"," << ffric[2] << "] "
+			//      << "f=[" << f[0] <<"," << f[1] <<"," << f[2] << "] "
+			//      << "vps=[" << vps[0] <<"," << vps[1] <<"," << vps[2] << "] "
+			//      << "vt=[" << vt[0] <<"," << vt[1] <<"," << vt[2] << "] "
+			//      << "vs=[" << vs[0] <<"," << vs[1] <<"," << vs[2] << "] "
+			//      << "vp=[" << s->v[ip][0] <<"," << s->v[ip][1] <<"," << s->v[ip][2] << "] "
+			//      << "ap=[" << s->a[ip][0] <<"," << s->a[ip][1] <<"," << s->a[ip][2] << "] "
+			//      << "xsp=[" << xsp[0] <<"," << xsp[1] <<"," << xsp[2] << "] "
+			//      << "dt=" << update->dt << " vtnorm=" << vtnorm << " "
+			//      << "contact_stress=[" << contact_stress[0] << ", " << contact_stress[1] << ", " << contact_stress[2] << "]" << endl;
+			f += ffric;
 		      }
 		    }
-
 		    s->mbp[ip] += f;
                     ftot += f;
                   } else {
@@ -208,6 +223,9 @@ void FixIndentMinimizePenetration::initial_integrate() {
     }
   } else {
     s = domain->solids[solid];
+
+    omega = s->mat->signal_velocity / s->grid->cellsize;
+
     if (domain->dimension == 2) {
       for (int ip = 0; ip < s->np_local; ip++) {
 	if (s->mass[ip] > 0) {
@@ -238,12 +256,13 @@ void FixIndentMinimizePenetration::initial_integrate() {
 		  f = fmag * xsp;// / r;
 
 		  if (mu != 0) {
-		    vps = vs - s->v[ip];
-		    vt = vps - vps.dot(xsp) * xsp;// / (r*r);
-		    vtnorm = vt.norm();
-		    if (vtnorm != 0) {
-		      vt /= vtnorm;
-		      f += MIN(s->mass[ip] * vtnorm / update->dt, mu * fmag) * vt;
+		    contact_stress = - s->sigma[ip] * xsp;
+		    tau = contact_stress - contact_stress.dot(xsp) * xsp;
+		    tau_norm = tau.norm();
+		    if (tau_norm > 0) {
+		      tau /= tau_norm;
+		      ffric = mu * fmag * tau;
+		      f += ffric;
 		    }
 		  }
 
@@ -284,14 +303,15 @@ void FixIndentMinimizePenetration::initial_integrate() {
 		  xsp /= r;
 		  fmag = s->mass[ip] * p / (update->dt * update->dt);
 		  f = fmag * xsp;// / r;
-
+		  
 		  if (mu != 0) {
-		    vps = vs - s->v[ip];
-		    vt = vps - vps.dot(xsp) * xsp;// / (r*r);
-		    vtnorm = vt.norm();
-		    if (vtnorm != 0) {
-		      vt /= vtnorm;
-		      f += MIN(s->mass[ip] * vtnorm / update->dt, mu * fmag) * vt;
+		    contact_stress = - s->sigma[ip] * xsp;
+		    tau = contact_stress - contact_stress.dot(xsp) * xsp;
+		    tau_norm = tau.norm();
+		    if (tau_norm > 0) {
+		      tau /= tau_norm;
+		      ffric = mu * fmag * tau;
+		      f += ffric;
 		    }
 		  }
 
