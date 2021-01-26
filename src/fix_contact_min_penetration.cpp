@@ -124,7 +124,7 @@ void FixContactMinPenetration::initial_integrate() {
 		vtnorm = vt.norm();
                 if (vtnorm != 0) {
 		  vt /= vtnorm;
-		  f += mu * fmag * r * vt;
+		  f -= mu * fmag * r * vt;
 		}
 	      }
 
@@ -178,12 +178,22 @@ void FixContactMinPenetration::initial_integrate() {
 		vtnorm = vt.norm();
                 if (vtnorm != 0) {
 		  vt /= vtnorm;
-		  f += mu * fmag * r * vt;
+		  f -= mu * fmag * r * vt;
 		}
 	      }
 	      s1->mbp[ip1] += f;
 	      s2->mbp[ip2] -= f;
               ftot += f;
+              // if ((s1->ptag[ip1] == 12862 && s2->ptag[ip2] == 12902) ||
+              //     (s1->ptag[ip1] == 12835 && s2->ptag[ip2] == 12875)) {
+	      // cout << "dx[" << s1->ptag[ip1] << "," << s2->ptag[ip2] << "]= ["
+	      // 	   << dx[0] << "\t" << dx[1] << "\t" << dx[2] << "]\n";
+	      // cout << "(v2 - v1)[" << s1->ptag[ip1] << "," << s2->ptag[ip2] << "]= ["
+	      // 	   << dv[0] << "\t" << dv[1] << "\t" << dv[2] << "]\n";
+	      // cout << "f1[" << s1->ptag[ip1] << "," << s2->ptag[ip2] << "]= ["
+	      // 	   << f[0] << "\t" << f[1] << "\t" << f[2] << "]\n";
+	      // cout << "fmag = " << fmag << endl;
+              // }
             }
           }
         }
