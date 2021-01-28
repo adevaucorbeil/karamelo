@@ -94,9 +94,9 @@ void FixIndentMinimizePenetration::initial_integrate() {
   Eigen::Vector3d vs(input->parsev(args[vxpos]).result(mpm),
                      input->parsev(args[vypos]).result(mpm),
                      input->parsev(args[vzpos]).result(mpm));
-  Eigen::Vector3d xsp, vps, vt, contact_stress, tau, ffric;
+  Eigen::Vector3d xsp, vsp, vsp_tangential, contact_stress, tau, ffric;
 
-  double Rs, Rp, r, p, fmag, vtnorm, omega, tau_norm, damping_factor = 10.0;
+  double Rs, Rp, r, p, fmag, omega, tau_norm, damping_factor = 10.0, tau_critical;
 
   int n, n_reduced;
   ftot.setZero();
@@ -185,11 +185,14 @@ void FixIndentMinimizePenetration::initial_integrate() {
                     fmag = s->mass[ip] * p / (update->dt * update->dt);
                     f = fmag * xsp;// / r;
 
-		    if (1) {//mu != 0) {
+		    if (mu != 0) {
 		      contact_stress = - s->sigma[ip] * xsp;
 		      tau = contact_stress - contact_stress.dot(xsp) * xsp;
 		      tau_norm = tau.norm();
-		      if (tau_norm > 0) {
+
+		      tau_critical = -mu * contact_stress.dot(xsp);
+
+		      if (tau_norm > tau_critical) {
 			tau /= tau_norm;
 
 			ffric = mu * fmag * tau;
@@ -205,6 +208,12 @@ void FixIndentMinimizePenetration::initial_integrate() {
 			//      << "xsp=[" << xsp[0] <<"," << xsp[1] <<"," << xsp[2] << "] "
 			//      << "dt=" << update->dt << " vtnorm=" << vtnorm << " "
 			//      << "contact_stress=[" << contact_stress[0] << ", " << contact_stress[1] << ", " << contact_stress[2] << "]" << endl;
+			f += ffric;
+		      } else {
+			// The particule should have the same velocity as the indenter:
+			vsp = vs - s->v[ip];
+			vsp_tangential = vsp - vsp.dot(xsp) * xsp;
+			ffric = s->mass[ip] * vsp_tangential / update->dt;
 			f += ffric;
 		      }
 		    }
