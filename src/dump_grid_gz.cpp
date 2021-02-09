@@ -132,6 +132,8 @@ void DumpGridGz::write() {
           dumpstream << g->ntype[i][1] << " ";
         else if (v.compare("ntypez") == 0)
           dumpstream << g->ntype[i][2] << " ";
+        else if (v.compare("T") == 0)
+          dumpstream << g->T[i] << " ";
       }
       dumpstream << endl;
     }

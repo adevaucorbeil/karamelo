@@ -478,6 +478,10 @@ void Grid::grow(int nn){
   ntype.resize(nn);
   rigid.resize(nn);
 
+  T.resize(nn);
+  T_update.resize(nn);
+  Qext.resize(nn);
+  Qint.resize(nn);
 }
 
 void Grid::update_grid_velocities()
@@ -778,91 +782,15 @@ void Grid::reduce_rigid_ghost_nodes() {
   }
 }
 
-void Grid::reduce_mass_ghost_nodes_old() {
-  tagint in, j, ng;
-  vector<tagint> tmp_shared;
-  vector<double> tmp_mass, tmp_mass_reduced;
-
-  // MPI_Barrier(universe->uworld);
-
-  for (int proc = 0; proc < universe->nprocs; proc++) {
-    if (proc == universe->me) {
-      ng = nshared;
-    } else {
-      ng = 0;
-    }
-
-    MPI_Bcast(&ng, 1, MPI_INT, proc, universe->uworld);
-
-    if (proc == universe->me) {
-      tmp_shared = shared;
-    } else {
-      tmp_shared.resize(ng);
-    }
-
-    tmp_mass.assign(ng, 0);
-    tmp_mass_reduced.assign(ng, 0);
-
-    MPI_Bcast(tmp_shared.data(), ng, MPI_MPM_TAGINT, proc, universe->uworld);
-
-    for (int is = 0; is < ng; is++) {
-      j = tmp_shared[is];
-
-      if (map_ntag.count(j)) {
-        tmp_mass[is] = mass[map_ntag[j]];
-      }
-    }
-
-    MPI_Allreduce(tmp_mass.data(), tmp_mass_reduced.data(), ng, MPI_DOUBLE,
-                  MPI_SUM, universe->uworld);
-
-    for (int is = 0; is < ng; is++) {
-      j = tmp_shared[is];
-
-      if (map_ntag.count(j)) {
-        mass[map_ntag[j]] = tmp_mass_reduced[is];
-        // cout << "mass[" << map_ntag[j] << "]=" << tmp_mass_reduced[is] <<
-        // "\n";
-      }
-    }
-
-    // // cout << "------------------\n";
-
-    // for (int is=0; is<ng; is++) {
-    //   if (proc == universe->me) {
-    // 	// Position in array of the shared node: shared[is]
-    // 	j = shared[is];
-    //   }
-
-    //   // MPI_Barrier(universe->uworld);
-    //   MPI_Bcast(&j,1,MPI_MPM_TAGINT,proc,universe->uworld);
-
-    //   if (map_ntag.count(j)) in = map_ntag[j];
-    //   else in = -1;
-
-    //   if (in >= 0) {
-    // 	mass_local = mass[in];
-    //   } else {
-    // 	mass_local = 0;
-    //   }
-
-    //   MPI_Allreduce(&mass_local, &mass_reduced, 1, MPI_DOUBLE, MPI_SUM,
-    //   universe->uworld); if (in >= 0) {
-    // 	//mass[in] = mass_reduced;
-    // 	cout << "mass[" << in << "]=" << mass_reduced << endl;
-    //   }
-    // }
-  }
-}
-
-void Grid::reduce_ghost_nodes(bool only_v) {
+void Grid::reduce_ghost_nodes(bool only_v, bool temp) {
   vector<double> tmp;
   int j, k, m, size_r, size_s, jproc, nsend;
 
-  if (only_v)
-    nsend = 1 * 3;
-  else
-    nsend = 3 * 3;
+  if (only_v) {
+    nsend = 3 + temp;
+  } else {
+    nsend = (3 + temp) * 3;
+  }
 
   // Some ghost nodes' mass on the CPU that owns them:
   for (int iproc = 0; iproc < universe->nprocs; iproc++) {
@@ -903,6 +831,14 @@ void Grid::reduce_ghost_nodes(bool only_v) {
               mb[m][1] += buf_recv[k + 7];
               mb[m][2] += buf_recv[k + 8];
             }
+
+            if (temp) {
+              T[m] += buf_recv[k + 9];
+              if (!only_v) {
+                Qint[m] += buf_recv[k + 10];
+                Qext[m] += buf_recv[k + 11];
+              }
+            }
           }
         }
       }
@@ -939,6 +875,14 @@ void Grid::reduce_ghost_nodes(bool only_v) {
               tmp[k + 7] = mb[m][1];
               tmp[k + 8] = mb[m][2];
             }
+
+	    if (temp) {
+	      tmp[k + 9] = T[m];
+	      if (!only_v) {
+		tmp[k + 10] = Qint[m];
+		tmp[k + 10] = Qext[m];
+	      }	      
+	    }
           }
         }
 
@@ -985,6 +929,14 @@ void Grid::reduce_ghost_nodes(bool only_v) {
               tmp[k + 7] = mb[m][1];
               tmp[k + 8] = mb[m][2];
             }
+
+	    if (temp) {
+	      tmp[k + 9] = T[m];
+	      if (!only_v) {
+		tmp[k + 10] = Qint[m];
+		tmp[k + 10] = Qext[m];
+	      }	      
+	    }
           }
         }
 
@@ -1032,6 +984,14 @@ void Grid::reduce_ghost_nodes(bool only_v) {
               mb[m][1] = buf_recv[k + 7];
               mb[m][2] = buf_recv[k + 8];
             }
+
+            if (temp) {
+              T[m] += buf_recv[k + 9];
+              if (!only_v) {
+                Qint[m] += buf_recv[k + 10];
+                Qext[m] += buf_recv[k + 11];
+              }
+            }
           }
         }
       }
@@ -1039,95 +999,16 @@ void Grid::reduce_ghost_nodes(bool only_v) {
   }
 }
 
-void Grid::reduce_ghost_nodes_old(bool only_v) {
-  tagint in, j, ng;
-  vector<tagint> tmp_shared;
-  vector<double> buf, buf_reduced;
-  int nsend, k, m;
-
-  if (only_v)
-    nsend = 1 * 3;
-  else
-    nsend = 3 * 3;
-
-  // MPI_Barrier(universe->uworld);
-
-  for (int proc = 0; proc < universe->nprocs; proc++) {
-    if (proc == universe->me) {
-      ng = nshared;
-    } else {
-      ng = 0;
-    }
-
-    MPI_Bcast(&ng, 1, MPI_INT, proc, universe->uworld);
-
-    if (proc == universe->me) {
-      tmp_shared = shared;
-    } else {
-      tmp_shared.resize(ng);
-    }
-
-    MPI_Bcast(tmp_shared.data(), ng, MPI_MPM_TAGINT, proc, universe->uworld);
-
-    buf.assign(nsend * ng, 0);
-    buf_reduced.assign(nsend * ng, 0);
-
-    for (int is = 0; is < ng; is++) {
-      j = tmp_shared[is];
-
-      if (map_ntag.count(j)) {
-        m = map_ntag[j];
-        k = nsend * is;
-        buf[k] = v[m][0];
-        buf[k + 1] = v[m][1];
-        buf[k + 2] = v[m][2];
-        if (!only_v) {
-          buf[k + 3] = f[m][0];
-          buf[k + 4] = f[m][1];
-          buf[k + 5] = f[m][2];
-
-          buf[k + 6] = mb[m][0];
-          buf[k + 7] = mb[m][1];
-          buf[k + 8] = mb[m][2];
-        }
-      }
-    }
-
-    MPI_Allreduce(buf.data(), buf_reduced.data(), nsend * ng, MPI_DOUBLE,
-                  MPI_SUM, universe->uworld);
-
-    for (int is = 0; is < ng; is++) {
-      j = tmp_shared[is];
-
-      if (map_ntag.count(j)) {
-        m = map_ntag[j];
-        k = nsend * is;
-        v[m][0] = buf_reduced[k];
-        v[m][1] = buf_reduced[k + 1];
-        v[m][2] = buf_reduced[k + 2];
-        if (!only_v) {
-          f[m][0] = buf_reduced[k + 3];
-          f[m][1] = buf_reduced[k + 4];
-          f[m][2] = buf_reduced[k + 5];
-
-          mb[m][0] = buf_reduced[k + 6];
-          mb[m][1] = buf_reduced[k + 7];
-          mb[m][2] = buf_reduced[k + 8];
-        }
-      }
-    }
-  }
-}
-
 void Grid::update_grid_temperature() {
-  double Ttemp;
-  Ttemp.setZero();
-
   // Update all particles (even the ghost to not have to communicate the result)
   for (int i = 0; i < nnodes_local + nnodes_ghost; i++) {
     if (mass[i] != 0)
       T_update[i] = T[i] + update->dt * (Qint[i] + Qext[i]) / mass[i];
     else
       T_update[i] = T[i];
+    // if (T_update[i] < T[i]) {
+    //   cout << "T_update[" << ntag[i] << "]=" << T_update[i] << " T=" << T[i]
+    //        << " Qint=" << Qint[i] << " Qext=" << Qext[i] << endl;
+    // }
   }
 }

@@ -154,7 +154,7 @@ class Solid : protected Pointers {
   void compute_external_temperature_driving_forces_nodes(bool); ///< Compute external temperature driving forces
   void compute_internal_temperature_driving_forces_nodes(); ///< Compute internal forces step of the Particle to Grid step of the total Lagrangian MPM algorithm.
   void update_particle_temperature();               ///< Update the particles' temperature
-  void update_heat_source_and_flux();               ///< Update the particles' heat source and fluxes
+  void update_heat_flux();                          ///< Update the particles' heat source and fluxes
 
 private:
   void populate(vector<string>);

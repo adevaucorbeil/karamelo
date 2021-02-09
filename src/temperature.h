@@ -20,7 +20,7 @@ class Temperature : protected Pointers {
   virtual double cp() = 0;
   virtual double kappa() = 0;
   virtual void compute_heat_source(double &, const double &, const double &) = 0;
-  virtual double compute_thermal_strain(double) = 0;
+  virtual double compute_thermal_pressure(double) = 0;
 };
 
 #endif

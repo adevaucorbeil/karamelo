@@ -126,6 +126,7 @@ void DumpGrid::write()
 	  else if (v.compare("ntypey")==0) dumpstream << g->ntype[i][1] << " ";
 	  else if (v.compare("ntypez")==0) dumpstream << g->ntype[i][2] << " ";
 	  else if (v.compare("rigid")==0) dumpstream << g->rigid[i] << " ";
+	  else if (v.compare("T")==0) dumpstream << g->T[i] << " ";
 	}
 	dumpstream << endl;
       }

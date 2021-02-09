@@ -48,6 +48,7 @@ class Method : protected Pointers {
   bool is_TL;         ///< true: the method is total Lagrangian; false: it is updated Lagrangian
   bool is_CPDI;       ///< true if the method is a CPDI-like
   bool ge;            ///< true if using enhanced gradient projection
+  bool temp;          ///< true for thermo-mechanical simulations
 };
 
 #endif

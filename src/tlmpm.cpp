@@ -11,23 +11,24 @@
  *
  * ----------------------------------------------------------------------- */
 
-#include <iostream>
-#include <vector>
-#include <Eigen/Eigen>
-#include <algorithm>
-#include <math.h>
-#include <string>
-#include <map>
 #include "tlmpm.h"
-#include "var.h"
 #include "basis_functions.h"
-#include "error.h"
 #include "domain.h"
-#include "solid.h"
+#include "error.h"
 #include "grid.h"
 #include "input.h"
-#include "update.h"
+#include "method.h"
+#include "solid.h"
 #include "universe.h"
+#include "update.h"
+#include "var.h"
+#include <Eigen/Eigen>
+#include <algorithm>
+#include <iostream>
+#include <map>
+#include <math.h>
+#include <string>
+#include <vector>
 
 using namespace std;
 
@@ -104,14 +105,28 @@ void TLMPM::setup(vector<string> args)
     }
   }
 
-  if (args.size() > n + isFLIP) {
-    error->all(FLERR, "Illegal modify_method command: too many arguments: " + to_string(n + isFLIP) + " expected, " + to_string(args.size()) + " received.\n");
+  if (args.size() > n + isFLIP + 1) {
+    error->all(FLERR,
+               "Illegal modify_method command: too many arguments: maximum " +
+                   to_string(n + isFLIP + 1) + " expected, " +
+                   to_string(args.size()) + " received.\n");
   }
 
-  if (isFLIP) FLIP = input->parsev(args[n]);
-  // cout << "shape_function = " << shape_function << endl;
-  // cout << "method_type = " << method_type << endl;
-  // cout << "FLIP = " << FLIP << endl;
+  if (isFLIP)
+    FLIP = input->parsev(args[n]);
+
+  if (args.size() == n + isFLIP + 1) {
+    if (args[n + 1].compare("thermo-mechanical") == 0) {
+      temp = true;
+    } else if (args[n + 1].compare("mechanical") == 0) {
+      temp = false;
+    } else {
+      error->all(
+          FLERR,
+          "Illegal modify_method command: keyword " + args[n + 1] +
+              " unknown. Expected \"thermo-mechanical\" or \"mechanical\".\n");
+    }
+  }
 }
 
 void TLMPM::compute_grid_weight_functions_and_gradients()
@@ -364,8 +379,13 @@ void TLMPM::particles_to_grid()
     else domain->solids[isolid]->compute_velocity_nodes(grid_reset);
     domain->solids[isolid]->compute_external_forces_nodes(grid_reset);
     domain->solids[isolid]->compute_internal_forces_nodes_TL();
-    /*compute_thermal_energy_nodes();*/
-    domain->solids[isolid]->grid->reduce_ghost_nodes();
+
+    if (temp) {
+      domain->solids[isolid]->compute_temperature_nodes(grid_reset);
+      domain->solids[isolid]->compute_external_temperature_driving_forces_nodes(grid_reset);
+      domain->solids[isolid]->compute_internal_temperature_driving_forces_nodes();
+    }
+    domain->solids[isolid]->grid->reduce_ghost_nodes(false, temp);
   }
 }
 
@@ -373,6 +393,9 @@ void TLMPM::update_grid_state()
 {
   for (int isolid=0; isolid<domain->solids.size(); isolid++) {
     domain->solids[isolid]->grid->update_grid_velocities();
+    if (temp) {
+      domain->solids[isolid]->grid->update_grid_temperature();
+    }
   }
 }
 
@@ -381,6 +404,9 @@ void TLMPM::grid_to_points()
   for (int isolid=0; isolid<domain->solids.size(); isolid++) {
     domain->solids[isolid]->compute_particle_velocities_and_positions();
     domain->solids[isolid]->compute_particle_acceleration();
+    if (temp) {
+      domain->solids[isolid]->update_particle_temperature();
+    }
   }
 }
 
@@ -397,7 +423,10 @@ void TLMPM::velocities_to_grid()
     for (int isolid=0; isolid<domain->solids.size(); isolid++) {
       //domain->solids[isolid]->compute_mass_nodes();
       domain->solids[isolid]->compute_velocity_nodes(true);
-      domain->solids[isolid]->grid->reduce_ghost_nodes(true);
+      if (temp) {
+	domain->solids[isolid]->compute_temperature_nodes(true);
+      }
+      domain->solids[isolid]->grid->reduce_ghost_nodes(true, temp);
     }
   }
 }
@@ -429,6 +458,9 @@ void TLMPM::update_stress()
 {
   for (int isolid=0; isolid<domain->solids.size(); isolid++) {
     domain->solids[isolid]->update_stress();
+    if (temp) {
+      domain->solids[isolid]->update_heat_flux();
+    }
   }
 }
 

@@ -287,7 +287,8 @@ void Material::add_material(vector<string> args) {
       type = NEO_HOOKEAN;
 
     Mat new_material(args[0], type, input->parsev(args[2]),
-                     input->parsev(args[3]), input->parsev(args[4]));
+                     input->parsev(args[3]), input->parsev(args[4]),
+                     input->parsev(args[5]), input->parsev(args[6]));
     materials.push_back(new_material);
 
   } else if (args[1].compare("rigid") == 0) {
@@ -431,7 +432,8 @@ Mat::Mat(string id_, int type_, class EOS* eos_, class Strength* strength_, clas
   lambda = K - 2*G/3;
   signal_velocity = sqrt((lambda+2*G)/rho0);
 
-  cp = temp->cp;
+  cp = temp->cp();
+  kappa = temp->kappa();
 
   cout << "Properties for material " << id << endl;
   cout << "\tReference density: " << rho0 << endl;

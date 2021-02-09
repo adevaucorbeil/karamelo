@@ -133,7 +133,7 @@ Solid::Solid(MPM *mpm, vector<string> args) : Pointers(mpm)
     read_file(args[2]);
   }
 
-  comm_n = 50; // Number of double to pack for particle exchange between CPUs.
+  comm_n = 54; // Number of double to pack for particle exchange between CPUs.
 
 }
 
@@ -281,6 +281,11 @@ void Solid::grow(int nparticles)
   neigh_np.resize(nnodes);
   wf_np.resize(nnodes);
   wfd_np.resize(nnodes);
+
+  if (mat->temp != NULL) {
+    gamma.resize(nparticles);
+    q.resize(nparticles);
+  }
 }
 
 void Solid::compute_mass_nodes(bool reset)
@@ -1104,6 +1109,10 @@ void Solid::update_stress()
 
       mat->eos->compute_pressure(pH[ip], ienergy[ip], J[ip], rho[ip], T[ip],
                                  damage[ip], D[ip], grid->cellsize);
+      if (mat->temp != NULL) {
+	pH[ip] += mat->temp->compute_thermal_pressure(T[ip]);
+      }
+
       sigma_dev[ip] = mat->strength->update_deviatoric_stress(
           sigma[ip], D[ip], plastic_strain_increment[ip], eff_plastic_strain[ip],
           eff_plastic_strain_rate[ip], damage[ip], T[ip]);
@@ -1126,6 +1135,12 @@ void Solid::update_stress()
                                     plastic_strain_increment[ip], T[ip]);
       }
 
+      if (mat->temp != NULL) {
+	flow_stress = SQRT_3_OVER_2 * sigma_dev[ip].norm();
+	mat->temp->compute_heat_source(gamma[ip], flow_stress,
+				       eff_plastic_strain_rate[ip]);
+      }
+
       if (damage[ip] == 0 || pH[ip] >= 0)
 	sigma[ip] = -pH[ip] * eye + sigma_dev[ip];
       else
@@ -1145,12 +1160,6 @@ void Solid::update_stress()
 	vol0PK1[ip] = vol0[ip] * J[ip] *
 	  (R[ip] * sigma[ip] * R[ip].transpose()) *
 	  Finv[ip].transpose();
-      }
-
-      if (mat->temp != NULL) {
-        flow_stress = SQRT_3_OVER_2 * sigma_dev[ip].norm();
-        mat->temp->compute_temperature(T[ip], flow_stress,
-                                       plastic_strain_increment[ip]);
       }
     }
   }
@@ -1317,6 +1326,8 @@ void Solid::copy_particle(int i, int j) {
   damage[j]                  = damage[i];
   damage_init[j]             = damage_init[i];
   T[j]                       = T[i];
+  gamma[j]                   = gamma[i];
+  q[j]                       = q[i];
   ienergy[j]                 = ienergy[i];
   mask[j]                    = mask[i];
   sigma[j]                   = sigma[i];
@@ -1398,6 +1409,10 @@ void Solid::pack_particle(int i, vector<double> &buf)
   buf.push_back(damage[i]);
   buf.push_back(damage_init[i]);
   buf.push_back(T[i]);
+  buf.push_back(gamma[i]);
+  buf.push_back(q[i][0]);
+  buf.push_back(q[i][1]);
+  buf.push_back(q[i][2]);
   buf.push_back(ienergy[i]);
   buf.push_back(mask[i]);
 
@@ -1490,6 +1505,12 @@ void Solid::unpack_particle(int &i, vector<int> list, double buf[])
       damage[i] = buf[m++];
       damage_init[i] = buf[m++];
       T[i] = buf[m++];
+      gamma[i] = buf[m++];
+
+      q[i][0] = buf[m++];
+      q[i][1] = buf[m++];
+      q[i][2] = buf[m++];
+
       ienergy[i] = buf[m++];
       mask[i] = buf[m++];
 
@@ -2035,6 +2056,8 @@ void Solid::populate(vector<string> args)
     damage[i]                  = 0;
     damage_init[i]             = 0;
     T[i]                       = T0;
+    gamma[i]                   = 0;
+    q[i].setZero();
     ienergy[i]                 = 0;
     strain_el[i].setZero();
     sigma[i].setZero();
@@ -2439,6 +2462,8 @@ void Solid::read_mesh(string fileName)
     damage[i]                  = 0;
     damage_init[i]             = 0;
     T[i]                       = T0;
+    gamma[i]                   = 0;
+    q[i].setZero();
     ienergy[i]                 = 0;
     strain_el[i].setZero();
     sigma[i].setZero();
@@ -2508,7 +2533,7 @@ void Solid::compute_external_temperature_driving_forces_nodes(bool reset) {
 
   for (int in = 0; in < nn; in++) {
     if (reset)
-      grid->Qext = 0;
+      grid->Qext[in] = 0;
 
     if (grid->mass[in] > 0) {
       for (int j = 0; j < numneigh_np[in]; j++) {
@@ -2527,46 +2552,38 @@ void Solid::compute_internal_temperature_driving_forces_nodes() {
     grid->Qint[in] = 0;
     for (int j = 0; j < numneigh_np[in]; j++) {
       ip = neigh_np[in][j];
-      grid->Qint[in] = vol[ip] * inv_cp * wfd_np[in][j].dot(q[ip]);
+      grid->Qint[in] += vol[ip] * inv_cp * wfd_np[in][j].dot(q[ip]);
 
       if (domain->axisymmetric == true) {
 	error->one(FLERR,"Temperature and axisymmetric not yet supported.\n");
         //ftemp[0] -= vol0PK1[ip](2, 2) * wf_np[in][j] / x0[ip][0];
       }
     }
-
-    grid->Qint[in] = ftemp;
   }
 }
 
 void Solid::update_particle_temperature() {
+  int in;
   for (int ip = 0; ip < np_local; ip++) {
     for (int j = 0; j < numneigh_pn[ip]; j++) {
       in = neigh_pn[ip][j];
       T[ip] += wf_pn[ip][j] * (grid->T_update[in] - grid->T[in]);
+      // if (ptag[ip] == 5651) {
+      // 	cout << "T[" << ptag[ip] << "]=" << T[ip] << " in=" << grid->ntag[in] << " T_update[in]=" << grid->T_update[in] << " T[in]=" << grid->T[in] << endl;
+      // }
     }
   }
 }
 
-void Solid::update_heat_source_and_flux() {
-  double flow_stress;
-  Eigen::Matrix3d eye;
-  eye.setIdentity();
+void Solid::update_heat_flux() {
+  int in;
 
   for (int ip = 0; ip < np_local; ip++) {
-
-    flow_stress = SQRT_3_OVER_2 * sigma_dev[ip].norm();
-    mat->temp->compute_heat_source(gamma[ip], flow_stress,
-                                   plastic_strain_increment[ip]);
-
     q[ip].setZero();
     for (int j = 0; j < numneigh_pn[ip]; j++) {
       in = neigh_pn[ip][j];
       q[ip] -= wfd_pn[ip][j] * grid->T[in];
     }
     q[ip] *= mat->kappa;
-  
-    // Thermal strain:
-    mat->temp->compute_thermal_strain(T[ip]) * eye;
   }
 }
