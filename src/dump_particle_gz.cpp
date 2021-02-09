@@ -167,8 +167,6 @@ void DumpParticleGz::write() {
           dumpstream << s->T[i] << " ";
         else if (v.compare("ienergy") == 0)
           dumpstream << s->ienergy[i] << " ";
-        else if (v.compare("pH_regu") == 0)
-          dumpstream << s->pH_regu[i] << " ";
       }
       dumpstream << endl;
     }

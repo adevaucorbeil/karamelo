@@ -165,7 +165,7 @@ void FixIndentMinimizePenetration::initial_integrate() {
           if (s->mass[ip] > 0) {
             if (s->mask[ip] & groupbit) {
 
-              // Gross screening:
+             // Gross screening:
               xsp = s->x[ip] - xs;
 
               Rp = 0.5*cbrt(s->vol0[ip]);

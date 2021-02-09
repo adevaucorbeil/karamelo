@@ -166,7 +166,6 @@ Var PopulateCylindricalCoordinates::command(vector<string> args) {
           s->damage_init[l] = 0;
           s->T[l] = T0;
           s->ienergy[l] = 0;
-          s->pH_regu[l] = 0;
           s->strain_el[l].setZero();
           s->sigma[l].setZero();
           s->vol0PK1[l].setZero();

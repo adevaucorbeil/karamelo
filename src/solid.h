@@ -87,7 +87,6 @@ class Solid : protected Pointers {
   vector<double> damage;                    ///< Particles' damage variable
   vector<double> damage_init;               ///< Particles' damage initiation variable
   vector<double> ienergy;                   ///< Particles' internal energy
-  vector<double> pH_regu;                   ///< Particles' regularized hydrostatic pressure
   vector<int> mask;                         ///< Particles' group mask
 
   vector<double> T;                         ///< Particles' current temperature

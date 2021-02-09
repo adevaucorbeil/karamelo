@@ -265,7 +265,6 @@ void Solid::grow(int nparticles)
   damage_init.resize(nparticles);
   T.resize(nparticles);
   ienergy.resize(nparticles);
-  pH_regu.resize(nparticles);
   mask.resize(nparticles);
   J.resize(nparticles);
 
@@ -1120,36 +1119,9 @@ void Solid::update_stress()
           eff_plastic_strain_rate[ip] * update->dt / tav;
       eff_plastic_strain_rate[ip] += plastic_strain_increment[ip] / tav;
       eff_plastic_strain_rate[ip] = MAX(0.0, eff_plastic_strain_rate[ip]);
-    }
-
-    if (mat->damage != NULL) {
-      for (int in = 0; in < grid->nnodes_local + grid->nnodes_ghost; in++) {
-	grid->pH[in] = 0;
-	int ip;
-	for (int j = 0; j < numneigh_np[in]; j++) {
-	  ip = neigh_np[in][j];
-	  if (damage[ip] == 0 || pH[ip] >= 0)
-	    grid->pH[in] += (wf_np[in][j] * mass[ip]) * pH[ip];
-	  else
-	    grid->pH[in] += (wf_np[in][j] * mass[ip]) * pH[ip] * (1.0 - damage[ip]);
-	}
-	grid->pH[in] /= grid->mass[in];
-      }
-
-      grid->reduce_regularized_variables();
-    }
-    int in;
-
-    for (int ip = 0; ip < np_local; ip++) {
-      pH_regu[ip] = 0;
 
       if (mat->damage != NULL) {
-	for (int j = 0; j < numneigh_pn[ip]; j++) {
-	  in = neigh_pn[ip][j];
-	  pH_regu[ip] += wf_pn[ip][j] * grid->pH[in];
-	}
-
-	mat->damage->compute_damage(damage_init[ip], damage[ip], pH_regu[ip],
+	mat->damage->compute_damage(damage_init[ip], damage[ip], pH[ip],
                                     sigma_dev[ip], eff_plastic_strain_rate[ip],
                                     plastic_strain_increment[ip], T[ip]);
       }
@@ -1346,7 +1318,6 @@ void Solid::copy_particle(int i, int j) {
   damage_init[j]             = damage_init[i];
   T[j]                       = T[i];
   ienergy[j]                 = ienergy[i];
-  pH_regu[j]                 = pH_regu[i];
   mask[j]                    = mask[i];
   sigma[j]                   = sigma[i];
   strain_el[j]               = strain_el[i];
@@ -2065,7 +2036,6 @@ void Solid::populate(vector<string> args)
     damage_init[i]             = 0;
     T[i]                       = T0;
     ienergy[i]                 = 0;
-    pH_regu[i] = 0;
     strain_el[i].setZero();
     sigma[i].setZero();
     vol0PK1[i].setZero();
@@ -2470,7 +2440,6 @@ void Solid::read_mesh(string fileName)
     damage_init[i]             = 0;
     T[i]                       = T0;
     ienergy[i]                 = 0;
-    pH_regu[i] = 0;
     strain_el[i].setZero();
     sigma[i].setZero();
     vol0PK1[i].setZero();

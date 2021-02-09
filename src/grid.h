@@ -93,9 +93,6 @@ class Grid : protected Pointers {
   vector<double> T_update;          ///< nodes' temperature at time t+dt
   vector<double> Qext;              ///< nodes' external thermal driving force
   vector<double> Qint;              ///< nodes' internal thermal driving force
-
-  vector<double> pH;
-
   MPI_Datatype Pointtype;    ///< MPI type for struct Point
 
   Grid(class MPM *);
@@ -112,9 +109,7 @@ class Grid : protected Pointers {
   void reduce_ghost_nodes_old(bool only_v = false);
   void update_grid_velocities();                   ///< Determine the temporary grid velocities \f$\tilde{v}_{n}\f$. 
   void update_grid_positions();                    ///< Determine the new position of the grid nodes.
-  void reduce_regularized_variables();             ///< Reduce the pressure interpolated at the grid nodes.
-
-  void update_grid_temperature();                  ///< Determine the temporary grid temperature \f$\tilde{T}_{n}\f$. 
+  void update_grid_temperature();                  ///< Determine the temporary grid temperature \f$\tilde{T}_{n}\f$.
 };
 
 #endif
