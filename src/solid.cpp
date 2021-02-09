@@ -526,7 +526,7 @@ void Solid::compute_particle_velocities_and_positions()
              << domain->boxlo[1] << "," << domain->boxhi[1] << ","
              << domain->boxlo[2] << "," << domain->boxhi[2] << ",):\n"
              << x[ip] << endl;
-        exit(1);
+        error->one(FLERR, "");
       }
     }
 
@@ -2087,7 +2087,7 @@ void Solid::populate(vector<string> args)
   if (l != np_local)
   {
     cout << "Error l=" << l << " != np_local=" << np_local << endl;
-    exit(1);
+    error->one(FLERR, "");
   }
 
   int np_local_reduced;
@@ -2189,7 +2189,7 @@ void Solid::read_mesh(string fileName)
   if (!file)
   {
     cout << "Error: unable to open mesh file " << fileName << endl;
-    exit(1);
+    error->one(FLERR, "");
   }
 
   cout << "Reading Gmsh mesh file ...\n";
@@ -2206,7 +2206,7 @@ void Solid::read_mesh(string fileName)
       if (version >= 3.0)
       {
         cout << "Gmsh mesh file version >=3.0 not supported.\n";
-        exit(1);
+        error->one(FLERR, "");
       }
 
       getline(file, line);
@@ -2240,13 +2240,13 @@ void Solid::read_mesh(string fileName)
         if (domain->dimension == 1 && (xn[1] != 0. || xn[2] != 0.))
         {
           cout << "Error: node " << id << " has non 1D component.\n";
-          exit(1);
+          error->one(FLERR, "");
         }
 
         if (domain->dimension == 2 && xn[2] != 0.)
         {
           cout << "Error: node " << id << " has non zero z component.\n";
-          exit(1);
+          error->one(FLERR, "");
         }
 
         nodes[in] = xn;
@@ -2438,7 +2438,7 @@ void Solid::read_mesh(string fileName)
         else
         {
           cout << "Element type " << elemType << " not supported!!\n";
-          exit(1);
+          error->one(FLERR, "");
         }
       }
 
@@ -2510,3 +2510,94 @@ void Solid::read_mesh(string fileName)
 // #endif
 }
 
+
+void Solid::compute_temperature_nodes(bool reset) {
+  double Ttemp, Ttemp_update;
+  int ip, nn = grid->nnodes_local + grid->nnodes_ghost;
+
+  for (int in = 0; in < nn; in++) {
+    if (reset) {
+      grid->T[in] = 0;
+    }
+
+    if (grid->mass[in] > 0) {
+      Ttemp = 0;
+
+      for (int j = 0; j < numneigh_np[in]; j++) {
+        ip = neigh_np[in][j];
+        Ttemp += wf_np[in][j] * mass[ip] * T[ip];
+      }
+      Ttemp /= grid->mass[in];
+      grid->T[in] += Ttemp;
+    }
+  }
+}
+
+void Solid::compute_external_temperature_driving_forces_nodes(bool reset) {
+  int ip, nn = grid->nnodes_local + grid->nnodes_ghost;
+  double inv_cp = 1.0 / mat->cp;
+
+  for (int in = 0; in < nn; in++) {
+    if (reset)
+      grid->Qext = 0;
+
+    if (grid->mass[in] > 0) {
+      for (int j = 0; j < numneigh_np[in]; j++) {
+        ip = neigh_np[in][j];
+        grid->Qext[in] += wf_np[in][j] * gamma[ip] * vol[ip] * inv_cp;
+      }
+    }
+  }
+}
+
+void Solid::compute_internal_temperature_driving_forces_nodes() {
+  int ip, nn = grid->nnodes_local + grid->nnodes_ghost;
+  double inv_cp = 1.0 / mat->cp;
+
+  for (int in = 0; in < nn; in++) {
+    grid->Qint[in] = 0;
+    for (int j = 0; j < numneigh_np[in]; j++) {
+      ip = neigh_np[in][j];
+      grid->Qint[in] = vol[ip] * inv_cp * wfd_np[in][j].dot(q[ip]);
+
+      if (domain->axisymmetric == true) {
+	error->one(FLERR,"Temperature and axisymmetric not yet supported.\n");
+        //ftemp[0] -= vol0PK1[ip](2, 2) * wf_np[in][j] / x0[ip][0];
+      }
+    }
+
+    grid->Qint[in] = ftemp;
+  }
+}
+
+void Solid::update_particle_temperature() {
+  for (int ip = 0; ip < np_local; ip++) {
+    for (int j = 0; j < numneigh_pn[ip]; j++) {
+      in = neigh_pn[ip][j];
+      T[ip] += wf_pn[ip][j] * (grid->T_update[in] - grid->T[in]);
+    }
+  }
+}
+
+void Solid::update_heat_source_and_flux() {
+  double flow_stress;
+  Eigen::Matrix3d eye;
+  eye.setIdentity();
+
+  for (int ip = 0; ip < np_local; ip++) {
+
+    flow_stress = SQRT_3_OVER_2 * sigma_dev[ip].norm();
+    mat->temp->compute_heat_source(gamma[ip], flow_stress,
+                                   plastic_strain_increment[ip]);
+
+    q[ip].setZero();
+    for (int j = 0; j < numneigh_pn[ip]; j++) {
+      in = neigh_pn[ip][j];
+      q[ip] -= wfd_pn[ip][j] * grid->T[in];
+    }
+    q[ip] *= mat->kappa;
+  
+    // Thermal strain:
+    mat->temp->compute_thermal_strain(T[ip]) * eye;
+  }
+}

@@ -431,6 +431,8 @@ Mat::Mat(string id_, int type_, class EOS* eos_, class Strength* strength_, clas
   lambda = K - 2*G/3;
   signal_velocity = sqrt((lambda+2*G)/rho0);
 
+  cp = temp->cp;
+
   cout << "Properties for material " << id << endl;
   cout << "\tReference density: " << rho0 << endl;
   cout << "\tYoung\'s modulus: " << E << endl;
@@ -444,7 +446,7 @@ Mat::Mat(string id_, int type_, class EOS* eos_, class Strength* strength_, clas
 /*! The arguments are: material ID, material type (see Material::constitutive_model)
  * the density in the reference state, the Young's modulus and Poisson's ratio.
  */
-Mat::Mat(string id_, int type_, double rho0_, double E_, double nu_) {
+Mat::Mat(string id_, int type_, double rho0_, double E_, double nu_, double cp_, double kappa_) {
   id = id_;
   type = type_;
   eos = NULL;
@@ -458,6 +460,8 @@ Mat::Mat(string id_, int type_, double rho0_, double E_, double nu_) {
   lambda = E * nu / ((1 + nu) * (1 - 2 * nu));
   K = E / (3 * (1 - 2 * nu));
   signal_velocity = sqrt(K / rho0);
+  cp = cp_;
+  kappa = kappa_;
 }
 
 /*! The arguments are: material ID, material type (see Material::constitutive_model)

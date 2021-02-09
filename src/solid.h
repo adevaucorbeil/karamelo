@@ -86,10 +86,13 @@ class Solid : protected Pointers {
   vector<double> eff_plastic_strain_rate;   ///< Particles' effective plastic strain rate
   vector<double> damage;                    ///< Particles' damage variable
   vector<double> damage_init;               ///< Particles' damage initiation variable
-  vector<double> T;                         ///< Particles' temperature
   vector<double> ienergy;                   ///< Particles' internal energy
   vector<double> pH_regu;                   ///< Particles' regularized hydrostatic pressure
   vector<int> mask;                         ///< Particles' group mask
+
+  vector<double> T;                         ///< Particles' current temperature
+  vector<double> gamma;                     ///< Particles' heat source
+  vector<Eigen::Vector3d> q;                ///< Particles' heat flux
 
   double max_p_wave_speed;                  ///< Maximum of the particle wave speed
   double dtCFL;
@@ -147,6 +150,12 @@ class Solid : protected Pointers {
                                                     ///< Usually this is done when particle j is deleted.
   void pack_particle(int, vector<double> &);        ///< Pack particles attributes into a buffer (used for generating a restart).
   void unpack_particle(int &, vector<int>, double[]); ///< Unpack particles attributes from a buffer (used when reading a restart). 
+
+  void compute_temperature_nodes(bool);             ///< Compute nodal temperature step of the particle
+  void compute_external_temperature_driving_forces_nodes(bool); ///< Compute external temperature driving forces
+  void compute_internal_temperature_driving_forces_nodes(); ///< Compute internal forces step of the Particle to Grid step of the total Lagrangian MPM algorithm.
+  void update_particle_temperature();               ///< Update the particles' temperature
+  void update_heat_source_and_flux();               ///< Update the particles' heat source and fluxes
 
 private:
   void populate(vector<string>);

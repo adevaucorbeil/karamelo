@@ -1258,3 +1258,16 @@ void Grid::reduce_regularized_variables() {
     }
   }
 }
+
+void Grid::update_grid_temperature() {
+  double Ttemp;
+  Ttemp.setZero();
+
+  // Update all particles (even the ghost to not have to communicate the result)
+  for (int i = 0; i < nnodes_local + nnodes_ghost; i++) {
+    if (mass[i] != 0)
+      T_update[i] = T[i] + update->dt * (Qint[i] + Qext[i]) / mass[i];
+    else
+      T_update[i] = T[i];
+  }
+}

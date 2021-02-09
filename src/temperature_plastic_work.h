@@ -19,12 +19,14 @@ public:
   TemperaturePlasticWork(class MPM *, vector<string>);
   ~TemperaturePlasticWork() {};
 
-  void compute_temperature(double &, const double &, const double &);
+  inline double cp() { return cp; }
+  inline double kappa() { return kappa; }
+  void compute_heat_source(double &, const double &, const double &);
 
 protected:
-  double chi, rho, cp, alpha;
-  string usage = "Usage: temperature(temp-ID, plastic_work, chi, rho, cp)\n";
-  int Nargs = 5;
+  double chi, kappa, cp, alpha, T0;
+  string usage = "Usage: temperature(temp-ID, plastic_work, chi, cp, kappa, alpha, T0)\n";
+  int Nargs = 7;
 };
 
 #endif

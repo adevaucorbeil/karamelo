@@ -18,29 +18,32 @@ TemperaturePlasticWork::TemperaturePlasticWork(MPM *mpm, vector<string> args) : 
   cout << "Initiate TemperaturePlasticWork" << endl;
 
   if (args.size() < Nargs) {
-    cout << "Error: too few arguments for the temperature command" << endl;
-    cout << usage;
-    exit(1);
+    error->all(FLERR, "Error: not enough arguments.\n" + usage);
   }
   if (args.size() > Nargs) {
-    cout << "Error: too many arguments for the temperature command" << endl;
-    cout << usage;
-    exit(1);
+    error->all(FLERR, "Error: too many arguments.\n" + usage);
   }
 
   //options(&args, args.begin()+3);
   chi = input->parsev(args[2]);
-  rho = input->parsev(args[3]);
-  cp = input->parsev(args[4]);
+  cp = input->parsev(args[3]);
+  kappa = input->parsev(args[4]);
+  alpha = input->parsev(args[5]);
+  T0 = input->parsev(args[6]);
 
   cout << "Plastic work material temperature model:\n";
   cout << "\tTaylor-Quinney coefficient chi:" << chi << endl;
-  cout << "\tdensity rho:" << rho << endl;
   cout << "\tSpecific heat at constant pressure cp:" << cp << endl;
-  alpha = chi/(rho*cp);
+  cout << "\tThermal conductivity kappa:" << kappa << endl;
+  cout << "\tCoefficient of thermal expansion alpha:" << alpha << endl;
+  cout << "\tInitial temperature T0:" << T0 << endl;  
 }
 
-void TemperaturePlasticWork::compute_temperature(double &T, const double &flow_stress, const double &plastic_strain_increment)
+void TemperaturePlasticWork::compute_heat_source(double &gamma, const double &flow_stress, const double &plastic_strain_increment)
 {
-  T += alpha*flow_stress*plastic_strain_increment;
+  gamma += chi * flow_stress * plastic_strain_increment / update->dt;
+}
+
+double TemperaturePlasticWork::compute_thermal_strain(double T) {
+  return alpha * (T - T0);
 }

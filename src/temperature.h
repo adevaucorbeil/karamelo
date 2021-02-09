@@ -17,7 +17,10 @@ class Temperature : protected Pointers {
   void options(vector<string> *, vector<string>::iterator);
 
   // implemented by each Temperature
-  virtual void compute_temperature(double &, const double &, const double &) = 0;
+  virtual double cp() = 0;
+  virtual double kappa() = 0;
+  virtual void compute_heat_source(double &, const double &, const double &) = 0;
+  virtual double compute_thermal_strain(double) = 0;
 };
 
 #endif
