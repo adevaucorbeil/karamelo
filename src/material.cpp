@@ -433,6 +433,7 @@ Mat::Mat(string id_, int type_, class EOS* eos_, class Strength* strength_, clas
   signal_velocity = sqrt((lambda+2*G)/rho0);
 
   cp = temp->cp();
+  invcp = 1.0 / cp;
   kappa = temp->kappa();
 
   cout << "Properties for material " << id << endl;
@@ -463,6 +464,7 @@ Mat::Mat(string id_, int type_, double rho0_, double E_, double nu_, double cp_,
   K = E / (3 * (1 - 2 * nu));
   signal_velocity = sqrt(K / rho0);
   cp = cp_;
+  invcp = 1.0 / cp;
   kappa = kappa_;
 }
 

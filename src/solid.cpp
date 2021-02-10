@@ -476,13 +476,7 @@ void Solid::compute_particle_velocities_and_positions()
 
   int in;
 
-  bool update_corners, ul;
-
-  if (update->method_type.compare("tlmpm") == 0 ||
-      update->method_type.compare("tlcpdi") == 0)
-    ul = false;
-  else
-    ul = true;
+  bool update_corners;
 
   if ((method_type.compare("tlcpdi") == 0 ||
        method_type.compare("ulcpdi") == 0) &&
@@ -520,7 +514,7 @@ void Solid::compute_particle_velocities_and_positions()
       }
     }
 
-    if (ul)
+    if (!is_TL)
     {
       // Check if the particle is within the box's domain:
       if (domain->inside(x[ip]) == 0)
@@ -951,18 +945,9 @@ void Solid::update_deformation_gradient()
   if (mat->rigid)
     return;
 
-  bool status, tl, lin, nh, vol_cpdi;
+  bool status, lin, nh, vol_cpdi;
   Eigen::Matrix3d eye;
   eye.setIdentity();
-
-  if (update->method_type.compare("tlmpm") == 0 ||
-      update->method_type.compare("tlcpdi") == 0)
-    tl = true;
-  else
-    tl = false;
-
-  // if (mat->type == material->constitutive_model::LINEAR) lin = true;
-  // else lin = false;
 
   if (mat->type == material->constitutive_model::NEO_HOOKEAN)
     nh = true;
@@ -981,7 +966,7 @@ void Solid::update_deformation_gradient()
   for (int ip = 0; ip < np_local; ip++)
   {
 
-    if (tl)
+    if (is_TL)
       F[ip] += update->dt * Fdot[ip];
     else
       F[ip] = (eye + update->dt * L[ip]) * F[ip];
@@ -1020,7 +1005,7 @@ void Solid::update_deformation_gradient()
     if (!nh) {
       // Only done if not Neo-Hookean:
 
-      if (tl) {
+      if (is_TL) {
         status = PolDec(F[ip], R[ip]); // polar decomposition of the deformation
                                        // gradient, F = R * U
 
@@ -1053,7 +1038,7 @@ void Solid::update_stress()
   max_p_wave_speed = 0;
   double flow_stress;
   Matrix3d eye, FinvT, PK1, strain_increment;
-  bool lin, tl, nh, fluid, temp;
+  bool lin, nh, fluid, temp;
 
   if (mat->type == material->constitutive_model::LINEAR)
     lin = true;
@@ -1065,12 +1050,6 @@ void Solid::update_stress()
   else
     nh = false;
 
-  if (update->method_type.compare("tlmpm") == 0 ||
-      update->method_type.compare("tlcpdi") == 0)
-    tl = true;
-  else
-    tl = false;
-
   eye.setIdentity();
 
   if (lin) {
@@ -1080,7 +1059,7 @@ void Solid::update_stress()
       sigma[ip] += 2 * mat->G * strain_increment +
                    mat->lambda * strain_increment.trace() * eye;
 
-      if (tl) {
+      if (is_TL) {
 	vol0PK1[ip] = vol0[ip] * J[ip] *
 	  (R[ip] * sigma[ip] * R[ip].transpose()) *
 	  Finv[ip].transpose();
@@ -1139,6 +1118,10 @@ void Solid::update_stress()
 	flow_stress = SQRT_3_OVER_2 * sigma_dev[ip].norm();
 	mat->temp->compute_heat_source(gamma[ip], flow_stress,
 				       eff_plastic_strain_rate[ip]);
+        if (is_TL)
+          gamma[ip] *= vol0[ip] * mat->invcp;
+        else
+          gamma[ip] *= vol0[ip] * mat->invcp;
       }
 
       if (damage[ip] == 0 || pH[ip] >= 0)
@@ -1156,7 +1139,7 @@ void Solid::update_stress()
             sigma_dev[ip] / mat->G;
       }
 
-      if (tl) {
+      if (is_TL) {
 	vol0PK1[ip] = vol0[ip] * J[ip] *
 	  (R[ip] * sigma[ip] * R[ip].transpose()) *
 	  Finv[ip].transpose();
@@ -1188,7 +1171,7 @@ void Solid::update_stress()
       error->one(FLERR, "");
     }
 
-    if (tl) {
+    if (is_TL) {
       EigenSolver<Matrix3d> esF(F[ip], false);
       if (esF.info()!= Success) {
 	min_h_ratio = MIN(min_h_ratio,1.0);
@@ -2529,7 +2512,6 @@ void Solid::compute_temperature_nodes(bool reset) {
 
 void Solid::compute_external_temperature_driving_forces_nodes(bool reset) {
   int ip, nn = grid->nnodes_local + grid->nnodes_ghost;
-  double inv_cp = 1.0 / mat->cp;
 
   for (int in = 0; in < nn; in++) {
     if (reset)
@@ -2538,7 +2520,7 @@ void Solid::compute_external_temperature_driving_forces_nodes(bool reset) {
     if (grid->mass[in] > 0) {
       for (int j = 0; j < numneigh_np[in]; j++) {
         ip = neigh_np[in][j];
-        grid->Qext[in] += wf_np[in][j] * gamma[ip] * vol[ip] * inv_cp;
+        grid->Qext[in] += wf_np[in][j] * gamma[ip];
       }
     }
   }
@@ -2546,13 +2528,12 @@ void Solid::compute_external_temperature_driving_forces_nodes(bool reset) {
 
 void Solid::compute_internal_temperature_driving_forces_nodes() {
   int ip, nn = grid->nnodes_local + grid->nnodes_ghost;
-  double inv_cp = 1.0 / mat->cp;
 
   for (int in = 0; in < nn; in++) {
     grid->Qint[in] = 0;
     for (int j = 0; j < numneigh_np[in]; j++) {
       ip = neigh_np[in][j];
-      grid->Qint[in] += vol[ip] * inv_cp * wfd_np[in][j].dot(q[ip]);
+      grid->Qint[in] += wfd_np[in][j].dot(q[ip]);
 
       if (domain->axisymmetric == true) {
 	error->one(FLERR,"Temperature and axisymmetric not yet supported.\n");
@@ -2578,12 +2559,23 @@ void Solid::update_particle_temperature() {
 void Solid::update_heat_flux() {
   int in;
 
-  for (int ip = 0; ip < np_local; ip++) {
-    q[ip].setZero();
-    for (int j = 0; j < numneigh_pn[ip]; j++) {
-      in = neigh_pn[ip][j];
-      q[ip] -= wfd_pn[ip][j] * grid->T[in];
+  if (is_TL) {
+    for (int ip = 0; ip < np_local; ip++) {
+      q[ip].setZero();
+      for (int j = 0; j < numneigh_pn[ip]; j++) {
+        in = neigh_pn[ip][j];
+        q[ip] -= wfd_pn[ip][j] * grid->T[in];
+      }
+      q[ip] *= vol0[ip] * mat->invcp * mat->kappa;
     }
-    q[ip] *= mat->kappa;
+  } else {
+    for (int ip = 0; ip < np_local; ip++) {
+      q[ip].setZero();
+      for (int j = 0; j < numneigh_pn[ip]; j++) {
+        in = neigh_pn[ip][j];
+        q[ip] -= wfd_pn[ip][j] * grid->T[in];
+      }
+      q[ip] *= vol[ip] * mat->invcp * mat->kappa;
+    }
   }
 }

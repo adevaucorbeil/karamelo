@@ -59,6 +59,7 @@ public:
   double lambda;                                     ///< 1st Lame parameter \f$\lambda\f$
   double signal_velocity;                            ///< Signal velocity in the reference state \f$c_0 = \sqrt{\frac{\lambda+2G}{\rho_0}}\f$
   double cp;                                         ///< Heat capacity at constant pressure
+  double invcp;                                      ///< Inverse of the heat capacity at constant pressure
   double kappa;                                      ///< Thermal conductivity
   Mat(string, int, class EOS *, class Strength *, class Damage *,
       class Temperature *);                          ///< Creates an elasto-plastic material
