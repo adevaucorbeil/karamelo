@@ -124,15 +124,21 @@ void ULMPM::setup(vector<string> args)
   }
 
   if (args.size() > n) {
-    if (args[n].compare("enhanced-gradient") == 0) {
-      ge = true;
-      cout << "Enhanced gradient\n";
-      n++;
+    if (args[n].compare("thermo-mechanical") == 0) {
+      temp = true;
+    } else if (args[n + 1].compare("mechanical") == 0) {
+      temp = false;
+    } else {
+      error->all(
+          FLERR,
+          "Illegal modify_method command: keyword " + args[n + 1] +
+              " unknown. Expected \"thermo-mechanical\" or \"mechanical\".\n");
     }
+    n++;
   }
 
   if (args.size() > n) {
-    error->all(FLERR, "Illegal modify_method command: too many arguments: " + to_string(n + isFLIP) + " expected, " + to_string(args.size()) + " received.\n");
+    error->all(FLERR, "Illegal modify_method command: too many arguments: " + to_string(n) + " expected, " + to_string(args.size()) + " received.\n");
   }
 
   // cout << "shape_function = " << shape_function << endl;
@@ -466,12 +472,21 @@ void ULMPM::particles_to_grid() {
       domain->solids[isolid]->compute_velocity_nodes(grid_reset);
     domain->solids[isolid]->compute_external_forces_nodes(grid_reset);
     domain->solids[isolid]->compute_internal_forces_nodes_UL(grid_reset);
-    /*compute_thermal_energy_nodes();*/
+
+    if (temp) {
+      domain->solids[isolid]->compute_temperature_nodes(grid_reset);
+      domain->solids[isolid]->compute_external_temperature_driving_forces_nodes(grid_reset);
+      domain->solids[isolid]->compute_internal_temperature_driving_forces_nodes();
+    }
   }
-  domain->grid->reduce_ghost_nodes();
+  domain->grid->reduce_ghost_nodes(false, temp);
 }
 
-void ULMPM::update_grid_state() { domain->grid->update_grid_velocities(); }
+void ULMPM::update_grid_state() {
+  domain->grid->update_grid_velocities();
+  if (temp)
+    domain->grid->update_grid_temperature();
+}
 
 void ULMPM::grid_to_points()
 {
@@ -479,6 +494,9 @@ void ULMPM::grid_to_points()
   {
     domain->solids[isolid]->compute_particle_velocities_and_positions();
     domain->solids[isolid]->compute_particle_acceleration();
+    if (temp) {
+      domain->solids[isolid]->update_particle_temperature();
+    }
   }
 }
 
@@ -505,9 +523,12 @@ void ULMPM::velocities_to_grid()
     {
       // domain->solids[isolid]->compute_mass_nodes(grid_reset);
       domain->solids[isolid]->compute_velocity_nodes(grid_reset);
+      if (temp) {
+	domain->solids[isolid]->compute_temperature_nodes(grid_reset);
+      }
     }
   }
-  domain->grid->reduce_ghost_nodes(true);
+  domain->grid->reduce_ghost_nodes(true, temp);
 }
 
 void ULMPM::compute_rate_deformation_gradient()
@@ -535,6 +556,9 @@ void ULMPM::update_stress()
   for (int isolid = 0; isolid < domain->solids.size(); isolid++)
   {
     domain->solids[isolid]->update_stress();
+    if (temp) {
+      domain->solids[isolid]->update_heat_flux();
+    }
   }
 }
 
