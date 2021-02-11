@@ -191,30 +191,32 @@ void FixIndentMinimizePenetration::initial_integrate() {
 		      tau_norm = tau.norm();
 
 		      tau_critical = -mu * contact_stress.dot(xsp);
+		      vsp = vs - s->v[ip];
+		      vsp_tangential = vsp - vsp.dot(xsp) * xsp;
 
+		      tau /= tau_norm;
 		      if (tau_norm > tau_critical) {
-			tau /= tau_norm;
-
 			ffric = mu * fmag * tau;
-
-			// cout << "Particle " << s->ptag[ip]
-			//      << " f_friction=[" << ffric[0] <<"," << ffric[1] <<"," << ffric[2] << "] "
-			//      << "f=[" << f[0] <<"," << f[1] <<"," << f[2] << "] "
-			//      << "vps=[" << vps[0] <<"," << vps[1] <<"," << vps[2] << "] "
-			//      << "vt=[" << vt[0] <<"," << vt[1] <<"," << vt[2] << "] "
-			//      << "vs=[" << vs[0] <<"," << vs[1] <<"," << vs[2] << "] "
-			//      << "vp=[" << s->v[ip][0] <<"," << s->v[ip][1] <<"," << s->v[ip][2] << "] "
-			//      << "ap=[" << s->a[ip][0] <<"," << s->a[ip][1] <<"," << s->a[ip][2] << "] "
-			//      << "xsp=[" << xsp[0] <<"," << xsp[1] <<"," << xsp[2] << "] "
-			//      << "dt=" << update->dt << " vtnorm=" << vtnorm << " "
-			//      << "contact_stress=[" << contact_stress[0] << ", " << contact_stress[1] << ", " << contact_stress[2] << "]" << endl;
 			f += ffric;
 		      } else {
 			// The particule should have the same velocity as the indenter:
-			vsp = vs - s->v[ip];
-			vsp_tangential = vsp - vsp.dot(xsp) * xsp;
 			ffric = s->mass[ip] * vsp_tangential / update->dt;
 			f += ffric;
+		      }
+
+		      if (update->ntimestep > 52690) {
+			cout << "Particle " << s->ptag[ip]
+			     << " f_friction=[" << ffric[0] <<"," << ffric[1] <<"," << ffric[2] << "] "
+			  //      << "f=[" << f[0] <<"," << f[1] <<"," << f[2] << "] "
+			  //      << "vps=[" << vps[0] <<"," << vps[1] <<"," << vps[2] << "] "
+			     << "vt=[" << vsp_tangential[0] <<"," << vsp_tangential[1] <<"," << vsp_tangential[2] << "] "
+			  //      << "vs=[" << vs[0] <<"," << vs[1] <<"," << vs[2] << "] "
+			  //      << "vp=[" << s->v[ip][0] <<"," << s->v[ip][1] <<"," << s->v[ip][2] << "] "
+			  //      << "ap=[" << s->a[ip][0] <<"," << s->a[ip][1] <<"," << s->a[ip][2] << "] "
+			  //      << "xsp=[" << xsp[0] <<"," << xsp[1] <<"," << xsp[2] << "] "
+			  //      << "dt=" << update->dt << " vtnorm=" << vtnorm << " "
+			  //      << "contact_stress=[" << contact_stress[0] << ", " << contact_stress[1] << ", " << contact_stress[2] << "]" << endl;
+			     << "tau=[" << tau[0] <<"," << tau[1] <<"," << tau[2] << "]\n";
 		      }
 		    }
 		    s->mbp[ip] += f;
