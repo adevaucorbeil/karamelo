@@ -813,30 +813,31 @@ void Grid::reduce_ghost_nodes(bool only_v, bool temp) {
 
         // Add the received data to that of the nodes:
 
+	k = 0;
         for (int is = 0; is < size_r; is++) {
           j = idest->second[is];
 
           if (map_ntag.count(j)) {
             m = map_ntag[j];
-            k = nsend * is;
-            v[m][0] += buf_recv[k];
-            v[m][1] += buf_recv[k + 1];
-            v[m][2] += buf_recv[k + 2];
+            //k = nsend * is;
+            v[m][0] += buf_recv[k++];
+            v[m][1] += buf_recv[k++];
+            v[m][2] += buf_recv[k++];
             if (!only_v) {
-              f[m][0] += buf_recv[k + 4];
-              f[m][1] += buf_recv[k + 5];
-              f[m][2] += buf_recv[k + 6];
+              f[m][0] += buf_recv[k++];
+              f[m][1] += buf_recv[k++];
+              f[m][2] += buf_recv[k++];
 
-              mb[m][0] += buf_recv[k + 7];
-              mb[m][1] += buf_recv[k + 8];
-              mb[m][2] += buf_recv[k + 9];
+              mb[m][0] += buf_recv[k++];
+              mb[m][1] += buf_recv[k++];
+              mb[m][2] += buf_recv[k++];
             }
 
             if (temp) {
-              T[m] += buf_recv[k + 3];
+              T[m] += buf_recv[k++];
               if (!only_v) {
-                Qint[m] += buf_recv[k + 10];
-                Qext[m] += buf_recv[k + 11];
+                Qint[m] += buf_recv[k++];
+                Qext[m] += buf_recv[k++];
               }
             }
           }
@@ -857,30 +858,31 @@ void Grid::reduce_ghost_nodes(bool only_v, bool temp) {
         // Create the list of data:
 
         tmp.assign(nsend * size_s, 0);
+	k = 0;
         for (int is = 0; is < size_s; is++) {
           j = origin_nshared[iproc][is];
 
           if (map_ntag.count(j)) {
             m = map_ntag[j];
-            k = nsend * is;
-            tmp[k] = v[m][0];
-            tmp[k + 1] = v[m][1];
-            tmp[k + 2] = v[m][2];
+            //k = nsend * is;
+            tmp[k++] = v[m][0];
+            tmp[k++] = v[m][1];
+            tmp[k++] = v[m][2];
             if (!only_v) {
-              tmp[k + 4] = f[m][0];
-              tmp[k + 5] = f[m][1];
-              tmp[k + 6] = f[m][2];
+              tmp[k++] = f[m][0];
+              tmp[k++] = f[m][1];
+              tmp[k++] = f[m][2];
 
-              tmp[k + 7] = mb[m][0];
-              tmp[k + 8] = mb[m][1];
-              tmp[k + 9] = mb[m][2];
+              tmp[k++] = mb[m][0];
+              tmp[k++] = mb[m][1];
+              tmp[k++] = mb[m][2];
             }
 
 	    if (temp) {
-	      tmp[k + 3] = T[m];
+	      tmp[k++] = T[m];
 	      if (!only_v) {
-		tmp[k + 10] = Qint[m];
-		tmp[k + 11] = Qext[m];
+		tmp[k++] = Qint[m];
+		tmp[k++] = Qext[m];
 	      }	      
 	    }
           }
@@ -911,30 +913,31 @@ void Grid::reduce_ghost_nodes(bool only_v, bool temp) {
         // Create the list of data:
 
         tmp.assign(nsend * size_s, 0);
+	k = 0;
         for (int is = 0; is < size_s; is++) {
           j = idest->second[is];
 
           if (map_ntag.count(j)) {
             m = map_ntag[j];
-            k = nsend * is;
-            tmp[k] = v[m][0];
-            tmp[k + 1] = v[m][1];
-            tmp[k + 2] = v[m][2];
+            //k = nsend * is;
+            tmp[k++] = v[m][0];
+            tmp[k++] = v[m][1];
+            tmp[k++] = v[m][2];
             if (!only_v) {
-              tmp[k + 4] = f[m][0];
-              tmp[k + 5] = f[m][1];
-              tmp[k + 6] = f[m][2];
+              tmp[k++] = f[m][0];
+              tmp[k++] = f[m][1];
+              tmp[k++] = f[m][2];
 
-              tmp[k + 7] = mb[m][0];
-              tmp[k + 8] = mb[m][1];
-              tmp[k + 9] = mb[m][2];
+              tmp[k++] = mb[m][0];
+              tmp[k++] = mb[m][1];
+              tmp[k++] = mb[m][2];
             }
 
 	    if (temp) {
-	      tmp[k + 3] = T[m];
+	      tmp[k++] = T[m];
 	      if (!only_v) {
-		tmp[k + 10] = Qint[m];
-		tmp[k + 11] = Qext[m];
+		tmp[k++] = Qint[m];
+		tmp[k++] = Qext[m];
 	      }	      
 	    }
           }
@@ -965,31 +968,31 @@ void Grid::reduce_ghost_nodes(bool only_v, bool temp) {
                  MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
         // Update the local data with the received values
-
+	k = 0;
         for (int is = 0; is < size_r; is++) {
           j = origin_nshared[iproc][is];
 
           if (map_ntag.count(j)) {
             m = map_ntag[j];
-            k = nsend * is;
-            v[m][0] = buf_recv[k];
-            v[m][1] = buf_recv[k + 1];
-            v[m][2] = buf_recv[k + 2];
+            //k = nsend * is;
+            v[m][0] = buf_recv[k++];
+            v[m][1] = buf_recv[k++];
+            v[m][2] = buf_recv[k++];
             if (!only_v) {
-              f[m][0] = buf_recv[k + 4];
-              f[m][1] = buf_recv[k + 5];
-              f[m][2] = buf_recv[k + 6];
+              f[m][0] = buf_recv[k++];
+              f[m][1] = buf_recv[k++];
+              f[m][2] = buf_recv[k++];
 
-              mb[m][0] = buf_recv[k + 7];
-              mb[m][1] = buf_recv[k + 8];
-              mb[m][2] = buf_recv[k + 9];
+              mb[m][0] = buf_recv[k++];
+              mb[m][1] = buf_recv[k++];
+              mb[m][2] = buf_recv[k++];
             }
 
             if (temp) {
-              T[m] += buf_recv[k + 3];
+              T[m] = buf_recv[k++];
               if (!only_v) {
-                Qint[m] += buf_recv[k + 10];
-                Qext[m] += buf_recv[k + 11];
+                Qint[m] = buf_recv[k++];
+                Qext[m] = buf_recv[k++];
               }
             }
           }
@@ -1006,9 +1009,5 @@ void Grid::update_grid_temperature() {
       T_update[i] = T[i] + update->dt * (Qint[i] + Qext[i]) / mass[i];
     else
       T_update[i] = T[i];
-    // if (T_update[i] < T[i]) {
-    //   cout << "T_update[" << ntag[i] << "]=" << T_update[i] << " T=" << T[i]
-    //        << " Qint=" << Qint[i] << " Qext=" << Qext[i] << endl;
-    // }
   }
 }
