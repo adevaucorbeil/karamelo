@@ -823,17 +823,17 @@ void Grid::reduce_ghost_nodes(bool only_v, bool temp) {
             v[m][1] += buf_recv[k + 1];
             v[m][2] += buf_recv[k + 2];
             if (!only_v) {
-              f[m][0] += buf_recv[k + 3];
-              f[m][1] += buf_recv[k + 4];
-              f[m][2] += buf_recv[k + 5];
+              f[m][0] += buf_recv[k + 4];
+              f[m][1] += buf_recv[k + 5];
+              f[m][2] += buf_recv[k + 6];
 
-              mb[m][0] += buf_recv[k + 6];
-              mb[m][1] += buf_recv[k + 7];
-              mb[m][2] += buf_recv[k + 8];
+              mb[m][0] += buf_recv[k + 7];
+              mb[m][1] += buf_recv[k + 8];
+              mb[m][2] += buf_recv[k + 9];
             }
 
             if (temp) {
-              T[m] += buf_recv[k + 9];
+              T[m] += buf_recv[k + 3];
               if (!only_v) {
                 Qint[m] += buf_recv[k + 10];
                 Qext[m] += buf_recv[k + 11];
@@ -867,20 +867,20 @@ void Grid::reduce_ghost_nodes(bool only_v, bool temp) {
             tmp[k + 1] = v[m][1];
             tmp[k + 2] = v[m][2];
             if (!only_v) {
-              tmp[k + 3] = f[m][0];
-              tmp[k + 4] = f[m][1];
-              tmp[k + 5] = f[m][2];
+              tmp[k + 4] = f[m][0];
+              tmp[k + 5] = f[m][1];
+              tmp[k + 6] = f[m][2];
 
-              tmp[k + 6] = mb[m][0];
-              tmp[k + 7] = mb[m][1];
-              tmp[k + 8] = mb[m][2];
+              tmp[k + 7] = mb[m][0];
+              tmp[k + 8] = mb[m][1];
+              tmp[k + 9] = mb[m][2];
             }
 
 	    if (temp) {
-	      tmp[k + 9] = T[m];
+	      tmp[k + 3] = T[m];
 	      if (!only_v) {
 		tmp[k + 10] = Qint[m];
-		tmp[k + 10] = Qext[m];
+		tmp[k + 11] = Qext[m];
 	      }	      
 	    }
           }
@@ -921,20 +921,20 @@ void Grid::reduce_ghost_nodes(bool only_v, bool temp) {
             tmp[k + 1] = v[m][1];
             tmp[k + 2] = v[m][2];
             if (!only_v) {
-              tmp[k + 3] = f[m][0];
-              tmp[k + 4] = f[m][1];
-              tmp[k + 5] = f[m][2];
+              tmp[k + 4] = f[m][0];
+              tmp[k + 5] = f[m][1];
+              tmp[k + 6] = f[m][2];
 
-              tmp[k + 6] = mb[m][0];
-              tmp[k + 7] = mb[m][1];
-              tmp[k + 8] = mb[m][2];
+              tmp[k + 7] = mb[m][0];
+              tmp[k + 8] = mb[m][1];
+              tmp[k + 9] = mb[m][2];
             }
 
 	    if (temp) {
-	      tmp[k + 9] = T[m];
+	      tmp[k + 3] = T[m];
 	      if (!only_v) {
 		tmp[k + 10] = Qint[m];
-		tmp[k + 10] = Qext[m];
+		tmp[k + 11] = Qext[m];
 	      }	      
 	    }
           }
@@ -976,17 +976,17 @@ void Grid::reduce_ghost_nodes(bool only_v, bool temp) {
             v[m][1] = buf_recv[k + 1];
             v[m][2] = buf_recv[k + 2];
             if (!only_v) {
-              f[m][0] = buf_recv[k + 3];
-              f[m][1] = buf_recv[k + 4];
-              f[m][2] = buf_recv[k + 5];
+              f[m][0] = buf_recv[k + 4];
+              f[m][1] = buf_recv[k + 5];
+              f[m][2] = buf_recv[k + 6];
 
-              mb[m][0] = buf_recv[k + 6];
-              mb[m][1] = buf_recv[k + 7];
-              mb[m][2] = buf_recv[k + 8];
+              mb[m][0] = buf_recv[k + 7];
+              mb[m][1] = buf_recv[k + 8];
+              mb[m][2] = buf_recv[k + 9];
             }
 
             if (temp) {
-              T[m] += buf_recv[k + 9];
+              T[m] += buf_recv[k + 3];
               if (!only_v) {
                 Qint[m] += buf_recv[k + 10];
                 Qext[m] += buf_recv[k + 11];
