@@ -102,17 +102,18 @@ Matrix3d StrengthJohnsonCook::update_deviatoric_stress(
   if (eff_plastic_strain < 1.0e-10) {
     yieldStress = A;
   } else {
-    if (T < Tm) {
-      if (C != 0)
-        yieldStress =
-            (A + B * pow(eff_plastic_strain, n)) * pow(1.0 + epsdot_ratio, C);
-      else
-        yieldStress = A + B * pow(eff_plastic_strain, n);
+    yieldStress = A + B * pow(eff_plastic_strain, n);
+  }
+  if (C != 0) {
+    yieldStress *= pow(1.0 + epsdot_ratio, C);
+  }
 
-      if (m != 0 && T >= Tr)
-        yieldStress *= 1.0 - pow((T - Tr) / Tmr, m);
-    } else
-      yieldStress = 0;
+  if (T < Tm) {
+    if (m != 0 && T >= Tr) {
+      yieldStress *= 1.0 - pow((T - Tr) / Tmr, m);
+    }
+  } else {
+    yieldStress = 0;
   }
 
   /*
