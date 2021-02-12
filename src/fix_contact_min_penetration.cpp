@@ -16,6 +16,7 @@
 #include "error.h"
 #include "group.h"
 #include "input.h"
+#include "method.h"
 #include "solid.h"
 #include "universe.h"
 #include "update.h"
@@ -73,7 +74,7 @@ void FixContactMinPenetration::initial_integrate() {
   Solid *s1, *s2;
   Eigen::Vector3d ftot, ftot_reduced, vtemp1, vtemp2, dv, vt;
 
-  double Rp, Rp1, Rp2, r, inv_r, p, Estar, max_cellsize, vtnorm, fmag;
+  double Rp, Rp1, Rp2, r, inv_r, p, Estar, max_cellsize, vtnorm, fmag, ffric, gamma, alpha;
 
   ftot.setZero();
 
@@ -82,6 +83,8 @@ void FixContactMinPenetration::initial_integrate() {
 
   Estar = 1.0 / ((1 - s1->mat->nu * s1->mat->nu) / s1->mat->E +
                  (1 - s2->mat->nu * s2->mat->nu) / s2->mat->E);
+
+  alpha = s1->mat->kappa / (s1->mat->kappa + s2->mat->kappa);
 
   max_cellsize = MAX(s1->grid->cellsize, s2->grid->cellsize);
 
@@ -124,7 +127,13 @@ void FixContactMinPenetration::initial_integrate() {
 		vtnorm = vt.norm();
                 if (vtnorm != 0) {
 		  vt /= vtnorm;
-		  f -= mu * fmag * r * vt;
+		  ffric = mu * fmag * r;
+		  f -= ffric * vt;
+		  if (update->method->temp) {
+                    gamma = ffric * vtnorm * update->dt;
+                    s1->gamma[ip1] += alpha * s1->vol0[ip1] * s1->mat->invcp * gamma;
+                    s2->gamma[ip2] += (1.0 - alpha) * s2->vol0[ip2] * s2->mat->invcp * gamma;
+                  }
 		}
 	      }
 
@@ -178,7 +187,16 @@ void FixContactMinPenetration::initial_integrate() {
 		vtnorm = vt.norm();
                 if (vtnorm != 0) {
 		  vt /= vtnorm;
-		  f -= mu * fmag * r * vt;
+		  ffric = mu * fmag * r;
+		  f -= ffric * vt;
+		  if (update->method->temp) {
+                    gamma = alpha * ffric * vtnorm * update->dt;
+                    s1->gamma[ip1] += s1->vol0[ip1] * s1->mat->invcp * gamma;
+                    s2->gamma[ip2] += s2->vol0[ip2] * s2->mat->invcp * gamma;
+                    cout << "gamma_1[" << s1->ptag[ip1]
+                         << "]=" << s1->gamma[ip1] << "gamma_2["
+                         << s2->ptag[ip2] << "]=" << s2->gamma[ip2] << endl;
+                  }
 		}
 	      }
 	      s1->mbp[ip1] += f;
