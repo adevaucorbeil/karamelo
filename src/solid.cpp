@@ -2039,8 +2039,10 @@ void Solid::populate(vector<string> args)
     damage[i]                  = 0;
     damage_init[i]             = 0;
     T[i]                       = T0;
-    gamma[i]                   = 0;
-    q[i].setZero();
+    if (mat->temp != NULL) {
+      gamma[i]                 = 0;
+      q[i].setZero();
+    }
     ienergy[i]                 = 0;
     strain_el[i].setZero();
     sigma[i].setZero();
@@ -2445,8 +2447,10 @@ void Solid::read_mesh(string fileName)
     damage[i]                  = 0;
     damage_init[i]             = 0;
     T[i]                       = T0;
-    gamma[i]                   = 0;
-    q[i].setZero();
+    if (mat->temp != NULL) {
+      gamma[i]                 = 0;
+      q[i].setZero();
+    }
     ienergy[i]                 = 0;
     strain_el[i].setZero();
     sigma[i].setZero();

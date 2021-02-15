@@ -432,9 +432,15 @@ Mat::Mat(string id_, int type_, class EOS* eos_, class Strength* strength_, clas
   lambda = K - 2*G/3;
   signal_velocity = sqrt((lambda+2*G)/rho0);
 
-  cp = temp->cp();
-  invcp = 1.0 / cp;
-  kappa = temp->kappa();
+  if (temp != NULL) {
+    cp = temp->cp();
+    invcp = 1.0 / cp;  
+    kappa = temp->kappa();
+  } else {
+    cp = 0;
+    invcp = 0;
+    kappa = 0;
+  }
 
   cout << "Properties for material " << id << endl;
   cout << "\tReference density: " << rho0 << endl;
