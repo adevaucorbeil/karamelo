@@ -133,12 +133,6 @@ Solid::Solid(MPM *mpm, vector<string> args) : Pointers(mpm)
     read_file(args[2]);
   }
 
-#ifdef DEBUG
-  plt::axis("equal");
-  plt::save("debug.png");
-  plt::close();
-#endif
-
   comm_n = 50; // Number of double to pack for particle exchange between CPUs.
 
 }
@@ -299,6 +293,8 @@ void Solid::compute_mass_nodes(bool reset)
     {
       if (reset) grid->mass[in] = 0;
 
+      if (grid->rigid[in] && !mat->rigid) continue;
+
       for (int j = 0; j < numneigh_np[in]; j++)
 	{
 	  ip = neigh_np[in][j];
@@ -310,8 +306,8 @@ void Solid::compute_mass_nodes(bool reset)
 
 void Solid::compute_velocity_nodes(bool reset)
 {
-  Eigen::Vector3d vtemp, vtemp_rigid;
-  double mass_rigid;
+  Eigen::Vector3d vtemp;//, vtemp_rigid;
+  //double mass_rigid;
   int ip;
   int nn = grid->nnodes_local + grid->nnodes_ghost;
 
@@ -320,17 +316,14 @@ void Solid::compute_velocity_nodes(bool reset)
     if (reset)
     {
       grid->v[in].setZero();
-      grid->v_update[in].setZero();
+      // grid->v_update[in].setZero();
     }
 
-    if (mat->rigid)
-      mass_rigid = 0;
+    if (grid->rigid[in] && !mat->rigid) continue;
 
     if (grid->mass[in] > 0)
     {
       vtemp.setZero();
-      if (mat->rigid)
-        vtemp_rigid.setZero();
 
       for (int j = 0; j < numneigh_np[in]; j++)
       {
@@ -338,19 +331,10 @@ void Solid::compute_velocity_nodes(bool reset)
         vtemp += (wf_np[in][j] * mass[ip]) * v[ip];
         //vtemp += (wf_np[in][j] * mass[ip]) *
 	//  (v[ip] + Fdot[ip] * (grid->x0[in] - x0[ip]));
-
-        if (grid->rigid[in] && mat->rigid)
-        {
-          vtemp_rigid += wf_np[in][j] * v[ip];
-          mass_rigid += wf_np[in][j];
-        }
         // grid->v[in] += (wf_np[in][j] * mass[ip]) * v[ip]/ grid->mass[in];
       }
       vtemp /= grid->mass[in];
       grid->v[in] += vtemp;
-
-      if (mat->rigid && mass_rigid > 1.0e-12)
-        grid->v_update[in] += vtemp_rigid / mass_rigid;
       // if (isnan(grid->v_update[in][0]))
       //   cout << "in=" << in << "\tvn=[" << grid->v[in][0] << ", " << grid->v[in][1]
       //        << ", " << grid->v[in][2] << "]\tvp=[" << v[ip][0] << ", " << v[ip][1]
@@ -1093,6 +1077,7 @@ void Solid::update_stress()
     vector<double> plastic_strain_increment(np_local, 0);
     vector<Eigen::Matrix3d> sigma_dev;
     sigma_dev.resize(np_local);
+    double tav = 0;
 
     for (int ip = 0; ip < np_local; ip++) {
 
@@ -1106,7 +1091,9 @@ void Solid::update_stress()
 
       // // compute a characteristic time over which to average the plastic
       // strain
-      double tav = 1000 * grid->cellsize / mat->signal_velocity;
+
+      tav = 1000 * grid->cellsize / mat->signal_velocity;
+
       eff_plastic_strain_rate[ip] -=
           eff_plastic_strain_rate[ip] * update->dt / tav;
       eff_plastic_strain_rate[ip] += plastic_strain_increment[ip] / tav;
@@ -1238,7 +1225,7 @@ void Solid::update_stress()
   }
 }
 
-void Solid::compute_inertia_tensor(string form_function) {
+void Solid::compute_inertia_tensor() {
 
   int in;
   Eigen::Vector3d dx;
@@ -1376,9 +1363,6 @@ void Solid::copy_particle(int i, int j) {
 
 void Solid::pack_particle(int i, vector<double> &buf)
 {
-  int n[2];
-  n[0] = buf.size();
-
   buf.push_back(ptag[i]);
 
   buf.push_back(x[i](0));
@@ -1754,9 +1738,9 @@ void Solid::populate(vector<string> args)
          << "," << nsubz << "]\n";
     //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-#ifdef DEBUG
-  cout << "proc " << universe->me << "\tLsub=[" << Lsubx << "," << Lsuby << "," << Lsubz << "]\t nsub=["<< nsubx << "," << nsuby << "," << nsubz << "]\n";
-#endif
+// #ifdef DEBUG
+//   cout << "proc " << universe->me << "\tLsub=[" << Lsubx << "," << Lsuby << "," << Lsubz << "]\t nsub=["<< nsubx << "," << nsuby << "," << nsubz << "]\n";
+// #endif
 
   np_local = nsubx * nsuby * nsubz;
 
@@ -1859,13 +1843,33 @@ void Solid::populate(vector<string> args)
 		 xi, xi, xi};
 
   } else {
-    error->all(FLERR, "Error: solid command 4th argument should be 1 or 2, but " + to_string((int) input->parsev(args[3])) + "received.\n");
+    lp *= 1.0 / (2 * np_per_cell);
+
+    if (domain->dimension == 1) {
+      nip = np_per_cell;
+    } else if (domain->dimension == 2) {
+      nip = np_per_cell * np_per_cell;
+    } else {
+      nip = np_per_cell * np_per_cell * np_per_cell;
+    }
+
+    double d = 1.0 / np_per_cell;
+
+    for (int k = 0; k < np_per_cell; k++) {
+      for (int i = 0; i < np_per_cell; i++) {
+	for (int j = 0; j < np_per_cell; j++) {
+	  intpoints.push_back((i + 0.5) * d - 0.5);
+	  intpoints.push_back((j + 0.5) * d - 0.5);
+	  intpoints.push_back((k + 0.5) * d - 0.5);
+	}
+      }
+    }
   }
 
   np_local *= nip;
-#ifdef DEBUG
-  cout << "proc " << universe->me << "\tnp_local=" << np_local << endl;
-#endif
+// #ifdef DEBUG
+//   cout << "proc " << universe->me << "\tnp_local=" << np_local << endl;
+// #endif
   mass_ /= (double) nip;
   vol_ /= (double) nip;
 
@@ -2010,9 +2014,9 @@ void Solid::populate(vector<string> args)
     if (universe->me > proc) ptag0 += np_local_bcast;
   }
 
-#ifdef DEBUG
-  cout << "proc " << universe->me << "\tptag0 = " << ptag0 << endl;
-#endif
+// #ifdef DEBUG
+//   cout << "proc " << universe->me << "\tptag0 = " << ptag0 << endl;
+// #endif
   np_local = l; // Adjust np to account for the particles outside the domain
   cout << "np_local=" << np_local << endl;
 

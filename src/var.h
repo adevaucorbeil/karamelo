@@ -22,7 +22,6 @@ class Var{
   Var() {};
   Var(double);
   Var(string, double, bool c = false);
-  ~Var();
 
   void evaluate(class MPM * = NULL);
   double result(class MPM *);

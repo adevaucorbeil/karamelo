@@ -485,11 +485,18 @@ void Grid::grow(int nn){
 
 void Grid::update_grid_velocities()
 {
+  Vector3d vtemp;
+  vtemp.setZero();
+
   // Update all particles (even the ghost to not have to communicate the result)
   for (int i=0; i<nnodes_local + nnodes_ghost; i++){
     if (!rigid[i]) {
       if (mass[i] != 0) v_update[i] = v[i] + update->dt * (f[i] + mb[i])/mass[i];
       else v_update[i] = v[i];
+    } else {
+      vtemp = v_update[i]; // v[i] at t-dt
+      v_update[i] = v[i];
+      v[i] = vtemp;
     }
     // if (update->ntimestep>450)
     // if (isnan(v_update[i](0)))
@@ -633,6 +640,141 @@ void Grid::reduce_mass_ghost_nodes() {
           if (map_ntag.count(j)) {
             mass[map_ntag[j]] = buf_recv[is];
             // cout << "mass[" << j << "]=" << mass[map_ntag[j]] << "\n";
+          }
+        }
+      }
+    }
+  }
+}
+
+void Grid::reduce_rigid_ghost_nodes() {
+  vector<int> tmp_rigid;
+  int j, size_r, size_s, jproc;
+
+  // Some ghost nodes' rigid value on the CPU that owns them:
+  for (int iproc = 0; iproc < universe->nprocs; iproc++) {
+    if (iproc == universe->me) {
+
+      for (auto idest = dest_nshared.cbegin(); idest != dest_nshared.cend();
+           ++idest) {
+        // Receive the list of rigid from jproc:
+
+        jproc = idest->first;
+
+	// cout << "proc " << universe->me << " receives size from " << jproc << endl;
+        // MPI_Recv(&size_r, 1, MPI_INT, jproc, 0, universe->uworld,
+        //          MPI_STATUS_IGNORE);
+
+        // if (size_r != idest->second.size()) {
+        //   error->one(
+        //       FLERR,
+        //       "proc " + to_string(iproc) +
+        //           " received a conflicting number of shared nodes from proc " +
+        //           to_string(jproc) + "\n");
+        // }
+
+	size_r = idest->second.size();
+
+        int buf_recv[size_r];
+
+	// cout << "proc " << universe->me << " receives rigids from " << jproc << endl;
+        MPI_Recv(&buf_recv[0], size_r, MPI_INT, jproc, 0, MPI_COMM_WORLD,
+                 MPI_STATUS_IGNORE);
+
+        // Apply LOR to the received values of rigid with to that of the nodes:
+
+        for (int is = 0; is < size_r; is++) {
+          j = idest->second[is];
+
+          if (map_ntag.count(j)) {
+	    if (buf_recv[is] && !rigid[map_ntag[j]])
+	      rigid[map_ntag[j]] = true;
+          }
+        }
+      }
+    } else {
+
+      // Check if iproc listed in origin_nshared:
+
+      if (origin_nshared.count(iproc)) {
+        // me should send the list of masses of all the ghost nodes gotten from
+        // iproc to iproc.
+        size_s = origin_nshared[iproc].size();
+
+	// cout << "proc " << universe->me << " sends size to " << iproc << endl;
+        // MPI_Send(&size_s, 1, MPI_INT, iproc, 0, MPI_COMM_WORLD);
+
+        // Create the list of masses:
+
+        tmp_rigid.assign(size_s, 0); // Reset vector to all 0
+        for (int is = 0; is < size_s; is++) {
+          j = origin_nshared[iproc][is];
+
+          if (map_ntag.count(j)) {
+            tmp_rigid[is] = (int) rigid[map_ntag[j]]; // Populate tmp_rigid with the value of rigid
+          }
+        }
+
+	// cout << "proc " << universe->me << " sends rigids to " << iproc << endl;
+	MPI_Send(tmp_rigid.data(),  size_s, MPI_INT, iproc, 0, MPI_COMM_WORLD);
+      }
+    }
+  }
+
+  // Share the updated rigids:
+  for (int iproc = 0; iproc < universe->nprocs; iproc++) {
+    if (iproc == universe->me) {
+
+      for (auto idest = dest_nshared.cbegin(); idest != dest_nshared.cend();
+           ++idest) {
+        // Send the updated list of masses to jproc:
+
+        jproc = idest->first;
+        size_s = idest->second.size();
+
+	// cout << "proc " << universe->me << " sends size to " << jproc << endl;
+        // MPI_Send(&size_s, 1, MPI_INT, jproc, 0, universe->uworld);
+
+        // Create the list of rigids:
+
+        tmp_rigid.assign(size_s, 0);
+        for (int is = 0; is < size_s; is++) {
+          j = idest->second[is];
+
+          if (map_ntag.count(j)) {
+            tmp_rigid[is] = (int) rigid[map_ntag[j]];
+          }
+        }
+
+	// cout << "proc " << universe->me << " sends rigids to " << jproc << endl;
+        MPI_Send(tmp_rigid.data(), size_s, MPI_INT, jproc, 0, MPI_COMM_WORLD);
+      }
+    } else {
+
+      // Check if iproc listed in origin_nshared:
+
+      if (origin_nshared.count(iproc)) {
+        // Receive the updated list of masses from iproc
+
+	// cout << "proc " << universe->me << " receives size from " << iproc << endl;
+        // MPI_Recv(&size_r, 1, MPI_INT, iproc, 0, MPI_COMM_WORLD,
+        //          MPI_STATUS_IGNORE);
+
+	size_r = origin_nshared[iproc].size();
+        int buf_recv[size_r];
+
+	// cout << "proc " << universe->me << " receives rigids from " << iproc << endl;
+        MPI_Recv(&buf_recv[0], size_r, MPI_INT, iproc, 0, MPI_COMM_WORLD,
+                 MPI_STATUS_IGNORE);
+
+        // LOR the received rigids to that of the nodes:
+
+        for (int is = 0; is < size_r; is++) {
+	  j = origin_nshared[iproc][is];
+
+          if (map_ntag.count(j)) {
+	    if (buf_recv[is] && !rigid[map_ntag[j]])
+	      rigid[map_ntag[j]] = true;
           }
         }
       }

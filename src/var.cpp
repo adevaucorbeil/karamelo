@@ -19,15 +19,13 @@
 
 using namespace std;
 
-#define PRECISION 15
+//#define PRECISION 15
 
-template <typename T>
-std::string to_string_with_precision(const T a_value)
-{
-    std::ostringstream out;
-    out.precision(PRECISION);
-    out << std::fixed << a_value;
-    return out.str();
+std::string to_string_with_precision(const double a_value){
+    std::string s(30, '\0');
+    auto written = std::snprintf(&s[0], s.size(), "%.15f", a_value);
+    s.resize(written);
+    return s;
 }
 
 Var::Var(double v)
@@ -42,10 +40,6 @@ Var::Var(string eq, double v, bool c)
   equation = eq;
   value = v;
   constant = c;
-}
-
-Var::~Var()
-{
 }
 
 void Var::evaluate(MPM * mpm)
@@ -121,11 +115,11 @@ Var Var::operator-()
 Var Var::operator*(const Var& right)
 {
   if (this->constant && right.constant) {
-    Var result(this->value * right.value);
-    return result;
+    return Var(this->value * right.value);
+    //return result;
   } else {
-    Var result("(" + this->str() + "*" + right.str() + ")", this->value * right.value, false);
-    return result;
+    return Var("(" + this->str() + "*" + right.str() + ")", this->value * right.value, false);
+    //return result;
   }
 }
 
@@ -236,7 +230,7 @@ Var powv(int base, Var p){
     Var result(pow(base, p.result()));
     return result;
   } else {
-    Var result("pow(" + to_string_with_precision(base) + "," + p.str() + ")", pow(base, p.result()), p.is_constant());
+    Var result("pow(" + to_string(base) + "," + p.str() + ")", pow(base, p.result()), p.is_constant());
     return result;
   }
 }

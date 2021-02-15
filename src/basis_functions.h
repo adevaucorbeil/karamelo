@@ -18,7 +18,7 @@
 using namespace std;
 
 namespace BasisFunction { 
-  inline double linear(double r_, int ntype)
+  inline double linear(const double r_, const int ntype)
   {
     double r = fabs(r_);
     if (r >= 1.0)
@@ -27,7 +27,7 @@ namespace BasisFunction {
       return 1.0 - r;
   }
 
-  inline double derivative_linear(double r, int ntype, double inv_cellsize)
+  inline double derivative_linear(const double r, const int ntype, const double inv_cellsize)
   {
     if (r >= 1.0 || r <= -1.0 || r == 0)
       return 0.0;
@@ -37,7 +37,7 @@ namespace BasisFunction {
       return inv_cellsize;
   }
 
-  inline double cubic_spline(double r, int ntype)
+  inline double cubic_spline(const double r, const int ntype)
   {
     if (r >= 1 && r < 2) {
       if (ntype==1) {
@@ -70,7 +70,7 @@ namespace BasisFunction {
     }
   }
 
-  inline double derivative_cubic_spline(double r, int ntype, double icellsize)
+  inline double derivative_cubic_spline(const double r, const int ntype, const double icellsize)
   {
     if (r >= 1 && r < 2) {
       if (ntype==1) {
@@ -103,7 +103,7 @@ namespace BasisFunction {
     }
   }
 
-  inline double bernstein_quadratic(double r_, int ntype)
+  inline double bernstein_quadratic(const double r_, const int ntype)
   {
     double r = fabs(r_);
     if (r >= 1.0) return 0;
@@ -118,7 +118,7 @@ namespace BasisFunction {
     }
   }
 
-  inline double derivative_bernstein_quadratic(double r_signed, int ntype, double icellsize)
+  inline double derivative_bernstein_quadratic(const double r_signed, const int ntype, const double icellsize)
   {
     double r = fabs(r_signed);
     if (r >= 1.0) return 0;
@@ -137,8 +137,18 @@ namespace BasisFunction {
     }
   }
 
-  inline double quadratic_spline(double r, int ntype) {
-    if (ntype == -2) {
+  inline double quadratic_spline(const double r, const int ntype) {
+    if (ntype == 0) {
+      if (r >= 0.5 && r < 1.5) {
+        return 0.5 * r * r - 1.5 * r + 1.125;
+      } else if (r >= -0.5 && r < 0.5) {
+        return -r * r + 0.75;
+      } else if (r >= -1.5 && r < 0.5) {
+        return 0.5 * r * r + 1.5 * r + 1.125;
+      } else {
+        return 0;
+      }
+    } else if (ntype == -2) {
       if (r >= 0. && r < 0.5) {
         return 1 - r;
       } else if (r >= 0.5 && r < 1.5) {
@@ -166,7 +176,8 @@ namespace BasisFunction {
       } else {
         return 0;
       }
-    } else if (ntype == 2) {
+    } else {
+      //ntype == 2
       if (r >= -1.5 && r < -0.5) {
         return 0.5 * r * r + 1.5 * r + 1.125;
       } else if (r >= -0.5 && r <= 0.) {
@@ -174,23 +185,22 @@ namespace BasisFunction {
       } else {
         return 0;
       }
-    } else {
-      // ntype == 0!
-      if (r >= 0.5 && r < 1.5) {
-        return 0.5 * r * r - 1.5 * r + 1.125;
-      } else if (r >= -0.5 && r < 0.5) {
-        return -r * r + 0.75;
-      } else if (r >= -1.5 && r < 0.5) {
-        return 0.5 * r * r + 1.5 * r + 1.125;
-      } else {
-        return 0;
-      }
     }
   }
 
-  inline double derivative_quadratic_spline(double r, int ntype,
-                                            double icellsize) {
-    if (ntype == -2) {
+  inline double derivative_quadratic_spline(const double r, const int ntype,
+                                            const double icellsize) {
+    if (ntype == 0) {
+      if (r >= 0.5 && r < 1.5) {
+        return icellsize*(r - 1.5);
+      } else if (r >= -0.5 && r < 0.5) {
+        return - 2 * icellsize * r;
+      } else if (r >= -1.5 && r < 0.5) {
+        return icellsize*(r + 1.5);
+      } else {
+        return 0;
+      }
+    } else if (ntype == -2) {
       if (r >= 0. && r < 0.5) {
         return -icellsize;
       } else if (r >= 0.5 && r < 1.5) {
@@ -218,22 +228,12 @@ namespace BasisFunction {
       } else {
         return 0;
       }
-    } else if (ntype == 2) {
+    } else {
+      // ntype == 2
       if (r >= -1.5 && r < -0.5) {
         return icellsize*(r + 1.5);
       } else if (r >= -0.5 && r <= 0.) {
         return icellsize;
-      } else {
-        return 0;
-      }
-    } else {
-      // ntype == 0!
-      if (r >= 0.5 && r < 1.5) {
-        return icellsize*(r - 1.5);
-      } else if (r >= -0.5 && r < 0.5) {
-        return - 2 * icellsize * r;
-      } else if (r >= -1.5 && r < 0.5) {
-        return icellsize*(r + 1.5);
       } else {
         return 0;
       }
