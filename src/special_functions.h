@@ -11,30 +11,19 @@
  *
  * ----------------------------------------------------------------------- */
 
-#ifdef DUMP_CLASS
+#ifndef LMP_SPECIAL_FUNC_H
+#define LMP_SPECIAL_FUNC_H
 
-DumpStyle(grid,DumpGrid)
 
-#else
+namespace SpecialFunc {
+  static inline std::string replace_all(std::string str, const std::string& from, const std::string& to) {
+    size_t start_pos = 0;
+    while((start_pos = str.find(from, start_pos)) != std::string::npos) {
+      str.replace(start_pos, from.length(), to);
+      start_pos += to.length(); // Handles case where 'to' is a substring of 'from'
+    }
+    return str;
+  }
+}
 
-#ifndef MPM_DUMP_GRID_H
-#define MPM_DUMP_GRID_H
-
-#include "dump.h"
-
-class DumpGrid : public Dump {
- public:
-  DumpGrid(MPM *, vector<string>);
-  ~DumpGrid();
-
-  void write();
- protected:
-  vector<string> known_var = {"x", "y", "z",
-			      "vx", "vy", "vz",
-			      "bx", "by", "bz",
-			      "mass", "rigid",
-			      "ntypex", "ntypey", "ntypez"};
-};
-
-#endif
 #endif

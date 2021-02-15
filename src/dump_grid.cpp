@@ -91,7 +91,7 @@ void DumpGrid::write()
     // Now loop over the grids to find how many elements there are in total:
     bigint total_nn = 0;
     for (auto g: grids) {
-      total_nn += g->nnodes_local;
+      total_nn += g->nnodes_local + g->nnodes_ghost;
     }
 
     dumpstream << total_nn << endl;
@@ -99,7 +99,7 @@ void DumpGrid::write()
     dumpstream << domain->boxlo[0] << " " << domain->boxhi[0] << endl;
     dumpstream << domain->boxlo[1] << " " << domain->boxhi[1] << endl;
     dumpstream << domain->boxlo[2] << " " << domain->boxhi[2] << endl;
-    dumpstream << "ITEM: ATOMS id type ";
+    dumpstream << "ITEM: ATOMS id type tag ";
     for (auto v: output_var) {
       dumpstream << v << " ";
     }
@@ -107,9 +107,10 @@ void DumpGrid::write()
 
     int igrid = 0;
     for (auto g: grids) {
-      for (bigint i=0; i<g->nnodes_local;i++) {
+      for (bigint i=0; i<g->nnodes_local + g->nnodes_ghost;i++) {
 	dumpstream << g->ntag[i] << " "
-		   << igrid+1 << " ";
+		   << igrid+1 << " "
+		   << g->ntag[i] << " ";
 	for (auto v: output_var) {
 	  if (v.compare("x")==0) dumpstream << g->x[i][0] << " ";
 	  else if (v.compare("y")==0) dumpstream << g->x[i][1] << " ";
@@ -124,6 +125,7 @@ void DumpGrid::write()
 	  else if (v.compare("ntypex")==0) dumpstream << g->ntype[i][0] << " ";
 	  else if (v.compare("ntypey")==0) dumpstream << g->ntype[i][1] << " ";
 	  else if (v.compare("ntypez")==0) dumpstream << g->ntype[i][2] << " ";
+	  else if (v.compare("rigid")==0) dumpstream << g->rigid[i] << " ";
 	}
 	dumpstream << endl;
       }

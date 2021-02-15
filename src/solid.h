@@ -88,7 +88,6 @@ class Solid : protected Pointers {
   vector<double> damage_init;               ///< Particles' damage initiation variable
   vector<double> T;                         ///< Particles' temperature
   vector<double> ienergy;                   ///< Particles' internal energy
-  vector<double> pH_regu;                   ///< Particles' regularized hydrostatic pressure
   vector<int> mask;                         ///< Particles' group mask
 
   double max_p_wave_speed;                  ///< Maximum of the particle wave speed

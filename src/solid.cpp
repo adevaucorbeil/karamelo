@@ -265,7 +265,6 @@ void Solid::grow(int nparticles)
   damage_init.resize(nparticles);
   T.resize(nparticles);
   ienergy.resize(nparticles);
-  pH_regu.resize(nparticles);
   mask.resize(nparticles);
   J.resize(nparticles);
 
@@ -306,7 +305,7 @@ void Solid::compute_mass_nodes(bool reset)
 
 void Solid::compute_velocity_nodes(bool reset)
 {
-  Eigen::Vector3d vtemp;//, vtemp_rigid;
+  Eigen::Vector3d vtemp, vtemp_update;
   //double mass_rigid;
   int ip;
   int nn = grid->nnodes_local + grid->nnodes_ghost;
@@ -316,7 +315,10 @@ void Solid::compute_velocity_nodes(bool reset)
     if (reset)
     {
       grid->v[in].setZero();
-      // grid->v_update[in].setZero();
+      //grid->v_update[in].setZero();
+      if (grid->rigid[in]) {
+	grid->mb[in].setZero();
+      }
     }
 
     if (grid->rigid[in] && !mat->rigid) continue;
@@ -324,17 +326,29 @@ void Solid::compute_velocity_nodes(bool reset)
     if (grid->mass[in] > 0)
     {
       vtemp.setZero();
+      if (grid->rigid[in])
+	vtemp_update.setZero();
 
       for (int j = 0; j < numneigh_np[in]; j++)
       {
         ip = neigh_np[in][j];
-        vtemp += (wf_np[in][j] * mass[ip]) * v[ip];
-        //vtemp += (wf_np[in][j] * mass[ip]) *
-	//  (v[ip] + Fdot[ip] * (grid->x0[in] - x0[ip]));
+	if (grid->rigid[in]) {
+	  vtemp_update += (wf_np[in][j] * mass[ip]) * v_update[ip];
+	}
+	if (update->method->ge) {
+	  vtemp += (wf_np[in][j] * mass[ip]) *
+	    (v[ip] + L[ip] * (grid->x0[in] - x[ip]));
+	} else {
+	  vtemp += wf_np[in][j] * mass[ip] * v[ip];
+	}
         // grid->v[in] += (wf_np[in][j] * mass[ip]) * v[ip]/ grid->mass[in];
       }
       vtemp /= grid->mass[in];
       grid->v[in] += vtemp;
+      if (grid->rigid[in]) {
+	vtemp_update /= grid->mass[in];
+	grid->mb[in] += vtemp_update; // This should be grid->v_update[in], but we are using mb to make the reduction of ghost particles easy. It will be copied to grid->v_update[in] in Grid::update_grid_velocities()
+      }
       // if (isnan(grid->v_update[in][0]))
       //   cout << "in=" << in << "\tvn=[" << grid->v[in][0] << ", " << grid->v[in][1]
       //        << ", " << grid->v[in][2] << "]\tvp=[" << v[ip][0] << ", " << v[ip][1]
@@ -539,6 +553,10 @@ void Solid::compute_particle_acceleration()
     {
       in = neigh_pn[ip][j];
       a[ip] += wf_pn[ip][j] * (grid->v_update[in] - grid->v[in]);
+      // if (ptag[ip] == 101) {
+      // 	printf("dv[%d]=[%4.3e %4.3e %4.3e], ", grid->ntag[in], (grid->v_update[in][0] - grid->v[in][0])*inv_dt, (grid->v_update[in][1] - grid->v[in][1])*inv_dt, (grid->v_update[in][2] - grid->v[in][2])*inv_dt);
+      // 	cout << "rigid=" << grid->rigid[in] << endl;
+      // }
     }
     a[ip] *= inv_dt;
     f[ip] = a[ip] * mass[ip];
@@ -551,6 +569,9 @@ void Solid::update_particle_velocities(double alpha)
   for (int ip = 0; ip < np_local; ip++)
     {
       v[ip] = (1 - alpha) * v_update[ip] + alpha * (v[ip] + update->dt * a[ip]);
+      // if (ptag[ip] == 101) {
+      // 	printf("v=[%4.3e %4.3e %4.3e]\tv_update=[%4.3e %4.3e %4.3e]\ta=[%4.3e %4.3e %4.3e]\n", v[ip][0], v[ip][1], v[ip][2], v_update[ip][0], v_update[ip][1], v_update[ip][2], a[ip][0], a[ip][1], a[ip][2]);
+      // }
   }
 }
 
@@ -1098,36 +1119,9 @@ void Solid::update_stress()
           eff_plastic_strain_rate[ip] * update->dt / tav;
       eff_plastic_strain_rate[ip] += plastic_strain_increment[ip] / tav;
       eff_plastic_strain_rate[ip] = MAX(0.0, eff_plastic_strain_rate[ip]);
-    }
-
-    if (mat->damage != NULL) {
-      for (int in = 0; in < grid->nnodes_local + grid->nnodes_ghost; in++) {
-	grid->pH[in] = 0;
-	int ip;
-	for (int j = 0; j < numneigh_np[in]; j++) {
-	  ip = neigh_np[in][j];
-	  if (damage[ip] == 0 || pH[ip] >= 0)
-	    grid->pH[in] += (wf_np[in][j] * mass[ip]) * pH[ip];
-	  else
-	    grid->pH[in] += (wf_np[in][j] * mass[ip]) * pH[ip] * (1.0 - damage[ip]);
-	}
-	grid->pH[in] /= grid->mass[in];
-      }
-
-      grid->reduce_regularized_variables();
-    }
-    int in;
-
-    for (int ip = 0; ip < np_local; ip++) {
-      pH_regu[ip] = 0;
 
       if (mat->damage != NULL) {
-	for (int j = 0; j < numneigh_pn[ip]; j++) {
-	  in = neigh_pn[ip][j];
-	  pH_regu[ip] += wf_pn[ip][j] * grid->pH[in];
-	}
-
-	mat->damage->compute_damage(damage_init[ip], damage[ip], pH_regu[ip],
+	mat->damage->compute_damage(damage_init[ip], damage[ip], pH[ip],
                                     sigma_dev[ip], eff_plastic_strain_rate[ip],
                                     plastic_strain_increment[ip], T[ip]);
       }
@@ -1243,9 +1237,9 @@ void Solid::compute_inertia_tensor() {
       }
       Dtemp(1, 0) = Dtemp(0, 1);
       Dtemp(2, 2) = 1;
-      if (ip==0) cout << "1 - Dtemp[" << ip << "]=\n" << Dtemp << endl;
+      // if (ip==0) cout << "1 - Dtemp[" << ip << "]=\n" << Dtemp << endl;
       Di[ip] = Dtemp.inverse();
-      if (ip==0) cout << "1 - Di[" << ip << "]=\n" << Di[ip] << endl;
+      // if (ip==0) cout << "1 - Di[" << ip << "]=\n" << Di[ip] << endl;
     }
   } else if (domain->dimension == 3) {
     for (int ip = 0; ip < np_local; ip++) {
@@ -1264,7 +1258,7 @@ void Solid::compute_inertia_tensor() {
       Dtemp(2, 1) = Dtemp(1, 2);
       Dtemp(2, 0) = Dtemp(0, 2);
       Di[ip] = Dtemp.inverse();
-      if (ip==0) cout << "1 - Di[" << ip << "]=\n" << Di[ip] << endl;
+      // if (ip==0) cout << "1 - Di[" << ip << "]=\n" << Di[ip] << endl;
     }
   }
 
@@ -1324,7 +1318,6 @@ void Solid::copy_particle(int i, int j) {
   damage_init[j]             = damage_init[i];
   T[j]                       = T[i];
   ienergy[j]                 = ienergy[i];
-  pH_regu[j]                 = pH_regu[i];
   mask[j]                    = mask[i];
   sigma[j]                   = sigma[i];
   strain_el[j]               = strain_el[i];
@@ -1788,7 +1781,7 @@ void Solid::populate(vector<string> args)
     else if (domain->dimension == 2) nip = 4;
     else                             nip = 8;
 
-    if (nc == 0)
+    if (is_TL && nc == 0)
       xi = 0.5 / sqrt(3.0);
     else
       xi = 0.25;
@@ -2043,7 +2036,6 @@ void Solid::populate(vector<string> args)
     damage_init[i]             = 0;
     T[i]                       = T0;
     ienergy[i]                 = 0;
-    pH_regu[i] = 0;
     strain_el[i].setZero();
     sigma[i].setZero();
     vol0PK1[i].setZero();
@@ -2448,7 +2440,6 @@ void Solid::read_mesh(string fileName)
     damage_init[i]             = 0;
     T[i]                       = T0;
     ienergy[i]                 = 0;
-    pH_regu[i] = 0;
     strain_el[i].setZero();
     sigma[i].setZero();
     vol0PK1[i].setZero();
