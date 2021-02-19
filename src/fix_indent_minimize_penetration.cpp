@@ -85,7 +85,7 @@ void FixIndentMinimizePenetration::initial_integrate() {
   int solid = group->solid[igroup];
 
   Solid *s;
-  Eigen::Vector3d ftot, ftot_reduced, vtemp, ffric;
+  Eigen::Vector3d ftot, ftot_reduced, ffric;
 
   double R = input->parsev(args[Rpos]).result(mpm);
   Eigen::Vector3d xs(input->parsev(args[xpos]).result(mpm),
@@ -94,16 +94,13 @@ void FixIndentMinimizePenetration::initial_integrate() {
   Eigen::Vector3d vs(input->parsev(args[vxpos]).result(mpm),
                      input->parsev(args[vypos]).result(mpm),
                      input->parsev(args[vzpos]).result(mpm));
-  Eigen::Vector3d xsp, vps, vt, vtbar_new;
+  Eigen::Vector3d xsp, vps, vt;
 
-  double Rs, Rp, r, p, fmag, vtnorm;
+  double Rs, Rp, r, p, fmag, vtnorm, vndotxsp;
 
   int n, n_reduced;
   ftot.setZero();
   n = 0;
-
-  map<int, Vector3d>::iterator it;
-  //active_particles.clear();
 
   if (solid == -1) {
     for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
@@ -165,9 +162,8 @@ void FixIndentMinimizePenetration::initial_integrate() {
         for (int ip = 0; ip < s->np_local; ip++) {
           if (s->mass[ip] > 0) {
             if (s->mask[ip] & groupbit) {
-	      bool contact = false;
 
-              // Gross screening:
+             // Gross screening:
               xsp = s->x[ip] - xs;
 
               Rp = 0.5*cbrt(s->vol0[ip]);
@@ -184,43 +180,39 @@ void FixIndentMinimizePenetration::initial_integrate() {
                   if (p > 0) {
 		    n++;
 		    xsp /= r;
+		    vps = vs - s->v[ip];
                     fmag = s->mass[ip] * p / (update->dt * update->dt);
                     f = fmag * xsp;// / r;
-
 		    if (mu != 0) {
-		      contact = true;
-		      vps = vs - s->v[ip];
-		      vt = vps - vps.dot(xsp) * xsp;// / (r*r);
-
-		      it = vtbar.find(ip);
-		      if (it != vtbar.end()) {
-			vtbar_new = it->second + 1./20. * (vt - it->second);
-		      } else {
-			vtbar_new = vt;
-		      }
-		      vtbar[ip] = vtbar_new;
-		      vtnorm = vtbar_new.norm();
+		      vndotxsp = vps.dot(xsp);
+		      vt = vps - vndotxsp * xsp;// / (r*r);
+		      vtnorm = vt.norm();
 		      if (vtnorm != 0) {
-			vtbar_new /= vtnorm;
-			ffric = mu * fmag * vtbar_new;
-			f += ffric;
-
-			// //active_particles.push_back(ip);
-			// cout << "Particle " << s->ptag[ip]
-			//      << " f_friction=[" << ffric[0] <<"," << ffric[1] <<"," << ffric[2] << "] "
-			//   //      << "f=[" << f[0] <<"," << f[1] <<"," << f[2] << "] "
-			//   //      << "vps=[" << vps[0] <<"," << vps[1] <<"," << vps[2] << "] "
-			//      << "vtbar_new=[" << vtbar_new[0] <<"," << vtbar_new[1] <<"," << vtbar_new[2] << "] "
-			//      << "vt=[" << vt[0] <<"," << vt[1] <<"," << vt[2] << "] "
+			// Reference: DOI 10.1002/nag.2233
+			if (vtnorm <= mu * vndotxsp) {
+			  ffric = s->mass[ip] * vt/ update->dt;
+			  //f += MIN(s->mass[ip] * vtnorm / update->dt, mu * fmag) * vt;
+			} else {
+			  // vt /= vtnorm;
+			  // Either:
+			  // ffric = mu * fmag * vt;
+			  // Or:
+			  ffric = mu * s->mass[ip] * abs(vndotxsp) * vt / (update->dt * vtnorm);
+			}
+			cout << "Particle " << s->ptag[ip]
+			     << " f_friction=[" << ffric[0] <<"," << ffric[1] <<"," << ffric[2] << "] "
+			     << "f=[" << f[0] <<"," << f[1] <<"," << f[2] << "] "
+			     << "vps=[" << vps[0] <<"," << vps[1] <<"," << vps[2] << "] "
+			      << "vt=[" << vt[0] <<"," << vt[1] <<"," << vt[2] << "] "
 			//      << "vs=[" << vs[0] <<"," << vs[1] <<"," << vs[2] << "] "
 			//      << "vp=[" << s->v[ip][0] <<"," << s->v[ip][1] <<"," << s->v[ip][2] << "] "
-			//      << "ap=[" << s->a[ip][0] <<"," << s->a[ip][1] <<"," << s->a[ip][2] << "] "
-			//      << "xsp=[" << xsp[0] <<"," << xsp[1] <<"," << xsp[2] << "] "
-			//      << "dt=" << update->dt << " vtnorm=" << vtnorm << " ";
-			//   //      << "contact_stress=[" << contact_stress[0] << ", " << contact_stress[1] << ", " << contact_stress[2] << "]" << endl;
-			//   // << "tau=[" << tau[0] <<"," << tau[1] <<"," << tau[2] << "]\n";
-			//   cout << endl;
+			// //      << "ap=[" << s->a[ip][0] <<"," << s->a[ip][1] <<"," << s->a[ip][2] << "] "
+			     << "xsp=[" << xsp[0] <<"," << xsp[1] <<"," << xsp[2] << "] "
+			     << "dt=" << update->dt << endl;
+			// " mass=" << s->mass[ip] << " vtnorm=" << vtnorm << "\n";
+			// //   cout << endl;
 
+			f += ffric;
 		      }
 		    }
 
@@ -232,11 +224,6 @@ void FixIndentMinimizePenetration::initial_integrate() {
                   }
                 }
               }
-	      if (!contact) {
-		it = vtbar.find(ip);
-		if (it != vtbar.end())
-		  vtbar.erase(it);
-	      }
             }
           }
         }
@@ -355,40 +342,3 @@ void FixIndentMinimizePenetration::initial_integrate() {
   (*input->vars)[id + "_y"] = Var(id + "_y", ftot_reduced[1]);
   (*input->vars)[id + "_z"] = Var(id + "_z", ftot_reduced[2]);
 }
-
-// void FixIndentMinimizePenetration::post_velocities_to_grid() {
-//   int solid = group->solid[igroup];
-//   Solid *s;
-
-//   Eigen::Vector3d vu, vtu, xsp, vps;
-//   Eigen::Vector3d xs(input->parsev(args[xpos]).result(mpm),
-//                      input->parsev(args[ypos]).result(mpm),
-//                      input->parsev(args[zpos]).result(mpm));
-//   Eigen::Vector3d vs(input->parsev(args[vxpos]).result(mpm),
-//                      input->parsev(args[vypos]).result(mpm),
-//                      input->parsev(args[vzpos]).result(mpm));
-
-//   if (solid == -1) {
-//     for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
-//       s = domain->solids[isolid];
-      
-//       for (auto ip: active_particles) {
-	
-// 	vu.setZero();
-// 	for (int j = 0; j < s->numneigh_pn[ip]; j++) {
-// 	  int in = s->neigh_pn[ip][j];
-// 	  vu += s->wf_pn[ip][j] * s->grid->v[in];
-// 	}
-
-// 	xsp = s->x[ip] - xs;
-// 	vps = vs - s->v[ip];
-// 	vtu = vps - vps.dot(xsp) * xsp;// / (r*r);
-// 	//vtnorm = vt.norm();
-// 	//vt /= vtnorm;
-	
-// 	cout << "Particle " << s->ptag[ip]
-// 	     << " vtu=[" << vtu[0] <<"," << vtu[1] <<"," << vtu[2] << "]\n";
-//       }
-//     }
-//   }
-// }

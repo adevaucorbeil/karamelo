@@ -1030,7 +1030,7 @@ void Solid::update_deformation_gradient()
                << ip << ".\n";
           cout << "F:" << endl << F[ip] << endl;
           cout << "timestep" << endl << update->ntimestep << endl;
-          error->all(FLERR, "");
+          error->one(FLERR, "");
         }
 
       } else

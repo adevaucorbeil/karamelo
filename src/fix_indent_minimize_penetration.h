@@ -22,7 +22,6 @@ FixStyle(indent/minimize_penetration, FixIndentMinimizePenetration)
 
 #include "fix.h"
 #include "var.h"
-#include <Eigen/Eigen>
 #include <vector>
 
 class FixIndentMinimizePenetration : public Fix {
@@ -51,8 +50,6 @@ private:
       vzpos; // Positions of K, the position of the sphere, and
              // its radius in the argument list (args)
   double mu; // Friction coefficient
-
-  map<int, Eigen::Vector3d> vtbar;
 };
 
 #endif
