@@ -38,7 +38,7 @@ class Strength : protected Pointers {
     const double           eff_plastic_strain,
     const double           epsdot,
     const double           damage,
-    const double           temperature) = 0;
+    const double           temperature = 0) = 0;
   //protected:
 };
 

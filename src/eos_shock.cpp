@@ -86,7 +86,7 @@ double EOSShock::K(){
   return K_;
 }
 
-void EOSShock::compute_pressure(double &pFinal, double &e, const double J, const double rho, const double T, const double damage, const Eigen::Matrix3d D, const double cellsize){
+void EOSShock::compute_pressure(double &pFinal, double &e, const double J, const double rho, const double damage, const Eigen::Matrix3d D, const double cellsize, const double T){
   double mu = rho / rho0_ - 1.0;
   double pH = rho0_ * square(c0) * mu * (1.0 + mu) / square(1.0 - (S - 1.0) * mu);
 

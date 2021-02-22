@@ -263,7 +263,6 @@ void Solid::grow(int nparticles)
   eff_plastic_strain_rate.resize(nparticles);
   damage.resize(nparticles);
   damage_init.resize(nparticles);
-  T.resize(nparticles);
   ienergy.resize(nparticles);
   mask.resize(nparticles);
   J.resize(nparticles);
@@ -283,6 +282,7 @@ void Solid::grow(int nparticles)
   wfd_np.resize(nnodes);
 
   if (mat->temp != NULL) {
+    T.resize(nparticles);
     gamma.resize(nparticles);
     q.resize(nparticles);
   }
@@ -1086,15 +1086,22 @@ void Solid::update_stress()
 
     for (int ip = 0; ip < np_local; ip++) {
 
-      mat->eos->compute_pressure(pH[ip], ienergy[ip], J[ip], rho[ip], T[ip],
-                                 damage[ip], D[ip], grid->cellsize);
       if (mat->temp != NULL) {
-	pH[ip] += mat->temp->compute_thermal_pressure(T[ip]);
-      }
+        mat->eos->compute_pressure(pH[ip], ienergy[ip], J[ip], rho[ip],
+                                   damage[ip], D[ip], grid->cellsize, T[ip]);
+        pH[ip] += mat->temp->compute_thermal_pressure(T[ip]);
 
-      sigma_dev[ip] = mat->strength->update_deviatoric_stress(
-          sigma[ip], D[ip], plastic_strain_increment[ip], eff_plastic_strain[ip],
-          eff_plastic_strain_rate[ip], damage[ip], T[ip]);
+        sigma_dev[ip] = mat->strength->update_deviatoric_stress(
+            sigma[ip], D[ip], plastic_strain_increment[ip],
+            eff_plastic_strain[ip], eff_plastic_strain_rate[ip], damage[ip],
+            T[ip]);
+      } else {
+        mat->eos->compute_pressure(pH[ip], ienergy[ip], J[ip], rho[ip],
+                                   damage[ip], D[ip], grid->cellsize);
+        sigma_dev[ip] = mat->strength->update_deviatoric_stress(
+            sigma[ip], D[ip], plastic_strain_increment[ip],
+            eff_plastic_strain[ip], eff_plastic_strain_rate[ip], damage[ip]);
+      }
 
       eff_plastic_strain[ip] += plastic_strain_increment[ip];
 
@@ -1109,9 +1116,15 @@ void Solid::update_stress()
       eff_plastic_strain_rate[ip] = MAX(0.0, eff_plastic_strain_rate[ip]);
 
       if (mat->damage != NULL) {
-	mat->damage->compute_damage(damage_init[ip], damage[ip], pH[ip],
-                                    sigma_dev[ip], eff_plastic_strain_rate[ip],
-                                    plastic_strain_increment[ip], T[ip]);
+	if (mat->temp != NULL) {
+	  mat->damage->compute_damage(damage_init[ip], damage[ip], pH[ip],
+				      sigma_dev[ip], eff_plastic_strain_rate[ip],
+				      plastic_strain_increment[ip], T[ip]);
+	} else {
+	  mat->damage->compute_damage(damage_init[ip], damage[ip], pH[ip],
+				      sigma_dev[ip], eff_plastic_strain_rate[ip],
+				      plastic_strain_increment[ip]);
+	}
       }
 
       if (mat->temp != NULL) {
@@ -1308,9 +1321,11 @@ void Solid::copy_particle(int i, int j) {
   eff_plastic_strain_rate[j] = eff_plastic_strain_rate[i];
   damage[j]                  = damage[i];
   damage_init[j]             = damage_init[i];
-  T[j]                       = T[i];
-  gamma[j]                   = gamma[i];
-  q[j]                       = q[i];
+  if (mat->temp != NULL) {
+    T[j]                     = T[i];
+    gamma[j]                   = gamma[i];
+    q[j]                       = q[i];
+  }
   ienergy[j]                 = ienergy[i];
   mask[j]                    = mask[i];
   sigma[j]                   = sigma[i];
@@ -1391,11 +1406,13 @@ void Solid::pack_particle(int i, vector<double> &buf)
   buf.push_back(eff_plastic_strain_rate[i]);
   buf.push_back(damage[i]);
   buf.push_back(damage_init[i]);
-  buf.push_back(T[i]);
-  buf.push_back(gamma[i]);
-  buf.push_back(q[i][0]);
-  buf.push_back(q[i][1]);
-  buf.push_back(q[i][2]);
+  if (mat->temp != NULL) {
+    buf.push_back(T[i]);
+    buf.push_back(gamma[i]);
+    buf.push_back(q[i][0]);
+    buf.push_back(q[i][1]);
+    buf.push_back(q[i][2]);
+  }
   buf.push_back(ienergy[i]);
   buf.push_back(mask[i]);
 
@@ -1487,12 +1504,14 @@ void Solid::unpack_particle(int &i, vector<int> list, double buf[])
       eff_plastic_strain_rate[i] = buf[m++];
       damage[i] = buf[m++];
       damage_init[i] = buf[m++];
-      T[i] = buf[m++];
-      gamma[i] = buf[m++];
+      if (mat->temp != NULL) {
+	T[i] = buf[m++];
+	gamma[i] = buf[m++];
 
-      q[i][0] = buf[m++];
-      q[i][1] = buf[m++];
-      q[i][2] = buf[m++];
+	q[i][0] = buf[m++];
+	q[i][1] = buf[m++];
+	q[i][2] = buf[m++];
+      }
 
       ienergy[i] = buf[m++];
       mask[i] = buf[m++];
@@ -1785,9 +1804,9 @@ void Solid::populate(vector<string> args)
     else if (domain->dimension == 2) nip = 4;
     else                             nip = 8;
 
-    if (is_TL && nc == 0)
-      xi = 0.5 / sqrt(3.0);
-    else
+    // if (is_TL && nc == 0)
+    //   xi = 0.5 / sqrt(3.0);
+    // else
       xi = 0.25;
 
     lp *= 0.25;
@@ -2038,8 +2057,8 @@ void Solid::populate(vector<string> args)
     eff_plastic_strain_rate[i] = 0;
     damage[i]                  = 0;
     damage_init[i]             = 0;
-    T[i]                       = T0;
     if (mat->temp != NULL) {
+      T[i]                     = T0;
       gamma[i]                 = 0;
       q[i].setZero();
     }
@@ -2446,8 +2465,8 @@ void Solid::read_mesh(string fileName)
     eff_plastic_strain_rate[i] = 0;
     damage[i]                  = 0;
     damage_init[i]             = 0;
-    T[i]                       = T0;
     if (mat->temp != NULL) {
+      T[i]                     = T0;
       gamma[i]                 = 0;
       q[i].setZero();
     }
@@ -2553,7 +2572,7 @@ void Solid::update_particle_temperature() {
     for (int j = 0; j < numneigh_pn[ip]; j++) {
       in = neigh_pn[ip][j];
       T[ip] += wf_pn[ip][j] * (grid->T_update[in] - grid->T[in]);
-      // if (ptag[ip] == 5651) {
+      // if (ptag[ip] == 3198 || ptag[ip] == 3102) {
       // 	cout << "T[" << ptag[ip] << "]=" << T[ip] << " in=" << grid->ntag[in] << " T_update[in]=" << grid->T_update[in] << " T[in]=" << grid->T[in] << endl;
       // }
     }

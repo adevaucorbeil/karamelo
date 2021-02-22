@@ -36,7 +36,7 @@ class EOS : protected Pointers {
   //virtual compute_pressure()
   virtual double rho0() = 0;
   virtual double K() = 0;
-  virtual void compute_pressure(double &, double&, const double, const double, const double, const double, const Eigen::Matrix3d, const double) = 0;
+  virtual void compute_pressure(double &, double &, const double, const double, const double, const Eigen::Matrix3d, const double, const double T = 0) = 0;
   //protected:
 };
 

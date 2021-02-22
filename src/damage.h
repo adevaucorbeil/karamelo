@@ -34,7 +34,7 @@ class Damage : protected Pointers {
 			      const Eigen::Matrix3d Sdev,
 			      const double epsdot,
 			      const double plastic_strain_increment,
-			      const double temperature) = 0;
+			      const double temperature = 0) = 0;
 };
 
 #endif

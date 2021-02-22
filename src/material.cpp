@@ -286,9 +286,15 @@ void Material::add_material(vector<string> args) {
     else
       type = NEO_HOOKEAN;
 
+    double kappa = 0, cp = 0;
+    if (args.size() >= 6) {
+      kappa = input->parsev(args[6]);
+      cp = input->parsev(args[5]);
+    }
+
     Mat new_material(args[0], type, input->parsev(args[2]),
                      input->parsev(args[3]), input->parsev(args[4]),
-                     input->parsev(args[5]), input->parsev(args[6]));
+                     cp, kappa);
     materials.push_back(new_material);
 
   } else if (args[1].compare("rigid") == 0) {

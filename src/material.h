@@ -123,12 +123,12 @@ private:
   template <typename T> static Temperature *temperature_creator(MPM *,vector<string>);
 
   const map<string, string> usage = {{"rigid",        "Usage: material(material-ID, \033[1;32mrigid\033[0m)\n"},
-				     {"linear",       "Usage: material(material-ID, \033[1;32mlinear\033[0m, rho, E, nu, cp, kappa, optional: damage-ID)\n"},
-				     {"neo-hookean",  "Usage: material(material-ID, \033[1;32mneo-hookean\033[0m, rho, E, nu, cp, kappa, optional: damage-ID)\n"},
+				     {"linear",       "Usage: material(material-ID, \033[1;32mlinear\033[0m, rho, E, nu, optional: cp, optional: kappa, optional: damage-ID)\n"},
+				     {"neo-hookean",  "Usage: material(material-ID, \033[1;32mneo-hookean\033[0m, rho, E, nu, optional: cp, optional: kappa, optional: damage-ID)\n"},
 				     {"eos-strength", "Usage: material(material-ID, \033[1;32meos-strength\033[0m, eos-ID, strength-ID, optional: damage-ID, optional: temperature-ID)\n"}};
   const map<string, int>    Nargs = {{"rigid",        2},
-				     {"linear",       7},
-				     {"neo-hookean",  7},
+				     {"linear",       5},
+				     {"neo-hookean",  5},
 				     {"eos-strength", 4}};
 };
 

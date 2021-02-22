@@ -193,9 +193,9 @@ void FixContactMinPenetration::initial_integrate() {
                     gamma = alpha * ffric * vtnorm * update->dt;
                     s1->gamma[ip1] += s1->vol0[ip1] * s1->mat->invcp * gamma;
                     s2->gamma[ip2] += s2->vol0[ip2] * s2->mat->invcp * gamma;
-                    cout << "gamma_1[" << s1->ptag[ip1]
-                         << "]=" << s1->gamma[ip1] << "gamma_2["
-                         << s2->ptag[ip2] << "]=" << s2->gamma[ip2] << endl;
+                    // cout << "gamma_1[" << s1->ptag[ip1]
+                    //      << "]=" << s1->gamma[ip1] << "gamma_2["
+                    //      << s2->ptag[ip2] << "]=" << s2->gamma[ip2] << endl;
                   }
 		}
 	      }

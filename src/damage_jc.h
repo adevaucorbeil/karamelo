@@ -36,7 +36,7 @@ public:
 			      const Eigen::Matrix3d Sdev,
 			      const double epsdot,
 			      const double plastic_strain_increment,
-			      const double temperature);
+			      const double temperature = 0);
 
 protected:
   double d1, d2, d3, d4, d5, epsdot0,Tr, Tm, Tmr;
