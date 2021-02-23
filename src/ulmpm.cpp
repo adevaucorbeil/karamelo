@@ -126,12 +126,12 @@ void ULMPM::setup(vector<string> args)
   if (args.size() > n) {
     if (args[n].compare("thermo-mechanical") == 0) {
       temp = true;
-    } else if (args[n + 1].compare("mechanical") == 0) {
+    } else if (args[n].compare("mechanical") == 0) {
       temp = false;
     } else {
       error->all(
           FLERR,
-          "Illegal modify_method command: keyword " + args[n + 1] +
+          "Illegal modify_method command: keyword " + args[n] +
               " unknown. Expected \"thermo-mechanical\" or \"mechanical\".\n");
     }
     n++;
