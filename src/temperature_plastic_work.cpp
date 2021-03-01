@@ -31,18 +31,23 @@ TemperaturePlasticWork::TemperaturePlasticWork(MPM *mpm, vector<string> args) : 
   kappa_ = input->parsev(args[4]);
   alpha = input->parsev(args[5]);
   T0 = input->parsev(args[6]);
+  Tm = input->parsev(args[7]);
 
   cout << "Plastic work material temperature model:\n";
   cout << "\tTaylor-Quinney coefficient chi:" << chi << endl;
   cout << "\tSpecific heat at constant pressure cp:" << cp_ << endl;
   cout << "\tThermal conductivity kappa:" << kappa_ << endl;
   cout << "\tCoefficient of thermal expansion alpha:" << alpha << endl;
-  cout << "\tInitial temperature T0:" << T0 << endl;  
+  cout << "\tInitial temperature T0:" << T0 << endl;
+  cout << "\tMelting temperature Tm:" << Tm << endl;
 }
 
-void TemperaturePlasticWork::compute_heat_source(double &gamma, const double &flow_stress, const double &eff_plastic_strain_rate)
+void TemperaturePlasticWork::compute_heat_source(double T, double &gamma, const double &flow_stress, const double &eff_plastic_strain_rate)
 {
-  gamma = chi * flow_stress * eff_plastic_strain_rate;
+  if (T < Tm)
+    gamma = chi * flow_stress * eff_plastic_strain_rate;
+  else
+    gamma = 0;
 }
 
 double TemperaturePlasticWork::compute_thermal_pressure(double T) {

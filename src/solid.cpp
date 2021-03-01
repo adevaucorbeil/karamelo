@@ -1129,8 +1129,8 @@ void Solid::update_stress()
 
       if (mat->temp != NULL) {
 	flow_stress = SQRT_3_OVER_2 * sigma_dev[ip].norm();
-	mat->temp->compute_heat_source(gamma[ip], flow_stress,
-				       eff_plastic_strain_rate[ip]);
+        mat->temp->compute_heat_source(T[ip], gamma[ip], flow_stress,
+                                       eff_plastic_strain_rate[ip]);
         if (is_TL)
           gamma[ip] *= vol0[ip] * mat->invcp;
         else

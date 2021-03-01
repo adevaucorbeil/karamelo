@@ -21,13 +21,13 @@ public:
 
   inline double cp() { return cp_; }
   inline double kappa() { return kappa_; }
-  void compute_heat_source(double &, const double &, const double &);
+  void compute_heat_source(double, double &, const double &, const double &);
   double compute_thermal_pressure(double);
 
 protected:
-  double chi, kappa_, cp_, alpha, T0;
-  string usage = "Usage: temperature(temp-ID, plastic_work, chi, cp, kappa, alpha, T0)\n";
-  int Nargs = 7;
+  double chi, kappa_, cp_, alpha, T0, Tm;
+  string usage = "Usage: temperature(temp-ID, plastic_work, chi, cp, kappa, alpha, T0, Tm)\n";
+  int Nargs = 8;
 };
 
 #endif
