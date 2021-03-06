@@ -1134,7 +1134,7 @@ void Solid::update_stress()
         if (is_TL)
           gamma[ip] *= vol0[ip] * mat->invcp;
         else
-          gamma[ip] *= vol0[ip] * mat->invcp;
+          gamma[ip] *= vol[ip] * mat->invcp;
       }
 
       if (damage[ip] == 0 || pH[ip] >= 0)
