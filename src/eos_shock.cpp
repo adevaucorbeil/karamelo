@@ -94,7 +94,7 @@ void EOSShock::compute_pressure(double &pFinal, double &e, const double J, const
     e = alpha * (T - Tr);
   else
     e = 0;
-  pFinal = pH - Gamma * (e - e0);
+  pFinal = pH + Gamma * (e - e0);
 
   if ( damage > 0.0 ) {
     if ( pFinal < 0.0 ) {
