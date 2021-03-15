@@ -281,7 +281,7 @@ void Solid::grow(int nparticles)
   wf_np.resize(nnodes);
   wfd_np.resize(nnodes);
 
-  if (mat->temp != NULL) {
+  if (update->method->temp) {
     T.resize(nparticles);
     gamma.resize(nparticles);
     q.resize(nparticles);
@@ -1116,7 +1116,7 @@ void Solid::update_stress()
       eff_plastic_strain_rate[ip] = MAX(0.0, eff_plastic_strain_rate[ip]);
 
       if (mat->damage != NULL) {
-	if (mat->temp != NULL) {
+	if (update->method->temp) {
 	  mat->damage->compute_damage(damage_init[ip], damage[ip], pH[ip],
 				      sigma_dev[ip], eff_plastic_strain_rate[ip],
 				      plastic_strain_increment[ip], T[ip]);
@@ -1321,7 +1321,7 @@ void Solid::copy_particle(int i, int j) {
   eff_plastic_strain_rate[j] = eff_plastic_strain_rate[i];
   damage[j]                  = damage[i];
   damage_init[j]             = damage_init[i];
-  if (mat->temp != NULL) {
+  if (update->method->temp) {
     T[j]                     = T[i];
     gamma[j]                   = gamma[i];
     q[j]                       = q[i];
@@ -1406,7 +1406,7 @@ void Solid::pack_particle(int i, vector<double> &buf)
   buf.push_back(eff_plastic_strain_rate[i]);
   buf.push_back(damage[i]);
   buf.push_back(damage_init[i]);
-  if (mat->temp != NULL) {
+  if (update->method->temp) {
     buf.push_back(T[i]);
     buf.push_back(gamma[i]);
     buf.push_back(q[i][0]);
@@ -1504,7 +1504,7 @@ void Solid::unpack_particle(int &i, vector<int> list, double buf[])
       eff_plastic_strain_rate[i] = buf[m++];
       damage[i] = buf[m++];
       damage_init[i] = buf[m++];
-      if (mat->temp != NULL) {
+      if (update->method->temp) {
 	T[i] = buf[m++];
 	gamma[i] = buf[m++];
 
@@ -2057,7 +2057,7 @@ void Solid::populate(vector<string> args)
     eff_plastic_strain_rate[i] = 0;
     damage[i]                  = 0;
     damage_init[i]             = 0;
-    if (mat->temp != NULL) {
+    if (update->method->temp) {
       T[i]                     = T0;
       gamma[i]                 = 0;
       q[i].setZero();
@@ -2465,7 +2465,7 @@ void Solid::read_mesh(string fileName)
     eff_plastic_strain_rate[i] = 0;
     damage[i]                  = 0;
     damage_init[i]             = 0;
-    if (mat->temp != NULL) {
+    if (update->method->temp) {
       T[i]                     = T0;
       gamma[i]                 = 0;
       q[i].setZero();

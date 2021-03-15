@@ -14,14 +14,15 @@
 #include "dump_particle.h"
 #include "domain.h"
 #include "error.h"
+#include "method.h"
 #include "mpm_math.h"
 #include "mpmtype.h"
 #include "output.h"
 #include "solid.h"
 #include "universe.h"
 #include "update.h"
-#include <iostream>
 #include <Eigen/Eigen>
+#include <iostream>
 
 using namespace std;
 using namespace MPM_Math;
@@ -136,14 +137,14 @@ void DumpParticle::write()
 	  else if (v.compare("epdot")==0) dumpstream << s->eff_plastic_strain_rate[i] << " ";
 	  else if (v.compare("ienergy")==0) dumpstream << s->ienergy[i] << " ";
 	  else if (v.compare("T")==0) {
-	    if (s->mat->temp != NULL) {
+	    if (update->method->temp) {
 	      dumpstream << s->T[i] << " ";
 	    } else {
 	      dumpstream << "0 ";
 	    }
 	  }
 	  else if (v.compare("gamma")==0) {
-	    if (s->mat->temp != NULL) {
+	    if (update->method->temp) {
 	      dumpstream << s->gamma[i] << " ";
 	    } else {
 	      dumpstream << "0 ";	      
