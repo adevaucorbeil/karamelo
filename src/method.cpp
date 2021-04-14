@@ -20,6 +20,7 @@ Method::Method(MPM *mpm) : Pointers(mpm)
 {
   is_TL = false;
   is_CPDI = false;
+  ge = false;
 }
 
 Method::~Method()

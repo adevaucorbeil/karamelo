@@ -74,6 +74,27 @@ void ULMPM::setup(vector<string> args)
     apic = true;
     update->alpha = 0;
   }
+
+  if (isFLIP) {
+    FLIP = input->parsev(args[n]);
+    n++;
+  }
+
+  if (args.size() > n) {
+    if (args[n].compare("enhanced-gradient") == 0) {
+      ge = true;
+      cout << "Enhanced gradient\n";
+      n++;
+    }
+  }
+
+  if (args.size() > n) {
+    error->all(FLERR, "Illegal modify_method command: too many arguments: " + to_string(n + isFLIP) + " expected, " + to_string(args.size()) + " received.\n");
+  }
+
+  // cout << "shape_function = " << shape_function << endl;
+  // cout << "method_type = " << method_type << endl;
+  // cout << "FLIP = " << FLIP << endl;
 }
 
 void ULMPM::compute_grid_weight_functions_and_gradients()

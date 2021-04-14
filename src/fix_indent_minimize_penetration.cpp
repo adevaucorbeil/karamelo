@@ -95,7 +95,7 @@ void FixIndentMinimizePenetration::initial_integrate() {
   int solid = group->solid[igroup];
 
   Solid *s;
-  Eigen::Vector3d ftot, ftot_reduced, vtemp;
+  Eigen::Vector3d ftot, ftot_reduced, ffric;
 
   Eigen::Vector3d xs(xvalue.result(mpm),
                      yvalue.result(mpm),
@@ -105,7 +105,7 @@ void FixIndentMinimizePenetration::initial_integrate() {
                      vzvalue.result(mpm));
   Eigen::Vector3d xsp, vps, vt;
 
-  double Rs, Rp, r, p, fmag, vtnorm;
+  double Rs, Rp, r, p, fmag, vtnorm, vndotxsp;
 
   int n, n_reduced;
   ftot.setZero();
@@ -172,7 +172,7 @@ void FixIndentMinimizePenetration::initial_integrate() {
           if (s->mass[ip] > 0) {
             if (s->mask[ip] & groupbit) {
 
-              // Gross screening:
+             // Gross screening:
               xsp = s->x[ip] - xs;
 
               Rp = 0.5*cbrt(s->vol0[ip]);
@@ -189,16 +189,39 @@ void FixIndentMinimizePenetration::initial_integrate() {
                   if (p > 0) {
 		    n++;
 		    xsp /= r;
+		    vps = vs - s->v[ip];
                     fmag = s->mass[ip] * p / (update->dt * update->dt);
                     f = fmag * xsp;// / r;
-
 		    if (mu != 0) {
-		      vps = vs - s->v[ip];
-		      vt = vps - vps.dot(xsp) * xsp;// / (r*r);
+		      vndotxsp = vps.dot(xsp);
+		      vt = vps - vndotxsp * xsp;// / (r*r);
 		      vtnorm = vt.norm();
 		      if (vtnorm != 0) {
-			vt /= vtnorm;
-			f += MIN(s->mass[ip] * vtnorm / update->dt, mu * fmag) * vt;
+			// Reference: DOI 10.1002/nag.2233
+			if (vtnorm <= mu * vndotxsp) {
+			  ffric = s->mass[ip] * vt/ update->dt;
+			  //f += MIN(s->mass[ip] * vtnorm / update->dt, mu * fmag) * vt;
+			} else {
+			  // vt /= vtnorm;
+			  // Either:
+			  // ffric = mu * fmag * vt;
+			  // Or:
+			  ffric = mu * s->mass[ip] * abs(vndotxsp) * vt / (update->dt * vtnorm);
+			}
+			cout << "Particle " << s->ptag[ip]
+			     << " f_friction=[" << ffric[0] <<"," << ffric[1] <<"," << ffric[2] << "] "
+			     << "f=[" << f[0] <<"," << f[1] <<"," << f[2] << "] "
+			     << "vps=[" << vps[0] <<"," << vps[1] <<"," << vps[2] << "] "
+			      << "vt=[" << vt[0] <<"," << vt[1] <<"," << vt[2] << "] "
+			//      << "vs=[" << vs[0] <<"," << vs[1] <<"," << vs[2] << "] "
+			//      << "vp=[" << s->v[ip][0] <<"," << s->v[ip][1] <<"," << s->v[ip][2] << "] "
+			// //      << "ap=[" << s->a[ip][0] <<"," << s->a[ip][1] <<"," << s->a[ip][2] << "] "
+			     << "xsp=[" << xsp[0] <<"," << xsp[1] <<"," << xsp[2] << "] "
+			     << "dt=" << update->dt << endl;
+			// " mass=" << s->mass[ip] << " vtnorm=" << vtnorm << "\n";
+			// //   cout << endl;
+
+			f += ffric;
 		      }
 		    }
 

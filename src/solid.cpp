@@ -314,7 +314,7 @@ void Solid::compute_mass_nodes(bool reset)
 
 void Solid::compute_velocity_nodes(bool reset)
 {
-  Eigen::Vector3d vtemp;//, vtemp_rigid;
+  Eigen::Vector3d vtemp, vtemp_update;
   //double mass_rigid;
   int ip;
   int nn = grid->nnodes_local + grid->nnodes_ghost;
@@ -324,7 +324,10 @@ void Solid::compute_velocity_nodes(bool reset)
     if (reset)
     {
       grid->v[in].setZero();
-      // grid->v_update[in].setZero();
+      //grid->v_update[in].setZero();
+      if (grid->rigid[in]) {
+	grid->mb[in].setZero();
+      }
     }
 
     if (grid->rigid[in] && !mat->rigid) continue;
@@ -332,17 +335,29 @@ void Solid::compute_velocity_nodes(bool reset)
     if (grid->mass[in] > 0)
     {
       vtemp.setZero();
+      if (grid->rigid[in])
+	vtemp_update.setZero();
 
       for (int j = 0; j < numneigh_np[in]; j++)
       {
         ip = neigh_np[in][j];
-        // vtemp += (wf_np[in][j] * mass[ip]) * v[ip];
-        vtemp += (wf_np[in][j] * mass[ip]) *
-	  (v[ip] + L[ip] * (grid->x0[in] - x[ip]));
+	if (grid->rigid[in]) {
+	  vtemp_update += (wf_np[in][j] * mass[ip]) * v_update[ip];
+	}
+	if (update->method->ge) {
+	  vtemp += (wf_np[in][j] * mass[ip]) *
+	    (v[ip] + L[ip] * (grid->x0[in] - x[ip]));
+	} else {
+	  vtemp += wf_np[in][j] * mass[ip] * v[ip];
+	}
         // grid->v[in] += (wf_np[in][j] * mass[ip]) * v[ip]/ grid->mass[in];
       }
       vtemp /= grid->mass[in];
       grid->v[in] += vtemp;
+      if (grid->rigid[in]) {
+	vtemp_update /= grid->mass[in];
+	grid->mb[in] += vtemp_update; // This should be grid->v_update[in], but we are using mb to make the reduction of ghost particles easy. It will be copied to grid->v_update[in] in Grid::update_grid_velocities()
+      }
       // if (isnan(grid->v_update[in][0]))
       //   cout << "in=" << in << "\tvn=[" << grid->v[in][0] << ", " << grid->v[in][1]
       //        << ", " << grid->v[in][2] << "]\tvp=[" << v[ip][0] << ", " << v[ip][1]
@@ -556,7 +571,7 @@ void Solid::compute_particle_acceleration()
     for (int j = 0; j < numneigh_pn[ip]; j++)
     {
       in = neigh_pn[ip][j];
-      a[ip] += wf_pn[ip][j] * (grid->v_update[in] - grid->v[in] + L[ip] * (v[ip] - grid->v[in]));
+      a[ip] += wf_pn[ip][j] * (grid->v_update[in] - grid->v[in]);
     }
     a[ip] *= inv_dt;
     f[ip] = a[ip] * mass[ip];
@@ -566,6 +581,11 @@ void Solid::compute_particle_acceleration()
 void Solid::update_particle_velocities(double alpha) {
   for (int ip = 0; ip < np_local; ip++) {
     v[ip] = (1 - alpha) * v_update[ip] + alpha * (v[ip] + update->dt * a[ip]);
+    // if (ptag[ip] == 101) {
+    // 	printf("v=[%4.3e %4.3e %4.3e]\tv_update=[%4.3e %4.3e %4.3e]\ta=[%4.3e
+    // %4.3e %4.3e]\n", v[ip][0], v[ip][1], v[ip][2], v_update[ip][0],
+    // v_update[ip][1], v_update[ip][2], a[ip][0], a[ip][1], a[ip][2]);
+    // }
   }
 }
 
@@ -1015,7 +1035,7 @@ void Solid::update_deformation_gradient()
                << ip << ".\n";
           cout << "F:" << endl << F[ip] << endl;
           cout << "timestep" << endl << update->ntimestep << endl;
-          error->all(FLERR, "");
+          error->one(FLERR, "");
         }
 
       } else
@@ -1274,9 +1294,7 @@ void Solid::compute_inertia_tensor() {
       }
       Dtemp(1, 0) = Dtemp(0, 1);
       Dtemp(2, 2) = 1;
-      // if (ptag[ip]==23) cout << "1 - Dtemp[" << ip << "]=\n" << Dtemp << endl;
       Di[ip] = Dtemp.inverse();
-      // if (ptag[ip]==23) cout << "1 - Di[" << ip << "]=\n" << Di[ip] << endl;
     }
   } else if (domain->dimension == 3) {
     for (int ip = 0; ip < np_local; ip++) {
@@ -1295,7 +1313,7 @@ void Solid::compute_inertia_tensor() {
       Dtemp(2, 1) = Dtemp(1, 2);
       Dtemp(2, 0) = Dtemp(0, 2);
       Di[ip] = Dtemp.inverse();
-      if (ip==0) cout << "1 - Di[" << ip << "]=\n" << Di[ip] << endl;
+      // if (ip==0) cout << "1 - Di[" << ip << "]=\n" << Di[ip] << endl;
     }
   }
 
@@ -1820,7 +1838,7 @@ void Solid::populate(vector<string> args)
     else if (domain->dimension == 2) nip = 4;
     else                             nip = 8;
 
-    if (nc == 0)
+    if (is_TL && nc == 0)
       xi = 0.5 / sqrt(3.0);
     else
       xi = 0.25;
