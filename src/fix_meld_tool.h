@@ -40,14 +40,16 @@ public:
   void post_velocities_to_grid(){};
   void final_integrate(){};
 
+  void write_restart(ofstream *);
+  void read_restart(ifstream *);
+
 private:
   string usage = "Usage: fix(fix-ID, meldtool, group, K, dim, half-width, c1, c2, theta, lo, hi, Rmax)\n";
   int Nargs = 12;
-  int dim, axis0, axis1, Rmax, RmaxSq;
-  double K, w, lo, hi;
-  int c1pos = 6;
-  int c2pos = 7;
-  int thetapos = 8; // Positions the arguments
+  int dim, axis0, axis1;
+  double K, w, lo, hi, Rmax, RmaxSq;
+
+  class Var c1, c2, theta;         //< Position and angle of the tool
 
   enum Axis { X, Y, Z, };
 };

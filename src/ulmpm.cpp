@@ -34,7 +34,7 @@ ULMPM::ULMPM(MPM *mpm) : Method(mpm)
   cout << "In ULMPM::ULMPM()" << endl;
 
   update_wf   = 1;
-  update->alpha = 0.99;
+  update->PIC_FLIP = 0.99;
   apic        = false;
 
   // Default base function (linear):
@@ -72,29 +72,8 @@ void ULMPM::setup(vector<string> args)
 
   if (update->sub_method_type == update->SubMethodType::APIC) {
     apic = true;
-    update->alpha = 0;
+    update->PIC_FLIP = 0;
   }
-
-  if (isFLIP) {
-    FLIP = input->parsev(args[n]);
-    n++;
-  }
-
-  if (args.size() > n) {
-    if (args[n].compare("enhanced-gradient") == 0) {
-      ge = true;
-      cout << "Enhanced gradient\n";
-      n++;
-    }
-  }
-
-  if (args.size() > n) {
-    error->all(FLERR, "Illegal modify_method command: too many arguments: " + to_string(n + isFLIP) + " expected, " + to_string(args.size()) + " received.\n");
-  }
-
-  // cout << "shape_function = " << shape_function << endl;
-  // cout << "method_type = " << method_type << endl;
-  // cout << "FLIP = " << FLIP << endl;
 }
 
 void ULMPM::compute_grid_weight_functions_and_gradients()
@@ -442,7 +421,7 @@ void ULMPM::advance_particles()
 {
   for (int isolid = 0; isolid < domain->solids.size(); isolid++)
   {
-    domain->solids[isolid]->update_particle_velocities(update->alpha);
+    domain->solids[isolid]->update_particle_velocities(update->PIC_FLIP);
   }
 }
 

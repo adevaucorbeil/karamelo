@@ -42,27 +42,34 @@ FixMeldTool::FixMeldTool(MPM *mpm, vector<string> args)
   }
   cout << "Creating new fix FixMeldTool with ID: " << args[0] << endl;
   id = args[0];
-  K = input->parsev(args[3]).result(mpm);
-  if (args[4].compare("x") == 0) {
+
+  int k = 2;
+  
+  K = input->parsev(args[++k]).result(mpm);
+  k++;
+  if (args[k].compare("x") == 0) {
     dim = X;
     axis0 = Y;
     axis1 = Z;
-  } else if (args[4].compare("y") == 0) {
+  } else if (args[k].compare("y") == 0) {
     dim = Y;
     axis0 = X;
     axis1 = Z;
-  } else if (args[4].compare("z") == 0) {
+  } else if (args[k].compare("z") == 0) {
     dim = Z;
     axis0 = X;
     axis1 = Y;
   } else {
-    error->all(FLERR, "Unknown dim: " + args[4] + "! Options are : x, y, and z.\n");
+    error->all(FLERR, "Unknown dim: " + args[k] + "! Options are : x, y, and z.\n");
   }
 
-  w = input->parsev(args[5]).result(mpm);
-  lo = input->parsev(args[9]).result(mpm);
-  hi = input->parsev(args[10]).result(mpm);
-  Rmax = input->parsev(args[11]).result(mpm);
+  w = input->parsev(args[++k]).result(mpm);
+  c1 = input->parsev(args[++k]);
+  c2 = input->parsev(args[++k]);
+  theta = input->parsev(args[++k]);
+  lo = input->parsev(args[++k]).result(mpm);
+  hi = input->parsev(args[++k]).result(mpm);
+  Rmax = input->parsev(args[++k]).result(mpm);
   RmaxSq = Rmax * Rmax;
 }
 
@@ -89,9 +96,7 @@ void FixMeldTool::initial_integrate() {
   Eigen::Vector3d ftot, ftot_reduced;
 
 
-  double theta = input->parsev(args[thetapos]).result(mpm);
-  double c1 = input->parsev(args[c1pos]).result(mpm);
-  double c2 = input->parsev(args[c2pos]).result(mpm);
+  double theta_ = theta.result(mpm);
 
   Eigen::Vector3d xprime, c;
   Eigen::Matrix3d R, Rt;
@@ -101,42 +106,42 @@ void FixMeldTool::initial_integrate() {
     R(0,1) = 0;
     R(0,2) = 0;
     R(1,0) = 0;
-    R(1,1) = cos(theta);
-    R(1,2) = sin(theta);
+    R(1,1) = cos(theta_);
+    R(1,2) = sin(theta_);
     R(2,0) = 0;
-    R(2,1) = -sin(theta);
-    R(2,2) = cos(theta);
+    R(2,1) = -sin(theta_);
+    R(2,2) = cos(theta_);
 
     c(0) = lo;
-    c(1) = c1;
-    c(2) = c2;
+    c(1) = c1.result(mpm);
+    c(2) = c2.result(mpm);
   } else if (dim == Y) {
-    R(0,0) = cos(theta);
+    R(0,0) = cos(theta_);
     R(0,1) = 0;
-    R(0,2) = sin(theta);
+    R(0,2) = sin(theta_);
     R(1,0) = 0;
     R(1,1) = 1;
     R(1,2) = 0;
-    R(2,0) = -sin(theta);
+    R(2,0) = -sin(theta_);
     R(2,1) = 0;
-    R(2,2) = cos(theta);
+    R(2,2) = cos(theta_);
 
-    c(0) = c1;
+    c(0) = c1.result(mpm);
     c(1) = lo;
-    c(2) = c2;
+    c(2) = c2.result(mpm);
   } else if (dim == Z) {
     R(0,0) = 1;
     R(0,1) = 0;
     R(0,2) = 0;
     R(1,0) = 0;
-    R(1,1) = cos(theta);
-    R(1,2) = sin(theta);
+    R(1,1) = cos(theta_);
+    R(1,2) = sin(theta_);
     R(2,0) = 0;
-    R(2,1) = -sin(theta);
-    R(2,2) = cos(theta);
+    R(2,1) = -sin(theta_);
+    R(2,2) = cos(theta_);
 
-    c(0) = c1;
-    c(1) = c2;
+    c(0) = c1.result(mpm);
+    c(1) = c2.result(mpm);
     c(2) = lo;
   }
 
@@ -275,4 +280,36 @@ void FixMeldTool::initial_integrate() {
   (*input->vars)[id + "_x"] = Var(id + "_x", ftot_reduced[0]);
   (*input->vars)[id + "_y"] = Var(id + "_y", ftot_reduced[1]);
   (*input->vars)[id + "_z"] = Var(id + "_z", ftot_reduced[2]);
+}
+
+
+void FixMeldTool::write_restart(ofstream *of) {
+  of->write(reinterpret_cast<const char *>(&dim), sizeof(int));
+  of->write(reinterpret_cast<const char *>(&axis0), sizeof(int));
+  of->write(reinterpret_cast<const char *>(&axis1), sizeof(int));
+  of->write(reinterpret_cast<const char *>(&K), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&w), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&lo), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&hi), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&Rmax), sizeof(double));
+  
+  c1.write_to_restart(of);
+  c2.write_to_restart(of);
+  theta.write_to_restart(of);
+}
+
+void FixMeldTool::read_restart(ifstream *ifr) {
+  ifr->read(reinterpret_cast<char *>(&dim), sizeof(int));
+  ifr->read(reinterpret_cast<char *>(&axis0), sizeof(int));
+  ifr->read(reinterpret_cast<char *>(&axis1), sizeof(int));
+  ifr->read(reinterpret_cast<char *>(&K), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&w), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&lo), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&hi), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&Rmax), sizeof(double));
+  RmaxSq = Rmax * Rmax;
+
+  c1.read_from_restart(ifr);
+  c2.read_from_restart(ifr);
+  theta.read_from_restart(ifr);
 }

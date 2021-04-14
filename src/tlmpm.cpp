@@ -35,7 +35,7 @@ TLMPM::TLMPM(MPM *mpm) : Method(mpm) {
   cout << "In TLMPM::TLMPM()" << endl;
 
   update_wf = 1;
-  update->alpha = 0.99;
+  update->PIC_FLIP = 0.99;
   is_TL = true;
 
   // Default base function (linear):
@@ -75,7 +75,7 @@ void TLMPM::setup(vector<string> args)
   }
 
   if (update->sub_method_type == update->SubMethodType::APIC) {
-    update->alpha = 0;
+    update->PIC_FLIP = 0;
   }
 }
 
@@ -343,7 +343,7 @@ void TLMPM::grid_to_points()
 void TLMPM::advance_particles()
 {
   for (int isolid=0; isolid<domain->solids.size(); isolid++) {
-    domain->solids[isolid]->update_particle_velocities(update->alpha);
+    domain->solids[isolid]->update_particle_velocities(update->PIC_FLIP);
   }
 }
 

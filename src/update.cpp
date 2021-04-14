@@ -46,7 +46,7 @@ Update::Update(MPM *mpm) : Pointers(mpm)
   method = NULL;
   shape_function = ShapeFunctions::LINEAR;
   sub_method_type = SubMethodType::FLIP;
-  alpha = 0.99;
+  PIC_FLIP = 0.99;
   //vector<string> method_args;
   //method_args.push_back("tlmpm");
   //create_method(method_args);
@@ -132,7 +132,7 @@ void Update::create_method(vector<string> args){
   if (map_sub_method_type.count(args[n]) > 0) {
     sub_method_type = map_sub_method_type.at(args[n]);
     if (sub_method_type == SubMethodType::PIC)
-      alpha = 0;
+      PIC_FLIP = 0;
     else if (sub_method_type == SubMethodType::FLIP) {
       isFLIP = true;
       if (args.size() < 4) {
@@ -157,7 +157,7 @@ void Update::create_method(vector<string> args){
   }
 
   if (isFLIP) {
-    alpha = input->parsev(args[n]);
+    PIC_FLIP = input->parsev(args[n]);
     n++;
   }
 
@@ -196,7 +196,7 @@ void Update::write_restart(ofstream *of) {
   // - The method type
   // - The scheme style
   // - FLIP and/or PIC, or APIC
-  // - alpha
+  // - PIC_FLIP
   // - The type of shape function
   // - additional_args
   // - The timestep
@@ -217,9 +217,9 @@ void Update::write_restart(ofstream *of) {
   // Sub-method type (PIC and/or FLIP or APIC):
   of->write(reinterpret_cast<const char *>(&sub_method_type), sizeof(int));
 
-  // alpha
-  of->write(reinterpret_cast<const char *>(&alpha), sizeof(double));
-  cout << "alpha=" << alpha << endl;
+  // PIC_FLIP
+  of->write(reinterpret_cast<const char *>(&PIC_FLIP), sizeof(double));
+  cout << "PIC_FLIP=" << PIC_FLIP << endl;
 
   // The type of shape function:
   of->write(reinterpret_cast<const char *>(&shape_function), sizeof(int));
@@ -256,7 +256,7 @@ void Update::read_restart(ifstream *ifr) {
   // The informations to be stored in the restart file are:  // - The method type
   // - The scheme style
   // - FLIP and/or PIC, or APIC
-  // - alpha
+  // - PIC_FLIP
   // - The type of shape function
   // - The timestep
   // - dt
@@ -307,9 +307,9 @@ void Update::read_restart(ifstream *ifr) {
   ifr->read(reinterpret_cast<char *>(&sub_method_type), sizeof(int));
   cout << "sub_method_type=" << sub_method_type << endl;
 
-  // alpha
-  ifr->read(reinterpret_cast<char *>(&alpha), sizeof(double));
-  cout << "alpha=" << alpha << endl;
+  // PIC_FLIP
+  ifr->read(reinterpret_cast<char *>(&PIC_FLIP), sizeof(double));
+  cout << "PIC_FLIP=" << PIC_FLIP << endl;
 
   // The type of shape function:
   ifr->read(reinterpret_cast<char *>(&shape_function), sizeof(int));

@@ -35,13 +35,15 @@ FixImpenetrableSurface::FixImpenetrableSurface(MPM *mpm, vector<string> args)
   }
 
   int k = 2;
-  Kpos = ++k;
-  xspos = ++k;
-  yspos = ++k;
-  zspos = ++k;
-  nxpos = ++k;
-  nypos = ++k;
-  nzpos = ++k;
+
+  K = input->parsev(args[++k]).result(mpm);
+
+  xs_x = input->parsev(args[++k]);
+  xs_y = input->parsev(args[++k]);
+  xs_z = input->parsev(args[++k]);
+  nx = input->parsev(args[++k]);
+  ny = input->parsev(args[++k]);
+  nz = input->parsev(args[++k]);
 
   if (group->pon[igroup].compare("particles") != 0 &&
       group->pon[igroup].compare("all") != 0) {
@@ -77,14 +79,13 @@ void FixImpenetrableSurface::initial_integrate() {
   Solid *s;
   Eigen::Vector3d ftot, ftot_reduced;
 
-  double K = input->parsev(args[Kpos]).result(mpm);
 
-  Eigen::Vector3d xs(input->parsev(args[xspos]).result(mpm),
-                     input->parsev(args[yspos]).result(mpm),
-                     input->parsev(args[zspos]).result(mpm));
-  Eigen::Vector3d n(input->parsev(args[nxpos]).result(mpm),
-                    input->parsev(args[nypos]).result(mpm),
-                    input->parsev(args[nzpos]).result(mpm)); // Outgoing normal
+  Eigen::Vector3d xs(xs_x.result(mpm),
+                     xs_y.result(mpm),
+                     xs_z.result(mpm));
+  Eigen::Vector3d n(nx.result(mpm),
+                    ny.result(mpm),
+                    nz.result(mpm)); // Outgoing normal
 
   // Normalize n:
   n /= n.norm();
@@ -176,4 +177,28 @@ void FixImpenetrableSurface::initial_integrate() {
   (*input->vars)[id + "_x"] = Var(id + "_x", ftot_reduced[0]);
   (*input->vars)[id + "_y"] = Var(id + "_y", ftot_reduced[1]);
   (*input->vars)[id + "_z"] = Var(id + "_z", ftot_reduced[2]);
+}
+
+void FixImpenetrableSurface::write_restart(ofstream *of) {
+  of->write(reinterpret_cast<const char *>(&K), sizeof(double));
+
+  xs_x.write_to_restart(of);
+  xs_y.write_to_restart(of);
+  xs_z.write_to_restart(of);
+
+  nx.write_to_restart(of);
+  ny.write_to_restart(of);
+  nz.write_to_restart(of);
+}
+
+void FixImpenetrableSurface::read_restart(ifstream *ifr) {
+  ifr->read(reinterpret_cast<char *>(&K), sizeof(double));
+
+  xs_x.read_from_restart(ifr);
+  xs_y.read_from_restart(ifr);
+  xs_z.read_from_restart(ifr);
+
+  nx.read_from_restart(ifr);
+  ny.read_from_restart(ifr);
+  nz.read_from_restart(ifr);
 }

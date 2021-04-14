@@ -42,7 +42,7 @@ class Update : protected Pointers {
   string method_type;                 ///< Name of the method type
   int sub_method_type;                ///< Name of the velocity updating method type
   int shape_function;                 ///< Type of shape function used
-  double alpha;                       ///< PIC/FLIP mixing factor
+  double PIC_FLIP;                    ///< PIC/FLIP mixing factor
 
   Update(class MPM *);
   ~Update();

@@ -19,7 +19,7 @@ TLCPDI::TLCPDI(MPM *mpm) : Method(mpm) {
   cout << "In TLCPDI::TLCPDI()" << endl;
 
   update_wf = 1;
-  update->alpha = 0.99;
+  update->PIC_FLIP = 0.99;
   style = 0;    //Default CPDI style is known_styles[style]="R4"; 
   is_TL = true;
   is_CPDI = true;
@@ -378,7 +378,7 @@ void TLCPDI::grid_to_points()
 void TLCPDI::advance_particles()
 {
   for (int isolid=0; isolid<domain->solids.size(); isolid++) {
-    domain->solids[isolid]->update_particle_velocities(update->alpha);
+    domain->solids[isolid]->update_particle_velocities(update->PIC_FLIP);
   }
 }
 
