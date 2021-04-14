@@ -71,8 +71,8 @@ void Output::setup(){
   if (ndumps != 0) {
 
     if (next_dump.size() != ndumps) next_dump.reserve(ndumps);
-    
-    for (int idump=0; idump<ndumps; idump++){
+
+    for (int idump = 0; idump < ndumps; idump++) {
       if (every_dump[idump]){
 	next_dump[idump] =
           (ntimestep/every_dump[idump])*every_dump[idump] + every_dump[idump];
@@ -80,7 +80,7 @@ void Output::setup(){
 	cout << "Error every_dump = 0 does not make sense" << endl;
       }
 
-      if (idump) next_dump_any = MIN(next_dump_any,next_dump[idump]);
+      if (idump != 0) next_dump_any = MIN(next_dump_any,next_dump[idump]);
       else next_dump_any = next_dump[0];
     }
   }
@@ -102,7 +102,10 @@ void Output::setup(){
     }
   }
 
-  next = MIN(next_dump_any,next_plot_any);
+  if (next_plot_any != 0)
+    next = MIN(next_dump_any, next_plot_any);
+  else
+    next = next_dump_any;
 
   if (restart_flag && next_restart)
     next = MIN(next, next_restart);
@@ -122,12 +125,17 @@ void Output::setup(){
     error->all(FLERR,"Error: next=0!\n");
   }
 
-  // cout << "next = " << next << endl;
+  cout << "next = " << next << endl;
 }
 
 void Output::write(bigint ntimestep){
 
   bigint nsteps = update->nsteps;
+
+  cout << "In Output::write\n";
+  cout << "restart_flag = " << restart_flag << endl;
+  cout << "next_restart = " << next_restart << endl;
+  cout << "ntimestep = " << ntimestep << endl;
 
   // If there is at least one dump that requested output at the current step:
   if (next_dump_any == ntimestep) {
@@ -145,6 +153,7 @@ void Output::write(bigint ntimestep){
   }
 
   if (restart_flag && next_restart == ntimestep) {
+    cout << "OK\n";
     restart->write();
     next_restart += every_restart;
   }
@@ -158,11 +167,22 @@ void Output::write(bigint ntimestep){
     modify->run_computes();
     log->write();
   }
+
+  if (restart_flag) {
+    next = next_restart;
+    if (next_dump_any != 0)
+      next = MIN(next, next_dump_any);
+    if (next_log != 0)
+      next = MIN(next, next_log);
+  } else {
+    if (next_dump_any != 0)
+      next = MIN(next_dump_any, next_log);
+    else if (next_log != 0)
+      next = next_log;
+  }
   
-  if (next_dump_any!=0) next = MIN(next_dump_any,next_log);
-  else if (next_log!=0) next = next_log;
-  else {
-    error->all(FLERR,"Error: next=0!\n");
+  if (next == 0) {
+    error->all(FLERR, "Error: next=0!\n");
   }
 
   if (next_plot_any == ntimestep) {
@@ -330,6 +350,7 @@ void Output::create_restart(vector<string> args){
   }
 
   every_restart = (int) input->parsev(args[0]);
+  cout << "every_restart = " << every_restart << endl;
 
   if (every_restart == 0) {
     delete restart;
@@ -341,6 +362,7 @@ void Output::create_restart(vector<string> args){
     restart = new WriteRestart(mpm);
     restart->command(vector<string>(1, args[1]));
     next_restart = (update->ntimestep/every_restart)*every_restart + every_restart;
+    cout << "next_restart = " << next_restart << endl;
 
     restart_flag = 1;
 
