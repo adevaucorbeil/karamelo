@@ -109,7 +109,7 @@ vector<double> Union::limits(){
 
 void Union::write_restart(ofstream *of) {
   size_t N = iregions.size();
-  of->write(reinterpret_cast<const char *>(&N), sizeof(int));
+  of->write(reinterpret_cast<const char *>(&N), sizeof(size_t));
   for (int i = 0; i < N; i++) {
     of->write(reinterpret_cast<const char *>(&iregions[i]), sizeof(int));
   }
@@ -126,7 +126,8 @@ void Union::read_restart(ifstream *ifr) {
   cout << "Restart Union" << endl;
 
   size_t N;
-  ifr->read(reinterpret_cast<char *>(&N), sizeof(int));
+  ifr->read(reinterpret_cast<char *>(&N), sizeof(size_t));
+  cout << "N = " << N << endl;
   iregions.resize(N);
 
   for (int i = 0; i < N; i++) {

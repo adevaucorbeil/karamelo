@@ -113,7 +113,7 @@ vector<double> Difference::limits(){
 
 void Difference::write_restart(ofstream *of) {
   size_t N = iregions.size();
-  of->write(reinterpret_cast<const char *>(&N), sizeof(int));
+  of->write(reinterpret_cast<const char *>(&N), sizeof(size_t));
   for (int i = 0; i < N; i++) {
     of->write(reinterpret_cast<const char *>(&iregions[i]), sizeof(int));
   }
@@ -131,7 +131,7 @@ void Difference::read_restart(ifstream *ifr) {
   cout << "Restart Difference" << endl;
 
   size_t N;
-  ifr->read(reinterpret_cast<char *>(&N), sizeof(int));
+  ifr->read(reinterpret_cast<char *>(&N), sizeof(size_t));
   iregions.resize(N);
 
   for (int i = 0; i < N; i++) {

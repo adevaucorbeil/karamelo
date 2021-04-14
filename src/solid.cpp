@@ -2555,6 +2555,10 @@ void Solid::write_restart(ofstream *of) {
   // Write material's info:
   int iMat = material->find_material(mat->id);
   of->write(reinterpret_cast<const char *>(&iMat), sizeof(int));
+
+  // Write cellsize:
+  of->write(reinterpret_cast<const char *>(&grid->cellsize), sizeof(double));
+  
   
   // Write particle's attributes:
   cout << x[0](0) << ", " << x[0](1) << ", " << x[0](2) << endl;
@@ -2592,7 +2596,8 @@ void Solid::read_restart(ifstream *ifr) {
   cout << "solidhi=[" << solidhi[0] << "," << solidhi[1] << "," << solidhi[2] << endl;
   cout << "solidsublo=[" << solidsublo[0] << "," << solidsublo[1] << "," << solidsublo[2] << endl;
   cout << "solidsubhi=[" << solidsubhi[0] << "," << solidsubhi[1] << "," << solidsubhi[2] << endl;
-  
+
+  //init();
   // Read number of particles:
   ifr->read(reinterpret_cast<char *>(&np), sizeof(bigint));
   ifr->read(reinterpret_cast<char *>(&np_local), sizeof(int));
@@ -2602,6 +2607,12 @@ void Solid::read_restart(ifstream *ifr) {
   int iMat = -1;
   ifr->read(reinterpret_cast<char *>(&iMat), sizeof(int));
   mat = &material->materials[iMat];
+
+  // Read cellsize:
+  ifr->read(reinterpret_cast<char *>(&grid->cellsize), sizeof(double));
+  if (is_TL) {
+    grid->init(solidlo, solidhi);
+  }
 
   // Read particle's attributes:
   grow(np_local);
