@@ -126,7 +126,7 @@ void Group::assign(vector<string> args)
 
 	    if (pon[igroup].compare("particles") == 0)
 	      {
-		x    = &domain->solids[isolid]->x;
+		x    = &domain->solids[isolid]->x0;
 		nmax = domain->solids[isolid]->np_local;
 		mask = &domain->solids[isolid]->mask;
 		cout << "Solid has " << domain->solids[isolid]->np << " particles"
@@ -134,7 +134,7 @@ void Group::assign(vector<string> args)
 	      }
 	    else
 	      {
-		x    = &domain->solids[isolid]->grid->x;
+		x    = &domain->solids[isolid]->grid->x0;
 		nmax = domain->solids[isolid]->grid->nnodes_local
 		  + domain->solids[isolid]->grid->nnodes_ghost;
 		mask = &domain->solids[isolid]->grid->mask;
@@ -176,7 +176,7 @@ void Group::assign(vector<string> args)
 
 	    if (pon[igroup].compare("particles") == 0)
 	      {
-		x    = &domain->solids[solid[igroup]]->x;
+		x    = &domain->solids[solid[igroup]]->x0;
 		nmax = domain->solids[solid[igroup]]->np_local;
 		mask = &domain->solids[solid[igroup]]->mask;
 		cout << "Solid has " << domain->solids[solid[igroup]]->np
@@ -184,7 +184,7 @@ void Group::assign(vector<string> args)
 	      }
 	    else
 	      {
-		x    = &domain->solids[solid[igroup]]->grid->x;
+		x    = &domain->solids[solid[igroup]]->grid->x0;
 		nmax = domain->solids[solid[igroup]]->grid->nnodes_local
 		  + domain->solids[solid[igroup]]->grid->nnodes_ghost;
 		mask = &domain->solids[solid[igroup]]->grid->mask;
@@ -534,13 +534,13 @@ void Group::read_restart(ifstream *ifr) {
         vector<int> *mask;
 
         if (pon[igroup].compare("particles") == 0) {
-          x = &domain->solids[isolid]->x;
+          x = &domain->solids[isolid]->x0;
           nmax = domain->solids[isolid]->np_local;
           mask = &domain->solids[isolid]->mask;
           cout << "Solid has " << domain->solids[isolid]->np << " particles"
                << endl;
         } else {
-          x = &domain->solids[isolid]->grid->x;
+          x = &domain->solids[isolid]->grid->x0;
           nmax = domain->solids[isolid]->grid->nnodes_local +
                  domain->solids[isolid]->grid->nnodes_ghost;
           mask = &domain->solids[isolid]->grid->mask;
@@ -570,13 +570,13 @@ void Group::read_restart(ifstream *ifr) {
       vector<int> *mask;
 
       if (pon[igroup].compare("particles") == 0) {
-        x = &domain->solids[solid[igroup]]->x;
+        x = &domain->solids[solid[igroup]]->x0;
         nmax = domain->solids[solid[igroup]]->np_local;
         mask = &domain->solids[solid[igroup]]->mask;
         cout << "Solid has " << domain->solids[solid[igroup]]->np
              << " particles" << endl;
       } else {
-        x = &domain->solids[solid[igroup]]->grid->x;
+        x = &domain->solids[solid[igroup]]->grid->x0;
         nmax = domain->solids[solid[igroup]]->grid->nnodes_local +
                domain->solids[solid[igroup]]->grid->nnodes_ghost;
         mask = &domain->solids[solid[igroup]]->grid->mask;
