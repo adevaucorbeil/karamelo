@@ -358,5 +358,6 @@ void Modify::read_restart(ifstream *ifr) {
     fix[i] = fix_creator(mpm, vector<string>{id, style, "restart"});
     fix[i]->read_restart(ifr);
     fix[i]->init();
+    fix[i]->setmask();
   }
 }
