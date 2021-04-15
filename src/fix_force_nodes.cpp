@@ -37,6 +37,12 @@ FixForceNodes::FixForceNodes(MPM *mpm, vector<string> args) : Fix(mpm, args)
   if (args[2].compare("restart") ==
       0) { // If the keyword restart, we are expecting to have read_restart()
            // launched right after.
+    igroup = stoi(args[3]);
+    if (igroup == -1) {
+      cout << "Could not find group number " << args[3] << endl;
+    }
+    groupbit = group->bitmask[igroup];
+
     xset = yset = zset = false;
     return;
   }
