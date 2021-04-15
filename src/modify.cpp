@@ -324,6 +324,7 @@ void Modify::write_restart(ofstream *of) {
     Nr = fix[i]->style.size();
     of->write(reinterpret_cast<const char *>(&Nr), sizeof(size_t));
     of->write(reinterpret_cast<const char *>(fix[i]->style.c_str()), Nr);
+    of->write(reinterpret_cast<const char *>(&fix[i]->igroup), sizeof(int));
     fix[i]->write_restart(of);
     cout << "style = " << fix[i]->style << endl;
   }
@@ -354,8 +355,10 @@ void Modify::read_restart(ifstream *ifr) {
 
     ifr->read(reinterpret_cast<char *>(&style[0]), Nr);
     cout << "style = " << style << endl;
+    int igroup = -1;
+    ifr->read(reinterpret_cast<char *>(&igroup), sizeof(int));
     FixCreator fix_creator = (*fix_map)[style];
-    fix[i] = fix_creator(mpm, vector<string>{id, style, "restart"});
+    fix[i] = fix_creator(mpm, vector<string>{id, style, "restart", to_string(igroup)});
     fix[i]->read_restart(ifr);
     fix[i]->init();
     fix[i]->setmask();

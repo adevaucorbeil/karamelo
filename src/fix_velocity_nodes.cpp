@@ -36,6 +36,12 @@ FixVelocityNodes::FixVelocityNodes(MPM *mpm, vector<string> args) : Fix(mpm, arg
   if (args[2].compare("restart") ==
       0) { // If the keyword restart, we are expecting to have read_restart()
            // launched right after.
+    igroup = stoi(args[3]);
+    if (igroup == -1) {
+      cout << "Could not find group number " << args[3] << endl;
+    }
+    groupbit = group->bitmask[igroup];
+    
     xset = yset = zset = false;
     return;
   }
@@ -120,7 +126,7 @@ void FixVelocityNodes::setmask() {
 
 
 void FixVelocityNodes::post_update_grid_state() {
-  // cout << "In FixVelocityNodes::post_update_grid_state()" << endl;
+  cout << "In FixVelocityNodes::post_update_grid_state()" << endl;
 
   // Go through all the nodes in the group and set v_update to the right value:
   double vx, vy, vz;
@@ -136,8 +142,8 @@ void FixVelocityNodes::post_update_grid_state() {
   if (yset) {
     vy = yvalue.result(mpm);
     vy_old = yprevvalue.result(mpm);
-    // cout << "Set v_update[1] to " << "=" <<  vy << endl;
-    // cout << "Set v[1] to " << "=" <<  vy_old << endl;
+    cout << "Set v_update[1] to " << "=" <<  vy << endl;
+    cout << "Set v[1] to " << "=" <<  vy_old << endl;
   }
 
   if (zset) {
@@ -283,7 +289,7 @@ void FixVelocityNodes::write_restart(ofstream *of) {
 
 void FixVelocityNodes::read_restart(ifstream *ifr) {
   ifr->read(reinterpret_cast<char *>(&xset), sizeof(bool));
-  ifr->read(reinterpret_cast<char *>(&yset), sizeof(bool));
+   ifr->read(reinterpret_cast<char *>(&yset), sizeof(bool));
   ifr->read(reinterpret_cast<char *>(&zset), sizeof(bool));
 
   if (xset) {

@@ -485,6 +485,7 @@ void Group::write_restart(ofstream *of) {
     cout << "Group solid = " << solid[igroup] << endl;
     of->write(reinterpret_cast<const char *>(&region[igroup]), sizeof(int));
     cout << "Group region = " << region[igroup] << endl;
+    cout << "Group pon = " << pon[igroup] << endl;
   }
 }
 
@@ -509,14 +510,17 @@ void Group::read_restart(ifstream *ifr) {
     ifr->read(reinterpret_cast<char *>(&p_or_n), sizeof(bool));
 
     if (p_or_n == false) {
-      pon[igroup] == "particles";
+      pon[igroup] = "particles";
     } else {
-      pon[igroup] == "nodes";
+      pon[igroup] = "nodes";
     }
 
     ifr->read(reinterpret_cast<char *>(&solid[igroup]), sizeof(int));
     ifr->read(reinterpret_cast<char *>(&region[igroup]), sizeof(int));
 
+    cout << "Group solid = " << solid[igroup] << endl;
+    cout << "Group region = " << region[igroup] << endl;
+    cout << "Group pon = " << pon[igroup] << endl;
     if (region[igroup] == -1) {
       error->all(FLERR, "Error: could not find region with ID " + to_string(region[igroup]) + ".\n");
     }
