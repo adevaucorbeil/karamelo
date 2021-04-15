@@ -313,7 +313,7 @@ void Modify::write_restart(ofstream *of) {
 
   // Save fixes:
   size_t N = fix.size();
-  of->write(reinterpret_cast<const char *>(&N), sizeof(int));
+  of->write(reinterpret_cast<const char *>(&N), sizeof(size_t));
 
   for (int i = 0; i < N; i++) {
     size_t Nr = fix[i]->id.size();
@@ -335,7 +335,7 @@ void Modify::read_restart(ifstream *ifr) {
 
   // Pull fix:
   size_t N = 0;
-  ifr->read(reinterpret_cast<char *>(&N), sizeof(int));
+  ifr->read(reinterpret_cast<char *>(&N), sizeof(size_t));
   fix.resize(N);
 
   for (int i = 0; i < N; i++) {
