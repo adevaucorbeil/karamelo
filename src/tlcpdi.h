@@ -38,7 +38,7 @@ class TLCPDI : public Method {
   void reset();
   void exchange_particles() {};
 
-  int update_wf;
+  bool update_wf;
 
   private:
   string known_styles[2] = {"R4", "Q4"};

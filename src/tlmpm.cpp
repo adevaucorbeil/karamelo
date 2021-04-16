@@ -34,7 +34,8 @@ using namespace std;
 TLMPM::TLMPM(MPM *mpm) : Method(mpm) {
   cout << "In TLMPM::TLMPM()" << endl;
 
-  update_wf = 1;
+  update_wf = true;
+  update_mass_nodes = true;
   update->PIC_FLIP = 0.99;
   is_TL = true;
 
@@ -291,7 +292,7 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
 		}
 	      (*wfd_pn)[ip].push_back(wfd);
 	      (*wfd_np)[in].push_back(wfd);
-	      // cout << "ip=" << ip << ", in=" << in << ", wf=" << wf << ", wfd=[" << wfd[0] << "," << wfd[1] << "," << wfd[2] << "]" << endl;
+	      cout << "ip=" << ip << ", in=" << in << ", wf=" << wf << ", wfd=[" << wfd[0] << "," << wfd[1] << "," << wfd[2] << "]" << endl;
 	    }
 	  }
 	  // cout << endl;
@@ -301,18 +302,18 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
     }
   }
 
-  update_wf = 0;
+  update_wf = false;
 }
 
 void TLMPM::particles_to_grid()
 {
   bool grid_reset = true; // Indicate if the grid quantities have to be reset
   for (int isolid=0; isolid<domain->solids.size(); isolid++){
-    if (update->ntimestep==1)
-      {
-	domain->solids[isolid]->compute_mass_nodes(grid_reset);
-	domain->solids[isolid]->grid->reduce_mass_ghost_nodes();
-      }
+    if (update_mass_nodes) {
+      domain->solids[isolid]->compute_mass_nodes(grid_reset);
+      domain->solids[isolid]->grid->reduce_mass_ghost_nodes();
+      update_mass_nodes = false;
+    }
   }
 
   for (int isolid=0; isolid<domain->solids.size(); isolid++){

@@ -18,7 +18,7 @@ using namespace std;
 TLCPDI::TLCPDI(MPM *mpm) : Method(mpm) {
   cout << "In TLCPDI::TLCPDI()" << endl;
 
-  update_wf = 1;
+  update_wf = true;
   update->PIC_FLIP = 0.99;
   style = 0;    //Default CPDI style is known_styles[style]="R4"; 
   is_TL = true;
@@ -343,7 +343,7 @@ void TLCPDI::compute_grid_weight_functions_and_gradients()
       if (method_type.compare("APIC") == 0) domain->solids[isolid]->compute_inertia_tensor();
     }
   }
-  update_wf = 0;
+  update_wf = false;
 }
 
 void TLCPDI::particles_to_grid()

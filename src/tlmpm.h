@@ -48,7 +48,7 @@ public:
   void exchange_particles(){};
 
 private:
-  int update_wf;
+  bool update_wf, update_mass_nodes;
 };
 
 // double linear_basis_function(double, int);
