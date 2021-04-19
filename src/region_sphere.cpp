@@ -25,34 +25,50 @@ using namespace MathSpecial;
 
 #define BIG 1.0e20
 
-Sphere::Sphere(MPM *mpm, vector<string> args) : Region(mpm, args)
-{
+Sphere::Sphere(MPM *mpm, vector<string> args) : Region(mpm, args) {
   cout << "Initiate Sphere" << endl;
 
   c1 = c2 = c3 = 0;
   R = 0;
 
-  if (args.size() < Nargs[domain->dimension-1]) {
-    error->all(FLERR, "Error: region command not enough arguments.\n" + usage[domain->dimension-1]);
-  }
-  
-  if (args.size() > Nargs[domain->dimension-1]) {
-    error->all(FLERR, "Error: region command too many arguments.\n" + usage[domain->dimension-1]);
+  if (args.size() < 3) {
+    error->all(FLERR, "Error: not enough arguments.\n");
   }
 
-  int iargs=2;
+  if (args[2].compare("restart") ==
+      0) { // If the keyword restart, we are expecting to have read_restart()
+           // launched right after.
+    RSq, xlo, xhi, ylo, yhi, zlo, zhi = 0;
+    return;
+  }
+
+  if (args.size() < Nargs[domain->dimension - 1]) {
+    error->all(FLERR, "Error: region command not enough arguments.\n" +
+                          usage[domain->dimension - 1]);
+  }
+
+  if (args.size() > Nargs[domain->dimension - 1]) {
+    error->all(FLERR, "Error: region command too many arguments.\n" +
+                          usage[domain->dimension - 1]);
+  }
+
+  int iargs = 2;
   c1 = input->parsev(args[iargs++]);
-  if (domain->dimension >= 2) c2 = input->parsev(args[iargs++]);
-  if (domain->dimension == 3) c3 = input->parsev(args[iargs++]);
+  if (domain->dimension >= 2)
+    c2 = input->parsev(args[iargs++]);
+  if (domain->dimension == 3)
+    c3 = input->parsev(args[iargs++]);
   R = input->parsev(args[iargs++]);
 
   // Chech if R is negative:
   if (R < 0) {
-    error->all(FLERR, "Error: R cannot be negative, set to: " + to_string(R) + "\n.");
+    error->all(FLERR,
+               "Error: R cannot be negative, set to: " + to_string(R) + "\n.");
   }
 
-  RSq = R*R;
-  cout << "c1, c2, c3, R = " << c1 << "\t" << c2 << "\t" << c3 << "\t" << R << endl;
+  RSq = R * R;
+  cout << "c1, c2, c3, R = " << c1 << "\t" << c2 << "\t" << c3 << "\t" << R
+       << endl;
 
   xlo = c1 - R;
   xhi = c1 + R;
@@ -61,24 +77,32 @@ Sphere::Sphere(MPM *mpm, vector<string> args) : Region(mpm, args)
   zlo = c3 - R;
   zhi = c3 + R;
 
-if (  update->method_type.compare("tlmpm") == 0 )
-{
-  if (domain->boxlo[0] > xlo) domain->boxlo[0] = xlo;
-  if (domain->boxlo[1] > ylo) domain->boxlo[1] = ylo;
-  if (domain->dimension == 3) if (domain->boxlo[2] > zlo) domain->boxlo[2] = zlo;
+  if (update->method_type.compare("tlmpm") == 0) {
+    if (domain->boxlo[0] > xlo)
+      domain->boxlo[0] = xlo;
+    if (domain->boxlo[1] > ylo)
+      domain->boxlo[1] = ylo;
+    if (domain->dimension == 3)
+      if (domain->boxlo[2] > zlo)
+        domain->boxlo[2] = zlo;
 
-  if (domain->boxhi[0] < xhi) domain->boxhi[0] = xhi;
-  if (domain->boxhi[1] < yhi) domain->boxhi[1] = yhi;
-  if (domain->dimension == 3) if (domain->boxhi[2] < zhi) domain->boxhi[2] = zhi;
+    if (domain->boxhi[0] < xhi)
+      domain->boxhi[0] = xhi;
+    if (domain->boxhi[1] < yhi)
+      domain->boxhi[1] = yhi;
+    if (domain->dimension == 3)
+      if (domain->boxhi[2] < zhi)
+        domain->boxhi[2] = zhi;
+  } else {
+    if (domain->boxlo[0] > xlo)
+      xlo = domain->boxlo[0];
+    if (domain->boxlo[1] > ylo)
+      ylo = domain->boxlo[1];
+    if (domain->dimension == 3)
+      if (domain->boxlo[2] > zlo)
+        zlo = domain->boxlo[2];
+  }
 }
-else
-{
-   if (domain->boxlo[0] > xlo) xlo = domain->boxlo[0];
-    if (domain->boxlo[1] > ylo) ylo = domain->boxlo[1];
-    if (domain->dimension == 3) if (domain->boxlo[2] > zlo) zlo = domain->boxlo[2];
-}
-}
-
 
 Sphere::~Sphere()
 {
@@ -113,4 +137,34 @@ vector<double> Sphere::limits(){
   lim.push_back(zlo);
   lim.push_back(zhi);
   return lim;
+}
+
+void Sphere::write_restart(ofstream *of) {
+  of->write(reinterpret_cast<const char *>(&c1), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&c2), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&c3), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&R), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&xlo), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&xhi), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&ylo), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&yhi), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&zlo), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&zhi), sizeof(double));
+}
+
+
+
+void Sphere::read_restart(ifstream *ifr) {
+  cout << "Restart Sphere" << endl;
+  ifr->read(reinterpret_cast<char *>(&c1), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&c2), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&c3), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&R), sizeof(double));
+  RSq = R * R;
+  ifr->read(reinterpret_cast<char *>(&xlo), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&xhi), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&ylo), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&yhi), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&zlo), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&zhi), sizeof(double));
 }

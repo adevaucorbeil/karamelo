@@ -67,8 +67,9 @@ configure_file("${CMAKE_CURRENT_SOURCE_DIR}/src/version.cpp.in" "${CMAKE_CURRENT
 file(GLOB MyCSources src/*.cpp)
 add_executable(karamelo ${MyCSources})
 
-find_package(Boost 1.67.0 COMPONENTS system filesystem)
-find_package(OpenMP)
+add_subdirectory(doc EXCLUDE_FROM_ALL)
+
+find_package(Boost REQUIRED)
 include_directories(${Boost_INCLUDE_DIR})
 
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DDEBUG")
@@ -78,9 +79,5 @@ set(CMAKE_CXX_FLAGS_PROFILING "${CMAKE_CXX_FLAGS_PROFILING} -O3 -g")
 
 target_compile_options(${PROJECT_NAME} PRIVATE ${MPI_CXX_COMPILE_FLAGS} "-DWITHOUT_NUMPY -march=native")
 
-if(OpenMP_CXX_FOUND)
-  target_link_libraries(${PROJECT_NAME} PUBLIC ${MPI_CXX_LIBRARIES} ${MPI_CXX_LINK_FLAGS} -lpython2.7 -lgzstream -lz PUBLIC OpenMP::OpenMP_CXX ${Boost_LIBRARIES} Eigen3::Eigen)
-else()
-  target_link_libraries(${PROJECT_NAME} PUBLIC ${MPI_CXX_LIBRARIES} ${MPI_CXX_LINK_FLAGS} -lpython2.7 -lgzstream -lz ${Boost_LIBRARIES})
-endif()
+target_link_libraries(${PROJECT_NAME} PUBLIC ${MPI_CXX_LIBRARIES} ${MPI_CXX_LINK_FLAGS} -lpython2.7 -lgzstream -lz PUBLIC ${Boost_LIBRARIES} Eigen3::Eigen)
 

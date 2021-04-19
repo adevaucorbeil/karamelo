@@ -21,6 +21,9 @@ public:
 
   void compute_temperature(double &, const double &, const double &);
 
+  void write_restart(ofstream *);
+  void read_restart(ifstream *);
+
 protected:
   double chi, rho, cp, alpha;
   string usage = "Usage: temperature(temp-ID, plastic_work, chi, rho, cp)\n";

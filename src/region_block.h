@@ -50,17 +50,18 @@ This command defines a rectangle region of space. It is usually used by groups t
 \section Class Class description
 */
 
-
 class Block_ : public Region {
 
- public:
+public:
   Block_(class MPM *, vector<string>);
   ~Block_();
   int inside(double, double, double);
   vector<double> limits();
+  void write_restart(ofstream *);
+  void read_restart(ifstream *);
 
- protected:
-  double xlo,xhi,ylo,yhi,zlo,zhi;
+protected:
+  double xlo, xhi, ylo, yhi, zlo, zhi;
 };
 
 #endif

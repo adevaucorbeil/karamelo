@@ -29,6 +29,22 @@ using namespace Eigen;
 
 FixInitialVelocityNodes::FixInitialVelocityNodes(MPM *mpm, vector<string> args) : Fix(mpm, args)
 {
+  if (args.size() < 3) {
+    error->all(FLERR, "Error: not enough arguments.\n");
+  }
+
+  if (args[2].compare("restart") ==
+      0) { // If the keyword restart, we are expecting to have read_restart()
+           // launched right after.
+    igroup = stoi(args[3]);
+    if (igroup == -1) {
+      cout << "Could not find group number " << args[3] << endl;
+    }
+    groupbit = group->bitmask[igroup];
+
+    return;
+  }
+
   if (domain->dimension == 3 && args.size()<6) {
     error->all(FLERR,"Error: too few arguments for fix_initial_velocity_nodes: requires at least 6 arguments. " + to_string(args.size()) + " received.\n");
   } else if (domain->dimension == 2 && args.size()<5) {

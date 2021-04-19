@@ -44,6 +44,9 @@ Update::Update(MPM *mpm) : Pointers(mpm)
   create_scheme(scheme_args);
 
   method = NULL;
+  shape_function = ShapeFunctions::LINEAR;
+  sub_method_type = SubMethodType::FLIP;
+  PIC_FLIP = 0.99;
   //vector<string> method_args;
   //method_args.push_back("tlmpm");
   //create_method(method_args);
@@ -87,7 +90,7 @@ void Update::create_scheme(vector<string> args){
 
 #define SCHEME_CLASS
 #define SchemeStyle(key,Class) \
-  else if (scheme_style.compare(#key) == 0) scheme = new Class(mpm,args);
+  else if (scheme_style.compare(#key) == 0) scheme = new Class(mpm);
 #include "style_scheme.h"
 #undef SchemeStyle
 #undef SCHEME_CLASS
@@ -106,14 +109,15 @@ void Update::create_method(vector<string> args){
     error->all(FLERR, "Illegal method command: not enough arguments.\n");
   }
 
+  int n = 0;
   method_type = args[0];
-  method_shape_function = args[2];
+  
 
   if (0) return;
 
 #define METHOD_CLASS
 #define MethodStyle(key,Class) \
-  else if (method_type.compare(#key) == 0) method = new Class(mpm,args);
+  else if (method_type.compare(#key) == 0) method = new Class(mpm);
 #include "style_method.h"
 #undef MethodStyle
 #undef METHOD_CLASS
@@ -122,7 +126,47 @@ void Update::create_method(vector<string> args){
     error->all(FLERR, "Illegal method style.\n");
   }
 
-  method->setup(args);
+  bool isFLIP = false;
+  n++;
+  // Method used: PIC, FLIP or APIC:
+  if (map_sub_method_type.count(args[n]) > 0) {
+    sub_method_type = map_sub_method_type.at(args[n]);
+    if (sub_method_type == SubMethodType::PIC)
+      PIC_FLIP = 0;
+    else if (sub_method_type == SubMethodType::FLIP) {
+      isFLIP = true;
+      if (args.size() < 4) {
+	error->all(FLERR, "Illegal modify_method command: not enough arguments.\n");
+      }
+    }
+  } else {
+    error->all(FLERR, "Error: method type " + args[n] + " not understood. Expect: PIC, FLIP or APIC\n");
+  }
+
+  n++;
+  
+  // Check if the shape function given in the inputfile is recognized.
+  if (args.size() > 1 + isFLIP) {
+    if (map_shape_functions.count(args[n]) > 0) {
+      shape_function = map_shape_functions.at(args[n]);
+      cout << "Setting up " << args[n] << " basis functions\n";
+      n++;
+    } else {
+      error->all(FLERR, "Illegal method_method argument: form function of type \033[1;31m" + args[2] + "\033[0m is unknown. Available options are:  \033[1;32mlinear\033[0m, \033[1;32mcubic-spline\033[0m, \033[1;32mquadratic-spline\033[0m, \033[1;32mBernstein-quadratic\033[0m.\n");
+    }
+  }
+
+  if (isFLIP) {
+    PIC_FLIP = input->parsev(args[n]);
+    n++;
+  }
+
+  if (n < args.size()) {
+    additional_args = vector<string>(args.begin() + n, args.end());
+  } else {
+    additional_args.clear();
+  }
+  method->setup(additional_args);
 }
 
 /*! Update elapsed simulation time.
@@ -143,4 +187,170 @@ int Update::update_timestep()
   update->ntimestep++;
   (*input->vars)["timestep"] = Var("timestep", ntimestep);
   return update->ntimestep;
+}
+
+/*! Write method, scheme, timestep, dt... to restart file.
+ */
+void Update::write_restart(ofstream *of) {
+  // The informations to be stored in the restart file are:
+  // - The method type
+  // - The scheme style
+  // - FLIP and/or PIC, or APIC
+  // - PIC_FLIP
+  // - The type of shape function
+  // - additional_args
+  // - The timestep
+  // - dt
+  // - dt_factor
+  // - dt_contant
+  
+  // Method type:
+  size_t N = method_type.size();
+  of->write(reinterpret_cast<const char *>(&N), sizeof(size_t));
+  of->write(reinterpret_cast<const char *>(method_type.c_str()), N);
+
+  // Scheme style:
+  N = scheme_style.size();
+  of->write(reinterpret_cast<const char *>(&N), sizeof(size_t));
+  of->write(reinterpret_cast<const char *>(scheme_style.c_str()), N);
+
+  // Sub-method type (PIC and/or FLIP or APIC):
+  of->write(reinterpret_cast<const char *>(&sub_method_type), sizeof(int));
+
+  // PIC_FLIP
+  of->write(reinterpret_cast<const char *>(&PIC_FLIP), sizeof(double));
+  cout << "PIC_FLIP=" << PIC_FLIP << endl;
+
+  // The type of shape function:
+  of->write(reinterpret_cast<const char *>(&shape_function), sizeof(int));
+
+  // additional_args: 
+  N = additional_args.size();
+  of->write(reinterpret_cast<const char *>(&N), sizeof(size_t));
+  for (size_t i = 0; i < N; i++) {
+    size_t Ns = additional_args[i].size();
+    of->write(reinterpret_cast<const char *>(&Ns), sizeof(size_t));
+    of->write(reinterpret_cast<const char *>(additional_args[i].c_str()), Ns);    
+  }
+
+  // atime:
+  of->write(reinterpret_cast<const char *>(&atime), sizeof(double));
+
+  // Timestep:
+  of->write(reinterpret_cast<const char *>(&ntimestep), sizeof(bigint));
+
+  // dt:
+  of->write(reinterpret_cast<const char *>(&dt), sizeof(double));
+
+  // dt_factor:
+  of->write(reinterpret_cast<const char *>(&dt_factor), sizeof(double));
+
+  // dt_contant:
+  of->write(reinterpret_cast<const char *>(&dt_constant), sizeof(bool));
+}
+
+
+/*! Write method, scheme, timestep, dt... to restart file.
+ */
+void Update::read_restart(ifstream *ifr) {
+  // The informations to be stored in the restart file are:  // - The method type
+  // - The scheme style
+  // - FLIP and/or PIC, or APIC
+  // - PIC_FLIP
+  // - The type of shape function
+  // - The timestep
+  // - dt
+  // - dt_factor
+  // - dt_contant
+  
+  // Method type:
+  size_t N = 0;
+  ifr->read(reinterpret_cast<char *>(&N), sizeof(size_t));
+  method_type.resize(N);
+  ifr->read(reinterpret_cast<char *>(&method_type[0]), N);
+  cout << "method_type=" << method_type << endl;
+
+  if (0) return;
+
+#define METHOD_CLASS
+#define MethodStyle(key,Class) \
+  else if (method_type.compare(#key) == 0) method = new Class(mpm);
+#include "style_method.h"
+#undef MethodStyle
+#undef METHOD_CLASS
+
+  else {
+    error->all(FLERR, "Illegal method style.\n");
+  }
+
+
+  // Scheme style:
+  N = 0;
+  ifr->read(reinterpret_cast<char *>(&N), sizeof(size_t));
+  scheme_style.resize(N);
+  ifr->read(reinterpret_cast<char *>(&scheme_style[0]), N);
+  cout << "scheme_style=" << scheme_style << endl;
+
+  if (0) return;
+
+#define SCHEME_CLASS
+#define SchemeStyle(key,Class) \
+  else if (scheme_style.compare(#key) == 0) scheme = new Class(mpm);
+#include "style_scheme.h"
+#undef SchemeStyle
+#undef SCHEME_CLASS
+
+  else {
+    error->all(FLERR, "Illegal scheme style.\n");
+  }
+  // Sub-method type (PIC and/or FLIP or APIC):
+  ifr->read(reinterpret_cast<char *>(&sub_method_type), sizeof(int));
+  cout << "sub_method_type=" << sub_method_type << endl;
+
+  // PIC_FLIP
+  ifr->read(reinterpret_cast<char *>(&PIC_FLIP), sizeof(double));
+  cout << "PIC_FLIP=" << PIC_FLIP << endl;
+
+  // The type of shape function:
+  ifr->read(reinterpret_cast<char *>(&shape_function), sizeof(int));
+  cout << "shape_functions=" << shape_function << endl;
+
+  // additional_args: 
+  ifr->read(reinterpret_cast<char *>(&N), sizeof(size_t));
+  additional_args.resize(N);
+  for (size_t i = 0; i < N; i++) {
+    size_t Ns = 0;
+    ifr->read(reinterpret_cast<char *>(&Ns), sizeof(size_t));
+    additional_args[i].resize(Ns);
+    ifr->read(reinterpret_cast<char *>(&additional_args[i][0]), Ns);
+    cout << "additional_args[" << i << "]=" << additional_args[i] << endl;
+  }
+  method->setup(additional_args);
+
+  // atime:
+  ifr->read(reinterpret_cast<char *>(&atime), sizeof(double));
+  cout << "atime=" << atime << endl;
+  (*input->vars)["time"] = Var("time", atime);
+
+  // Timestep:
+  ifr->read(reinterpret_cast<char *>(&ntimestep), sizeof(bigint));
+  cout << "ntimestep=" << ntimestep << endl;
+  atimestep = ntimestep;
+  (*input->vars)["timestep"] = Var("timestep", ntimestep);
+
+  // dt:
+  ifr->read(reinterpret_cast<char *>(&dt), sizeof(double));
+  cout << "dt=" << dt << endl;
+
+  // dt_factor:
+  ifr->read(reinterpret_cast<char *>(&dt_factor), sizeof(double));
+  cout << "dt_factor=" << dt_factor << endl;
+
+  // dt_contant:
+  ifr->read(reinterpret_cast<char *>(&dt_constant), sizeof(bool));
+  cout << "dt_constant=" << dt_constant << endl;
+
+  if (dt_constant)
+    (*input->vars)["dt"] = Var("dt", dt);
+  
 }

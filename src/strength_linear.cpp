@@ -30,9 +30,17 @@ StrengthLinear::StrengthLinear(MPM *mpm, vector<string> args) : Strength(mpm, ar
 {
   cout << "Initiate StrengthLinear" << endl;
 
-  if (args.size()<2) {
+  if (args.size() < 3) {
     error->all(FLERR, "Error: too few arguments for the strength command.\n");
   }
+
+  if (args[2].compare("restart") ==
+      0) { // If the keyword restart, we are expecting to have read_restart()
+           // launched right after.
+    G_ = 0;
+    return;
+  }
+
   //options(&args, args.begin()+3);
   G_ = input->parsev(args[2]);
   cout << "Linear strength model:\n";
@@ -56,3 +64,13 @@ Matrix3d StrengthLinear::update_deviatoric_stress(const Eigen::Matrix3d& sigma,
   dev_rate = 2.0 * G_* (1-damage) * Deviator(D);
   return Deviator(sigma) + update->dt * dev_rate;
 }
+
+void StrengthLinear::write_restart(ofstream *of) {
+  of->write(reinterpret_cast<const char *>(&G_), sizeof(double));
+}
+
+void StrengthLinear::read_restart(ifstream *ifr) {
+  cout << "Restart StrengthLinear" << endl;
+  ifr->read(reinterpret_cast<char *>(&G_), sizeof(double));
+}
+

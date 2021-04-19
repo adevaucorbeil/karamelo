@@ -11,35 +11,33 @@
  *
  * ----------------------------------------------------------------------- */
 
-#include <iostream>
-#include <vector>
-#include <Eigen/Eigen>
-#include <math.h>
-#include <algorithm>
 #include "ulmpm.h"
 #include "basis_functions.h"
 #include "domain.h"
+#include "error.h"
 #include "grid.h"
 #include "input.h"
 #include "solid.h"
+#include "universe.h"
 #include "update.h"
 #include "var.h"
-#include "error.h"
-#include "universe.h"
+#include <Eigen/Eigen>
+#include <algorithm>
+#include <iostream>
+#include <math.h>
+#include <vector>
 
 using namespace std;
 
-ULMPM::ULMPM(MPM *mpm, vector<string> args) : Method(mpm)
+ULMPM::ULMPM(MPM *mpm) : Method(mpm)
 {
   cout << "In ULMPM::ULMPM()" << endl;
 
   update_wf   = 1;
-  method_type = "FLIP";
-  FLIP        = 0.99;
+  update->PIC_FLIP = 0.99;
   apic        = false;
 
   // Default base function (linear):
-  shape_function            = LINEAR;
   basis_function            = &BasisFunction::linear;
   derivative_basis_function = &BasisFunction::derivative_linear;
 }
@@ -48,96 +46,34 @@ ULMPM::~ULMPM() {}
 
 void ULMPM::setup(vector<string> args)
 {
-  int n       = 1;
-  bool isFLIP = false;
-  // Method used: PIC, FLIP or APIC:
-  if (args[n].compare("PIC") == 0)
-  {
-    method_type = "PIC";
-    FLIP        = 0;
+  if (args.size() > 0) {
+    error->all(FLERR, "Illegal modify_method command: too many arguments.\n");
   }
-  else if (args[n].compare("FLIP") == 0)
-  {
-    method_type = "FLIP";
-    isFLIP      = true;
 
-    if (args.size() < 2)
-    {
-      error->all(FLERR, "Illegal modify_method command: not enough arguments.\n");
-    }
+  if (update->shape_function == update->ShapeFunctions::LINEAR) {
+    cout << "Setting up linear basis functions\n";
+    basis_function = &BasisFunction::linear;
+    derivative_basis_function = &BasisFunction::derivative_linear;
+  } else if (update->shape_function == update->ShapeFunctions::CUBIC_SPLINE) {
+    cout << "Setting up cubic-spline basis functions\n";
+    basis_function = &BasisFunction::cubic_spline;
+    derivative_basis_function = &BasisFunction::derivative_cubic_spline;
+  } else if (update->shape_function == update->ShapeFunctions::QUADRATIC_SPLINE) {
+    cout << "Setting up quadratic-spline basis functions\n";
+    basis_function = &BasisFunction::quadratic_spline;
+    derivative_basis_function = &BasisFunction::derivative_quadratic_spline;
+  } else if (update->shape_function == update->ShapeFunctions::BERNSTEIN) {
+    cout << "Setting up Bernstein-quadratic basis functions\n";
+    basis_function = &BasisFunction::bernstein_quadratic;
+    derivative_basis_function = &BasisFunction::derivative_bernstein_quadratic;
+  } else {
+    error->all(FLERR, "Error: shape function not supported! Supported functions are:  \033[1;32mlinear\033[0m, \033[1;32mcubic-spline\033[0m, \033[1;32mquadratic-spline\033[0m, \033[1;32mBernstein-quadratic\033[0m.\n");
   }
-  else if (args[n].compare("APIC") == 0)
-  {
-    method_type = "APIC";
+
+  if (update->sub_method_type == update->SubMethodType::APIC) {
     apic = true;
-    FLIP = 0;
+    update->PIC_FLIP = 0;
   }
-  else
-  {
-    error->all(FLERR, "Error: method type " + args[n] + " not understood. Expect: PIC, FLIP or APIC\n");
-  }
-
-  n++;
-
-  if (args.size() > 1 + isFLIP)
-  {
-    if (args[n].compare("linear") == 0)
-    {
-      shape_function = LINEAR;
-      cout << "Setting up linear basis functions\n";
-      basis_function            = &BasisFunction::linear;
-      derivative_basis_function = &BasisFunction::derivative_linear;
-      n++;
-    }
-    else if (args[n].compare("cubic-spline") == 0)
-    {
-      shape_function = CUBIC;
-      cout << "Setting up cubic-spline basis functions\n";
-      basis_function            = &BasisFunction::cubic_spline;
-      derivative_basis_function = &BasisFunction::derivative_cubic_spline;
-      n++;
-    }
-    else if (args[n].compare("quadratic-spline") == 0)
-    {
-      shape_function = QUADRATIC;
-      cout << "Setting up quadratic-spline basis functions\n";
-      basis_function            = &BasisFunction::quadratic_spline;
-      derivative_basis_function = &BasisFunction::derivative_quadratic_spline;
-      n++;
-    }
-    else if (args[n].compare("Bernstein-quadratic") == 0)
-    {
-      shape_function = BERNSTEIN;
-      cout << "Setting up Bernstein-quadratic basis functions\n";
-      basis_function = &BasisFunction::bernstein_quadratic;
-      derivative_basis_function =
-          &BasisFunction::derivative_bernstein_quadratic;
-      n++;
-    } else {
-      error->all(FLERR, "Illegal method_method argument: form function of type \033[1;31m" + args[n] + "\033[0m is unknown. Available options are:  \033[1;32mlinear\033[0m, \033[1;32mcubic-spline\033[0m, \033[1;32mquadratic-spline\033[0m, \033[1;32mBernstein-quadratic\033[0m.\n");
-    }
-  }
-
-  if (isFLIP) {
-    FLIP = input->parsev(args[n]);
-    n++;
-  }
-
-  if (args.size() > n) {
-    if (args[n].compare("enhanced-gradient") == 0) {
-      ge = true;
-      cout << "Enhanced gradient\n";
-      n++;
-    }
-  }
-
-  if (args.size() > n) {
-    error->all(FLERR, "Illegal modify_method command: too many arguments: " + to_string(n + isFLIP) + " expected, " + to_string(args.size()) + " received.\n");
-  }
-
-  // cout << "shape_function = " << shape_function << endl;
-  // cout << "method_type = " << method_type << endl;
-  // cout << "FLIP = " << FLIP << endl;
 }
 
 void ULMPM::compute_grid_weight_functions_and_gradients()
@@ -212,7 +148,7 @@ void ULMPM::compute_grid_weight_functions_and_gradients()
 
           vector<int> n_neigh;
 
-          if (shape_function == LINEAR)
+          if (update->shape_function == update->ShapeFunctions::LINEAR)
           {
 	    int i0 = (int) (((*xp)[ip][0] - domain->boxlo[0])*inv_cellsize);
 	    int j0 = (int) (((*xp)[ip][1] - domain->boxlo[1])*inv_cellsize);
@@ -252,7 +188,7 @@ void ULMPM::compute_grid_weight_functions_and_gradients()
               }
             }
           }
-          else if (shape_function == BERNSTEIN)
+          else if (update->shape_function == update->ShapeFunctions::BERNSTEIN)
           {
 	    int i0 = 2 * (int) (((*xp)[ip][0] - domain->boxlo[0]) * inv_cellsize);
 	    int j0 = 2 * (int) (((*xp)[ip][1] - domain->boxlo[1]) * inv_cellsize);
@@ -301,23 +237,24 @@ void ULMPM::compute_grid_weight_functions_and_gradients()
                   n_neigh.push_back(i);
               }
             }
-          } else if (shape_function == CUBIC || shape_function == QUADRATIC) {
-              int i0 =
-                  (int)(((*xp)[ip][0] - domain->boxlo[0]) * inv_cellsize - 1);
-              int j0 =
-                  (int)(((*xp)[ip][1] - domain->boxlo[1]) * inv_cellsize - 1);
-              int k0 =
-                  (int)(((*xp)[ip][2] - domain->boxlo[2]) * inv_cellsize - 1);
+          } else {
+	    // cubic and quadratic B-splines
+            int i0 =
+                (int)(((*xp)[ip][0] - domain->boxlo[0]) * inv_cellsize - 1);
+            int j0 =
+                (int)(((*xp)[ip][1] - domain->boxlo[1]) * inv_cellsize - 1);
+            int k0 =
+                (int)(((*xp)[ip][2] - domain->boxlo[2]) * inv_cellsize - 1);
 
-              for (int i = i0; i < i0 + 4; i++) {
-                if (ny > 1) {
-                  for (int j = j0; j < j0 + 4; j++) {
-                    if (nz > 1) {
-                      for (int k = k0; k < k0 + 4; k++) {
-                        it = (*map_ntag).find(nz * ny * i + nz * j + k);
-                        if (it != (*map_ntag).end()) {
-			  n_neigh.push_back(it->second);
-			}
+            for (int i = i0; i < i0 + 4; i++) {
+              if (ny > 1) {
+                for (int j = j0; j < j0 + 4; j++) {
+                  if (nz > 1) {
+                    for (int k = k0; k < k0 + 4; k++) {
+                      it = (*map_ntag).find(nz * ny * i + nz * j + k);
+                      if (it != (*map_ntag).end()) {
+                        n_neigh.push_back(it->second);
+                      }
                     }
                   }
                   else
@@ -336,10 +273,6 @@ void ULMPM::compute_grid_weight_functions_and_gradients()
                   n_neigh.push_back(i);
               }
             }
-            }
-          else
-          {
-	    error->all(FLERR, "Shape function type not supported by TLMPM::compute_grid_weight_functions_and_gradients(): " + update->method_shape_function + ".\n");
           }
 
           // cout << "[";
@@ -477,6 +410,8 @@ void ULMPM::grid_to_points()
 {
   for (int isolid = 0; isolid < domain->solids.size(); isolid++)
   {
+    if (apic)
+      domain->solids[isolid]->compute_rate_deformation_gradient_UL_APIC();
     domain->solids[isolid]->compute_particle_velocities_and_positions();
     domain->solids[isolid]->compute_particle_acceleration();
   }
@@ -486,7 +421,7 @@ void ULMPM::advance_particles()
 {
   for (int isolid = 0; isolid < domain->solids.size(); isolid++)
   {
-    domain->solids[isolid]->update_particle_velocities(FLIP);
+    domain->solids[isolid]->update_particle_velocities(update->PIC_FLIP);
   }
 }
 
@@ -510,15 +445,12 @@ void ULMPM::velocities_to_grid()
   domain->grid->reduce_ghost_nodes(true);
 }
 
-void ULMPM::compute_rate_deformation_gradient()
-{
-  for (int isolid = 0; isolid < domain->solids.size(); isolid++)
-  {
-    if (apic)
-      domain->solids[isolid]->compute_rate_deformation_gradient_UL_APIC();
-    else
+void ULMPM::compute_rate_deformation_gradient() {
+  if (!apic) {
+    for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
       domain->solids[isolid]->compute_rate_deformation_gradient_UL_MUSL();
-    // domain->solids[isolid]->compute_deformation_gradient();
+      // domain->solids[isolid]->compute_deformation_gradient();
+    }
   }
 }
 

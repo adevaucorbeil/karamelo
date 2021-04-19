@@ -31,16 +31,15 @@
 
 using namespace std;
 
-TLMPM::TLMPM(MPM *mpm, vector<string> args) : Method(mpm) {
+TLMPM::TLMPM(MPM *mpm) : Method(mpm) {
   cout << "In TLMPM::TLMPM()" << endl;
 
-  update_wf = 1;
-  method_type = "FLIP";
-  FLIP = 0.99;
+  update_wf = true;
+  update_mass_nodes = true;
+  update->PIC_FLIP = 0.99;
   is_TL = true;
 
   // Default base function (linear):
-  shape_function = "linear";
   basis_function = &BasisFunction::linear;
   derivative_basis_function = &BasisFunction::derivative_linear;
 }
@@ -51,67 +50,34 @@ TLMPM::~TLMPM()
 
 void TLMPM::setup(vector<string> args)
 {
-  int n = 1;
-  bool isFLIP = false;
-  // Method used: PIC, FLIP or APIC:
-  if (args[n].compare("PIC") == 0) {
-    method_type = "PIC";
-    FLIP = 0;
-  } else if (args[n].compare("FLIP") == 0) {
-    method_type = "FLIP";
-    isFLIP = true;
 
-    if (args.size() < 2) {
-      error->all(FLERR, "Illegal modify_method command: not enough arguments.\n");
-    }
-
-  } else if (args[n].compare("APIC") == 0) {
-    method_type = "APIC";
-    FLIP = 0;
-  } else {
-    error->all(FLERR, "Error: method type " + args[n] + " not understood. Expect: PIC, FLIP or APIC\n");
+  if (args.size() > 0) {
+    error->all(FLERR, "Illegal modify_method command: too many arguments.\n");
   }
-
-  n++;
   
-  if (args.size() > 1 + isFLIP) {
-    if (args[n].compare("linear") == 0) {
-      shape_function = "linear";
-      cout << "Setting up linear basis functions\n";
-      basis_function = &BasisFunction::linear;
-      derivative_basis_function = &BasisFunction::derivative_linear;
-      n++;
-    } else if (args[n].compare("cubic-spline") == 0) {
-      shape_function = "cubic-spline";
-      cout << "Setting up cubic-spline basis functions\n";
-      basis_function = &BasisFunction::cubic_spline;
-      derivative_basis_function = &BasisFunction::derivative_cubic_spline;
-      n++;
-    } else if (args[n].compare("quadratic-spline") == 0) {
-      shape_function = "quadratic-spline";
-      cout << "Setting up quadratic-spline basis functions\n";
-      basis_function = &BasisFunction::quadratic_spline;
-      derivative_basis_function = &BasisFunction::derivative_quadratic_spline;
-      n++;
-    } else if (args[n].compare("Bernstein-quadratic") == 0) {
-      shape_function = "Bernstein-quadratic";
-      cout << "Setting up Bernstein-quadratic basis functions\n";
-      basis_function = &BasisFunction::bernstein_quadratic;
-      derivative_basis_function = &BasisFunction::derivative_bernstein_quadratic;
-      n++;
-    } else {
-      error->all(FLERR, "Illegal method_method argument: form function of type \033[1;31m" + args[n] + "\033[0m is unknown. Available options are:  \033[1;32mlinear\033[0m, \033[1;32mcubic-spline\033[0m, \033[1;32mquadratic-spline\033[0m, \033[1;32mBernstein-quadratic\033[0m.\n");
-    }
+  if (update->shape_function == update->ShapeFunctions::LINEAR) {
+    cout << "Setting up linear basis functions\n";
+    basis_function = &BasisFunction::linear;
+    derivative_basis_function = &BasisFunction::derivative_linear;
+  } else if (update->shape_function == update->ShapeFunctions::CUBIC_SPLINE) {
+    cout << "Setting up cubic-spline basis functions\n";
+    basis_function = &BasisFunction::cubic_spline;
+    derivative_basis_function = &BasisFunction::derivative_cubic_spline;
+  } else if (update->shape_function == update->ShapeFunctions::QUADRATIC_SPLINE) {
+    cout << "Setting up quadratic-spline basis functions\n";
+    basis_function = &BasisFunction::quadratic_spline;
+    derivative_basis_function = &BasisFunction::derivative_quadratic_spline;
+  } else if (update->shape_function == update->ShapeFunctions::BERNSTEIN) {
+    cout << "Setting up Bernstein-quadratic basis functions\n";
+    basis_function = &BasisFunction::bernstein_quadratic;
+    derivative_basis_function = &BasisFunction::derivative_bernstein_quadratic;
+  } else {
+    error->all(FLERR, "Error: shape function not supported! Supported functions are:  \033[1;32mlinear\033[0m, \033[1;32mcubic-spline\033[0m, \033[1;32mquadratic-spline\033[0m, \033[1;32mBernstein-quadratic\033[0m.\n");
   }
 
-  if (args.size() > n + isFLIP) {
-    error->all(FLERR, "Illegal modify_method command: too many arguments: " + to_string(n + isFLIP) + " expected, " + to_string(args.size()) + " received.\n");
+  if (update->sub_method_type == update->SubMethodType::APIC) {
+    update->PIC_FLIP = 0;
   }
-
-  if (isFLIP) FLIP = input->parsev(args[n]);
-  // cout << "shape_function = " << shape_function << endl;
-  // cout << "method_type = " << method_type << endl;
-  // cout << "FLIP = " << FLIP << endl;
 }
 
 void TLMPM::compute_grid_weight_functions_and_gradients()
@@ -144,7 +110,7 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
 
       Eigen::Vector3d r;
       double s[3], sd[3];
-      vector<Eigen::Vector3d> *xp = &domain->solids[isolid]->x;
+      vector<Eigen::Vector3d> *xp = &domain->solids[isolid]->x0;
       vector<Eigen::Vector3d> *xn = &domain->solids[isolid]->grid->x0;
       double inv_cellsize = 1.0 / domain->solids[isolid]->grid->cellsize;
       double wf;
@@ -155,14 +121,6 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
 
       map<int, int> *map_ntag = &domain->solids[isolid]->grid->map_ntag;
       map<int, int>::iterator it;
-
-      bool linear, cubic, quadratic, bernstein;
-      linear = cubic = quadratic = bernstein = false;
-
-      if (update->method_shape_function.compare("linear")==0) linear = true;
-      if (update->method_shape_function.compare("cubic-spline")==0) cubic = true;
-      if (update->method_shape_function.compare("quadratic-spline")==0) quadratic = true;
-      if (update->method_shape_function.compare("Bernstein-quadratic")==0) bernstein = true;
       
       r.setZero();
       if (np_local && (nnodes_local + nnodes_ghost)) {
@@ -176,7 +134,7 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
 
 	  vector<int> n_neigh;
 
-	  if (linear) {
+	  if (update->shape_function == update->ShapeFunctions::LINEAR) {
 	    int i0 = (int) (((*xp)[ip][0] - domain->solids[isolid]->solidlo[0])*inv_cellsize);
 	    int j0 = (int) (((*xp)[ip][1] - domain->solids[isolid]->solidlo[1])*inv_cellsize);
 	    int k0 = (int) (((*xp)[ip][2] - domain->solids[isolid]->solidlo[2])*inv_cellsize);
@@ -205,7 +163,7 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
 		  n_neigh.push_back(i);
 	      }
 	    }
-	  } else if (bernstein){
+	  } else if (update->shape_function == update->ShapeFunctions::BERNSTEIN){
 	    int i0 = 2*(int) (((*xp)[ip][0] - domain->solids[isolid]->solidlo[0])*inv_cellsize);
 	    int j0 = 2*(int) (((*xp)[ip][1] - domain->solids[isolid]->solidlo[1])*inv_cellsize);
 	    int k0 = 2*(int) (((*xp)[ip][2] - domain->solids[isolid]->solidlo[2])*inv_cellsize);
@@ -238,8 +196,9 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
 		  n_neigh.push_back(i);
 	      }
 	    }
-	  } else if (cubic || quadratic) {
-	    int i0 = (int) (((*xp)[ip][0] - domain->solids[isolid]->solidlo[0])*inv_cellsize - 1);
+          } else {
+	    //(update->shape_function == update->ShapeFunctions::CUBIC_SPLINE || update->shape_function == update->ShapeFunctions::QUADRATIC_SPLINE) {
+            int i0 = (int) (((*xp)[ip][0] - domain->solids[isolid]->solidlo[0])*inv_cellsize - 1);
 	    int j0 = (int) (((*xp)[ip][1] - domain->solids[isolid]->solidlo[1])*inv_cellsize - 1);
 	    int k0 = (int) (((*xp)[ip][2] - domain->solids[isolid]->solidlo[2])*inv_cellsize - 1);
 
@@ -267,11 +226,9 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
 		  n_neigh.push_back(i);
 	      }
 	    }
-	  } else {
-	    error->all(FLERR, "Shape function type not supported by TLMPM::compute_grid_weight_functions_and_gradients(): " + update->method_shape_function + ".\n");
-	  }
+          }
 
-	  // cout << "ip: "<< ip << "\t";
+          // cout << "ip: "<< ip << "\t";
 	  // cout << "[";
 	  // for (auto ii: n_neigh)
 	  //   cout << domain->solids[isolid]->grid->ntag[ii] << ' ';
@@ -335,32 +292,32 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
 		}
 	      (*wfd_pn)[ip].push_back(wfd);
 	      (*wfd_np)[in].push_back(wfd);
-	      // cout << "ip=" << ip << ", in=" << in << ", wf=" << wf << ", wfd=[" << wfd[0] << "," << wfd[1] << "," << wfd[2] << "]" << endl;
+	      cout << "ip=" << ip << ", in=" << in << ", wf=" << wf << ", wfd=[" << wfd[0] << "," << wfd[1] << "," << wfd[2] << "]" << endl;
 	    }
 	  }
 	  // cout << endl;
 	}
       }
-      if (method_type.compare("APIC") == 0) domain->solids[isolid]->compute_inertia_tensor();
+      if (update->sub_method_type == update->SubMethodType::APIC) domain->solids[isolid]->compute_inertia_tensor();
     }
   }
 
-  update_wf = 0;
+  update_wf = false;
 }
 
 void TLMPM::particles_to_grid()
 {
   bool grid_reset = true; // Indicate if the grid quantities have to be reset
   for (int isolid=0; isolid<domain->solids.size(); isolid++){
-    if (update->ntimestep==1)
-      {
-	domain->solids[isolid]->compute_mass_nodes(grid_reset);
-	domain->solids[isolid]->grid->reduce_mass_ghost_nodes();
-      }
+    if (update_mass_nodes) {
+      domain->solids[isolid]->compute_mass_nodes(grid_reset);
+      domain->solids[isolid]->grid->reduce_mass_ghost_nodes();
+      update_mass_nodes = false;
+    }
   }
 
   for (int isolid=0; isolid<domain->solids.size(); isolid++){
-    if (method_type.compare("APIC") == 0) domain->solids[isolid]->compute_velocity_nodes_APIC(grid_reset);
+    if (update->sub_method_type == update->SubMethodType::APIC) domain->solids[isolid]->compute_velocity_nodes_APIC(grid_reset);
     else domain->solids[isolid]->compute_velocity_nodes(grid_reset);
     domain->solids[isolid]->compute_external_forces_nodes(grid_reset);
     domain->solids[isolid]->compute_internal_forces_nodes_TL();
@@ -387,13 +344,13 @@ void TLMPM::grid_to_points()
 void TLMPM::advance_particles()
 {
   for (int isolid=0; isolid<domain->solids.size(); isolid++) {
-    domain->solids[isolid]->update_particle_velocities(FLIP);
+    domain->solids[isolid]->update_particle_velocities(update->PIC_FLIP);
   }
 }
 
 void TLMPM::velocities_to_grid()
 {
-  if (method_type.compare("APIC") != 0) {
+  if (update->sub_method_type != update->SubMethodType::APIC) {
     for (int isolid=0; isolid<domain->solids.size(); isolid++) {
       //domain->solids[isolid]->compute_mass_nodes();
       domain->solids[isolid]->compute_velocity_nodes(true);
@@ -412,7 +369,7 @@ void TLMPM::update_grid_positions()
 void TLMPM::compute_rate_deformation_gradient()
 {
   for (int isolid=0; isolid<domain->solids.size(); isolid++) {
-    if (method_type.compare("APIC") == 0) domain->solids[isolid]->compute_rate_deformation_gradient_TL_APIC();
+    if (update->sub_method_type == update->SubMethodType::APIC) domain->solids[isolid]->compute_rate_deformation_gradient_TL_APIC();
     else domain->solids[isolid]->compute_rate_deformation_gradient_TL();
     //domain->solids[isolid]->compute_deformation_gradient();
   }

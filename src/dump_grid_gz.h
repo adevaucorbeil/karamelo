@@ -32,7 +32,7 @@ class DumpGridGz : public Dump {
   vector<string> known_var = {"x", "y", "z",
 			      "vx", "vy", "vz",
 			      "bx", "by", "bz",
-			      "mass",
+			      "mass", "mask", "rigid",
 			      "ntypex", "ntypey", "ntypez"};
 };
 

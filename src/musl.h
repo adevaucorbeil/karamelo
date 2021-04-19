@@ -26,7 +26,7 @@ SchemeStyle(musl,MUSL)
 
 class MUSL : public Scheme {
  public:
-  MUSL(class MPM *, vector<string>);
+  MUSL(class MPM *);
   ~MUSL() {}
   void setup();
   void run(class Var);

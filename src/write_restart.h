@@ -11,25 +11,36 @@
  *
  * ----------------------------------------------------------------------- */
 
-#ifdef SCHEME_CLASS
 
-SchemeStyle(usl,USL)
+#ifdef COMMAND_CLASS
+
+CommandStyle(write_restart,WriteRestart)
 
 #else
 
-#ifndef LMP_USL_H
-#define LMP_USL_H
+#ifndef MPM_WRITE_RESTART_H
+#define MPM_WRITE_RESTART_H
 
-#include "scheme.h"
-#include "var.h"
+#include "pointers.h"
+#include <fstream>
 #include <vector>
 
-class USL : public Scheme {
+class WriteRestart : protected Pointers {
  public:
-  USL(class MPM *);
-  ~USL() {}
-  void setup();
-  void run(class Var);
+  WriteRestart(class MPM *);
+  ~WriteRestart();
+  class Var command(vector<string>);
+  void write();
+
+private:
+  string filename;
+  size_t pos_asterisk;
+  ofstream *of;
+  void header();
+
+  template <typename T> void write_variable(int, T);
+  void write_string(int flag, string value);
+  //void write_int(int flag, int value);
 };
 
 #endif

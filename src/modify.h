@@ -28,9 +28,6 @@ public:
   int nfix_restart_global;  // stored fix global info from restart file
   int nfix_restart_peratom; // stored fix peratom info from restart file
 
-  bool ghost_particles_any; // 1 if at least one fix requires the use of ghost
-                            // particles (i.e. contact with TLMPM)
-
   vector<class Fix *> fix;  // list of fixes
 
   vector<class Compute *> compute; // list of computes
@@ -66,6 +63,10 @@ public:
   void final_integrate();
 
   void run_computes();
+
+  void write_restart(ofstream*);      ///< Write fixes and computes to restart file
+  void read_restart(ifstream*);       ///< Read fixes and computes from restart file
+
 
 protected:
   // lists of fixes to apply at different stages of timestep

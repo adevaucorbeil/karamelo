@@ -40,6 +40,9 @@ class FixInitialVelocityParticles : public Fix {
   void post_velocities_to_grid() {};
   void final_integrate() {};
 
+  void write_restart(ofstream *) {};
+  void read_restart(ifstream *) {};
+
 private:
   string usage = "Usage: fix(fix-ID, initial_velocity_particles, group-ID, vx, vy, vz)\n";
   int Nargs = 6;

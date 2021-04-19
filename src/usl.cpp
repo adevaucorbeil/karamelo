@@ -23,7 +23,7 @@
 
 using namespace std;
 
-USL::USL(MPM *mpm, vector<string> args) : Scheme(mpm) {
+USL::USL(MPM *mpm) : Scheme(mpm) {
   // cout << "In USL::USL()" << endl;
 }
 
@@ -56,6 +56,7 @@ void USL::run(Var condition){
 
     modify->post_update_grid_state();
 
+    update->method->compute_rate_deformation_gradient();
     update->method->grid_to_points();
 
     modify->post_grid_to_point();
@@ -70,7 +71,6 @@ void USL::run(Var condition){
 
     update->method->update_grid_positions();
 
-    update->method->compute_rate_deformation_gradient();
     update->method->update_deformation_gradient();
     update->method->update_stress();
 

@@ -16,10 +16,8 @@ MethodStyle(tlcpdi,TLCPDI)
 
 class TLCPDI : public Method {
  public:
-  double FLIP;
-  string shape_function;
 
-  TLCPDI(class MPM *, vector<string>);
+  TLCPDI(class MPM *);
   ~TLCPDI();
 
   void setup(vector<string>);
@@ -40,7 +38,7 @@ class TLCPDI : public Method {
   void reset();
   void exchange_particles() {};
 
-  int update_wf;
+  bool update_wf;
 
   private:
   string known_styles[2] = {"R4", "Q4"};

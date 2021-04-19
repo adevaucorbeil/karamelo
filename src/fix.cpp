@@ -28,6 +28,8 @@ Fix::Fix(MPM *mpm, vector<string> args_) :
   cout << "Creating new fix with ID: " << args[0] << endl;
   id = args[0];
 
+  style = args[1];
+
   igroup = group->find(args[2]);
   if (igroup == -1) {
     cout << "Could not find group ID " << args[2] << endl;

@@ -85,6 +85,7 @@ private:
   int save_plot(vector<string>);             ///< Save the plot as ...
   int print(vector<string>);                 ///< Print the details of a user-variable.
   int create_domain(vector<string>);         ///< Deprecated.
+  int restart(vector<string>);               ///< Create a restart policy
 
   bool protected_variable(string);           ///< Checks if the variables is protected or not.
 

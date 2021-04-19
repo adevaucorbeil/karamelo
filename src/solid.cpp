@@ -62,24 +62,11 @@ Solid::Solid(MPM *mpm, vector<string> args) : Pointers(mpm)
     error->all(FLERR, error_str);
   }
 
-  if (usage.find(args[1]) == usage.end())
-  {
-    string error_str = "Error, keyword \033[1;31m" + args[1] + "\033[0m unknown!\n";
-    for (auto &x : usage)
-      error_str += x.second;
-    error->all(FLERR, error_str);
-  }
+  id          = args[0];
 
-  if (args.size() < Nargs.find(args[1])->second)
-  {
-    error->all(FLERR, "Error: not enough arguments.\n"
-	       + usage.find(args[1])->second);
-  }
-
-  cout << "Creating new solid with ID: " << args[0] << endl;
+  cout << "Creating new solid with ID: " << id << endl;
 
   method_type = update->method_type;
-  id          = args[0];
 
   np = 0;
 
@@ -100,15 +87,38 @@ Solid::Solid(MPM *mpm, vector<string> args) : Pointers(mpm)
     grid = domain->grid;
   }
 
-  if (update->method->method_type.compare("APIC") == 0) {
+  if (update->sub_method_type == update->SubMethodType::APIC) {
     apic = true;
   } else {
     apic = false;
   }
 
   dtCFL = 1.0e22;
+  max_p_wave_speed = 0;
   vtot  = 0;
   mtot = 0;
+  comm_n = 50; // Number of double to pack for particle exchange between CPUs.
+
+
+  if (args[1].compare("restart") == 0) {
+    // If the keyword restart, we are expecting to have read_restart()
+    // launched right after.
+    return;
+  }
+
+  if (usage.find(args[1]) == usage.end())
+  {
+    string error_str = "Error, keyword \033[1;31m" + args[1] + "\033[0m unknown!\n";
+    for (auto &x : usage)
+      error_str += x.second;
+    error->all(FLERR, error_str);
+  }
+
+  if (args.size() < Nargs.find(args[1])->second)
+  {
+    error->all(FLERR, "Error: not enough arguments.\n"
+	       + usage.find(args[1])->second);
+  }
 
   if (args[1].compare("region") == 0)
   {
@@ -132,9 +142,6 @@ Solid::Solid(MPM *mpm, vector<string> args) : Pointers(mpm)
 
     read_file(args[2]);
   }
-
-  comm_n = 50; // Number of double to pack for particle exchange between CPUs.
-
 }
 
 Solid::~Solid()
@@ -251,9 +258,10 @@ void Solid::grow(int nparticles)
   D.resize(nparticles);
   Finv.resize(nparticles);
   Fdot.resize(nparticles);
-  if (apic)
+  if (apic) {
     Di.resize(nparticles);
-
+    // BDinv.resize(nparticles);
+  }
   vol0.resize(nparticles);
   vol.resize(nparticles);
   rho0.resize(nparticles);
@@ -358,28 +366,38 @@ void Solid::compute_velocity_nodes(bool reset)
   }
 }
 
-void Solid::compute_velocity_nodes_APIC(bool reset)
-{
+void Solid::compute_velocity_nodes_APIC(bool reset) {
   int ip;
   int nn = grid->nnodes_local + grid->nnodes_ghost;
+  Eigen::Vector3d vtemp;
 
-  for (int in = 0; in < nn; in++)
-  {
+  vector<Eigen::Vector3d> *pos;
+  vector<Eigen::Matrix3d> *C;
+
+  if (is_TL) {
+    pos = &x0;
+    C = &Fdot;
+  } else {
+    pos = &x;
+    C = &L;
+  }
+
+  for (int in = 0; in < nn; in++) {
     if (reset)
       grid->v[in].setZero();
 
     if (grid->rigid[in] && !mat->rigid)
       continue;
 
-    if (grid->mass[in] > 0)
-    {
-      for (int j = 0; j < numneigh_np[in]; j++)
-      {
+    if (grid->mass[in] > 0) {
+      vtemp.setZero();
+      for (int j = 0; j < numneigh_np[in]; j++) {
         ip = neigh_np[in][j];
-        grid->v[in] += (wf_np[in][j] * mass[ip]) *
-	  (v[ip] + Fdot[ip] * (grid->x0[in] - x0[ip]));
+        vtemp += (wf_np[in][j] * mass[ip]) *
+	  (v[ip] + (*C)[ip] * (grid->x0[in] - (*pos)[ip]));
       }
-      grid->v[in] /= grid->mass[in];
+      vtemp /= grid->mass[in];
+      grid->v[in] += vtemp;
     }
   }
 }
@@ -553,25 +571,20 @@ void Solid::compute_particle_acceleration()
     {
       in = neigh_pn[ip][j];
       a[ip] += wf_pn[ip][j] * (grid->v_update[in] - grid->v[in]);
-      // if (ptag[ip] == 101) {
-      // 	printf("dv[%d]=[%4.3e %4.3e %4.3e], ", grid->ntag[in], (grid->v_update[in][0] - grid->v[in][0])*inv_dt, (grid->v_update[in][1] - grid->v[in][1])*inv_dt, (grid->v_update[in][2] - grid->v[in][2])*inv_dt);
-      // 	cout << "rigid=" << grid->rigid[in] << endl;
-      // }
     }
     a[ip] *= inv_dt;
     f[ip] = a[ip] * mass[ip];
   }
 }
 
-
-void Solid::update_particle_velocities(double alpha)
-{
-  for (int ip = 0; ip < np_local; ip++)
-    {
-      v[ip] = (1 - alpha) * v_update[ip] + alpha * (v[ip] + update->dt * a[ip]);
-      // if (ptag[ip] == 101) {
-      // 	printf("v=[%4.3e %4.3e %4.3e]\tv_update=[%4.3e %4.3e %4.3e]\ta=[%4.3e %4.3e %4.3e]\n", v[ip][0], v[ip][1], v[ip][2], v_update[ip][0], v_update[ip][1], v_update[ip][2], a[ip][0], a[ip][1], a[ip][2]);
-      // }
+void Solid::update_particle_velocities(double alpha) {
+  for (int ip = 0; ip < np_local; ip++) {
+    v[ip] = (1 - alpha) * v_update[ip] + alpha * (v[ip] + update->dt * a[ip]);
+    // if (ptag[ip] == 101) {
+    // 	printf("v=[%4.3e %4.3e %4.3e]\tv_update=[%4.3e %4.3e %4.3e]\ta=[%4.3e
+    // %4.3e %4.3e]\n", v[ip][0], v[ip][1], v[ip][2], v_update[ip][0],
+    // v_update[ip][1], v_update[ip][2], a[ip][0], a[ip][1], a[ip][2]);
+    // }
   }
 }
 
@@ -776,14 +789,12 @@ void Solid::compute_deformation_gradient()
 
   if (domain->dimension == 1)
     {
-      for (int ip = 0; ip < np_local; ip++)
-	{
-	  Ftemp.setZero();
-	  for (int j = 0; j < numneigh_pn[ip]; j++)
-	    {
-	      in = neigh_pn[ip][j];
-	      dx = (*xn)[in] - (*x0n)[in];
-	      Ftemp(0, 0) += dx[0] * wfd_pn[ip][j][0];
+    for (int ip = 0; ip < np_local; ip++) {
+      Ftemp.setZero();
+      for (int j = 0; j < numneigh_pn[ip]; j++) {
+        in = neigh_pn[ip][j];
+        dx = (*xn)[in] - (*x0n)[in];
+        Ftemp(0, 0) += dx[0] * wfd_pn[ip][j][0];
       }
       F[ip](0, 0) = Ftemp(0, 0) + 1;
     }
@@ -902,7 +913,7 @@ void Solid::compute_rate_deformation_gradient_UL_APIC()
       L[ip].setZero();
       for (int j=0; j<numneigh_pn[ip]; j++){
 	in = neigh_pn[ip][j];
-	dx = (*x0n)[in] - x0[ip];
+	dx = (*x0n)[in] - x[ip];
 	L[ip](0,0) += (*vn)[in][0]*dx[0]*wf_pn[ip][j];
       }
       L[ip] *= Di[ip];
@@ -912,7 +923,7 @@ void Solid::compute_rate_deformation_gradient_UL_APIC()
       L[ip].setZero();
       for (int j=0; j<numneigh_pn[ip]; j++){
 	in = neigh_pn[ip][j];
-	dx = (*x0n)[in] - x0[ip];
+	dx = (*x0n)[in] - x[ip];
 	L[ip](0,0) += (*vn)[in][0]*dx[0]*wf_pn[ip][j];
 	L[ip](0,1) += (*vn)[in][0]*dx[1]*wf_pn[ip][j];
 	L[ip](1,0) += (*vn)[in][1]*dx[0]*wf_pn[ip][j];
@@ -925,7 +936,7 @@ void Solid::compute_rate_deformation_gradient_UL_APIC()
       L[ip].setZero();
       for (int j=0; j<numneigh_pn[ip]; j++){
 	in = neigh_pn[ip][j];
-	dx = (*x0n)[in] - x0[ip];
+	dx = (*x0n)[in] - x[ip];
 	L[ip](0,0) += (*vn)[in][0]*dx[0]*wf_pn[ip][j];
 	L[ip](0,1) += (*vn)[in][0]*dx[1]*wf_pn[ip][j];
 	L[ip](0,2) += (*vn)[in][0]*dx[2]*wf_pn[ip][j];
@@ -950,12 +961,6 @@ void Solid::update_deformation_gradient()
   Eigen::Matrix3d eye;
   eye.setIdentity();
 
-  if (update->method_type.compare("tlmpm") == 0 ||
-      update->method_type.compare("tlcpdi") == 0)
-    tl = true;
-  else
-    tl = false;
-
   // if (mat->type == material->constitutive_model::LINEAR) lin = true;
   // else lin = false;
 
@@ -976,7 +981,7 @@ void Solid::update_deformation_gradient()
   for (int ip = 0; ip < np_local; ip++)
   {
 
-    if (tl)
+    if (is_TL)
       F[ip] += update->dt * Fdot[ip];
     else
       F[ip] = (eye + update->dt * L[ip]) * F[ip];
@@ -1015,7 +1020,7 @@ void Solid::update_deformation_gradient()
     if (!nh) {
       // Only done if not Neo-Hookean:
 
-      if (tl) {
+      if (is_TL) {
         status = PolDec(F[ip], R[ip]); // polar decomposition of the deformation
                                        // gradient, F = R * U
 
@@ -1029,7 +1034,7 @@ void Solid::update_deformation_gradient()
                << ip << ".\n";
           cout << "F:" << endl << F[ip] << endl;
           cout << "timestep" << endl << update->ntimestep << endl;
-          error->all(FLERR, "");
+          error->one(FLERR, "");
         }
 
       } else
@@ -1075,7 +1080,7 @@ void Solid::update_stress()
       sigma[ip] += 2 * mat->G * strain_increment +
                    mat->lambda * strain_increment.trace() * eye;
 
-      if (tl) {
+      if (is_TL) {
 	vol0PK1[ip] = vol0[ip] * J[ip] *
 	  (R[ip] * sigma[ip] * R[ip].transpose()) *
 	  Finv[ip].transpose();
@@ -1141,7 +1146,7 @@ void Solid::update_stress()
             sigma_dev[ip] / mat->G;
       }
 
-      if (tl) {
+      if (is_TL) {
 	vol0PK1[ip] = vol0[ip] * J[ip] *
 	  (R[ip] * sigma[ip] * R[ip].transpose()) *
 	  Finv[ip].transpose();
@@ -1179,7 +1184,7 @@ void Solid::update_stress()
       error->one(FLERR, "");
     }
 
-    if (tl) {
+    if (is_TL) {
       EigenSolver<Matrix3d> esF(F[ip], false);
       if (esF.info()!= Success) {
 	min_h_ratio = MIN(min_h_ratio,1.0);
@@ -1225,28 +1230,50 @@ void Solid::compute_inertia_tensor() {
   Eigen::Vector3d dx;
   Eigen::Matrix3d Dtemp;
 
+  vector<Eigen::Vector3d> *pos;
+
+  if (update->shape_function == update->ShapeFunctions::CUBIC_SPLINE) {
+    Eigen::Matrix3d eye;
+    eye.setIdentity();
+
+    double cellsizeSqInv = 1.0 / (grid->cellsize * grid->cellsize);
+    Dtemp = 3.0 * cellsizeSqInv * eye;
+    if (domain->dimension == 1) {
+      Dtemp(1,1) = 1;
+      Dtemp(2,2) = 1;
+    }
+    if (domain->dimension == 2)
+      Dtemp(2,2) = 1;
+    for (int ip = 0; ip < np_local; ip++) {
+      Di[ip] = Dtemp;
+    }
+    return;
+  }
+  if (is_TL)
+    pos = &x0;
+  else
+    pos = &x;
+
   if (domain->dimension == 2) {
     for (int ip = 0; ip < np_local; ip++) {
       Dtemp.setZero();
       for (int j = 0; j < numneigh_pn[ip]; j++) {
         in = neigh_pn[ip][j];
-        dx = grid->x0[in] - x0[ip];
+        dx = grid->x0[in] - (*pos)[ip];
         Dtemp(0, 0) += wf_pn[ip][j] * (dx[0] * dx[0]);
         Dtemp(0, 1) += wf_pn[ip][j] * (dx[0] * dx[1]);
         Dtemp(1, 1) += wf_pn[ip][j] * (dx[1] * dx[1]);
       }
       Dtemp(1, 0) = Dtemp(0, 1);
       Dtemp(2, 2) = 1;
-      // if (ip==0) cout << "1 - Dtemp[" << ip << "]=\n" << Dtemp << endl;
       Di[ip] = Dtemp.inverse();
-      // if (ip==0) cout << "1 - Di[" << ip << "]=\n" << Di[ip] << endl;
     }
   } else if (domain->dimension == 3) {
     for (int ip = 0; ip < np_local; ip++) {
       Dtemp.setZero();
       for (int j = 0; j < numneigh_pn[ip]; j++) {
         in = neigh_pn[ip][j];
-        dx = grid->x0[in] - x0[ip];
+        dx = grid->x0[in] - (*pos)[ip];
         Dtemp(0, 0) += wf_pn[ip][j] * (dx[0] * dx[0]);
         Dtemp(0, 1) += wf_pn[ip][j] * (dx[0] * dx[1]);
         Dtemp(0, 2) += wf_pn[ip][j] * (dx[0] * dx[2]);
@@ -1329,9 +1356,10 @@ void Solid::copy_particle(int i, int j) {
   Finv[j]                    = Finv[i];
   Fdot[j]                    = Fdot[i];
   J[j]                       = J[i];
-  if (apic)
+  if (apic) {
     Di[j]                      = Di[i];
-
+    //BDinv[j]                   = BDinv[i];
+  }
   // if (method_type.compare("tlcpdi") == 0 || method_type.compare("ulcpdi") == 0)
   //   {
   //     if (update->method->style == 0)
@@ -2045,9 +2073,10 @@ void Solid::populate(vector<string> args)
     D[i].setZero();
     Finv[i].setZero();
     Fdot[i].setZero();
-    if (apic)
+    if (apic) {
       Di[i].setZero();
-
+      //BDinv[i].setZero();
+    }
     J[i] = 1;
     mask[i] = 1;
 
@@ -2449,9 +2478,10 @@ void Solid::read_mesh(string fileName)
     D[i].setZero();
     Finv[i].setZero();
     Fdot[i].setZero();
-    if (apic)
+    if (apic) {
       Di[i].setZero();
-
+      //BDinv[i].setZero();
+    }
     J[i] = 1;
 
     if (x0[i][0] < solidlo[0])
@@ -2479,3 +2509,120 @@ void Solid::read_mesh(string fileName)
 // #endif
 }
 
+void Solid::write_restart(ofstream *of) {
+  // Write solid bounds:
+  of->write(reinterpret_cast<const char *>(&solidlo[0]), 3*sizeof(double));
+  of->write(reinterpret_cast<const char *>(&solidhi[0]), 3*sizeof(double));
+  of->write(reinterpret_cast<const char *>(&solidsublo[0]), 3*sizeof(double));
+  of->write(reinterpret_cast<const char *>(&solidsubhi[0]), 3*sizeof(double));
+
+  // Write number of particles:
+  of->write(reinterpret_cast<const char *>(&np), sizeof(bigint));
+  of->write(reinterpret_cast<const char *>(&np_local), sizeof(int));
+  of->write(reinterpret_cast<const char *>(&nc), sizeof(int));
+
+  // Write material's info:
+  int iMat = material->find_material(mat->id);
+  of->write(reinterpret_cast<const char *>(&iMat), sizeof(int));
+
+  // Write cellsize:
+  of->write(reinterpret_cast<const char *>(&grid->cellsize), sizeof(double));
+
+
+  // Write particle's attributes:
+  cout << x[0](0) << ", " << x[0](1) << ", " << x[0](2) << endl;
+  for (int ip = 0; ip < np_local; ip++) {
+    of->write(reinterpret_cast<const char *>(&ptag[ip]), sizeof(tagint));
+    of->write(reinterpret_cast<const char *>(&x0[ip]), sizeof(Eigen::Vector3d));
+    of->write(reinterpret_cast<const char *>(&x[ip]), sizeof(Eigen::Vector3d));
+    of->write(reinterpret_cast<const char *>(&v[ip]), sizeof(Eigen::Vector3d));
+    of->write(reinterpret_cast<const char *>(&sigma[ip]), sizeof(Eigen::Matrix3d));
+    of->write(reinterpret_cast<const char *>(&strain_el[ip]), sizeof(Eigen::Matrix3d));
+    if (is_TL) {
+      of->write(reinterpret_cast<const char *>(&vol0PK1[ip]), sizeof(Eigen::Matrix3d));
+    }
+    of->write(reinterpret_cast<const char *>(&F[ip]), sizeof(Eigen::Matrix3d));
+    of->write(reinterpret_cast<const char *>(&J[ip]), sizeof(double));
+    of->write(reinterpret_cast<const char *>(&vol0[ip]), sizeof(double));
+    of->write(reinterpret_cast<const char *>(&rho0[ip]), sizeof(double));
+    of->write(reinterpret_cast<const char *>(&eff_plastic_strain[ip]), sizeof(double));
+    of->write(reinterpret_cast<const char *>(&eff_plastic_strain_rate[ip]), sizeof(double));
+    of->write(reinterpret_cast<const char *>(&damage[ip]), sizeof(double));
+    of->write(reinterpret_cast<const char *>(&damage_init[ip]), sizeof(double));
+    of->write(reinterpret_cast<const char *>(&T[ip]), sizeof(double));
+    of->write(reinterpret_cast<const char *>(&ienergy[ip]), sizeof(double));
+    of->write(reinterpret_cast<const char *>(&mask[ip]), sizeof(int));
+  }
+}
+
+void Solid::read_restart(ifstream *ifr) {
+  // Read solid bounds:
+  ifr->read(reinterpret_cast<char *>(&solidlo[0]), 3*sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&solidhi[0]), 3*sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&solidsublo[0]), 3*sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&solidsubhi[0]), 3*sizeof(double));
+  cout << "solidlo=[" << solidlo[0] << "," << solidlo[1] << "," << solidlo[2] << endl;
+  cout << "solidhi=[" << solidhi[0] << "," << solidhi[1] << "," << solidhi[2] << endl;
+  cout << "solidsublo=[" << solidsublo[0] << "," << solidsublo[1] << "," << solidsublo[2] << endl;
+  cout << "solidsubhi=[" << solidsubhi[0] << "," << solidsubhi[1] << "," << solidsubhi[2] << endl;
+
+  //init();
+  // Read number of particles:
+  ifr->read(reinterpret_cast<char *>(&np), sizeof(bigint));
+  ifr->read(reinterpret_cast<char *>(&np_local), sizeof(int));
+  ifr->read(reinterpret_cast<char *>(&nc), sizeof(int));
+
+  // Read material's info:
+  int iMat = -1;
+  ifr->read(reinterpret_cast<char *>(&iMat), sizeof(int));
+  mat = &material->materials[iMat];
+
+  // Read cellsize:
+  ifr->read(reinterpret_cast<char *>(&grid->cellsize), sizeof(double));
+  if (is_TL) {
+    grid->init(solidlo, solidhi);
+  }
+
+  // Read particle's attributes:
+  grow(np_local);
+
+  for (int ip = 0; ip < np_local; ip++) {
+    ifr->read(reinterpret_cast<char *>(&ptag[ip]), sizeof(tagint));
+    ifr->read(reinterpret_cast<char *>(&x0[ip]), sizeof(Eigen::Vector3d));
+    ifr->read(reinterpret_cast<char *>(&x[ip]), sizeof(Eigen::Vector3d));
+    ifr->read(reinterpret_cast<char *>(&v[ip]), sizeof(Eigen::Vector3d));
+    v_update[ip].setZero();
+    a[ip].setZero();
+    mbp[ip].setZero();
+    f[ip].setZero();
+    ifr->read(reinterpret_cast<char *>(&sigma[ip]), sizeof(Eigen::Matrix3d));
+    ifr->read(reinterpret_cast<char *>(&strain_el[ip]), sizeof(Eigen::Matrix3d));
+    if (is_TL) {
+      ifr->read(reinterpret_cast<char *>(&vol0PK1[ip]), sizeof(Eigen::Matrix3d));
+    }
+    L[ip].setZero();
+    ifr->read(reinterpret_cast<char *>(&F[ip]), sizeof(Eigen::Matrix3d));
+    R[ip].setZero();
+    D[ip].setZero();
+    Finv[ip].setZero();
+    Fdot[ip].setZero();
+    if (apic) {
+      Di[ip].setZero();
+      //BDinv[ip].setZero();
+    }
+    ifr->read(reinterpret_cast<char *>(&J[ip]), sizeof(double));
+    ifr->read(reinterpret_cast<char *>(&vol0[ip]), sizeof(double));
+    vol[ip] = J[ip] * vol0[ip];
+    ifr->read(reinterpret_cast<char *>(&rho0[ip]), sizeof(double));
+    rho[ip] = rho0[ip] / J[ip];
+    mass[ip] = rho0[ip] * vol0[ip];
+    ifr->read(reinterpret_cast<char *>(&eff_plastic_strain[ip]), sizeof(double));
+    ifr->read(reinterpret_cast<char *>(&eff_plastic_strain_rate[ip]), sizeof(double));
+    ifr->read(reinterpret_cast<char *>(&damage[ip]), sizeof(double));
+    ifr->read(reinterpret_cast<char *>(&damage_init[ip]), sizeof(double));
+    ifr->read(reinterpret_cast<char *>(&T[ip]), sizeof(double));
+    ifr->read(reinterpret_cast<char *>(&ienergy[ip]), sizeof(double));
+    ifr->read(reinterpret_cast<char *>(&mask[ip]), sizeof(int));
+  }
+  cout << x[0](0) << ", " << x[0](1) << ", " << x[0](2) << endl;
+}

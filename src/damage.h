@@ -20,12 +20,16 @@
 
 class Damage : protected Pointers {
  public:
-  string id;
+  string id;                        ///< damage identification string
+  string style;                     ///< damage style
 
   Damage(MPM *, vector<string>);
   virtual ~Damage();
   virtual void init();
   void options(vector<string> *, vector<string>::iterator);
+
+  virtual void write_restart(ofstream*) = 0;
+  virtual void read_restart(ifstream*) = 0;
 
   // implemented by each Damage
   virtual void compute_damage(double &damage_init,

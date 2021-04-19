@@ -40,12 +40,18 @@ public:
   void post_velocities_to_grid(){};
   void final_integrate(){};
 
+  void write_restart(ofstream *);
+  void read_restart(ifstream *);
+
 private:
   string usage = "Usage: fix(fix-ID, cuttingtool, group, K, x_tip, y_tip, "
                  "z_tip, vx_tip, vy_tip, vz_tip, xA, yA, xB, yB)\n";
   int Nargs = 14;
-  int Kpos, xtpos, ytpos, ztpos, vtxpos, vtypos, vtzpos, xApos, yApos, xBpos,
-      yBpos; // Positions the arguments
+  double K;
+  Var xtvalue, ytvalue, ztvalue;
+  Var vtxvalue, vtyvalue, vtzvalue;
+  Var xAvalue, yAvalue;
+  Var xBvalue, yBvalue;
 };
 
 #endif

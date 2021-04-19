@@ -11,25 +11,34 @@
  *
  * ----------------------------------------------------------------------- */
 
-#ifdef SCHEME_CLASS
 
-SchemeStyle(usl,USL)
+#ifdef COMMAND_CLASS
+
+CommandStyle(read_restart,ReadRestart)
 
 #else
 
-#ifndef LMP_USL_H
-#define LMP_USL_H
+#ifndef MPM_READ_RESTART_H
+#define MPM_READ_RESTART_H
 
-#include "scheme.h"
-#include "var.h"
+#include "pointers.h"
+#include <fstream>
 #include <vector>
 
-class USL : public Scheme {
+class ReadRestart : protected Pointers {
  public:
-  USL(class MPM *);
-  ~USL() {}
-  void setup();
-  void run(class Var);
+  ReadRestart(class MPM *);
+  ~ReadRestart();
+  class Var command(vector<string>);
+
+private:
+  string filename;
+  size_t pos_asterisk;
+  ifstream *ifr;
+  void header();
+
+  int read_int();
+  string read_string();
 };
 
 #endif

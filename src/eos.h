@@ -25,7 +25,8 @@
  */
 class EOS : protected Pointers {
  public:
-  string id;
+  string id;                        ///< EOS identification string
+  string style;                     ///< EOS style
 
   EOS(class MPM *, vector<string>);
   virtual ~EOS();
@@ -37,6 +38,9 @@ class EOS : protected Pointers {
   virtual double rho0() = 0;
   virtual double K() = 0;
   virtual void compute_pressure(double &, double&, const double, const double, const double, const double, const Eigen::Matrix3d, const double) = 0;
+
+  virtual void write_restart(ofstream*) = 0;
+  virtual void read_restart(ifstream*) = 0;
   //protected:
 };
 

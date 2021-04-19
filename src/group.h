@@ -26,9 +26,10 @@ public:
   int ngroup;       ///< Number of defined groups
   string *names;    ///< Name of each group
   int *bitmask;     ///< One-bit mask for each group
-  int *inversemask; ///< Inverse mask for each group
+  //int *inversemask; ///< Inverse mask for each group
   string *pon;      ///< Group of particles if pon == "particles", or nodes if pon = "nodes"
   int *solid;       ///< Solids corresponding to each group
+  int *region;      ///< Index of the region corresponding to each group
 
   Group(class MPM *);
   virtual ~Group();
@@ -44,6 +45,9 @@ public:
   double external_force(
       int,
       int);                    ///< Determine the resulting internal force applied onto the group
+
+  void write_restart(ofstream *);
+  void read_restart(ifstream *);  
 };
 
 #endif
