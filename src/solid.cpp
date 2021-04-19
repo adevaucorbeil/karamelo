@@ -517,7 +517,7 @@ void Solid::compute_particle_velocities_and_positions()
     for (int j = 0; j < numneigh_pn[ip]; j++)
       {
       in = neigh_pn[ip][j];
-      v_update[ip] += wf_pn[ip][j] * (grid->v_update[in] + L[ip] * (x[ip] - grid->x0[in]));
+      v_update[ip] += wf_pn[ip][j] * grid->v_update[in];
       x[ip] += update->dt * wf_pn[ip][j] * grid->v_update[in];
       // if (isnan(x[ip](0)))
       //   cout << "ip=" << ip << "\tx=[" << x[ip](0) << "," << x[ip](1) << ","
@@ -2558,8 +2558,8 @@ void Solid::write_restart(ofstream *of) {
 
   // Write cellsize:
   of->write(reinterpret_cast<const char *>(&grid->cellsize), sizeof(double));
-  
-  
+
+
   // Write particle's attributes:
   cout << x[0](0) << ", " << x[0](1) << ", " << x[0](2) << endl;
   for (int ip = 0; ip < np_local; ip++) {
@@ -2570,7 +2570,7 @@ void Solid::write_restart(ofstream *of) {
     of->write(reinterpret_cast<const char *>(&sigma[ip]), sizeof(Eigen::Matrix3d));
     of->write(reinterpret_cast<const char *>(&strain_el[ip]), sizeof(Eigen::Matrix3d));
     if (is_TL) {
-      of->write(reinterpret_cast<const char *>(&vol0PK1[ip]), sizeof(Eigen::Matrix3d));      
+      of->write(reinterpret_cast<const char *>(&vol0PK1[ip]), sizeof(Eigen::Matrix3d));
     }
     of->write(reinterpret_cast<const char *>(&F[ip]), sizeof(Eigen::Matrix3d));
     of->write(reinterpret_cast<const char *>(&J[ip]), sizeof(double));
