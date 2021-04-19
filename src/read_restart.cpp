@@ -66,7 +66,10 @@ Var ReadRestart::command(vector<string> args) {
     // proc 0 reads out header:
     if (universe->me == 0)
       header();
-    
+
+    MPI_Bcast(&domain->dimension, 1, MPI_INT, 0, universe->uworld);
+    cout << "dimension = " << domain->dimension << endl;
+
     // Everyone reads the method, scheme, timestep, dt:
     update->read_restart(ifr);
     domain->read_restart(ifr);
