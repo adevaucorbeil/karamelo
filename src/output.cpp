@@ -125,17 +125,17 @@ void Output::setup(){
     error->all(FLERR,"Error: next=0!\n");
   }
 
-  cout << "next = " << next << endl;
+  // cout << "next = " << next << endl;
 }
 
 void Output::write(bigint ntimestep){
 
   bigint nsteps = update->nsteps;
 
-  cout << "In Output::write\n";
-  cout << "restart_flag = " << restart_flag << endl;
-  cout << "next_restart = " << next_restart << endl;
-  cout << "ntimestep = " << ntimestep << endl;
+  // cout << "In Output::write\n";
+  // cout << "restart_flag = " << restart_flag << endl;
+  // cout << "next_restart = " << next_restart << endl;
+  // cout << "ntimestep = " << ntimestep << endl;
 
   // If there is at least one dump that requested output at the current step:
   if (next_dump_any == ntimestep) {
@@ -153,7 +153,6 @@ void Output::write(bigint ntimestep){
   }
 
   if (restart_flag && next_restart == ntimestep) {
-    cout << "OK\n";
     restart->write();
     next_restart += every_restart;
   }
@@ -350,7 +349,7 @@ void Output::create_restart(vector<string> args){
   }
 
   every_restart = (int) input->parsev(args[0]);
-  cout << "every_restart = " << every_restart << endl;
+  // cout << "every_restart = " << every_restart << endl;
 
   if (every_restart == 0) {
     delete restart;
@@ -362,7 +361,7 @@ void Output::create_restart(vector<string> args){
     restart = new WriteRestart(mpm);
     restart->command(vector<string>(1, args[1]));
     next_restart = (update->ntimestep/every_restart)*every_restart + every_restart;
-    cout << "next_restart = " << next_restart << endl;
+    // cout << "next_restart = " << next_restart << endl;
 
     restart_flag = 1;
 
