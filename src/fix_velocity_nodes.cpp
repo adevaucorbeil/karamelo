@@ -126,7 +126,7 @@ void FixVelocityNodes::setmask() {
 
 
 void FixVelocityNodes::post_update_grid_state() {
-  cout << "In FixVelocityNodes::post_update_grid_state()" << endl;
+  // cout << "In FixVelocityNodes::post_update_grid_state()" << endl;
 
   // Go through all the nodes in the group and set v_update to the right value:
   double vx, vy, vz;
@@ -142,8 +142,8 @@ void FixVelocityNodes::post_update_grid_state() {
   if (yset) {
     vy = yvalue.result(mpm);
     vy_old = yprevvalue.result(mpm);
-    cout << "Set v_update[1] to " << "=" <<  vy << endl;
-    cout << "Set v[1] to " << "=" <<  vy_old << endl;
+    // cout << "Set v_update[1] to " << "=" <<  vy << endl;
+    // cout << "Set v[1] to " << "=" <<  vy_old << endl;
   }
 
   if (zset) {
