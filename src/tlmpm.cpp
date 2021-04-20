@@ -308,12 +308,12 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
 void TLMPM::particles_to_grid()
 {
   bool grid_reset = true; // Indicate if the grid quantities have to be reset
-  for (int isolid=0; isolid<domain->solids.size(); isolid++){
-    if (update_mass_nodes) {
+  if (update_mass_nodes) {
+    for (int isolid=0; isolid<domain->solids.size(); isolid++){
       domain->solids[isolid]->compute_mass_nodes(grid_reset);
       domain->solids[isolid]->grid->reduce_mass_ghost_nodes();
-      update_mass_nodes = false;
     }
+    update_mass_nodes = false;
   }
 
   for (int isolid=0; isolid<domain->solids.size(); isolid++){
