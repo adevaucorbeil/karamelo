@@ -1771,14 +1771,14 @@ void Solid::populate(vector<string> args)
     cout << "2--- proc " << universe->me << " noffsethi=[" << noffsethi[0]
          << "," << noffsethi[1] << "," << noffsethi[2] << "]\n";
 
-    nsubx = noffsethi[0] - noffsetlo[0];
+    nsubx = MAX(0, noffsethi[0] - noffsetlo[0]);
     if (domain->dimension >= 2) {
-      nsuby = noffsethi[1] - noffsetlo[1];
+      nsuby = MAX(0, noffsethi[1] - noffsetlo[1]);
     } else {
       nsuby = 1;
     }
     if (domain->dimension >= 3) {
-      nsubz = noffsethi[2] - noffsetlo[2];
+      nsubz = MAX(0,noffsethi[2] - noffsetlo[2]);
     } else {
       nsubz = 1;
     }
@@ -2140,6 +2140,7 @@ void Solid::populate(vector<string> args)
   MPI_Allreduce(&np_local, &np_local_reduced, 1, MPI_INT, MPI_SUM, universe->uworld);
   np += np_local_reduced;
   domain->np_total += np;
+  domain->np_local += np_local;
 }
 
 void Solid::update_particle_domain()

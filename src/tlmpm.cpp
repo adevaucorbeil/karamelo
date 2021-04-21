@@ -85,6 +85,16 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
 {
   if (!update_wf) return;
 
+  if (domain->np_local == 0) {
+    error->one(
+        FLERR,
+        "Bad domain decomposition, some CPUs (at least CPU #" +
+            to_string(universe->me) +
+            ") do not have any particles "
+            "attached to.\nTry to increase or decrease the number of CPUs "
+            "(using prime numbers might help).\n");
+  }
+
   // cout << "In TLMPM::compute_grid_weight_functions_and_gradients()\n";
   bigint nsolids, np_local, nnodes_local, nnodes_ghost;
 

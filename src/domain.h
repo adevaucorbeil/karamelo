@@ -37,6 +37,7 @@ class Domain : protected Pointers {
   bool created;                          ///< has the domain been created?
   bool axisymmetric;                     ///< true if axisymmetric,  false otherwise
   tagint np_total;                       ///< total number of particles
+  tagint np_local;                       ///< sum of the local number of particles
 
   double boxlo[3];                       ///< Lower orthogonal box global bounds
   double boxhi[3];                       ///< Higher orthogonal box global bounds

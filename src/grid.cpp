@@ -170,14 +170,14 @@ void Grid::init(double *solidlo, double *solidhi) {
     nz_global = 1;
   }
 
-  nx = noffsethi_[0] - noffsetlo[0];
+  nx = MAX(0, noffsethi_[0] - noffsetlo[0]);
   if (domain->dimension >= 2) {
-    ny = noffsethi_[1] - noffsetlo[1];
+    ny = MAX(0, noffsethi_[1] - noffsetlo[1]);
   } else {
     ny = 1;
   }
   if (domain->dimension >= 3) {
-    nz = noffsethi_[2] - noffsetlo[2];
+    nz = MAX(0, noffsethi_[2] - noffsetlo[2]);
   } else {
     nz = 1;
   }
@@ -195,20 +195,16 @@ void Grid::init(double *solidlo, double *solidhi) {
       nz++;
   }
 
-  // Create nodes that are inside the local subdomain:
-  nnodes_local = nx * ny * nz;
-  if (nnodes_local < 0) {
-    error->one(FLERR,
-               "Bad domain decomposition, some CPUs do not have any grid "
-               "attached to.\nThis is likely to happen when using TLMPM.\n");
-  }
-  grow(nnodes_local);
-
   // #ifdef DEBUG
   cout << "proc " << universe->me << " nx=" << nx << "\tny=" << ny << "\tnz=" << nz <<endl;
   cout << "proc " << universe->me << " noffsetlo=[" << noffsetlo[0] << "," << noffsetlo[1] << "," << noffsetlo[2] << "]\n";
   cout << "proc " << universe->me << " noffsethi_=[" << noffsethi_[0] << "," << noffsethi_[1] << "," << noffsethi_[2] << "]\n";
   // #endif
+
+  // Create nodes that are inside the local subdomain:
+  nnodes_local = nx * ny * nz;
+  grow(nnodes_local);
+
 
   int l=0;
   for (int i=0; i<nx; i++){
