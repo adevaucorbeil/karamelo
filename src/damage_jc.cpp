@@ -113,7 +113,10 @@ void DamageJohnsonCook::compute_damage(double &damage_init, double &damage,
                                            // avoid divison by zero
   }
 
-  // if (triax <= 0) return ;
+  if (triax <= -3) {
+    damage_init = 0;
+    return ;
+  }
 
   // Johnson-Cook failure strain, dependence on stress triaxiality
   double jc_failure_strain = d1 + d2 * exp(d3 * triax);
