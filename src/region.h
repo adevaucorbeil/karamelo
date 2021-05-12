@@ -28,6 +28,7 @@
 class Region : protected Pointers {
  public:
   string id;                        ///< Region identification string
+  string style;                     ///< Region style
   int interior;                     ///< 1 for interior, 0 for exterior
 
   Region(class MPM *, vector<string>);
@@ -43,6 +44,8 @@ class Region : protected Pointers {
 
   virtual vector<double> limits() {return vector<double>();};
   virtual int inside(double, double, double) = 0;
+  virtual void write_restart(ofstream*) = 0;
+  virtual void read_restart(ifstream*) = 0;
   //protected:
 };
 

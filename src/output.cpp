@@ -22,6 +22,7 @@
 #include "universe.h"
 #include "update.h"
 #include "var.h"
+#include "write_restart.h"
 
 #define MIN(A,B) ((A) < (B) ? (A) : (B))
 
@@ -32,6 +33,7 @@ Output::Output(MPM *mpm) : Pointers(mpm)
   ndumps = 0;
   nplots = 0;
 
+  next = 0;
   next_dump_any = 0;
   next_plot_any = 0;
 
@@ -44,6 +46,10 @@ Output::Output(MPM *mpm) : Pointers(mpm)
   log = new Log(mpm, log_args);
 
   every_log = 1;
+  next_log = 1;
+
+  every_restart = next_restart = restart_flag = 0;
+  restart = NULL;
 }
 
 
@@ -52,6 +58,7 @@ Output::~Output()
   for (int i=0; i<dumps.size();i++) delete dumps[i];
   for (int i=0; i<plots.size();i++) delete plots[i];
   delete log;
+  delete restart;
 }
 
 void Output::setup(){
@@ -61,8 +68,8 @@ void Output::setup(){
   if (ndumps != 0) {
 
     if (next_dump.size() != ndumps) next_dump.reserve(ndumps);
-    
-    for (int idump=0; idump<ndumps; idump++){
+
+    for (int idump = 0; idump < ndumps; idump++) {
       if (every_dump[idump]){
 	next_dump[idump] =
           (ntimestep/every_dump[idump])*every_dump[idump] + every_dump[idump];
@@ -70,7 +77,7 @@ void Output::setup(){
 	cout << "Error every_dump = 0 does not make sense" << endl;
       }
 
-      if (idump) next_dump_any = MIN(next_dump_any,next_dump[idump]);
+      if (idump != 0) next_dump_any = MIN(next_dump_any,next_dump[idump]);
       else next_dump_any = next_dump[0];
     }
   }
@@ -92,7 +99,13 @@ void Output::setup(){
     }
   }
 
-  next = MIN(next_dump_any,next_plot_any);
+  if (next_plot_any != 0)
+    next = MIN(next_dump_any, next_plot_any);
+  else
+    next = next_dump_any;
+
+  if (restart_flag && next_restart)
+    next = MIN(next, next_restart);
 
   log->init();
   log->header();
@@ -116,6 +129,11 @@ void Output::write(bigint ntimestep){
 
   bigint nsteps = update->nsteps;
 
+  // cout << "In Output::write\n";
+  // cout << "restart_flag = " << restart_flag << endl;
+  // cout << "next_restart = " << next_restart << endl;
+  // cout << "ntimestep = " << ntimestep << endl;
+
   // If there is at least one dump that requested output at the current step:
   if (next_dump_any == ntimestep) {
     for (int idump = 0; idump < ndumps; idump++) {
@@ -131,6 +149,11 @@ void Output::write(bigint ntimestep){
     }
   }
 
+  if (restart_flag && next_restart == ntimestep) {
+    restart->write();
+    next_restart += every_restart;
+  }
+
   if (next_log == ntimestep) {
     modify->run_computes();
     log->write();
@@ -140,11 +163,22 @@ void Output::write(bigint ntimestep){
     modify->run_computes();
     log->write();
   }
+
+  if (restart_flag) {
+    next = next_restart;
+    if (next_dump_any != 0)
+      next = MIN(next, next_dump_any);
+    if (next_log != 0)
+      next = MIN(next, next_log);
+  } else {
+    if (next_dump_any != 0)
+      next = MIN(next_dump_any, next_log);
+    else if (next_log != 0)
+      next = next_log;
+  }
   
-  if (next_dump_any!=0) next = MIN(next_dump_any,next_log);
-  else if (next_log!=0) next = next_log;
-  else {
-    error->all(FLERR,"Error: next=0!\n");
+  if (next == 0) {
+    error->all(FLERR, "Error: next=0!\n");
   }
 
   if (next_plot_any == ntimestep) {
@@ -282,4 +316,35 @@ int Output::find_plot(string name){
     if (name.compare(plots[iplot]->id) == 0) return iplot;
   }
   return -1;
+}
+
+//  restart(0) => do not write any restart
+//  restart(N, file-*.restart) => write a restart every N steps as file-timestep.restart
+void Output::create_restart(vector<string> args){
+  if (args.size()< 1) {
+    error->all(FLERR, "Illegal restart command: too few arguments.\n");
+  }
+  if (args.size()> 2) {
+    error->all(FLERR, "Illegal restart command: too many arguments.\n");
+  }
+
+  every_restart = (int) input->parsev(args[0]);
+  // cout << "every_restart = " << every_restart << endl;
+
+  if (every_restart == 0) {
+    delete restart;
+    every_restart = 0;
+    next_restart = 0;
+    restart_flag = 0;
+  } else {
+    delete restart;
+    restart = new WriteRestart(mpm);
+    restart->command(vector<string>(1, args[1]));
+    next_restart = (update->ntimestep/every_restart)*every_restart + every_restart;
+    // cout << "next_restart = " << next_restart << endl;
+
+    restart_flag = 1;
+
+    if (next) next = MIN(next, next_restart);
+  }
 }

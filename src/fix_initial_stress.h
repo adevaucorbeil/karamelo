@@ -40,6 +40,9 @@ class FixInitialStress : public Fix {
   void post_velocities_to_grid() {};
   void final_integrate() {};
 
+  void write_restart(ofstream *) {};
+  void read_restart(ifstream *) {};
+
 private:
   string usage = "Usage: fix(fix-ID, initial_stress, group-ID, sigma_xx, sigma_yy, sigma_zz, sigma_yz, sigma_xz, sigma_xy)\n";
   int Nargs = 9;

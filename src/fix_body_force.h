@@ -74,6 +74,9 @@ class FixBodyforce : public Fix {
   void post_velocities_to_grid() {};
   void final_integrate() {};
 
+  void write_restart(ofstream *);
+  void read_restart(ifstream *);
+
 private:
   class Var xvalue, yvalue, zvalue;    // Set force in x, y, and z directions.
   bool xset, yset, zset;               // Does the fix set the x, y, and z forces of the group?

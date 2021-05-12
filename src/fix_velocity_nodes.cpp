@@ -3,9 +3,9 @@
  *                    ***       Karamelo       ***
  *               Parallel Material Point Method Simulator
  * 
- * Copyright (2019) Alban de Vaucorbeil, alban.devaucorbeil@monash.edu
- * Materials Science and Engineering, Monash University
- * Clayton VIC 3800, Australia
+ * Copyright (2020) Alban de Vaucorbeil, alban.devaucorbeil@deakin.edu.au
+ * Institute for Frontier Materials, Deakin University
+ * Geelong VIC 3216, Australia
 
  * This software is distributed under the GNU General Public License.
  *
@@ -29,12 +29,26 @@ using namespace Eigen;
 
 FixVelocityNodes::FixVelocityNodes(MPM *mpm, vector<string> args) : Fix(mpm, args)
 {
-  if (domain->dimension == 3 && args.size()<6) {
-    error->all(FLERR,"Error: too few arguments for fix_velocity_nodes: requires at least 6 arguments. " + to_string(args.size()) + " received.\n");
-  } else if (domain->dimension == 2 && args.size()<5) {
-    error->all(FLERR,"Error: too few arguments for fix_velocity_nodes: requires at least 5 arguments. " + to_string(args.size()) + " received.\n");
-  } else if (domain->dimension == 1 && args.size()<4) {
-    error->all(FLERR,"Error: too few arguments for fix_velocity_nodes: requires at least 4 arguments. " + to_string(args.size()) + " received.\n");
+  if (args.size() < 3) {
+    error->all(FLERR, "Error: not enough arguments.\n");
+  }
+
+  if (args[2].compare("restart") ==
+      0) { // If the keyword restart, we are expecting to have read_restart()
+           // launched right after.
+    igroup = stoi(args[3]);
+    if (igroup == -1) {
+      cout << "Could not find group number " << args[3] << endl;
+    }
+    groupbit = group->bitmask[igroup];
+    
+    xset = yset = zset = false;
+    return;
+  }
+
+  if (args.size() < Nargs.find(domain->dimension)->second) {
+    error->all(FLERR, "Error: too few arguments for fix_velocity_nodes.\n" +
+                          usage.find(domain->dimension)->second);
   }
 
   if (group->pon[igroup].compare("nodes") !=0 ) {
@@ -45,43 +59,49 @@ FixVelocityNodes::FixVelocityNodes(MPM *mpm, vector<string> args) : Fix(mpm, arg
 
   xset = yset = zset = false;
 
-  args_previous_step = args;
-
   string time = "time";
 
   if (args[3].compare("NULL") != 0) {
     // xvalue = input->parsev(args[3]);
-    xpos = 3;
     xset = true;
+    xvalue = input->parsev(args[3]);
+
+    string previous = args[3];
 
     // Replace "time" by "time - dt" in the x argument:
-    while(args_previous_step[xpos].find(time)!=std::string::npos) {
-      args_previous_step[xpos].replace(args_previous_step[xpos].find(time),time.length(),"time - dt");
+    while(previous.find(time)!=std::string::npos) {
+      previous.replace(previous.find(time),time.length(),"time - dt");
     }
+    xprevvalue = input->parsev(previous);
   }
 
   if (domain->dimension >= 2) {
     if (args[4].compare("NULL") != 0) {
-      ypos = 4;
-      // yvalue = input->parsev(args[4]);
+      yvalue = input->parsev(args[4]);
       yset = true;
+
+      string previous = args[4];
+
       // Replace "time" by "time - dt" in the y argument:
-      while(args_previous_step[ypos].find(time)!=std::string::npos) {
-	args_previous_step[ypos].replace(args_previous_step[ypos].find(time),time.length(),"time - dt");
+      while(previous.find(time)!=std::string::npos) {
+	previous.replace(previous.find(time),time.length(),"time - dt");
       }
+      yprevvalue = input->parsev(previous);
     }
   }
 
   if (domain->dimension == 3) {
     if (args[5].compare("NULL") != 0) {
-      zpos = 5;
-      // zvalue = input->parsev(args[5]);
+      zvalue = input->parsev(args[5]);
       zset = true;
 
+      string previous = args[5];
+
       // Replace "time" by "time - dt" in the z argument:
-      while(args_previous_step[zpos].find(time)!=std::string::npos) {
-	args_previous_step[zpos].replace(args_previous_step[zpos].find(time),time.length(),"time - dt");
+      while(previous.find(time)!=std::string::npos) {
+	previous.replace(previous.find(time),time.length(),"time - dt");
       }
+      zprevvalue = input->parsev(previous);
     }
   }
 }
@@ -113,22 +133,22 @@ void FixVelocityNodes::post_update_grid_state() {
   double vx_old, vy_old, vz_old;
 
   if (xset) {
-    vx = input->parsev(args[xpos]).result(mpm);
-    vx_old = input->parsev(args_previous_step[xpos]).result(mpm);
+    vx = xvalue.result(mpm);
+    vx_old = xprevvalue.result(mpm);
     // cout << "Set v_update[0] to " << xvalue.eq() << "=" << vx << endl;
     // cout << "Set v[0] to " << vx_old << endl;
   }
 
   if (yset) {
-    vy = input->parsev(args[ypos]).result(mpm);
-    vy_old = input->parsev(args_previous_step[ypos]).result(mpm);
+    vy = yvalue.result(mpm);
+    vy_old = yprevvalue.result(mpm);
     // cout << "Set v_update[1] to " << "=" <<  vy << endl;
     // cout << "Set v[1] to " << "=" <<  vy_old << endl;
   }
 
   if (zset) {
-    vz = input->parsev(args[zpos]).result(mpm);
-    vz_old = input->parsev(args_previous_step[zpos]).result(mpm);
+    vz = zvalue.result(mpm);
+    vz_old = zprevvalue.result(mpm);
     // cout << "Set v_update[2] to " << "=" <<  vz << endl;
     // cout << "Set v[2] to " << "=" <<  vz_old << endl;
   }
@@ -209,15 +229,15 @@ void FixVelocityNodes::post_velocities_to_grid() {
   double vx, vy, vz;
 
   if (xset) {
-    vx = input->parsev(args[xpos]).result(mpm);
+    vx = xvalue.result(mpm);
   }
 
   if (yset) {
-    vy = input->parsev(args[ypos]).result(mpm);
+    vy = yvalue.result(mpm);
   }
 
   if (zset) {
-    vz = input->parsev(args[zpos]).result(mpm);
+    vz = zvalue.result(mpm);
   }
   
   int solid = group->solid[igroup];
@@ -245,5 +265,43 @@ void FixVelocityNodes::post_velocities_to_grid() {
 	if (zset) g->v[ip][2] = vz;
       }
     }
+  }
+}
+
+void FixVelocityNodes::write_restart(ofstream *of) {
+  of->write(reinterpret_cast<const char *>(&xset), sizeof(bool));
+  of->write(reinterpret_cast<const char *>(&yset), sizeof(bool));
+  of->write(reinterpret_cast<const char *>(&zset), sizeof(bool));
+
+  if (xset) {
+    xvalue.write_to_restart(of);
+    xprevvalue.write_to_restart(of);
+  }
+  if (yset) {
+    yvalue.write_to_restart(of);
+    yprevvalue.write_to_restart(of);
+  }
+  if (zset) {
+    zvalue.write_to_restart(of);
+    zprevvalue.write_to_restart(of);
+  }
+}
+
+void FixVelocityNodes::read_restart(ifstream *ifr) {
+  ifr->read(reinterpret_cast<char *>(&xset), sizeof(bool));
+   ifr->read(reinterpret_cast<char *>(&yset), sizeof(bool));
+  ifr->read(reinterpret_cast<char *>(&zset), sizeof(bool));
+
+  if (xset) {
+    xvalue.read_from_restart(ifr);
+    xprevvalue.read_from_restart(ifr);
+  }
+  if (yset) {
+    yvalue.read_from_restart(ifr);
+    yprevvalue.read_from_restart(ifr);
+  }
+  if (zset) {
+    zvalue.read_from_restart(ifr);
+    zprevvalue.read_from_restart(ifr);
   }
 }

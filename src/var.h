@@ -47,6 +47,9 @@ class Var{
   operator int() {return (int) value;};
   operator double() {return value;};
 
+  void write_to_restart(ofstream *);
+  void read_from_restart(ifstream *);
+
 protected:
   string equation;             // formula
   double value;                // current value

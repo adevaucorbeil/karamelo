@@ -1,5 +1,19 @@
+/* ----------------------------------------------------------------------
+ *
+ *                    ***       Karamelo       ***
+ *               Parallel Material Point Method Simulator
+ * 
+ * Copyright (2020) Alban de Vaucorbeil, alban.devaucorbeil@deakin.edu.au
+ * Institute for Frontier Materials, Deakin University
+ * Geelong VIC 3216, Australia
+
+ * This software is distributed under the GNU General Public License.
+ *
+ * ----------------------------------------------------------------------- */
+
 #include "fix_velocity_particles.h"
 #include "domain.h"
+#include "error.h"
 #include "group.h"
 #include "input.h"
 #include "special_functions.h"
@@ -16,15 +30,26 @@ using namespace Eigen;
 
 FixVelocityParticles::FixVelocityParticles(MPM *mpm, vector<string> args) : Fix(mpm, args)
 {
-  if (domain->dimension == 3 && args.size()<6) {
-    cout << "Error: too few arguments for fix_velocity_particles: requires at least 6 arguments. " << args.size() << " received" << endl;
-    exit(1);
-  } else if (domain->dimension == 2 && args.size()<5) {
-    cout << "Error: too few arguments for fix_velocity_particles: requires at least 5 arguments. " << args.size() << " received" << endl;
-    exit(1);
-  } else if (domain->dimension == 1 && args.size()<4) {
-    cout << "Error: too few arguments for fix_velocity_particles: requires at least 4 arguments. " << args.size() << " received" << endl;
-    exit(1);
+  if (args.size() < 3) {
+    error->all(FLERR, "Error: not enough arguments.\n");
+  }
+
+  if (args[2].compare("restart") ==
+      0) { // If the keyword restart, we are expecting to have read_restart()
+           // launched right after.
+    igroup = stoi(args[3]);
+    if (igroup == -1) {
+      cout << "Could not find group number " << args[3] << endl;
+    }
+    groupbit = group->bitmask[igroup];
+
+    xset = yset = zset = false;
+    return;
+  }
+
+  if (args.size() < Nargs.find(domain->dimension)->second) {
+    error->all(FLERR, "Error: too few arguments for fix_velocity_nodes.\n" +
+                          usage.find(domain->dimension)->second);
   }
 
   if (group->pon[igroup].compare("particles") !=0 ) {
@@ -36,37 +61,45 @@ FixVelocityParticles::FixVelocityParticles(MPM *mpm, vector<string> args) : Fix(
 
   xset = yset = zset = false;
 
-  args_previous_step = args;
 
   string time = "time";
 
+
   if (args[3].compare("NULL") != 0) {
     // xvalue = input->parsev(args[3]);
-    xpos = 3;
     xset = true;
+    xvalue = input->parsev(args[3]);
+
+    string previous = args[3];
 
     // Replace "time" by "time - dt" in the x argument:
-    args_previous_step[xpos] = SpecialFunc::replace_all(input->parsev(args_previous_step[xpos]).str(), "time", "(time - dt)");
+    previous = SpecialFunc::replace_all(input->parsev(previous).str(), "time", "(time - dt)");
+    xprevvalue = input->parsev(previous);
   }
 
   if (domain->dimension >= 2) {
     if (args[4].compare("NULL") != 0) {
-      ypos = 4;
-      // yvalue = input->parsev(args[4]);
+      yvalue = input->parsev(args[4]);
       yset = true;
+
+      string previous = args[4];
+
       // Replace "time" by "time - dt" in the y argument:
-      args_previous_step[ypos] = SpecialFunc::replace_all(input->parsev(args_previous_step[ypos]).str(), "time", "(time - dt)");
+      previous = SpecialFunc::replace_all(input->parsev(previous).str(), "time", "(time - dt)");
+      xprevvalue = input->parsev(previous);
     }
   }
 
   if (domain->dimension == 3) {
     if (args[5].compare("NULL") != 0) {
-      zpos = 5;
-      // zvalue = input->parsev(args[5]);
+      zvalue = input->parsev(args[5]);
       zset = true;
 
+      string previous = args[5];
+
       // Replace "time" by "time - dt" in the z argument:
-      args_previous_step[zpos] = SpecialFunc::replace_all(input->parsev(args_previous_step[zpos]).str(), "time", "(time - dt)");
+      previous = SpecialFunc::replace_all(input->parsev(previous).str(), "time", "(time - dt)");
+      xprevvalue = input->parsev(previous);
     }
   }
 }
@@ -92,8 +125,6 @@ void FixVelocityParticles::setmask() {
 
 void FixVelocityParticles::initial_integrate() {
   // Go through all the particles in the group and set v_update to the right value:
-  double vx, vy, vz;
-  double vx_old, vy_old, vz_old;
   Vector3d xtemp;
 
   int solid = group->solid[igroup];
@@ -118,26 +149,20 @@ void FixVelocityParticles::initial_integrate() {
 	  (*input->vars)["z0"] = Var("z0", s->x0[ip][2]);
 
 	  if (xset) {
-	    vx = input->parsev(args[xpos]).result(mpm);
-	    vx_old = input->parsev(args_previous_step[xpos]).result(mpm);
-	    s->v_update[ip][0] = vx;
-	    s->v[ip][0] = vx_old;
+	    s->v_update[ip][0] = xvalue.result(mpm);
+	    s->v[ip][0] = xprevvalue.result(mpm);
 	  }
 	  if (yset) {
-	    vy = input->parsev(args[ypos]).result(mpm);
-	    vy_old = input->parsev(args_previous_step[ypos]).result(mpm);
-	    s->v_update[ip][1] = vy;
-	    s->v[ip][1] = vy_old;
+	    s->v_update[ip][1] = yvalue.result(mpm);
+	    s->v[ip][1] = yprevvalue.result(mpm);
 	  }
 	  if (zset) {
-	    vz = input->parsev(args[zpos]).result(mpm);
-	    vz_old = input->parsev(args_previous_step[zpos]).result(mpm);
-	    s->v_update[ip][2] = vz;
-	    s->v[ip][2] = vz_old;
+	    s->v_update[ip][2] = zvalue.result(mpm);
+	    s->v[ip][2] = zprevvalue.result(mpm);
 	  }
-	  if (s->ptag[ip] == 533) {
-	    printf("fix: v=[%4.3e %4.3e %4.3e]\tv_update=[%4.3e %4.3e %4.3e]\ta=[%4.3e %4.3e %4.3e]\n", s->v[ip][0], s->v[ip][1], s->v[ip][2], s->v_update[ip][0], s->v_update[ip][1], s->v_update[ip][2], s->a[ip][0], s->a[ip][1], s->a[ip][2]);
-	  }
+	  // if (s->ptag[ip] == 533) {
+	  //   printf("fix: v=[%4.3e %4.3e %4.3e]\tv_update=[%4.3e %4.3e %4.3e]\ta=[%4.3e %4.3e %4.3e]\n", s->v[ip][0], s->v[ip][1], s->v[ip][2], s->v_update[ip][0], s->v_update[ip][1], s->v_update[ip][2], s->a[ip][0], s->a[ip][1], s->a[ip][2]);
+	  // }
 	  xold.push_back(xtemp);
 	  n++;
 	}
@@ -158,26 +183,20 @@ void FixVelocityParticles::initial_integrate() {
 	(*input->vars)["z0"] = Var("z0", s->x0[ip][2]);
 
 	if (xset) {
-	  vx = input->parsev(args[xpos]).result(mpm);
-	  vx_old = input->parsev(args_previous_step[xpos]).result(mpm);
-	  s->v_update[ip][0] = vx;
-	  s->v[ip][0] = vx_old;
+	  s->v_update[ip][0] = xvalue.result(mpm);
+	  s->v[ip][0] = xprevvalue.result(mpm);
 	}
 	if (yset) {
-	  vy = input->parsev(args[ypos]).result(mpm);
-	  vy_old = input->parsev(args_previous_step[ypos]).result(mpm);
-	  s->v_update[ip][1] = vy;
-	  s->v[ip][1] = vy_old;
+	  s->v_update[ip][1] = yvalue.result(mpm);
+	  s->v[ip][1] = yprevvalue.result(mpm);
 	}
 	if (zset) {
-	  vz = input->parsev(args[zpos]).result(mpm);
-	  vz_old = input->parsev(args_previous_step[zpos]).result(mpm);
-	  s->v_update[ip][2] = vz;
-	  s->v[ip][2] = vz_old;
+	  s->v_update[ip][2] = zvalue.result(mpm);
+	  s->v[ip][2] = zprevvalue.result(mpm);
 	}
-	if (s->ptag[ip] == 533) {
-	  printf("fix: v=[%4.3e %4.3e %4.3e]\tv_update=[%4.3e %4.3e %4.3e]\ta=[%4.3e %4.3e %4.3e]\n", s->v[ip][0], s->v[ip][1], s->v[ip][2], s->v_update[ip][0], s->v_update[ip][1], s->v_update[ip][2], s->a[ip][0], s->a[ip][1], s->a[ip][2]);
-	}
+	// if (s->ptag[ip] == 533) {
+	//   printf("fix: v=[%4.3e %4.3e %4.3e]\tv_update=[%4.3e %4.3e %4.3e]\ta=[%4.3e %4.3e %4.3e]\n", s->v[ip][0], s->v[ip][1], s->v[ip][2], s->v_update[ip][0], s->v_update[ip][1], s->v_update[ip][2], s->a[ip][0], s->a[ip][1], s->a[ip][2]);
+	// }
 	xold.push_back(xtemp);
 	n++;
       }
@@ -214,19 +233,19 @@ void FixVelocityParticles::post_advance_particles() {
 	  (*input->vars)["z0"] = Var("z0", s->x0[ip][2]);
 
           if (xset) {
-            vx = input->parsev(args[xpos]).result(mpm);
+            vx = xvalue.result(mpm);
             Dv[0] = vx - s->v[ip][0];
             s->v[ip][0] = vx;
             s->x[ip][0] = xold[n][0] + update->dt * vx;
           }
           if (yset) {
-            vy = input->parsev(args[ypos]).result(mpm);
+            vy = yvalue.result(mpm);
             Dv[1] = vy - s->v[ip][1];
             s->v[ip][1] = vy;
             s->x[ip][1] = xold[n][1] + update->dt * vy;
           }
           if (zset) {
-            vz = input->parsev(args[zpos]).result(mpm);
+            vz = zvalue.result(mpm);
             Dv[2] = vz - s->v[ip][2];
             s->v[ip][2] = vz;
             s->x[ip][2] = xold[n][2] + update->dt * vz;
@@ -252,19 +271,19 @@ void FixVelocityParticles::post_advance_particles() {
 	(*input->vars)["z0"] = Var("z0", s->x0[ip][2]);
 
         if (xset) {
-          vx = input->parsev(args[xpos]).result(mpm);
+          vx = xvalue.result(mpm);
           Dv[0] = vx - s->v[ip][0];
           s->v[ip][0] = vx;
           s->x[ip][0] = xold[n][0] + update->dt * vx;
         }
         if (yset) {
-          vy = input->parsev(args[ypos]).result(mpm);
+          vy = yvalue.result(mpm);
           Dv[1] = vy - s->v[ip][1];
           s->v[ip][1] = vy;
           s->x[ip][1] = xold[n][1] + update->dt * vy;
         }
         if (zset) {
-          vz = input->parsev(args[zpos]).result(mpm);
+          vz = zvalue.result(mpm);
           Dv[2] = vz - s->v[ip][2];
           s->v[ip][2] = vz;
           s->x[ip][2] = xold[n][2] + update->dt * vz;
@@ -284,4 +303,42 @@ void FixVelocityParticles::post_advance_particles() {
   (*input->vars)[id + "_x"] = Var(id + "_x", ftot_reduced[0]);
   (*input->vars)[id + "_y"] = Var(id + "_y", ftot_reduced[1]);
   (*input->vars)[id + "_z"] = Var(id + "_z", ftot_reduced[2]);
+}
+
+void FixVelocityParticles::write_restart(ofstream *of) {
+  of->write(reinterpret_cast<const char *>(&xset), sizeof(bool));
+  of->write(reinterpret_cast<const char *>(&yset), sizeof(bool));
+  of->write(reinterpret_cast<const char *>(&zset), sizeof(bool));
+
+  if (xset) {
+    xvalue.write_to_restart(of);
+    xprevvalue.write_to_restart(of);
+  }
+  if (yset) {
+    yvalue.write_to_restart(of);
+    yprevvalue.write_to_restart(of);
+  }
+  if (zset) {
+    zvalue.write_to_restart(of);
+    zprevvalue.write_to_restart(of);
+  }
+}
+
+void FixVelocityParticles::read_restart(ifstream *ifr) {
+  ifr->read(reinterpret_cast<char *>(&xset), sizeof(bool));
+  ifr->read(reinterpret_cast<char *>(&yset), sizeof(bool));
+  ifr->read(reinterpret_cast<char *>(&zset), sizeof(bool));
+
+  if (xset) {
+    xvalue.read_from_restart(ifr);
+    xprevvalue.read_from_restart(ifr);
+  }
+  if (yset) {
+    yvalue.read_from_restart(ifr);
+    yprevvalue.read_from_restart(ifr);
+  }
+  if (zset) {
+    zvalue.read_from_restart(ifr);
+    zprevvalue.read_from_restart(ifr);
+  }
 }

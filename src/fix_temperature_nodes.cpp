@@ -11,18 +11,19 @@
  *
  * ----------------------------------------------------------------------- */
 
-#include <iostream>
-#include <vector>
-#include <string>
-#include <Eigen/Eigen>
 #include "fix_temperature_nodes.h"
-#include "input.h"
-#include "group.h"
 #include "domain.h"
-#include "grid.h"
 #include "error.h"
-#include "update.h"
+#include "grid.h"
+#include "group.h"
+#include "input.h"
+#include "special_functions.h"
 #include "universe.h"
+#include "update.h"
+#include <Eigen/Eigen>
+#include <iostream>
+#include <string>
+#include <vector>
 using namespace std;
 using namespace FixConst;
 using namespace Eigen;
@@ -39,15 +40,15 @@ FixTemperatureNodes::FixTemperatureNodes(MPM *mpm, vector<string> args) : Fix(mp
   cout << "Creating new fix FixTemperatureNodes with ID: " << args[0] << endl;
   id = args[0];
 
-  args_previous_step = args;
-
   string time = "time";
 
+  Tvalue = input->parsev(args[3]);
+
+  string previous = args[3];
 
   // Replace "time" by "time - dt" in the x argument:
-  while(args_previous_step[3].find(time)!=std::string::npos) {
-    args_previous_step[3].replace(args_previous_step[3].find(time),time.length(),"time - dt");
-  }
+  previous = SpecialFunc::replace_all(input->parsev(previous).str(), "time", "(time - dt)");
+  Tprevvalue = input->parsev(previous);
 }
 
 FixTemperatureNodes::~FixTemperatureNodes()
@@ -76,8 +77,8 @@ void FixTemperatureNodes::post_update_grid_state() {
   double T;
   double T_old;
 
-  T = input->parsev(args[3]).result(mpm);
-  T_old = input->parsev(args_previous_step[3]).result(mpm);
+  T = Tvalue.result(mpm);
+  T_old = Tprevvalue.result(mpm);
 
   int solid = group->solid[igroup];
   Grid *g;
@@ -148,4 +149,14 @@ void FixTemperatureNodes::post_velocities_to_grid() {
       }
     }
   }
+}
+
+void FixTemperatureNodes::write_restart(ofstream *of) {
+  Tvalue.write_to_restart(of);
+  Tprevvalue.write_to_restart(of);
+}
+
+void FixTemperatureNodes::read_restart(ifstream *ifr) {
+  Tvalue.read_from_restart(ifr);
+  Tprevvalue.read_from_restart(ifr);
 }

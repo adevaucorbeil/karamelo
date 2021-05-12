@@ -28,25 +28,54 @@ using namespace std;
 using namespace FixConst;
 using namespace Eigen;
 
+// void write_var(Var v, ofstream *of) {
+//   string eq = v.eq();
+//   size_t N = eq.size();
+//   double value = v.result();
+//   bool cst = v.is_constant();
+//   of->write(reinterpret_cast<const char *>(&N), sizeof(size_t));
+//   of->write(reinterpret_cast<const char *>(eq.c_str()), N);
+//   of->write(reinterpret_cast<const char *>(&value), sizeof(double));
+//   of->write(reinterpret_cast<const char *>(&cst), sizeof(bool));
+// }
+
+// Var read_var(ifstream *ifr) {
+//   string eq = "";
+//   size_t N = 0;
+//   double value = 0;
+//   bool cst = false;
+
+//   ifr->read(reinterpret_cast<char *>(&N), sizeof(size_t));
+//   eq.resize(N);
+
+//   ifr->read(reinterpret_cast<char *>(&eq[0]), N);
+//   ifr->read(reinterpret_cast<char *>(&value), sizeof(double));
+//   ifr->read(reinterpret_cast<char *>(&cst), sizeof(bool));
+//   return Var(eq, value, cst);
+// }
+
 FixCuttingTool::FixCuttingTool(MPM *mpm, vector<string> args)
     : Fix(mpm, args) {
+  if (args.size() < 3) {
+    error->all(FLERR, "Error: not enough arguments.\n");
+  }
+
+  if (args[2].compare("restart") ==
+      0) { // If the keyword restart, we are expecting to have read_restart()
+           // launched right after.
+    igroup = stoi(args[3]);
+    if (igroup == -1) {
+      cout << "Could not find group number " << args[3] << endl;
+    }
+    groupbit = group->bitmask[igroup];
+
+    K = 0;
+    return;
+  }
+
   if (args.size() < Nargs) {
     error->all(FLERR, "Error: not enough arguments.\n" + usage);
   }
-
-  int k = 2;
-  Kpos = ++k;
-  xtpos = ++k;
-  ytpos = ++k;
-  ztpos = ++k;
-  vtxpos = ++k;
-  vtypos = ++k;
-  vtzpos = ++k;
-  xApos = ++k;
-  yApos = ++k;
-  xBpos = ++k;
-  yBpos = ++k;
-
   if (group->pon[igroup].compare("particles") != 0 &&
       group->pon[igroup].compare("all") != 0) {
     error->all(FLERR, "fix_cuttingtool needs to be given a group of nodes" +
@@ -55,6 +84,21 @@ FixCuttingTool::FixCuttingTool(MPM *mpm, vector<string> args)
   }
   cout << "Creating new fix FixCuttingTool with ID: " << args[0] << endl;
   id = args[0];
+  K = input->parsev(args[3]).result(mpm);
+
+  xtvalue = input->parsev(args[4]);
+  ytvalue = input->parsev(args[5]);
+  ztvalue = input->parsev(args[6]);
+
+  vtxvalue = input->parsev(args[7]);
+  vtyvalue = input->parsev(args[8]);
+  vtzvalue = input->parsev(args[9]);
+
+  xAvalue = input->parsev(args[10]);
+  yAvalue = input->parsev(args[11]);
+
+  xBvalue = input->parsev(args[12]);
+  yBvalue = input->parsev(args[13]);
 }
 
 FixCuttingTool::~FixCuttingTool() {}
@@ -79,20 +123,19 @@ void FixCuttingTool::initial_integrate() {
   Solid *s;
   Eigen::Vector3d ftot, ftot_reduced, n1, n2, n;
 
-  double K = input->parsev(args[Kpos]).result(mpm);
-
-  Eigen::Vector3d xt(input->parsev(args[xtpos]).result(mpm),
-                     input->parsev(args[ytpos]).result(mpm),
-                     input->parsev(args[ztpos]).result(mpm));
-  Eigen::Vector3d vt(input->parsev(args[vtxpos]).result(mpm),
-                     input->parsev(args[vtypos]).result(mpm),
-                     input->parsev(args[vtzpos]).result(mpm));
-  Eigen::Vector3d xA(input->parsev(args[xApos]).result(mpm),
-                     input->parsev(args[yApos]).result(mpm),
-                     input->parsev(args[ztpos]).result(mpm));
-  Eigen::Vector3d xB(input->parsev(args[xBpos]).result(mpm),
-                     input->parsev(args[yBpos]).result(mpm),
-                     input->parsev(args[ztpos]).result(mpm));
+  double zt = ztvalue.result(mpm);
+  Eigen::Vector3d xt(xtvalue.result(mpm),
+                     ytvalue.result(mpm),
+                     zt);
+  Eigen::Vector3d vt(vtxvalue.result(mpm),
+                     vtyvalue.result(mpm),
+                     vtzvalue.result(mpm));
+  Eigen::Vector3d xA(xAvalue.result(mpm),
+                     yAvalue.result(mpm),
+                     zt);
+  Eigen::Vector3d xB(xBvalue.result(mpm),
+                     yBvalue.result(mpm),
+                     zt);
 
   // The equation of line 1 is: (yA - yt) * x - (xA - xt) * y + yt * xA - yA *
   // xt = 0 The equation of line 2 is: (yB - yt) * x - (xB - xt) * y + yt * xB -
@@ -239,4 +282,38 @@ void FixCuttingTool::initial_integrate() {
   (*input->vars)[id + "_x"] = Var(id + "_x", ftot_reduced[0]);
   (*input->vars)[id + "_y"] = Var(id + "_y", ftot_reduced[1]);
   (*input->vars)[id + "_z"] = Var(id + "_z", ftot_reduced[2]);
+}
+
+void FixCuttingTool::write_restart(ofstream *of) {
+  of->write(reinterpret_cast<const char *>(&K), sizeof(double));
+  xtvalue.write_to_restart(of);
+  ytvalue.write_to_restart(of);
+  ztvalue.write_to_restart(of);
+
+  vtxvalue.write_to_restart(of);
+  vtyvalue.write_to_restart(of);
+  vtzvalue.write_to_restart(of);
+
+  xAvalue.write_to_restart(of);
+  yAvalue.write_to_restart(of);
+
+  xBvalue.write_to_restart(of);
+  yBvalue.write_to_restart(of);
+}
+
+void FixCuttingTool::read_restart(ifstream *ifr) {
+  ifr->read(reinterpret_cast<char *>(&K), sizeof(double));
+  xtvalue.read_from_restart(ifr);
+  ytvalue.read_from_restart(ifr);
+  ztvalue.read_from_restart(ifr);
+
+  vtxvalue.read_from_restart(ifr);
+  vtyvalue.read_from_restart(ifr);
+  vtzvalue.read_from_restart(ifr);
+
+  xAvalue.read_from_restart(ifr);
+  yAvalue.read_from_restart(ifr);
+
+  xBvalue.read_from_restart(ifr);
+  yBvalue.read_from_restart(ifr);
 }

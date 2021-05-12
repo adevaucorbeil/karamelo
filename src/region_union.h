@@ -59,6 +59,8 @@ class Union : public Region {
   ~Union();
   int inside(double, double, double);
   vector<double> limits();
+  void write_restart(ofstream *);
+  void read_restart(ifstream *);
 
  protected:
   //vector<string> regions;

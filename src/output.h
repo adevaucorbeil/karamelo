@@ -24,7 +24,6 @@ class Output : protected Pointers {
 public:
   bigint next;                 ///< next timestep for any kind of output
 
-  
   bigint next_log;             ///< next timestep for log output
   int every_log;               ///< freq for log output
   class Log *log;
@@ -45,6 +44,11 @@ public:
   bool save_plot;              ///< true to save plot in file
   string ofile_plot;           ///< filename to save the plot to
 
+  bigint next_restart;         ///< next timestep for restart output
+  int every_restart;           ///< freq for restart output
+  int restart_flag;            // 1 if any restart files are written
+  class WriteRestart *restart; ///< restart
+
   Output(class MPM *);
   ~Output();
 
@@ -62,6 +66,7 @@ public:
   int find_plot(string);               ///< find a Plot in Plot list
   void modify_plot(vector<string>);    ///< modify a Plot
   void delete_plot(string);            ///< delete a Plot from Plot list
+  void create_restart(vector<string>); ///< create a restart policy
 };
 
 #endif

@@ -40,6 +40,9 @@ public:
   void post_velocities_to_grid(){};
   void final_integrate(){};
 
+  void write_restart(ofstream *);
+  void read_restart(ifstream *);
+
 private:
   string usage = "Usage: fix(fix-ID, contact/hertz, solid1, solid2)\n";
   int Nargs = 4;

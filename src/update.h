@@ -16,6 +16,7 @@
 
 #include "pointers.h"
 #include <vector>
+#include <map>
 /*! Stores everything related to time steps as well as the Scheme and Method classes.
  */
 class Update : protected Pointers {
@@ -39,7 +40,10 @@ class Update : protected Pointers {
 
   class Method *method;               ///< Pointer to the type of Method used
   string method_type;                 ///< Name of the method type
-  string method_shape_function;       ///< Type of shape function used
+  int sub_method_type;                ///< Name of the velocity updating method type
+  int shape_function;                 ///< Type of shape function used
+  double PIC_FLIP;                    ///< PIC/FLIP mixing factor
+  bool temp;                          ///< True for thermo-mechanical simulations
 
   Update(class MPM *);
   ~Update();
@@ -49,9 +53,32 @@ class Update : protected Pointers {
   void create_method(vector<string>); ///< Creates a method: tlmpm, ulmpm, tlcpdi, ...
   void update_time();                 ///< Update elapsed time
   int update_timestep();              ///< Update timestep
-protected:
-  
-};
+  void write_restart(ofstream*);      ///< Write method, scheme, timestep, dt... to restart file
+  void read_restart(ifstream*);       ///< Read method, scheme, timestep, dt... to restart file
 
+  enum SubMethodType {
+    PIC,
+    FLIP,
+    APIC,
+  };
+  enum ShapeFunctions {
+    LINEAR,
+    CUBIC_SPLINE,
+    QUADRATIC_SPLINE,
+    BERNSTEIN,
+  };
+
+private:
+  const map<string, int> map_sub_method_type{{"PIC", SubMethodType::PIC},
+                                             {"FLIP", SubMethodType::FLIP},
+                                             {"APIC", SubMethodType::APIC}};
+  const map<string, int> map_shape_functions{
+      {"linear", ShapeFunctions::LINEAR},
+      {"cubic-spline", ShapeFunctions::CUBIC_SPLINE},
+      {"quadratic-spline", ShapeFunctions::QUADRATIC_SPLINE},
+      {"Bernstein-quadratic", ShapeFunctions::BERNSTEIN}};
+
+  vector<string> additional_args;     ///< Read method, scheme, timestep, dt... to restart file
+};
 
 #endif

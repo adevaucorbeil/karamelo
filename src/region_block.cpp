@@ -26,6 +26,15 @@ Block_::Block_(MPM *mpm, vector<string> args) : Region(mpm, args)
 {
   cout << "Initiate Block_" << endl;
 
+  if (args.size()<3) {
+    error->all(FLERR, "Error: not enough arguments.\n");
+  }
+
+  if (args[2].compare("restart") == 0) {
+    xlo, xhi, ylo, yhi, zlo, zhi = 0;
+    return;
+  }
+
   if (domain->dimension == 3 && args.size()<8) {
     error->all(FLERR, "Error: region command not enough arguments.\n");
   } else if (domain->dimension == 2 && args.size()<6) {
@@ -151,4 +160,23 @@ vector<double> Block_::limits(){
   lim.push_back(zlo);
   lim.push_back(zhi);
   return lim;
+}
+
+void Block_::write_restart(ofstream *of) {
+  of->write(reinterpret_cast<const char *>(&xlo), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&xhi), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&ylo), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&yhi), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&zlo), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&zhi), sizeof(double));
+}
+
+
+void Block_::read_restart(ifstream *ifr) {
+  ifr->read(reinterpret_cast<char *>(&xlo), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&xhi), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&ylo), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&yhi), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&zlo), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&zhi), sizeof(double));
 }

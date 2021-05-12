@@ -18,6 +18,17 @@ TemperaturePlasticWork::TemperaturePlasticWork(MPM *mpm, vector<string> args) : 
 {
   cout << "Initiate TemperaturePlasticWork" << endl;
 
+  if (args.size() < 3) {
+    error->all(FLERR, "Error: too few arguments for the strength command.\n");
+  }
+
+  if (args[2].compare("restart") ==
+      0) { // If the keyword restart, we are expecting to have read_restart()
+           // launched right after.
+    chi, cp_, kappa_, alpha, T0, Tm = 0;
+    return;
+  }
+
   if (args.size() < Nargs) {
     error->all(FLERR, "Error: not enough arguments.\n" + usage);
   }
@@ -52,4 +63,23 @@ void TemperaturePlasticWork::compute_heat_source(double T, double &gamma, const 
 
 double TemperaturePlasticWork::compute_thermal_pressure(double T) {
   return alpha * (T0 - T);
+}
+
+void TemperaturePlasticWork::write_restart(ofstream *of) {
+  of->write(reinterpret_cast<const char *>(&chi), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&kappa_), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&cp_), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&alpha), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&T0), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&Tm), sizeof(double));
+}
+
+void TemperaturePlasticWork::read_restart(ifstream *ifr) {
+  cout << "Restart TemperaturePlasticWork" << endl;
+  ifr->read(reinterpret_cast<char *>(&chi), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&kappa_), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&cp_), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&alpha), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&T0), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&Tm), sizeof(double));
 }

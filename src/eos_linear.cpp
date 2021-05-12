@@ -11,14 +11,14 @@
  *
  * ----------------------------------------------------------------------- */
 
-#include <iostream>
 #include "eos_linear.h"
-#include "input.h"
 #include "domain.h"
-#include "mpm_math.h"
-#include <Eigen/Eigen>
-#include "var.h"
 #include "error.h"
+#include "input.h"
+#include "mpm_math.h"
+#include "var.h"
+#include <Eigen/Eigen>
+#include <iostream>
 
 using namespace std;
 using namespace Eigen;
@@ -29,9 +29,18 @@ EOSLinear::EOSLinear(MPM *mpm, vector<string> args) : EOS(mpm, args)
 {
   cout << "Initiate EOSLinear" << endl;
 
-  if (args.size()<3) {
+  if (args.size() < 3) {
     error->all(FLERR, "Error: not enough arguments.\n");
   }
+
+  if (args[2].compare("restart") ==
+      0) { // If the keyword restart, we are expecting to have read_restart()
+           // launched right after.
+    rho0_ = 0;
+    K_ = 0;
+    return;
+  }
+
   //options(&args, args.begin()+3);
   rho0_ = input->parsev(args[2]);
   cout << "Set rho0 to " << rho0_ << endl;
@@ -59,3 +68,13 @@ void EOSLinear::compute_pressure(double &pFinal, double &e, const double J, cons
 }
 
 
+void EOSLinear::write_restart(ofstream *of) {
+  of->write(reinterpret_cast<const char *>(&rho0_), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&K_), sizeof(double));
+}
+
+void EOSLinear::read_restart(ifstream *ifr) {
+  cout << "Restart EOSLinear" << endl;
+  ifr->read(reinterpret_cast<char *>(&rho0_), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&K_), sizeof(double));
+}

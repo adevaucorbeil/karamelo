@@ -41,6 +41,9 @@ public:
   void post_velocities_to_grid(){};
   void final_integrate(){};
 
+  void write_restart(ofstream *);
+  void read_restart(ifstream *);
+
 private:
   string usage = "Usage: fix(fix-ID, contact/minimize_penetration/plane, solid, x, y, z, nx, ny, nz, mu)\n";
   int Nargs = 10;

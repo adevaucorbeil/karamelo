@@ -52,21 +52,23 @@ This command defines a difference between two regions of space. It is usually us
 \section Class Class description
 */
 
-
 class Difference : public Region {
 
- public:
+public:
   Difference(class MPM *, vector<string>);
   ~Difference();
   int inside(double, double, double);
   vector<double> limits();
+  void write_restart(ofstream *);
+  void read_restart(ifstream *);
 
- protected:
-  //vector<string> regions;
+protected:
+  // vector<string> regions;
   vector<int> iregions;
   double xlo, xhi, ylo, yhi, zlo, zhi;
-  
-  const string usage = "Usage: region(region-ID, difference, region-1, region-2)\n";
+
+  const string usage =
+      "Usage: region(region-ID, difference, region-1, region-2)\n";
   const int Nargs = 4;
 };
 

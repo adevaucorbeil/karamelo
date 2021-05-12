@@ -40,11 +40,17 @@ public:
   void post_velocities_to_grid(){};
   void final_integrate(){};
 
+  void write_restart(ofstream *);
+  void read_restart(ifstream *);
+
 private:
   string usage = "Usage: fix(fix-ID, impenetrablesurface, group, K, xs, ys, "
                  "zs, nx, ny, nz)\n";
   int Nargs = 10;
-  int Kpos, xspos, yspos, zspos, nxpos, nypos, nzpos; // Positions the arguments
+
+  class Var xs_x, xs_y, xs_z;                  //< Position of a point on the surface
+  class Var nx, ny, nz;                        //< Normal to the plane
+  double K;                                    //< Contact stiffness
 };
 
 #endif

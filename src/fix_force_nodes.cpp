@@ -30,6 +30,23 @@ using namespace Eigen;
 
 FixForceNodes::FixForceNodes(MPM *mpm, vector<string> args) : Fix(mpm, args)
 {
+  if (args.size() < 3) {
+    error->all(FLERR, "Error: not enough arguments.\n");
+  }
+
+  if (args[2].compare("restart") ==
+      0) { // If the keyword restart, we are expecting to have read_restart()
+           // launched right after.
+    igroup = stoi(args[3]);
+    if (igroup == -1) {
+      cout << "Could not find group number " << args[3] << endl;
+    }
+    groupbit = group->bitmask[igroup];
+
+    xset = yset = zset = false;
+    return;
+  }
+
   if (args.size() < 6) {
     error->all(FLERR,"Error: too few arguments for fix_force_nodes: requires at least 6 arguments. " + to_string(args.size()) + " received.\n");
   }
@@ -177,4 +194,94 @@ void FixForceNodes::post_particles_to_grid() {
   if (zset) (*input->vars)[id+"_z"]=Var(id+"_z", ftot_reduced[2]);
   // cout << "f for " << n << " nodes from solid " << domain->solids[solid]->id << " set." << endl;
   // cout << "ftot = [" << ftot[0] << ", " << ftot[1] << ", " << ftot[2] << "]\n"; 
+}
+
+void FixForceNodes::write_restart(ofstream *of) {
+  of->write(reinterpret_cast<const char *>(&xset), sizeof(bool));
+  of->write(reinterpret_cast<const char *>(&yset), sizeof(bool));
+  of->write(reinterpret_cast<const char *>(&zset), sizeof(bool));
+
+  if (xset) {
+    string eq = xvalue.eq();
+    size_t N = eq.size();
+    double value = xvalue.result();
+    bool cst = xvalue.is_constant();
+    of->write(reinterpret_cast<const char *>(&N), sizeof(size_t));
+    of->write(reinterpret_cast<const char *>(eq.c_str()), N);
+    of->write(reinterpret_cast<const char *>(&value), sizeof(double));
+    of->write(reinterpret_cast<const char *>(&cst), sizeof(bool));
+  }
+
+  if (yset) {
+    string eq = yvalue.eq();
+    size_t N = eq.size();
+    double value = yvalue.result();
+    bool cst = yvalue.is_constant();
+    of->write(reinterpret_cast<const char *>(&N), sizeof(size_t));
+    of->write(reinterpret_cast<const char *>(eq.c_str()), N);
+    of->write(reinterpret_cast<const char *>(&value), sizeof(double));
+    of->write(reinterpret_cast<const char *>(&cst), sizeof(bool));
+  }
+
+  if (zset) {
+    string eq = zvalue.eq();
+    size_t N = eq.size();
+    double value = zvalue.result();
+    bool cst = zvalue.is_constant();
+    of->write(reinterpret_cast<const char *>(&N), sizeof(size_t));
+    of->write(reinterpret_cast<const char *>(eq.c_str()), N);
+    of->write(reinterpret_cast<const char *>(&value), sizeof(double));
+    of->write(reinterpret_cast<const char *>(&cst), sizeof(bool));
+  }
+}
+
+void FixForceNodes::read_restart(ifstream *ifr) {
+  ifr->read(reinterpret_cast<char *>(&xset), sizeof(bool));
+  ifr->read(reinterpret_cast<char *>(&yset), sizeof(bool));
+  ifr->read(reinterpret_cast<char *>(&zset), sizeof(bool));
+
+  if (xset) {
+    string eq = "";
+    size_t N = 0;
+    double value = 0;
+    bool cst = false;
+
+    ifr->read(reinterpret_cast<char *>(&N), sizeof(size_t));
+    eq.resize(N);
+
+    ifr->read(reinterpret_cast<char *>(&eq[0]), N);
+    ifr->read(reinterpret_cast<char *>(&value), sizeof(double));
+    ifr->read(reinterpret_cast<char *>(&cst), sizeof(bool));
+    xvalue = Var(eq, value, cst);
+  }
+
+  if (yset) {
+    string eq = "";
+    size_t N = 0;
+    double value = 0;
+    bool cst = false;
+
+    ifr->read(reinterpret_cast<char *>(&N), sizeof(size_t));
+    eq.resize(N);
+
+    ifr->read(reinterpret_cast<char *>(&eq[0]), N);
+    ifr->read(reinterpret_cast<char *>(&value), sizeof(double));
+    ifr->read(reinterpret_cast<char *>(&cst), sizeof(bool));
+    yvalue = Var(eq, value, cst);
+  }
+
+  if (zset) {
+    string eq = "";
+    size_t N = 0;
+    double value = 0;
+    bool cst = false;
+
+    ifr->read(reinterpret_cast<char *>(&N), sizeof(size_t));
+    eq.resize(N);
+
+    ifr->read(reinterpret_cast<char *>(&eq[0]), N);
+    ifr->read(reinterpret_cast<char *>(&value), sizeof(double));
+    ifr->read(reinterpret_cast<char *>(&cst), sizeof(bool));
+    zvalue = Var(eq, value, cst);
+  }
 }

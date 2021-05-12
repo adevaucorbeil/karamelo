@@ -72,6 +72,9 @@ class Domain : protected Pointers {
 
   int inside(Eigen::Vector3d);
 
+  void write_restart(ofstream*);      ///< Write box bounds, list of regions and solids to restart file
+  void read_restart(ifstream*);       ///< Read box bounds, list of regions and solids to restart file
+
 private:
   template <typename T> static Region *region_creator(MPM *, vector<string>);
   // template <typename T> static Solid *solid_creator(MPM *,vector<string>);

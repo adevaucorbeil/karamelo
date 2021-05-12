@@ -30,6 +30,9 @@ public:
   DamageJohnsonCook(class MPM *, vector<string>);
   ~DamageJohnsonCook() {};
 
+  void write_restart(ofstream *);
+  void read_restart(ifstream *);
+
   void compute_damage(double &damage_init,
 			      double &damage,
 			      const double pH,
@@ -39,7 +42,7 @@ public:
 			      const double temperature = 0);
 
 protected:
-  double d1, d2, d3, d4, d5, epsdot0,Tr, Tm, Tmr;
+  double d1, d2, d3, d4, d5, epsdot0, Tr, Tm, Tmr;
   string usage = "Usage: damage(damage-ID, damage_johnson_cook, d1, d2, d3, d4, d5, epsdot0, Tr, Tm)\n";
   int Nargs = 10;
 };

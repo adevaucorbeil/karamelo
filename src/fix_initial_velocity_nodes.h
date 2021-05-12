@@ -40,6 +40,9 @@ class FixInitialVelocityNodes : public Fix {
   void post_velocities_to_grid();
   void final_integrate() {};
 
+  void write_restart(ofstream *) {};
+  void read_restart(ifstream *) {};
+
 private:
   class Var xvalue, yvalue, zvalue;    // Set velocities in x, y, and z directions.
   bool xset, yset, zset;               // Does the fix set the x, y, and z velocities of the group?

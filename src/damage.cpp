@@ -23,6 +23,7 @@ Damage::Damage(MPM *mpm, vector<string> args) :
 {
   cout << "Creating new Damage with ID: " << args[0] << endl;
   id = args[0];
+  style = args[1];
 }
 
 Damage::~Damage()

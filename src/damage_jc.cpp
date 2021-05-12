@@ -30,6 +30,17 @@ using namespace MPM_Math;
 DamageJohnsonCook::DamageJohnsonCook(MPM *mpm, vector<string> args)
     : Damage(mpm, args)
 {
+  if (args.size() < 3) {
+    error->all(FLERR, "Error: too few arguments for the strength command.\n");
+  }
+
+  if (args[2].compare("restart") ==
+      0) { // If the keyword restart, we are expecting to have read_restart()
+           // launched right after.
+    d1, d2, d3, d4, d5, epsdot0,Tr, Tm, Tmr = 0;
+    return;
+  }
+
   cout << "Initiate DamageJohnsonCook" << endl;
 
   if (args.size() < Nargs) {
@@ -102,7 +113,7 @@ void DamageJohnsonCook::compute_damage(double &damage_init, double &damage,
                                            // avoid divison by zero
   }
 
-  if (triax <= 0) return ;
+  // if (triax <= 0) return ;
 
   // Johnson-Cook failure strain, dependence on stress triaxiality
   double jc_failure_strain = d1 + d2 * exp(d3 * triax);
@@ -123,4 +134,28 @@ void DamageJohnsonCook::compute_damage(double &damage_init, double &damage,
 
   if (damage_init >= 1.0)
     damage = MIN((damage_init - 1.0) * 10, 1.0);
+}
+
+void DamageJohnsonCook::write_restart(ofstream *of) {
+  of->write(reinterpret_cast<const char *>(&d1), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&d2), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&d3), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&d4), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&d5), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&epsdot0), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&Tr), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&Tm), sizeof(double));
+}
+
+void DamageJohnsonCook::read_restart(ifstream *ifr) {
+  cout << "Restart DamageJohnsonCook" << endl;
+  ifr->read(reinterpret_cast<char *>(&d1), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&d2), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&d3), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&d4), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&d5), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&epsdot0), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&Tr), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&Tm), sizeof(double));
+  Tmr = Tm - Tr;
 }

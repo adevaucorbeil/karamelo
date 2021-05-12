@@ -126,6 +126,8 @@ void DumpGridGz::write() {
           dumpstream << g->mb[i][2] << " ";
         else if (v.compare("mass") == 0)
           dumpstream << g->mass[i] << " ";
+	else if (v.compare("mask")==0)
+	  dumpstream << g->mask[i] << " ";
         else if (v.compare("ntypex") == 0)
           dumpstream << g->ntype[i][0] << " ";
         else if (v.compare("ntypey") == 0)
@@ -134,6 +136,8 @@ void DumpGridGz::write() {
           dumpstream << g->ntype[i][2] << " ";
         else if (v.compare("T") == 0)
           dumpstream << g->T[i] << " ";
+        else if (v.compare("rigid") == 0)
+          dumpstream << g->rigid[i] << " ";
       }
       dumpstream << endl;
     }

@@ -25,7 +25,7 @@
 
 class Fix : protected Pointers {
  public:
-  string id;
+  string id, style;
   int igroup, groupbit;
   int mask;
   vector<string> args; // Store arguments
@@ -46,6 +46,9 @@ class Fix : protected Pointers {
   virtual void post_advance_particles() = 0;
   virtual void post_velocities_to_grid() = 0;
   virtual void final_integrate() = 0;
+
+  virtual void write_restart(ofstream *) = 0;
+  virtual void read_restart(ifstream *) = 0;
 };
 
 namespace FixConst {

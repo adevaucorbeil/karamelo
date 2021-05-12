@@ -23,7 +23,7 @@
 
 using namespace std;
 
-MUSL::MUSL(MPM *mpm, vector<string> args) : Scheme(mpm) {
+MUSL::MUSL(MPM *mpm) : Scheme(mpm) {
   // cout << "In MUSL::MUSL()" << endl;
 }
 

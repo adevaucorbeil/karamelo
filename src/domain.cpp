@@ -325,7 +325,7 @@ void Domain::create_domain(vector<string> args) {
       grid->init(boxlo, boxhi);
     }
   }
-  
+
   // Set proc grid
   universe->set_proc_grid();
   created = true;
@@ -411,5 +411,155 @@ void Domain::set_axisymmetric(vector<string> args) {
     axisymmetric = true;
   } else if (args[0].compare("false") == 0) {
     axisymmetric = false;
+  }
+}
+
+/*! Write box bounds, list of regions and solids to restart file
+ */
+void Domain::write_restart(ofstream* of){
+
+  // Write boxlo:
+  of->write(reinterpret_cast<const char *>(&boxlo[0]), 3*sizeof(double));
+  
+  // Write boxhi:
+  of->write(reinterpret_cast<const char *>(&boxhi[0]), 3*sizeof(double));
+
+  // Write sublo:
+  of->write(reinterpret_cast<const char *>(&sublo[0]), 3*sizeof(double));
+
+  // Write subhi:
+  of->write(reinterpret_cast<const char *>(&subhi[0]), 3*sizeof(double));
+
+  // Write axisymmetric:
+  of->write(reinterpret_cast<const char *>(&axisymmetric), sizeof(bool));
+
+  // Write  np_total:
+  of->write(reinterpret_cast<const char *>(&np_total), sizeof(tagint));
+  cout << "np_total=" << np_total << endl;
+  
+  if (!update->method->is_TL) {
+    of->write(reinterpret_cast<const char *>(&grid->cellsize), sizeof(double));
+    cout << "cellsize=" << grid->cellsize << endl;
+  }
+
+  // Save regions:
+  size_t N = regions.size();
+  of->write(reinterpret_cast<const char *>(&N), sizeof(int));
+
+  for (int i = 0; i < N; i++) {
+    size_t Nr = regions[i]->id.size();
+    of->write(reinterpret_cast<const char *>(&Nr), sizeof(size_t));
+    of->write(reinterpret_cast<const char *>(regions[i]->id.c_str()), Nr);
+    cout << "id = " << regions[i]->id << endl;
+
+    Nr = regions[i]->style.size();
+    of->write(reinterpret_cast<const char *>(&Nr), sizeof(size_t));
+    of->write(reinterpret_cast<const char *>(regions[i]->style.c_str()), Nr);
+    regions[i]->write_restart(of);
+    cout << "style = " << regions[i]->style << endl;
+  }
+
+  // Save materials:
+  material->write_restart(of);
+
+  // Save solids:
+  N = solids.size();
+  of->write(reinterpret_cast<const char *>(&N), sizeof(int));
+
+  for (int i = 0; i < N; i++) {
+    size_t Ns = solids[i]->id.size();
+    of->write(reinterpret_cast<const char *>(&Ns), sizeof(size_t));
+    of->write(reinterpret_cast<const char *>(solids[i]->id.c_str()), Ns);
+    cout << "id = " << solids[i]->id << endl;
+    solids[i]->write_restart(of);
+  }
+}
+
+/*! Read box bounds, list of regions and solids to restart file
+ */
+void Domain::read_restart(ifstream *ifr) {
+  // Write boxlo:
+  ifr->read(reinterpret_cast<char *>(&boxlo[0]), 3*sizeof(double));
+  cout << "boxlo=[" << boxlo[0] << "," << boxlo[1] << "," << boxlo[2] << endl;
+  
+  // Write boxhi:
+  ifr->read(reinterpret_cast<char *>(&boxhi[0]), 3*sizeof(double));
+  cout << "boxhi=[" << boxhi[0] << "," << boxhi[1] << "," << boxhi[2] << endl;
+
+  // Write sublo:
+  ifr->read(reinterpret_cast<char *>(&sublo[0]), 3*sizeof(double));
+  cout << "sublo=[" << sublo[0] << "," << sublo[1] << "," << sublo[2] << endl;
+
+  // Write subhi:
+  ifr->read(reinterpret_cast<char *>(&subhi[0]), 3*sizeof(double));
+  cout << "subhi=[" << subhi[0] << "," << subhi[1] << "," << subhi[2] << endl;
+
+  // Write axisymmetric:
+  ifr->read(reinterpret_cast<char *>(&axisymmetric), sizeof(bool));
+  cout << "axisymmetric=" << axisymmetric << endl;
+
+  // Write  np_total:
+  ifr->read(reinterpret_cast<char *>(&np_total), sizeof(tagint));
+  cout << "np_total=" << np_total << endl;
+  
+  universe->set_proc_grid();
+  if (!update->method->is_TL) {
+    grid = new Grid(mpm);
+    ifr->read(reinterpret_cast<char *>(&grid->cellsize), sizeof(double));
+    cout << "cellsize=" << grid->cellsize << endl;
+    
+    grid->init(boxlo, boxhi);
+  }
+  created = true;
+
+
+  // Pull regions:
+  size_t N = 0;
+  ifr->read(reinterpret_cast<char *>(&N), sizeof(int));
+  regions.resize(N);
+
+  for (int i = 0; i < N; i++) {
+    size_t Nr = 0;
+    string id = "";
+
+    ifr->read(reinterpret_cast<char *>(&Nr), sizeof(size_t));
+    id.resize(Nr);
+
+    ifr->read(reinterpret_cast<char *>(&id[0]), Nr);
+    cout << "id = " << id << endl;
+
+    string style = "";
+    ifr->read(reinterpret_cast<char *>(&Nr), sizeof(size_t));
+    style.resize(Nr);
+
+    ifr->read(reinterpret_cast<char *>(&style[0]), Nr);
+    cout << "style = " << style << endl;
+    RegionCreator region_creator = (*region_map)[style];
+    regions[i] = region_creator(mpm, vector<string>{id, style, "restart"});
+    regions[i]->read_restart(ifr);
+    regions[i]->init();
+  }
+
+  // Save materials:
+  material->read_restart(ifr);
+
+  // Read solids:
+  N = 0;
+  ifr->read(reinterpret_cast<char *>(&N), sizeof(int));
+  solids.resize(N);
+
+  for (int i = 0; i < N; i++) {
+    size_t Ns = 0;
+    string id = "";
+
+    ifr->read(reinterpret_cast<char *>(&Ns), sizeof(size_t));
+    id.resize(Ns);
+
+    ifr->read(reinterpret_cast<char *>(&id[0]), Ns);
+    cout << "id = " << id << endl;
+
+    solids[i] = new Solid(mpm, vector<string>{id, "restart"});
+    solids[i]->read_restart(ifr);
+    solids[i]->init();
   }
 }

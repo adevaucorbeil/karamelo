@@ -40,12 +40,15 @@ class FixTemperatureNodes : public Fix {
   void post_velocities_to_grid();
   void final_integrate() {};
 
-private:
-  //class Var xvalue, yvalue, zvalue;    // Set velocities in x, y, and z directions.
-  vector<string> args_previous_step;
-  
+  void write_restart(ofstream *);
+  void read_restart(ifstream *);
+
+private:  
   string usage = "Usage: fix(fix-ID, temperature_nodes, group-ID, T)\n";
   int Nargs = 4;
+
+  class Var Tvalue;                      //< Temperature variable.
+  class Var Tprevvalue;                  //< Temperature variable from previous time step.
 };
 
 #endif

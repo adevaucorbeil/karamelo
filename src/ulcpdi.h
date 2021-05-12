@@ -31,7 +31,7 @@ class ULCPDI : public Method {
   double FLIP;
   string shape_function;
 
-  ULCPDI(class MPM *, vector<string>);
+  ULCPDI(class MPM *);
   ~ULCPDI();
 
   void setup(vector<string>);

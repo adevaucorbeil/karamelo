@@ -309,3 +309,23 @@ Var atan2v(Var x, Var y){
 }
 
 
+void Var::write_to_restart(ofstream *of) {
+  size_t N = equation.size();
+  of->write(reinterpret_cast<const char *>(&N), sizeof(size_t));
+  of->write(reinterpret_cast<const char *>(equation.c_str()), N);
+  of->write(reinterpret_cast<const char *>(&value), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&constant), sizeof(bool));
+
+}
+
+
+void Var::read_from_restart(ifstream *ifr) {
+  size_t N = 0;
+
+  ifr->read(reinterpret_cast<char *>(&N), sizeof(size_t));
+  equation.resize(N);
+
+  ifr->read(reinterpret_cast<char *>(&equation[0]), N);
+  ifr->read(reinterpret_cast<char *>(&value), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&constant), sizeof(bool));
+}

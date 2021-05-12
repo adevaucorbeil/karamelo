@@ -32,6 +32,23 @@ using namespace Eigen;
 
 FixContactHertz::FixContactHertz(MPM *mpm, vector<string> args)
     : Fix(mpm, args) {
+  if (args.size() < 3) {
+    error->all(FLERR, "Error: not enough arguments.\n");
+  }
+
+  if (args[2].compare("restart") ==
+      0) { // If the keyword restart, we are expecting to have read_restart()
+           // launched right after.
+    igroup = stoi(args[3]);
+    if (igroup == -1) {
+      cout << "Could not find group number " << args[3] << endl;
+    }
+    groupbit = group->bitmask[igroup];
+
+    solid1 = solid2 = -1;
+    return;
+  }
+
   if (args.size() < Nargs) {
     error->all(FLERR, "Error: not enough arguments.\n" + usage);
   }
@@ -300,3 +317,13 @@ void FixContactHertz::initial_integrate() {
 //   (*input->vars)[id + "_y"] = Var(id + "_y", ftot_reduced[1]);
 //   (*input->vars)[id + "_z"] = Var(id + "_z", ftot_reduced[2]);
 // }
+
+void FixContactHertz::write_restart(ofstream *of) {
+  of->write(reinterpret_cast<const char *>(&solid1), sizeof(int));
+  of->write(reinterpret_cast<const char *>(&solid2), sizeof(int));
+}
+
+void FixContactHertz::read_restart(ifstream *ifr) {
+  ifr->read(reinterpret_cast<char *>(&solid1), sizeof(int));
+  ifr->read(reinterpret_cast<char *>(&solid2), sizeof(int));
+}

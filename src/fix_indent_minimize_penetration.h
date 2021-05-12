@@ -40,16 +40,18 @@ public:
   void post_velocities_to_grid(){};
   void final_integrate(){};
 
+  void write_restart(ofstream *);
+  void read_restart(ifstream *);
+
 private:
   string type; // sphere
-  string usage =
-      "Usage: fix(fix-ID, indent/hertz, group, sphere, R, x_center, "
-      "y_center, z_center, vx_center, vy_center, vz_center, mu)\n";
+  string usage = "Usage: fix(fix-ID, indent/minimize_penetration, group, "
+                 "sphere, R, x_center, y_center, z_center, vx_center, "
+                 "vy_center, vz_center, mu)\n";
   int Nargs = 12;
-  int type_pos, Kpos, Rpos, xpos, ypos, zpos, vxpos, vypos,
-      vzpos; // Positions of K, the position of the sphere, and
-             // its radius in the argument list (args)
-  double mu; // Friction coefficient
+  Var xvalue, yvalue, zvalue, vxvalue, vyvalue, vzvalue;
+  double R;  //< Sphere radius
+  double mu; //< Friction coefficient
 };
 
 #endif

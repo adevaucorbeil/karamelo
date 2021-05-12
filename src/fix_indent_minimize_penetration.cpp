@@ -32,21 +32,29 @@ using namespace Eigen;
 
 FixIndentMinimizePenetration::FixIndentMinimizePenetration(MPM *mpm, vector<string> args)
     : Fix(mpm, args) {
+  if (args.size() < 3) {
+    error->all(FLERR, "Error: not enough arguments.\n");
+  }
+
+  if (args[2].compare("restart") ==
+      0) { // If the keyword restart, we are expecting to have read_restart()
+           // launched right after.
+    igroup = stoi(args[3]);
+    if (igroup == -1) {
+      cout << "Could not find group number " << args[3] << endl;
+    }
+    groupbit = group->bitmask[igroup];
+
+    R = mu = 0;
+    return;
+  }
+
   if (args.size() < Nargs) {
     error->all(FLERR, "Error: not enough arguments.\n" + usage);
   }
   if (args.size() > Nargs) {
     error->all(FLERR, "Error: too many arguments.\n" + usage);
   }
-
-  type_pos = 3;
-  Rpos = 4;
-  xpos = 5;
-  ypos = 6;
-  zpos = 7;
-  vxpos = 8;
-  vypos = 9;
-  vzpos = 10;
 
   if (group->pon[igroup].compare("particles") != 0 &&
       group->pon[igroup].compare("all") != 0) {
@@ -57,13 +65,21 @@ FixIndentMinimizePenetration::FixIndentMinimizePenetration(MPM *mpm, vector<stri
   cout << "Creating new fix FixIndentMinimizePenetration with ID: " << args[0] << endl;
   id = args[0];
 
-  type = args[type_pos];
-  if (args[type_pos].compare("sphere") == 0) {
+  type = args[3];
+  if (args[3].compare("sphere") == 0) {
     type = "sphere";
   } else {
-    error->all(FLERR, "Error indent type " + args[type_pos] +
+    error->all(FLERR, "Error indent type " + args[3] +
                           " unknown. Only type sphere is supported.\n");
   }
+
+  R = input->parsev(args[4]);
+  xvalue = input->parsev(args[5]);
+  yvalue = input->parsev(args[6]);
+  zvalue = input->parsev(args[7]);
+  vxvalue = input->parsev(args[8]);
+  vyvalue = input->parsev(args[9]);
+  vzvalue = input->parsev(args[10]);
   mu = input->parsev(args[11]);
 }
 
@@ -85,18 +101,17 @@ void FixIndentMinimizePenetration::initial_integrate() {
   int solid = group->solid[igroup];
 
   Solid *s;
-  Eigen::Vector3d ftot, ftot_reduced, vtemp;
+  Eigen::Vector3d ftot, ftot_reduced, ffric;
 
-  double R = input->parsev(args[Rpos]).result(mpm);
-  Eigen::Vector3d xs(input->parsev(args[xpos]).result(mpm),
-                     input->parsev(args[ypos]).result(mpm),
-                     input->parsev(args[zpos]).result(mpm));
-  Eigen::Vector3d vs(input->parsev(args[vxpos]).result(mpm),
-                     input->parsev(args[vypos]).result(mpm),
-                     input->parsev(args[vzpos]).result(mpm));
-  Eigen::Vector3d xsp, vsp, vsp_tangential, contact_stress, tau, ffric;
+  Eigen::Vector3d xs(xvalue.result(mpm),
+                     yvalue.result(mpm),
+                     zvalue.result(mpm));
+  Eigen::Vector3d vs(vxvalue.result(mpm),
+                     vyvalue.result(mpm),
+                     vzvalue.result(mpm));
+  Eigen::Vector3d xsp, vps, vt;
 
-  double Rs, Rp, r, p, fmag, omega, tau_norm, damping_factor = 10.0, tau_critical;
+  double Rs, Rp, r, p, fmag, vtnorm, vndotxsp;
 
   int n, n_reduced;
   ftot.setZero();
@@ -105,7 +120,6 @@ void FixIndentMinimizePenetration::initial_integrate() {
   if (solid == -1) {
     for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
       s = domain->solids[isolid];
-      omega = s->mat->signal_velocity / s->grid->cellsize;
 
       if (domain->dimension == 2) {
         for (int ip = 0; ip < s->np_local; ip++) {
@@ -137,13 +151,12 @@ void FixIndentMinimizePenetration::initial_integrate() {
                     f = fmag * xsp;// / r;
 
 		    if (mu != 0) {
-		      contact_stress = - s->sigma[ip] * xsp;
-		      tau = contact_stress - contact_stress.dot(xsp) * xsp;
-		      tau_norm = tau.norm();
-		      if (tau_norm > 0) {
-			tau /= tau_norm;
-			ffric = mu * fmag * tau;
-			f += ffric;
+		      vps = vs - s->v[ip];
+		      vt = vps - vps.dot(xsp) * xsp;// / (r*r);
+		      vtnorm = vt.norm();
+		      if (vtnorm != 0) {
+			vt /= vtnorm;
+			f += MIN(s->mass[ip] * vtnorm / update->dt, mu * fmag) * vt;
 		      }
 		    }
 
@@ -182,41 +195,42 @@ void FixIndentMinimizePenetration::initial_integrate() {
                   if (p > 0) {
 		    n++;
 		    xsp /= r;
+		    vps = vs - s->v[ip];
                     fmag = s->mass[ip] * p / (update->dt * update->dt);
                     f = fmag * xsp;// / r;
-
 		    if (mu != 0) {
-		      contact_stress = - s->sigma[ip] * xsp;
-		      tau = contact_stress - contact_stress.dot(xsp) * xsp;
-		      tau_norm = tau.norm();
-
-		      tau_critical = -mu * contact_stress.dot(xsp);
-
-		      if (tau_norm > tau_critical) {
-			tau /= tau_norm;
-
-			ffric = mu * fmag * tau;
-
-			// cout << "Particle " << s->ptag[ip]
-			//      << " f_friction=[" << ffric[0] <<"," << ffric[1] <<"," << ffric[2] << "] "
-			//      << "f=[" << f[0] <<"," << f[1] <<"," << f[2] << "] "
-			//      << "vps=[" << vps[0] <<"," << vps[1] <<"," << vps[2] << "] "
-			//      << "vt=[" << vt[0] <<"," << vt[1] <<"," << vt[2] << "] "
+		      vndotxsp = vps.dot(xsp);
+		      vt = vps - vndotxsp * xsp;// / (r*r);
+		      vtnorm = vt.norm();
+		      if (vtnorm != 0) {
+			// Reference: DOI 10.1002/nag.2233
+			if (vtnorm <= mu * vndotxsp) {
+			  ffric = s->mass[ip] * vt/ update->dt;
+			  //f += MIN(s->mass[ip] * vtnorm / update->dt, mu * fmag) * vt;
+			} else {
+			  // vt /= vtnorm;
+			  // Either:
+			  // ffric = mu * fmag * vt;
+			  // Or:
+			  ffric = mu * s->mass[ip] * abs(vndotxsp) * vt / (update->dt * vtnorm);
+			}
+			cout << "Particle " << s->ptag[ip]
+			     << " f_friction=[" << ffric[0] <<"," << ffric[1] <<"," << ffric[2] << "] "
+			     << "f=[" << f[0] <<"," << f[1] <<"," << f[2] << "] "
+			     << "vps=[" << vps[0] <<"," << vps[1] <<"," << vps[2] << "] "
+			      << "vt=[" << vt[0] <<"," << vt[1] <<"," << vt[2] << "] "
 			//      << "vs=[" << vs[0] <<"," << vs[1] <<"," << vs[2] << "] "
 			//      << "vp=[" << s->v[ip][0] <<"," << s->v[ip][1] <<"," << s->v[ip][2] << "] "
-			//      << "ap=[" << s->a[ip][0] <<"," << s->a[ip][1] <<"," << s->a[ip][2] << "] "
-			//      << "xsp=[" << xsp[0] <<"," << xsp[1] <<"," << xsp[2] << "] "
-			//      << "dt=" << update->dt << " vtnorm=" << vtnorm << " "
-			//      << "contact_stress=[" << contact_stress[0] << ", " << contact_stress[1] << ", " << contact_stress[2] << "]" << endl;
-			f += ffric;
-		      } else {
-			// The particule should have the same velocity as the indenter:
-			vsp = vs - s->v[ip];
-			vsp_tangential = vsp - vsp.dot(xsp) * xsp;
-			ffric = s->mass[ip] * vsp_tangential / update->dt;
+			// //      << "ap=[" << s->a[ip][0] <<"," << s->a[ip][1] <<"," << s->a[ip][2] << "] "
+			     << "xsp=[" << xsp[0] <<"," << xsp[1] <<"," << xsp[2] << "] "
+			     << "dt=" << update->dt << endl;
+			// " mass=" << s->mass[ip] << " vtnorm=" << vtnorm << "\n";
+			// //   cout << endl;
+
 			f += ffric;
 		      }
 		    }
+
 		    s->mbp[ip] += f;
                     ftot += f;
                   } else {
@@ -232,9 +246,6 @@ void FixIndentMinimizePenetration::initial_integrate() {
     }
   } else {
     s = domain->solids[solid];
-
-    omega = s->mat->signal_velocity / s->grid->cellsize;
-
     if (domain->dimension == 2) {
       for (int ip = 0; ip < s->np_local; ip++) {
 	if (s->mass[ip] > 0) {
@@ -265,13 +276,12 @@ void FixIndentMinimizePenetration::initial_integrate() {
 		  f = fmag * xsp;// / r;
 
 		  if (mu != 0) {
-		    contact_stress = - s->sigma[ip] * xsp;
-		    tau = contact_stress - contact_stress.dot(xsp) * xsp;
-		    tau_norm = tau.norm();
-		    if (tau_norm > 0) {
-		      tau /= tau_norm;
-		      ffric = mu * fmag * tau;
-		      f += ffric;
+		    vps = vs - s->v[ip];
+		    vt = vps - vps.dot(xsp) * xsp;// / (r*r);
+		    vtnorm = vt.norm();
+		    if (vtnorm != 0) {
+		      vt /= vtnorm;
+		      f += MIN(s->mass[ip] * vtnorm / update->dt, mu * fmag) * vt;
 		    }
 		  }
 
@@ -312,15 +322,14 @@ void FixIndentMinimizePenetration::initial_integrate() {
 		  xsp /= r;
 		  fmag = s->mass[ip] * p / (update->dt * update->dt);
 		  f = fmag * xsp;// / r;
-		  
+
 		  if (mu != 0) {
-		    contact_stress = - s->sigma[ip] * xsp;
-		    tau = contact_stress - contact_stress.dot(xsp) * xsp;
-		    tau_norm = tau.norm();
-		    if (tau_norm > 0) {
-		      tau /= tau_norm;
-		      ffric = mu * fmag * tau;
-		      f += ffric;
+		    vps = vs - s->v[ip];
+		    vt = vps - vps.dot(xsp) * xsp;// / (r*r);
+		    vtnorm = vt.norm();
+		    if (vtnorm != 0) {
+		      vt /= vtnorm;
+		      f += MIN(s->mass[ip] * vtnorm / update->dt, mu * fmag) * vt;
 		    }
 		  }
 
@@ -347,4 +356,29 @@ void FixIndentMinimizePenetration::initial_integrate() {
   (*input->vars)[id + "_x"] = Var(id + "_x", ftot_reduced[0]);
   (*input->vars)[id + "_y"] = Var(id + "_y", ftot_reduced[1]);
   (*input->vars)[id + "_z"] = Var(id + "_z", ftot_reduced[2]);
+}
+
+void FixIndentMinimizePenetration::write_restart(ofstream *of) {
+  of->write(reinterpret_cast<const char *>(&R), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&mu), sizeof(double));
+  xvalue.write_to_restart(of);
+  yvalue.write_to_restart(of);
+  zvalue.write_to_restart(of);
+
+  vxvalue.write_to_restart(of);
+  vyvalue.write_to_restart(of);
+  vzvalue.write_to_restart(of);
+}
+
+void FixIndentMinimizePenetration::read_restart(ifstream *ifr) {
+  ifr->read(reinterpret_cast<char *>(&R), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&mu), sizeof(double));
+  xvalue.read_from_restart(ifr);
+  yvalue.read_from_restart(ifr);
+  zvalue.read_from_restart(ifr);
+
+  vxvalue.read_from_restart(ifr);
+  vyvalue.read_from_restart(ifr);
+  vzvalue.read_from_restart(ifr);
+  type = "sphere";
 }

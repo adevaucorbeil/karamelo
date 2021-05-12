@@ -20,12 +20,16 @@
 
 class Strength : protected Pointers {
  public:
-  string id;
+  string id;                        ///< Strength identification string
+  string style;                     ///< Strength style
 
   Strength(MPM *, vector<string>);
   virtual ~Strength();
   virtual void init();
   void options(vector<string> *, vector<string>::iterator);
+
+  virtual void write_restart(ofstream*) = 0;
+  virtual void read_restart(ifstream*) = 0;
 
   // implemented by each Strength
   //virtual compute_pressure()
