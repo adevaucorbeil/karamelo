@@ -16,16 +16,12 @@
 #include <string>
 #include <sstream>
 #include <stdexcept>
-#include <matplotlibcpp.h>
 #include "plot.h"
 #include "mpmtype.h"
 #include "update.h"
 #include "input.h"
 #include "var.h"
 #include "error.h"
-
-namespace plt = matplotlibcpp;
-using namespace std;
 
 enum{INT,FLOAT,BIGINT};
 

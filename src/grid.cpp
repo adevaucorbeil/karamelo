@@ -27,19 +27,8 @@
 #include "universe.h"
 #include "error.h"
 
-
-#ifdef DEBUG
-#include <matplotlibcpp.h>
-namespace plt = matplotlibcpp;
-#endif
-
 using namespace std;
 using namespace Eigen;
-
-#ifdef DEBUG
-#include <matplotlibcpp.h>
-namespace plt = matplotlibcpp;
-#endif
 
 Grid::Grid(MPM *mpm) :
   Pointers(mpm)
@@ -77,10 +66,6 @@ Grid::~Grid() {
 }
 
 void Grid::init(double *solidlo, double *solidhi) {
-
-#ifdef DEBUG
-  std::vector<double> x2plot, y2plot;
-#endif
 
   cout << "In Grid::init() with proc " << universe->me << "\n";
   bool cubic = false;
@@ -265,11 +250,6 @@ void Grid::init(double *solidlo, double *solidhi) {
 	map_ntag[ntag[l]] = l;
 	nowner[l] = universe->me;
 
-#ifdef DEBUG
-	plt::annotate(to_string(ntag[l]), x0[l][2], x0[l][1]);
-	x2plot.push_back(x0[l][2]);
-	y2plot.push_back(x0[l][1]);
-#endif
 	l++;
       }
     }
@@ -313,9 +293,6 @@ void Grid::init(double *solidlo, double *solidhi) {
   }
 
   nshared = ns.size();
-#ifdef DEBUG
-  cout << "proc " << universe->me << " has " << ns.size() << " node to send.\n";
-#endif
 
   // Send over the tag and coordinates of the nodes to send:
   int size_n;
@@ -370,10 +347,6 @@ void Grid::init(double *solidlo, double *solidhi) {
                                               tmp_shared[i_recv].x[2], delta)) {
           gnodes.push_back(tmp_shared[i_recv]);
           origin_gnodes.push_back(tmp_shared[i_recv].tag);
-#ifdef DEBUG
-          cout << "proc " << universe->me << " received node "
-               << tmp_shared[i_recv].tag << " from proc " << sproc << ".\n";
-#endif
         }
       }
 
@@ -389,23 +362,9 @@ void Grid::init(double *solidlo, double *solidhi) {
     }
   }
 
-#ifdef DEBUG
-  // Check that the dest_nshared map is correct:
-  for (auto it = dest_nshared.cbegin(); it != dest_nshared.cend(); ++it) {
-    cout << "On proc " << universe->me << " proc " << it->first
-         << " should receive information of nodes ";
-    for (auto ii : it->second) {
-      cout << ii << ", ";
-    }
-    cout << endl;
-  }
-#endif
 
   nnodes_ghost = gnodes.size();
 
-#ifdef DEBUG
-  cout << "proc " << universe->me << " has " << nnodes_ghost << " ghost nodes.\n";
-#endif
   grow(nnodes_local + nnodes_ghost);
 
   // Copy ghost nodes at the end of the local nodes:
@@ -436,18 +395,8 @@ void Grid::init(double *solidlo, double *solidhi) {
     f[i].setZero();
     mb[i].setZero();
     mass[i] = 0;
-
-#ifdef DEBUG
-    x2plot.push_back(x0[i][2]);
-    y2plot.push_back(x0[i][1]);
-    plt::annotate(to_string(ntag[i]), x0[i][2], x0[i][1]);
-#endif
   }
 
-#ifdef DEBUG
-  plt::plot(x2plot, y2plot, "g+");
-#endif
-  
   // Determine the total number of nodes:
   bigint nnodes_temp = nnodes_local;
   MPI_Allreduce(&nnodes_temp, &nnodes, 1, MPI_MPM_BIGINT, MPI_SUM, universe->uworld);

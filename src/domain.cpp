@@ -24,10 +24,6 @@
 
 using namespace std;
 
-#ifdef DEBUG
-#include <matplotlibcpp.h>
-namespace plt = matplotlibcpp;
-#endif
 
 /*! Initializes variables and generates the map of known region types (at compile time).
  */

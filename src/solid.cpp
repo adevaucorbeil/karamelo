@@ -33,11 +33,6 @@
 #include <string>
 #include <vector>
 
-#ifdef DEBUG
-#include <matplotlibcpp.h>
-namespace plt = matplotlibcpp;
-#endif
-
 using namespace std;
 using namespace Eigen;
 using namespace MPM_Math;
@@ -1604,7 +1599,6 @@ void Solid::populate(vector<string> args)
        << "]\n";
 
 //   std::vector<double> x2plot, y2plot;
-//   plt::figure_size(1200, 780);
 // #endif
 
   // Calculate total number of particles np_local:
@@ -2091,49 +2085,6 @@ void Solid::populate(vector<string> args)
   MPI_Allreduce(&np_local, &np_local_reduced, 1, MPI_INT, MPI_SUM, universe->uworld);
   np += np_local_reduced;
   domain->np_total += np;
-
-// #ifdef DEBUG
-//   vector<double> xdomain, ydomain;
-//   vector<double> xsubdomain, ysubdomain;
-
-//   xdomain.push_back(domain->boxlo[0]);
-//   ydomain.push_back(domain->boxlo[1]);
-
-//   xdomain.push_back(domain->boxhi[0]);
-//   ydomain.push_back(domain->boxlo[1]);
-
-//   xdomain.push_back(domain->boxhi[0]);
-//   ydomain.push_back(domain->boxhi[1]);
-
-//   xdomain.push_back(domain->boxlo[0]);
-//   ydomain.push_back(domain->boxhi[1]);
-
-//   xdomain.push_back(domain->boxlo[0]);
-//   ydomain.push_back(domain->boxlo[1]);
-
-
-//   xsubdomain.push_back(sublo[0]);
-//   ysubdomain.push_back(sublo[1]);
-
-//   xsubdomain.push_back(subhi[0]);
-//   ysubdomain.push_back(sublo[1]);
-
-//   xsubdomain.push_back(subhi[0]);
-//   ysubdomain.push_back(subhi[1]);
-
-//   xsubdomain.push_back(sublo[0]);
-//   ysubdomain.push_back(subhi[1]);
-
-//   xsubdomain.push_back(sublo[0]);
-//   ysubdomain.push_back(sublo[1]);
-
-//   plt::plot(xdomain, ydomain, "b-");
-//   plt::plot(xsubdomain, ysubdomain, "r-");
-//   plt::plot(x2plot, y2plot, ".");
-//   plt::axis("equal");
-//   plt::save("debug-proc_" + to_string(universe->me) + ".png");
-//   plt::close();
-// #endif
 }
 
 void Solid::update_particle_domain()
@@ -2348,20 +2299,6 @@ void Solid::read_mesh(string fileName)
             xpc0[nc * ie + 3][2] = xpc[nc * ie + 3][2] = nodes[no4][2];
           }
 
-// #ifdef DEBUG
-//           xcplot[0] = xpc0[nc * ie][0];
-//           ycplot[0] = xpc0[nc * ie][1];
-//           xcplot[1] = xpc0[nc * ie + 1][0];
-//           ycplot[1] = xpc0[nc * ie + 1][1];
-//           xcplot[2] = xpc0[nc * ie + 2][0];
-//           ycplot[2] = xpc0[nc * ie + 2][1];
-//           xcplot[3] = xpc0[nc * ie + 3][0];
-//           ycplot[3] = xpc0[nc * ie + 3][1];
-//           xcplot[4] = xpc0[nc * ie][0];
-//           ycplot[4] = xpc0[nc * ie][1];
-//           plt::plot(xcplot, ycplot, "r-");
-// #endif
-
           x0[ie][0] = x[ie][0] = 0.25 * (nodes[no1][0] + nodes[no2][0] +
                                          nodes[no3][0] + nodes[no4][0]);
           x0[ie][1] = x[ie][1] = 0.25 * (nodes[no1][1] + nodes[no2][1] +
@@ -2384,11 +2321,6 @@ void Solid::read_mesh(string fileName)
                nodes[no2][0] * nodes[no3][1] - nodes[no3][0] * nodes[no2][1] +
                nodes[no3][0] * nodes[no4][1] - nodes[no4][0] * nodes[no3][1] +
                nodes[no4][0] * nodes[no1][1] - nodes[no1][0] * nodes[no4][1]);
-
-// #ifdef DEBUG
-//           x2plot.push_back(x0[ie][0]);
-//           y2plot.push_back(x0[ie][1]);
-// #endif
         }
         else if (elemType == 4)
         {
@@ -2504,10 +2436,6 @@ void Solid::read_mesh(string fileName)
   {
     grid->init(solidlo, solidhi);
   }
-
-// #ifdef DEBUG
-//   plt::plot(x2plot, y2plot, ".");
-// #endif
 }
 
 
