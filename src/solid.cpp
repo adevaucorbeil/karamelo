@@ -25,8 +25,6 @@
 #include "var.h"
 #include <Eigen/Eigen>
 #include <Eigen/Eigenvalues> 
-#include <boost/algorithm/string.hpp>
-#include <boost/lexical_cast.hpp>
 #include <math.h>
 #include <mpi.h>
 #include <omp.h>
@@ -40,6 +38,23 @@ using namespace MPM_Math;
 
 #define SQRT_3_OVER_2 1.224744871 // sqrt(3.0/2.0)
 #define FOUR_THIRD 1.333333333333333333333333333333333333333
+
+
+
+vector<string> split (string s, string delimiter) {
+    size_t pos_start = 0, pos_end, delim_len = delimiter.length();
+    string token;
+    vector<string> res;
+
+    while ((pos_end = s.find (delimiter, pos_start)) != string::npos) {
+        token = s.substr (pos_start, pos_end - pos_start);
+        pos_start = pos_end + delim_len;
+        res.push_back (token);
+    }
+
+    res.push_back (s.substr (pos_start));
+    return res;
+}
 
 Solid::Solid(MPM *mpm, vector<string> args) : Pointers(mpm)
 {
@@ -2237,19 +2252,19 @@ void Solid::read_mesh(string fileName)
       {
         getline(file, line);
 
-        boost::split(splitLine, line, boost::is_any_of("\t "));
+        splitLine = split(line, "\t ");
 
         length = splitLine.size();
 
-        elemType = boost::lexical_cast<int>(splitLine[1]);
+        elemType = stoi(splitLine[1]);
         // elemType == 1: 2-node   line element
         // elemType == 3: 4-node   quadrangle
         // elemType == 4: 4-node   tetrahedra
 
         if (elemType == 1)
         {
-          int no1 = boost::lexical_cast<int>(splitLine[5]) - 1;
-          int no2 = boost::lexical_cast<int>(splitLine[6]) - 1;
+          int no1 = stoi(splitLine[5]) - 1;
+          int no2 = stoi(splitLine[6]) - 1;
 
           xpc0[nc * ie][0] = xpc[nc * ie][0] = nodes[no1][0];
           xpc0[nc * ie][1] = xpc[nc * ie][1] = nodes[no1][1];
@@ -2273,10 +2288,10 @@ void Solid::read_mesh(string fileName)
 //           ycplot.resize(5, 0);
 // #endif
 
-          int no1 = boost::lexical_cast<int>(splitLine[5]) - 1;
-          int no2 = boost::lexical_cast<int>(splitLine[6]) - 1;
-          int no3 = boost::lexical_cast<int>(splitLine[7]) - 1;
-          int no4 = boost::lexical_cast<int>(splitLine[8]) - 1;
+          int no1 = stoi(splitLine[5]) - 1;
+          int no2 = stoi(splitLine[6]) - 1;
+          int no3 = stoi(splitLine[7]) - 1;
+          int no4 = stoi(splitLine[8]) - 1;
 
           if (method_type.compare("tlcpdi") == 0 ||
               method_type.compare("ulcpdi") == 0)
@@ -2325,10 +2340,10 @@ void Solid::read_mesh(string fileName)
         else if (elemType == 4)
         {
 
-          int no1 = boost::lexical_cast<int>(splitLine[5]) - 1;
-          int no2 = boost::lexical_cast<int>(splitLine[6]) - 1;
-          int no3 = boost::lexical_cast<int>(splitLine[7]) - 1;
-          int no4 = boost::lexical_cast<int>(splitLine[8]) - 1;
+          int no1 = stoi(splitLine[5]) - 1;
+          int no2 = stoi(splitLine[6]) - 1;
+          int no3 = stoi(splitLine[7]) - 1;
+          int no4 = stoi(splitLine[8]) - 1;
 
           double x1 = nodes[no1][0];
           double y1 = nodes[no1][1];
