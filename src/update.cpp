@@ -161,10 +161,10 @@ void Update::create_method(vector<string> args){
     n++;
   }
 
-  if (args.size() == n) {
+  if (args.size() == n + 1) {
     if (args[n].compare("thermo-mechanical") == 0) {
       method->temp = true;
-    } else if (args[n + 1].compare("mechanical") == 0) {
+    } else if (args[n].compare("mechanical") == 0) {
       method->temp = false;
     } else {
       error->all(
@@ -173,6 +173,7 @@ void Update::create_method(vector<string> args){
               " unknown. Expected \"thermo-mechanical\" or \"mechanical\".\n");
     }
   }
+  n++;
 
   if (n < args.size()) {
     additional_args = vector<string>(args.begin() + n, args.end());
