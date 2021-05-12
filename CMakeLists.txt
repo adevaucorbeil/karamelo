@@ -45,8 +45,6 @@ add_executable(karamelo ${MyCSources})
 
 add_subdirectory(doc EXCLUDE_FROM_ALL)
 
-find_package(Boost REQUIRED)
-include_directories(${Boost_INCLUDE_DIR})
 
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DDEBUG")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
@@ -55,5 +53,5 @@ set(CMAKE_CXX_FLAGS_PROFILING "${CMAKE_CXX_FLAGS_PROFILING} -O3 -g")
 
 target_compile_options(${PROJECT_NAME} PRIVATE ${MPI_CXX_COMPILE_FLAGS} "-DWITHOUT_NUMPY -march=native")
 
-target_link_libraries(${PROJECT_NAME} PUBLIC ${MPI_CXX_LIBRARIES} ${MPI_CXX_LINK_FLAGS} -lpython2.7 -lgzstream -lz PUBLIC ${Boost_LIBRARIES} Eigen3::Eigen)
+target_link_libraries(${PROJECT_NAME} PUBLIC ${MPI_CXX_LIBRARIES} ${MPI_CXX_LINK_FLAGS} -lpython2.7 -lgzstream -lz PUBLIC Eigen3::Eigen)
 
