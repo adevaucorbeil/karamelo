@@ -203,6 +203,11 @@ void Grid::init(double *solidlo, double *solidhi) {
 
   // Create nodes that are inside the local subdomain:
   nnodes_local = nx * ny * nz;
+  if (!update->method->is_TL && nnodes_local <= 0) {
+    error->one(FLERR,
+	       "Bad domain decomposition, some CPUs do not have any grid "
+	       "attached to.\n");
+  }
   grow(nnodes_local);
 
 
