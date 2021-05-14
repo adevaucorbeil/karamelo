@@ -135,15 +135,15 @@ void Grid::init(double *solidlo, double *solidhi) {
   }
 
   if (universe->procneigh[0][1] >= 0 &&
-      abs(boundlo[0] + noffsethi_[0] * h - subhi[0]) < 1.0e-12) {
+      abs(boundlo[0] + noffsethi_[0] * h - MIN(subhi[0], boundhi[0])) < 1.0e-12) {
     noffsethi_[0]++;
   }
   if (domain->dimension >= 2 && universe->procneigh[1][1] >= 0 &&
-      abs(boundlo[1] + noffsethi_[1] * h - subhi[1]) < 1.0e-12) {
+      abs(boundlo[1] + noffsethi_[1] * h - MIN(subhi[1], boundhi[1])) < 1.0e-12) {
     noffsethi_[1]++;
   }
   if (domain->dimension == 3 && universe->procneigh[2][1] >= 0 &&
-      abs(boundlo[2] + noffsethi_[2] * h - subhi[2]) < 1.0e-12) {
+      abs(boundlo[2] + noffsethi_[2] * h - MIN(subhi[2], boundhi[2])) < 1.0e-12) {
     noffsethi_[2]++;
   }
   // cout << "2--- proc " << universe->me << " noffsetlo=[" << noffsetlo[0] << "," << noffsetlo[1] << "," << noffsetlo[2] << "]\n";
