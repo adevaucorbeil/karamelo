@@ -1019,11 +1019,12 @@ void Solid::update_deformation_gradient()
     }
 
 
-    if (J[ip] <= 0.0)
+    if (J[ip] <= 0.0 && damage[ip] < 1.0)
     {
-      cout << "Error: J[" << ip << "]<=0.0 == " << J[ip] << endl;
-      cout << "F[" << ip << "]:" << endl << F[ip] << endl;
-      cout << "Fdot[" << ip << "]:" << endl << Fdot[ip] << endl;
+      cout << "Error: J[" << ptag[ip] << "]<=0.0 == " << J[ip] << endl;
+      cout << "F[" << ptag[ip] << "]:" << endl << F[ip] << endl;
+      cout << "Fdot[" << ptag[ip] << "]:" << endl << Fdot[ip] << endl;
+      cout << "damage[" << ptag[ip] << "]:" << endl << damage[ip] << endl;
       error->one(FLERR,"");
     }
     rho[ip] = rho0[ip] / J[ip];
@@ -1228,14 +1229,14 @@ void Solid::update_stress()
 	error->one(FLERR, "");
       }
 
-      // dt should also be lower than the inverse of \dot{F}e_i.
-      EigenSolver<Matrix3d> esFdot(Fdot[ip], false);
-      if (esFdot.info()!= Success) {
-	double lambda = fabs(esFdot.eigenvalues()[0].real());
-	lambda = MAX(lambda, fabs(esFdot.eigenvalues()[1].real()));
-	lambda = MAX(lambda, fabs(esFdot.eigenvalues()[2].real()));
-	dtCFL = MIN(dtCFL, 0.5/lambda);
-      }
+      // // dt should also be lower than the inverse of \dot{F}e_i.
+      // EigenSolver<Matrix3d> esFdot(Fdot[ip], false);
+      // if (esFdot.info()!= Success) {
+      // 	double lambda = fabs(esFdot.eigenvalues()[0].real());
+      // 	lambda = MAX(lambda, fabs(esFdot.eigenvalues()[1].real()));
+      // 	lambda = MAX(lambda, fabs(esFdot.eigenvalues()[2].real()));
+      // 	dtCFL = MIN(dtCFL, 0.5/lambda);
+      // }
     }
   }
 
