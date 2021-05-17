@@ -50,9 +50,9 @@ ComputeAverageVelocity::ComputeAverageVelocity(MPM *mpm, vector<string> args)
   cout << "Creating new compute ComputeAverageVelocity with ID: " << args[0] << endl;
   id = args[0];
 
-  (*input->vars)[id]=Var(id + "_x", 0);
-  (*input->vars)[id]=Var(id + "_y", 0);
-  (*input->vars)[id]=Var(id + "_z", 0);
+  (*input->vars)[id + "_x"]=Var(id + "_x", 0);
+  (*input->vars)[id + "_y"]=Var(id + "_y", 0);
+  (*input->vars)[id + "_z"]=Var(id + "_z", 0);
 }
 
 ComputeAverageVelocity::~ComputeAverageVelocity() {}
@@ -111,7 +111,7 @@ void ComputeAverageVelocity::compute_value() {
   MPI_Allreduce(&vz, &vz_reduced, 1, MPI_DOUBLE, MPI_SUM, universe->uworld);
   MPI_Allreduce(&n, &n_reduced, 1, MPI_INT, MPI_SUM, universe->uworld);
 
-  (*input->vars)[id]=Var(id + "_x", vx_reduced/n);
-  (*input->vars)[id]=Var(id + "_y", vy_reduced/n);
-  (*input->vars)[id]=Var(id + "_z", vz_reduced/n);
+  (*input->vars)[id + "_x"]=Var(id + "_x", vx_reduced/n);
+  (*input->vars)[id + "_y"]=Var(id + "_y", vy_reduced/n);
+  (*input->vars)[id + "_z"]=Var(id + "_z", vz_reduced/n);
 }
