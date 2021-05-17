@@ -24,7 +24,7 @@ ComputeStyle(average_velocity,ComputeAverageVelocity)
 #include "var.h"
 #include <vector>
 
-namespace KARAMELO_NS {
+//namespace KARAMELO_NS {
 
 class ComputeAverageVelocity : public Compute {
  public:
@@ -39,7 +39,7 @@ private:
   // class Var xvalue, yvalue, zvalue;    // Set force in x, y, and z directions.
   // bool xset, yset, zset;               // Does the compute set the x, y, and z forces of the group?
 };
-}
+//}
 #endif
 #endif
 

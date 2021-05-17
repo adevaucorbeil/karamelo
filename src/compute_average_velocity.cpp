@@ -28,7 +28,7 @@
 using namespace std;
 using namespace MathSpecial;
 using namespace Eigen;
-using namespace KARAMELO_NS;
+//using namespace KARAMELO_NS;
 
 ComputeAverageVelocity::ComputeAverageVelocity(MPM *mpm, vector<string> args)
     : Compute(mpm, args) {
