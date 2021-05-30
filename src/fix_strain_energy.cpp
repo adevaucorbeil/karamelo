@@ -38,6 +38,18 @@ FixStrainEnergy::FixStrainEnergy(MPM *mpm, vector<string> args) : Fix(mpm, args)
     error->all(FLERR,"Error: too few arguments for fix_strain_energy: requires at least 3 arguments. " + to_string(args.size()) + " received.\n");
   }
 
+  if (args[2].compare("restart") ==
+      0) { // If the keyword restart, we are expecting to have read_restart()
+           // launched right after.
+    igroup = stoi(args[3]);
+    if (igroup == -1) {
+      cout << "Could not find group number " << args[3] << endl;
+    }
+    groupbit = group->bitmask[igroup];
+    
+    return;
+  }
+
   if (group->pon[igroup].compare("particles") !=0 && group->pon[igroup].compare("all") !=0) {
     error->all(FLERR, "fix_strain_energy needs to be given a group of particles" + group->pon[igroup] + ", " + args[2] + " is a group of " + group->pon[igroup] + ".\n");
   }
@@ -118,4 +130,13 @@ void FixStrainEnergy::final_integrate() {
   // Reduce Es:
   MPI_Allreduce(&Es,&Es_reduced,1,MPI_DOUBLE,MPI_SUM,universe->uworld);
   (*input->vars)[id+"_s"]=Var(id+"_s", Es_reduced);
+}
+
+
+void FixStrainEnergy::write_restart(ofstream *of) {
+
+}
+
+void FixStrainEnergy::read_restart(ifstream *ifr) {
+
 }

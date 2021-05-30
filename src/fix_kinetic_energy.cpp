@@ -39,6 +39,19 @@ FixKineticEnergy::FixKineticEnergy(MPM *mpm, vector<string> args)
                           to_string(args.size()) + " received.\n");
   }
 
+  if (args[2].compare("restart") ==
+      0) { // If the keyword restart, we are expecting to have read_restart()
+           // launched right after.
+    igroup = stoi(args[3]);
+    if (igroup == -1) {
+      cout << "Could not find group number " << args[3] << endl;
+    }
+    groupbit = group->bitmask[igroup];
+    
+    return;
+  }
+
+
   if (group->pon[igroup].compare("particles") != 0 &&
       group->pon[igroup].compare("all") != 0) {
     error->all(FLERR,
@@ -102,4 +115,13 @@ void FixKineticEnergy::final_integrate() {
   // Reduce Ek:
   MPI_Allreduce(&Ek, &Ek_reduced, 1, MPI_DOUBLE, MPI_SUM, universe->uworld);
   (*input->vars)[id + "_s"] = Var(id + "_s", Ek_reduced);
+}
+
+
+void FixKineticEnergy::write_restart(ofstream *of) {
+
+}
+
+void FixKineticEnergy::read_restart(ifstream *ifr) {
+
 }

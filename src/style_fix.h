@@ -3,7 +3,6 @@
 #include "fix_contact_hertz.h"
 #include "fix_cutting_tool.h"
 #include "fix_force_nodes.h"
-#include "fix_impenetrable_surface.h"
 #include "fix_initial_stress.h"
 #include "fix_initial_velocity_nodes.h"
 #include "fix_initial_velocity_particles.h"
