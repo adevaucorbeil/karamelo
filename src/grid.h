@@ -104,6 +104,7 @@ class Grid : protected Pointers {
   void init(double*, double*); ///< Create the array of nodes. Give them their position, tag, and type
 
   void reduce_mass_ghost_nodes();                  ///< Reduce the mass of all the ghost nodes from that computed on each CPU.
+  void reduce_mass_ghost_nodes_old();              ///< Deprecated
   void reduce_rigid_ghost_nodes();                 ///< Reduce the rigid bool of all the ghost nodes from that computed on each CPU.
   void reduce_ghost_nodes(bool only_v = false, bool temp = false);    ///< Reduce the force and velocities of all the ghost nodes from that computed on each CPU. If only_v is true, it reduces only the velocities
   void update_grid_velocities();                   ///< Determine the temporary grid velocities \f$\tilde{v}_{n}\f$. 
