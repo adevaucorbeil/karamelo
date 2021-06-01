@@ -185,6 +185,139 @@ void Universe::set_proc_grid() {
 #ifdef DEBUG
     cout << "proc " << universe->me << "\tprocneigh = [[" << procneigh[0][0] << "," << procneigh[0][1] <<"],[" << procneigh[1][0] << "," << procneigh[1][1] <<"],[" << procneigh[2][0] << "," << procneigh[2][1] << "].\n";
 #endif
+
+    // Set send and receive pattern:
+    if (domain->dimension == 2) {
+      int jproc;
+      // Step 1:
+      if (me % 2 == 1) {
+	jproc = procneigh[0][0];
+	if (jproc != -1) {
+	  sendnrecv.push_back({1, jproc}); // me sends to jproc
+	  sendnrecv.push_back({0, jproc}); // me receives from jproc
+	}
+      }
+
+      if (me % 2 == 0) {
+	jproc = procneigh[0][1];
+	if (jproc != -1) {
+	  sendnrecv.push_back({0, jproc}); // me receives from jproc
+	  sendnrecv.push_back({1, jproc}); // me sends to jproc
+	}
+      }
+
+      // Step 2:
+      if (me % 2 == 0) {
+	jproc = procneigh[0][0];
+	if (jproc != -1) {
+	  sendnrecv.push_back({1, jproc}); // me sends to jproc
+	  sendnrecv.push_back({0, jproc}); // me receives from jproc
+	}
+      }
+
+      if (me % 2 == 1) {
+	jproc = procneigh[0][1];
+	if (jproc != -1) {
+	  sendnrecv.push_back({0, jproc}); // me receives from jproc
+	  sendnrecv.push_back({1, jproc}); // me sends to jproc
+	}
+      }
+
+
+      // Step 3:
+      if ((me / procgrid[0]) % 2 == 1) {
+	jproc = procneigh[1][0];
+	if (jproc != -1) {
+	  sendnrecv.push_back({1, jproc}); // me sends to jproc
+	  sendnrecv.push_back({0, jproc}); // me receives from jproc
+	}
+      }
+
+      if ((me / procgrid[0]) % 2 == 0) {
+	jproc = procneigh[1][1];
+	if (jproc != -1) {
+	  sendnrecv.push_back({0, jproc}); // me receives from jproc
+	  sendnrecv.push_back({1, jproc}); // me sends to jproc
+	}
+      }
+
+
+      // Step 4:
+      if ((me / procgrid[0]) % 2 == 0) {
+	jproc = procneigh[1][0];
+	if (jproc != -1) {
+	  sendnrecv.push_back({1, jproc}); // me sends to jproc
+	  sendnrecv.push_back({0, jproc}); // me receives from jproc
+	}
+      }
+
+      if ((me / procgrid[0]) % 2 == 1) {
+	jproc = procneigh[1][1];
+	if (jproc != -1) {
+	  sendnrecv.push_back({0, jproc}); // me receives from jproc
+	  sendnrecv.push_back({1, jproc}); // me sends to jproc
+	}
+      }
+
+
+      // Step 5:
+      if ((me / procgrid[0]) % 2 == 1) {
+	jproc = procneigh[1][0] + 1;
+	if (jproc != -1 && jproc / procgrid[0] < me / procgrid[0]) {
+	  sendnrecv.push_back({1, jproc}); // me sends to jproc
+	  sendnrecv.push_back({0, jproc}); // me receives from jproc
+	}
+      }
+
+      if ((me / procgrid[0]) % 2 == 0) {
+	jproc = procneigh[1][1] - 1;
+	if (jproc != -1 && me / procgrid[0] < jproc / procgrid[0]) {
+	  sendnrecv.push_back({0, jproc}); // me receives from jproc
+	  sendnrecv.push_back({1, jproc}); // me sends to jproc
+	}
+      }
+
+
+      // Step 6:
+      if ((me / procgrid[0]) % 2 == 1) {
+	jproc = procneigh[1][0] - 1;
+	if (jproc != -1 && me / procgrid[0] - jproc / procgrid[0] == 1) {
+	  sendnrecv.push_back({1, jproc}); // me sends to jproc
+	  sendnrecv.push_back({0, jproc}); // me receives from jproc
+	}
+      }
+
+      if ((me / procgrid[0]) % 2 == 0) {
+	jproc = procneigh[1][1] + 1;
+	if (jproc != -1 && jproc / procgrid[0] - me / procgrid[0] == 1) {
+	  sendnrecv.push_back({0, jproc}); // me receives from jproc
+	  sendnrecv.push_back({1, jproc}); // me sends to jproc
+	}
+      }
+
+
+      // Step 7:
+      if ((me / procgrid[0]) % 2 == 0) {
+	jproc = procneigh[1][0] - 1;
+	if (jproc > -1 && me / procgrid[0] - jproc / procgrid[0] == 1) {
+	  sendnrecv.push_back({1, jproc}); // me sends to jproc
+	  sendnrecv.push_back({0, jproc}); // me receives from jproc
+	}
+      }
+
+      if ((me / procgrid[0]) % 2 == 1) {
+	jproc = procneigh[1][1] + 1;
+	if (jproc > -1 && jproc / procgrid[0] - me / procgrid[0] == 1) {
+	  sendnrecv.push_back({0, jproc}); // me receives from jproc
+	  sendnrecv.push_back({1, jproc}); // me sends to jproc
+	}
+      }
+
+      cout << "End set communication pattern\n";
+
+    } else {
+      error->all(FLERR, "New partitioning not supported for dimensions 1 and 3 yet!\n");
+    }
 }
 
 vector<int> tile2d(int p) {
