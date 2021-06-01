@@ -506,29 +506,45 @@ void Grid::reduce_mass_ghost_nodes() {
     }
   }
 
-  // 2. Send and receive
-  for (int iproc = 0; iproc < universe->nprocs; iproc++) {
-    if (iproc == universe->me) {
+  // 2. New send and receive
+  for (int i = 0; i < universe->sendnrecv.size(); i++) {
+    if (universe->sendnrecv[i][0] == 0) {
+      // Receive
+      jproc = universe->sendnrecv[i][1];
 
-      for (auto idest = dest_nshared.cbegin(); idest != dest_nshared.cend();
-           ++idest) {
-        // Receive the list of masses from jproc:
-
-        jproc = idest->first;
-        //cout << "proc " << universe->me << " receives masses from " << jproc << endl;
-        MPI_Recv(&buf_recv_vect[jproc][0], idest->second.size(), MPI_DOUBLE,
-                 jproc, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-      }
+      MPI_Recv(&buf_recv_vect[jproc][0], dest_nshared[jproc].size(), MPI_DOUBLE,
+               jproc, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
     } else {
-
-      // Check if iproc listed in origin_nshared:
-
-      if (origin_nshared.count(iproc)) {
-	//cout << "proc " << universe->me << " sends masses to " << iproc << endl;
-        MPI_Send(tmp_mass_vect[iproc].data(), origin_nshared[iproc].size(), MPI_DOUBLE, iproc, 0, MPI_COMM_WORLD);
-      }
+      // Send
+      jproc = universe->sendnrecv[i][1];
+      MPI_Send(tmp_mass_vect[jproc].data(), origin_nshared[jproc].size(),
+               MPI_DOUBLE, jproc, 0, MPI_COMM_WORLD);
     }
   }
+
+  // // 2. Send and receive
+  // for (int iproc = 0; iproc < universe->nprocs; iproc++) {
+  //   if (iproc == universe->me) {
+
+  //     for (auto idest = dest_nshared.cbegin(); idest != dest_nshared.cend();
+  //          ++idest) {
+  //       // Receive the list of masses from jproc:
+
+  //       jproc = idest->first;
+  //       //cout << "proc " << universe->me << " receives masses from " << jproc << endl;
+  //       MPI_Recv(&buf_recv_vect[jproc][0], idest->second.size(), MPI_DOUBLE,
+  //                jproc, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+  //     }
+  //   } else {
+
+  //     // Check if iproc listed in origin_nshared:
+
+  //     if (origin_nshared.count(iproc)) {
+  // 	//cout << "proc " << universe->me << " sends masses to " << iproc << endl;
+  //       MPI_Send(tmp_mass_vect[iproc].data(), origin_nshared[iproc].size(), MPI_DOUBLE, iproc, 0, MPI_COMM_WORLD);
+  //     }
+  //   }
+  // }
 
   // 3. Add the received masses to that of the nodes:
   for (auto idest = dest_nshared.cbegin(); idest != dest_nshared.cend();
