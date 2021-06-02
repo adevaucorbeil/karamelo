@@ -119,8 +119,8 @@ void ULMPM::compute_grid_weight_functions_and_gradients()
       vector<array<int, 3>> *ntype = &domain->solids[isolid]->grid->ntype;
       vector<bool> *nrigid = &domain->solids[isolid]->grid->rigid;
 
-      map<int, int> *map_ntag = &domain->solids[isolid]->grid->map_ntag;
-      map<int, int>::iterator it;
+      unordered_map<int, int> *map_ntag = &domain->solids[isolid]->grid->map_ntag;
+      unordered_map<int, int>::iterator it;
 
       r.setZero();
 
@@ -187,57 +187,7 @@ void ULMPM::compute_grid_weight_functions_and_gradients()
                   n_neigh.push_back(i);
               }
             }
-          }
-          else if (update->shape_function == update->ShapeFunctions::BERNSTEIN)
-          {
-	    int i0 = 2 * (int) (((*xp)[ip][0] - domain->boxlo[0]) * inv_cellsize);
-	    int j0 = 2 * (int) (((*xp)[ip][1] - domain->boxlo[1]) * inv_cellsize);
-	    int k0 = 2 * (int) (((*xp)[ip][2] - domain->boxlo[2]) * inv_cellsize);
-
-            if ((i0 >= 1) && (i0 % 2 != 0))
-              i0--;
-            if ((j0 >= 1) && (j0 % 2 != 0))
-              j0--;
-            if (nz > 1)
-              if ((k0 >= 1) && (k0 % 2 != 0))
-                k0--;
-
-            // cout << "(" << i0 << "," << j0 << "," << k0 << ")\t";
-
-            for (int i = i0; i < i0 + 3; i++)
-            {
-              if (ny > 1)
-              {
-                for (int j = j0; j < j0 + 3; j++)
-                {
-                  if (nz > 1)
-                  {
-                    for (int k = k0; k < k0 + 3; k++)
-                    {
-		      it = (*map_ntag).find(nz * ny * i + nz * j + k);
-		      if (it != (*map_ntag).end())
-			{
-			  n_neigh.push_back(it->second);
-			}
-                    }
-                  }
-                  else
-                  {
-		    it = (*map_ntag).find(ny * i + j);
-		    if (it != (*map_ntag).end())
-		      {
-			n_neigh.push_back(it->second);
-		      }
-                  }
-                }
-              }
-              else
-              {
-		if (i < nnodes_local + nnodes_ghost)
-                  n_neigh.push_back(i);
-              }
-            }
-          } else {
+	  } else {
 	    // cubic and quadratic B-splines
             int i0 =
                 (int)(((*xp)[ip][0] - domain->boxlo[0]) * inv_cellsize - 1);

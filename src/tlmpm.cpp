@@ -25,7 +25,6 @@
 #include <Eigen/Eigen>
 #include <algorithm>
 #include <iostream>
-#include <map>
 #include <math.h>
 #include <string>
 #include <vector>
@@ -130,8 +129,8 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
       vector<array<int, 3>> *ntype = &domain->solids[isolid]->grid->ntype;
       vector<bool> *nrigid = &domain->solids[isolid]->grid->rigid;
 
-      map<int, int> *map_ntag = &domain->solids[isolid]->grid->map_ntag;
-      map<int, int>::iterator it;
+      unordered_map<int, int> *map_ntag = &domain->solids[isolid]->grid->map_ntag;
+      unordered_map<int, int>::iterator it;
       
       r.setZero();
       if (np_local && (nnodes_local + nnodes_ghost)) {
