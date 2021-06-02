@@ -40,6 +40,8 @@ ULMPM::ULMPM(MPM *mpm) : Method(mpm)
   // Default base function (linear):
   basis_function            = &BasisFunction::linear;
   derivative_basis_function = &BasisFunction::derivative_linear;
+
+  rigid_solids = 0;
 }
 
 ULMPM::~ULMPM() {}
@@ -82,7 +84,6 @@ void ULMPM::compute_grid_weight_functions_and_gradients()
     return;
 
   bigint nsolids, np_local, nnodes_local, nnodes_ghost;
-  int rigid_solids = 0;
 
   nsolids = domain->solids.size();
 
@@ -90,7 +91,8 @@ void ULMPM::compute_grid_weight_functions_and_gradients()
   {
     for (int isolid = 0; isolid < nsolids; isolid++)
     {
-      if (domain->solids[isolid]->mat->rigid) rigid_solids = 1;
+      if (update->ntimestep == 0 && domain->solids[isolid]->mat->rigid)
+        rigid_solids = 1;
 
       np_local = domain->solids[isolid]->np_local;
       nnodes_local = domain->solids[isolid]->grid->nnodes_local;
@@ -312,14 +314,17 @@ void ULMPM::compute_grid_weight_functions_and_gradients()
     }
   } // end if (nsolids)
 
-  // Reduce rigid_solids
-  int rigid_solids_reduced = 0;
+  if (update->ntimestep == 0) {
+    // Reduce rigid_solids
+    int rigid_solids_reduced = 0;
 
-  MPI_Allreduce(&rigid_solids, &rigid_solids_reduced, 1, MPI_INT, MPI_LOR,
-                universe->uworld);
-
-  if (rigid_solids_reduced)
+    MPI_Allreduce(&rigid_solids, &rigid_solids_reduced, 1, MPI_INT, MPI_LOR,
+		  universe->uworld);
+    rigid_solids = rigid_solids_reduced;
+  }
+  if (rigid_solids) {
     domain->grid->reduce_rigid_ghost_nodes();
+  }
 }
 
 void ULMPM::particles_to_grid() {

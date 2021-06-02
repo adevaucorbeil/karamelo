@@ -52,6 +52,7 @@ class ULMPM : public Method {
 
 private:
   int update_wf;
+  int rigid_solids;
 };
 
 // double linear_basis_function(double, int);
