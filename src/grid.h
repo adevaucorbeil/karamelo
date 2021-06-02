@@ -107,6 +107,7 @@ class Grid : protected Pointers {
   void reduce_mass_ghost_nodes_old();              ///< Deprecated
   void reduce_rigid_ghost_nodes();                 ///< Reduce the rigid bool of all the ghost nodes from that computed on each CPU.
   void reduce_ghost_nodes(bool only_v = false, bool temp = false);    ///< Reduce the force and velocities of all the ghost nodes from that computed on each CPU. If only_v is true, it reduces only the velocities
+  void reduce_ghost_nodes_old(bool only_v = false, bool temp = false);    ///< Deprecated
   void update_grid_velocities();                   ///< Determine the temporary grid velocities \f$\tilde{v}_{n}\f$. 
   void update_grid_positions();                    ///< Determine the new position of the grid nodes.
   void update_grid_temperature();                  ///< Determine the temporary grid temperature \f$\tilde{T}_{n}\f$.
