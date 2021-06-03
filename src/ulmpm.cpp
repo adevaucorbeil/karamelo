@@ -124,6 +124,12 @@ void ULMPM::compute_grid_weight_functions_and_gradients()
       unordered_map<int, int> *map_ntag = &domain->solids[isolid]->grid->map_ntag;
       unordered_map<int, int>::iterator it;
 
+      vector<int> n_neigh;
+
+      int i0, j0, k0;
+      int ny = domain->solids[isolid]->grid->ny_global;
+      int nz = domain->solids[isolid]->grid->nz_global;
+
       r.setZero();
 
       for (int in = 0; in < nnodes_local + nnodes_ghost; in++)
@@ -144,17 +150,14 @@ void ULMPM::compute_grid_weight_functions_and_gradients()
           (*wfd_pn)[ip].clear();
 
           // Calculate what nodes particle ip will interact with:
-	  int nx = domain->solids[isolid]->grid->nx_global;
-	  int ny = domain->solids[isolid]->grid->ny_global;
-	  int nz = domain->solids[isolid]->grid->nz_global;
 
-          vector<int> n_neigh;
+          n_neigh.clear();
 
           if (update->shape_function == update->ShapeFunctions::LINEAR)
           {
-	    int i0 = (int) (((*xp)[ip][0] - domain->boxlo[0])*inv_cellsize);
-	    int j0 = (int) (((*xp)[ip][1] - domain->boxlo[1])*inv_cellsize);
-	    int k0 = (int) (((*xp)[ip][2] - domain->boxlo[2])*inv_cellsize);
+	    i0 = (int) (((*xp)[ip][0] - domain->boxlo[0])*inv_cellsize);
+	    j0 = (int) (((*xp)[ip][1] - domain->boxlo[1])*inv_cellsize);
+	    k0 = (int) (((*xp)[ip][2] - domain->boxlo[2])*inv_cellsize);
 
             for (int i = i0; i < i0 + 2; i++)
             {
@@ -191,12 +194,9 @@ void ULMPM::compute_grid_weight_functions_and_gradients()
             }
 	  } else {
 	    // cubic and quadratic B-splines
-            int i0 =
-                (int)(((*xp)[ip][0] - domain->boxlo[0]) * inv_cellsize - 1);
-            int j0 =
-                (int)(((*xp)[ip][1] - domain->boxlo[1]) * inv_cellsize - 1);
-            int k0 =
-                (int)(((*xp)[ip][2] - domain->boxlo[2]) * inv_cellsize - 1);
+            i0 = (int)(((*xp)[ip][0] - domain->boxlo[0]) * inv_cellsize - 1);
+            j0 = (int)(((*xp)[ip][1] - domain->boxlo[1]) * inv_cellsize - 1);
+            k0 = (int)(((*xp)[ip][2] - domain->boxlo[2]) * inv_cellsize - 1);
 
             for (int i = i0; i < i0 + 4; i++) {
               if (ny > 1) {
