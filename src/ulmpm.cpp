@@ -376,8 +376,14 @@ void ULMPM::grid_to_points()
   {
     if (apic)
       domain->solids[isolid]->compute_rate_deformation_gradient_UL_APIC();
-    domain->solids[isolid]->compute_particle_velocities_and_positions();
-    domain->solids[isolid]->compute_particle_acceleration();
+
+    if (domain->solids[isolid]->mat->rigid) {
+      domain->solids[isolid]->compute_particle_velocities_and_positions();
+      domain->solids[isolid]->compute_particle_acceleration();
+    } else {
+      domain->solids[isolid]->compute_particle_accelerations_velocities_and_positions();
+    }
+
     if (temp) {
       domain->solids[isolid]->update_particle_temperature();
     }

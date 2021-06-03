@@ -131,6 +131,7 @@ class Solid : protected Pointers {
   void compute_internal_forces_nodes_TL();          ///< Compute internal forces step of the Particle to Grid step of the total Lagrangian MPM algorithm.
   void compute_internal_forces_nodes_UL(bool);      ///< Compute internal forces step of the Particle to Grid step of the updated Lagrangian MPM algorithm.
   void compute_particle_velocities_and_positions(); ///< Compute the particles' temporary velocities and position, part of the Grid to Particles step of the MPM algorithm.
+  void compute_particle_accelerations_velocities_and_positions(); ///< Compute the particles' temporary acceleration, velocities and position, part of the Grid to Particles step of the MPM algorithm.
   void compute_particle_acceleration();             ///< Update the particles' acceleration
   void update_particle_velocities(double);          ///< Update the particles' velocities based on either PIC and/or FLIP.
                                                     ///< The argument is the ratio \f$\alpha\f$ used between PIC and FLIP.
