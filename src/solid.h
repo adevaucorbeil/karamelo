@@ -150,7 +150,7 @@ class Solid : protected Pointers {
                                                     ///< This function is used to re-order the memory arrangment of particles.
                                                     ///< Usually this is done when particle j is deleted.
   void pack_particle(int, vector<double> &);        ///< Pack particles attributes into a buffer (used for generating a restart).
-  void unpack_particle(int &, vector<int>, double[]); ///< Unpack particles attributes from a buffer (used when reading a restart).
+  void unpack_particle(int &, vector<int>, vector<double> &); ///< Unpack particles attributes from a buffer (used when reading a restart).
 
   void write_restart(ofstream*);                    ///< Write solid information in the restart file
   void read_restart(ifstream*);                     ///< Read solid information from the restart file

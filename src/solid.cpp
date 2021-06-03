@@ -1506,7 +1506,7 @@ void Solid::pack_particle(int i, vector<double> &buf)
   buf.push_back(J[i]);
 }
 
-void Solid::unpack_particle(int &i, vector<int> list, double buf[])
+void Solid::unpack_particle(int &i, vector<int> list, vector<double> &buf)
 {
   int m;
   for (auto j: list)

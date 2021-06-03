@@ -483,93 +483,88 @@ void ULMPM::reset()
   }
 }
 
-void ULMPM::exchange_particles()
-{
-  int ip, np_local_old, size_buf_send, size_buf_recv;
+void ULMPM::exchange_particles() {
+  int ip, np_local_old, size_buf;
   vector<Eigen::Vector3d> *xp;
   vector<double> buf_send;
+  vector<double> buf_send_vect[universe->nprocs];
+  vector<double> buf_recv_vect[universe->nprocs];
   vector<int> unpack_list;
-  
+
   // Identify the particles that are not in the subdomain
   // and transfer their variables to the buffer:
 
-  for (int isolid=0; isolid<domain->solids.size(); isolid++)
-    {
-      buf_send.clear();
-      np_local_old = domain->solids[isolid]->np_local;
-      xp = &domain->solids[isolid]->x;
+  for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
+    buf_send_vect[universe->me].clear();
+    np_local_old = domain->solids[isolid]->np_local;
+    xp = &domain->solids[isolid]->x;
 
-      ip = 0;
-      while(ip < domain->solids[isolid]->np_local)
-	{
-	  if (!domain->inside_subdomain((*xp)[ip][0], (*xp)[ip][1], (*xp)[ip][2]))
-	    {
-	      // The particle is not located in the subdomain anymore:
-	      // transfer it to the buffer
-	      domain->solids[isolid]->pack_particle(ip, buf_send);
-	      domain->solids[isolid]->copy_particle(domain->solids[isolid]->np_local - 1, ip);
-	      domain->solids[isolid]->np_local--;
-	    }
-	  else
-	    {
-	      ip++;
-	    }
-	}
-
-      // Resize particle variables:
-      if (np_local_old - domain->solids[isolid]->np_local != buf_send.size()/domain->solids[isolid]->comm_n)
-	{
-	  error->one(FLERR,"Size of buffer does not match the number of particles that left the domain: " + to_string(np_local_old - domain->solids[isolid]->np_local) + "!=" + to_string(buf_send.size()) + "\n");
-	}
-      if (buf_send.size())
-	{
-	  domain->solids[isolid]->grow(domain->solids[isolid]->np_local);
-	}
-
-      // Exchange buffers:
-      for (int sproc=0; sproc<universe->nprocs; sproc++)
-	{
-	  if (sproc == universe->me)
-	    {
-	      size_buf_send = buf_send.size();
-
-	      for (int rproc=0; rproc<universe->nprocs; rproc++){
-		if (rproc != universe->me) {
-		  MPI_Send(&size_buf_send, 1, MPI_INT, rproc, 0, universe->uworld);
-		  if (size_buf_send)
-		    MPI_Send(buf_send.data(), size_buf_send, MPI_DOUBLE, rproc, 0, MPI_COMM_WORLD);
-		}
-	      }
-	    }
-	  else
-	    {
-	      // Receive buffer:
-	      MPI_Recv(&size_buf_recv, 1, MPI_INT, sproc, 0, universe->uworld, MPI_STATUS_IGNORE);
-
-	      if (size_buf_recv)
-		{
-		  double buf_recv[size_buf_recv];
-		  MPI_Recv(&buf_recv[0], size_buf_recv, MPI_DOUBLE, sproc, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-
-
-		  // Check what particles are within the subdomain:
-		  unpack_list.clear();
-		  ip = 0;
-		  while(ip < size_buf_recv)
-		    {
-		      if (domain->inside_subdomain(buf_recv[ip+1], buf_recv[ip+2], buf_recv[ip+3]))
-			{
-			  unpack_list.push_back(ip);
-			}
-		      ip += domain->solids[isolid]->comm_n;
-		    }
-
-		  domain->solids[isolid]->grow(domain->solids[isolid]->np_local + unpack_list.size());
-
-		  // Unpack buffer:
-		  domain->solids[isolid]->unpack_particle(domain->solids[isolid]->np_local, unpack_list, buf_recv);
-		}
-	    }
-	}
+    ip = 0;
+    while (ip < domain->solids[isolid]->np_local) {
+      if (!domain->inside_subdomain((*xp)[ip][0], (*xp)[ip][1], (*xp)[ip][2])) {
+        // The particle is not located in the subdomain anymore:
+        // transfer it to the buffer
+        domain->solids[isolid]->pack_particle(ip, buf_send_vect[universe->me]);
+        domain->solids[isolid]->copy_particle(
+            domain->solids[isolid]->np_local - 1, ip);
+        domain->solids[isolid]->np_local--;
+      } else {
+        ip++;
+      }
     }
+
+    // Resize particle variables:
+    if (np_local_old - domain->solids[isolid]->np_local !=
+        buf_send_vect[universe->me].size() / domain->solids[isolid]->comm_n) {
+      error->one(
+          FLERR,
+          "Size of buffer does not match the number of particles that left the "
+          "domain: " +
+              to_string(np_local_old - domain->solids[isolid]->np_local) +
+              "!=" + to_string(buf_send_vect[universe->me].size()) + "\n");
+    }
+    if (buf_send_vect[universe->me].size()) {
+      domain->solids[isolid]->grow(domain->solids[isolid]->np_local);
+    }
+
+    // Exchange buffers:
+    for (int sproc = 0; sproc < universe->nprocs; sproc++) {
+      if (sproc == universe->me) {
+        size_buf = buf_send_vect[sproc].size();
+      }
+
+      MPI_Bcast(&size_buf, 1, MPI_INT, sproc, universe->uworld);
+
+      if (sproc != universe->me) {
+        buf_send_vect[sproc].resize(size_buf);
+      }
+
+      MPI_Bcast(&buf_send_vect[sproc][0], size_buf, MPI_DOUBLE, sproc,
+                universe->uworld);
+    }
+
+    // Check what particles are within the subdomain:
+    for (int sproc = 0; sproc < universe->nprocs; sproc++) {
+      if (sproc != universe->me) {
+        unpack_list.clear();
+        ip = 0;
+        while (ip < buf_send_vect[sproc].size()) {
+          if (domain->inside_subdomain(buf_send_vect[sproc][ip + 1],
+                                       buf_send_vect[sproc][ip + 2],
+                                       buf_send_vect[sproc][ip + 3])) {
+            unpack_list.push_back(ip);
+          }
+          ip += domain->solids[isolid]->comm_n;
+        }
+
+        domain->solids[isolid]->grow(domain->solids[isolid]->np_local +
+                                     unpack_list.size());
+
+        // Unpack buffer:
+        domain->solids[isolid]->unpack_particle(
+            domain->solids[isolid]->np_local, unpack_list,
+            buf_send_vect[sproc]);
+      }
+    }
+  }
 }
