@@ -510,6 +510,7 @@ void Solid::compute_particle_accelerations_velocities_and_positions() {
 
   bool update_corners;
   double inv_dt = 1.0/update->dt;
+  Vector3d dummy;
 
   if ((method_type.compare("tlcpdi") == 0 ||
        method_type.compare("ulcpdi") == 0) &&
@@ -529,7 +530,7 @@ void Solid::compute_particle_accelerations_velocities_and_positions() {
       in = neigh_pn[ip][j];
       v_update[ip] += wf_pn[ip][j] * grid->v_update[in];
       a[ip] += wf_pn[ip][j] * (grid->v_update[in] - grid->v[in]);
-      x[ip] += update->dt * wf_pn[ip][j] * grid->v_update[in];
+      //x[ip] += update->dt * wf_pn[ip][j] * grid->v_update[in];
 
       if (update_corners) {
         for (int ic = 0; ic < nc; ic++) {
@@ -539,6 +540,7 @@ void Solid::compute_particle_accelerations_velocities_and_positions() {
     }
     a[ip] *= inv_dt;
     f[ip] = a[ip] * mass[ip];
+    x[ip] += update->dt * v_update[ip];
 
     if (!is_TL) {
       // Check if the particle is within the box's domain:
