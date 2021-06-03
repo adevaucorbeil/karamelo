@@ -404,8 +404,7 @@ void ULCPDI::particles_to_grid()
 
     if (method_type.compare("APIC") == 0) domain->solids[isolid]->compute_velocity_nodes_APIC(grid_reset);
     else domain->solids[isolid]->compute_velocity_nodes(grid_reset);
-    domain->solids[isolid]->compute_external_forces_nodes(grid_reset);
-    domain->solids[isolid]->compute_internal_forces_nodes_UL(grid_reset);
+    domain->solids[isolid]->compute_external_and_internal_forces_nodes_UL(grid_reset);
     /*compute_thermal_energy_nodes();*/
   }
 }

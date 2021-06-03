@@ -352,8 +352,7 @@ void ULMPM::particles_to_grid() {
       domain->solids[isolid]->compute_velocity_nodes_APIC(grid_reset);
     else
       domain->solids[isolid]->compute_velocity_nodes(grid_reset);
-    domain->solids[isolid]->compute_external_forces_nodes(grid_reset);
-    domain->solids[isolid]->compute_internal_forces_nodes_UL(grid_reset);
+    domain->solids[isolid]->compute_external_and_internal_forces_nodes_UL(grid_reset);
 
     if (temp) {
       domain->solids[isolid]->compute_temperature_nodes(grid_reset);
