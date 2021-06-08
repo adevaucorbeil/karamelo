@@ -175,6 +175,17 @@ void Update::create_method(vector<string> args){
   }
   n++;
 
+  if (args.size() == n + 1) {
+    if (args[n].compare("gradient-enhanced") == 0) {
+      method->ge = true;
+    } else {
+      error->all(FLERR,
+                 "Illegal modify_method command: keyword " + args[n] +
+                     " unknown. Expected \"gradient-enhanced\" or nothing.\n");
+    }
+  }
+  n++;
+
   if (n < args.size()) {
     additional_args = vector<string>(args.begin() + n, args.end());
   } else {
