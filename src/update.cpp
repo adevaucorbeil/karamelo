@@ -161,7 +161,7 @@ void Update::create_method(vector<string> args){
     n++;
   }
 
-  if (args.size() == n + 1) {
+  if (args.size() >= n + 1) {
     if (args[n].compare("thermo-mechanical") == 0) {
       method->temp = true;
     } else if (args[n].compare("mechanical") == 0) {
@@ -175,7 +175,7 @@ void Update::create_method(vector<string> args){
   }
   n++;
 
-  if (args.size() == n + 1) {
+  if (args.size() >= n + 1) {
     if (args[n].compare("gradient-enhanced") == 0) {
       method->ge = true;
     } else {
