@@ -277,8 +277,25 @@ void Universe::set_proc_grid() {
 	}
       }
 
-
       // Step 6:
+      if ((me / procgrid[0]) % 2 == 0) {
+	jproc = procneigh[1][0] + 1;
+	if (jproc != -1 && jproc / procgrid[0] < me / procgrid[0]) {
+	  sendnrecv.push_back({1, jproc}); // me sends to jproc
+	  sendnrecv.push_back({0, jproc}); // me receives from jproc
+	}
+      }
+
+      if ((me / procgrid[0]) % 2 == 1) {
+	jproc = procneigh[1][1] - 1;
+	if (jproc != -1 && me / procgrid[0] < jproc / procgrid[0]) {
+	  sendnrecv.push_back({0, jproc}); // me receives from jproc
+	  sendnrecv.push_back({1, jproc}); // me sends to jproc
+	}
+      }
+
+
+      // Step 7:
       if ((me / procgrid[0]) % 2 == 1) {
 	jproc = procneigh[1][0] - 1;
 	if (jproc != -1 && me / procgrid[0] - jproc / procgrid[0] == 1) {
@@ -296,7 +313,7 @@ void Universe::set_proc_grid() {
       }
 
 
-      // Step 7:
+      // Step 8:
       if ((me / procgrid[0]) % 2 == 0) {
 	jproc = procneigh[1][0] - 1;
 	if (jproc > -1 && me / procgrid[0] - jproc / procgrid[0] == 1) {
@@ -318,6 +335,7 @@ void Universe::set_proc_grid() {
     } else {
       error->all(FLERR, "New partitioning not supported for dimensions 1 and 3 yet!\n");
     }
+    error->all(FLERR, "exit\n");
 }
 
 vector<int> tile2d(int p) {
