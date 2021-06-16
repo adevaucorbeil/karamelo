@@ -187,7 +187,7 @@ void Universe::set_proc_grid() {
 #endif
 
     // Set send and receive pattern:
-    if (domain->dimension == 2) {
+    if (domain->dimension >= 2) {
       int jproc;
       // Step 1:
       if (me % 2 == 1) {
@@ -315,8 +315,319 @@ void Universe::set_proc_grid() {
 
       cout << "End set communication pattern\n";
 
-    } else {
-      error->all(FLERR, "New partitioning not supported for dimensions 1 and 3 yet!\n");
+    }
+
+    if (domain->dimension == 3) {
+      int jproc;
+      // Step 9:
+      if (myloc[2] % 2 == 1) {
+	jproc = procneigh[2][0];
+	if (jproc != -1) {
+	  sendnrecv.push_back({1, jproc}); // me sends to jproc
+	  sendnrecv.push_back({0, jproc}); // me receives from jproc
+	}
+      }
+
+      if (myloc[2] % 2 == 0) {
+	jproc = procneigh[2][1];
+	if (jproc != -1) {
+	  sendnrecv.push_back({0, jproc}); // me receives from jproc
+	  sendnrecv.push_back({1, jproc}); // me sends to jproc
+	}
+      }
+
+      // Step 10:
+      if (myloc[2] % 2 == 0) {
+	jproc = procneigh[2][0];
+	if (jproc != -1) {
+	  sendnrecv.push_back({1, jproc}); // me sends to jproc
+	  sendnrecv.push_back({0, jproc}); // me receives from jproc
+	}
+      }
+
+      if (myloc[2] % 2 == 1) {
+	jproc = procneigh[2][1];
+	if (jproc != -1) {
+	  sendnrecv.push_back({0, jproc}); // me receives from jproc
+	  sendnrecv.push_back({1, jproc}); // me sends to jproc
+	}
+      }
+
+      // Step 11:
+      if (myloc[2] % 2 == 1) {
+	jproc = procneigh[2][0] - procgrid[0];
+	if (jproc != -1 && procneigh[1][0] != -1) {
+	  sendnrecv.push_back({1, jproc}); // me sends to jproc
+	  sendnrecv.push_back({0, jproc}); // me receives from jproc
+	}
+      }
+
+      if (myloc[2] % 2 == 0) {
+	jproc = procneigh[2][1] + procgrid[0];
+	if (jproc != -1 && procneigh[1][1] != -1) {
+	  sendnrecv.push_back({0, jproc}); // me receives from jproc
+	  sendnrecv.push_back({1, jproc}); // me sends to jproc
+	}
+      }
+
+      // Step 12:
+      if (myloc[2] % 2 == 0) {
+	jproc = procneigh[2][0] - procgrid[0];
+	if (jproc > -1 && procneigh[1][0] != -1) {
+	  sendnrecv.push_back({1, jproc}); // me sends to jproc
+	  sendnrecv.push_back({0, jproc}); // me receives from jproc
+	}
+      }
+
+      if (myloc[2] % 2 == 1) {
+	jproc = procneigh[2][1] + procgrid[0];
+	if (jproc > -1 && procneigh[1][1] != -1 && procneigh[2][1] != -1) {
+	  sendnrecv.push_back({0, jproc}); // me receives from jproc
+	  sendnrecv.push_back({1, jproc}); // me sends to jproc
+	}
+      }
+
+      // Step 13:
+      if (myloc[2] % 2 == 1) {
+	jproc = procneigh[2][0] - 1;
+	if (jproc != -1) {
+	  sendnrecv.push_back({1, jproc}); // me sends to jproc
+	  sendnrecv.push_back({0, jproc}); // me receives from jproc
+	}
+      }
+
+      if (myloc[2] % 2 == 0) {
+	jproc = procneigh[2][1] + 1;
+	if (jproc != -1) {
+	  sendnrecv.push_back({0, jproc}); // me receives from jproc
+	  sendnrecv.push_back({1, jproc}); // me sends to jproc
+	}
+      }
+
+      // Step 14:
+      if (myloc[2] % 2 == 0) {
+	jproc = procneigh[2][0] - 1;
+	if (jproc != -1 && procneigh[0][0] != -1) {
+	  sendnrecv.push_back({1, jproc}); // me sends to jproc
+	  sendnrecv.push_back({0, jproc}); // me receives from jproc
+	}
+      }
+
+      if (myloc[2] % 2 == 1) {
+	jproc = procneigh[2][1] + 1;
+	if (jproc != -1 && procneigh[0][1] != -1 && procneigh[2][1] != -1) {
+	  sendnrecv.push_back({0, jproc}); // me receives from jproc
+	  sendnrecv.push_back({1, jproc}); // me sends to jproc
+	}
+      }
+
+      // Step 15:
+      if (myloc[2] % 2 == 1) {
+	jproc = procneigh[2][0] - procgrid[0] - 1;
+	if (jproc > -1 && procneigh[1][0] != -1 && procneigh[0][0] != -1) {
+	  sendnrecv.push_back({1, jproc}); // me sends to jproc
+	  sendnrecv.push_back({0, jproc}); // me receives from jproc
+	}
+      }
+
+      if (myloc[2] % 2 == 0) {
+	jproc = procneigh[2][1] + procgrid[0] + 1;
+	if (jproc > -1 && procneigh[1][1] != -1 && procneigh[0][1] != -1) {
+	  sendnrecv.push_back({0, jproc}); // me receives from jproc
+	  sendnrecv.push_back({1, jproc}); // me sends to jproc
+	}
+      }
+
+      // Step 16:
+      if (myloc[2] % 2 == 0) {
+	jproc = procneigh[2][0] - procgrid[0] - 1;
+	if (jproc > -1 && procneigh[1][0] != -1 && procneigh[0][0] != -1) {
+	  sendnrecv.push_back({1, jproc}); // me sends to jproc
+	  sendnrecv.push_back({0, jproc}); // me receives from jproc
+	}
+      }
+
+      if (myloc[2] % 2 == 1) {
+	jproc = procneigh[2][1] + procgrid[0] + 1;
+	if (jproc > procgrid[0] && procneigh[1][1] != -1 && procneigh[0][1] != -1) {
+	  sendnrecv.push_back({0, jproc}); // me receives from jproc
+	  sendnrecv.push_back({1, jproc}); // me sends to jproc
+	}
+      }
+
+      // Step 17:
+      if (myloc[2] % 2 == 1) {
+	jproc = procneigh[2][0] + procgrid[0] - 1;
+	if (jproc > -1 && procneigh[1][1] != -1 && procneigh[0][0] != -1) {
+	  sendnrecv.push_back({1, jproc}); // me sends to jproc
+	  sendnrecv.push_back({0, jproc}); // me receives from jproc
+	}
+      }
+
+      if (myloc[2] % 2 == 0) {
+	jproc = procneigh[2][1] - procgrid[0] + 1;
+	if (jproc > -1 && procneigh[1][0] != -1 && procneigh[0][1] != -1) {
+	  sendnrecv.push_back({0, jproc}); // me receives from jproc
+	  sendnrecv.push_back({1, jproc}); // me sends to jproc
+	}
+      }
+
+      // Step 18:
+      if (myloc[2] % 2 == 0) {
+	jproc = procneigh[2][0] + procgrid[0] - 1;
+	if (jproc > -1 && procneigh[1][1] != -1 && procneigh[0][0] != -1) {
+	  sendnrecv.push_back({1, jproc}); // me sends to jproc
+	  sendnrecv.push_back({0, jproc}); // me receives from jproc
+	}
+      }
+
+      if (myloc[2] % 2 == 1) {
+	jproc = procneigh[2][1] - procgrid[0] + 1;
+	if (jproc > -1 && procneigh[1][0] != -1 && procneigh[0][1] != -1) {
+	  sendnrecv.push_back({0, jproc}); // me receives from jproc
+	  sendnrecv.push_back({1, jproc}); // me sends to jproc
+	}
+      }
+
+      // Step 19:
+      if (myloc[2] % 2 == 1) {
+	jproc = procneigh[2][0] + procgrid[0];
+	if (jproc > -1 && procneigh[1][1] != -1) {
+	  sendnrecv.push_back({1, jproc}); // me sends to jproc
+	  sendnrecv.push_back({0, jproc}); // me receives from jproc
+	}
+      }
+
+      if (myloc[2] % 2 == 0) {
+	jproc = procneigh[2][1] - procgrid[0];
+	if (jproc > -1 && procneigh[1][0] != -1) {
+	  sendnrecv.push_back({0, jproc}); // me receives from jproc
+	  sendnrecv.push_back({1, jproc}); // me sends to jproc
+	}
+      }
+
+      // Step 20:
+      if (myloc[2] % 2 == 0) {
+	jproc = procneigh[2][0] + procgrid[0];
+        if (jproc > procgrid[0] - 1 && procneigh[1][1] != -1) {
+          sendnrecv.push_back({1, jproc}); // me sends to jproc
+	  sendnrecv.push_back({0, jproc}); // me receives from jproc
+        }
+      }
+
+      if (myloc[2] % 2 == 1) {
+	jproc = procneigh[2][1] - procgrid[0];
+	if (jproc > -1 && procneigh[1][0] != -1) {
+	  sendnrecv.push_back({0, jproc}); // me receives from jproc
+	  sendnrecv.push_back({1, jproc}); // me sends to jproc
+	}
+      }
+
+      // Step 21:
+      if (myloc[2] % 2 == 1) {
+	jproc = procneigh[2][0] + procgrid[0] + 1;
+	if (jproc > -1 && procneigh[0][1] != -1 && procneigh[1][1] != -1) {
+          sendnrecv.push_back({1, jproc}); // me sends to jproc
+	  sendnrecv.push_back({0, jproc}); // me receives from jproc
+        }
+      }
+
+      if (myloc[2] % 2 == 0) {
+	jproc = procneigh[2][1] - procgrid[0] - 1;
+	if (jproc > -1 && procneigh[0][0] != -1 && procneigh[1][0] != -1) {
+	  sendnrecv.push_back({0, jproc}); // me receives from jproc
+	  sendnrecv.push_back({1, jproc}); // me sends to jproc
+	}
+      }
+
+      // Step 22:
+      if (myloc[2] % 2 == 0) {
+	jproc = procneigh[2][0] + procgrid[0] + 1;
+	if (jproc > procgrid[0] && procneigh[0][1] != -1 && procneigh[1][1] != -1) {
+          sendnrecv.push_back({1, jproc}); // me sends to jproc
+	  sendnrecv.push_back({0, jproc}); // me receives from jproc
+        }
+      }
+
+      if (myloc[2] % 2 == 1) {
+	jproc = procneigh[2][1] - procgrid[0] - 1;
+	if (jproc > -1 && procneigh[0][0] != -1 && procneigh[1][0] != -1) {
+	  sendnrecv.push_back({0, jproc}); // me receives from jproc
+	  sendnrecv.push_back({1, jproc}); // me sends to jproc
+	}
+      }
+
+      // Step 23:
+      if (myloc[2] % 2 == 1) {
+	jproc = procneigh[2][0] + 1;
+	if (jproc > -1 && procneigh[0][1] != -1) {
+          sendnrecv.push_back({1, jproc}); // me sends to jproc
+	  sendnrecv.push_back({0, jproc}); // me receives from jproc
+        }
+      }
+
+      if (myloc[2] % 2 == 0) {
+	jproc = procneigh[2][1] - 1;
+	if (jproc > -1 && procneigh[0][0] != -1) {
+	  sendnrecv.push_back({0, jproc}); // me receives from jproc
+	  sendnrecv.push_back({1, jproc}); // me sends to jproc
+	}
+      }
+
+      // Step 24:
+      if (myloc[2] % 2 == 0) {
+	jproc = procneigh[2][0] + 1;
+	if (jproc > -1 && procneigh[0][1] != -1) {
+          sendnrecv.push_back({1, jproc}); // me sends to jproc
+	  sendnrecv.push_back({0, jproc}); // me receives from jproc
+        }
+      }
+
+      if (myloc[2] % 2 == 1) {
+	jproc = procneigh[2][1] - 1;
+	if (jproc > -1 && procneigh[0][0] != -1) {
+	  sendnrecv.push_back({0, jproc}); // me receives from jproc
+	  sendnrecv.push_back({1, jproc}); // me sends to jproc
+	}
+      }
+
+      // Step 25:
+      if (myloc[2] % 2 == 1) {
+	jproc = procneigh[2][0] - procgrid[1] + 1;
+	if (jproc > -1 && procneigh[0][1] != -1 && procneigh[1][0] != -1) {
+          sendnrecv.push_back({1, jproc}); // me sends to jproc
+	  sendnrecv.push_back({0, jproc}); // me receives from jproc
+        }
+      }
+
+      if (myloc[2] % 2 == 0) {
+	jproc = procneigh[2][1] + procgrid[1] - 1;
+	if (jproc > -1 && procneigh[0][0] != -1 && procneigh[1][1] != -1) {
+	  sendnrecv.push_back({0, jproc}); // me receives from jproc
+	  sendnrecv.push_back({1, jproc}); // me sends to jproc
+	}
+      }
+
+      // Step 26:
+      if (myloc[2] % 2 == 0) {
+	jproc = procneigh[2][0] - procgrid[1] + 1;
+	if (jproc > -1 && procneigh[0][1] != -1 && procneigh[1][0] != -1) {
+          sendnrecv.push_back({1, jproc}); // me sends to jproc
+	  sendnrecv.push_back({0, jproc}); // me receives from jproc
+        }
+      }
+
+      if (myloc[2] % 2 == 1) {
+	jproc = procneigh[2][1] + procgrid[1] - 1;
+	if (jproc > procgrid[1] - 2 && procneigh[0][0] != -1 && procneigh[1][1] != -1) {
+	  sendnrecv.push_back({0, jproc}); // me receives from jproc
+	  sendnrecv.push_back({1, jproc}); // me sends to jproc
+	}
+      }
+    }
+
+    if (domain->dimension == 1) {
+      error->all(FLERR, "New partitioning not supported for dimensions 1 yet!\n");
     }
 }
 
