@@ -43,19 +43,15 @@ dump(dump1, all, particle, dumping_interval, dump_p.*.LAMMPS, x, y, z)
 dump(dump2, all, grid, dumping_interval, dump_g.*.LAMMPS, x, y, z)
 #dump(dump3, all, pyplot, 1, dump.*.pdf, 500, 500)
 #-----------OUTPUTS------------------#
-fix(Ek, kinetic_energy, all)
-fix(Es, strain_energy, all)
-Etot = Ek_s + Es_s
+compute(Ek, kinetic_energy, all)
+compute(Es, strain_energy, all)
+Etot = Ek + Es
 #----------- RUN --------------------#
 
 #dt_factor(0.1)  # => adaptive time step with CFL = 0.1
 set_dt(0.001)
 
-log_modify(custom, step, dt, time, Ek_s, Es_s)
-plot(Ek, N_log, time, Ek_s)
-plot(Es, N_log, time, Es_s)
-plot(Etot, N_log, time, Etot)
-save_plot(plot.pdf)
-log(N_log)
+log_modify(custom, step, dt, time, Ek, Es)
+set_output(N_log)
 run_time(3.5)
 #run(1107)
