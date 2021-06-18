@@ -280,7 +280,7 @@ void Universe::set_proc_grid() {
       // Step 6:
       if ((me / procgrid[0]) % 2 == 0) {
 	jproc = procneigh[1][0] + 1;
-	if (jproc != -1 && jproc / procgrid[0] < me / procgrid[0]) {
+	if (jproc > 0 && jproc / procgrid[0] < me / procgrid[0] && procneigh[0][1] != -1) {
 	  sendnrecv.push_back({1, jproc, 6}); // me sends to jproc
 	  sendnrecv.push_back({0, jproc, 6}); // me receives from jproc
 	}
@@ -380,7 +380,7 @@ void Universe::set_proc_grid() {
 
       if (myloc[2] % 2 == 0) {
 	jproc = procneigh[2][1] + procgrid[0];
-	if (jproc > -1 && procneigh[1][1] != -1) {
+	if (jproc > -1 && procneigh[1][1] != -1 && procneigh[2][1] != -1) {
 	  sendnrecv.push_back({0, jproc, 11}); // me receives from jproc
 	  sendnrecv.push_back({1, jproc, 11}); // me sends to jproc
 	}
@@ -406,7 +406,7 @@ void Universe::set_proc_grid() {
       // Step 13:
       if (myloc[2] % 2 == 1) {
 	jproc = procneigh[2][0] - 1;
-	if (jproc > -1) {
+	if (jproc > -1 && procneigh[0][0] != -1) {
 	  sendnrecv.push_back({1, jproc, 13}); // me sends to jproc
 	  sendnrecv.push_back({0, jproc, 13}); // me receives from jproc
 	}
@@ -414,7 +414,7 @@ void Universe::set_proc_grid() {
 
       if (myloc[2] % 2 == 0) {
 	jproc = procneigh[2][1] + 1;
-	if (jproc > -1 && procneigh[2][1] != -1) {
+	if (jproc > -1 && procneigh[2][1] != -1 && procneigh[0][1] != -1) {
 	  sendnrecv.push_back({0, jproc, 13}); // me receives from jproc
 	  sendnrecv.push_back({1, jproc, 13}); // me sends to jproc
 	}
@@ -448,7 +448,7 @@ void Universe::set_proc_grid() {
 
       if (myloc[2] % 2 == 0) {
 	jproc = procneigh[2][1] + procgrid[0] + 1;
-	if (jproc > -1 && procneigh[1][1] != -1 && procneigh[0][1] != -1) {
+	if (jproc > procgrid[0] && procneigh[1][1] != -1 && procneigh[0][1] != -1) {
 	  sendnrecv.push_back({0, jproc, 15}); // me receives from jproc
 	  sendnrecv.push_back({1, jproc, 15}); // me sends to jproc
 	}
@@ -609,7 +609,7 @@ void Universe::set_proc_grid() {
 
       // Step 25:
       if (myloc[2] % 2 == 1) {
-	jproc = procneigh[2][0] - procgrid[1] + 1;
+	jproc = procneigh[2][0] - procgrid[0] + 1;
 	if (jproc > -1 && procneigh[0][1] != -1 && procneigh[1][0] != -1) {
           sendnrecv.push_back({1, jproc, 25}); // me sends to jproc
 	  sendnrecv.push_back({0, jproc, 25}); // me receives from jproc
@@ -618,7 +618,7 @@ void Universe::set_proc_grid() {
 
       if (myloc[2] % 2 == 0) {
 	jproc = procneigh[2][1] + procgrid[0] - 1;
-	if (jproc > -1 && procneigh[0][0] != -1 && procneigh[1][1] != -1) {
+	if (jproc > -1 && procneigh[0][0] != -1 && procneigh[1][1] != -1 && procneigh[2][1] != -1) {
 	  sendnrecv.push_back({0, jproc, 25}); // me receives from jproc
 	  sendnrecv.push_back({1, jproc, 25}); // me sends to jproc
 	}
@@ -634,7 +634,7 @@ void Universe::set_proc_grid() {
       }
 
       if (myloc[2] % 2 == 1) {
-	jproc = procneigh[2][1] + procgrid[1] - 1;
+	jproc = procneigh[2][1] + procgrid[0] - 1;
 	if (jproc > procgrid[1] - 2 && procneigh[0][0] != -1 && procneigh[1][1] != -1) {
 	  sendnrecv.push_back({0, jproc, 26}); // me receives from jproc
 	  sendnrecv.push_back({1, jproc, 26}); // me sends to jproc
