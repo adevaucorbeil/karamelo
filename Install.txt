@@ -36,3 +36,15 @@ make
 5. Enjoy!
 
 
+- Installing Karamelo on NCI:
+module load cmake/3.18.2   
+module load eigen/3.3.7 
+module load openmpi/4.1.0
+module load petsc/3.12.2   
+module load boost/1.72.0
+
+unset BOOST_ROOT
+
+cmake -DCMAKE_BUILD_TYPE=release -DCMAKE_CXX_COMPILER=mpicxx -DCMAKE_C_COMPILER=mpicc -DBoost_INCLUDE_DIR=$BOOST_BASE/include -DBoost_LIBRARY_DIR=$BOOST_BASE/lib/GNU build .
+make -j04
+
