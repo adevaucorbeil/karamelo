@@ -76,7 +76,7 @@ void ComputeAverageVelocity::compute_value() {
   double vx, vy, vz, vx_reduced, vy_reduced, vz_reduced;
   int n = 0, n_reduced = 0;
 
-  vx = vy = vz;
+  vx = vy = vz = 0;
   vx_reduced = vz_reduced = vy_reduced = 0;
 
   if (solid == -1) {
@@ -111,7 +111,7 @@ void ComputeAverageVelocity::compute_value() {
   MPI_Allreduce(&vz, &vz_reduced, 1, MPI_DOUBLE, MPI_SUM, universe->uworld);
   MPI_Allreduce(&n, &n_reduced, 1, MPI_INT, MPI_SUM, universe->uworld);
 
-  (*input->vars)[id + "_x"]=Var(id + "_x", vx_reduced/n);
-  (*input->vars)[id + "_y"]=Var(id + "_y", vy_reduced/n);
-  (*input->vars)[id + "_z"]=Var(id + "_z", vz_reduced/n);
+  (*input->vars)[id + "_x"]=Var(id + "_x", vx_reduced/n_reduced);
+  (*input->vars)[id + "_y"]=Var(id + "_y", vy_reduced/n_reduced);
+  (*input->vars)[id + "_z"]=Var(id + "_z", vz_reduced/n_reduced);
 }
