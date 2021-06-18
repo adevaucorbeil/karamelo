@@ -657,9 +657,6 @@ void Universe::set_proc_grid() {
       }
       MPI_Barrier(uworld);
     }
-
-    MPI_Barrier(uworld);
-    error->all(FLERR, "exit\n");
 }
 
 vector<int> tile2d(int p) {
