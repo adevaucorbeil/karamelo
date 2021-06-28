@@ -128,19 +128,24 @@ void Update::create_method(vector<string> args){
 
   bool isFLIP = false;
   n++;
-  // Method used: PIC, FLIP or APIC:
+  // Method used: PIC, FLIP, APIC, or ASFLIP:
   if (map_sub_method_type.count(args[n]) > 0) {
     sub_method_type = map_sub_method_type.at(args[n]);
     if (sub_method_type == SubMethodType::PIC)
       PIC_FLIP = 0;
-    else if (sub_method_type == SubMethodType::FLIP) {
+    else if (sub_method_type == SubMethodType::FLIP ||
+             sub_method_type == SubMethodType::AFLIP ||
+             sub_method_type == SubMethodType::ASFLIP) {
       isFLIP = true;
       if (args.size() < 4) {
 	error->all(FLERR, "Illegal modify_method command: not enough arguments.\n");
       }
     }
   } else {
-    error->all(FLERR, "Error: method type " + args[n] + " not understood. Expect: PIC, FLIP or APIC\n");
+    error->all(
+        FLERR,
+        "Error: method type " + args[n] +
+            " not understood. Expect: PIC, FLIP, APIC, AFLIP, or ASFLIP\n");
   }
 
   n++;

@@ -75,6 +75,9 @@ void ULMPM::setup(vector<string> args)
   if (update->sub_method_type == update->SubMethodType::APIC) {
     apic = true;
     update->PIC_FLIP = 0;
+  } else if (update->sub_method_type == update->SubMethodType::ASFLIP ||
+             update->sub_method_type == update->SubMethodType::AFLIP) {
+    apic = true;
   }
 }
 
@@ -380,7 +383,10 @@ void ULMPM::grid_to_points()
       domain->solids[isolid]->compute_particle_velocities_and_positions();
       domain->solids[isolid]->compute_particle_acceleration();
     } else {
-      domain->solids[isolid]->compute_particle_accelerations_velocities_and_positions();
+      if (update->sub_method_type != update->SubMethodType::ASFLIP)
+	domain->solids[isolid]->compute_particle_accelerations_velocities_and_positions();
+      else
+	domain->solids[isolid]->compute_particle_accelerations_velocities();	
     }
 
     if (temp) {
@@ -393,7 +399,10 @@ void ULMPM::advance_particles()
 {
   for (int isolid = 0; isolid < domain->solids.size(); isolid++)
   {
-    domain->solids[isolid]->update_particle_velocities(update->PIC_FLIP);
+    if (update->sub_method_type != update->SubMethodType::ASFLIP)
+      domain->solids[isolid]->update_particle_velocities(update->PIC_FLIP);
+    else
+      domain->solids[isolid]->update_particle_velocities_and_positions(update->PIC_FLIP);      
   }
 }
 

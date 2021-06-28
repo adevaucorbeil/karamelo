@@ -97,7 +97,9 @@ Solid::Solid(MPM *mpm, vector<string> args) : Pointers(mpm)
     grid = domain->grid;
   }
 
-  if (update->sub_method_type == update->SubMethodType::APIC) {
+  if (update->sub_method_type == update->SubMethodType::APIC ||
+      update->sub_method_type == update->SubMethodType::AFLIP ||
+      update->sub_method_type == update->SubMethodType::ASFLIP) {
     apic = true;
   } else {
     apic = false;
@@ -579,6 +581,65 @@ void Solid::compute_particle_accelerations_velocities_and_positions() {
   }
 }
 
+void Solid::compute_particle_accelerations_velocities() {
+
+  vector<Eigen::Vector3d> vc_update;
+  vc_update.resize(nc);
+
+  int in;
+
+  bool update_corners;
+  double inv_dt = 1.0/update->dt;
+  Vector3d dummy;
+
+  if ((method_type.compare("tlcpdi") == 0 ||
+       method_type.compare("ulcpdi") == 0) &&
+      (update->method->style == 1)) {
+    update_corners = true;
+  } else
+    update_corners = false;
+
+  for (int ip = 0; ip < np_local; ip++) {
+    v_update[ip].setZero();
+    a[ip].setZero();
+    if (update_corners)
+      for (int i = 0; i < nc; i++)
+        vc_update[i].setZero();
+
+    for (int j = 0; j < numneigh_pn[ip]; j++) {
+      in = neigh_pn[ip][j];
+      v_update[ip] += wf_pn[ip][j] * grid->v_update[in];
+      a[ip] += wf_pn[ip][j] * (grid->v_update[in] - grid->v[in]);
+
+      if (update_corners) {
+        for (int ic = 0; ic < nc; ic++) {
+          vc_update[ic] += wf_pn_corners[nc * ip + ic][j] * grid->v_update[in];
+        }
+      }
+    }
+    a[ip] *= inv_dt;
+    f[ip] = a[ip] * mass[ip];
+
+    if (!is_TL) {
+      // Check if the particle is within the box's domain:
+      if (domain->inside(x[ip]) == 0) {
+        cout << "Error: Particle " << ip << " left the domain ("
+             << domain->boxlo[0] << "," << domain->boxhi[0] << ","
+             << domain->boxlo[1] << "," << domain->boxhi[1] << ","
+             << domain->boxlo[2] << "," << domain->boxhi[2] << ",):\n"
+             << x[ip] << endl;
+        error->one(FLERR, "");
+      }
+    }
+
+    if (update_corners) {
+      for (int ic = 0; ic < nc; ic++) {
+        xpc[nc * ip + ic] += update->dt * vc_update[ic];
+      }
+    }
+  }
+}
+
 void Solid::compute_particle_velocities_and_positions()
 {
 
@@ -672,11 +733,12 @@ void Solid::compute_particle_acceleration()
 void Solid::update_particle_velocities(double alpha) {
   for (int ip = 0; ip < np_local; ip++) {
     v[ip] = (1 - alpha) * v_update[ip] + alpha * (v[ip] + update->dt * a[ip]);
-    // if (ptag[ip] == 101) {
-    // 	printf("v=[%4.3e %4.3e %4.3e]\tv_update=[%4.3e %4.3e %4.3e]\ta=[%4.3e
-    // %4.3e %4.3e]\n", v[ip][0], v[ip][1], v[ip][2], v_update[ip][0],
-    // v_update[ip][1], v_update[ip][2], a[ip][0], a[ip][1], a[ip][2]);
-    // }
+  }
+}
+void Solid::update_particle_velocities_and_positions(double alpha) {
+  for (int ip = 0; ip < np_local; ip++) {
+    v[ip] = (1 - alpha) * v_update[ip] + alpha * (v[ip] + update->dt * a[ip]);
+    x[ip] += update->dt * v[ip];
   }
 }
 
