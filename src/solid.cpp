@@ -742,12 +742,17 @@ void Solid::update_particle_velocities_and_positions(double alpha) {
   }
 }
 
-void Solid::compute_rate_deformation_gradient_TL() {
+void Solid::compute_rate_deformation_gradient_TL(bool doublemapping) {
   if (mat->rigid)
     return;
 
   int in;
-  vector<Eigen::Vector3d> *vn = &grid->v;
+  vector<Eigen::Vector3d> *vn;
+
+  if (doublemapping)
+    vn = &grid->v;
+  else
+    vn = &grid->v_update;
 
   if (domain->dimension == 1) {
     for (int ip = 0; ip < np_local; ip++) {
@@ -799,13 +804,18 @@ void Solid::compute_rate_deformation_gradient_TL() {
   }
 }
 
-void Solid::compute_rate_deformation_gradient_UL_MUSL()
+void Solid::compute_rate_deformation_gradient_UL(bool doublemapping)
 {
   if (mat->rigid)
     return;
 
   int in;
-  vector<Eigen::Vector3d> *vn = &grid->v;
+  vector<Eigen::Vector3d> *vn;
+
+  if (doublemapping)
+    vn = &grid->v;
+  else
+    vn = &grid->v_update;
 
   if (domain->dimension == 1)
     {
@@ -867,63 +877,6 @@ void Solid::compute_rate_deformation_gradient_UL_MUSL()
 	      L[ip](2,0) += (*vn)[in][2]*wfd_pn[ip][j][0];
 	      L[ip](2,1) += (*vn)[in][2]*wfd_pn[ip][j][1];
 	      L[ip](2,2) += (*vn)[in][2]*wfd_pn[ip][j][2];
-      }
-    }
-  }
-}
-
-void Solid::compute_rate_deformation_gradient_UL_USL()
-{
-  if (mat->rigid)
-    return;
-
-  int in;
-  vector<Eigen::Vector3d> *vn = &grid->v_update;
-
-  if (domain->dimension == 1)
-  {
-    for (int ip = 0; ip < np_local; ip++)
-    {
-      L[ip].setZero();
-      for (int j = 0; j < numneigh_pn[ip]; j++)
-      {
-        in = neigh_pn[ip][j];
-        L[ip](0, 0) += (*vn)[in][0] * wfd_pn[ip][j][0];
-      }
-    }
-  }
-  else if (domain->dimension == 2)
-  {
-    for (int ip = 0; ip < np; ip++)
-    {
-      L[ip].setZero();
-      for (int j = 0; j < numneigh_pn[ip]; j++)
-      {
-        in = neigh_pn[ip][j];
-        L[ip](0, 0) += (*vn)[in][0] * wfd_pn[ip][j][0];
-        L[ip](0, 1) += (*vn)[in][0] * wfd_pn[ip][j][1];
-        L[ip](1, 0) += (*vn)[in][1] * wfd_pn[ip][j][0];
-        L[ip](1, 1) += (*vn)[in][1] * wfd_pn[ip][j][1];
-      }
-    }
-  }
-  else if (domain->dimension == 3)
-  {
-    for (int ip = 0; ip < np; ip++)
-    {
-      L[ip].setZero();
-      for (int j = 0; j < numneigh_pn[ip]; j++)
-      {
-        in = neigh_pn[ip][j];
-        L[ip](0, 0) += (*vn)[in][0] * wfd_pn[ip][j][0];
-        L[ip](0, 1) += (*vn)[in][0] * wfd_pn[ip][j][1];
-        L[ip](0, 2) += (*vn)[in][0] * wfd_pn[ip][j][2];
-        L[ip](1, 0) += (*vn)[in][1] * wfd_pn[ip][j][0];
-        L[ip](1, 1) += (*vn)[in][1] * wfd_pn[ip][j][1];
-        L[ip](1, 2) += (*vn)[in][1] * wfd_pn[ip][j][2];
-        L[ip](2, 0) += (*vn)[in][2] * wfd_pn[ip][j][0];
-        L[ip](2, 1) += (*vn)[in][2] * wfd_pn[ip][j][1];
-        L[ip](2, 2) += (*vn)[in][2] * wfd_pn[ip][j][2];
       }
     }
   }
@@ -997,15 +950,21 @@ void Solid::compute_deformation_gradient()
   }
 }
 
-void Solid::compute_rate_deformation_gradient_TL_APIC()
+void Solid::compute_rate_deformation_gradient_TL_APIC(bool doublemapping)
 {
   if (mat->rigid)
     return;
 
   int in;
   vector<Eigen::Vector3d> *x0n = &grid->x0;
-  //Eigen::Vector3d *vn = grid->v;
-  vector<Eigen::Vector3d> *vn = &grid->v_update;
+
+  vector<Eigen::Vector3d> *vn;
+
+  if (doublemapping)
+    vn = &grid->v;
+  else
+    vn = &grid->v_update;
+
   Eigen::Vector3d dx;
 
   if (domain->dimension == 1) {
@@ -1052,14 +1011,20 @@ void Solid::compute_rate_deformation_gradient_TL_APIC()
   }
 }
 
-void Solid::compute_rate_deformation_gradient_UL_APIC()
+void Solid::compute_rate_deformation_gradient_UL_APIC(bool doublemapping)
 {
   if (mat->rigid)
     return;
 
   int in;
   vector<Eigen::Vector3d> *x0n = &grid->x0;
-  vector<Eigen::Vector3d> *vn = &grid->v_update;
+  vector<Eigen::Vector3d> *vn;
+
+  if (doublemapping)
+    vn = &grid->v;
+  else
+    vn = &grid->v_update;
+
   Eigen::Vector3d dx;
 
   if (domain->dimension == 1) {

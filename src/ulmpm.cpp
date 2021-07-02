@@ -417,31 +417,26 @@ void ULMPM::velocities_to_grid()
     else
       grid_reset = false;
 
-    //if (!apic)
-    //{
-    // domain->solids[isolid]->compute_mass_nodes(grid_reset);
     domain->solids[isolid]->compute_velocity_nodes(grid_reset);
     if (temp) {
       domain->solids[isolid]->compute_temperature_nodes(grid_reset);
     }
-    //}
   }
   domain->grid->reduce_ghost_nodes(true, temp);
 }
 
-void ULMPM::compute_rate_deformation_gradient() {
-  //if (!apic) {
+void ULMPM::compute_rate_deformation_gradient(bool doublemapping) {
   for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
-    domain->solids[isolid]->compute_rate_deformation_gradient_UL_MUSL();
-    // domain->solids[isolid]->compute_deformation_gradient();
+    if (apic) 
+      domain->solids[isolid]->compute_rate_deformation_gradient_UL_APIC(doublemapping);
+    else
+      domain->solids[isolid]->compute_rate_deformation_gradient_UL(doublemapping);
   }
-  //}
 }
 
 void ULMPM::update_deformation_gradient()
 {
-  for (int isolid = 0; isolid < domain->solids.size(); isolid++)
-  {
+  for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
     domain->solids[isolid]->update_deformation_gradient();
   }
 }

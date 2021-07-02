@@ -56,7 +56,7 @@ void USL::run(Var condition){
 
     modify->post_update_grid_state();
 
-    update->method->compute_rate_deformation_gradient();
+    update->method->compute_rate_deformation_gradient(false);
     update->method->grid_to_points();
 
     modify->post_grid_to_point();

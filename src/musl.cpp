@@ -70,7 +70,7 @@ void MUSL::run(Var condition){
 
     update->method->update_grid_positions();
 
-    update->method->compute_rate_deformation_gradient();
+    update->method->compute_rate_deformation_gradient(true);
     update->method->update_deformation_gradient();
     update->method->update_stress();
 

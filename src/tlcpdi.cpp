@@ -399,12 +399,12 @@ void TLCPDI::update_grid_positions()
   }
 }
 
-void TLCPDI::compute_rate_deformation_gradient()
-{
+void TLCPDI::compute_rate_deformation_gradient(bool doublemapping) {
   for (int isolid=0; isolid<domain->solids.size(); isolid++) {
-    if (method_type.compare("APIC") == 0) domain->solids[isolid]->compute_rate_deformation_gradient_TL_APIC();
-    else domain->solids[isolid]->compute_rate_deformation_gradient_TL();
-    //domain->solids[isolid]->compute_deformation_gradient();
+    if (update->sub_method_type == update->SubMethodType::APIC)
+      domain->solids[isolid]->compute_rate_deformation_gradient_TL_APIC(doublemapping);
+    else
+      domain->solids[isolid]->compute_rate_deformation_gradient_TL(doublemapping);
   }
 }
 

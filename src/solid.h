@@ -138,11 +138,10 @@ class Solid : protected Pointers {
   void update_particle_velocities_and_positions(double);          ///< Update the particles' velocities based on either PIC and/or FLIP and update the positions using the updated velocities.
                                                     ///< The argument is the ratio \f$\alpha\f$ used between PIC and FLIP.
                                                     ///< \f$\alpha = 0\f$ for pure PIC, \f$\alpha = 1\f$ for pure FLIP.
-  void compute_rate_deformation_gradient_TL();      ///< Compute the time derivative of the deformation matrix for TLMPM, when APIC is not used.
-  void compute_rate_deformation_gradient_TL_APIC(); ///< Compute the time derivative of the deformation matrix for TLMPM, when APIC is used.
-  void compute_rate_deformation_gradient_UL_USL();  ///< Compute the time derivative of the deformation matrix for TLMPM, when using Update Stress Last and APIC is not used.
-  void compute_rate_deformation_gradient_UL_MUSL(); ///< Compute the time derivative of the deformation matrix for TLMPM, when using Modified Update Stress Last and APIC is not used.
-  void compute_rate_deformation_gradient_UL_APIC(); ///< Compute the time derivative of the deformation matrix for TLMPM, when APIC is in use.
+  void compute_rate_deformation_gradient_TL(bool);      ///< Compute the time derivative of the deformation matrix for TLMPM, when APIC is not used.
+  void compute_rate_deformation_gradient_TL_APIC(bool); ///< Compute the time derivative of the deformation matrix for TLMPM, when APIC is used.
+  void compute_rate_deformation_gradient_UL(bool);  ///< Compute the time derivative of the deformation matrix for ULMPM, when using Update Stress Last and APIC is not used.
+  void compute_rate_deformation_gradient_UL_APIC(bool); ///< Compute the time derivative of the deformation matrix for ULMPM, when APIC is in use.
   void update_deformation_gradient();               ///< Update the deformation gradient, volume, density, and the necessary strain matrices
   void update_stress();                             ///< Calculate the stress, damage and temperature at each particle, and determine the maximum allowed time step.
   void compute_inertia_tensor();                    ///< Compute the inertia tensor necessary for the Affice PIC.

@@ -31,7 +31,7 @@ class TLCPDI : public Method {
   void advance_particles();
   void velocities_to_grid();
   void update_grid_positions();
-  void compute_rate_deformation_gradient();
+  void compute_rate_deformation_gradient(bool);
   void update_deformation_gradient();
   void update_stress();
   void adjust_dt();

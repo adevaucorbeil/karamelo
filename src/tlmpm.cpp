@@ -375,15 +375,12 @@ void TLMPM::advance_particles()
 
 void TLMPM::velocities_to_grid()
 {
-  if (update->sub_method_type != update->SubMethodType::APIC) {
-    for (int isolid=0; isolid<domain->solids.size(); isolid++) {
-      //domain->solids[isolid]->compute_mass_nodes();
-      domain->solids[isolid]->compute_velocity_nodes(true);
-      if (temp) {
-	domain->solids[isolid]->compute_temperature_nodes(true);
-      }
-      domain->solids[isolid]->grid->reduce_ghost_nodes(true, temp);
+  for (int isolid=0; isolid<domain->solids.size(); isolid++) {
+    domain->solids[isolid]->compute_velocity_nodes(true);
+    if (temp) {
+      domain->solids[isolid]->compute_temperature_nodes(true);
     }
+    domain->solids[isolid]->grid->reduce_ghost_nodes(true, temp);
   }
 }
 
@@ -394,12 +391,14 @@ void TLMPM::update_grid_positions()
   }
 }
 
-void TLMPM::compute_rate_deformation_gradient()
-{
-  for (int isolid=0; isolid<domain->solids.size(); isolid++) {
-    if (update->sub_method_type == update->SubMethodType::APIC) domain->solids[isolid]->compute_rate_deformation_gradient_TL_APIC();
-    else domain->solids[isolid]->compute_rate_deformation_gradient_TL();
-    //domain->solids[isolid]->compute_deformation_gradient();
+void TLMPM::compute_rate_deformation_gradient(bool doublemapping) {
+  for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
+    if (update->sub_method_type == update->SubMethodType::APIC)
+      domain->solids[isolid]->compute_rate_deformation_gradient_TL_APIC(
+          doublemapping);
+    else
+      domain->solids[isolid]->compute_rate_deformation_gradient_TL(
+          doublemapping);
   }
 }
 
