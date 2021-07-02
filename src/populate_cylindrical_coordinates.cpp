@@ -175,9 +175,6 @@ Var PopulateCylindricalCoordinates::command(vector<string> args) {
           s->D[l].setZero();
           s->Finv[l].setZero();
           s->Fdot[l].setZero();
-	  if (update->method->method_type.compare("APIC") == 0)
-	    s->Di[l].setZero();
-
           s->J[l] = 1;
           s->mask[l] = 1;
           l++;

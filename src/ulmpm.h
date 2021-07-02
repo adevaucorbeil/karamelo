@@ -51,7 +51,7 @@ class ULMPM : public Method {
   void exchange_particles();
 
 private:
-  int update_wf;
+  int update_Di;
   int rigid_solids;
 };
 

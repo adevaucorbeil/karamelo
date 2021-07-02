@@ -275,10 +275,6 @@ void Solid::grow(int nparticles)
   D.resize(nparticles);
   Finv.resize(nparticles);
   Fdot.resize(nparticles);
-  if (apic) {
-    Di.resize(nparticles);
-    // BDinv.resize(nparticles);
-  }
   vol0.resize(nparticles);
   vol.resize(nparticles);
   rho0.resize(nparticles);
@@ -975,7 +971,7 @@ void Solid::compute_rate_deformation_gradient_TL_APIC(bool doublemapping)
 	dx = (*x0n)[in] - x0[ip];
 	Fdot[ip](0,0) += (*vn)[in][0]*dx[0]*wf_pn[ip][j];
       }
-      Fdot[ip] *= Di[ip];
+      Fdot[ip] *= Di;
     }
   } else if (domain->dimension == 2) {
     for (int ip=0; ip<np_local; ip++){
@@ -988,7 +984,7 @@ void Solid::compute_rate_deformation_gradient_TL_APIC(bool doublemapping)
 	Fdot[ip](1,0) += (*vn)[in][1]*dx[0]*wf_pn[ip][j];
 	Fdot[ip](1,1) += (*vn)[in][1]*dx[1]*wf_pn[ip][j];
       }
-      Fdot[ip] *= Di[ip];
+      Fdot[ip] *= Di;
     }
   } else if (domain->dimension == 3) {
     for (int ip=0; ip<np_local; ip++){
@@ -1006,7 +1002,7 @@ void Solid::compute_rate_deformation_gradient_TL_APIC(bool doublemapping)
 	Fdot[ip](2,1) += (*vn)[in][2]*dx[1]*wf_pn[ip][j];
 	Fdot[ip](2,2) += (*vn)[in][2]*dx[2]*wf_pn[ip][j];
       }
-      Fdot[ip] *= Di[ip];
+      Fdot[ip] *= Di;
     }
   }
 }
@@ -1035,7 +1031,7 @@ void Solid::compute_rate_deformation_gradient_UL_APIC(bool doublemapping)
 	dx = (*x0n)[in] - x[ip];
 	L[ip](0,0) += (*vn)[in][0]*dx[0]*wf_pn[ip][j];
       }
-      L[ip] *= Di[ip];
+      L[ip] *= Di;
     }
   } else if (domain->dimension == 2) {
     for (int ip=0; ip<np_local; ip++){
@@ -1048,7 +1044,7 @@ void Solid::compute_rate_deformation_gradient_UL_APIC(bool doublemapping)
 	L[ip](1,0) += (*vn)[in][1]*dx[0]*wf_pn[ip][j];
 	L[ip](1,1) += (*vn)[in][1]*dx[1]*wf_pn[ip][j];
       }
-      L[ip] *= Di[ip];
+      L[ip] *= Di;
     }
   } else if (domain->dimension == 3) {
     for (int ip=0; ip<np_local; ip++){
@@ -1066,7 +1062,7 @@ void Solid::compute_rate_deformation_gradient_UL_APIC(bool doublemapping)
 	L[ip](2,1) += (*vn)[in][2]*dx[1]*wf_pn[ip][j];
 	L[ip](2,2) += (*vn)[in][2]*dx[2]*wf_pn[ip][j];
       }
-      L[ip] *= Di[ip];
+      L[ip] *= Di;
     }
   }
 }
@@ -1357,83 +1353,76 @@ void Solid::update_stress()
 }
 
 void Solid::compute_inertia_tensor() {
-
   int in;
   Eigen::Vector3d dx;
-  Eigen::Matrix3d Dtemp;
 
   vector<Eigen::Vector3d> *pos;
   Eigen::Matrix3d eye;
   eye.setIdentity();
+  double cellsizeSqInv = 1.0 / (grid->cellsize * grid->cellsize);
 
   if (update->shape_function == update->ShapeFunctions::CUBIC_SPLINE) {
 
-    double cellsizeSqInv = 1.0 / (grid->cellsize * grid->cellsize);
-    Dtemp = 3.0 * cellsizeSqInv * eye;
+    Di = 3.0 * cellsizeSqInv * eye;
     if (domain->dimension == 1) {
-      Dtemp(1,1) = 1;
-      Dtemp(2,2) = 1;
+      Di(1, 1) = 1;
+      Di(2, 2) = 1;
+    } else if (domain->dimension == 2) {
+      Di(2, 2) = 1;
     }
-    if (domain->dimension == 2)
-      Dtemp(2,2) = 1;
-    for (int ip = 0; ip < np_local; ip++) {
-      Di[ip] = Dtemp;
-    }
-    return;
-  } else if (update->shape_function == update->ShapeFunctions::QUADRATIC_SPLINE) {
+  } else if (update->shape_function ==
+             update->ShapeFunctions::QUADRATIC_SPLINE) {
 
-    double cellsizeSqInv = 1.0 / (grid->cellsize * grid->cellsize);
-    Dtemp = 4.0 * cellsizeSqInv * eye;
+    Di = 4.0 * cellsizeSqInv * eye;
     if (domain->dimension == 1) {
-      Dtemp(1,1) = 1;
-      Dtemp(2,2) = 1;
-    }
-    if (domain->dimension == 2)
-      Dtemp(2,2) = 1;
-    for (int ip = 0; ip < np_local; ip++) {
-      Di[ip] = Dtemp;
-    }
-    return;
-  }
-
-  if (is_TL)
-    pos = &x0;
-  else
-    pos = &x;
-
-  if (domain->dimension == 2) {
-    for (int ip = 0; ip < np_local; ip++) {
-      Dtemp.setZero();
-      for (int j = 0; j < numneigh_pn[ip]; j++) {
-        in = neigh_pn[ip][j];
-        dx = grid->x0[in] - (*pos)[ip];
-        Dtemp(0, 0) += wf_pn[ip][j] * (dx[0] * dx[0]);
-        Dtemp(0, 1) += wf_pn[ip][j] * (dx[0] * dx[1]);
-        Dtemp(1, 1) += wf_pn[ip][j] * (dx[1] * dx[1]);
-      }
-      Dtemp(1, 0) = Dtemp(0, 1);
-      Dtemp(2, 2) = 1;
-      Di[ip] = Dtemp.inverse();
-    }
-  } else if (domain->dimension == 3) {
-    for (int ip = 0; ip < np_local; ip++) {
-      Dtemp.setZero();
-      for (int j = 0; j < numneigh_pn[ip]; j++) {
-        in = neigh_pn[ip][j];
-        dx = grid->x0[in] - (*pos)[ip];
-        Dtemp(0, 0) += wf_pn[ip][j] * (dx[0] * dx[0]);
-        Dtemp(0, 1) += wf_pn[ip][j] * (dx[0] * dx[1]);
-        Dtemp(0, 2) += wf_pn[ip][j] * (dx[0] * dx[2]);
-        Dtemp(1, 1) += wf_pn[ip][j] * (dx[1] * dx[1]);
-        Dtemp(1, 2) += wf_pn[ip][j] * (dx[1] * dx[2]);
-        Dtemp(2, 2) += wf_pn[ip][j] * (dx[2] * dx[2]);
-      }
-      Dtemp(1, 0) = Dtemp(0, 1);
-      Dtemp(2, 1) = Dtemp(1, 2);
-      Dtemp(2, 0) = Dtemp(0, 2);
-      Di[ip] = Dtemp.inverse();
+      Di(1, 1) = 1;
+      Di(2, 2) = 1;
+    } else if (domain->dimension == 2) {
+      Di(2, 2) = 1;
     }
   }
+  else {
+    error->all(FLERR, "Shape function not supported for APIC.\n");
+  }
+
+  // if (is_TL)
+  //   pos = &x0;
+  // else
+  //   pos = &x;
+
+  // if (domain->dimension == 2) {
+  //   for (int ip = 0; ip < np_local; ip++) {
+  //     Dtemp.setZero();
+  //     for (int j = 0; j < numneigh_pn[ip]; j++) {
+  //       in = neigh_pn[ip][j];
+  //       dx = grid->x0[in] - (*pos)[ip];
+  //       Dtemp(0, 0) += wf_pn[ip][j] * (dx[0] * dx[0]);
+  //       Dtemp(0, 1) += wf_pn[ip][j] * (dx[0] * dx[1]);
+  //       Dtemp(1, 1) += wf_pn[ip][j] * (dx[1] * dx[1]);
+  //     }
+  //     Dtemp(1, 0) = Dtemp(0, 1);
+  //     Dtemp(2, 2) = 1;
+  //     Di[ip] = Dtemp.inverse();
+  //   }
+  // } else if (domain->dimension == 3) {
+  //   for (int ip = 0; ip < np_local; ip++) {
+  //     Dtemp.setZero();
+  //     for (int j = 0; j < numneigh_pn[ip]; j++) {
+  //       in = neigh_pn[ip][j];
+  //       dx = grid->x0[in] - (*pos)[ip];
+  //       Dtemp(0, 0) += wf_pn[ip][j] * (dx[0] * dx[0]);
+  //       Dtemp(0, 1) += wf_pn[ip][j] * (dx[0] * dx[1]);
+  //       Dtemp(0, 2) += wf_pn[ip][j] * (dx[0] * dx[2]);
+  //       Dtemp(1, 1) += wf_pn[ip][j] * (dx[1] * dx[1]);
+  //       Dtemp(1, 2) += wf_pn[ip][j] * (dx[1] * dx[2]);
+  //       Dtemp(2, 2) += wf_pn[ip][j] * (dx[2] * dx[2]);
+  //     }
+  //     Dtemp(1, 0) = Dtemp(0, 1);
+  //     Dtemp(2, 1) = Dtemp(1, 2);
+  //     Dtemp(2, 0) = Dtemp(0, 2);
+  //     Di[ip] = Dtemp.inverse();
+  //   }
+  // }
 
   // Eigen::Matrix3d eye;
   // eye.setIdentity();
@@ -1506,10 +1495,6 @@ void Solid::copy_particle(int i, int j) {
   Finv[j]                    = Finv[i];
   Fdot[j]                    = Fdot[i];
   J[j]                       = J[i];
-  if (apic) {
-    Di[j]                      = Di[i];
-    //BDinv[j]                   = BDinv[i];
-  }
   // if (method_type.compare("tlcpdi") == 0 || method_type.compare("ulcpdi") == 0)
   //   {
   //     if (update->method->style == 0)
@@ -2240,10 +2225,6 @@ void Solid::populate(vector<string> args)
     D[i].setZero();
     Finv[i].setZero();
     Fdot[i].setZero();
-    if (apic) {
-      Di[i].setZero();
-      //BDinv[i].setZero();
-    }
     J[i] = 1;
     mask[i] = 1;
 
@@ -2588,10 +2569,6 @@ void Solid::read_mesh(string fileName)
     D[i].setZero();
     Finv[i].setZero();
     Fdot[i].setZero();
-    if (apic) {
-      Di[i].setZero();
-      //BDinv[i].setZero();
-    }
     J[i] = 1;
 
     if (x0[i][0] < solidlo[0])
@@ -2805,10 +2782,6 @@ void Solid::read_restart(ifstream *ifr) {
     D[ip].setZero();
     Finv[ip].setZero();
     Fdot[ip].setZero();
-    if (apic) {
-      Di[ip].setZero();
-      //BDinv[ip].setZero();
-    }
     ifr->read(reinterpret_cast<char *>(&J[ip]), sizeof(double));
     ifr->read(reinterpret_cast<char *>(&vol0[ip]), sizeof(double));
     vol[ip] = J[ip] * vol0[ip];

@@ -33,7 +33,7 @@ ULMPM::ULMPM(MPM *mpm) : Method(mpm)
 {
   cout << "In ULMPM::ULMPM()" << endl;
 
-  update_wf   = 1;
+  update_Di   = 1;
   update->PIC_FLIP = 0.99;
   apic        = false;
 
@@ -83,9 +83,6 @@ void ULMPM::setup(vector<string> args)
 
 void ULMPM::compute_grid_weight_functions_and_gradients()
 {
-  if (!update_wf)
-    return;
-
   bigint nsolids, np_local, nnodes_local, nnodes_ghost;
 
   nsolids = domain->solids.size();
@@ -312,7 +309,7 @@ void ULMPM::compute_grid_weight_functions_and_gradients()
           // cout << endl;
         }
       }
-      if (apic)
+      if (update_Di && apic)
         domain->solids[isolid]->compute_inertia_tensor();
     }
   } // end if (nsolids)
@@ -328,6 +325,7 @@ void ULMPM::compute_grid_weight_functions_and_gradients()
   if (rigid_solids) {
     domain->grid->reduce_rigid_ghost_nodes();
   }
+  update_Di = 0;
 }
 
 void ULMPM::particles_to_grid() {
