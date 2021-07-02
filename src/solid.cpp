@@ -1398,10 +1398,10 @@ void Solid::compute_inertia_tensor() {
   Eigen::Matrix3d Dtemp;
 
   vector<Eigen::Vector3d> *pos;
+  Eigen::Matrix3d eye;
+  eye.setIdentity();
 
   if (update->shape_function == update->ShapeFunctions::CUBIC_SPLINE) {
-    Eigen::Matrix3d eye;
-    eye.setIdentity();
 
     double cellsizeSqInv = 1.0 / (grid->cellsize * grid->cellsize);
     Dtemp = 3.0 * cellsizeSqInv * eye;
@@ -1415,7 +1415,22 @@ void Solid::compute_inertia_tensor() {
       Di[ip] = Dtemp;
     }
     return;
+  } else if (update->shape_function == update->ShapeFunctions::QUADRATIC_SPLINE) {
+
+    double cellsizeSqInv = 1.0 / (grid->cellsize * grid->cellsize);
+    Dtemp = 4.0 * cellsizeSqInv * eye;
+    if (domain->dimension == 1) {
+      Dtemp(1,1) = 1;
+      Dtemp(2,2) = 1;
+    }
+    if (domain->dimension == 2)
+      Dtemp(2,2) = 1;
+    for (int ip = 0; ip < np_local; ip++) {
+      Di[ip] = Dtemp;
+    }
+    return;
   }
+
   if (is_TL)
     pos = &x0;
   else
@@ -1452,7 +1467,6 @@ void Solid::compute_inertia_tensor() {
       Dtemp(2, 1) = Dtemp(1, 2);
       Dtemp(2, 0) = Dtemp(0, 2);
       Di[ip] = Dtemp.inverse();
-      // if (ip==0) cout << "1 - Di[" << ip << "]=\n" << Di[ip] << endl;
     }
   }
 
