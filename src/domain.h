@@ -56,6 +56,7 @@ class Domain : protected Pointers {
   void set_dimension(vector<string>);    ///< Called when user calls dimension()
   void set_axisymmetric(vector<string>); ///< Called when user calls axisymmetric()
   bool inside_subdomain(double, double, double); ///< Checks if the set of coordinates lies in the simulation domain.
+  int which_CPU_owns_me(double, double, double); ///< Determine in which CPU a particle belongs.
   bool inside_subdomain_extended(double, double, double, double); ///< Checks if the set of coordinates lies in this proc sub-domain.
   void set_local_box();                  ///< Determine the boundaries of this proc subdomain
   void add_region(vector<string>);       ///< Create a new region

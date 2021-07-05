@@ -193,6 +193,158 @@ bool Domain::inside_subdomain(double x, double y, double z) {
   return true;
 }
 
+/*! Determine the CPU owning the particle with x, y, z coordinates.
+ */
+int Domain::which_CPU_owns_me(double x, double y, double z) {
+  if (x < sublo[0]) {
+    // target[0] = -1;
+    if (y < sublo[1]) {
+      // target[1] = -1;
+      if (z < sublo[2]) {
+        // target[2] = -1;
+	// target = {-1, -1, -1};
+	return universe->procneigh[2][0] - 1 - universe->procgrid[1];
+      } else if (z > subhi[2]) {
+        // target[2] = 1;
+	// target = {-1, -1, 1};
+	return universe->procneigh[2][1] - 1 - universe->procgrid[1];
+      } else {
+        // target[2] = 0;
+	// target = {-1, -1, 0};
+	return universe->procneigh[1][0] - 1;
+      }
+    } else if (y > subhi[1]) {
+      // target[1] = 1;
+      if (z < sublo[2]) {
+        // target[2] = -1;
+	// target = {-1, 1, -1};
+	return universe->procneigh[2][1] - 1 + universe->procgrid[1];
+      } else if (z > subhi[2]) {
+        // target[2] = 1;
+	// target = {-1, 1, 1};
+	return universe->procneigh[2][1] - 1 + universe->procgrid[1];
+      } else {
+        // target[2] = 0;
+	// target = {-1, 1, 0};
+	return universe->procneigh[1][1] - 1;
+      }
+    } else {
+      // target[1] = 0;
+      if (z < sublo[2]) {
+        // target[2] = -1;
+	// target = {-1, 0, -1};
+	return universe->procneigh[2][0] - 1;
+      } else if (z > subhi[2]) {
+        // target[2] = 1;
+	// target = {-1, 0, 1};
+	return universe->procneigh[2][1] - 1;
+      } else {
+        // target[2] = 0;
+	// target = {-1, 0, 0};
+	return universe->procneigh[0][0];
+      }
+    }
+  } else if (x > subhi[0]) {
+    // target[0] = 1;
+    if (y < sublo[1]) {
+      // target[1] = -1;
+      if (z < sublo[2]) {
+        // target[2] = -1;
+	// target = {1, -1, -1};
+	return universe->procneigh[2][0] + 1 - universe->procgrid[1];
+      } else if (z > subhi[2]) {
+        // target[2] = 1;
+	// target = {1, -1, 1};
+	return universe->procneigh[2][1] + 1 - universe->procgrid[1];
+      } else {
+        // target[2] = 0;
+	// target = {1, -1, 0};
+	return universe->procneigh[1][0] + 1;
+      }
+    } else if (y > subhi[1]) {
+      // target[1] = 1;
+      if (z < sublo[2]) {
+        // target[2] = -1;
+	// target = {1, 1, -1};
+	return universe->procneigh[2][0] + 1 + universe->procgrid[1];
+      } else if (z > subhi[2]) {
+        // target[2] = 1;
+	// target = {1, 1, 1};
+	return universe->procneigh[2][1] + 1 + universe->procgrid[1];
+      } else {
+        // target[2] = 0;
+	// target = {1, 1, 0};
+	return universe->procneigh[1][1] + 1;
+      }
+    } else {
+      // target[1] = 0;
+      if (z < sublo[2]) {
+        // target[2] = -1;
+	// target = {1, 0, -1};
+	return universe->procneigh[2][0] + 1;
+      } else if (z > subhi[2]) {
+        // target[2] = 1;
+	// target = {1, 0, 1};
+	return universe->procneigh[2][1] + 1;
+      } else {
+        // target[2] = 0;
+	// target = {1, 0, 0};
+	return universe->procneigh[0][1];
+      }
+    }
+  } else {
+    // target[0] = 0;
+    if (y < sublo[1]) {
+      // target[1] = -1;
+      if (z < sublo[2]) {
+        // target[2] = -1;
+	// target = {0, -1, -1};
+	return universe->procneigh[2][0] - universe->procgrid[1];
+      } else if (z > subhi[2]) {
+        // target[2] = 1;
+	// target = {0, -1, 1};
+	return universe->procneigh[2][1] - universe->procgrid[1];
+      } else {
+        // target[2] = 0;
+	// target = {0, -1, 0};
+	return universe->procneigh[1][0];
+      }
+    } else if (y > subhi[1]) {
+      // target[1] = 1;
+      if (z < sublo[2]) {
+        // target[2] = -1;
+	// target = {0, 1, -1};
+	return universe->procneigh[2][0] + universe->procgrid[1];
+      } else if (z > subhi[2]) {
+        // target[2] = 1;
+	// target = {0, 1, 1};
+	return universe->procneigh[2][1] + universe->procgrid[1];
+      } else {
+        // target[2] = 0;
+	// target = {0, 1, 0};
+	return universe->procneigh[1][1];
+      }
+    } else {
+      // target[1] = 0;
+      if (z < sublo[2]) {
+        // target[2] = -1;
+	// target = {0, 0, -1};
+	return universe->procneigh[2][0];
+      } else if (z > subhi[2]) {
+        // target[2] = 1;
+	// target = {0, 0, 1};
+	return universe->procneigh[2][1];
+      } else {
+        // target[2] = 0;
+	// target = {0, 0, 0};
+	return universe->me;
+      }
+    }
+  }
+
+  return -1;
+}
+
 
 /*! inside = 1 if x,y,z is inside or on the boundary of this proc domain, extended by h.
  *  inside = 0 if x,y,z is outside and not on boundary of this proc domain, extended by h.

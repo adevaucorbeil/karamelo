@@ -227,12 +227,6 @@ void ULMPM::compute_grid_weight_functions_and_gradients()
             }
           }
 
-          // cout << "[";
-          // for (auto ii: n_neigh)
-          //   cout << domain->solids[isolid]->grid->ntag[ii] << ' ';
-          // cout << "]\n";
-
-          // for (int in=0; in<nnodes; in++) {
           for (auto in : n_neigh)
           {
 
@@ -497,6 +491,7 @@ void ULMPM::exchange_particles() {
   vector<double> buf_send_vect[universe->nprocs];
   vector<double> buf_recv_vect[universe->nprocs];
   vector<int> unpack_list;
+  int owner = 0;
 
   // Identify the particles that are not in the subdomain
   // and transfer their variables to the buffer:
@@ -508,10 +503,11 @@ void ULMPM::exchange_particles() {
 
     ip = 0;
     while (ip < domain->solids[isolid]->np_local) {
-      if (!domain->inside_subdomain((*xp)[ip][0], (*xp)[ip][1], (*xp)[ip][2])) {
+      owner = domain->which_CPU_owns_me((*xp)[ip][0], (*xp)[ip][1], (*xp)[ip][2]);
+      if (owner != universe->me) {
         // The particle is not located in the subdomain anymore:
         // transfer it to the buffer
-        domain->solids[isolid]->pack_particle(ip, buf_send_vect[universe->me]);
+        domain->solids[isolid]->pack_particle(ip, buf_send_vect[owner]);
         domain->solids[isolid]->copy_particle(
             domain->solids[isolid]->np_local - 1, ip);
         domain->solids[isolid]->np_local--;
@@ -520,46 +516,50 @@ void ULMPM::exchange_particles() {
       }
     }
 
-    // Resize particle variables:
-    if (np_local_old - domain->solids[isolid]->np_local !=
-        buf_send_vect[universe->me].size() / domain->solids[isolid]->comm_n) {
-      error->one(
-          FLERR,
-          "Size of buffer does not match the number of particles that left the "
-          "domain: " +
-              to_string(np_local_old - domain->solids[isolid]->np_local) +
-              "!=" + to_string(buf_send_vect[universe->me].size()) + "\n");
-    }
-    if (buf_send_vect[universe->me].size()) {
-      domain->solids[isolid]->grow(domain->solids[isolid]->np_local);
-    }
 
-    // Exchange buffers:
-    for (int sproc = 0; sproc < universe->nprocs; sproc++) {
-      if (sproc == universe->me) {
-        size_buf = buf_send_vect[sproc].size();
+    // New send and receive
+    int size_r, size_s;
+    int jproc;
+    for (int i = 0; i < universe->sendnrecv.size(); i++) {
+      if (universe->sendnrecv[i][0] == 0) {
+	// Receive
+	jproc = universe->sendnrecv[i][1];
+
+        MPI_Recv(&size_r, 1, MPI_INT, jproc, 0, MPI_COMM_WORLD,
+                 MPI_STATUS_IGNORE);
+
+	if (size_r > 0) {
+	  buf_recv_vect[jproc].resize(size_r);
+          MPI_Recv(&buf_recv_vect[jproc][0], size_r, MPI_DOUBLE, jproc, 0,
+                   MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        }
+      } else {
+	// Send
+	jproc = universe->sendnrecv[i][1];
+	size_s = buf_send_vect[jproc].size();
+        MPI_Send(&size_s, 1, MPI_INT, jproc, 0, MPI_COMM_WORLD);
+
+	if (size_s > 0) {
+          MPI_Send(buf_send_vect[jproc].data(), size_s, MPI_DOUBLE, jproc, 0,
+                   MPI_COMM_WORLD);
+        }
       }
-
-      MPI_Bcast(&size_buf, 1, MPI_INT, sproc, universe->uworld);
-
-      if (sproc != universe->me) {
-        buf_send_vect[sproc].resize(size_buf);
-      }
-
-      MPI_Bcast(&buf_send_vect[sproc][0], size_buf, MPI_DOUBLE, sproc,
-                universe->uworld);
     }
+
 
     // Check what particles are within the subdomain:
     for (int sproc = 0; sproc < universe->nprocs; sproc++) {
       if (sproc != universe->me) {
         unpack_list.clear();
         ip = 0;
-        while (ip < buf_send_vect[sproc].size()) {
-          if (domain->inside_subdomain(buf_send_vect[sproc][ip + 1],
-                                       buf_send_vect[sproc][ip + 2],
-                                       buf_send_vect[sproc][ip + 3])) {
+        while (ip < buf_recv_vect[sproc].size()) {
+          if (domain->inside_subdomain(buf_recv_vect[sproc][ip + 1],
+                                       buf_recv_vect[sproc][ip + 2],
+                                       buf_recv_vect[sproc][ip + 3])) {
             unpack_list.push_back(ip);
+          } else {
+            error->one(FLERR, "Particle received from CPU" + to_string(sproc) +
+                                  " that did not belong in this CPU.\n ");
           }
           ip += domain->solids[isolid]->comm_n;
         }
@@ -570,7 +570,7 @@ void ULMPM::exchange_particles() {
         // Unpack buffer:
         domain->solids[isolid]->unpack_particle(
             domain->solids[isolid]->np_local, unpack_list,
-            buf_send_vect[sproc]);
+            buf_recv_vect[sproc]);
       }
     }
   }
