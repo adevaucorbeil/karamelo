@@ -487,7 +487,7 @@ void ULMPM::reset()
 void ULMPM::exchange_particles() {
   int ip, np_local_old, size_buf;
   vector<Eigen::Vector3d> *xp;
-  vector<double> buf_send;
+  // vector<int> np_send;
   vector<double> buf_send_vect[universe->nprocs];
   vector<double> buf_recv_vect[universe->nprocs];
   vector<int> unpack_list;
@@ -497,9 +497,15 @@ void ULMPM::exchange_particles() {
   // and transfer their variables to the buffer:
 
   for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
-    buf_send_vect[universe->me].clear();
+    for (int iproc = 0; iproc < universe->nprocs; iproc++) {
+      buf_send_vect[iproc].clear();
+      buf_recv_vect[iproc].clear();
+    }
+
     np_local_old = domain->solids[isolid]->np_local;
     xp = &domain->solids[isolid]->x;
+
+    // np_send.assign(universe->nprocs, 0);
 
     ip = 0;
     while (ip < domain->solids[isolid]->np_local) {
@@ -511,11 +517,15 @@ void ULMPM::exchange_particles() {
         domain->solids[isolid]->copy_particle(
             domain->solids[isolid]->np_local - 1, ip);
         domain->solids[isolid]->np_local--;
+	// np_send[owner]++;
       } else {
         ip++;
       }
     }
 
+    // if (np_local_old != domain->solids[isolid]->np_local) {
+    //   domain->solids[isolid]->grow(domain->solids[isolid]->np_local);
+    // }
 
     // New send and receive
     int size_r, size_s;
@@ -564,13 +574,15 @@ void ULMPM::exchange_particles() {
           ip += domain->solids[isolid]->comm_n;
         }
 
-        domain->solids[isolid]->grow(domain->solids[isolid]->np_local +
-                                     unpack_list.size());
+        if (unpack_list.size() > 0) {
+          domain->solids[isolid]->grow(domain->solids[isolid]->np_local +
+                                       unpack_list.size());
 
-        // Unpack buffer:
-        domain->solids[isolid]->unpack_particle(
-            domain->solids[isolid]->np_local, unpack_list,
-            buf_recv_vect[sproc]);
+          // Unpack buffer:
+          domain->solids[isolid]->unpack_particle(
+              domain->solids[isolid]->np_local, unpack_list,
+              buf_recv_vect[sproc]);
+        }
       }
     }
   }
