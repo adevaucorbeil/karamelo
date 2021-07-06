@@ -170,6 +170,10 @@ void Grid::init(double *solidlo, double *solidhi) {
     nz_global = 1;
   }
 
+  // Determine the total number of nodes:
+  nnodes = nx_global * ny_global * nz_global;
+  map_ntag.assign(nnodes, -1);
+
   nx = MAX(0, noffsethi_[0] - noffsetlo[0]);
   if (domain->dimension >= 2) {
     ny = MAX(0, noffsethi_[1] - noffsetlo[1]);
@@ -203,6 +207,7 @@ void Grid::init(double *solidlo, double *solidhi) {
 
   // Create nodes that are inside the local subdomain:
   nnodes_local = nx * ny * nz;
+
   if (!update->method->is_TL && nnodes_local <= 0) {
     error->one(FLERR,
 	       "Bad domain decomposition, some CPUs do not have any grid "
@@ -248,7 +253,7 @@ void Grid::init(double *solidlo, double *solidhi) {
 	// cout << "ntag = " << ntag[l] << endl;
 
 	// Check if ntag[l] already exists:
-	if(map_ntag.count(ntag[l]) > 0 ) {
+	if(map_ntag[ntag[l]] != -1 ) {
 	  error->all(FLERR, "node " + to_string(ntag[l]) + " already exists.");
 	}
 	map_ntag[ntag[l]] = l;
@@ -379,7 +384,7 @@ void Grid::init(double *solidlo, double *solidhi) {
     ntag[i] = gnodes[in].tag;
 
     // Check if ntag[l] already exists:
-    if(map_ntag.count(ntag[i]) > 0 ) {
+    if(map_ntag[ntag[i]] != -1 ) {
       cout << "x0[" << ntag[i] << "]=[" << gnodes[in].x[0] << "," << gnodes[in].x[1] << "," << gnodes[in].x[2] << "]\t exits in x=[" << x0[map_ntag[i]][0] << "," << x0[map_ntag[i]][1] << "," << x0[map_ntag[i]][2] << "]\n";
       error->all(FLERR, "node " + to_string(ntag[i]) + " already exists.");
     }
@@ -401,9 +406,9 @@ void Grid::init(double *solidlo, double *solidhi) {
     mass[i] = 0;
   }
 
-  // Determine the total number of nodes:
-  bigint nnodes_temp = nnodes_local;
-  MPI_Allreduce(&nnodes_temp, &nnodes, 1, MPI_MPM_BIGINT, MPI_SUM, universe->uworld);
+  // // Determine the total number of nodes:
+  // bigint nnodes_temp = nnodes_local;
+  // MPI_Allreduce(&nnodes_temp, &nnodes, 1, MPI_MPM_BIGINT, MPI_SUM, universe->uworld);
 }
 
 void Grid::setup(string cs){
@@ -496,7 +501,7 @@ void Grid::reduce_mass_ghost_nodes() {
         for (int is = 0; is < size_s; is++) {
           j = origin_nshared[iproc][is];
 
-          if (map_ntag.count(j)) {
+          if (map_ntag[j] != -1) {
             tmp_mass_vect[iproc][is] = mass[map_ntag[j]];
           } else {
 	    error->one(FLERR, "Grid node j does not exist on this CPU.\n");
@@ -527,7 +532,7 @@ void Grid::reduce_mass_ghost_nodes() {
        ++idest) {
     for (int is = 0; is < idest->second.size(); is++) {
       j = idest->second[is];
-      if (map_ntag.count(j)) {
+      if (map_ntag[j] != -1) {
 	mass[map_ntag[j]] += buf_recv_vect[idest->first][is];
       } else {
 	error->one(FLERR, "Grid node j does not exist on this CPU.\n");
@@ -554,7 +559,7 @@ void Grid::reduce_mass_ghost_nodes() {
         for (int is = 0; is < size_s; is++) {
           j = idest->second[is];
 
-          if (map_ntag.count(j)) {
+          if (map_ntag[j] != -1) {
             tmp_mass_vect[jproc][is] = mass[map_ntag[j]];
           } else {
 	    error->one(FLERR, "Grid node j does not exist on this CPU.\n");
@@ -603,7 +608,7 @@ void Grid::reduce_mass_ghost_nodes() {
         for (int is = 0; is < size_r; is++) {
 	  j = origin_nshared[iproc][is];
 
-          if (map_ntag.count(j)) {
+          if (map_ntag[j] != -1) {
             mass[map_ntag[j]] = buf_recv_vect[iproc][is];
           }
         }
@@ -640,7 +645,7 @@ void Grid::reduce_mass_ghost_nodes_old() {
         for (int is = 0; is < size_r; is++) {
           j = idest->second[is];
 
-          if (map_ntag.count(j)) {
+          if (map_ntag[j] != -1) {
             mass[map_ntag[j]] += buf_recv[is];
           }
         }
@@ -663,7 +668,7 @@ void Grid::reduce_mass_ghost_nodes_old() {
         for (int is = 0; is < size_s; is++) {
           j = origin_nshared[iproc][is];
 
-          if (map_ntag.count(j)) {
+          if (map_ntag[j] != -1) {
             tmp_mass[is] = mass[map_ntag[j]];
           }
         }
@@ -694,7 +699,7 @@ void Grid::reduce_mass_ghost_nodes_old() {
         for (int is = 0; is < size_s; is++) {
           j = idest->second[is];
 
-          if (map_ntag.count(j)) {
+          if (map_ntag[j] != -1) {
             tmp_mass[is] = mass[map_ntag[j]];
           }
         }
@@ -725,7 +730,7 @@ void Grid::reduce_mass_ghost_nodes_old() {
         for (int is = 0; is < size_r; is++) {
 	  j = origin_nshared[iproc][is];
 
-          if (map_ntag.count(j)) {
+          if (map_ntag[j] != -1) {
             mass[map_ntag[j]] = buf_recv[is];
             // cout << "mass[" << j << "]=" << mass[map_ntag[j]] << "\n";
           }
@@ -774,7 +779,7 @@ void Grid::reduce_rigid_ghost_nodes() {
         for (int is = 0; is < size_r; is++) {
           j = idest->second[is];
 
-          if (map_ntag.count(j)) {
+          if (map_ntag[j] != -1) {
 	    if (buf_recv[is] && !rigid[map_ntag[j]])
 	      rigid[map_ntag[j]] = true;
           }
@@ -798,7 +803,7 @@ void Grid::reduce_rigid_ghost_nodes() {
         for (int is = 0; is < size_s; is++) {
           j = origin_nshared[iproc][is];
 
-          if (map_ntag.count(j)) {
+          if (map_ntag[j] != -1) {
             tmp_rigid[is] = (int) rigid[map_ntag[j]]; // Populate tmp_rigid with the value of rigid
           }
         }
@@ -829,7 +834,7 @@ void Grid::reduce_rigid_ghost_nodes() {
         for (int is = 0; is < size_s; is++) {
           j = idest->second[is];
 
-          if (map_ntag.count(j)) {
+          if (map_ntag[j] != -1) {
             tmp_rigid[is] = (int) rigid[map_ntag[j]];
           }
         }
@@ -860,7 +865,7 @@ void Grid::reduce_rigid_ghost_nodes() {
         for (int is = 0; is < size_r; is++) {
 	  j = origin_nshared[iproc][is];
 
-          if (map_ntag.count(j)) {
+          if (map_ntag[j] != -1) {
 	    if (buf_recv[is] && !rigid[map_ntag[j]])
 	      rigid[map_ntag[j]] = true;
           }
@@ -909,7 +914,7 @@ void Grid::reduce_ghost_nodes(bool only_v, bool temp) {
 	for (int is = 0; is < size_s; is++) {
           j = origin_nshared[iproc][is];
 
-          if (map_ntag.count(j)) {
+          if (map_ntag[j] != -1) {
             m = map_ntag[j];
             //k = nsend * is;
             tmp_vect[iproc][k++] = v[m][0];
@@ -964,7 +969,7 @@ void Grid::reduce_ghost_nodes(bool only_v, bool temp) {
 
     for (int is = 0; is < idest->second.size(); is++) {
       j = idest->second[is];
-      if (map_ntag.count(j)) {
+      if (map_ntag[j] != -1) {
 	//mass[map_ntag[j]] += buf_recv_vect[idest->first][is];
 	m = map_ntag[j];
 	//k = nsend * is;
@@ -1015,7 +1020,7 @@ void Grid::reduce_ghost_nodes(bool only_v, bool temp) {
         for (int is = 0; is < size_s; is++) {
           j = idest->second[is];
 
-          if (map_ntag.count(j)) {
+          if (map_ntag[j] != -1) {
             m = map_ntag[j];
             //k = nsend * is;
             tmp_vect[jproc][k++] = v[m][0];
@@ -1083,7 +1088,7 @@ void Grid::reduce_ghost_nodes(bool only_v, bool temp) {
         for (int is = 0; is < origin_nshared[iproc].size(); is++) {
 	  j = origin_nshared[iproc][is];
 
-          if (map_ntag.count(j)) {
+          if (map_ntag[j] != -1) {
 	    m = map_ntag[j];
             //k = nsend * is;
             v[m][0] = buf_recv_vect[iproc][k++];
@@ -1150,7 +1155,7 @@ void Grid::reduce_ghost_nodes_old(bool only_v, bool temp) {
         for (int is = 0; is < size_r; is++) {
           j = idest->second[is];
 
-          if (map_ntag.count(j)) {
+          if (map_ntag[j] != -1) {
             m = map_ntag[j];
             //k = nsend * is;
             v[m][0] += buf_recv[k++];
@@ -1195,7 +1200,7 @@ void Grid::reduce_ghost_nodes_old(bool only_v, bool temp) {
         for (int is = 0; is < size_s; is++) {
           j = origin_nshared[iproc][is];
 
-          if (map_ntag.count(j)) {
+          if (map_ntag[j] != -1) {
             m = map_ntag[j];
             //k = nsend * is;
             tmp[k++] = v[m][0];
@@ -1250,7 +1255,7 @@ void Grid::reduce_ghost_nodes_old(bool only_v, bool temp) {
         for (int is = 0; is < size_s; is++) {
           j = idest->second[is];
 
-          if (map_ntag.count(j)) {
+          if (map_ntag[j] != -1) {
             m = map_ntag[j];
             //k = nsend * is;
             tmp[k++] = v[m][0];
@@ -1305,7 +1310,7 @@ void Grid::reduce_ghost_nodes_old(bool only_v, bool temp) {
         for (int is = 0; is < size_r; is++) {
           j = origin_nshared[iproc][is];
 
-          if (map_ntag.count(j)) {
+          if (map_ntag[j] != -1) {
             m = map_ntag[j];
             //k = nsend * is;
             v[m][0] = buf_recv[k++];

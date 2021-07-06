@@ -129,8 +129,8 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
       vector<array<int, 3>> *ntype = &domain->solids[isolid]->grid->ntype;
       vector<bool> *nrigid = &domain->solids[isolid]->grid->rigid;
 
-      unordered_map<int, int> *map_ntag = &domain->solids[isolid]->grid->map_ntag;
-      unordered_map<int, int>::iterator it;
+      vector<tagint> *map_ntag = &domain->solids[isolid]->grid->map_ntag;
+      int inn;
       
       r.setZero();
       if (np_local && (nnodes_local + nnodes_ghost)) {
@@ -156,15 +156,15 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
 		for(int j=j0; j<j0+2;j++){
 		  if (nz>1){
 		    for(int k=k0; k<k0+2;k++){
-		      it = (*map_ntag).find(nz*ny*i+nz*j+k);
-		      if (it != (*map_ntag).end()) {
-			n_neigh.push_back(it->second);
+		      inn = (*map_ntag)[nz*ny*i+nz*j+k];
+		      if (inn != -1) {
+			n_neigh.push_back(inn);
 		      }
 		    }
 		  } else {
-		    it = (*map_ntag).find(ny*i+j);
-		    if (it != (*map_ntag).end()) {
-		      n_neigh.push_back(it->second);
+		    inn = (*map_ntag)[ny*i+j];
+		    if (inn != -1) {
+		      n_neigh.push_back(inn);
 		    }
 		  }
 		}
@@ -189,15 +189,15 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
 		for(int j=j0; j<j0+3;j++){
 		  if (nz>1){
 		    for(int k=k0; k<k0+3;k++){
-		      it = (*map_ntag).find(nz*ny*i+nz*j+k);
-		      if (it != (*map_ntag).end()) {
-			n_neigh.push_back(it->second);
+		      inn = (*map_ntag)[nz*ny*i+nz*j+k];
+		      if (inn != -1) {
+			n_neigh.push_back(inn);
 		      }
 		    }
 		  } else {
-		    it = (*map_ntag).find(ny*i+j);
-		    if (it != (*map_ntag).end()) {
-		      n_neigh.push_back(it->second);
+		    inn = (*map_ntag)[ny*i+j];
+		    if (inn != -1) {
+		      n_neigh.push_back(inn);
 		    }
 		  }
 		}
@@ -219,15 +219,15 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
 		for(int j=j0; j<j0+4;j++){
 		  if (nz>1){
 		    for(int k=k0; k<k0+4;k++){
-		      it = (*map_ntag).find(nz*ny*i+nz*j+k);
-		      if (it != (*map_ntag).end()) {
-			n_neigh.push_back(it->second);
+		      inn = (*map_ntag)[nz*ny*i+nz*j+k];
+		      if (inn != -1) {
+			n_neigh.push_back(inn);
 		      }
 		    }
 		  } else {
-		    it = (*map_ntag).find(ny*i+j);
-		    if (it != (*map_ntag).end()) {
-		      n_neigh.push_back(it->second);
+		    inn = (*map_ntag)[ny*i+j];
+		    if (inn != -1) {
+		      n_neigh.push_back(inn);
 		    }
 		  }
 		}

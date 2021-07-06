@@ -59,7 +59,7 @@ class Grid : protected Pointers {
   bigint nnodes_local;   ///< number of nodes (in this CPU)
   bigint nnodes_ghost;   ///< number of ghost nodes (in this CPU)
   vector<tagint> ntag;   ///< unique identifier for nodes in the system.
-  unordered_map<int, int> map_ntag;  ///< map_ntag[ntag[i]] = i;
+  vector<tagint> map_ntag;  ///< map_ntag[ntag[i]] = i;
 
   int nx;                ///< number of nodes along x on this CPU
   int ny;                ///< number of nodes along y on this CPU
