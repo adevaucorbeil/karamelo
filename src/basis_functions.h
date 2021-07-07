@@ -43,28 +43,28 @@ namespace BasisFunction {
       if (ntype==1) {
 	return 0;
       } else {
-	return -1.0/6.0*r*r*r + r*r - 2*r + 4.0/3.0;
+	return ((-1.0/6.0*r + 1)*r - 2)*r + 4.0/3.0;
       }
     } else if (r >=0 && r < 1) {
       if (ntype==-2) {
-	return  1.0/6.0*r*r*r - r + 1;
+	return  (1.0/6.0*r*r - 1)*r + 1;
       } else if (ntype==2) {
 	return 1;
       } else if (ntype==1) {
-	return 1.0/3.0*r*r*r - r*r + 2.0/3.0;
+	return (1.0/3.0*r - 1)*r*r + 2.0/3.0;
       } else {
-	return 0.5*r*r*r - r*r + 2.0/3.0;
+	return (0.5*r - 1)*r*r + 2.0/3.0;
       }
     } else if (r >= -1 && r < 0) {
       if (ntype==2) {
-	return -1.0/6.0*r*r*r + r + 1;
+	return (-1.0/6.0*r*r + 1)*r + 1;
       } else if (ntype==-1) {
-	return  -1.0/3.0*r*r*r - r*r + 2.0/3.0;
+	return  (-1.0/3.0*r - 1)*r*r + 2.0/3.0;
       } else {
-	return -0.5*r*r*r - r*r + 2.0/3.0;
+	return (-0.5*r - 1)*r*r + 2.0/3.0;
       }
     } else if (r >= -2 && r < -1) {
-      return 1.0/6.0*r*r*r + r*r + 2*r + 4.0/3.0;
+      return ((1.0/6.0*r + 1)*r + 2)*r + 4.0/3.0;
     } else {
       return 0;
     }
@@ -76,28 +76,28 @@ namespace BasisFunction {
       if (ntype==1) {
 	return -icellsize;// * (-1);
       } else {
-	return icellsize * (-0.5*r*r + 2*r - 2);
+	return icellsize * ((-0.5*r + 2)*r - 2);
       }
     } else if (r >=0 && r < 1) {
       if (ntype==-2) {
-	return icellsize * (0.5*r*r - 1);
+        return icellsize * (0.5 * r * r - 1);
       } else if (ntype==2) {
 	return icellsize;// * (1);
       } else if (ntype==1) {
-	return icellsize * (r*r - 2*r);
+        return icellsize * r * (r - 2);
       } else {
-	return icellsize * (3.0/2.0*r*r - 2*r);
+        return icellsize * (3.0 / 2.0 * r - 2) * r;
       }
     } else if (r >= -1 && r < 0) {
       if (ntype==2) {
-	return icellsize * (-0.5*r*r + 1);
+        return icellsize * (-0.5 * r * r + 1);
       } else if (ntype==-1) {
-	return icellsize * (-r*r - 2*r);
+	return icellsize * (-r - 2)*r;
       } else {
-	return icellsize * (-3.0/2.0*r*r - 2*r);
+	return icellsize * (-3.0/2.0*r - 2)*r;
       }
     } else if (r >= -2 && r < -1) {
-      return icellsize * (0.5*r*r + 2*r + 2);
+      return icellsize * ((0.5 * r + 2) * r + 2);
     } else {
       return 0;
     }
@@ -140,11 +140,11 @@ namespace BasisFunction {
   inline double quadratic_spline(const double r, const int ntype) {
     if (ntype == 0) {
       if (r >= 0.5 && r < 1.5) {
-        return 0.5 * r * r - 1.5 * r + 1.125;
+        return (0.5 * r - 1.5) * r + 1.125;
       } else if (r >= -0.5 && r < 0.5) {
         return -r * r + 0.75;
       } else if (r >= -1.5 && r < 0.5) {
-        return 0.5 * r * r + 1.5 * r + 1.125;
+        return (0.5 * r + 1.5) * r + 1.125;
       } else {
         return 0;
       }
@@ -152,7 +152,7 @@ namespace BasisFunction {
       if (r >= 0. && r < 0.5) {
         return 1 - r;
       } else if (r >= 0.5 && r < 1.5) {
-        return 0.5 * r * r - 1.5 * r + 1.125;
+        return (0.5 * r - 1.5) * r + 1.125;
       } else {
         return 0;
       }
@@ -162,13 +162,13 @@ namespace BasisFunction {
       } else if (r >= -0.5 && r < 0.5) {
         return -r * r + 0.75;
       } else if (r >= 0.5 && r < 1.5) {
-        return 0.5 * r * r - 1.5 * r + 1.125;
+        return (0.5 * r - 1.5) * r + 1.125;
       } else {
         return 0;
       }
     } else if (ntype == 1) {
       if (r >= -1.5 && r < -0.5) {
-        return 0.5 * r * r + 1.5 * r + 1.125;
+        return (0.5 * r + 1.5) * r + 1.125;
       } else if (r >= -0.5 && r < 0.5) {
         return -r * r + 0.75;
       } else if (r >= 0.5 && r < 1.) {
@@ -179,7 +179,7 @@ namespace BasisFunction {
     } else {
       //ntype == 2
       if (r >= -1.5 && r < -0.5) {
-        return 0.5 * r * r + 1.5 * r + 1.125;
+        return (0.5 * r + 1.5) * r + 1.125;
       } else if (r >= -0.5 && r <= 0.) {
         return 1 + r;
       } else {
