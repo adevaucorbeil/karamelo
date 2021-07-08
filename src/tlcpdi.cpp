@@ -415,7 +415,7 @@ void TLCPDI::update_deformation_gradient()
   }
 }
 
-void TLCPDI::update_stress()
+void TLCPDI::update_stress(bool doublemapping)
 {
   for (int isolid=0; isolid<domain->solids.size(); isolid++) {
     domain->solids[isolid]->update_stress();

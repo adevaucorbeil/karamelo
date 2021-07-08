@@ -462,7 +462,7 @@ void ULCPDI::update_deformation_gradient()
   }
 }
 
-void ULCPDI::update_stress()
+void ULCPDI::update_stress(bool doublemapping)
 {
   for (int isolid=0; isolid<domain->solids.size(); isolid++) {
     domain->solids[isolid]->update_stress();

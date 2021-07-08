@@ -47,7 +47,7 @@ class ULCPDI : public Method {
   void update_grid_positions() {};
   void compute_rate_deformation_gradient(bool);
   void update_deformation_gradient();
-  void update_stress();
+  void update_stress(bool);
   void adjust_dt();
   void reset();
   void exchange_particles();

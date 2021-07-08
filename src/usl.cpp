@@ -72,7 +72,7 @@ void USL::run(Var condition){
     update->method->update_grid_positions();
 
     update->method->update_deformation_gradient();
-    update->method->update_stress();
+    update->method->update_stress(false);
 
     update->method->exchange_particles();
 

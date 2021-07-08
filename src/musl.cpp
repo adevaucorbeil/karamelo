@@ -72,7 +72,7 @@ void MUSL::run(Var condition){
 
     update->method->compute_rate_deformation_gradient(true);
     update->method->update_deformation_gradient();
-    update->method->update_stress();
+    update->method->update_stress(true);
 
     update->method->exchange_particles();
 
