@@ -40,7 +40,7 @@ class Method : protected Pointers {
   virtual void update_grid_positions() = 0;
   virtual void compute_rate_deformation_gradient(bool) = 0;
   virtual void update_deformation_gradient() = 0;
-  virtual void update_stress() = 0;
+  virtual void update_stress(bool) = 0;
   virtual void adjust_dt() = 0;
   virtual void reset() = 0;
   virtual void exchange_particles() = 0;

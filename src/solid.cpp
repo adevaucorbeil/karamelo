@@ -2661,15 +2661,22 @@ void Solid::update_particle_temperature() {
   }
 }
 
-void Solid::update_heat_flux() {
+void Solid::update_heat_flux(bool doublemapping) {
   int in;
+
+  vector<double> *Tn;
+
+  if (doublemapping)
+    Tn = &grid->T;
+  else
+    Tn = &grid->T_update;
 
   if (is_TL) {
     for (int ip = 0; ip < np_local; ip++) {
       q[ip].setZero();
       for (int j = 0; j < numneigh_pn[ip]; j++) {
         in = neigh_pn[ip][j];
-        q[ip] -= wfd_pn[ip][j] * grid->T[in];
+        q[ip] -= wfd_pn[ip][j] * (*Tn)[in];
       }
       q[ip] *= vol0[ip] * mat->invcp * mat->kappa;
     }
@@ -2678,7 +2685,7 @@ void Solid::update_heat_flux() {
       q[ip].setZero();
       for (int j = 0; j < numneigh_pn[ip]; j++) {
         in = neigh_pn[ip][j];
-        q[ip] -= wfd_pn[ip][j] * grid->T[in];
+        q[ip] -= wfd_pn[ip][j] * (*Tn)[in];
       }
       q[ip] *= vol[ip] * mat->invcp * mat->kappa;
     }

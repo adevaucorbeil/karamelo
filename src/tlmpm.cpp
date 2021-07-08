@@ -409,12 +409,12 @@ void TLMPM::update_deformation_gradient()
   }
 }
 
-void TLMPM::update_stress()
+void TLMPM::update_stress(bool doublemapping)
 {
   for (int isolid=0; isolid<domain->solids.size(); isolid++) {
     domain->solids[isolid]->update_stress();
     if (temp) {
-      domain->solids[isolid]->update_heat_flux();
+      domain->solids[isolid]->update_heat_flux(doublemapping);
     }
   }
 }
