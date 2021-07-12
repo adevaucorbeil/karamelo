@@ -110,16 +110,18 @@ void FixIndentMinimizePenetration::initial_integrate() {
                      vyvalue.result(mpm),
                      vzvalue.result(mpm));
   Eigen::Vector3d xsp, vps, vt;
+  Eigen::Vector3d ey = {0, 1, 0};
 
   double Rs, Rp, r, p, fmag, vtnorm, vndotxsp;
 
-  int n, n_reduced;
+  double A, A_reduced, cellsizeSq;
   ftot.setZero();
-  n = 0;
+  A = 0;
 
   if (solid == -1) {
     for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
       s = domain->solids[isolid];
+      cellsizeSq = s->grid->cellsize * s->grid->cellsize;
 
       if (domain->dimension == 2) {
         for (int ip = 0; ip < s->np_local; ip++) {
@@ -145,7 +147,6 @@ void FixIndentMinimizePenetration::initial_integrate() {
                   p = Rs - r; // penetration
 
                   if (p > 0) {
-		    n++;
 		    xsp /= r;
                     fmag = s->mass[ip] * p / (update->dt * update->dt);
                     f = fmag * xsp;// / r;
@@ -160,6 +161,7 @@ void FixIndentMinimizePenetration::initial_integrate() {
 		      }
 		    }
 
+		    A += cellsizeSq * s->F[ip](1,1) * s->F[ip](2,2);
 		    s->mbp[ip] += f;
                     ftot += f;
                   } else {
@@ -193,7 +195,6 @@ void FixIndentMinimizePenetration::initial_integrate() {
                   p = Rs - r; // penetration
 
                   if (p > 0) {
-		    n++;
 		    xsp /= r;
 		    vps = vs - s->v[ip];
                     fmag = s->mass[ip] * p / (update->dt * update->dt);
@@ -214,23 +215,25 @@ void FixIndentMinimizePenetration::initial_integrate() {
 			  // Or:
 			  ffric = mu * s->mass[ip] * abs(vndotxsp) * vt / (update->dt * vtnorm);
 			}
-			cout << "Particle " << s->ptag[ip]
-			     << " f_friction=[" << ffric[0] <<"," << ffric[1] <<"," << ffric[2] << "] "
-			     << "f=[" << f[0] <<"," << f[1] <<"," << f[2] << "] "
-			     << "vps=[" << vps[0] <<"," << vps[1] <<"," << vps[2] << "] "
-			      << "vt=[" << vt[0] <<"," << vt[1] <<"," << vt[2] << "] "
-			//      << "vs=[" << vs[0] <<"," << vs[1] <<"," << vs[2] << "] "
-			//      << "vp=[" << s->v[ip][0] <<"," << s->v[ip][1] <<"," << s->v[ip][2] << "] "
-			// //      << "ap=[" << s->a[ip][0] <<"," << s->a[ip][1] <<"," << s->a[ip][2] << "] "
-			     << "xsp=[" << xsp[0] <<"," << xsp[1] <<"," << xsp[2] << "] "
-			     << "dt=" << update->dt << endl;
-			// " mass=" << s->mass[ip] << " vtnorm=" << vtnorm << "\n";
-			// //   cout << endl;
+			// cout << "Particle " << s->ptag[ip]
+			//      << " f_friction=[" << ffric[0] <<"," << ffric[1] <<"," << ffric[2] << "] "
+			//      << "f=[" << f[0] <<"," << f[1] <<"," << f[2] << "] "
+			//      << "vps=[" << vps[0] <<"," << vps[1] <<"," << vps[2] << "] "
+			//       << "vt=[" << vt[0] <<"," << vt[1] <<"," << vt[2] << "] "
+			// //      << "vs=[" << vs[0] <<"," << vs[1] <<"," << vs[2] << "] "
+			// //      << "vp=[" << s->v[ip][0] <<"," << s->v[ip][1] <<"," << s->v[ip][2] << "] "
+			// // //      << "ap=[" << s->a[ip][0] <<"," << s->a[ip][1] <<"," << s->a[ip][2] << "] "
+			//      << "xsp=[" << xsp[0] <<"," << xsp[1] <<"," << xsp[2] << "] "
+			//      << "dt=" << update->dt << endl;
+			// // " mass=" << s->mass[ip] << " vtnorm=" << vtnorm << "\n";
+			// // //   cout << endl;
 
 			f += ffric;
 		      }
 		    }
 
+		    A += cellsizeSq * s->F[ip](0,0) * s->F[ip](2,2);
+		    // cout << "Particle " << s->ptag[ip] << " h^2=" << cellsizeSq << " F11=" << s->F[ip](0,0) << " F33=" << s->F[ip](2,2) << " dA=" << cellsizeSq * s->F[ip](0,0) * s->F[ip](2,2) << endl;
 		    s->mbp[ip] += f;
                     ftot += f;
                   } else {
@@ -246,6 +249,8 @@ void FixIndentMinimizePenetration::initial_integrate() {
     }
   } else {
     s = domain->solids[solid];
+    cellsizeSq = s->grid->cellsize * s->grid->cellsize;
+
     if (domain->dimension == 2) {
       for (int ip = 0; ip < s->np_local; ip++) {
 	if (s->mass[ip] > 0) {
@@ -270,7 +275,6 @@ void FixIndentMinimizePenetration::initial_integrate() {
 		p = Rs - r; // penetration
 
 		if (p > 0) {
-		  n++;
 		  xsp /= r;
 		  fmag = s->mass[ip] * p / (update->dt * update->dt);
 		  f = fmag * xsp;// / r;
@@ -285,6 +289,7 @@ void FixIndentMinimizePenetration::initial_integrate() {
 		    }
 		  }
 
+		  A += cellsizeSq * s->F[ip](0,0) * s->F[ip](2,2);
 		  s->mbp[ip] += f;
 		  ftot += f;
 		} else {
@@ -318,7 +323,6 @@ void FixIndentMinimizePenetration::initial_integrate() {
 		p = Rs - r; // penetration
 
 		if (p > 0) {
-		  n++;
 		  xsp /= r;
 		  fmag = s->mass[ip] * p / (update->dt * update->dt);
 		  f = fmag * xsp;// / r;
@@ -333,6 +337,7 @@ void FixIndentMinimizePenetration::initial_integrate() {
 		    }
 		  }
 
+		  A += cellsizeSq * s->F[ip](0,0) * s->F[ip](2,2);
 		  s->mbp[ip] += f;
 		  ftot += f;
 		} else {
@@ -348,11 +353,11 @@ void FixIndentMinimizePenetration::initial_integrate() {
   }
 
   // Reduce ftot:
-  MPI_Allreduce(&n, &n_reduced, 1, MPI_INT, MPI_SUM, universe->uworld);
+  MPI_Allreduce(&A, &A_reduced, 1, MPI_DOUBLE, MPI_SUM, universe->uworld);
   MPI_Allreduce(ftot.data(), ftot_reduced.data(), 3, MPI_DOUBLE, MPI_SUM,
                 universe->uworld);
 
-  (*input->vars)[id + "_s"] = Var(id + "_s", n_reduced);
+  (*input->vars)[id + "_s"] = Var(id + "_s", A_reduced);
   (*input->vars)[id + "_x"] = Var(id + "_x", ftot_reduced[0]);
   (*input->vars)[id + "_y"] = Var(id + "_y", ftot_reduced[1]);
   (*input->vars)[id + "_z"] = Var(id + "_z", ftot_reduced[2]);
