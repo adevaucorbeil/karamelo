@@ -2651,12 +2651,11 @@ void Solid::compute_internal_temperature_driving_forces_nodes() {
 void Solid::update_particle_temperature() {
   int in;
   for (int ip = 0; ip < np_local; ip++) {
+    T[ip] = 0;
     for (int j = 0; j < numneigh_pn[ip]; j++) {
       in = neigh_pn[ip][j];
-      T[ip] += wf_pn[ip][j] * (grid->T_update[in] - grid->T[in]);
-      // if (ptag[ip] == 3198 || ptag[ip] == 3102) {
-      // 	cout << "T[" << ptag[ip] << "]=" << T[ip] << " in=" << grid->ntag[in] << " T_update[in]=" << grid->T_update[in] << " T[in]=" << grid->T[in] << endl;
-      // }
+      // T[ip] += wf_pn[ip][j] * (grid->T_update[in] - grid->T[in]);
+      T[ip] += wf_pn[ip][j] * grid->T_update[in];
     }
   }
 }
