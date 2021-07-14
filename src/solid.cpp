@@ -74,7 +74,8 @@ Solid::Solid(MPM *mpm, vector<string> args) : Pointers(mpm)
 
   id          = args[0];
 
-  cout << "Creating new solid with ID: " << id << endl;
+  if (universe->me == 0)
+    cout << "Creating new solid with ID: " << id << endl;
 
   method_type = update->method_type;
 
@@ -168,10 +169,12 @@ Solid::~Solid()
 
 void Solid::init()
 {
-  cout << "Bounds for " << id << ":\n";
-  cout << "xlo xhi: " << solidlo[0] << " " << solidhi[0] << endl;
-  cout << "ylo yhi: " << solidlo[1] << " " << solidhi[1] << endl;
-  cout << "zlo zhi: " << solidlo[2] << " " << solidhi[2] << endl;
+  if (universe->me == 0) {
+    cout << "Bounds for " << id << ":\n";
+    cout << "xlo xhi: " << solidlo[0] << " " << solidhi[0] << endl;
+    cout << "ylo yhi: " << solidlo[1] << " " << solidhi[1] << endl;
+    cout << "zlo zhi: " << solidlo[2] << " " << solidhi[2] << endl;
+  }
 
   // Calculate total volume:
   double vtot_local = 0;
@@ -185,8 +188,10 @@ void Solid::init()
   MPI_Allreduce(&vtot_local, &vtot, 1, MPI_DOUBLE, MPI_SUM, universe->uworld);
   MPI_Allreduce(&mtot_local, &mtot, 1, MPI_DOUBLE, MPI_SUM, universe->uworld);
 
-  cout << "Solid " << id << " total volume = " << vtot << endl;
-  cout << "Solid " << id << " total mass = " << mtot << endl;
+  if (universe->me == 0) {
+    cout << "Solid " << id << " total volume = " << vtot << endl;
+    cout << "Solid " << id << " total mass = " << mtot << endl;
+  }
 
   if (grid->nnodes == 0) grid->init(solidlo, solidhi);
 
@@ -197,7 +202,7 @@ void Solid::init()
 
 void Solid::options(vector<string> *args, vector<string>::iterator it)
 {
-  cout << "In solid::options()" << endl;
+  // cout << "In solid::options()" << endl;
   if (args->end() < it + 3)
   {
     error->all(FLERR, "Error: not enough arguments.\n");
@@ -1717,7 +1722,9 @@ void Solid::unpack_particle(int &i, vector<int> list, vector<double> &buf)
 
 void Solid::populate(vector<string> args)
 {
-  cout << "Solid delimitated by region ID: " << args[2] << endl;
+  if (universe->me == 0) {
+    cout << "Solid delimitated by region ID: " << args[2] << endl;
+  }
 
   // Look for region ID:
   int iregion = domain->find_region(args[2]);
@@ -1751,14 +1758,14 @@ void Solid::populate(vector<string> args)
   solidsubhi[1] = MIN(solidhi[1], subhi[1]);
   solidsubhi[2] = MIN(solidhi[2], subhi[2]);
 
-  //#ifdef DEBUG
+#ifdef DEBUG
   cout << "proc " << universe->me
        << "\tsolidsublo=[" << solidsublo[0] << "," << solidsublo[1] << "," << solidsublo[2]
        << "]\t solidsubhi=["<< solidsubhi[0] << "," << solidsubhi[1] << "," << solidsubhi[2]
        << "]\n";
 
 //   std::vector<double> x2plot, y2plot;
-// #endif
+#endif
 
   // Calculate total number of particles np_local:
   int nsubx, nsuby, nsubz;
@@ -1859,7 +1866,7 @@ void Solid::populate(vector<string> args)
     cout << "1--- proc " << universe->me << " noffsethi=[" << noffsethi[0]
          << "," << noffsethi[1] << "," << noffsethi[2] << "]\n";
 
-    cout << "abs=" << abs(boundlo[0] + noffsethi[0] * delta - subhi[0])<< "]\n";
+    // cout << "abs=" << abs(boundlo[0] + noffsethi[0] * delta - subhi[0])<< "]\n";
     if (universe->procneigh[0][1] >= 0 &&
         abs(boundlo[0] + noffsethi[0] * delta - subhi[0]) < 1.0e-12) {
       noffsethi[0]++;
@@ -1915,7 +1922,8 @@ void Solid::populate(vector<string> args)
 
   // Create particles:
 
-  cout << "delta = " << delta << endl;
+  if (universe->me == 0)
+    cout << "delta = " << delta << endl;
 
   int l = 0;
   double vol_;
@@ -2297,7 +2305,8 @@ void Solid::read_mesh(string fileName)
     error->one(FLERR, "");
   }
 
-  cout << "Reading Gmsh mesh file ...\n";
+  if (universe->me == 0)
+    cout << "Reading Gmsh mesh file ...\n";
 
   while (getline(file, line))
   {
@@ -2317,16 +2326,20 @@ void Solid::read_mesh(string fileName)
       getline(file, line);
       if (line.compare("$EndMeshFormat") == 0)
       {
-        cout << "Reading format...done!\n";
+        
+	if (universe->me == 0)
+	  cout << "Reading format...done!\n";
         break;
       }
       else
-        cout << "Unexpected line: " << line << ". $EndMeshFormat expected!!\n";
+	if (universe->me == 0)
+	  cout << "Unexpected line: " << line << ". $EndMeshFormat expected!!\n";
     }
 
     if (line.compare("$Nodes") == 0)
     {
-      cout << "Reading nodes...\n";
+      if (universe->me == 0)
+	cout << "Reading nodes...\n";
       // Read mesh node informations:
       file >> nodeCount;
 
@@ -2375,15 +2388,18 @@ void Solid::read_mesh(string fileName)
       getline(file, line);
       if (line.compare("$EndNodes") == 0)
       {
-        cout << "Reading nodes...done!\n";
+	if (universe->me == 0)
+	  cout << "Reading nodes...done!\n";
       }
       else
-        cout << "Unexpected line: " << line << ". $EndNodes expected!!\n";
+	if (universe->me == 0)
+	  cout << "Unexpected line: " << line << ". $EndNodes expected!!\n";
     }
 
     if (line.compare("$Elements") == 0)
     {
-      cout << "Reading elements...\n";
+      if (universe->me == 0)
+	cout << "Reading elements...\n";
       file >> np; // Number of elements
       getline(file, line);
 
@@ -2530,16 +2546,19 @@ void Solid::read_mesh(string fileName)
 
       getline(file, line);
       if (line.compare("$EndElements") == 0)
-      {
-        cout << "Reading elements...done!\n";
+	{
+	  if (universe->me == 0)
+	    cout << "Reading elements...done!\n";
         break;
       }
       else
-        cout << "Unexpected line: " << line << ". $EndElements expected!!\n";
+	if (universe->me == 0)
+	  cout << "Unexpected line: " << line << ". $EndElements expected!!\n";
     }
   }
 
-  cout << "np=" << np << endl;
+  if (universe->me == 0)
+    cout << "np=" << np << endl;
 
   for (int i = 0; i < np; i++)
   {
@@ -2712,7 +2731,7 @@ void Solid::write_restart(ofstream *of) {
 
 
   // Write particle's attributes:
-  cout << x[0](0) << ", " << x[0](1) << ", " << x[0](2) << endl;
+  // cout << x[0](0) << ", " << x[0](1) << ", " << x[0](2) << endl;
   for (int ip = 0; ip < np_local; ip++) {
     of->write(reinterpret_cast<const char *>(&ptag[ip]), sizeof(tagint));
     of->write(reinterpret_cast<const char *>(&x0[ip]), sizeof(Eigen::Vector3d));
@@ -2743,10 +2762,10 @@ void Solid::read_restart(ifstream *ifr) {
   ifr->read(reinterpret_cast<char *>(&solidhi[0]), 3*sizeof(double));
   ifr->read(reinterpret_cast<char *>(&solidsublo[0]), 3*sizeof(double));
   ifr->read(reinterpret_cast<char *>(&solidsubhi[0]), 3*sizeof(double));
-  cout << "solidlo=[" << solidlo[0] << "," << solidlo[1] << "," << solidlo[2] << endl;
-  cout << "solidhi=[" << solidhi[0] << "," << solidhi[1] << "," << solidhi[2] << endl;
-  cout << "solidsublo=[" << solidsublo[0] << "," << solidsublo[1] << "," << solidsublo[2] << endl;
-  cout << "solidsubhi=[" << solidsubhi[0] << "," << solidsubhi[1] << "," << solidsubhi[2] << endl;
+  // cout << "solidlo=[" << solidlo[0] << "," << solidlo[1] << "," << solidlo[2] << endl;
+  // cout << "solidhi=[" << solidhi[0] << "," << solidhi[1] << "," << solidhi[2] << endl;
+  // cout << "solidsublo=[" << solidsublo[0] << "," << solidsublo[1] << "," << solidsublo[2] << endl;
+  // cout << "solidsubhi=[" << solidsubhi[0] << "," << solidsubhi[1] << "," << solidsubhi[2] << endl;
 
   //init();
   // Read number of particles:
@@ -2802,5 +2821,5 @@ void Solid::read_restart(ifstream *ifr) {
     ifr->read(reinterpret_cast<char *>(&ienergy[ip]), sizeof(double));
     ifr->read(reinterpret_cast<char *>(&mask[ip]), sizeof(int));
   }
-  cout << x[0](0) << ", " << x[0](1) << ", " << x[0](2) << endl;
+  // cout << x[0](0) << ", " << x[0](1) << ", " << x[0](2) << endl;
 }

@@ -56,7 +56,7 @@ void TranslateParticles::translate_region(vector<string> args, int isolid) {
   if (iregion < 0)
     {
       cout << "Error: region " << args[2] << " unknown.\n";
-      exit(1);
+      error->all(FLERR, "");
     }
 
   delx = input->parsev(args[3]);

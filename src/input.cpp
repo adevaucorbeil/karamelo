@@ -100,7 +100,7 @@ Input::~Input()
 
 void Input::file()
 {
-  cout << "In Input::file()\n";
+  // cout << "In Input::file()\n";
   bool ignore = false;
   int end = 0;
 
@@ -589,14 +589,18 @@ Var Input::parsev(string str)
 	  if (negative) {
 	    if (!returnvar.empty()) {
 	      (*vars)[returnvar] = -(*vars)[word];
-	      cout << returnvar << " = " << (*vars)[returnvar].result() << endl;
+	      if (universe->me == 0) {
+		cout << returnvar << " = " << (*vars)[returnvar].result() << endl;
+	      }
 	    }
 	    return -(*vars)[word];
 	  }
 	  else {
 	    if (!returnvar.empty()) {
 	      (*vars)[returnvar] = (*vars)[word];
-	      cout << returnvar << " = " << (*vars)[returnvar].result() << endl;
+	      if (universe->me == 0) {
+		cout << returnvar << " = " << (*vars)[returnvar].result() << endl;
+	      }
 	    }
 	    return (*vars)[word];
 	  }
@@ -643,8 +647,7 @@ Var Input::parsev(string str)
           k++;
           if (i + k > str.length())
           {
-            cout << "Error: Unbalanced parenthesis '('" << endl;
-            exit(1);
+	    error->all(FLERR, "Error: Unbalanced parenthesis '('.\n");
           }
         }
         string arg;
@@ -709,7 +712,9 @@ Var Input::parsev(string str)
   else {
     if (!returnvar.empty()) {
       (*vars)[returnvar] = values.top();
-      cout << returnvar << " = " << (*vars)[returnvar].result(mpm) << endl;
+      if (universe->me == 0) {
+	cout << returnvar << " = " << (*vars)[returnvar].result(mpm) << endl;
+      }
     }
     return values.top();
   }
@@ -871,15 +876,17 @@ int Input::print(vector<string> args) {
   }
 
   Var v = parsev(args[0]);
-  cout << args[0] << " = {equation=\"" << v.eq()
-       << "\", value=" << v.result(mpm) << ", constant=";
+  if (universe->me == 0) {
+    cout << args[0] << " = {equation=\"" << v.eq()
+	 << "\", value=" << v.result(mpm) << ", constant=";
 
-  if (v.is_constant())
-    cout << "true";
-  else
-    cout << "false";
+    if (v.is_constant())
+      cout << "true";
+    else
+      cout << "false";
 
-  cout << "}\n";
+    cout << "}\n";
+  }
 
   return 0;
 }

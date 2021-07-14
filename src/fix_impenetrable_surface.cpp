@@ -52,8 +52,10 @@ FixImpenetrableSurface::FixImpenetrableSurface(MPM *mpm, vector<string> args)
                    group->pon[igroup] + ", " + args[2] + " is a group of " +
                    group->pon[igroup] + ".\n");
   }
-  cout << "Creating new fix FixImpenetrableSurface with ID: " << args[0]
-       << endl;
+  if (universe->me == 0) {
+    cout << "Creating new fix FixImpenetrableSurface with ID: " << args[0]
+	 << endl;
+  }
   id = args[0];
 }
 

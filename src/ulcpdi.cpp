@@ -31,7 +31,7 @@ using namespace std;
 
 ULCPDI::ULCPDI(MPM *mpm) : Method(mpm) {
 
-  cout << "In ULCPDI::ULCPDI()" << endl;
+  // cout << "In ULCPDI::ULCPDI()" << endl;
 
   update_wf = 1;
   is_CPDI = true;
@@ -53,19 +53,23 @@ void ULCPDI::setup(vector<string> args)
   }
 
   if (update->shape_function == update->ShapeFunctions::LINEAR) {
-    cout << "Setting up linear basis functions\n";
+    if (universe->me == 0)
+      cout << "Setting up linear basis functions\n";
     basis_function = &BasisFunction::linear;
     derivative_basis_function = &BasisFunction::derivative_linear;
   } else if (update->shape_function == update->ShapeFunctions::CUBIC_SPLINE) {
-    cout << "Setting up cubic-spline basis functions\n";
+    if (universe->me == 0)
+      cout << "Setting up cubic-spline basis functions\n";
     basis_function = &BasisFunction::cubic_spline;
     derivative_basis_function = &BasisFunction::derivative_cubic_spline;
   } else if (update->shape_function == update->ShapeFunctions::QUADRATIC_SPLINE) {
-    cout << "Setting up quadratic-spline basis functions\n";
+    if (universe->me == 0)
+      cout << "Setting up quadratic-spline basis functions\n";
     basis_function = &BasisFunction::quadratic_spline;
     derivative_basis_function = &BasisFunction::derivative_quadratic_spline;
   } else if (update->shape_function == update->ShapeFunctions::BERNSTEIN) {
-    cout << "Setting up Bernstein-quadratic basis functions\n";
+    if (universe->me == 0)
+      cout << "Setting up Bernstein-quadratic basis functions\n";
     basis_function = &BasisFunction::bernstein_quadratic;
     derivative_basis_function = &BasisFunction::derivative_bernstein_quadratic;
   } else {
@@ -100,7 +104,8 @@ void ULCPDI::setup(vector<string> args)
     error->all(FLERR, error_str);
   }
 
-  cout << "Using CPDI-" << known_styles[style] << endl;
+  if (universe->me == 0)
+    cout << "Using CPDI-" << known_styles[style] << endl;
 }
 
 void ULCPDI::compute_grid_weight_functions_and_gradients()

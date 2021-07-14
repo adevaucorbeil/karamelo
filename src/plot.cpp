@@ -33,7 +33,7 @@ Plot::Plot(MPM *mpm, vector<string> args) : Pointers(mpm)
   dvalue = 0;
   bivalue = 0;
 
-  cout << "In Plot::Plot" << endl;
+  // cout << "In Plot::Plot" << endl;
 
   style = args[0];
 

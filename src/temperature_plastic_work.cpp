@@ -3,6 +3,7 @@
 #include "error.h"
 #include "input.h"
 #include "mpm_math.h"
+#include "universe.h"
 #include "update.h"
 #include "var.h"
 #include <Eigen/Eigen>
@@ -16,7 +17,7 @@ using namespace MPM_Math;
 
 TemperaturePlasticWork::TemperaturePlasticWork(MPM *mpm, vector<string> args) : Temperature(mpm, args)
 {
-  cout << "Initiate TemperaturePlasticWork" << endl;
+  // cout << "Initiate TemperaturePlasticWork" << endl;
 
   if (args.size() < 3) {
     error->all(FLERR, "Error: too few arguments for the strength command.\n");
@@ -44,13 +45,15 @@ TemperaturePlasticWork::TemperaturePlasticWork(MPM *mpm, vector<string> args) : 
   T0 = input->parsev(args[6]);
   Tm = input->parsev(args[7]);
 
-  cout << "Plastic work material temperature model:\n";
-  cout << "\tTaylor-Quinney coefficient chi:" << chi << endl;
-  cout << "\tSpecific heat at constant pressure cp:" << cp_ << endl;
-  cout << "\tThermal conductivity kappa:" << kappa_ << endl;
-  cout << "\tCoefficient of thermal expansion alpha:" << alpha << endl;
-  cout << "\tInitial temperature T0:" << T0 << endl;
-  cout << "\tMelting temperature Tm:" << Tm << endl;
+  if (universe->me == 0) {
+    cout << "Plastic work material temperature model:\n";
+    cout << "\tTaylor-Quinney coefficient chi:" << chi << endl;
+    cout << "\tSpecific heat at constant pressure cp:" << cp_ << endl;
+    cout << "\tThermal conductivity kappa:" << kappa_ << endl;
+    cout << "\tCoefficient of thermal expansion alpha:" << alpha << endl;
+    cout << "\tInitial temperature T0:" << T0 << endl;
+    cout << "\tMelting temperature Tm:" << Tm << endl;
+  }
 }
 
 void TemperaturePlasticWork::compute_heat_source(double T, double &gamma, const double &flow_stress, const double &eff_plastic_strain_rate)
@@ -75,7 +78,7 @@ void TemperaturePlasticWork::write_restart(ofstream *of) {
 }
 
 void TemperaturePlasticWork::read_restart(ifstream *ifr) {
-  cout << "Restart TemperaturePlasticWork" << endl;
+  // cout << "Restart TemperaturePlasticWork" << endl;
   ifr->read(reinterpret_cast<char *>(&chi), sizeof(double));
   ifr->read(reinterpret_cast<char *>(&kappa_), sizeof(double));
   ifr->read(reinterpret_cast<char *>(&cp_), sizeof(double));

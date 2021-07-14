@@ -31,7 +31,7 @@ using namespace std;
 
 ULMPM::ULMPM(MPM *mpm) : Method(mpm)
 {
-  cout << "In ULMPM::ULMPM()" << endl;
+  // cout << "In ULMPM::ULMPM()" << endl;
 
   update_Di   = 1;
   update->PIC_FLIP = 0.99;
@@ -53,19 +53,23 @@ void ULMPM::setup(vector<string> args)
   }
 
   if (update->shape_function == update->ShapeFunctions::LINEAR) {
-    cout << "Setting up linear basis functions\n";
+    if (universe->me == 0)
+      cout << "Setting up linear basis functions\n";
     basis_function = &BasisFunction::linear;
     derivative_basis_function = &BasisFunction::derivative_linear;
   } else if (update->shape_function == update->ShapeFunctions::CUBIC_SPLINE) {
-    cout << "Setting up cubic-spline basis functions\n";
+    if (universe->me == 0)
+      cout << "Setting up cubic-spline basis functions\n";
     basis_function = &BasisFunction::cubic_spline;
     derivative_basis_function = &BasisFunction::derivative_cubic_spline;
   } else if (update->shape_function == update->ShapeFunctions::QUADRATIC_SPLINE) {
-    cout << "Setting up quadratic-spline basis functions\n";
+    if (universe->me == 0)
+      cout << "Setting up quadratic-spline basis functions\n";
     basis_function = &BasisFunction::quadratic_spline;
     derivative_basis_function = &BasisFunction::derivative_quadratic_spline;
   } else if (update->shape_function == update->ShapeFunctions::BERNSTEIN) {
-    cout << "Setting up Bernstein-quadratic basis functions\n";
+    if (universe->me == 0)
+      cout << "Setting up Bernstein-quadratic basis functions\n";
     basis_function = &BasisFunction::bernstein_quadratic;
     derivative_basis_function = &BasisFunction::derivative_bernstein_quadratic;
   } else {

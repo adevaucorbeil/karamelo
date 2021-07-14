@@ -11,15 +11,16 @@
  *
  * ----------------------------------------------------------------------- */
 
-#include <iostream>
-#include <Eigen/Eigen>
 #include "strength_plastic.h"
-#include "input.h"
 #include "domain.h"
-#include "update.h"
-#include "mpm_math.h"
-#include "var.h"
 #include "error.h"
+#include "input.h"
+#include "mpm_math.h"
+#include "universe.h"
+#include "update.h"
+#include "var.h"
+#include <Eigen/Eigen>
+#include <iostream>
 
 using namespace std;
 using namespace Eigen;
@@ -28,7 +29,9 @@ using namespace MPM_Math;
 
 StrengthPlastic::StrengthPlastic(MPM *mpm, vector<string> args) : Strength(mpm, args)
 {
-  cout << "Initiate StrengthPlastic" << endl;
+  if (universe->me == 0) {
+    cout << "Initiate StrengthPlastic" << endl;
+  }
 
   if (args.size() < 3) {
     error->all(FLERR, "Error: too few arguments for the strength command.\n");
@@ -44,10 +47,12 @@ StrengthPlastic::StrengthPlastic(MPM *mpm, vector<string> args) : Strength(mpm, 
   //options(&args, args.begin()+3);
   G_ = input->parsev(args[2]);
   yieldStress = input->parsev(args[3]);
-  cout << "Linear plastic strength model:\n";
-  cout << "\tG: shear modulus " << G_ << endl;
+  if (universe->me == 0) {
+    cout << "Linear plastic strength model:\n";
+    cout << "\tG: shear modulus " << G_ << endl;
 
-  cout << "\t yield stress: " << yieldStress << endl;
+    cout << "\t yield stress: " << yieldStress << endl;
+  }
 }
 
 double StrengthPlastic::G(){
@@ -115,7 +120,9 @@ void StrengthPlastic::write_restart(ofstream *of) {
 }
 
 void StrengthPlastic::read_restart(ifstream *ifr) {
-  cout << "Restart StrengthPlastic" << endl;
+  if (universe->me == 0) {
+    cout << "Restart StrengthPlastic" << endl;
+  }
   ifr->read(reinterpret_cast<char *>(&G_), sizeof(double));
   ifr->read(reinterpret_cast<char *>(&yieldStress), sizeof(double));
 }

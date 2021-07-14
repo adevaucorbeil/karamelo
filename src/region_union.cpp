@@ -15,6 +15,7 @@
 #include "domain.h"
 #include "error.h"
 #include "input.h"
+#include "universe.h"
 #include "var.h"
 #include <iostream>
 
@@ -24,7 +25,8 @@ using namespace std;
 
 Union::Union(MPM *mpm, vector<string> args) : Region(mpm, args)
 {
-  cout << "Initiate Union" << endl;
+  if (universe->me == 0)
+    cout << "Initiate Union" << endl;
 
   if (args.size() < 3) {
     error->all(FLERR, "Error: not enough arguments.\n");
@@ -123,11 +125,11 @@ void Union::write_restart(ofstream *of) {
 }
 
 void Union::read_restart(ifstream *ifr) {
-  cout << "Restart Union" << endl;
+  // cout << "Restart Union" << endl;
 
   size_t N;
   ifr->read(reinterpret_cast<char *>(&N), sizeof(size_t));
-  cout << "N = " << N << endl;
+  // cout << "N = " << N << endl;
   iregions.resize(N);
 
   for (int i = 0; i < N; i++) {

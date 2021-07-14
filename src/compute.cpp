@@ -14,6 +14,7 @@
 #include "compute.h"
 #include "group.h"
 #include "input.h"
+#include "universe.h"
 #include "var.h"
 #include <iostream>
 
@@ -23,11 +24,12 @@ using namespace std;
 Compute::Compute(MPM *mpm, vector<string> args) :
   Pointers(mpm)
 {
-  cout << "Creating new compute with ID: " << args[0] << endl;
+  if (universe->me == 0)
+    cout << "Creating new compute with ID: " << args[0] << endl;
   id = args[0];
 
   igroup = group->find(args[2]);
-  if (igroup == -1) {
+  if (igroup == -1 && universe->me == 0) {
     cout << "Could not find group ID " << args[2] << endl;
   }
   groupbit = group->bitmask[igroup];

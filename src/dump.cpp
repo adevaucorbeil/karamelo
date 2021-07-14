@@ -11,10 +11,11 @@
  *
  * ----------------------------------------------------------------------- */
 
-#include <iostream>
-#include <algorithm>
 #include "dump.h"
 #include "error.h"
+#include "universe.h"
+#include <algorithm>
+#include <iostream>
 
 using namespace std;
 
@@ -22,7 +23,8 @@ using namespace std;
 Dump::Dump(MPM *mpm, vector<string> args) :
   Pointers(mpm)
 {
-  cout << "Creating new dump with ID: " << args[0] << endl;
+  if (universe->me == 0)
+    cout << "Creating new dump with ID: " << args[0] << endl;
   id = args[0];
 
   if (args[1].compare("all")!=0) {

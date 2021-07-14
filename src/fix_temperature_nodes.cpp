@@ -37,7 +37,9 @@ FixTemperatureNodes::FixTemperatureNodes(MPM *mpm, vector<string> args) : Fix(mp
   if (group->pon[igroup].compare("nodes") !=0 ) {
     error->one(FLERR, "fix_temperature_nodes needs to be given a group of nodes" + group->pon[igroup] + ", " + args[2] + " is a group of "+ group->pon[igroup] + ".\n");
   }
-  cout << "Creating new fix FixTemperatureNodes with ID: " << args[0] << endl;
+  if (universe->me == 0) {
+    cout << "Creating new fix FixTemperatureNodes with ID: " << args[0] << endl;
+  }
   id = args[0];
 
   string time = "time";

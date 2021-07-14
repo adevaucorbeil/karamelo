@@ -38,7 +38,7 @@ FixVelocityParticles::FixVelocityParticles(MPM *mpm, vector<string> args) : Fix(
       0) { // If the keyword restart, we are expecting to have read_restart()
            // launched right after.
     igroup = stoi(args[3]);
-    if (igroup == -1) {
+    if (igroup == -1 && universe->me == 0) {
       cout << "Could not find group number " << args[3] << endl;
     }
     groupbit = group->bitmask[igroup];
@@ -53,10 +53,13 @@ FixVelocityParticles::FixVelocityParticles(MPM *mpm, vector<string> args) : Fix(
   }
 
   if (group->pon[igroup].compare("particles") !=0 ) {
-    cout << "fix_velocity_particles needs to be given a group of particles" << group->pon[igroup] << ", " << args[2] << " is a group of "<< group->pon[igroup] << "." << endl;
-    exit(1);
+    error->one(FLERR, "fix_velocity_nodes needs to be given a group of nodes" +
+                          group->pon[igroup] + ", " + args[2] +
+                          " is a group of " + group->pon[igroup] + ".\n");
   }
-  cout << "Creating new fix FixVelocityParticles with ID: " << args[0] << endl;
+  if (universe->me == 0) {
+    cout << "Creating new fix FixVelocityParticles with ID: " << args[0] << endl;
+  }
   id = args[0];
 
   xset = yset = zset = false;

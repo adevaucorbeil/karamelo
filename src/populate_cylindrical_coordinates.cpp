@@ -39,8 +39,7 @@ Var PopulateCylindricalCoordinates::command(vector<string> args) {
 
   if (isolid < 0) {
     if (args[0].compare("all")!=0) {
-      cout << "Error: solid " << args[0] << " unknown.\n";
-      error->all(FLERR, "");
+      error->all(FLERR, "Error: solid " + args[0] + " unknown.\n");
     }
   }
 
@@ -48,8 +47,7 @@ Var PopulateCylindricalCoordinates::command(vector<string> args) {
 
   if (iregion < 0)
     {
-      cout << "Error: region " << args[1] << " unknown.\n";
-      exit(1);
+      error->all(FLERR, "Error: region " + args[1] + " unknown.\n");
     }
 
   double c1, c2, R, RSq, lo, hi, T0;
@@ -103,7 +101,10 @@ Var PopulateCylindricalCoordinates::command(vector<string> args) {
   }
 
   RSq = R*R;
-  cout << "axis, c1, c2, R = " << axis << "\t" << c1 << "\t" << c2 << "\t" << R << endl;
+  if (universe->me == 0) {
+    cout << "axis, c1, c2, R = " << axis << "\t" << c1 << "\t" << c2 << "\t"
+         << R << endl;
+  }
 
   int N = Ndx * Ndr * Ndtheta;
 
@@ -126,9 +127,8 @@ Var PopulateCylindricalCoordinates::command(vector<string> args) {
     for (int j = 0; j < Ndr; j++) {
       for (int k = 0; k < Ndtheta; k++) {
         if (l >= N) {
-          cout << "Error in Solid::populate(), exceeding the allocated number "
-                  "of particles.\n";
-          error->all(FLERR, "");
+          error->all(FLERR, "Error in Solid::populate(), exceeding the "
+                            "allocated number of particles.\n");
         }
 
         s->x0[l][ii] = s->x[l][ii] = c1 + j * Ndr_ * cos(k * Ndtheta_);
@@ -207,8 +207,8 @@ Var PopulateCylindricalCoordinates::command(vector<string> args) {
 
   s->np_local = l; // Adjust np to account for the particles outside the domain
 
-  cout << "ptag0=" << ptag0 << endl;
-  cout << "s->np_local=" << s->np_local << endl;
+  // cout << "ptag0=" << ptag0 << endl;
+  // cout << "s->np_local=" << s->np_local << endl;
   for (int i = 0; i < s->np_local; i++)
   {
     s->ptag[i] = ptag0 + i + 1 + domain->np_total;

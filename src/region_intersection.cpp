@@ -15,6 +15,7 @@
 #include "domain.h"
 #include "error.h"
 #include "input.h"
+#include "universe.h"
 #include "var.h"
 #include <iostream>
 
@@ -24,7 +25,8 @@ using namespace std;
 
 Intersection::Intersection(MPM *mpm, vector<string> args) : Region(mpm, args)
 {
-  cout << "Initiate Intersection" << endl;
+  if (universe->me == 0)
+    cout << "Initiate Intersection" << endl;
 
   if (args.size() < 3) {
     error->all(FLERR, "Error: not enough arguments.\n");
@@ -123,7 +125,7 @@ void Intersection::write_restart(ofstream *of) {
 }
 
 void Intersection::read_restart(ifstream *ifr) {
-  cout << "Restart Intersection" << endl;
+  // cout << "Restart Intersection" << endl;
 
   size_t N;
   ifr->read(reinterpret_cast<char *>(&N), sizeof(size_t));

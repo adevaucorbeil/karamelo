@@ -74,7 +74,7 @@ void Output::setup(){
 	next_dump[idump] =
           (ntimestep/every_dump[idump])*every_dump[idump] + every_dump[idump];
       } else {
-	cout << "Error every_dump = 0 does not make sense" << endl;
+	error->all(FLERR, "Error every_dump = 0 does not make sense.\n");
       }
 
       if (idump != 0) next_dump_any = MIN(next_dump_any,next_dump[idump]);
@@ -91,7 +91,7 @@ void Output::setup(){
 	next_plot[iplot] =
           (ntimestep/every_plot[iplot])*every_plot[iplot] + every_plot[iplot];
       } else {
-	cout << "Error every_plot = 0 does not make sense" << endl;
+	error->all(FLERR,  "Error every_plot = 0 does not make sense.\n");
       }
 
       if (iplot) next_plot_any = MIN(next_plot_any,next_plot[iplot]);
@@ -207,9 +207,9 @@ void Output::set_log(vector<string> args){
 }
 
 void Output::add_dump(vector<string> args){
-  cout << "In add_dump" << endl;
+  // cout << "In add_dump" << endl;
   if (args.size() < 5) {
-    cout << "Error: not enough arguments in dump command" << endl;
+    error->all(FLERR, "Error: not enough arguments in dump command.\n");
   }
 
   if (find_dump(args[0]) >= 0) {
@@ -238,7 +238,7 @@ void Output::add_dump(vector<string> args){
 }
 
 void Output::modify_dump(vector<string> args){
-  cout << "In modify_dump" << endl;
+  // cout << "In modify_dump" << endl;
 
   int idump = find_dump(args[1]);
   if (idump < 0) {
@@ -249,7 +249,7 @@ void Output::modify_dump(vector<string> args){
 }
 
 void Output::delete_dump(string name){
-  cout << "In delete_dump" << endl;
+  // cout << "In delete_dump" << endl;
 
   int idump = find_dump(name);
   if (idump < 0) {
@@ -271,7 +271,7 @@ int Output::find_dump(string name){
 }
 
 void Output::add_plot(vector<string> args){
-  cout << "In add_plot" << endl;
+  // cout << "In add_plot" << endl;
   if (args.size() < 4) {
     cout << "Error: not enough arguments in plot command" << endl;
   }
@@ -290,7 +290,7 @@ void Output::add_plot(vector<string> args){
 }
 
 void Output::modify_plot(vector<string> args){
-  cout << "In modify_plot" << endl;
+  // cout << "In modify_plot" << endl;
 
   int iplot = find_plot(args[1]);
   if (iplot == 0) {
@@ -301,7 +301,7 @@ void Output::modify_plot(vector<string> args){
 }
 
 void Output::delete_plot(string name){
-  cout << "In delete_plot" << endl;
+  // cout << "In delete_plot" << endl;
 
   int iplot = find_plot(name);
   if (iplot == 0) {

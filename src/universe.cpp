@@ -44,7 +44,6 @@ Universe::~Universe()
 }
 
 void Universe::set_proc_grid() {
-  cout << "In Universe::set_proc_grid()\n";
   int dim = domain->dimension;
 
   if (dim != 1 && dim !=2 && dim !=3) {
@@ -330,7 +329,8 @@ void Universe::set_proc_grid() {
 	}
       }
 
-      cout << "End set communication pattern\n";
+      if (me == 0)
+	cout << "End set communication pattern\n";
     }
 
     if (domain->dimension == 3) {

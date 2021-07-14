@@ -75,9 +75,8 @@ void Group::assign(vector<string> args)
 
   if (igroup == -1)
   {
-    if (ngroup == MAX_GROUP)
-    {
-      cout << "Too many groups" << endl;
+    if (ngroup == MAX_GROUP) {
+      error->all(FLERR, "Too many groups.\n");
     }
     igroup        = find_unused();
     names[igroup] = args[0];
@@ -129,18 +128,24 @@ void Group::assign(vector<string> args)
 		x    = &domain->solids[isolid]->x0;
 		nmax = domain->solids[isolid]->np_local;
 		mask = &domain->solids[isolid]->mask;
-		cout << "Solid has " << domain->solids[isolid]->np << " particles"
-		     << endl;
-	      }
+
+                // if (universe->me == 0) {
+                //   cout << "Solid has " << domain->solids[isolid]->np
+                //        << " particles" << endl;
+                // }
+              }
 	    else
 	      {
 		x    = &domain->solids[isolid]->grid->x0;
 		nmax = domain->solids[isolid]->grid->nnodes_local
 		  + domain->solids[isolid]->grid->nnodes_ghost;
 		mask = &domain->solids[isolid]->grid->mask;
-		cout << "Grid has " << domain->solids[isolid]->grid->nnodes
-		     << " nodes" << endl;
-	      }
+
+                // if (universe->me == 0) {
+                //   cout << "Grid has " << domain->solids[isolid]->grid->nnodes
+                //        << " nodes" << endl;
+                // }
+              }
 
 	    int n = 0;
 
@@ -155,10 +160,12 @@ void Group::assign(vector<string> args)
 
 	    int n_tot = 0;
 	    MPI_Allreduce(&n,&n_tot,1,MPI_INT,MPI_SUM,universe->uworld);
-	
-	    cout << n_tot << " " << pon[igroup] << " from solid "
-		 << domain->solids[isolid]->id << " found" << endl;
-	  }
+
+            if (universe->me == 0) {
+              cout << n_tot << " " << pon[igroup] << " from solid "
+                   << domain->solids[isolid]->id << " found" << endl;
+            }
+          }
       }
     else if (args[4].compare("solid") == 0)
       {
@@ -179,8 +186,10 @@ void Group::assign(vector<string> args)
 		x    = &domain->solids[solid[igroup]]->x0;
 		nmax = domain->solids[solid[igroup]]->np_local;
 		mask = &domain->solids[solid[igroup]]->mask;
-		cout << "Solid has " << domain->solids[solid[igroup]]->np
-		     << " particles" << endl;
+		// if (universe->me == 0) {
+		//   cout << "Solid has " << domain->solids[solid[igroup]]->np
+		//        << " particles" << endl;
+		// }
 	      }
 	    else
 	      {
@@ -188,8 +197,10 @@ void Group::assign(vector<string> args)
 		nmax = domain->solids[solid[igroup]]->grid->nnodes_local
 		  + domain->solids[solid[igroup]]->grid->nnodes_ghost;
 		mask = &domain->solids[solid[igroup]]->grid->mask;
-		cout << "Grid has " << domain->solids[solid[igroup]]->grid->nnodes
-		     << " nodes" << endl;
+		// if (universe->me == 0) {
+		//   cout << "Grid has " << domain->solids[solid[igroup]]->grid->nnodes
+		//        << " nodes" << endl;
+		// }
 	      }
 
 	    int n = 0;
@@ -204,9 +215,12 @@ void Group::assign(vector<string> args)
 
 	    int n_tot = 0;
 	    MPI_Allreduce(&n,&n_tot,1,MPI_INT,MPI_SUM,universe->uworld);
-	
-	    cout << n_tot << " " << pon[igroup] << " from solid " << domain->solids[solid[igroup]]->id << " found" << endl;
-	  }
+
+            if (universe->me == 0) {
+              cout << n_tot << " " << pon[igroup] << " from solid "
+                   << domain->solids[solid[igroup]]->id << " found" << endl;
+            }
+          }
 
       }
     else
@@ -465,7 +479,7 @@ void Group::write_restart(ofstream *of) {
     Nr = names[igroup].size();
     of->write(reinterpret_cast<const char *>(&Nr), sizeof(size_t));
     of->write(reinterpret_cast<const char *>(names[igroup].c_str()), Nr);
-    cout << "Group name = " << names[igroup] << endl;
+    // cout << "Group name = " << names[igroup] << endl;
 
     of->write(reinterpret_cast<const char *>(&bitmask[igroup]), sizeof(int));
     //of->write(reinterpret_cast<const char *>(&inversemask[igroup]), sizeof(int));
@@ -482,10 +496,10 @@ void Group::write_restart(ofstream *of) {
     of->write(reinterpret_cast<const char *>(&p_or_n), sizeof(bool));
 
     of->write(reinterpret_cast<const char *>(&solid[igroup]), sizeof(int));
-    cout << "Group solid = " << solid[igroup] << endl;
+    // cout << "Group solid = " << solid[igroup] << endl;
     of->write(reinterpret_cast<const char *>(&region[igroup]), sizeof(int));
-    cout << "Group region = " << region[igroup] << endl;
-    cout << "Group pon = " << pon[igroup] << endl;
+    // cout << "Group region = " << region[igroup] << endl;
+    // cout << "Group pon = " << pon[igroup] << endl;
   }
 }
 
@@ -504,7 +518,7 @@ void Group::read_restart(ifstream *ifr) {
     names[igroup].resize(Nr);
 
     ifr->read(reinterpret_cast<char *>(&names[igroup][0]), Nr);
-    cout << "Group name = " << names[igroup] << endl;
+    // cout << "Group name = " << names[igroup] << endl;
 
     ifr->read(reinterpret_cast<char *>(&bitmask[igroup]), sizeof(int));
     ifr->read(reinterpret_cast<char *>(&p_or_n), sizeof(bool));
@@ -518,9 +532,9 @@ void Group::read_restart(ifstream *ifr) {
     ifr->read(reinterpret_cast<char *>(&solid[igroup]), sizeof(int));
     ifr->read(reinterpret_cast<char *>(&region[igroup]), sizeof(int));
 
-    cout << "Group solid = " << solid[igroup] << endl;
-    cout << "Group region = " << region[igroup] << endl;
-    cout << "Group pon = " << pon[igroup] << endl;
+    // cout << "Group solid = " << solid[igroup] << endl;
+    // cout << "Group region = " << region[igroup] << endl;
+    // cout << "Group pon = " << pon[igroup] << endl;
     if (region[igroup] == -1) {
       error->all(FLERR, "Error: could not find region with ID " + to_string(region[igroup]) + ".\n");
     }
@@ -537,15 +551,19 @@ void Group::read_restart(ifstream *ifr) {
           x = &domain->solids[isolid]->x0;
           nmax = domain->solids[isolid]->np_local;
           mask = &domain->solids[isolid]->mask;
-          cout << "Solid has " << domain->solids[isolid]->np << " particles"
-               << endl;
+	  if (universe->me == 0) {
+	    cout << "Solid has " << domain->solids[isolid]->np << " particles"
+		 << endl;
+	  }
         } else {
           x = &domain->solids[isolid]->grid->x0;
           nmax = domain->solids[isolid]->grid->nnodes_local +
                  domain->solids[isolid]->grid->nnodes_ghost;
           mask = &domain->solids[isolid]->grid->mask;
-          cout << "Grid has " << domain->solids[isolid]->grid->nnodes
-               << " nodes" << endl;
+	  if (universe->me == 0) {
+	    cout << "Grid has " << domain->solids[isolid]->grid->nnodes
+		 << " nodes" << endl;
+	  }
         }
 
         int n = 0;
@@ -561,8 +579,10 @@ void Group::read_restart(ifstream *ifr) {
         int n_tot = 0;
         MPI_Allreduce(&n, &n_tot, 1, MPI_INT, MPI_SUM, universe->uworld);
 
-        cout << n_tot << " " << pon[igroup] << " from solid "
-             << domain->solids[isolid]->id << " found" << endl;
+	if (universe->me == 0) {
+	  cout << n_tot << " " << pon[igroup] << " from solid "
+	       << domain->solids[isolid]->id << " found" << endl;
+	}
       }
     } else {
       vector<Eigen::Vector3d> *x;
@@ -573,15 +593,19 @@ void Group::read_restart(ifstream *ifr) {
         x = &domain->solids[solid[igroup]]->x0;
         nmax = domain->solids[solid[igroup]]->np_local;
         mask = &domain->solids[solid[igroup]]->mask;
-        cout << "Solid has " << domain->solids[solid[igroup]]->np
-             << " particles" << endl;
+	if (universe->me == 0) {
+	  cout << "Solid has " << domain->solids[solid[igroup]]->np
+	       << " particles" << endl;
+	}
       } else {
         x = &domain->solids[solid[igroup]]->grid->x0;
         nmax = domain->solids[solid[igroup]]->grid->nnodes_local +
                domain->solids[solid[igroup]]->grid->nnodes_ghost;
         mask = &domain->solids[solid[igroup]]->grid->mask;
-        cout << "Grid has " << domain->solids[solid[igroup]]->grid->nnodes
-             << " nodes" << endl;
+	if (universe->me == 0) {
+	  cout << "Grid has " << domain->solids[solid[igroup]]->grid->nnodes
+	       << " nodes" << endl;
+	}
       }
 
       int n = 0;
@@ -597,8 +621,10 @@ void Group::read_restart(ifstream *ifr) {
       int n_tot = 0;
       MPI_Allreduce(&n, &n_tot, 1, MPI_INT, MPI_SUM, universe->uworld);
 
-      cout << n_tot << " " << pon[igroup] << " from solid "
-           << domain->solids[solid[igroup]]->id << " found" << endl;
+      if (universe->me == 0) {
+	cout << n_tot << " " << pon[igroup] << " from solid "
+	     << domain->solids[solid[igroup]]->id << " found" << endl;
+      }
     }
   }
 }

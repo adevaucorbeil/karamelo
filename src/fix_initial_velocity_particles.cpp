@@ -11,17 +11,18 @@
  *
  * ----------------------------------------------------------------------- */
 
-#include <iostream>
-#include <vector>
-#include <string>
-#include <Eigen/Eigen>
 #include "fix_initial_velocity_particles.h"
-#include "input.h"
-#include "group.h"
 #include "domain.h"
-#include "update.h"
-#include "solid.h"
 #include "error.h"
+#include "group.h"
+#include "input.h"
+#include "solid.h"
+#include "universe.h"
+#include "update.h"
+#include <Eigen/Eigen>
+#include <iostream>
+#include <string>
+#include <vector>
 
 using namespace std;
 using namespace FixConst;
@@ -37,7 +38,7 @@ FixInitialVelocityParticles::FixInitialVelocityParticles(MPM *mpm, vector<string
       0) { // If the keyword restart, we are expecting to have read_restart()
            // launched right after.
     igroup = stoi(args[3]);
-    if (igroup == -1) {
+    if (igroup == -1 && universe->me == 0) {
       cout << "Could not find group number " << args[3] << endl;
     }
     groupbit = group->bitmask[igroup];

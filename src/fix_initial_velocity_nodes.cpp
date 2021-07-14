@@ -11,17 +11,18 @@
  *
  * ----------------------------------------------------------------------- */
 
-#include <iostream>
-#include <vector>
-#include <string>
-#include <Eigen/Eigen>
 #include "fix_initial_velocity_nodes.h"
-#include "input.h"
-#include "group.h"
 #include "domain.h"
-#include "update.h"
-#include "grid.h"
 #include "error.h"
+#include "grid.h"
+#include "group.h"
+#include "input.h"
+#include "universe.h"
+#include "update.h"
+#include <Eigen/Eigen>
+#include <iostream>
+#include <string>
+#include <vector>
 
 using namespace std;
 using namespace FixConst;
@@ -37,7 +38,7 @@ FixInitialVelocityNodes::FixInitialVelocityNodes(MPM *mpm, vector<string> args) 
       0) { // If the keyword restart, we are expecting to have read_restart()
            // launched right after.
     igroup = stoi(args[3]);
-    if (igroup == -1) {
+    if (igroup == -1 && universe->me == 0) {
       cout << "Could not find group number " << args[3] << endl;
     }
     groupbit = group->bitmask[igroup];
@@ -56,7 +57,9 @@ FixInitialVelocityNodes::FixInitialVelocityNodes(MPM *mpm, vector<string> args) 
   if (group->pon[igroup].compare("nodes") !=0 && group->pon[igroup].compare("all") !=0) {
     error->all(FLERR,"fix_initial_velocity_nodes needs to be given a group of nodes" + group->pon[igroup] + ", " + args[2] + " is a group of " + group->pon[igroup] + ".\n");
   }
-  cout << "Creating new fix FixInitialVelocityNodes with ID: " << args[0] << endl;
+  if (universe->me == 0) {
+    cout << "Creating new fix FixInitialVelocityNodes with ID: " << args[0] << endl;
+  }
   id = args[0];
 
   xset = yset = zset = false;

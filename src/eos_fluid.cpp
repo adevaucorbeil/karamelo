@@ -4,6 +4,7 @@
 #include "input.h"
 #include "math_special.h"
 #include "mpm_math.h"
+#include "universe.h"
 #include "var.h"
 #include <Eigen/Eigen>
 #include <iostream>
@@ -17,7 +18,9 @@ using namespace MathSpecial;
 
 EOSFluid::EOSFluid(MPM *mpm, vector<string> args) : EOS(mpm, args)
 {
-  cout << "Initiate EOSFluid" << endl;
+  if (universe->me == 0) {
+    cout << "Initiate EOSFluid" << endl;
+  }
 
   if (args.size() < 3) {
     error->all(FLERR, "Error: not enough arguments.\n");
@@ -38,13 +41,14 @@ EOSFluid::EOSFluid(MPM *mpm, vector<string> args) : EOS(mpm, args)
 
   //options(&args, args.begin()+3);
   rho0_ = input->parsev(args[2]);
-  cout << "Set rho0 to " << rho0_ << endl;
-
   K_ = input->parsev(args[3]);
-  cout << "Set K to " << K_ << endl;
-
   Gamma = input->parsev(args[4]);
-  cout << "Set gamma to " << Gamma << endl;
+
+  if (universe->me == 0) {
+    cout << "Set rho0 to " << rho0_ << endl;
+    cout << "Set K to " << K_ << endl;
+    cout << "Set gamma to " << Gamma << endl;
+  }
 }
 
 
@@ -76,7 +80,9 @@ void EOSFluid::write_restart(ofstream *of) {
 }
 
 void EOSFluid::read_restart(ifstream *ifr) {
-  cout << "Restart EOSFluid" << endl;
+  if (universe->me == 0) {
+    cout << "Restart EOSFluid" << endl;
+  }
   ifr->read(reinterpret_cast<char *>(&rho0_), sizeof(double));
   ifr->read(reinterpret_cast<char *>(&K_), sizeof(double));
   ifr->read(reinterpret_cast<char *>(&Gamma), sizeof(double));

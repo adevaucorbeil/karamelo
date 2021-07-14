@@ -11,15 +11,17 @@
  *
  * ----------------------------------------------------------------------- */
 
-#include <iostream>
 #include "region.h"
 #include "error.h"
+#include "universe.h"
+#include <iostream>
 
 using namespace std;
 
 Region::Region(MPM *mpm, vector<string> args) : Pointers(mpm)
 {
-  cout << "Creating new region with ID: " << args[0] << endl;
+  if (universe->me == 0)
+    cout << "Creating new region with ID: " << args[0] << endl;
   id       = args[0];
   style    = args[1];
   interior = 1; // Interior by default
@@ -31,13 +33,13 @@ void Region::init() {}
 void Region::options(vector<string> *args, vector<string>::iterator it)
 {
 
-  cout << "In region::options()" << endl;
+  // cout << "In region::options()" << endl;
   if (args->end() < it)
   {
     // error->all(FLERR, "Error: not enough arguments.\n");
     return;
   }
-  if (args->end() > it)
+  if (args->end() > it && universe->me == 0)
   {
     for (it; it != args->end(); ++it)
     {

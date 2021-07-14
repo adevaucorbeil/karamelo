@@ -67,7 +67,6 @@ Grid::~Grid() {
 
 void Grid::init(double *solidlo, double *solidhi) {
 
-  cout << "In Grid::init() with proc " << universe->me << "\n";
   bool linear = false;
   bool cubic = false;
   bool bernstein = false;
@@ -199,11 +198,11 @@ void Grid::init(double *solidlo, double *solidhi) {
       nz++;
   }
 
-  // #ifdef DEBUG
+#ifdef DEBUG
   cout << "proc " << universe->me << " nx=" << nx << "\tny=" << ny << "\tnz=" << nz <<endl;
   cout << "proc " << universe->me << " noffsetlo=[" << noffsetlo[0] << "," << noffsetlo[1] << "," << noffsetlo[2] << "]\n";
   cout << "proc " << universe->me << " noffsethi_=[" << noffsethi_[0] << "," << noffsethi_[1] << "," << noffsethi_[2] << "]\n";
-  // #endif
+#endif
 
   // Create nodes that are inside the local subdomain:
   nnodes_local = nx * ny * nz;
@@ -274,7 +273,9 @@ void Grid::init(double *solidlo, double *solidhi) {
   if (cubic || quadratic || bernstein) delta = 2*h - 1.0e-12;
   else delta = h - 1.0e-12;
 
-  cout << "delta=" << delta << endl;
+  if (universe->me == 0) {
+    cout << "delta=" << delta << endl;
+  }
 
   bool isnt_sublo_boundlo[3] = {true, true, true};
   bool isnt_subhi_boundhi[3] = {true, true, true};
@@ -413,7 +414,9 @@ void Grid::init(double *solidlo, double *solidhi) {
 
 void Grid::setup(string cs){
   cellsize = input->parsev(cs);
-  cout << "Set grid cellsize to " << cellsize << endl;
+  if (universe->me == 0) {
+    cout << "Set grid cellsize to " << cellsize << endl;
+  }
 }
 
 void Grid::grow(int nn){

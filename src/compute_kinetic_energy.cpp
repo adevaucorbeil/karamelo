@@ -46,7 +46,9 @@ ComputeKineticEnergy::ComputeKineticEnergy(MPM *mpm, vector<string> args)
                    group->pon[igroup] + ".\n");
   }
 
-  cout << "Creating new compute ComputeKineticEnergy with ID: " << args[0] << endl;
+  
+  if (universe->me == 0) 
+    cout << "Creating new compute ComputeKineticEnergy with ID: " << args[0] << endl;
   id = args[0];
 
   (*input->vars)[id]=Var(id, 0);

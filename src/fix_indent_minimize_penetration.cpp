@@ -40,7 +40,7 @@ FixIndentMinimizePenetration::FixIndentMinimizePenetration(MPM *mpm, vector<stri
       0) { // If the keyword restart, we are expecting to have read_restart()
            // launched right after.
     igroup = stoi(args[3]);
-    if (igroup == -1) {
+    if (igroup == -1 && universe->me == 0) {
       cout << "Could not find group number " << args[3] << endl;
     }
     groupbit = group->bitmask[igroup];
@@ -62,7 +62,9 @@ FixIndentMinimizePenetration::FixIndentMinimizePenetration(MPM *mpm, vector<stri
                           group->pon[igroup] + ", " + args[2] +
                           " is a group of " + group->pon[igroup] + ".\n");
   }
-  cout << "Creating new fix FixIndentMinimizePenetration with ID: " << args[0] << endl;
+  if (universe->me == 0) {
+    cout << "Creating new fix FixIndentMinimizePenetration with ID: " << args[0] << endl;
+  }
   id = args[0];
 
   type = args[3];

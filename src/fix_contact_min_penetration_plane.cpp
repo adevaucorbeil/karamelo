@@ -40,7 +40,7 @@ FixContactMinPenetrationPlane::FixContactMinPenetrationPlane(MPM *mpm, vector<st
       0) { // If the keyword restart, we are expecting to have read_restart()
            // launched right after.
     igroup = stoi(args[3]);
-    if (igroup == -1) {
+    if (igroup == -1 && universe->me == 0) {
       cout << "Could not find group number " << args[3] << endl;
     }
     groupbit = group->bitmask[igroup];
@@ -62,7 +62,9 @@ FixContactMinPenetrationPlane::FixContactMinPenetrationPlane(MPM *mpm, vector<st
     error->all(FLERR, "Error: solid " + args[2] + " unknown.\n");
   }
 
-  cout << "Creating new fix FixContactMinPenetrationPlane with ID: " << args[0] << endl;
+  if (universe->me == 0) {
+    cout << "Creating new fix FixContactMinPenetrationPlane with ID: " << args[0] << endl;
+  }
   id = args[0];
   requires_ghost_particles = false;
 

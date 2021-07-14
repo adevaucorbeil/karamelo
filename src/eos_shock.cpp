@@ -17,6 +17,7 @@
 #include "input.h"
 #include "math_special.h"
 #include "mpm_math.h"
+#include "universe.h"
 #include "var.h"
 #include <Eigen/Eigen>
 #include <iostream>
@@ -29,7 +30,9 @@ using namespace MathSpecial;
 
 EOSShock::EOSShock(MPM *mpm, vector<string> args) : EOS(mpm, args)
 {
-  cout << "Initiate EOSShock" << endl;
+  if (universe->me == 0) {
+    cout << "Initiate EOSShock" << endl;
+  }
 
   if (args.size() < 3) {
     error->all(FLERR, "Error: not enough arguments.\n");
@@ -48,31 +51,26 @@ EOSShock::EOSShock(MPM *mpm, vector<string> args) : EOS(mpm, args)
   }
   //options(&args, args.begin()+3);
   rho0_ = input->parsev(args[2]);
-  cout << "Set rho0 to " << rho0_ << endl;
-
   K_ = input->parsev(args[3]);
-  cout << "Set K to " << K_ << endl;
-
   c0 = input->parsev(args[4]);
-  cout << "Set c0 to " << c0 << endl;
-
   S = input->parsev(args[5]);
-  cout << "Set S to " << S << endl;
-
   Gamma = input->parsev(args[6]);
-  cout << "Set gamma to " << Gamma << endl;
-
   cv = input->parsev(args[7]);
-  cout << "Set cv to " << cv << endl;
-
   Tr = input->parsev(args[8]);
-  cout << "Set Tr to " << Tr << endl;
-
   Q1 = input->parsev(args[9]);
-  cout << "Set the artificial vicosity coefficient Q1 to " << Q1 << endl;
-
   Q2 = input->parsev(args[10]);
-  cout << "Set the artificial vicosity coefficient Q2 to " << Q2 << endl;
+
+  if (universe->me == 0) {
+    cout << "Set rho0 to " << rho0_ << endl;
+    cout << "Set K to " << K_ << endl;
+    cout << "Set c0 to " << c0 << endl;
+    cout << "Set S to " << S << endl;
+    cout << "Set gamma to " << Gamma << endl;
+    cout << "Set cv to " << cv << endl;
+    cout << "Set Tr to " << Tr << endl;
+    cout << "Set the artificial vicosity coefficient Q1 to " << Q1 << endl;
+    cout << "Set the artificial vicosity coefficient Q2 to " << Q2 << endl;
+  }
 
   if (Q1 == 0 && Q2 == 0) {
     artificial_viscosity = false;
@@ -147,7 +145,9 @@ void EOSShock::write_restart(ofstream *of) {
 }
 
 void EOSShock::read_restart(ifstream *ifr) {
-  cout << "Restart EOSShock" << endl;
+  if (universe->me == 0) {
+    cout << "Restart EOSShock" << endl;
+  }
   ifr->read(reinterpret_cast<char *>(&rho0_), sizeof(double));
   ifr->read(reinterpret_cast<char *>(&K_), sizeof(double));
   ifr->read(reinterpret_cast<char *>(&c0), sizeof(double));

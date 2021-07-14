@@ -17,6 +17,7 @@
 #include "group.h"
 #include "input.h"
 #include "solid.h"
+#include "universe.h"
 #include "update.h"
 #include <Eigen/Eigen>
 #include <iostream>
@@ -37,7 +38,7 @@ FixInitialStress::FixInitialStress(MPM *mpm, vector<string> args) : Fix(mpm, arg
       0) { // If the keyword restart, we are expecting to have read_restart()
            // launched right after.
     igroup = stoi(args[3]);
-    if (igroup == -1) {
+    if (igroup == -1 && universe->me == 0) {
       cout << "Could not find group number " << args[3] << endl;
     }
     groupbit = group->bitmask[igroup];
@@ -56,7 +57,9 @@ FixInitialStress::FixInitialStress(MPM *mpm, vector<string> args) : Fix(mpm, arg
   if (group->pon[igroup].compare("particles") !=0 && group->pon[igroup].compare("all") !=0) {
     error->all(FLERR, "fix_initial_stress needs to be given a group of particles" + group->pon[igroup] + ", " + args[2] + " is a group of " + group->pon[igroup] + ".\n");
   }
-  cout << "Creating new fix FixInitialStress with ID: " << args[0] << endl;
+  if (universe->me == 0) {
+    cout << "Creating new fix FixInitialStress with ID: " << args[0] << endl;
+  }
   id = args[0];
 
   for (int i = 0; i < 6; i++) {

@@ -41,7 +41,9 @@ ComputeStrainEnergy::ComputeStrainEnergy(MPM *mpm, vector<string> args) : Comput
     error->all(FLERR, "compute_strain_energy needs to be given a group of particles" + group->pon[igroup] + ", " + args[2] + " is a group of " + group->pon[igroup] + ".\n");
   }
 
-  cout << "Creating new compute ComputeStrainEnergy with ID: " << args[0] << endl;
+  
+  if (universe->me == 0) 
+    cout << "Creating new compute ComputeStrainEnergy with ID: " << args[0] << endl;
   id = args[0];
 
   (*input->vars)[id]=Var(id, 0);

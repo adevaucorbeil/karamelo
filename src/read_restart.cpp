@@ -36,7 +36,7 @@ ReadRestart::~ReadRestart() {
 }
 
 Var ReadRestart::command(vector<string> args) {
-  cout << "In ReadRestart::command()" << endl;
+  // cout << "In ReadRestart::command()" << endl;
 
   if (args.size() < 1) {
     error->all(FLERR, "Illegal read command.\n");
@@ -58,7 +58,9 @@ Var ReadRestart::command(vector<string> args) {
   } else
     frestart = filename;
 
-  cout << "read " << frestart << endl;
+  if (universe->me == 0) {
+    cout << "read " << frestart << endl;
+  }
   ifr = new ifstream(frestart, ios_base::in | ios_base::binary);
 
   if (ifr->is_open()) {
@@ -92,13 +94,16 @@ void ReadRestart::header() {
   while (flag >= 0) {
     if (flag == VERSION) {
       string version = read_string();
-      cout << "version = " << version << endl;
+      if (universe->me == 0)
+	cout << "version = " << version << endl;
     } else if (flag == DIMENSION) {
       domain->dimension = read_int();
-      cout << "dimension = " << domain->dimension << endl;
+      if (universe->me == 0)
+	cout << "dimension = " << domain->dimension << endl;
     } else if (flag == NPROCS) {
       int nprocs = read_int();
-      cout << "nprocs = " << nprocs << endl;
+      if (universe->me == 0)
+	cout << "nprocs = " << nprocs << endl;
       if (nprocs != universe->nprocs) {
 	error->one(FLERR, "Restart file written for " + to_string(nprocs) + " CPUs.\n");
       }
