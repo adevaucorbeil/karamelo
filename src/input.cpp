@@ -591,6 +591,8 @@ Var Input::parsev(string str)
 	      (*vars)[returnvar] = -(*vars)[word];
 	      if (universe->me == 0) {
 		cout << returnvar << " = " << (*vars)[returnvar].result() << endl;
+	      } else {
+		(*vars)[returnvar].result();
 	      }
 	    }
 	    return -(*vars)[word];
@@ -600,6 +602,8 @@ Var Input::parsev(string str)
 	      (*vars)[returnvar] = (*vars)[word];
 	      if (universe->me == 0) {
 		cout << returnvar << " = " << (*vars)[returnvar].result() << endl;
+	      } else {
+		(*vars)[returnvar].result();
 	      }
 	    }
 	    return (*vars)[word];
@@ -714,6 +718,8 @@ Var Input::parsev(string str)
       (*vars)[returnvar] = values.top();
       if (universe->me == 0) {
 	cout << returnvar << " = " << (*vars)[returnvar].result(mpm) << endl;
+      } else {
+	(*vars)[returnvar].result(mpm);
       }
     }
     return values.top();
@@ -886,6 +892,8 @@ int Input::print(vector<string> args) {
       cout << "false";
 
     cout << "}\n";
+  } else {
+    v.result(mpm);
   }
 
   return 0;
