@@ -89,10 +89,10 @@ Matrix3d StrengthSwift::update_deviatoric_stress(
   Matrix3d sigmaFinal_dev, sigmaTrial, sigmaTrial_dev;
   double J2, Gd, yieldStress;
 
-  if (eff_plastic_strain < 1.0e-10) {
-    yieldStress = A;
-  } else {
+  if (eff_plastic_strain > 1.0e-10 && eff_plastic_strain > C) {
     yieldStress = A + B * pow(eff_plastic_strain - C, n);
+  } else {
+    yieldStress = A;
   }
 
   /*
