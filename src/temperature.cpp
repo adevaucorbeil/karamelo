@@ -9,7 +9,9 @@ using namespace std;
 Temperature::Temperature(MPM *mpm, vector<string> args) :
   Pointers(mpm)
 {
-  cout << "Creating new Temperature with ID: " << args[0] << endl;
+  if (universe->me == 0) {
+    cout << "Creating new Temperature with ID: " << args[0] << endl;
+  }
   id = args[0];
   style = args[1];
 }
