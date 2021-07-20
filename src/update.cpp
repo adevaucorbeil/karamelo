@@ -224,6 +224,7 @@ int Update::update_timestep()
 void Update::write_restart(ofstream *of) {
   // The informations to be stored in the restart file are:
   // - The method type
+  // - If temperature is involved (method->temp)
   // - The scheme style
   // - FLIP and/or PIC, or APIC
   // - PIC_FLIP
@@ -238,6 +239,9 @@ void Update::write_restart(ofstream *of) {
   size_t N = method_type.size();
   of->write(reinterpret_cast<const char *>(&N), sizeof(size_t));
   of->write(reinterpret_cast<const char *>(method_type.c_str()), N);
+
+  // method->temp
+  of->write(reinterpret_cast<const char *>(&method->temp), sizeof(bool));
 
   // Scheme style:
   N = scheme_style.size();
@@ -313,6 +317,9 @@ void Update::read_restart(ifstream *ifr) {
     error->all(FLERR, "Illegal method style.\n");
   }
 
+
+  // method->temp
+  ifr->read(reinterpret_cast<char *>(&method->temp), sizeof(bool));
 
   // Scheme style:
   N = 0;
