@@ -191,9 +191,6 @@ void FixMeldTool::initial_integrate() {
 	      rSq = xprime(axis0) * xprime(axis0) + xprime(axis1) * xprime(axis1);
 
 	      if (rSq <= RmaxSq) {
-		if (s->ptag[ip]==12 || s->ptag[ip]==21) {
-		  cout << "Particle " << s->ptag[ip] << " in 2\n";
-		}
 		xprime = R * xprime;
 		p0 = xprime[axis0];
 		p1 = xprime[axis1];
