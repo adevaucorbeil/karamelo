@@ -16,6 +16,8 @@ A_zy = L*L
 
 FLIP=0.99
 
+T0 = 0
+
 #---------- SET METHOD --------------#
 method(ulmpm, FLIP, linear, FLIP)
 
@@ -32,9 +34,9 @@ material(mat1, linear, rho, E, nu)
 
 
 #---------- SET SOLID --------------#
-solid(sBall1, rBall1, 2, mat1, cellsize)
-solid(sBall2, rBall2, 2, mat1, cellsize)
-#solid(sBall3, rBall3, 2, mat1, cellsize)
+solid(sBall1, region, rBall1, 2, mat1, cellsize, T0)
+solid(sBall2, region, rBall2, 2, mat1, cellsize, T0)
+
 
 #---------- IMPOSE BOUNDARY CONDITIONS --------------#
 
@@ -65,6 +67,6 @@ plot(Ek, N_log, time, Ek_s)
 plot(Es, N_log, time, Es_s)
 plot(Etot, N_log, time, Etot)
 save_plot(plot.pdf)
-log(N_log)
-run_time(0.1)
+set_output(N_log)
+run_time(3.5)
 #run(2)

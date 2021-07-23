@@ -292,7 +292,7 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
 		}
 	      (*wfd_pn)[ip].push_back(wfd);
 	      (*wfd_np)[in].push_back(wfd);
-	      cout << "ip=" << ip << ", in=" << in << ", wf=" << wf << ", wfd=[" << wfd[0] << "," << wfd[1] << "," << wfd[2] << "]" << endl;
+	      // cout << "ip=" << ip << ", in=" << in << ", wf=" << wf << ", wfd=[" << wfd[0] << "," << wfd[1] << "," << wfd[2] << "]" << endl;
 	    }
 	  }
 	  // cout << endl;
