@@ -27,7 +27,6 @@
 #include <Eigen/Eigenvalues> 
 #include <math.h>
 #include <mpi.h>
-#include <omp.h>
 #include <string>
 #include <vector>
 
