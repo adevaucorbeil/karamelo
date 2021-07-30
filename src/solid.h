@@ -111,7 +111,7 @@ class Solid : protected Pointers {
   vector<vector< Eigen::Vector3d >> wfd_np; ///< Array of arrays (matrix) of the derivative of the weight functions \f$\partial \Phi_{Ip}/ \partial x\f$ effectively the transpose of wfd_pn.
 
 
-  struct Mat *mat;                          ///< Pointer to the material
+  class Mat *mat;                          ///< Pointer to the material
 
   class Grid *grid;                         ///< Pointer to the background grid
 

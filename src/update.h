@@ -21,6 +21,8 @@
  */
 class Update : protected Pointers {
  public:
+  enum class ShapeFunctions;
+
   double run_duration;                ///< Stop simulation if elapsed simulation time exceeds this.
   double elapsed_time_in_run;	      ///< Elapsed simulation time for a single run;
   double dt;                          ///< Timestep
@@ -41,7 +43,7 @@ class Update : protected Pointers {
   class Method *method;               ///< Pointer to the type of Method used
   string method_type;                 ///< Name of the method type
   int sub_method_type;                ///< Name of the velocity updating method type
-  int shape_function;                 ///< Type of shape function used
+  ShapeFunctions shape_function;                 ///< Type of shape function used
   double PIC_FLIP;                    ///< PIC/FLIP mixing factor
   bool temp;                          ///< True for thermo-mechanical simulations
 
@@ -63,7 +65,7 @@ class Update : protected Pointers {
     AFLIP,
     ASFLIP,
   };
-  enum ShapeFunctions {
+  enum class ShapeFunctions {
     LINEAR,
     CUBIC_SPLINE,
     QUADRATIC_SPLINE,
@@ -76,11 +78,11 @@ private:
                                              {"APIC", SubMethodType::APIC},
                                              {"AFLIP", SubMethodType::AFLIP},
                                              {"ASFLIP", SubMethodType::ASFLIP}};
-  const map<string, int> map_shape_functions{
-      {"linear", ShapeFunctions::LINEAR},
-      {"cubic-spline", ShapeFunctions::CUBIC_SPLINE},
-      {"quadratic-spline", ShapeFunctions::QUADRATIC_SPLINE},
-      {"Bernstein-quadratic", ShapeFunctions::BERNSTEIN}};
+  const map<string, ShapeFunctions> map_shape_functions{
+      pair<string, ShapeFunctions>("linear", ShapeFunctions::LINEAR),
+      pair<string, ShapeFunctions>("cubic-spline", ShapeFunctions::CUBIC_SPLINE),
+      pair<string, ShapeFunctions>("quadratic-spline", ShapeFunctions::QUADRATIC_SPLINE),
+      pair<string, ShapeFunctions>("Bernstein-quadratic", ShapeFunctions::BERNSTEIN)};
 
   vector<string> additional_args;     ///< Read method, scheme, timestep, dt... to restart file
 };

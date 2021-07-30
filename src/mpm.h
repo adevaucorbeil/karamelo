@@ -26,21 +26,33 @@ using namespace std;
 
 /*! Main class creating all the others.*/
 
+class Memory;
+class Error;
+class Universe;
+class Input;
+class Output;
+
+class Domain;
+class Material;
+class Update;
+class Modify;
+class Group;
+
 class MPM {
 
  public:
 
-  class Memory *memory;          ///< memory allocation functions
-  class Error *error;            ///< error handling
-  class Universe *universe;      ///< universe of processors
-  class Input *input;            ///< input script processing
-  class Output *output;          ///< logs/dump/restart
+  Memory *memory;          ///< memory allocation functions
+  Error *error;            ///< error handling
+  Universe *universe;      ///< universe of processors
+  Input *input;            ///< input script processing
+  Output *output;          ///< logs/dump/restart
 
-  class Domain *domain;          ///< simulation box
-  class Material *material;      ///< material
-  class Update *update;          ///< pointer to update 
-  class Modify *modify;          ///< fixes and computes
-  class Group *group;            ///< groups of particles
+  Domain *domain;          ///< simulation box
+  Material *material;      ///< material
+  Update *update;          ///< pointer to update 
+  Modify *modify;          ///< fixes and computes
+  Group *group;            ///< groups of particles
 
   MPI_Comm world;                ///< MPI communicator
   double initclock;              ///< wall clock at instantiation

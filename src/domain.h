@@ -14,6 +14,8 @@
 #ifndef LMP_DOMAIN_H
 #define LMP_DOMAIN_H
 
+#define _USE_MATH_DEFINES // needed to define constants for windows
+
 #include "pointers.h"
 #include "region.h"
 #include "solid.h"

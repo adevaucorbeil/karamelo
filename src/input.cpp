@@ -358,6 +358,7 @@ string Input::remove_whitespace(string str){
 
 double Input::parse(string str){
   error->all(FLERR, "Error: Input::parse deprecated function.\n");
+  return nan("");
 }
 
 /*! This function translates the input file syntax, either mathematical expressions or functions, 

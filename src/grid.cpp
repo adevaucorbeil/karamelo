@@ -337,7 +337,7 @@ void Grid::init(double *solidlo, double *solidhi) {
                    MPI_STATUS_IGNORE);
 
           if (size_origin != 0) {
-            tagint buf_recv[size_origin];
+            vector<tagint> buf_recv(size_origin);
 
             MPI_Recv(&buf_recv[0], size_origin, MPI_MPM_TAGINT, rproc, 0,
                      MPI_COMM_WORLD, MPI_STATUS_IGNORE);
@@ -475,8 +475,8 @@ void Grid::update_grid_positions()
 
 
 void Grid::reduce_mass_ghost_nodes() {
-  vector<double> tmp_mass_vect[universe->nprocs];
-  vector<double> buf_recv_vect[universe->nprocs];
+  vector<vector<double>> tmp_mass_vect(universe->nprocs);
+  vector<vector<double>> buf_recv_vect(universe->nprocs);
   //vector<double> tmp_mass;
   int j, size_r, size_s, jproc;
 
@@ -637,7 +637,7 @@ void Grid::reduce_mass_ghost_nodes_old() {
 
 	size_r = idest->second.size();
 
-        double buf_recv[size_r];
+        vector<double> buf_recv(size_r);
 
 	// cout << "proc " << universe->me << " receives masses from " << jproc << endl;
         MPI_Recv(&buf_recv[0], size_r, MPI_DOUBLE, jproc, 0, MPI_COMM_WORLD,
@@ -722,7 +722,7 @@ void Grid::reduce_mass_ghost_nodes_old() {
         //          MPI_STATUS_IGNORE);
 
 	size_r = origin_nshared[iproc].size();
-        double buf_recv[size_r];
+        vector<double> buf_recv(size_r);
 
 	// cout << "proc " << universe->me << " receives masses from " << iproc << endl;
         MPI_Recv(&buf_recv[0], size_r, MPI_DOUBLE, iproc, 0, MPI_COMM_WORLD,
@@ -771,7 +771,7 @@ void Grid::reduce_rigid_ghost_nodes() {
 
 	size_r = idest->second.size();
 
-        int buf_recv[size_r];
+        vector<int> buf_recv(size_r);
 
 	// cout << "proc " << universe->me << " receives rigids from " << jproc << endl;
         MPI_Recv(&buf_recv[0], size_r, MPI_INT, jproc, 0, MPI_COMM_WORLD,
@@ -857,7 +857,7 @@ void Grid::reduce_rigid_ghost_nodes() {
         //          MPI_STATUS_IGNORE);
 
 	size_r = origin_nshared[iproc].size();
-        int buf_recv[size_r];
+        vector<int> buf_recv(size_r);
 
 	// cout << "proc " << universe->me << " receives rigids from " << iproc << endl;
         MPI_Recv(&buf_recv[0], size_r, MPI_INT, iproc, 0, MPI_COMM_WORLD,
@@ -879,8 +879,8 @@ void Grid::reduce_rigid_ghost_nodes() {
 }
 
 void Grid::reduce_ghost_nodes(bool only_v, bool temp) {
-  vector<double> tmp_vect[universe->nprocs];
-  vector<double> buf_recv_vect[universe->nprocs];
+  vector<vector<double>> tmp_vect(universe->nprocs);
+  vector<vector<double>> buf_recv_vect(universe->nprocs);
   //vector<double> tmp_mass;
   int j, k, m, size_r, size_s, jproc, nsend;
 
@@ -1145,7 +1145,7 @@ void Grid::reduce_ghost_nodes_old(bool only_v, bool temp) {
 
         size_r = idest->second.size();
 
-        double buf_recv[nsend * size_r];
+        vector<double> buf_recv(nsend * size_r);
 
         // cout << "proc " << universe->me << " receives masses from " << jproc
         // << endl;
@@ -1301,7 +1301,7 @@ void Grid::reduce_ghost_nodes_old(bool only_v, bool temp) {
         //          MPI_STATUS_IGNORE);
 
         size_r = origin_nshared[iproc].size();
-        double buf_recv[nsend * size_r];
+        vector<double> buf_recv(nsend * size_r);
 
         // cout << "proc " << universe->me << " receives masses from " << iproc
         // << endl;

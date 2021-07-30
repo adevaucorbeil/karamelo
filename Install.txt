@@ -1,31 +1,14 @@
 Installing Karamelo on Ubuntu:
 
 1. Install all the dependencies shipped with ubuntu:
-sudo apt install make gcc g++ libz-dev cmake libopenmpi-dev libeigen3-dev
-
-2. Add Eigen to your paths:
-
-Add to you .bash_profile:
+1.1 sudo apt install make gcc g++ libz-dev cmake libopenmpi-dev libeigen3-dev
+1.2. Add Eigen to your paths, add to your .bash_profile:
 
 CPATH=$CPATH:/usr/include/eigen3
 export CPATH
 
 LIBRARY_PATH=$LIBRARY_PATH:/usr/include/eigen3
 export LIBRARY_PATH
-
-3. Download and install Karamelo:
-
-git clone https://github.com/adevaucorbeil/karamelo.git
-cd ~/karamelo
-cmake -DCMAKE_BUILD_TYPE=release build .
-make
-
-4. Enjoy!
-
-Installing Karamelo on macOS:
-
-1. Install all the dependencies:
-brew install make gcc cmake eigen open-mpi libomp
 
 2. Download and install Karamelo:
 
@@ -36,6 +19,35 @@ make
 
 3. Enjoy!
 
+Installing Karamelo on macOS:
+
+1. Install all the dependencies:
+brew install make gcc cmake eigen open-mpi zlib
+
+2. Download and install Karamelo:
+
+git clone https://github.com/adevaucorbeil/karamelo.git
+cd ~/karamelo
+cmake -DCMAKE_BUILD_TYPE=release build .
+make
+
+3. Enjoy!
+
+Installing Karamelo on Windows:
+
+1. Install dependencies (all into default directories):
+1.1 Download and install both msmpisetup.exe and msmpisdk.msi from https://docs.microsoft.com/en-us/message-passing-interface/microsoft-mpi
+1.2 Download Eigen3 from https://eigen.tuxfamily.org/ and move contents to C:/Program Files/Eigen
+1.3 Download zlib from https://www.bruot.org/hp/media/files/libraries/zlib_1_2_11_msvc2017_64.zip and move contents to C:/Program Files/Zlib
+
+2. Download and install Karamelo:
+
+git clone https://github.com/adevaucorbeil/karamelo.git
+cd ~/karamelo
+cmake -DCMAKE_BUILD_TYPE=release build .
+make
+
+3. Enjoy!
 
 - Installing Karamelo on NCI:
 module load cmake/3.18.2   

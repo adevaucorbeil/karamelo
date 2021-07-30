@@ -488,8 +488,8 @@ void ULMPM::exchange_particles() {
   int ip, np_local_old, size_buf;
   vector<Eigen::Vector3d> *xp;
   // vector<int> np_send;
-  vector<double> buf_send_vect[universe->nprocs];
-  vector<double> buf_recv_vect[universe->nprocs];
+  vector<vector<double>> buf_send_vect(universe->nprocs);
+  vector<vector<double>> buf_recv_vect(universe->nprocs);
   vector<int> unpack_list;
   int owner = 0;
 

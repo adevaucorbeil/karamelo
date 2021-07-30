@@ -11,8 +11,15 @@ cmake_policy(SET CMP0004 OLD)
 
 project(karamelo)
 
+if(WIN32)
+  set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+
+  include_directories("C:/Program Files/Eigen")
+else()
+  find_package(Eigen3 REQUIRED NO_MODULE)
+endif()
+
 find_package(MPI REQUIRED)
-find_package(Eigen3 REQUIRED NO_MODULE)
 include_directories(${MPI_INCLUDE_PATH})
 include_directories(${PROJECT_SOURCE_DIR})
 
@@ -38,7 +45,7 @@ execute_process(COMMAND
   ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
 
 # generate version.cpp
-configure_file("${CMAKE_CURRENT_SOURCE_DIR}/src/version.cpp.in" "${CMAKE_CURRENT_BINARY_DIR}/src/version.cpp" @ONLY)
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/src/version.cpp.in" "${CMAKE_CURRENT_SOURCE_DIR}/src/version.cpp" @ONLY)
 
 file(GLOB MyCSources src/*.cpp)
 add_executable(karamelo ${MyCSources})
@@ -52,7 +59,12 @@ set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
 set(CMAKE_CXX_FLAGS_PROFILING "${CMAKE_CXX_FLAGS_PROFILING} -O3 -g")
 
 
-target_compile_options(${PROJECT_NAME} PRIVATE ${MPI_CXX_COMPILE_FLAGS} "-march=native")
+target_compile_options(${PROJECT_NAME} PRIVATE ${MPI_CXX_COMPILE_FLAGS})
+if(!WIN32)
+  target_compile_options(${PROJECT_NAME} PRIVATE "-march=native")
+endif()
 
-target_link_libraries(${PROJECT_NAME} PUBLIC ${MPI_CXX_LIBRARIES} ${MPI_CXX_LINK_FLAGS} Eigen3::Eigen gzstream)
-
+target_link_libraries(${PROJECT_NAME} PUBLIC ${MPI_CXX_LIBRARIES} ${MPI_CXX_LINK_FLAGS} gzstream)
+if(!WIN32)
+  target_link_libraries(${PROJECT_NAME} PUBLIC Eigen3::Eigen)
+endif()
