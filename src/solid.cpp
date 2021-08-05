@@ -1361,32 +1361,40 @@ void Solid::compute_inertia_tensor() {
   Eigen::Vector3d dx;
 
   vector<Eigen::Vector3d> *pos;
-  Eigen::Matrix3d eye;
+  Eigen::Matrix3d eye, Dtemp;
   eye.setIdentity();
   double cellsizeSqInv = 1.0 / (grid->cellsize * grid->cellsize);
 
-  if (update->shape_function == update->ShapeFunctions::CUBIC_SPLINE) {
+  if (update->shape_function == update->ShapeFunctions::LINEAR) { 
+    if (is_TL)
+      pos = &x0;
+    else {
+      error->all(FLERR, "Shape function not supported for APIC and ULMPM.\n");
+    }
+    if (np_per_cell == 1) {
+      Di = 16.0 / 4.0 * cellsizeSqInv * eye;
+    } else if (np_per_cell == 2) {
+      Di = 16.0 / 3.0 * cellsizeSqInv * eye;
+    } else {
+      error->all(FLERR, "Number of particle per cell not supported with linear "
+                        "shape functions and APIC.\n");
+    }
+  } else if (update->shape_function == update->ShapeFunctions::CUBIC_SPLINE) {
 
     Di = 3.0 * cellsizeSqInv * eye;
-    if (domain->dimension == 1) {
-      Di(1, 1) = 1;
-      Di(2, 2) = 1;
-    } else if (domain->dimension == 2) {
-      Di(2, 2) = 1;
-    }
   } else if (update->shape_function ==
              update->ShapeFunctions::QUADRATIC_SPLINE) {
 
     Di = 4.0 * cellsizeSqInv * eye;
-    if (domain->dimension == 1) {
-      Di(1, 1) = 1;
-      Di(2, 2) = 1;
-    } else if (domain->dimension == 2) {
-      Di(2, 2) = 1;
-    }
-  }
-  else {
+  } else {
     error->all(FLERR, "Shape function not supported for APIC.\n");
+  }
+
+  if (domain->dimension == 1) {
+    Di(1, 1) = 1;
+    Di(2, 2) = 1;
+  } else if (domain->dimension == 2) {
+    Di(2, 2) = 1;
   }
 
   // if (is_TL)
@@ -1940,7 +1948,7 @@ void Solid::populate(vector<string> args)
   else
     mass_ = mat->rho0 * vol_;
 
-  int np_per_cell = (int) input->parsev(args[3]);
+  np_per_cell = (int) input->parsev(args[3]);
   double xi = 0.5;
   double lp = delta;
   int nip   = 1;

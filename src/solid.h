@@ -42,6 +42,7 @@ class Solid : protected Pointers {
 
   bigint np;                                ///< Total number of particles in the domain
   int np_local;                             ///< Number of local particles (in this CPU)
+  int np_per_cell;                          ///< Number of particles per cell (at the beginning)
   int comm_n;                               ///< Number of double to pack for particle exchange between CPU
   double vtot;                              ///< Total volume
   double mtot;                              ///< Total mass
