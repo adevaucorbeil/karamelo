@@ -165,7 +165,7 @@ void FixMeldTool::initial_integrate() {
   Rt = R.transpose();
   ftot.setZero();
 
-  double p0, p1, p2, pext, p, rSq, fmag;
+  double p0, p1, p2, pext, p, rSq;
 
   if (solid == -1) {
     for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
@@ -280,6 +280,7 @@ void FixMeldTool::initial_integrate() {
 	      p0 = xprime[axis0];
 	      p1 = xprime[axis1];
 	      p2 = xprime[dim];
+		  pext = Rmax - sqrt(p0*p0 + p1*p1);
 
 	      f.setZero();
 

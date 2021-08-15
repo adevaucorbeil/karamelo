@@ -39,22 +39,22 @@ void TLCPDI::setup(vector<string> args)
   if (args.size() > 1) {
     error->all(FLERR, "Illegal modify_method command: too many arguments.\n");
   }
-  if (update->shape_function == update->ShapeFunctions::LINEAR) {
+  if (update->shape_function == Update::ShapeFunctions::LINEAR) {
     if (universe->me == 0)
       cout << "Setting up linear basis functions\n";
     basis_function = &BasisFunction::linear;
     derivative_basis_function = &BasisFunction::derivative_linear;
-  } else if (update->shape_function == update->ShapeFunctions::CUBIC_SPLINE) {
+  } else if (update->shape_function == Update::ShapeFunctions::CUBIC_SPLINE) {
     if (universe->me == 0)
       cout << "Setting up cubic-spline basis functions\n";
     basis_function = &BasisFunction::cubic_spline;
     derivative_basis_function = &BasisFunction::derivative_cubic_spline;
-  } else if (update->shape_function == update->ShapeFunctions::QUADRATIC_SPLINE) {
+  } else if (update->shape_function == Update::ShapeFunctions::QUADRATIC_SPLINE) {
     if (universe->me == 0)
       cout << "Setting up quadratic-spline basis functions\n";
     basis_function = &BasisFunction::quadratic_spline;
     derivative_basis_function = &BasisFunction::derivative_quadratic_spline;
-  } else if (update->shape_function == update->ShapeFunctions::BERNSTEIN) {
+  } else if (update->shape_function == Update::ShapeFunctions::BERNSTEIN) {
     if (universe->me == 0)
       cout << "Setting up Bernstein-quadratic basis functions\n";
     basis_function = &BasisFunction::bernstein_quadratic;
@@ -196,14 +196,14 @@ void TLCPDI::compute_grid_weight_functions_and_gradients()
 
 	    int i0, j0, k0;
 
-	    if (update->shape_function == update->ShapeFunctions::LINEAR) {
+	    if (update->shape_function == Update::ShapeFunctions::LINEAR) {
 	      i0 = (int) ((xcorner[ic][0] - domain->boxlo[0])*inv_cellsize);
 	      j0 = (int) ((xcorner[ic][1] - domain->boxlo[1])*inv_cellsize);
 	      k0 = (int) ((xcorner[ic][2] - domain->boxlo[2])*inv_cellsize);
 
 	      m = 2;
 
-	    } else if (update->shape_function == update->ShapeFunctions::BERNSTEIN){
+	    } else if (update->shape_function == Update::ShapeFunctions::BERNSTEIN){
 	      i0 = 2*(int) ((xcorner[ic][0] - domain->boxlo[0])*inv_cellsize);
 	      j0 = 2*(int) ((xcorner[ic][1] - domain->boxlo[1])*inv_cellsize);
 	      k0 = 2*(int) ((xcorner[ic][2] - domain->boxlo[2])*inv_cellsize);
@@ -215,7 +215,7 @@ void TLCPDI::compute_grid_weight_functions_and_gradients()
 	      m = 3;
 
 	    } else {
-	      //(update->shape_function == update->ShapeFunctions::CUBIC_SPLINE || update->shape_function == update->ShapeFunctions::QUADRATIC_SPLINE){
+	      //(update->shape_function == Update::ShapeFunctions::CUBIC_SPLINE || update->shape_function == Update::ShapeFunctions::QUADRATIC_SPLINE){
 	      i0 = (int) ((xcorner[ic][0] - domain->boxlo[0])*inv_cellsize - 1);
 	      j0 = (int) ((xcorner[ic][1] - domain->boxlo[1])*inv_cellsize - 1);
 	      k0 = (int) ((xcorner[ic][2] - domain->boxlo[2])*inv_cellsize - 1);
@@ -405,7 +405,7 @@ void TLCPDI::update_grid_positions()
 
 void TLCPDI::compute_rate_deformation_gradient(bool doublemapping) {
   for (int isolid=0; isolid<domain->solids.size(); isolid++) {
-    if (update->sub_method_type == update->SubMethodType::APIC)
+    if (update->sub_method_type == Update::SubMethodType::APIC)
       domain->solids[isolid]->compute_rate_deformation_gradient_TL_APIC(doublemapping);
     else
       domain->solids[isolid]->compute_rate_deformation_gradient_TL(doublemapping);

@@ -81,10 +81,10 @@ void Log::parse_keywords(vector<string> keyword)
     else if (keyword[i].compare("time")==0) addfield("Time", &Log::compute_time, FLOAT);
     else {
       try {
-	(*input->vars).at(keyword[i]);
+	//(*input->vars).at(keyword[i]);
 	addfield(keyword[i], &Log::compute_var, FLOAT);
       }
-      catch (const std::out_of_range& oor) {
+      catch (const std::out_of_range&) {
 	error->all(FLERR,"Error: unknown log keyword " + keyword[i] + ".\n");
 	// std::cerr << "Out of Range error: " << oor.what() << '\n';
       }

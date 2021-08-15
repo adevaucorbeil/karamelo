@@ -73,13 +73,13 @@ void Grid::init(double *solidlo, double *solidhi) {
   bool quadratic = false;
   double h = cellsize;
 
-  if (update->shape_function == update->ShapeFunctions::LINEAR)
+  if (update->shape_function == Update::ShapeFunctions::LINEAR)
     linear = true;
-  if (update->shape_function == update->ShapeFunctions::CUBIC_SPLINE)
+  if (update->shape_function == Update::ShapeFunctions::CUBIC_SPLINE)
     cubic = true;
-  if (update->shape_function == update->ShapeFunctions::QUADRATIC_SPLINE)
+  if (update->shape_function == Update::ShapeFunctions::QUADRATIC_SPLINE)
     quadratic = true;
-  if (update->shape_function == update->ShapeFunctions::BERNSTEIN) {
+  if (update->shape_function == Update::ShapeFunctions::BERNSTEIN) {
     bernstein = true;
     h /= 2;
   }

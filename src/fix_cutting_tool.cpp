@@ -178,7 +178,7 @@ void FixCuttingTool::initial_integrate() {
 
   ftot.setZero();
 
-  double r, p, p1, p2, c1p, c2p, fmag;
+  double p, p1, p2, c1p, c2p, fmag;
 
   // cout << "line 1: " << line1[0] << "x + " << line1[1] << "y + " << line1[2] << endl;
   // cout << "line 2: " << line2[0] << "x + " << line2[1] << "y + " << line2[2] << endl;

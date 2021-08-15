@@ -22,6 +22,7 @@
 class Update : protected Pointers {
  public:
   enum class ShapeFunctions;
+  enum class SubMethodType;
 
   double run_duration;                ///< Stop simulation if elapsed simulation time exceeds this.
   double elapsed_time_in_run;	      ///< Elapsed simulation time for a single run;
@@ -42,8 +43,8 @@ class Update : protected Pointers {
 
   class Method *method;               ///< Pointer to the type of Method used
   string method_type;                 ///< Name of the method type
-  int sub_method_type;                ///< Name of the velocity updating method type
-  ShapeFunctions shape_function;                 ///< Type of shape function used
+  SubMethodType sub_method_type;      ///< Name of the velocity updating method type
+  ShapeFunctions shape_function;      ///< Type of shape function used
   double PIC_FLIP;                    ///< PIC/FLIP mixing factor
   bool temp;                          ///< True for thermo-mechanical simulations
 
@@ -58,7 +59,7 @@ class Update : protected Pointers {
   void write_restart(ofstream*);      ///< Write method, scheme, timestep, dt... to restart file
   void read_restart(ifstream*);       ///< Read method, scheme, timestep, dt... to restart file
 
-  enum SubMethodType {
+  enum class SubMethodType {
     PIC,
     FLIP,
     APIC,
@@ -73,16 +74,16 @@ class Update : protected Pointers {
   };
 
 private:
-  const map<string, int> map_sub_method_type{{"PIC", SubMethodType::PIC},
-                                             {"FLIP", SubMethodType::FLIP},
-                                             {"APIC", SubMethodType::APIC},
-                                             {"AFLIP", SubMethodType::AFLIP},
-                                             {"ASFLIP", SubMethodType::ASFLIP}};
+  const map<string, SubMethodType> map_sub_method_type{{"PIC", SubMethodType::PIC},
+                                                       {"FLIP", SubMethodType::FLIP},
+                                                       {"APIC", SubMethodType::APIC},
+                                                       {"AFLIP", SubMethodType::AFLIP},
+                                                       {"ASFLIP", SubMethodType::ASFLIP}};
   const map<string, ShapeFunctions> map_shape_functions{
-      pair<string, ShapeFunctions>("linear", ShapeFunctions::LINEAR),
-      pair<string, ShapeFunctions>("cubic-spline", ShapeFunctions::CUBIC_SPLINE),
-      pair<string, ShapeFunctions>("quadratic-spline", ShapeFunctions::QUADRATIC_SPLINE),
-      pair<string, ShapeFunctions>("Bernstein-quadratic", ShapeFunctions::BERNSTEIN)};
+      {"linear", ShapeFunctions::LINEAR},
+      {"cubic-spline", ShapeFunctions::CUBIC_SPLINE},
+      {"quadratic-spline", ShapeFunctions::QUADRATIC_SPLINE},
+      {"Bernstein-quadratic", ShapeFunctions::BERNSTEIN}};
 
   vector<string> additional_args;     ///< Read method, scheme, timestep, dt... to restart file
 };

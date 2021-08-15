@@ -52,22 +52,22 @@ void ULMPM::setup(vector<string> args)
     error->all(FLERR, "Illegal modify_method command: too many arguments.\n");
   }
 
-  if (update->shape_function == update->ShapeFunctions::LINEAR) {
+  if (update->shape_function == Update::ShapeFunctions::LINEAR) {
     if (universe->me == 0)
       cout << "Setting up linear basis functions\n";
     basis_function = &BasisFunction::linear;
     derivative_basis_function = &BasisFunction::derivative_linear;
-  } else if (update->shape_function == update->ShapeFunctions::CUBIC_SPLINE) {
+  } else if (update->shape_function == Update::ShapeFunctions::CUBIC_SPLINE) {
     if (universe->me == 0)
       cout << "Setting up cubic-spline basis functions\n";
     basis_function = &BasisFunction::cubic_spline;
     derivative_basis_function = &BasisFunction::derivative_cubic_spline;
-  } else if (update->shape_function == update->ShapeFunctions::QUADRATIC_SPLINE) {
+  } else if (update->shape_function == Update::ShapeFunctions::QUADRATIC_SPLINE) {
     if (universe->me == 0)
       cout << "Setting up quadratic-spline basis functions\n";
     basis_function = &BasisFunction::quadratic_spline;
     derivative_basis_function = &BasisFunction::derivative_quadratic_spline;
-  } else if (update->shape_function == update->ShapeFunctions::BERNSTEIN) {
+  } else if (update->shape_function == Update::ShapeFunctions::BERNSTEIN) {
     if (universe->me == 0)
       cout << "Setting up Bernstein-quadratic basis functions\n";
     basis_function = &BasisFunction::bernstein_quadratic;
@@ -76,11 +76,11 @@ void ULMPM::setup(vector<string> args)
     error->all(FLERR, "Error: shape function not supported! Supported functions are:  \033[1;32mlinear\033[0m, \033[1;32mcubic-spline\033[0m, \033[1;32mquadratic-spline\033[0m, \033[1;32mBernstein-quadratic\033[0m.\n");
   }
 
-  if (update->sub_method_type == update->SubMethodType::APIC) {
+  if (update->sub_method_type == Update::SubMethodType::APIC) {
     apic = true;
     update->PIC_FLIP = 0;
-  } else if (update->sub_method_type == update->SubMethodType::ASFLIP ||
-             update->sub_method_type == update->SubMethodType::AFLIP) {
+  } else if (update->sub_method_type == Update::SubMethodType::ASFLIP ||
+             update->sub_method_type == Update::SubMethodType::AFLIP) {
     apic = true;
   }
 }
@@ -156,7 +156,7 @@ void ULMPM::compute_grid_weight_functions_and_gradients()
 
           n_neigh.clear();
 
-          if (update->shape_function == update->ShapeFunctions::LINEAR)
+          if (update->shape_function == Update::ShapeFunctions::LINEAR)
           {
 	    i0 = (int) (((*xp)[ip][0] - domain->boxlo[0])*inv_cellsize);
 	    j0 = (int) (((*xp)[ip][1] - domain->boxlo[1])*inv_cellsize);
@@ -375,7 +375,7 @@ void ULMPM::grid_to_points()
       domain->solids[isolid]->compute_particle_velocities_and_positions();
       domain->solids[isolid]->compute_particle_acceleration();
     } else {
-      if (update->sub_method_type != update->SubMethodType::ASFLIP)
+      if (update->sub_method_type != Update::SubMethodType::ASFLIP)
 	domain->solids[isolid]->compute_particle_accelerations_velocities_and_positions();
       else
 	domain->solids[isolid]->compute_particle_accelerations_velocities();	
@@ -391,7 +391,7 @@ void ULMPM::advance_particles()
 {
   for (int isolid = 0; isolid < domain->solids.size(); isolid++)
   {
-    if (update->sub_method_type != update->SubMethodType::ASFLIP)
+    if (update->sub_method_type != Update::SubMethodType::ASFLIP)
       domain->solids[isolid]->update_particle_velocities(update->PIC_FLIP);
     else
       domain->solids[isolid]->update_particle_velocities_and_positions(update->PIC_FLIP);      
@@ -485,7 +485,7 @@ void ULMPM::reset()
 }
 
 void ULMPM::exchange_particles() {
-  int ip, np_local_old, size_buf;
+  int ip, np_local_old;
   vector<Eigen::Vector3d> *xp;
   // vector<int> np_send;
   vector<vector<double>> buf_send_vect(universe->nprocs);

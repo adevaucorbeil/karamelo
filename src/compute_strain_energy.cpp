@@ -66,7 +66,6 @@ void ComputeStrainEnergy::compute_value() {
   // cout << "In ComputeStrainEnergy::post_particles_to_grid()\n";
 
   // Go through all the nodes in the group and set b to the right value:
-  double ux, uy, uz;
     
   int solid = group->solid[igroup];
 

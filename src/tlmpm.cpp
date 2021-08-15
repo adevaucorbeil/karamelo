@@ -55,22 +55,22 @@ void TLMPM::setup(vector<string> args)
     error->all(FLERR, "Illegal modify_method command: too many arguments.\n");
   }
   
-  if (update->shape_function == update->ShapeFunctions::LINEAR) {
+  if (update->shape_function == Update::ShapeFunctions::LINEAR) {
     if (universe->me == 0)
       cout << "Setting up linear basis functions\n";
     basis_function = &BasisFunction::linear;
     derivative_basis_function = &BasisFunction::derivative_linear;
-  } else if (update->shape_function == update->ShapeFunctions::CUBIC_SPLINE) {
+  } else if (update->shape_function == Update::ShapeFunctions::CUBIC_SPLINE) {
     if (universe->me == 0)
       cout << "Setting up cubic-spline basis functions\n";
     basis_function = &BasisFunction::cubic_spline;
     derivative_basis_function = &BasisFunction::derivative_cubic_spline;
-  } else if (update->shape_function == update->ShapeFunctions::QUADRATIC_SPLINE) {
+  } else if (update->shape_function == Update::ShapeFunctions::QUADRATIC_SPLINE) {
     if (universe->me == 0)
       cout << "Setting up quadratic-spline basis functions\n";
     basis_function = &BasisFunction::quadratic_spline;
     derivative_basis_function = &BasisFunction::derivative_quadratic_spline;
-  } else if (update->shape_function == update->ShapeFunctions::BERNSTEIN) {
+  } else if (update->shape_function == Update::ShapeFunctions::BERNSTEIN) {
     if (universe->me == 0)
       cout << "Setting up Bernstein-quadratic basis functions\n";
     basis_function = &BasisFunction::bernstein_quadratic;
@@ -79,7 +79,7 @@ void TLMPM::setup(vector<string> args)
     error->all(FLERR, "Error: shape function not supported! Supported functions are:  \033[1;32mlinear\033[0m, \033[1;32mcubic-spline\033[0m, \033[1;32mquadratic-spline\033[0m, \033[1;32mBernstein-quadratic\033[0m.\n");
   }
 
-  if (update->sub_method_type == update->SubMethodType::APIC) {
+  if (update->sub_method_type == Update::SubMethodType::APIC) {
     update->PIC_FLIP = 0;
   }
 }
@@ -148,7 +148,7 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
 
 	  vector<int> n_neigh;
 
-	  if (update->shape_function == update->ShapeFunctions::LINEAR) {
+	  if (update->shape_function == Update::ShapeFunctions::LINEAR) {
 	    int i0 = (int) (((*xp)[ip][0] - domain->solids[isolid]->solidlo[0])*inv_cellsize);
 	    int j0 = (int) (((*xp)[ip][1] - domain->solids[isolid]->solidlo[1])*inv_cellsize);
 	    int k0 = (int) (((*xp)[ip][2] - domain->solids[isolid]->solidlo[2])*inv_cellsize);
@@ -177,7 +177,7 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
 		  n_neigh.push_back(i);
 	      }
 	    }
-	  } else if (update->shape_function == update->ShapeFunctions::BERNSTEIN){
+	  } else if (update->shape_function == Update::ShapeFunctions::BERNSTEIN){
 	    int i0 = 2*(int) (((*xp)[ip][0] - domain->solids[isolid]->solidlo[0])*inv_cellsize);
 	    int j0 = 2*(int) (((*xp)[ip][1] - domain->solids[isolid]->solidlo[1])*inv_cellsize);
 	    int k0 = 2*(int) (((*xp)[ip][2] - domain->solids[isolid]->solidlo[2])*inv_cellsize);
@@ -211,7 +211,7 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
 	      }
 	    }
           } else {
-	    //(update->shape_function == update->ShapeFunctions::CUBIC_SPLINE || update->shape_function == update->ShapeFunctions::QUADRATIC_SPLINE) {
+	    //(update->shape_function == Update::ShapeFunctions::CUBIC_SPLINE || update->shape_function == Update::ShapeFunctions::QUADRATIC_SPLINE) {
             int i0 = (int) (((*xp)[ip][0] - domain->solids[isolid]->solidlo[0])*inv_cellsize - 1);
 	    int j0 = (int) (((*xp)[ip][1] - domain->solids[isolid]->solidlo[1])*inv_cellsize - 1);
 	    int k0 = (int) (((*xp)[ip][2] - domain->solids[isolid]->solidlo[2])*inv_cellsize - 1);
@@ -312,7 +312,7 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
 	  // cout << endl;
 	}
       }
-      if (update->sub_method_type == update->SubMethodType::APIC) domain->solids[isolid]->compute_inertia_tensor();
+      if (update->sub_method_type == Update::SubMethodType::APIC) domain->solids[isolid]->compute_inertia_tensor();
     }
   }
 
@@ -331,7 +331,7 @@ void TLMPM::particles_to_grid()
   }
 
   for (int isolid=0; isolid<domain->solids.size(); isolid++){
-    if (update->sub_method_type == update->SubMethodType::APIC) domain->solids[isolid]->compute_velocity_nodes_APIC(grid_reset);
+    if (update->sub_method_type == Update::SubMethodType::APIC) domain->solids[isolid]->compute_velocity_nodes_APIC(grid_reset);
     else domain->solids[isolid]->compute_velocity_nodes(grid_reset);
     domain->solids[isolid]->compute_external_forces_nodes(grid_reset);
     domain->solids[isolid]->compute_internal_forces_nodes_TL();
@@ -397,7 +397,7 @@ void TLMPM::update_grid_positions()
 
 void TLMPM::compute_rate_deformation_gradient(bool doublemapping) {
   for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
-    if (update->sub_method_type == update->SubMethodType::APIC)
+    if (update->sub_method_type == Update::SubMethodType::APIC)
       domain->solids[isolid]->compute_rate_deformation_gradient_TL_APIC(
           doublemapping);
     else

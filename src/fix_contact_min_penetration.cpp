@@ -94,7 +94,7 @@ void FixContactMinPenetration::initial_integrate() {
   Solid *s1, *s2;
   Eigen::Vector3d ftot, ftot_reduced, vtemp1, vtemp2, dv, vt;
 
-  double Rp, Rp1, Rp2, r, inv_r, p, Estar, max_cellsize, vtnorm, fmag, ffric, gamma, alpha;
+  double Rp, Rp1, Rp2, r, inv_r, Estar, max_cellsize, vtnorm, fmag, ffric, gamma, alpha;
 
   ftot.setZero();
 

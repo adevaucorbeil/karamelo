@@ -49,7 +49,7 @@ Output::Output(MPM *mpm) : Pointers(mpm)
   next_log = 1;
 
   every_restart = next_restart = restart_flag = 0;
-  restart = NULL;
+  restart = nullptr;
 }
 
 

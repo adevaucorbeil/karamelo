@@ -104,7 +104,7 @@ void FixContactMinPenetrationPlane::initial_integrate() {
   Solid *s;
   Eigen::Vector3d ftot, ftot_reduced, vt;
 
-  double Rp, r, p, d, fnorm, vtnorm;
+  double Rp, p, d, fnorm, vtnorm;
 
   ftot.setZero();
 

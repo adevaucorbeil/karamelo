@@ -28,7 +28,7 @@ enum { VERSION, DIMENSION, NPROCS };
 /* ---------------------------------------------------------------------- */
 
 WriteRestart::WriteRestart(MPM *mpm) : Pointers(mpm) {
-  of = NULL;
+  of = nullptr;
 }
 
 WriteRestart::~WriteRestart() {

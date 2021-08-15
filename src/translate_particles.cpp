@@ -72,7 +72,6 @@ void TranslateParticles::translate_region(vector<string> args, int isolid) {
   else zset = true;
 
   int ns = domain->solids.size();
-  int np;
   double delx_value, dely_value, delz_value;
   Solid *s;
   Grid *g;

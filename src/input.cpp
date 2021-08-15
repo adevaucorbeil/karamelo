@@ -47,7 +47,7 @@ Input::Input(MPM *mpm, int argc, char **argv) : Pointers(mpm)
   line_number = 0;
   maxline = maxcopy = 0;
   maxarg = 0;
-  arg = NULL;
+  arg = nullptr;
   vars = new map<string, Var>;
 
   (*vars)["time"]     = Var("time", 0);
@@ -207,6 +207,7 @@ Var Input::applyOp(Var a, const string op, Var b){
       error->all(FLERR, "Error: unknown operator " + op + "\n");
     }
   }
+  return Var();
 }
 
 /*! This function checks if op is a known on-character operator: '+', '-', '*', '/', '^', '<', '>', '!'.\n
@@ -344,6 +345,7 @@ Var Input::evaluate_function(string func, string arg){
   else if (func.compare("restart") == 0)
     return Var(restart(args));
   error->all(FLERR, "Error: Unknown function " + func + "\n");
+  return Var();
 }
 
 // remove white spaces from string
@@ -729,7 +731,7 @@ Var Input::parsev(string str)
 
 int Input::dimension(vector<string> args) {
   // Check that a method is available:
-  if (update->method == NULL) {
+  if (update->method == nullptr) {
     error->all(
         FLERR,
         "Error: a method should be defined before calling dimension()!\n");

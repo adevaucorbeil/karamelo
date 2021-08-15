@@ -306,8 +306,8 @@ void Material::add_material(vector<string> args) {
                  "Error: could not find strength named: " + args[3] + ".\n");
     }
 
-    Damage *damage_ = NULL;
-    Temperature *temp_ = NULL;
+    Damage *damage_ = nullptr;
+    Temperature *temp_ = nullptr;
 
     if (args.size() > Nargs.find(args[1])->second) {
       int iDamage, iTemp;
@@ -471,13 +471,13 @@ void Material::write_restart(ofstream *of) {
       of->write(reinterpret_cast<const char *>(&iStrength), sizeof(int));
 
       int iDamage = -1;
-      if (materials[i].damage != NULL) {
+      if (materials[i].damage != nullptr) {
 	iDamage = find_damage(materials[i].damage->id);
       }
       of->write(reinterpret_cast<const char *>(&iDamage), sizeof(int));
 
       int iTemperature = -1;
-      if (materials[i].temp != NULL) {
+      if (materials[i].temp != nullptr) {
 	iTemperature = find_temperature(materials[i].temp->id);
       }
       of->write(reinterpret_cast<const char *>(&iTemperature), sizeof(int));
@@ -634,8 +634,8 @@ void Material::read_restart(ifstream *ifr) {
       ifr->read(reinterpret_cast<char *>(&iDamage), sizeof(int));
       ifr->read(reinterpret_cast<char *>(&iTemp), sizeof(int));
 
-      Damage *damage_ = NULL;
-      Temperature *temp_ = NULL;
+      Damage *damage_ = nullptr;
+      Temperature *temp_ = nullptr;
 
       if (iDamage != -1) {
         damage_ = damages[iDamage];
@@ -730,7 +730,7 @@ Mat::Mat(string id_, int type_, class EOS* eos_, class Strength* strength_, clas
   lambda = K - 2*G/3;
   signal_velocity = sqrt((lambda+2*G)/rho0);
 
-  if (temp != NULL) {
+  if (temp != nullptr) {
     cp = temp->cp();
     invcp = 1.0 / cp;  
     kappa = temp->kappa();
@@ -747,10 +747,10 @@ Mat::Mat(string id_, int type_, class EOS* eos_, class Strength* strength_, clas
 Mat::Mat(string id_, int type_, double rho0_, double E_, double nu_, double cp_, double kappa_) {
   id = id_;
   type = type_;
-  eos = NULL;
-  strength = NULL;
-  damage = NULL;
-  temp = NULL;
+  eos = nullptr;
+  strength = nullptr;
+  damage = nullptr;
+  temp = nullptr;
   rho0 = rho0_;
   E = E_;
   nu = nu_;

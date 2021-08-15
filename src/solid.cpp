@@ -58,7 +58,7 @@ vector<string> split (string s, string delimiter) {
 Solid::Solid(MPM *mpm, vector<string> args) : Pointers(mpm)
 {
   // Check that a method is available:
-  if (update->method == NULL)
+  if (update->method == nullptr)
   {
     error->all(FLERR, "Error: a method should be defined before creating a solid!\n");
   }
@@ -86,7 +86,7 @@ Solid::Solid(MPM *mpm, vector<string> args) : Pointers(mpm)
   else
     nc = 0;
 
-  mat = NULL;
+  mat = nullptr;
 
   if (update->method->is_TL) {
     is_TL = true;
@@ -97,9 +97,9 @@ Solid::Solid(MPM *mpm, vector<string> args) : Pointers(mpm)
     grid = domain->grid;
   }
 
-  if (update->sub_method_type == update->SubMethodType::APIC ||
-      update->sub_method_type == update->SubMethodType::AFLIP ||
-      update->sub_method_type == update->SubMethodType::ASFLIP) {
+  if (update->sub_method_type == Update::SubMethodType::APIC ||
+      update->sub_method_type == Update::SubMethodType::AFLIP ||
+      update->sub_method_type == Update::SubMethodType::ASFLIP) {
     apic = true;
   } else {
     apic = false;
@@ -1076,7 +1076,7 @@ void Solid::update_deformation_gradient()
   if (mat->rigid)
     return;
 
-  bool status, lin, nh, vol_cpdi;
+  bool status, nh, vol_cpdi;
   Eigen::Matrix3d eye;
   eye.setIdentity();
 
@@ -1170,7 +1170,7 @@ void Solid::update_stress()
   max_p_wave_speed = 0;
   double flow_stress;
   Matrix3d eye, FinvT, PK1, strain_increment;
-  bool lin, nh, fluid, temp;
+  bool lin, nh;
 
   if (mat->type == material->constitutive_model::LINEAR)
     lin = true;
@@ -1218,7 +1218,7 @@ void Solid::update_stress()
 
     for (int ip = 0; ip < np_local; ip++) {
 
-      if (mat->temp != NULL) {
+      if (mat->temp != nullptr) {
         mat->eos->compute_pressure(pH[ip], ienergy[ip], J[ip], rho[ip],
                                    damage[ip], D[ip], grid->cellsize, T[ip]);
         pH[ip] += mat->temp->compute_thermal_pressure(T[ip]);
@@ -1247,7 +1247,7 @@ void Solid::update_stress()
       eff_plastic_strain_rate[ip] += plastic_strain_increment[ip] / tav;
       eff_plastic_strain_rate[ip] = MAX(0.0, eff_plastic_strain_rate[ip]);
 
-      if (mat->damage != NULL) {
+      if (mat->damage != nullptr) {
 	if (update->method->temp) {
 	  mat->damage->compute_damage(damage_init[ip], damage[ip], pH[ip],
 				      sigma_dev[ip], eff_plastic_strain_rate[ip],
@@ -1259,7 +1259,7 @@ void Solid::update_stress()
 	}
       }
 
-      if (mat->temp != NULL) {
+      if (mat->temp != nullptr) {
 	flow_stress = SQRT_3_OVER_2 * sigma_dev[ip].norm();
         mat->temp->compute_heat_source(T[ip], gamma[ip], flow_stress,
                                        eff_plastic_strain_rate[ip]);
@@ -1357,7 +1357,6 @@ void Solid::update_stress()
 }
 
 void Solid::compute_inertia_tensor() {
-  int in;
   Eigen::Vector3d dx;
 
   vector<Eigen::Vector3d> *pos;
@@ -1365,7 +1364,7 @@ void Solid::compute_inertia_tensor() {
   eye.setIdentity();
   double cellsizeSqInv = 1.0 / (grid->cellsize * grid->cellsize);
 
-  if (update->shape_function == update->ShapeFunctions::LINEAR) { 
+  if (update->shape_function == Update::ShapeFunctions::LINEAR) { 
     if (is_TL)
       pos = &x0;
     else {
@@ -1379,11 +1378,11 @@ void Solid::compute_inertia_tensor() {
       error->all(FLERR, "Number of particle per cell not supported with linear "
                         "shape functions and APIC.\n");
     }
-  } else if (update->shape_function == update->ShapeFunctions::CUBIC_SPLINE) {
+  } else if (update->shape_function == Update::ShapeFunctions::CUBIC_SPLINE) {
 
     Di = 3.0 * cellsizeSqInv * eye;
   } else if (update->shape_function ==
-             update->ShapeFunctions::QUADRATIC_SPLINE) {
+             Update::ShapeFunctions::QUADRATIC_SPLINE) {
 
     Di = 4.0 * cellsizeSqInv * eye;
   } else {
@@ -1777,8 +1776,8 @@ void Solid::populate(vector<string> args)
   // Calculate total number of particles np_local:
   int nsubx, nsuby, nsubz;
   double delta;
-  double hdelta;
-  double Lsubx, Lsuby, Lsubz;
+  //double hdelta;
+  //double Lsubx, Lsuby, Lsubz;
 
   double *boundlo, *boundhi;
 
@@ -2620,7 +2619,7 @@ void Solid::read_mesh(string fileName)
 
 
 void Solid::compute_temperature_nodes(bool reset) {
-  double Ttemp, Ttemp_update;
+  double Ttemp;
   int ip, nn = grid->nnodes_local + grid->nnodes_ghost;
 
   for (int in = 0; in < nn; in++) {

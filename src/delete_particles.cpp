@@ -42,7 +42,7 @@ Var DeleteParticles::command(vector<string> args) {
 
   // Delete particles flagged in dlist:
   for (int i = 0; i < ns; i++) {
-    if (dlist[i] != NULL) {
+    if (dlist[i] != nullptr) {
       int np_local = domain->solids[i]->np_local;
       double vtot_local = 0;
       double mtot_local = 0;

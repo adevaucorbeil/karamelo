@@ -23,7 +23,7 @@ class Var{
   Var(double);
   Var(string, double, bool c = false);
 
-  void evaluate(class MPM * = NULL);
+  void evaluate(class MPM * = nullptr);
   double result(class MPM *);
   double result() const {return value;};
   string str() const;

@@ -47,10 +47,10 @@ public:
   string id;                                         ///< Identification name of the material
   int type;                                          ///< Either RIGID, LINEAR, NEO_HOOKEAN, or SHOCK with values from  Material::constitutive_model
   bool rigid = false;                                ///< True if the material is rigid, false otherwise
-  class EOS *eos = NULL;                             ///< Pointer to the EOS
-  class Strength *strength = NULL;                   ///< Pointer to the Strength (flow stress rule)
-  class Damage *damage = NULL;                       ///< Pointer to the Damage law
-  class Temperature *temp = NULL;                    ///< Pointer to the Temperature law
+  class EOS *eos = nullptr;                          ///< Pointer to the EOS
+  class Strength *strength = nullptr;                ///< Pointer to the Strength (flow stress rule)
+  class Damage *damage = nullptr;                    ///< Pointer to the Damage law
+  class Temperature *temp = nullptr;                 ///< Pointer to the Temperature law
   double rho0;                                       ///< Density in the reference state \f$\rho_0\f$
   double E;                                          ///< Young's modulus
   double nu;                                         ///< Poisson's ratio \f$\nu\f$

@@ -23,7 +23,7 @@ typedef void (Plot::*FnPtrPlt)(string, int);
 
 struct FieldPlt {
   string name = "";
-  FnPtrPlt vfunc = NULL;
+  FnPtrPlt vfunc = nullptr;
   int typeflag = -1;
   int x_or_y = 0;
 };

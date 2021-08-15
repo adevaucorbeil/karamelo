@@ -1,12 +1,11 @@
-add_library(gzstream SHARED gzstream.C)
+add_library(gzstream STATIC gzstream.C)
 
 target_include_directories(gzstream PUBLIC ./)
 
 if(WIN32)
-  add_library(zlib SHARED IMPORTED)
+  add_library(zlib STATIC IMPORTED)
   set_target_properties(zlib PROPERTIES
-    IMPORTED_LOCATION "C:/Program Files/Zlib/lib/zlib/zlib.dll"
-    IMPORTED_IMPLIB "C:/Program Files/Zlib/lib/zlib/zlib.lib")
+    IMPORTED_LOCATION "C:/Program Files/Zlib/lib/zlib/zlibstatic.lib")
   target_include_directories(zlib INTERFACE "C:/Program Files/Zlib/include/zlib")
 
   target_link_libraries(gzstream PUBLIC zlib)

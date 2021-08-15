@@ -28,7 +28,7 @@ enum { VERSION, DIMENSION, NPROCS };
 /* ---------------------------------------------------------------------- */
 
 ReadRestart::ReadRestart(MPM *mpm) : Pointers(mpm) {
-  ifr = NULL;
+  ifr = nullptr;
 }
 
 ReadRestart::~ReadRestart() {

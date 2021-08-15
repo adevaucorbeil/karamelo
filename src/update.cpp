@@ -44,7 +44,7 @@ Update::Update(MPM *mpm) : Pointers(mpm)
   scheme_args.push_back("musl");
   create_scheme(scheme_args);
 
-  method = NULL;
+  method = nullptr;
   shape_function = ShapeFunctions::LINEAR;
   sub_method_type = SubMethodType::FLIP;
   PIC_FLIP = 0.99;

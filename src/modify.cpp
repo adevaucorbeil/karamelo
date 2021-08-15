@@ -23,15 +23,15 @@ using namespace FixConst;
 
 Modify::Modify(MPM *mpm) : Pointers(mpm)
 {
-  end_of_step_every = NULL;
+  end_of_step_every = nullptr;
 
-  list_timeflag = NULL;
+  list_timeflag = nullptr;
 
   nfix_restart_global = 0;
-  id_restart_global = style_restart_global = state_restart_global = NULL;
+  id_restart_global = style_restart_global = state_restart_global = nullptr;
   nfix_restart_peratom = 0;
-  id_restart_peratom = style_restart_peratom = NULL;
-  index_restart_peratom = NULL;
+  id_restart_peratom = style_restart_peratom = nullptr;
+  index_restart_peratom = nullptr;
 
 
   // fill map with fixes listed in style_fix.h

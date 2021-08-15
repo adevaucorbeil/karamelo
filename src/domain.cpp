@@ -41,6 +41,7 @@ Domain::Domain(MPM *mpm) : Pointers(mpm)
   region_map = new RegionCreatorMap();
   // solid_map = new SolidCreatorMap();
 
+  grid = nullptr;
 
 #define REGION_CLASS
 #define RegionStyle(key, Class) (*region_map)[#key] = &region_creator<Class>;
@@ -69,7 +70,7 @@ Domain::~Domain()
   delete region_map;
   // delete solid_map;
 
-  if (!update->method->is_TL) delete grid;
+  if (grid) delete grid;
 }
 
 /* ----------------------------------------------------------------------
@@ -395,7 +396,7 @@ void Domain::set_local_box() {
 void Domain::create_domain(vector<string> args) {
 
   // Check that a method is available:
-  if (update->method == NULL)
+  if (update->method == nullptr)
     error->all(FLERR, "Error: a method should be defined before calling create_domain()!\n");
 
   if (!update->method->is_TL) grid = new Grid(mpm);

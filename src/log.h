@@ -23,7 +23,7 @@ typedef void (Log::*FnPtr)(string);
 
 struct Field {
   string name = "";
-  FnPtr vfunc = NULL;
+  FnPtr vfunc = nullptr;
   int typeflag = -1;
 };
 

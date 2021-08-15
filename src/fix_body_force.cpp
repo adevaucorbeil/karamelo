@@ -113,7 +113,6 @@ void FixBodyforce::post_particles_to_grid() {
   Grid *g;
 
   Eigen::Vector3d ftot, ftot_reduced;
-  Eigen::Matrix3d *R;
 
   // double mtot = 0;
   ftot.setZero();

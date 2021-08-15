@@ -42,7 +42,7 @@ Var Run::command(vector<string> args)
   update->scheme->setup();
 
   // Check that a method is available:
-  if (update->method == NULL) {
+  if (update->method == nullptr) {
     error->all(FLERR, "Error: no method was defined!\n");
   }
 

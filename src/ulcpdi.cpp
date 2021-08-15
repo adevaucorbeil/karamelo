@@ -52,22 +52,22 @@ void ULCPDI::setup(vector<string> args)
     error->all(FLERR, "Illegal modify_method command: too many arguments.\n");
   }
 
-  if (update->shape_function == update->ShapeFunctions::LINEAR) {
+  if (update->shape_function == Update::ShapeFunctions::LINEAR) {
     if (universe->me == 0)
       cout << "Setting up linear basis functions\n";
     basis_function = &BasisFunction::linear;
     derivative_basis_function = &BasisFunction::derivative_linear;
-  } else if (update->shape_function == update->ShapeFunctions::CUBIC_SPLINE) {
+  } else if (update->shape_function == Update::ShapeFunctions::CUBIC_SPLINE) {
     if (universe->me == 0)
       cout << "Setting up cubic-spline basis functions\n";
     basis_function = &BasisFunction::cubic_spline;
     derivative_basis_function = &BasisFunction::derivative_cubic_spline;
-  } else if (update->shape_function == update->ShapeFunctions::QUADRATIC_SPLINE) {
+  } else if (update->shape_function == Update::ShapeFunctions::QUADRATIC_SPLINE) {
     if (universe->me == 0)
       cout << "Setting up quadratic-spline basis functions\n";
     basis_function = &BasisFunction::quadratic_spline;
     derivative_basis_function = &BasisFunction::derivative_quadratic_spline;
-  } else if (update->shape_function == update->ShapeFunctions::BERNSTEIN) {
+  } else if (update->shape_function == Update::ShapeFunctions::BERNSTEIN) {
     if (universe->me == 0)
       cout << "Setting up Bernstein-quadratic basis functions\n";
     basis_function = &BasisFunction::bernstein_quadratic;
@@ -222,7 +222,7 @@ void ULCPDI::compute_grid_weight_functions_and_gradients()
 
 		  int i0, j0, k0;
 
-		  if (update->shape_function == update->ShapeFunctions::LINEAR)
+		  if (update->shape_function == Update::ShapeFunctions::LINEAR)
 		    {
 		      i0 = (int) ((xcorner[ic][0] - domain->boxlo[0])*inv_cellsize);
 		      j0 = (int) ((xcorner[ic][1] - domain->boxlo[1])*inv_cellsize);
@@ -231,7 +231,7 @@ void ULCPDI::compute_grid_weight_functions_and_gradients()
 		      m = 2;
 
 		    }
-		  else if (update->shape_function == update->ShapeFunctions::BERNSTEIN)
+		  else if (update->shape_function == Update::ShapeFunctions::BERNSTEIN)
 		    {
 		      i0 = 2*(int) ((xcorner[ic][0] - domain->boxlo[0])*inv_cellsize);
 		      j0 = 2*(int) ((xcorner[ic][1] - domain->boxlo[1])*inv_cellsize);
@@ -452,7 +452,7 @@ void ULCPDI::velocities_to_grid()
 
 void ULCPDI::compute_rate_deformation_gradient(bool doublemapping) {
   for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
-    if (update->sub_method_type == update->SubMethodType::APIC)
+    if (update->sub_method_type == Update::SubMethodType::APIC)
       domain->solids[isolid]->compute_rate_deformation_gradient_UL_APIC(doublemapping);
     else
       domain->solids[isolid]->compute_rate_deformation_gradient_UL(doublemapping);
