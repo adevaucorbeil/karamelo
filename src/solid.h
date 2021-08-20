@@ -131,6 +131,7 @@ class Solid : protected Pointers {
   void compute_external_forces_nodes(bool);         ///< Compute external forces step of the Particle to Grid step of the MPM algorithm.
   void compute_internal_forces_nodes_TL();          ///< Compute internal forces step of the Particle to Grid step of the total Lagrangian MPM algorithm.
   void compute_external_and_internal_forces_nodes_UL(bool);      ///< Compute both external and internal forces step of the Particle to Grid step of the updated Lagrangian MPM algorithm.
+  void compute_external_and_internal_forces_nodes_UL_MLS(bool);      ///< Compute both external and internal forces step of the Particle to Grid step of the moving least square updated Lagrangian MPM algorithm.
   void compute_particle_velocities_and_positions(); ///< Compute the particles' temporary velocities and position, part of the Grid to Particles step of the MPM algorithm.
   void compute_particle_accelerations_velocities_and_positions(); ///< Compute the particles' temporary acceleration, velocities and position, part of the Grid to Particles step of the MPM algorithm.
   void compute_particle_accelerations_velocities(); ///< Compute the particles' temporary acceleration and velocities, part of the Grid to Particles step of the MPM algorithm.

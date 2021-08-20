@@ -65,6 +65,7 @@ class Update : protected Pointers {
     APIC,
     AFLIP,
     ASFLIP,
+    MLS,
   };
   enum class ShapeFunctions {
     LINEAR,
@@ -78,7 +79,8 @@ private:
                                                        {"FLIP", SubMethodType::FLIP},
                                                        {"APIC", SubMethodType::APIC},
                                                        {"AFLIP", SubMethodType::AFLIP},
-                                                       {"ASFLIP", SubMethodType::ASFLIP}};
+                                                       {"ASFLIP", SubMethodType::ASFLIP},
+                                                       {"MLS", SubMethodType::MLS}};
   const map<string, ShapeFunctions> map_shape_functions{
       {"linear", ShapeFunctions::LINEAR},
       {"cubic-spline", ShapeFunctions::CUBIC_SPLINE},

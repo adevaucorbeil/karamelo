@@ -76,7 +76,7 @@ void ULMPM::setup(vector<string> args)
     error->all(FLERR, "Error: shape function not supported! Supported functions are:  \033[1;32mlinear\033[0m, \033[1;32mcubic-spline\033[0m, \033[1;32mquadratic-spline\033[0m, \033[1;32mBernstein-quadratic\033[0m.\n");
   }
 
-  if (update->sub_method_type == Update::SubMethodType::APIC) {
+  if (update->sub_method_type == update->SubMethodType::APIC || update->sub_method_type == update->SubMethodType::MLS) {
     apic = true;
     update->PIC_FLIP = 0;
   } else if (update->sub_method_type == Update::SubMethodType::ASFLIP ||
@@ -361,7 +361,12 @@ void ULMPM::particles_to_grid() {
       domain->solids[isolid]->compute_velocity_nodes_APIC(grid_reset);
     else
       domain->solids[isolid]->compute_velocity_nodes(grid_reset);
-    domain->solids[isolid]->compute_external_and_internal_forces_nodes_UL(grid_reset);
+
+    if (update->sub_method_type == update->SubMethodType::MLS) {
+      domain->solids[isolid]->compute_external_and_internal_forces_nodes_UL_MLS(grid_reset);
+    } else {
+      domain->solids[isolid]->compute_external_and_internal_forces_nodes_UL(grid_reset);
+    }
 
     if (temp) {
       domain->solids[isolid]->compute_temperature_nodes(grid_reset);

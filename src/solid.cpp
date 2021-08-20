@@ -520,6 +520,58 @@ void Solid::compute_external_and_internal_forces_nodes_UL(bool reset)
   }
 }
 
+void Solid::compute_external_and_internal_forces_nodes_UL_MLS(bool reset) {
+  int ip;
+  int nn = grid->nnodes_local + grid->nnodes_ghost;
+  vector<Eigen::Vector3d> *pos;
+
+  if (is_TL) {
+    pos = &x0;
+  } else {
+    pos = &x;
+  }
+
+  for (int in = 0; in < nn; in++) {
+    if (reset) {
+      grid->f[in].setZero();
+      grid->mb[in].setZero();
+    }
+
+    if (grid->rigid[in]) {
+      for (int j = 0; j < numneigh_np[in]; j++) {
+        ip = neigh_np[in][j];
+        // grid->f[in] -= vol[ip] * (sigma[ip] * wfd_np[in][j]);
+        grid->f[in] -= vol[ip] * wf_np[in][j] *
+                       (sigma[ip] * Di * (grid->x0[in] - (*pos)[ip]));
+      }
+
+      if (domain->axisymmetric == true) {
+        for (int j = 0; j < numneigh_np[in]; j++) {
+          ip = neigh_np[in][j];
+          grid->f[in][0] -=
+              vol[ip] * (sigma[ip](2, 2) * wf_np[in][j] / x[ip][0]);
+        }
+      }
+    } else {
+      for (int j = 0; j < numneigh_np[in]; j++) {
+        ip = neigh_np[in][j];
+        // grid->f[in] -= vol[ip] * (sigma[ip] * wfd_np[in][j]);
+        grid->f[in] -= vol[ip] * wf_np[in][j] *
+                       (sigma[ip] * Di * (grid->x0[in] - (*pos)[ip]));
+        grid->mb[in] += wf_np[in][j] * mbp[ip];
+      }
+
+      if (domain->axisymmetric == true) {
+        for (int j = 0; j < numneigh_np[in]; j++) {
+          ip = neigh_np[in][j];
+          grid->f[in][0] -=
+              vol[ip] * (sigma[ip](2, 2) * wf_np[in][j] / x[ip][0]);
+        }
+      }
+    }
+  }
+}
+
 void Solid::compute_particle_accelerations_velocities_and_positions() {
 
   vector<Eigen::Vector3d> vc_update;
