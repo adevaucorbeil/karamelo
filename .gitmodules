@@ -1,0 +1,4 @@
+[submodule "third-party/kokkos"]
+	path = third-party/kokkos
+	url = https://github.com/kokkos/kokkos
+	branch = develop

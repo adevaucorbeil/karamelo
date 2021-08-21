@@ -51,7 +51,8 @@ add_executable(karamelo ${MyCSources})
 
 add_subdirectory(doc EXCLUDE_FROM_ALL)
 add_subdirectory(third-party/gzstream)
-
+add_subdirectory(third-party/kokkos)
+add_subdirectory(kokkos_demo)
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DDEBUG")
 
 target_compile_options(${PROJECT_NAME} PRIVATE ${MPI_CXX_COMPILE_FLAGS})
