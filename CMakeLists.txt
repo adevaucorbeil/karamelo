@@ -12,15 +12,14 @@ cmake_policy(SET CMP0004 OLD)
 project(karamelo)
 
 if(WIN32)
-  set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
-
-  include_directories("C:/Program Files/Eigen")
+  set(EIGEN3_INCLUDE_DIR "C:/Program Files/Eigen")
 else()
   find_package(Eigen3 REQUIRED NO_MODULE)
 endif()
 
 find_package(MPI REQUIRED)
 include_directories(${MPI_INCLUDE_PATH})
+include_directories(${EIGEN3_INCLUDE_DIR})
 include_directories(${PROJECT_SOURCE_DIR})
 
 # the commit's SHA1, and whether the building workspace was dirty or not
@@ -66,6 +65,3 @@ else()
 endif()
 
 target_link_libraries(${PROJECT_NAME} PUBLIC ${MPI_CXX_LIBRARIES} ${MPI_CXX_LINK_FLAGS} gzstream)
-if(!WIN32)
-  target_link_libraries(${PROJECT_NAME} PUBLIC Eigen3::Eigen)
-endif()
