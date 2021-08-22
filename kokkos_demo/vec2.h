@@ -40,11 +40,11 @@ struct         vec2 {
   double      norm()                          const { return hypot(x, y); }
 };
 
-inline vec2 & operator+(double s,
-                        const vec2 &v)              { return v + s; }
+inline vec2 operator+(double s,
+                      const vec2 &v)              { return v + s; }
 
-inline vec2 & operator-(double s,
-                        const vec2 &v)              { return (v - s)*-1; }
+inline vec2 operator-(double s,
+                      const vec2 &v)              { return (v - s)*-1; }
 
-inline vec2 & operator*(double s,
-                        const vec2 &v)              { return v*s; }
+inline vec2 operator*(double s,
+                      const vec2 &v)              { return v*s; }

@@ -8,19 +8,19 @@
 
 using namespace std;
 
-void svd(const mat2 &m,
+void svd(const mat2 &A,
          mat2 &U,
          mat2 &sig,
          mat2 &V);
 
 void mls_mpm() {
   int quality = 1;  // Use a larger value for higher-res simulations
-  int n_particles = 9000*quality*quality;
-  int n_grid = 128*quality;
+  int n_particles = 1800*quality*quality;
+  int n_grid = 15*quality;
 
-  double dx = 1/n_grid;
+  double dx = 1.0/n_grid;
   double inv_dx = n_grid;
-  double dt = 1e-4 / quality;
+  double dt = 1e-3/quality;
   double p_vol = (dx*0.5)*(dx*0.5);
   double p_rho = 1;
   double p_mass = p_vol*p_rho;
@@ -68,19 +68,19 @@ void mls_mpm() {
       mat2 U, sig, V;
       svd(F.at(p), U, sig, V);
       double J = 1;
-      for (int d = 0; d < 2; d++) {
-        double new_sig = sig(d, d);
-        if (material.at(p) == 2) { // Snow
-          new_sig = min(max(sig(d, d), 1 - 2.5e-2), 1 + 4.5e-3); // Plasticity
-          Jp.at(p) *= sig(d, d)/new_sig;
-          sig(d, d) = new_sig;
-          J *= new_sig;
-        }
-      }
+      //for (int d = 0; d < 2; d++) {
+      //  double new_sig = sig(d, d);
+      //  if (material.at(p) == 2) { // Snow
+      //    new_sig = min(max(sig(d, d), 1 - 2.5e-2), 1 + 4.5e-3); // Plasticity
+      //    Jp.at(p) *= sig(d, d)/new_sig;
+      //    sig(d, d) = new_sig;
+      //    J *= new_sig;
+      //  }
+      //}
       if (material.at(p) == 0) // Reset deformation gradient to avoid numerical instability
         F.at(p) = mat2()*sqrt(J);
-      else if (material.at(p) == 2)
-        F.at(p) = U*sig*V.transpose(); // Reconstruct elastic deformation gradient after plasticity
+      //else if (material.at(p) == 2)
+      //  F.at(p) = U*sig*V.transpose(); // Reconstruct elastic deformation gradient after plasticity
       mat2 stress = 2*mu*(F.at(p) - U*V.transpose())*F.at(p).transpose() + mat2()*la*J*(J - 1);
       stress = (-dt*p_vol*4*inv_dx*inv_dx)*stress;
       mat2 affine = stress + p_mass * C.at(p);
@@ -90,7 +90,7 @@ void mls_mpm() {
           vec2 dpos = (offset - fx)*dx;
           double weight = w[i].x*w[j].y;
           vec2 index = base + offset;
-          grid_v.at(index.x).at(index.y) += weight*(p_mass * v[p] + affine*dpos);
+          grid_v.at(index.x).at(index.y) += weight*(p_mass*v.at(p) + affine*dpos);
           grid_m.at(index.x).at(index.y) += weight*p_mass;
         }
     }
@@ -120,8 +120,8 @@ void mls_mpm() {
       vec2 w[3] = { 0.5*(1.5 - fx).square(), 0.75 - (fx - 1).square(), 0.5*(fx -  0.5).square() };
       vec2 new_v;
       mat2 new_C(0, 0, 0, 0);
-      for (int i = 0; i < n_particles; i++)
-        for (int j = 0; j < n_particles; j++) { // loop over 3x3 grid node neighborhood
+      for (int i = 0; i < 3; i++)
+        for (int j = 0; j < 3; j++) { // loop over 3x3 grid node neighborhood
           vec2 dpos = vec2(i, j) - fx;
           vec2 offset = base + vec2(i, j);
           vec2 g_v = grid_v.at(offset.x).at(offset.y);
@@ -139,7 +139,8 @@ void mls_mpm() {
   auto reset = [&]() {
     int group_size = n_particles/3;
     for (int i = 0; i < n_particles; i++) {
-      x.at(i) = vec2(rand()/RAND_MAX*0.2 + 0.3 + 0.1*(int)(i/group_size), rand()/RAND_MAX*0.2 + 0.05 + 0.32*(int)(i/group_size));
+      x.at(i) = vec2(1.0*rand()/RAND_MAX*0.2 + 0.3 + 0.1*(int)(i/group_size),
+                     1.0*rand()/RAND_MAX*0.2 + 0.05 + 0.32*(int)(i/group_size));
 
       material[i] = i/group_size; // 0: fluid 1: jelly 2: snow
       v.at(i) = vec2();
@@ -154,38 +155,85 @@ void mls_mpm() {
   reset();
   gravity = vec2(0, -1);
 
-  draw();
+  vector<float> vertices(5*n_particles);
 
-  for (int frame = 0; frame < 20000; frame++) {
-    //if gui.get_event(ti.GUI.PRESS):
-    //    if gui.event.key == 'r': reset()
-    //    elif gui.event.key in [ti.GUI.ESCAPE, ti.GUI.EXIT]: break
-    //if gui.event is not None: gravity[None] = [0, 0]  # if had any event
-    //if gui.is_pressed(ti.GUI.LEFT, 'a'): gravity[None][0] = -1
-    //if gui.is_pressed(ti.GUI.RIGHT, 'd'): gravity[None][0] = 1
-    //if gui.is_pressed(ti.GUI.UP, 'w'): gravity[None][1] = 1
-    //if gui.is_pressed(ti.GUI.DOWN, 's'): gravity[None][1] = -1
-    //mouse = gui.get_cursor_pos()
-    //gui.circle((mouse[0], mouse[1]), color=0x336699, radius=15)
-    //attractor_pos[None] = [mouse[0], mouse[1]]
-    //attractor_strength[None] = 0
-    //if gui.is_pressed(ti.GUI.LMB):
-    //    attractor_strength[None] = 1
-    //if gui.is_pressed(ti.GUI.RMB):
-    //    attractor_strength[None] = -1
-    //for s in range(int(2e-3 // dt)):
-    //    substep()
-    //gui.circles(x.to_numpy(),
-    //            radius=1.5,
-    //            palette=[0x068587, 0xED553B, 0xEEEEF0],
-    //            palette_indices=material)
-    //gui.show()  # Change to gui.show(f'{frame:06d}.png') to write images to disk
-  }
+  draw(n_particles, &vertices.front(),
+       [&](bool r,
+           bool left, bool right, bool up, bool down,
+           bool mouse_left, bool mouse_right,
+           double xpos, double ypos) {
+      if (r)
+        reset();
+
+      if (left || right || up || down)
+        gravity = vec2();
+      if (left)
+        gravity.x -= 1;
+      if (right)
+        gravity.x += 1;
+      if (up)
+        gravity.y += 1;
+      if (down)
+        gravity.y -= 1;
+
+      attractor_pos = vec2(xpos, ypos);
+      attractor_strength = 0;
+      if (mouse_left)
+        attractor_strength++;
+      if (mouse_right)
+        attractor_strength--;
+
+      for (int s = 0; s < max(1, (int)(2e-3/dt)); s++) {
+        substep();
+      }
+
+      for (int i = 0; i < n_particles; i++) {
+        vertices.at(5*i    ) = 2*x.at(i).x - 1;
+        vertices.at(5*i + 1) = 2*x.at(i).y - 1;
+        vertices.at(5*i + 2) = material.at(i) == 0;
+        vertices.at(5*i + 3) = material.at(i) == 1;
+        vertices.at(5*i + 4) = material.at(i) == 2;
+      }
+    });
 }
 
-void svd(const mat2 &m,
+void svd(const mat2 &A,
          mat2 &U,
          mat2 &sig,
          mat2 &V) {
-
+  double x = A(0, 0) + A(1, 1), y = A(1, 0) - A(0, 1);
+  double scale = 1/sqrt(x*x + y*y);
+  double c = x*scale;
+  double s = y*scale;
+  mat2 R(c, -s, s, c);
+  mat2 S = R.transpose()*A;
+  double s1 = 0, s2 = 0;
+  if (abs(S(0, 1)) < 1e-5) {
+    c = 1;
+    s = 0;
+  }
+  else {
+   double tao = 0.5*(S(0, 0) - S(1, 1));
+   double w = sqrt(tao*tao + S(0, 1)* S(0, 1));
+   double t = 0;
+   if (tao > 0)
+     t = S(0, 1)/(tao + w);
+   else
+     t = S(0, 1)/(tao - w);
+   c = 1/sqrt(t*t + 1);
+   s = -t*c;
+   s1 = c*c*S(0, 0) - 2*c*s*S(0, 1) + s*s*S(1, 1);
+   s2 = s*s*S(0, 0) + 2*c*s*S(0, 1) + c*c*S(1, 1);
+  }
+       
+  if (s1 < s2) {
+    double tmp = s1;
+    s1 = s2;
+    s2 = tmp;
+    V = mat2(-s, c, -c, -s);
+  }
+  else
+    V = mat2(c, s, -s, c);
+  U = R*V;
+  sig = mat2(s1, 0, 0, s2);
 }

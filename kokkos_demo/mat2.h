@@ -43,7 +43,10 @@ struct        mat2 {
 
   double &    operator()(int i,
                          int j)                     { return i? (j? m11: m10): (j? m01: m00); }
+
+  double      operator()(int i,
+                         int j)               const { return i? (j? m11: m10): (j? m01: m00); }
 };
 
-inline mat2 & operator*(double s,
+inline mat2   operator*(double s,
                         const mat2 &m)              { return m*s; }
