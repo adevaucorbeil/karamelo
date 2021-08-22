@@ -2,3 +2,7 @@
 	path = third-party/kokkos
 	url = https://github.com/kokkos/kokkos
 	branch = develop
+[submodule "third-party/glfw"]
+	path = third-party/glfw
+	url = https://github.com/glfw/glfw
+	branch = master

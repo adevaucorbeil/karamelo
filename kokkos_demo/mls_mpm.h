@@ -1,6 +1,7 @@
 #pragma once
 
 #include <mat2.h>
+#include <graphics.h>
 
 #include <vector>
 #include <cmath>
@@ -136,11 +137,11 @@ void mls_mpm() {
   };
 
   auto reset = [&]() {
-    int group_size = n_particles%3;
+    int group_size = n_particles/3;
     for (int i = 0; i < n_particles; i++) {
-      x.at(i) = vec2(rand()/RAND_MAX*0.2 + 0.3 + 0.1*(i%group_size), rand()/RAND_MAX*0.2 + 0.05 + 0.32*(i%group_size));
+      x.at(i) = vec2(rand()/RAND_MAX*0.2 + 0.3 + 0.1*(int)(i/group_size), rand()/RAND_MAX*0.2 + 0.05 + 0.32*(int)(i/group_size));
 
-      material[i] = i%group_size; // 0: fluid 1: jelly 2: snow
+      material[i] = i/group_size; // 0: fluid 1: jelly 2: snow
       v.at(i) = vec2();
       F.at(i) = mat2();
       Jp.at(i) = 1;
@@ -152,6 +153,8 @@ void mls_mpm() {
 
   reset();
   gravity = vec2(0, -1);
+
+  draw();
 
   for (int frame = 0; frame < 20000; frame++) {
     //if gui.get_event(ti.GUI.PRESS):
