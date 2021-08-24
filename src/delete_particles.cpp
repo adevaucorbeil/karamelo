@@ -82,6 +82,8 @@ Var DeleteParticles::command(vector<string> args) {
     }
   }
 
+  delete[] dlist;
+
   return Var(0);
 }
 
