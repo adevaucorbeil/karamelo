@@ -6,7 +6,10 @@
 #include <vector>
 #include <cmath>
 
+#include <Kokkos_Core.hpp>
+
 using namespace std;
+using namespace Kokkos;
 
 void svd(const mat2 &A,
          mat2 &U,
@@ -14,30 +17,30 @@ void svd(const mat2 &A,
          mat2 &V);
 
 void mls_mpm() {
-  int quality = 1;  // Use a larger value for higher-res simulations
-  int n_particles = 1800*quality*quality;
-  int n_grid = 15*quality;
+  constexpr int quality = 1;  // Use a larger value for higher-res simulations
+  constexpr int n_particles = 1800*quality*quality;
+  constexpr int n_grid = 15*quality;
 
-  double dx = 1.0/n_grid;
-  double inv_dx = n_grid;
-  double dt = 1e-3/quality;
-  double p_vol = (dx*0.5)*(dx*0.5);
-  double p_rho = 1;
-  double p_mass = p_vol*p_rho;
-  double E = 5e3; // Young's modulus
-  double nu = 0.2; // Poisson's ratio
-  double mu_0 = E/(2*(1 + nu)); // Lame mu
-  double lambda_0 = E*nu/((1 + nu)*(1 - 2*nu)); // Lame lambda
+  constexpr double dx = 1.0/n_grid;
+  constexpr double inv_dx = n_grid;
+  constexpr double dt = 1e-3/quality;
+  constexpr double p_vol = (dx*0.5)*(dx*0.5);
+  constexpr double p_rho = 1;
+  constexpr double p_mass = p_vol*p_rho;
+  constexpr double E = 5e3; // Young's modulus
+  constexpr double nu = 0.2; // Poisson's ratio
+  constexpr double mu_0 = E/(2*(1 + nu)); // Lame mu
+  constexpr double lambda_0 = E*nu/((1 + nu)*(1 - 2*nu)); // Lame lambda
 
-  vector<vec2> x(n_particles); // position
-  vector<vec2> v(n_particles); // velocity
-  vector<mat2> C(n_particles); // affine velocity field
-  vector<mat2> F(n_particles); // deformation gradient
-  vector<int> material(n_particles); // material id
-  vector<double> Jp(n_particles); // plastic deformation
+  View<vec2[n_particles]> x("x"); // position
+  View<vec2[n_particles]> v("v"); // velocity
+  View<mat2[n_particles]> C("C"); // affine velocity field
+  View<mat2[n_particles]> F("F"); // deformation gradient
+  View<int[n_particles]> material("material"); // material id
+  View<double[n_particles]> Jp("Jp"); // plastic deformation
 
-  vector<vector<vec2>> grid_v(n_particles, vector<vec2>(n_particles)); // gird node momentum/velocity
-  vector<vector<double>> grid_m(n_particles, vector<double>(n_particles)); // grid node mass
+  View<vec2[n_particles][n_particles]> grid_v("grid_v"); // gird node momentum/velocity
+  View<double[n_particles][n_particles]> grid_m("grid_m"); // grid node mass
   vec2 gravity{};
   double attractor_strength;
   vec2 attractor_pos{};
@@ -45,77 +48,77 @@ void mls_mpm() {
   auto substep = [&]() {
     for (int i = 0; i < n_particles; i++)
       for (int j = 0; j < n_particles; j++) {
-        grid_v.at(i).at(j) = vec2();
-        grid_m.at(i).at(j) = 0;
+        grid_v(i, j) = vec2();
+        grid_m(i, j) = 0;
       }
 
     // Particle state update and scatter to grid (P2G)
-    for (int p = 0; p < n_particles; p++) {
-      vec2 base = x.at(p)*inv_dx - 0.5;
+    parallel_for(n_particles, KOKKOS_LAMBDA(int p) {
+      vec2 base = x(p)*inv_dx - 0.5;
       base.x = (int)base.x;
       base.y = (int)base.y;
-      vec2 fx = x.at(p)*inv_dx - base;
+      vec2 fx = x(p)*inv_dx - base;
 
       vec2 w[3] = { 0.5*(1.5 - fx).square(), 0.75 - (fx - 1).square(), 0.5*(fx -  0.5).square() };
 
-      F.at(p) = (mat2() + dt*C.at(p))*F.at(p); // deformation gradient update
-      double h = max(0.1, min(5.0, exp(10*(1 - Jp.at(p))))); // Hardening coefficient: snow gets harder when compressed
-      if (material.at(p) == 1) // jelly, make it softer
+      F(p) = (mat2() + dt*C(p))*F(p); // deformation gradient update
+      double h = max(0.1, min(5.0, exp(10*(1 - Jp(p))))); // Hardening coefficient: snow gets harder when compressed
+      if (material(p) == 1) // jelly, make it softer
         h = 0.3;
       double mu = mu_0*h, la = lambda_0*h;
-      if (material.at(p) == 0) // liquid
+      if (material(p) == 0) // liquid
         mu = 0.0;
       mat2 U, sig, V;
-      svd(F.at(p), U, sig, V);
+      svd(F(p), U, sig, V);
       double J = 1;
       //for (int d = 0; d < 2; d++) {
       //  double new_sig = sig(d, d);
-      //  if (material.at(p) == 2) { // Snow
+      //  if (material(p) == 2) { // Snow
       //    new_sig = min(max(sig(d, d), 1 - 2.5e-2), 1 + 4.5e-3); // Plasticity
-      //    Jp.at(p) *= sig(d, d)/new_sig;
+      //    Jp(p) *= sig(d, d)/new_sig;
       //    sig(d, d) = new_sig;
       //    J *= new_sig;
       //  }
       //}
-      if (material.at(p) == 0) // Reset deformation gradient to avoid numerical instability
-        F.at(p) = mat2()*sqrt(J);
-      //else if (material.at(p) == 2)
-      //  F.at(p) = U*sig*V.transpose(); // Reconstruct elastic deformation gradient after plasticity
-      mat2 stress = 2*mu*(F.at(p) - U*V.transpose())*F.at(p).transpose() + mat2()*la*J*(J - 1);
+      if (material(p) == 0) // Reset deformation gradient to avoid numerical instability
+        F(p) = mat2()*sqrt(J);
+      //else if (material(p) == 2)
+      //  F(p) = U*sig*V.transpose(); // Reconstruct elastic deformation gradient after plasticity
+      mat2 stress = 2*mu*(F(p) - U*V.transpose())*F(p).transpose() + mat2()*la*J*(J - 1);
       stress = (-dt*p_vol*4*inv_dx*inv_dx)*stress;
-      mat2 affine = stress + p_mass * C.at(p);
+      mat2 affine = stress + p_mass * C(p);
       for (int i = 0; i < 3; i++)
         for (int j = 0; j < 3; j++) { // Loop over 3x3 grid node neighborhood
           vec2 offset(i, j);
           vec2 dpos = (offset - fx)*dx;
           double weight = w[i].x*w[j].y;
           vec2 index = base + offset;
-          grid_v.at(index.x).at(index.y) += weight*(p_mass*v.at(p) + affine*dpos);
-          grid_m.at(index.x).at(index.y) += weight*p_mass;
+          grid_v((int)index.x, (int)index.y) += weight*(p_mass*v(p) + affine*dpos);
+          grid_m((int)index.x, (int)index.y) += weight*p_mass;
         }
-    }
-    for (int i = 0; i < n_particles; i++)
-      for (int j = 0; j < n_particles; j++) {
-        if (grid_m.at(i).at(j) > 0) {// No need for epsilon here
-          grid_v.at(i).at(j) = (1/grid_m.at(i).at(j))*grid_v.at(i).at(j); // Momentum to velocity
-          grid_v.at(i).at(j) += dt*gravity*30; // gravity
-          vec2 dist = attractor_pos - dx*vec2(i, j);
-          grid_v.at(i).at(j) += dist/(0.01 + dist.norm()) * attractor_strength*dt*100;
-          if (i < 3 && grid_v.at(i).at(j).x < 0)
-            grid_v.at(i).at(j).x = 0; // Boundary conditions
-          if (i > n_grid - 3 && grid_v.at(i).at(j).x > 0)
-            grid_v.at(i).at(j).x = 0;
-          if (j < 3 && grid_v.at(i).at(j).y < 0)
-            grid_v.at(i).at(j).y = 0;
-          if (j > n_grid - 3 && grid_v.at(i).at(j).y > 0)
-            grid_v.at(i).at(j).y = 0;
-        }
+    });
+    parallel_for(n_particles * n_particles, KOKKOS_LAMBDA(int i) {
+      int j = i/n_particles, k = i%n_particles;
+      if (grid_m(j, k) > 0) { // No need for epsilon here
+        grid_v(j, k) = (1/grid_m(j, k))*grid_v(j, k); // Momentum to velocity
+        grid_v(j, k) += dt*gravity*30; // gravity
+        vec2 dist = attractor_pos - dx*vec2(j, k);
+        grid_v(j, k) += dist/(0.01 + dist.norm()) * attractor_strength*dt*100;
+        if (j < 3 && grid_v(j, k).x < 0)
+          grid_v(j, k).x = 0; // Boundary conditions
+        if (j > n_grid - 3 && grid_v(j, k).x > 0)
+          grid_v(j, k).x = 0;
+        if (k < 3 && grid_v(j, k).y < 0)
+          grid_v(j, k).y = 0;
+        if (k > n_grid - 3 && grid_v(j, k).y > 0)
+          grid_v(j, k).y = 0;
       }
-    for (int p = 0; p < n_particles; p++) { // grid to particle(G2P)
-      vec2 base = x.at(p)*inv_dx - 0.5;
+    });
+    parallel_for(n_particles, KOKKOS_LAMBDA(int p) { // grid to particle(G2P)
+      vec2 base = x(p)*inv_dx - 0.5;
       base.x = (int)base.x;
       base.y = (int)base.y;
-      vec2 fx = x.at(p)*inv_dx - base;
+      vec2 fx = x(p)*inv_dx - base;
 
       vec2 w[3] = { 0.5*(1.5 - fx).square(), 0.75 - (fx - 1).square(), 0.5*(fx -  0.5).square() };
       vec2 new_v;
@@ -124,30 +127,30 @@ void mls_mpm() {
         for (int j = 0; j < 3; j++) { // loop over 3x3 grid node neighborhood
           vec2 dpos = vec2(i, j) - fx;
           vec2 offset = base + vec2(i, j);
-          vec2 g_v = grid_v.at(offset.x).at(offset.y);
+          vec2 g_v = grid_v((int)offset.x, (int)offset.y);
           double weight = w[i].x * w[j].y;
           new_v += weight*g_v;
           new_C += 4*inv_dx*weight*mat2(g_v.x*dpos.x, g_v.x*dpos.y, g_v.y*dpos.x, g_v.y*dpos.y);
         }
 
-      v.at(p) = new_v;
-      C.at(p) = new_C;
-      x.at(p) += dt*v.at(p); // advection
-    }
+      v(p) = new_v;
+      C(p) = new_C;
+      x(p) += dt*v(p); // advection
+    });
   };
 
   auto reset = [&]() {
     int group_size = n_particles/3;
-    for (int i = 0; i < n_particles; i++) {
-      x.at(i) = vec2(1.0*rand()/RAND_MAX*0.2 + 0.3 + 0.1*(int)(i/group_size),
-                     1.0*rand()/RAND_MAX*0.2 + 0.05 + 0.32*(int)(i/group_size));
+    parallel_for(n_particles, KOKKOS_LAMBDA(int i) {
+      x(i) = vec2(1.0*rand()/RAND_MAX*0.2 + 0.3 + 0.1*(int)(i/group_size),
+                  1.0*rand()/RAND_MAX*0.2 + 0.05 + 0.32*(int)(i/group_size));
 
       material[i] = i/group_size; // 0: fluid 1: jelly 2: snow
-      v.at(i) = vec2();
-      F.at(i) = mat2();
-      Jp.at(i) = 1;
-      C.at(i) = mat2(0, 0, 0, 0);
-    }
+      v(i) = vec2();
+      F(i) = mat2();
+      Jp(i) = 1;
+      C(i) = mat2(0, 0, 0, 0);
+    });
   };
 
   cout << "[Hint] Use WSAD/arrow keys to control gravity. Use left/right mouse bottons to attract/repel. Press R to reset.";
@@ -188,11 +191,11 @@ void mls_mpm() {
       }
 
       for (int i = 0; i < n_particles; i++) {
-        vertices.at(5*i    ) = 2*x.at(i).x - 1;
-        vertices.at(5*i + 1) = 2*x.at(i).y - 1;
-        vertices.at(5*i + 2) = material.at(i) == 0;
-        vertices.at(5*i + 3) = material.at(i) == 1;
-        vertices.at(5*i + 4) = material.at(i) == 2;
+        vertices.at(5*i    ) = 2*x(i).x - 1;
+        vertices.at(5*i + 1) = 2*x(i).y - 1;
+        vertices.at(5*i + 2) = material(i) == 0;
+        vertices.at(5*i + 3) = material(i) == 1;
+        vertices.at(5*i + 4) = material(i) == 2;
       }
     });
 }
