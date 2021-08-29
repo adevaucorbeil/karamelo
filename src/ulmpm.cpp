@@ -428,7 +428,10 @@ void ULMPM::velocities_to_grid()
     else
       grid_reset = false;
 
-    domain->solids[isolid]->compute_velocity_nodes(grid_reset);
+    if (apic)
+      domain->solids[isolid]->compute_velocity_nodes_APIC(grid_reset);
+    else
+      domain->solids[isolid]->compute_velocity_nodes(grid_reset);
     if (temp) {
       domain->solids[isolid]->compute_temperature_nodes(grid_reset);
     }
