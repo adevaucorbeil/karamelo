@@ -6,6 +6,7 @@
 using namespace std;
 using namespace Kokkos;
 
+KOKKOS_INLINE_FUNCTION
 void svd(const mat2 &A,
          mat2 &U,
          mat2 &sig,
@@ -140,8 +141,9 @@ void mls_mpm() {
   auto reset = [&]() {
     int group_size = n_particles/3;
     parallel_for(n_particles, KOKKOS_LAMBDA(int i) {
-      x(i) = vec2(1.0*rand()/RAND_MAX*0.2 + 0.3 + 0.1*(int)(i/group_size),
-                  1.0*rand()/RAND_MAX*0.2 + 0.05 + 0.32*(int)(i/group_size));
+      // terrible way to generate random numbers
+      x(i) = vec2((((69471233*i + 787723)*(73491213*i + 7919123))%1046527/1046527.0/2 + 1)*0.2 + 0.3 + 0.1*(int)(i/group_size),
+                  (((67331233*i + 729723)*(73331123*i + 7351123))%1676903/1676903.0/2 + 1)*0.2 + 0.05 + 0.32*(int)(i/group_size));
 
       material[i] = i/group_size; // 0: fluid 1: jelly 2: snow
       v(i) = vec2();
