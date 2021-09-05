@@ -380,7 +380,10 @@ void TLMPM::advance_particles()
 void TLMPM::velocities_to_grid()
 {
   for (int isolid=0; isolid<domain->solids.size(); isolid++) {
-    domain->solids[isolid]->compute_velocity_nodes(true);
+    if (update->sub_method_type == Update::SubMethodType::APIC)
+      domain->solids[isolid]->compute_velocity_nodes_APIC(true);
+    else
+      domain->solids[isolid]->compute_velocity_nodes(true);
     if (temp) {
       domain->solids[isolid]->compute_temperature_nodes(true);
     }
