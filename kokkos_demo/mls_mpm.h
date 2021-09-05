@@ -3,11 +3,6 @@
 #include <mat2.h>
 #include <graphics.h>
 
-#include <vector>
-#include <cmath>
-
-#include <Kokkos_Core.hpp>
-
 using namespace std;
 using namespace Kokkos;
 
@@ -39,18 +34,22 @@ void mls_mpm() {
   View<int[n_particles]> material("material"); // material id
   View<double[n_particles]> Jp("Jp"); // plastic deformation
 
+  View<vec2[n_particles]>::HostMirror x_host = create_mirror_view(x); // position mirror
+  View<int[n_particles]>::HostMirror material_host = create_mirror_view(material); // material mirror
+
   View<vec2[n_particles][n_particles]> grid_v("grid_v"); // gird node momentum/velocity
+  View<vec2[n_particles][n_particles], MemoryTraits<Atomic>> grid_v_atomic = grid_v; // gird node momentum/velocity
   View<double[n_particles][n_particles]> grid_m("grid_m"); // grid node mass
+  View<double[n_particles][n_particles], MemoryTraits<Atomic>> grid_m_atomic = grid_m; // grid node mass
   vec2 gravity{};
   double attractor_strength;
   vec2 attractor_pos{};
 
   auto substep = [&]() {
-    for (int i = 0; i < n_particles; i++)
-      for (int j = 0; j < n_particles; j++) {
-        grid_v(i, j) = vec2();
-        grid_m(i, j) = 0;
-      }
+    parallel_for(MDRangePolicy<Rank<2>>({ 0, 0 }, { n_particles, n_particles }), KOKKOS_LAMBDA(int i, int j) {
+      grid_v(i, j) = vec2();
+      grid_m(i, j) = 0;
+    });
 
     // Particle state update and scatter to grid (P2G)
     parallel_for(n_particles, KOKKOS_LAMBDA(int p) {
@@ -93,25 +92,24 @@ void mls_mpm() {
           vec2 dpos = (offset - fx)*dx;
           double weight = w[i].x*w[j].y;
           vec2 index = base + offset;
-          grid_v((int)index.x, (int)index.y) += weight*(p_mass*v(p) + affine*dpos);
-          grid_m((int)index.x, (int)index.y) += weight*p_mass;
+          grid_v_atomic((int)index.x, (int)index.y) += weight*(p_mass*v(p) + affine*dpos);
+          grid_m_atomic((int)index.x, (int)index.y) += weight*p_mass;
         }
     });
-    parallel_for(n_particles * n_particles, KOKKOS_LAMBDA(int i) {
-      int j = i/n_particles, k = i%n_particles;
-      if (grid_m(j, k) > 0) { // No need for epsilon here
-        grid_v(j, k) = (1/grid_m(j, k))*grid_v(j, k); // Momentum to velocity
-        grid_v(j, k) += dt*gravity*30; // gravity
-        vec2 dist = attractor_pos - dx*vec2(j, k);
-        grid_v(j, k) += dist/(0.01 + dist.norm()) * attractor_strength*dt*100;
-        if (j < 3 && grid_v(j, k).x < 0)
-          grid_v(j, k).x = 0; // Boundary conditions
-        if (j > n_grid - 3 && grid_v(j, k).x > 0)
-          grid_v(j, k).x = 0;
-        if (k < 3 && grid_v(j, k).y < 0)
-          grid_v(j, k).y = 0;
-        if (k > n_grid - 3 && grid_v(j, k).y > 0)
-          grid_v(j, k).y = 0;
+    parallel_for(MDRangePolicy<Rank<2>>({ 0, 0 }, { n_particles, n_particles }), KOKKOS_LAMBDA(int i, int j) {
+      if (grid_m(i, j) > 0) { // No need for epsilon here
+        grid_v(i, j) = (1/grid_m(i, j))*grid_v(i, j); // Momentum to velocity
+        grid_v(i, j) += dt*gravity*30; // gravity
+        vec2 dist = attractor_pos - dx*vec2(i, j);
+        grid_v(i, j) += dist/(0.01 + dist.norm()) * attractor_strength*dt*100;
+        if (i < 3 && grid_v(i, j).x < 0)
+          grid_v(i, j).x = 0; // Boundary conditions
+        if (i > n_grid - 3 && grid_v(i, j).x > 0)
+          grid_v(i, j).x = 0;
+        if (j < 3 && grid_v(i, j).y < 0)
+          grid_v(i, j).y = 0;
+        if (j > n_grid - 3 && grid_v(i, j).y > 0)
+          grid_v(i, j).y = 0;
       }
     });
     parallel_for(n_particles, KOKKOS_LAMBDA(int p) { // grid to particle(G2P)
@@ -190,16 +188,20 @@ void mls_mpm() {
         substep();
       }
 
+      deep_copy(x_host, x);
+      deep_copy(material_host, material);
+
       for (int i = 0; i < n_particles; i++) {
-        vertices.at(5*i    ) = 2*x(i).x - 1;
-        vertices.at(5*i + 1) = 2*x(i).y - 1;
-        vertices.at(5*i + 2) = material(i) == 0;
-        vertices.at(5*i + 3) = material(i) == 1;
-        vertices.at(5*i + 4) = material(i) == 2;
+        vertices.at(5*i    ) = 2*x_host(i).x - 1;
+        vertices.at(5*i + 1) = 2*x_host(i).y - 1;
+        vertices.at(5*i + 2) = material_host(i) == 0;
+        vertices.at(5*i + 3) = material_host(i) == 1;
+        vertices.at(5*i + 4) = material_host(i) == 2;
       }
     });
 }
 
+KOKKOS_INLINE_FUNCTION
 void svd(const mat2 &A,
          mat2 &U,
          mat2 &sig,
