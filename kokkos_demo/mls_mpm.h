@@ -38,16 +38,16 @@ void mls_mpm() {
   View<vec2[n_particles]>::HostMirror x_host = create_mirror_view(x); // position mirror
   View<int[n_particles]>::HostMirror material_host = create_mirror_view(material); // material mirror
 
-  View<vec2[n_particles][n_particles]> grid_v("grid_v"); // gird node momentum/velocity
-  View<vec2[n_particles][n_particles], MemoryTraits<Atomic>> grid_v_atomic = grid_v; // gird node momentum/velocity
-  View<double[n_particles][n_particles]> grid_m("grid_m"); // grid node mass
-  View<double[n_particles][n_particles], MemoryTraits<Atomic>> grid_m_atomic = grid_m; // grid node mass
+  View<vec2[n_grid][n_grid]> grid_v("grid_v"); // gird node momentum/velocity
+  View<vec2[n_grid][n_grid], MemoryTraits<Atomic>> grid_v_atomic = grid_v; // gird node momentum/velocity
+  View<double[n_grid][n_grid]> grid_m("grid_m"); // grid node mass
+  View<double[n_grid][n_grid], MemoryTraits<Atomic>> grid_m_atomic = grid_m; // grid node mass
   vec2 gravity{};
   double attractor_strength;
   vec2 attractor_pos{};
 
   auto substep = [&]() {
-    parallel_for(MDRangePolicy<Rank<2>>({ 0, 0 }, { n_particles, n_particles }), KOKKOS_LAMBDA(int i, int j) {
+    parallel_for(MDRangePolicy<Rank<2>>({ 0, 0 }, { n_grid, n_grid }), KOKKOS_LAMBDA(int i, int j) {
       grid_v(i, j) = vec2();
       grid_m(i, j) = 0;
     });
@@ -97,7 +97,7 @@ void mls_mpm() {
           grid_m_atomic((int)index.x, (int)index.y) += weight*p_mass;
         }
     });
-    parallel_for(MDRangePolicy<Rank<2>>({ 0, 0 }, { n_particles, n_particles }), KOKKOS_LAMBDA(int i, int j) {
+    parallel_for(MDRangePolicy<Rank<2>>({ 0, 0 }, { n_grid, n_grid }), KOKKOS_LAMBDA(int i, int j) {
       if (grid_m(i, j) > 0) { // No need for epsilon here
         grid_v(i, j) = (1/grid_m(i, j))*grid_v(i, j); // Momentum to velocity
         grid_v(i, j) += dt*gravity*30; // gravity
@@ -143,7 +143,7 @@ void mls_mpm() {
     parallel_for(n_particles, KOKKOS_LAMBDA(int i) {
       // terrible way to generate random numbers
       x(i) = vec2((((69471233*i + 787723)*(73491213*i + 7919123))%1046527/1046527.0/2 + 1)*0.2 + 0.3 + 0.1*(int)(i/group_size),
-                  (((67331233*i + 729723)*(73331123*i + 7351123))%1676903/1676903.0/2 + 1)*0.2 + 0.05 + 0.32*(int)(i/group_size));
+                  (((67331233*i + 729723)*(73331123*i + 7351123))%1676903/1676903.0/2 + 1)*0.2 + 0.05 + 0.29*(int)(i/group_size));
 
       material[i] = i/group_size; // 0: fluid 1: jelly 2: snow
       v(i) = vec2();
