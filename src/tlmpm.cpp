@@ -99,7 +99,7 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
   }
 
   // cout << "In TLMPM::compute_grid_weight_functions_and_gradients()\n";
-  bigint nsolids, np_local, nnodes_local, nnodes_ghost;
+  bigint nsolids, np_local, nnodes_local, nnodes_ghost, nnodes;
 
   nsolids = domain->solids.size();
 
@@ -107,6 +107,7 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
     for (int isolid=0; isolid<nsolids; isolid++){
 
       np_local = domain->solids[isolid]->np_local;
+      nnodes = domain->solids[isolid]->grid->nnodes;
       nnodes_local = domain->solids[isolid]->grid->nnodes_local;
       nnodes_ghost = domain->solids[isolid]->grid->nnodes_ghost;
 
@@ -135,6 +136,7 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
 
       vector<tagint> *map_ntag = &domain->solids[isolid]->grid->map_ntag;
       int inn;
+      tagint tag = 0;
       
       r.setZero();
       if (np_local && (nnodes_local + nnodes_ghost)) {
@@ -160,15 +162,21 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
 		for(int j=j0; j<j0+2;j++){
 		  if (nz>1){
 		    for(int k=k0; k<k0+2;k++){
-		      inn = (*map_ntag)[nz*ny*i+nz*j+k];
-		      if (inn != -1) {
-			n_neigh.push_back(inn);
+		      tag = nz * ny * i + nz * j + k;
+		      if (tag < nnodes) {
+			inn = (*map_ntag)[tag];
+			if (inn != -1) {
+			  n_neigh.push_back(inn);
+			}
 		      }
 		    }
 		  } else {
-		    inn = (*map_ntag)[ny*i+j];
-		    if (inn != -1) {
-		      n_neigh.push_back(inn);
+		    tag = ny * i + j;
+		    if (tag < nnodes) {
+		      inn = (*map_ntag)[tag];
+		      if (inn != -1) {
+			n_neigh.push_back(inn);
+		      }
 		    }
 		  }
 		}
@@ -193,15 +201,21 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
 		for(int j=j0; j<j0+3;j++){
 		  if (nz>1){
 		    for(int k=k0; k<k0+3;k++){
-		      inn = (*map_ntag)[nz*ny*i+nz*j+k];
-		      if (inn != -1) {
-			n_neigh.push_back(inn);
+		      tag = nz * ny * i + nz * j + k;
+		      if (tag < nnodes) {
+			inn = (*map_ntag)[tag];
+			if (inn != -1) {
+			  n_neigh.push_back(inn);
+			}
 		      }
 		    }
 		  } else {
-		    inn = (*map_ntag)[ny*i+j];
-		    if (inn != -1) {
-		      n_neigh.push_back(inn);
+		    tag = ny * i + j;
+		    if (tag < nnodes) {
+		      inn = (*map_ntag)[tag];
+		      if (inn != -1) {
+			n_neigh.push_back(inn);
+		      }
 		    }
 		  }
 		}
@@ -223,15 +237,21 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
 		for(int j=j0; j<j0+4;j++){
 		  if (nz>1){
 		    for(int k=k0; k<k0+4;k++){
-		      inn = (*map_ntag)[nz*ny*i+nz*j+k];
+		      tag = nz * ny * i + nz * j + k;
+			if (tag < nnodes) {
+			  inn = (*map_ntag)[nz*ny*i+nz*j+k];
+			  if (inn != -1) {
+			    n_neigh.push_back(inn);
+			  }
+			}
+		    }
+		  } else {
+		    tag = ny * i + j;
+		    if (tag < nnodes) {
+		      inn = (*map_ntag)[ny*i+j];
 		      if (inn != -1) {
 			n_neigh.push_back(inn);
 		      }
-		    }
-		  } else {
-		    inn = (*map_ntag)[ny*i+j];
-		    if (inn != -1) {
-		      n_neigh.push_back(inn);
 		    }
 		  }
 		}
