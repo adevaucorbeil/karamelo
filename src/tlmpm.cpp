@@ -361,7 +361,47 @@ void TLMPM::particles_to_grid()
       domain->solids[isolid]->compute_external_temperature_driving_forces_nodes(grid_reset);
       domain->solids[isolid]->compute_internal_temperature_driving_forces_nodes();
     }
-    domain->solids[isolid]->grid->reduce_ghost_nodes(false, temp);
+    domain->solids[isolid]->grid->reduce_ghost_nodes(true, true, temp);
+  }
+}
+
+void TLMPM::particles_to_grid_USF_1()
+{
+  bool grid_reset = true; // Indicate if the grid quantities have to be reset
+  if (update_mass_nodes) {
+    for (int isolid=0; isolid<domain->solids.size(); isolid++){
+      domain->solids[isolid]->compute_mass_nodes(grid_reset);
+      domain->solids[isolid]->grid->reduce_mass_ghost_nodes();
+    }
+    update_mass_nodes = false;
+  }
+
+  for (int isolid=0; isolid<domain->solids.size(); isolid++){
+    if (update->sub_method_type == Update::SubMethodType::APIC)
+      domain->solids[isolid]->compute_velocity_nodes_APIC(grid_reset);
+    else
+      domain->solids[isolid]->compute_velocity_nodes(grid_reset);
+
+    if (temp)
+      domain->solids[isolid]->compute_temperature_nodes(grid_reset);
+
+    domain->solids[isolid]->grid->reduce_ghost_nodes(true, false, temp);
+  }
+}
+
+void TLMPM::particles_to_grid_USF_2()
+{
+  bool grid_reset = true; // Indicate if the grid quantities have to be reset
+
+  for (int isolid=0; isolid<domain->solids.size(); isolid++){
+    domain->solids[isolid]->compute_external_forces_nodes(grid_reset);
+    domain->solids[isolid]->compute_internal_forces_nodes_TL();
+
+    if (temp) {
+      domain->solids[isolid]->compute_external_temperature_driving_forces_nodes(grid_reset);
+      domain->solids[isolid]->compute_internal_temperature_driving_forces_nodes();
+    }
+    domain->solids[isolid]->grid->reduce_ghost_nodes(false, true, temp);
   }
 }
 
@@ -407,7 +447,7 @@ void TLMPM::velocities_to_grid()
     if (temp) {
       domain->solids[isolid]->compute_temperature_nodes(true);
     }
-    domain->solids[isolid]->grid->reduce_ghost_nodes(true, temp);
+    domain->solids[isolid]->grid->reduce_ghost_nodes(true, false, temp);
   }
 }
 

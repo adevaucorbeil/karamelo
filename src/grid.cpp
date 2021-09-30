@@ -878,17 +878,13 @@ void Grid::reduce_rigid_ghost_nodes() {
   }
 }
 
-void Grid::reduce_ghost_nodes(bool only_v, bool temp) {
+void Grid::reduce_ghost_nodes(bool reduce_v, bool reduce_forces, bool temp) {
   vector<vector<double>> tmp_vect(universe->nprocs);
   vector<vector<double>> buf_recv_vect(universe->nprocs);
   //vector<double> tmp_mass;
   int j, k, m, size_r, size_s, jproc, nsend;
 
-  if (only_v) {
-    nsend = 3 + temp;
-  } else {
-    nsend = (3 + temp) * 3;
-  }
+  nsend = (3 + temp) * (reduce_v + 2*reduce_forces);
 
   // 1. Pack mass of nodes to be sent back to their owner:
   for (int iproc = 0; iproc < universe->nprocs; iproc++) {
@@ -920,10 +916,12 @@ void Grid::reduce_ghost_nodes(bool only_v, bool temp) {
           if (map_ntag[j] != -1) {
             m = map_ntag[j];
             //k = nsend * is;
-            tmp_vect[iproc][k++] = v[m][0];
-            tmp_vect[iproc][k++] = v[m][1];
-            tmp_vect[iproc][k++] = v[m][2];
-            if (!only_v) {
+	    if (reduce_v) {
+	      tmp_vect[iproc][k++] = v[m][0];
+	      tmp_vect[iproc][k++] = v[m][1];
+	      tmp_vect[iproc][k++] = v[m][2];
+	    }
+            if (reduce_forces) {
               tmp_vect[iproc][k++] = f[m][0];
               tmp_vect[iproc][k++] = f[m][1];
               tmp_vect[iproc][k++] = f[m][2];
@@ -934,8 +932,9 @@ void Grid::reduce_ghost_nodes(bool only_v, bool temp) {
             }
 
 	    if (temp) {
-	      tmp_vect[iproc][k++] = T[m];
-	      if (!only_v) {
+	      if (reduce_v)
+		tmp_vect[iproc][k++] = T[m];
+	      if (reduce_forces) {
 		tmp_vect[iproc][k++] = Qint[m];
 		tmp_vect[iproc][k++] = Qext[m];
 	      }	      
@@ -976,10 +975,12 @@ void Grid::reduce_ghost_nodes(bool only_v, bool temp) {
 	//mass[map_ntag[j]] += buf_recv_vect[idest->first][is];
 	m = map_ntag[j];
 	//k = nsend * is;
-	v[m][0] += buf_recv_vect[idest->first][k++];
-	v[m][1] += buf_recv_vect[idest->first][k++];
-	v[m][2] += buf_recv_vect[idest->first][k++];
-	if (!only_v) {
+	if (reduce_v) {
+	  v[m][0] += buf_recv_vect[idest->first][k++];
+	  v[m][1] += buf_recv_vect[idest->first][k++];
+	  v[m][2] += buf_recv_vect[idest->first][k++];
+	}
+	if (reduce_forces) {
 	  f[m][0] += buf_recv_vect[idest->first][k++];
 	  f[m][1] += buf_recv_vect[idest->first][k++];
 	  f[m][2] += buf_recv_vect[idest->first][k++];
@@ -990,8 +991,9 @@ void Grid::reduce_ghost_nodes(bool only_v, bool temp) {
 	}
 
 	if (temp) {
-	  T[m] += buf_recv_vect[idest->first][k++];
-	  if (!only_v) {
+	  if (reduce_v)
+	    T[m] += buf_recv_vect[idest->first][k++];
+	  if (reduce_forces) {
 	    Qint[m] += buf_recv_vect[idest->first][k++];
 	    Qext[m] += buf_recv_vect[idest->first][k++];
 	  }
@@ -1026,10 +1028,12 @@ void Grid::reduce_ghost_nodes(bool only_v, bool temp) {
           if (map_ntag[j] != -1) {
             m = map_ntag[j];
             //k = nsend * is;
-            tmp_vect[jproc][k++] = v[m][0];
-            tmp_vect[jproc][k++] = v[m][1];
-            tmp_vect[jproc][k++] = v[m][2];
-            if (!only_v) {
+	    if (reduce_v) {
+	      tmp_vect[jproc][k++] = v[m][0];
+	      tmp_vect[jproc][k++] = v[m][1];
+	      tmp_vect[jproc][k++] = v[m][2];
+	    }
+            if (reduce_forces) {
               tmp_vect[jproc][k++] = f[m][0];
               tmp_vect[jproc][k++] = f[m][1];
               tmp_vect[jproc][k++] = f[m][2];
@@ -1040,8 +1044,9 @@ void Grid::reduce_ghost_nodes(bool only_v, bool temp) {
             }
 
 	    if (temp) {
-	      tmp_vect[jproc][k++] = T[m];
-	      if (!only_v) {
+	      if (reduce_v)
+		tmp_vect[jproc][k++] = T[m];
+	      if (reduce_forces) {
 		tmp_vect[jproc][k++] = Qint[m];
 		tmp_vect[jproc][k++] = Qext[m];
 	      }	      
@@ -1094,10 +1099,12 @@ void Grid::reduce_ghost_nodes(bool only_v, bool temp) {
           if (map_ntag[j] != -1) {
 	    m = map_ntag[j];
             //k = nsend * is;
-            v[m][0] = buf_recv_vect[iproc][k++];
-            v[m][1] = buf_recv_vect[iproc][k++];
-            v[m][2] = buf_recv_vect[iproc][k++];
-            if (!only_v) {
+	    if (reduce_v) {
+	      v[m][0] = buf_recv_vect[iproc][k++];
+	      v[m][1] = buf_recv_vect[iproc][k++];
+	      v[m][2] = buf_recv_vect[iproc][k++];
+	    }
+            if (reduce_forces) {
               f[m][0] = buf_recv_vect[iproc][k++];
               f[m][1] = buf_recv_vect[iproc][k++];
               f[m][2] = buf_recv_vect[iproc][k++];
@@ -1108,8 +1115,9 @@ void Grid::reduce_ghost_nodes(bool only_v, bool temp) {
             }
 
             if (temp) {
-              T[m] = buf_recv_vect[iproc][k++];
-              if (!only_v) {
+	      if (reduce_v)
+		T[m] = buf_recv_vect[iproc][k++];
+              if (reduce_forces) {
                 Qint[m] = buf_recv_vect[iproc][k++];
                 Qext[m] = buf_recv_vect[iproc][k++];
               }
