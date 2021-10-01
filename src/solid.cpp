@@ -306,7 +306,7 @@ void Solid::grow(int nparticles)
   wf_np.resize(nnodes);
   wfd_np.resize(nnodes);
 
-  if (update->method->temp) {
+  if (mat->temp != nullptr) {
     T.resize(nparticles);
     gamma.resize(nparticles);
     q.resize(nparticles);
