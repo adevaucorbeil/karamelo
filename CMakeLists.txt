@@ -7,8 +7,6 @@ if(Git_FOUND)
   message("Git found: ${GIT_EXECUTABLE}")
 endif()
 
-cmake_policy(SET CMP0004 OLD)
-
 project(karamelo)
 
 if(WIN32)
@@ -45,6 +43,9 @@ execute_process(COMMAND
 
 # generate version.cpp
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/src/version.cpp.in" "${CMAKE_CURRENT_SOURCE_DIR}/src/version.cpp" @ONLY)
+
+set(Kokkos_ENABLE_CUDA ON)
+set(Kokkos_ENABLE_CUDA_LAMBDA ON)
 
 file(GLOB MyCSources src/*.cpp)
 add_executable(karamelo ${MyCSources})

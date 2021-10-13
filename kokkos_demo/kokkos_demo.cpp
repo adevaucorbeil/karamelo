@@ -1,6 +1,5 @@
 #include <Kokkos_Core.hpp>
 
-#include <kokkos_test.h>
 #include <mls_mpm.h>
 
 int main(int argc,
@@ -8,8 +7,7 @@ int main(int argc,
 {
   Kokkos::initialize(argc, argv);
 
-  kokkos_test();
-  mls_mpm();
+  mls_mpm<8000>();
 
   Kokkos::finalize();
 }
