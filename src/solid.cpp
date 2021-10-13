@@ -306,7 +306,7 @@ void Solid::grow(int nparticles)
   wf_np.resize(nnodes);
   wfd_np.resize(nnodes);
 
-  if (update->method->temp) {
+  if (mat->temp != nullptr) {
     T.resize(nparticles);
     gamma.resize(nparticles);
     q.resize(nparticles);
@@ -1029,7 +1029,7 @@ void Solid::compute_rate_deformation_gradient_TL_APIC(bool doublemapping)
       }
       Fdot[ip] *= Di;
     }
-  } else if (domain->dimension == 2) {
+  } else if ((domain->dimension == 2) && (domain->axisymmetric == false)) {
     for (int ip=0; ip<np_local; ip++){
       Fdot[ip].setZero();
       for (int j=0; j<numneigh_pn[ip]; j++){
@@ -1039,6 +1039,20 @@ void Solid::compute_rate_deformation_gradient_TL_APIC(bool doublemapping)
 	Fdot[ip](0,1) += (*vn)[in][0]*dx[1]*wf_pn[ip][j];
 	Fdot[ip](1,0) += (*vn)[in][1]*dx[0]*wf_pn[ip][j];
 	Fdot[ip](1,1) += (*vn)[in][1]*dx[1]*wf_pn[ip][j];
+      }
+      Fdot[ip] *= Di;
+    }
+  } else if ((domain->dimension == 2) && (domain->axisymmetric == true)) {
+    for (int ip=0; ip<np_local; ip++){
+      Fdot[ip].setZero();
+      for (int j=0; j<numneigh_pn[ip]; j++){
+	in = neigh_pn[ip][j];
+	dx = (*x0n)[in] - x0[ip];
+	Fdot[ip](0,0) += (*vn)[in][0]*dx[0]*wf_pn[ip][j];
+	Fdot[ip](0,1) += (*vn)[in][0]*dx[1]*wf_pn[ip][j];
+	Fdot[ip](1,0) += (*vn)[in][1]*dx[0]*wf_pn[ip][j];
+	Fdot[ip](1,1) += (*vn)[in][1]*dx[1]*wf_pn[ip][j];
+        Fdot[ip](2,2) += (*vn)[in][0] * wf_pn[ip][j] / x0[ip][0];
       }
       Fdot[ip] *= Di;
     }
@@ -1089,7 +1103,7 @@ void Solid::compute_rate_deformation_gradient_UL_APIC(bool doublemapping)
       }
       L[ip] *= Di;
     }
-  } else if (domain->dimension == 2) {
+  } else if ((domain->dimension == 2) && (domain->axisymmetric == false)) {
     for (int ip=0; ip<np_local; ip++){
       L[ip].setZero();
       for (int j=0; j<numneigh_pn[ip]; j++){
@@ -1099,6 +1113,20 @@ void Solid::compute_rate_deformation_gradient_UL_APIC(bool doublemapping)
 	L[ip](0,1) += (*vn)[in][0]*dx[1]*wf_pn[ip][j];
 	L[ip](1,0) += (*vn)[in][1]*dx[0]*wf_pn[ip][j];
 	L[ip](1,1) += (*vn)[in][1]*dx[1]*wf_pn[ip][j];
+      }
+      L[ip] *= Di;
+    }
+  } else if ((domain->dimension == 2) && (domain->axisymmetric == true)) {
+    for (int ip=0; ip<np_local; ip++){
+      L[ip].setZero();
+      for (int j=0; j<numneigh_pn[ip]; j++){
+	in = neigh_pn[ip][j];
+	dx = (*x0n)[in] - x[ip];
+	L[ip](0,0) += (*vn)[in][0]*dx[0]*wf_pn[ip][j];
+	L[ip](0,1) += (*vn)[in][0]*dx[1]*wf_pn[ip][j];
+	L[ip](1,0) += (*vn)[in][1]*dx[0]*wf_pn[ip][j];
+	L[ip](1,1) += (*vn)[in][1]*dx[1]*wf_pn[ip][j];
+	L[ip](2,2) += (*vn)[in][0] * wf_pn[ip][j] / x[ip][0];
       }
       L[ip] *= Di;
     }

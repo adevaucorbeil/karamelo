@@ -40,6 +40,8 @@ class ULCPDI : public Method {
   double (*basis_function)(double, int);
   double (*derivative_basis_function)(double, int, double);
   void particles_to_grid();
+  void particles_to_grid_USF_1();
+  void particles_to_grid_USF_2();
   void update_grid_state();
   void grid_to_points();
   void advance_particles();

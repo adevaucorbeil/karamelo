@@ -374,8 +374,64 @@ void ULMPM::particles_to_grid() {
       domain->solids[isolid]->compute_internal_temperature_driving_forces_nodes();
     }
   }
-  domain->grid->reduce_ghost_nodes(false, temp);
+  domain->grid->reduce_ghost_nodes(true, true, temp);
 }
+
+void ULMPM::particles_to_grid_USF_1() {
+  bool grid_reset = false; // Indicate if the grid quantities have to be reset
+  for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
+
+    if (isolid == 0)
+      grid_reset = true;
+    else
+      grid_reset = false;
+
+    domain->solids[isolid]->compute_mass_nodes(grid_reset);
+  }
+
+  domain->grid->reduce_mass_ghost_nodes();
+
+  for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
+
+    if (isolid == 0)
+      grid_reset = true;
+    else
+      grid_reset = false;
+
+    if (apic)
+      domain->solids[isolid]->compute_velocity_nodes_APIC(grid_reset);
+    else
+      domain->solids[isolid]->compute_velocity_nodes(grid_reset);
+    if (temp)
+      domain->solids[isolid]->compute_temperature_nodes(grid_reset);
+  }
+  domain->grid->reduce_ghost_nodes(true, false, temp);
+}
+
+void ULMPM::particles_to_grid_USF_2() {
+  bool grid_reset = false; // Indicate if the grid quantities have to be reset
+
+  for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
+
+    if (isolid == 0)
+      grid_reset = true;
+    else
+      grid_reset = false;
+
+    if (update->sub_method_type == update->SubMethodType::MLS) {
+      domain->solids[isolid]->compute_external_and_internal_forces_nodes_UL_MLS(grid_reset);
+    } else {
+      domain->solids[isolid]->compute_external_and_internal_forces_nodes_UL(grid_reset);
+    }
+
+    if (temp) {
+      domain->solids[isolid]->compute_external_temperature_driving_forces_nodes(grid_reset);
+      domain->solids[isolid]->compute_internal_temperature_driving_forces_nodes();
+    }
+  }
+  domain->grid->reduce_ghost_nodes(false, true, temp);
+}
+
 
 void ULMPM::update_grid_state() {
   domain->grid->update_grid_velocities();
@@ -436,7 +492,7 @@ void ULMPM::velocities_to_grid()
       domain->solids[isolid]->compute_temperature_nodes(grid_reset);
     }
   }
-  domain->grid->reduce_ghost_nodes(true, temp);
+  domain->grid->reduce_ghost_nodes(true, false, temp);
 }
 
 void ULMPM::compute_rate_deformation_gradient(bool doublemapping) {

@@ -414,6 +414,41 @@ void ULCPDI::particles_to_grid()
   }
 }
 
+void ULCPDI::particles_to_grid_USF_1()
+{
+  bool grid_reset = false; // Indicate if the grid quantities have to be reset
+  for (int isolid=0; isolid<domain->solids.size(); isolid++){
+
+    if (isolid == 0) grid_reset = true;
+    else grid_reset = false;
+
+    domain->solids[isolid]->compute_mass_nodes(grid_reset);
+  }
+  for (int isolid=0; isolid<domain->solids.size(); isolid++){
+
+    if (isolid == 0) grid_reset = true;
+    else grid_reset = false;
+
+    if (method_type.compare("APIC") == 0)
+      domain->solids[isolid]->compute_velocity_nodes_APIC(grid_reset);
+    else
+      domain->solids[isolid]->compute_velocity_nodes(grid_reset);
+  }
+}
+
+void ULCPDI::particles_to_grid_USF_2()
+{
+  bool grid_reset = false; // Indicate if the grid quantities have to be reset
+  for (int isolid=0; isolid<domain->solids.size(); isolid++){
+
+    if (isolid == 0) grid_reset = true;
+    else grid_reset = false;
+
+    domain->solids[isolid]->compute_external_and_internal_forces_nodes_UL(grid_reset);
+    /*compute_thermal_energy_nodes();*/
+  }
+}
+
 void ULCPDI::update_grid_state()
 {
   domain->grid->update_grid_velocities();

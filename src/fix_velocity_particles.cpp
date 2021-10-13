@@ -89,7 +89,7 @@ FixVelocityParticles::FixVelocityParticles(MPM *mpm, vector<string> args) : Fix(
 
       // Replace "time" by "time - dt" in the y argument:
       previous = SpecialFunc::replace_all(input->parsev(previous).str(), "time", "(time - dt)");
-      xprevvalue = input->parsev(previous);
+      yprevvalue = input->parsev(previous);
     }
   }
 
@@ -102,7 +102,7 @@ FixVelocityParticles::FixVelocityParticles(MPM *mpm, vector<string> args) : Fix(
 
       // Replace "time" by "time - dt" in the z argument:
       previous = SpecialFunc::replace_all(input->parsev(previous).str(), "time", "(time - dt)");
-      xprevvalue = input->parsev(previous);
+      zprevvalue = input->parsev(previous);
     }
   }
 }
@@ -163,7 +163,7 @@ void FixVelocityParticles::initial_integrate() {
 	    s->v_update[ip][2] = zvalue.result(mpm);
 	    s->v[ip][2] = zprevvalue.result(mpm);
 	  }
-	  // if (s->ptag[ip] == 533) {
+	  // if (s->ptag[ip] == 4371) {
 	  //   printf("fix: v=[%4.3e %4.3e %4.3e]\tv_update=[%4.3e %4.3e %4.3e]\ta=[%4.3e %4.3e %4.3e]\n", s->v[ip][0], s->v[ip][1], s->v[ip][2], s->v_update[ip][0], s->v_update[ip][1], s->v_update[ip][2], s->a[ip][0], s->a[ip][1], s->a[ip][2]);
 	  // }
 	  xold.push_back(xtemp);
@@ -197,7 +197,7 @@ void FixVelocityParticles::initial_integrate() {
 	  s->v_update[ip][2] = zvalue.result(mpm);
 	  s->v[ip][2] = zprevvalue.result(mpm);
 	}
-	// if (s->ptag[ip] == 533) {
+	// if (s->ptag[ip] == 4371) {
 	//   printf("fix: v=[%4.3e %4.3e %4.3e]\tv_update=[%4.3e %4.3e %4.3e]\ta=[%4.3e %4.3e %4.3e]\n", s->v[ip][0], s->v[ip][1], s->v[ip][2], s->v_update[ip][0], s->v_update[ip][1], s->v_update[ip][2], s->a[ip][0], s->a[ip][1], s->a[ip][2]);
 	// }
 	xold.push_back(xtemp);
