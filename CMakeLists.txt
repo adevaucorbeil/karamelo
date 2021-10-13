@@ -12,7 +12,10 @@ project(karamelo)
 if(WIN32)
   set(EIGEN3_INCLUDE_DIR "C:/Program Files/Eigen")
 else()
-  find_package(Eigen3 REQUIRED NO_MODULE)
+  find_package(Eigen3 NO_MODULE)
+  if(NOT ${Eigen3_FOUND})
+    message("EIGEN_CFLAGS: $ENV{EIGEN_CFLAGS}")
+  endif()
 endif()
 
 find_package(MPI REQUIRED)
@@ -44,8 +47,7 @@ execute_process(COMMAND
 # generate version.cpp
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/src/version.cpp.in" "${CMAKE_CURRENT_SOURCE_DIR}/src/version.cpp" @ONLY)
 
-set(Kokkos_ENABLE_CUDA ON)
-set(Kokkos_ENABLE_CUDA_LAMBDA ON)
+add_definitions(-D_POSIX_C_SOURCE=200809L)
 
 file(GLOB MyCSources src/*.cpp)
 add_executable(karamelo ${MyCSources})
@@ -60,7 +62,7 @@ add_subdirectory(third-party/kokkos)
 
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DDEBUG")
 
-target_compile_options(${PROJECT_NAME} PRIVATE ${MPI_CXX_COMPILE_FLAGS})
+target_compile_options(${PROJECT_NAME} PRIVATE ${MPI_CXX_COMPILE_FLAGS} $ENV{EIGEN_CFLAGS})
 if(!WIN32)
   target_compile_options(${PROJECT_NAME} PRIVATE "-march=native")
   set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
