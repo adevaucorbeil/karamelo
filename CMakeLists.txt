@@ -44,8 +44,7 @@ execute_process(COMMAND
 # generate version.cpp
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/src/version.cpp.in" "${CMAKE_CURRENT_SOURCE_DIR}/src/version.cpp" @ONLY)
 
-set(Kokkos_ENABLE_CUDA ON)
-set(Kokkos_ENABLE_CUDA_LAMBDA ON)
+add_definitions(-D_POSIX_C_SOURCE=200809L)
 
 file(GLOB MyCSources src/*.cpp)
 add_executable(karamelo ${MyCSources})
