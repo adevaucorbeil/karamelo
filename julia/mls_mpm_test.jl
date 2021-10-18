@@ -119,7 +119,7 @@ function P2G(x, v, F, Jp, C, material, n_particles, grid_v, grid_m, n_grid, dt, 
         if material[p] == 0  # liquid
             mu = 0.0
         end
-        #U, sig, V = ti.svd(F[p])
+        U, sig, V = svd(F[p])
         J = 1.0
         #for d in ti.static(range(2))
         #    new_sig = sig[d, d]
@@ -151,7 +151,46 @@ function P2G(x, v, F, Jp, C, material, n_particles, grid_v, grid_m, n_grid, dt, 
     return nothing
 end
 
-
+@inline function svd(A)
+    x = A[1, 1] + A[2, 2]
+    y = A[2, 1] - A[1, 2]
+    scale = 1/sqrt(x*x + y*y)
+    c = x*scale
+    s = y*scale
+    R = SMatrix{2,2}(c, -s, s, c)
+    S = transpose(R)*A
+    s1 = 0.0
+    s2 = 0.0
+    if (abs(S[1, 2]) < 1e-5)
+        c = 1.0;
+        s = 0.0;
+    else
+        tao = 0.5*(S[1, 1] - S[2, 2])
+        w = CUDA.sqrt(tao*tao + S[1, 2]*S[1, 2])
+        t = 0.0
+        if (tao > 0.0)
+            t = S[1, 2]/(tao + w);
+        else
+            t = S[1, 2]/(tao - w);
+        end
+        c = 1/CUDA.sqrt(t*t + 1);
+        s = -t*c;
+        s1 = c*c*S[1, 1] - 2*c*s*S[1, 2] + s*s*S[2, 2];
+        s2 = s*s*S[1, 1] + 2*c*s*S[1, 2] + c*c*S[2, 2];
+    end
+       
+    if (s1 < s2)
+        tmp = s1
+        s1 = s2;
+        s2 = tmp;
+        V = SMatrix{2,2}(-s, c, -c, -s);
+    else
+        V = SMatrix{2,2}(c, s, -s, c);
+    end
+    U = R*V;
+    sig = SMatrix{2,2}(s1, 0.0, 0.0, s2);
+    return U, sig, V
+end
 
 @krun n_particles reset(x, v, F, Jp, C, t, u, n_particles)
 
