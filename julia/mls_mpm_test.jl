@@ -228,10 +228,10 @@ function grid_update(grid_vx, grid_vy, grid_m, n_grid, gravity_x, gravity_y, att
     return nothing
 end
 
-function G2P(x, v, C, n_particles, grid_v, dt, inv_dx)
+function G2P(x, v, C, n_particles, grid_vx, grid_vy, dt, inv_dx)
     p = (blockIdx().x - 1)*blockDim().x + threadIdx().x
     if (p <= n_particles)
-        base = SVector{2, Int}(convert(Int, (x[p][1]*inv_dx - 0.5)÷1), convert(Int, (x[p][2]*inv_dx - 0.5)÷1))
+        base = SVector{2, Int}((x[p][1]*inv_dx - 0.5)÷1, (x[p][2]*inv_dx - 0.5)÷1)
         fx = x[p]*inv_dx - base
         ## Quadratic kernels  [http://mpm.graphics   Eqn. 123, with x=fx, fx-1,fx-2]
         wx = SVector{3}(0.5*(1.5 - fx[1])^2, 0.75 - (fx[1] - 1)^2, 0.5*(fx[1] - 0.5)^2)
@@ -241,15 +241,16 @@ function G2P(x, v, C, n_particles, grid_v, dt, inv_dx)
         for i in 1:3
             for j in 1:3
                 index = base - SVector{2, Int}(i - 1, j - 1)
-                #dpos = SVector{2}(i, j) - fx
+        #        #dpos = SVector{2}(i, j) - fx
                 dpos = SVector{2}(i - 1, j - 1) - x[p]*inv_dx + base
-                g_v = grid_v[index[1], index[2]]
+                @inbounds g_v = SVector{2}(grid_vx[index[1], index[2]],grid_vy[index[1], index[2]])
                 weight = wx[i] * wy[j]
                 new_v += weight * g_v
-                new_C += 4*inv_dx*weight*SMatrix{2, 2}(g_v[1]*dpos[1], gv[1]*dpos[2], gv[2]*dpos[1], gv[2]*dpos[2])
+                new_C += 4*inv_dx*weight*SMatrix{2, 2}(g_v[1]*dpos[1], g_v[1]*dpos[2], g_v[2]*dpos[1], g_v[2]*dpos[2])
             end
         end
-        v[p], C[p] = new_v, new_C
+        v[p] = new_v
+        C[p] = new_C
         x[p] += dt*v[p]  # advection
     end
     return nothing
@@ -264,7 +265,7 @@ function substep()
 
     @krun n_grid^2 grid_update(grid_vx, grid_vy, grid_m, n_grid, gravity_x, gravity_y, attractor_strength, attractor_pos_x, attractor_pos_y, dt, dx)
 
-    #@krun n_particles G2P(x, v, C, n_particles, grid_v, dt, inv_dx)
+    @krun n_particles G2P(x, v, C, n_particles, grid_vx, grid_vy, dt, inv_dx)
 end
 
 gravity = CUDA.zeros(Float64, 2)
