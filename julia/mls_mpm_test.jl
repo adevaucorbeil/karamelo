@@ -40,7 +40,8 @@ C = CuArray{SMatrix{2,2, Float64, 4}}(undef, n_particles) # affine velocity fiel
 Jp = CUDA.zeros(Float64, n_particles)  # plastic deformation
 material = CUDA.ones(Int64, n_particles)  # material
 
-grid_v = CuArray{SVector{2, Float64}}(undef, n_grid, n_grid) # position
+grid_vx = CUDA.zeros(Float64, n_grid, n_grid) # position along x
+grid_vy = CUDA.zeros(Float64, n_grid, n_grid) # position along y
 grid_m = CUDA.zeros(Float64, n_grid, n_grid)  # grid node mass
 
 gravity_x = 0.0
@@ -87,25 +88,27 @@ function reset(x, v, F, Jp, C, t, u, n_particles)
     return nothing
 end
 
-function reset_grid(grid_v, grid_m, n_grid)
+function reset_grid(grid_vx, grid_vy, grid_m, n_grid)
     ii = (blockIdx().x - 1)*blockDim().x + threadIdx().x
 
     i = (ii - 1)%n_grid + 1
     j = (ii - 1)÷n_grid + 1
 
     if (i <= n_grid && j <= n_grid)
-        grid_v[i,j] = SVector{2}(0, 0)
-        grid_m[i,j] = 0
+        grid_vx[i,j] = 0.0
+        grid_vy[i,j] = 0.0
+        grid_m[i,j] = 0.0
     end
     return nothing
 end
 
 
-function P2G(x, v, F, Jp, C, material, n_particles, grid_v, grid_m, n_grid, dt, inv_dx, mu_0, lambda_0)
+function P2G(x, v, F, Jp, C, material, n_particles, grid_vx, grid_vy, grid_m, n_grid, dt, inv_dx, mu_0, lambda_0, p_mass, p_vol)
     p = (blockIdx().x - 1)*blockDim().x + threadIdx().x
 
     if (p <= n_particles)
-        base = SVector{2}((x[p][1]*inv_dx - 0.5)÷1, (x[p][2]*inv_dx - 0.5)÷1)
+        base = SVector{2, Int}((x[p][1]*inv_dx - 0.5)÷1, (x[p][2]*inv_dx - 0.5)÷1)
+        #@cuprintf("base=[%ld, %ld]\n", base[1], base[2])
         fx = x[p]*inv_dx - base
         ## Quadratic kernels  [http://mpm.graphics   Eqn. 123, with x=fx, fx-1,fx-2]
         wx = SVector{3}(0.5*(1.5 - fx[1])^2, 0.75 - (fx[1] - 1)^2, 0.5*(fx[1] - 0.5)^2)
@@ -123,31 +126,32 @@ function P2G(x, v, F, Jp, C, material, n_particles, grid_v, grid_m, n_grid, dt, 
         end
         U, sig, V = svd(F[p])
         J = 1.0
-        for d in range(2)
-            new_sig = sig[d, d]
-            if material[p] == 2  # Snow
-                new_sig = min(max(sig[d, d], 1 - 2.5e-2), 1 + 4.5e-3)  # Plasticity
-            end
-            Jp[p] *= sig[d, d] / new_sig
-            sig[d, d] = new_sig
-            J *= new_sig
-        end
+        #for d in 1:2
+        #    new_sig = sig[d, d]
+        #    if material[p] == 2  # Snow
+        #        new_sig = min(max(sig[d, d], 1 - 2.5e-2), 1 + 4.5e-3)  # Plasticity
+        #    end
+        #    Jp[p] *= sig[d, d] / new_sig
+        #    sig[d, d] = new_sig
+        #    J *= new_sig
+        #end
         if material[p] == 0  # Reset deformation gradient to avoid numerical instability
             F[p] = SMatrix{2, 2}(1.0, 0.0, 0.0, 1.0)*sqrt(J)
         elseif material[p] == 2
             F[p] = U*sig*transpose(V)  # Reconstruct elastic deformation gradient after plasticity
         end
         # stress = 2*mu*(F[p] - transpose(inv(F[p]))) + SMatrix{2,2}(1.0, 0.0, 0.0, 1.0)*la*J*(J - 1)
-        stress = 2*mu*(F[p] - U*transpose(V))*transpose(F[p]) + SMatrix{2,2}(1.0, 0.0, 0.0, 1.0)*la*J*(J - 1)
-        stress = (-dt*p_vol*4*inv_dx*inv_dx)*stress
+        stress = (-dt*p_vol*4*inv_dx*inv_dx)*(2*mu*(F[p] - U*transpose(V))*transpose(F[p]) + SMatrix{2,2}(1.0, 0.0, 0.0, 1.0)*la*J*(J - 1))
         affine = stress + p_mass*C[p]
         for i in 1:3
             for j in 1:3
                 index = base - SVector{2, Int}(i - 1, j - 1)
                 dpos = SVector{2}(i - 1, j - 1) - x[p]*inv_dx + base
                 weight = wx[i]*wy[j]
-                grid_v[index[1], index[2]] += weight*(p_mass*v[p] + affine*dpos)
-                grid_m[index[1], index[2]] += weight*p_mass
+                dv = weight*(p_mass*v[p] + affine*dpos)
+                @inbounds @atomic grid_vx[index[1], index[2]] += dv[1]
+                @inbounds @atomic grid_vy[index[1], index[2]] += dv[2]
+                @inbounds @atomic grid_m[index[1], index[2]] += weight*p_mass
             end
         end
     end
@@ -195,7 +199,7 @@ end
     return U, sig, V
 end
 
-function grid_update(grid_v, grid_m, n_grid, gravity_x, gravity_y, attractor_strength, attractor_pos_x, attractor_pos_y, dt, dx)
+function grid_update(grid_vx, grid_vy, grid_m, n_grid, gravity_x, gravity_y, attractor_strength, attractor_pos_x, attractor_pos_y, dt, dx)
     ii = (blockIdx().x - 1)*blockDim().x + threadIdx().x
 
     i = (ii - 1)%n_grid + 1
@@ -251,13 +255,13 @@ end
 @krun n_particles reset(x, v, F, Jp, C, t, u, n_particles)
 
 function substep()
-    @krun n_grid^2 reset_grid(grid_v, grid_m, n_grid)
+    @krun n_grid^2 reset_grid(grid_vx, grid_vy, grid_m, n_grid)
     
-    @krun n_particles P2G(x, v, F, Jp, C, material, n_particles, grid_v, grid_m, n_grid, dt, inv_dx, mu_0, lambda_0)
+    @krun n_particles P2G(x, v, F, Jp, C, material, n_particles, grid_vx, grid_vy, grid_m, n_grid, dt, inv_dx, mu_0, lambda_0, p_mass, p_vol)
 
-    @krun n_grid^2 grid_update(grid_v, grid_m, n_grid, gravity_x, gravity_y, attractor_strength, attractor_pos_x, attractor_pos_y, dt, dx)
+    #@krun n_grid^2 grid_update(grid_vx, grid_vy, grid_m, n_grid, gravity_x, gravity_y, attractor_strength, attractor_pos_x, attractor_pos_y, dt, dx)
 
-    @krun n_particles G2P(x, v, C, n_particles, grid_v, dt, inv_dx)
+    #@krun n_particles G2P(x, v, C, n_particles, grid_v, dt, inv_dx)
 end
 
 gravity = CUDA.zeros(Float64, 2)
