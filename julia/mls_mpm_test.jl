@@ -13,6 +13,11 @@ macro krun(ex...)
         local $config = launch_configuration($kernel.fun)
         local $threads = min($len, $config.threads)
         local $blocks = cld($len, $threads)
+        print("Launch with ")
+        print($threads)
+        print(" threads and ")
+        print($blocks)
+        println(" blocks")
         $kernel($(args...); threads=$threads, blocks=$blocks)
     end
 
@@ -65,7 +70,7 @@ function reset(x, v, F, Jp, C, t, u, n_particles)
         v0 = 2
         group_size = n_particles÷2
 
-        solid = i÷group_size
+        solid = (i-1)÷group_size
         r = 0.0
         if u[i] > 1
             r = 2-u[i]
@@ -212,16 +217,16 @@ function grid_update(grid_vx, grid_vy, grid_m, n_grid, gravity_x, gravity_y, att
         dist = SVector{2}(attractor_pos_x, attractor_pos_y) - dx*SVector{2}(i, j)
         grid_vx[i, j] += dist[1]/(0.01 + sqrt(dist[1]*dist[1] + dist[2]*dist[2]))*attractor_strength*dt*100
         grid_vy[i, j] += dist[2]/(0.01 + sqrt(dist[1]*dist[1] + dist[2]*dist[2]))*attractor_strength*dt*100
-        if i < 3 && grid_vx[i, j] < 0
+        if i <= 3 && grid_vx[i, j] < 0
             grid_vx[i, j] = 0.0
         end
-        if i > n_grid - 3 && grid_vx[i, j] > 0
+        if i >= n_grid - 3 && grid_vx[i, j] > 0
             grid_vx[i, j] = 0.0
         end
-        if j < 3 && grid_vy[i, j] < 0
+        if j <= 3 && grid_vy[i, j] < 0
             grid_vy[i, j] = 0.0
         end
-        if j > n_grid - 3 && grid_vy[i, j] > 0
+        if j >= n_grid - 3 && grid_vy[i, j] > 0
             grid_vy[i, j] = 0.0
         end
     end
@@ -233,30 +238,41 @@ function G2P(x, v, C, n_particles, grid_vx, grid_vy, dt, inv_dx)
     if (p <= n_particles)
         base = SVector{2, Int}((x[p][1]*inv_dx - 0.5)÷1, (x[p][2]*inv_dx - 0.5)÷1)
         fx = x[p]*inv_dx - base
-        ## Quadratic kernels  [http://mpm.graphics   Eqn. 123, with x=fx, fx-1,fx-2]
+        ### Quadratic kernels  [http://mpm.graphics   Eqn. 123, with x=fx, fx-1,fx-2]
         wx = SVector{3}(0.5*(1.5 - fx[1])^2, 0.75 - (fx[1] - 1)^2, 0.5*(fx[1] - 0.5)^2)
         wy = SVector{3}(0.5*(1.5 - fx[2])^2, 0.75 - (fx[2] - 1)^2, 0.5*(fx[2] - 0.5)^2)
         new_v = SVector{2}(0.0, 0.0)
-        new_C = SMatrix{2}(0.0, 0.0, 0.0, 0.0)
+        new_C = SMatrix{2,2}(0.0, 0.0, 0.0, 0.0)
         for i in 1:3
             for j in 1:3
                 index = base - SVector{2, Int}(i - 1, j - 1)
         #        #dpos = SVector{2}(i, j) - fx
                 dpos = SVector{2}(i - 1, j - 1) - x[p]*inv_dx + base
-                @inbounds g_v = SVector{2}(grid_vx[index[1], index[2]],grid_vy[index[1], index[2]])
+                #        
+                if index[1] < 0 || index[1] > 128
+                    @cuprintf("p=%ld, index[1]=%ld, x=[%f, %f]\n", p, index[1], x[p][1], x[p][2])
+                end
+                if index[2] < 0 || index[2] > 128
+                    @cuprintf("p=%ld, index[2]=%ld, x=[%f, %f]\n", p, index[2], x[p][1], x[p][2])
+                end
+                g_v = SVector{2}(grid_vx[index[1], index[2]],grid_vy[index[1], index[2]])
                 weight = wx[i] * wy[j]
                 new_v += weight * g_v
-                new_C += 4*inv_dx*weight*SMatrix{2, 2}(g_v[1]*dpos[1], g_v[1]*dpos[2], g_v[2]*dpos[1], g_v[2]*dpos[2])
+                new_C += 4*inv_dx*weight*SMatrix{2,2}(g_v[1]*dpos[1], g_v[1]*dpos[2], g_v[2]*dpos[1], g_v[2]*dpos[2])#1.0, 1.0, 1.0, 1.0)
             end
         end
+        ##@cuprintf("C[%ld]=[%f, %f, %f, %f]", p, new_C[1], new_C[2], new_C[3], new_C[4])
         v[p] = new_v
         C[p] = new_C
-        x[p] += dt*v[p]  # advection
+        x[p] += dt*new_v  # advection
     end
     return nothing
 end
 
 @krun n_particles reset(x, v, F, Jp, C, t, u, n_particles)
+xHost = Array(x)
+pp = 165
+@printf("x[%ld]=[%f %f]\n", pp, xHost[pp][1], xHost[pp][2])
 
 function substep()
     @krun n_grid^2 reset_grid(grid_vx, grid_vy, grid_m, n_grid)
@@ -266,16 +282,19 @@ function substep()
     @krun n_grid^2 grid_update(grid_vx, grid_vy, grid_m, n_grid, gravity_x, gravity_y, attractor_strength, attractor_pos_x, attractor_pos_y, dt, dx)
 
     @krun n_particles G2P(x, v, C, n_particles, grid_vx, grid_vy, dt, inv_dx)
+    xHost = Array(x)
+    @printf("x[%ld]=[%f %f]\n", pp, xHost[pp][1], xHost[pp][2])
 end
 
 gravity = CUDA.zeros(Float64, 2)
 
-#for frame in 1:20000
-#    substep()
-#end
-substep()
+for frame in 1:20#0000
+    println("frame=$frame")
+    substep()
+end
 
-
+print("C=")
+println(Array(C))
 #FHost = Array(F)
 #println(FHost)
 println("Done")
