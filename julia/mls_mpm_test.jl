@@ -205,21 +205,24 @@ function grid_update(grid_vx, grid_vy, grid_m, n_grid, gravity_x, gravity_y, att
     i = (ii - 1)%n_grid + 1
     j = (ii - 1)÷n_grid + 1
     if i <= n_grid && j <= n_grid && grid_m[i, j] > 0  # No need for epsilon here
-        grid_v[i, j] = 1/grid_m[i, j]*grid_v[i, j]  # Momentum to velocity
-        grid_v[i, j] += dt*SVector{2}(gravity_x, gravity_y)*30  # gravity
+        grid_vx[i, j] = 1/grid_m[i, j]*grid_vx[i, j]  # Momentum to velocity
+        grid_vy[i, j] = 1/grid_m[i, j]*grid_vy[i, j]  # Momentum to velocity
+        grid_vx[i, j] += dt*gravity_x*30  # gravity
+        grid_vy[i, j] += dt*gravity_y*30  # gravity
         dist = SVector{2}(attractor_pos_x, attractor_pos_y) - dx*SVector{2}(i, j)
-        grid_v[i, j] += dist/(0.01 + sqrt(dist[1]*dist[1] + dist[2]*dist[2]))*attractor_strength*dt*100
-        if i < 3 && grid_v[i, j][1] < 0
-            grid_v[i, j] = SVector{2}(0, grid_v[i, j][2])  # Boundary conditions
+        grid_vx[i, j] += dist[1]/(0.01 + sqrt(dist[1]*dist[1] + dist[2]*dist[2]))*attractor_strength*dt*100
+        grid_vy[i, j] += dist[2]/(0.01 + sqrt(dist[1]*dist[1] + dist[2]*dist[2]))*attractor_strength*dt*100
+        if i < 3 && grid_vx[i, j] < 0
+            grid_vx[i, j] = 0.0
         end
-        if i > n_grid - 3 && grid_v[i, j][1] > 0
-            grid_v[i, j] = SVector{2}(0, grid_v[i, j][2])
+        if i > n_grid - 3 && grid_vx[i, j] > 0
+            grid_vx[i, j] = 0.0
         end
-        if j < 3 && grid_v[i, j][2] < 0
-            grid_v[i, j] = SVector{2}(grid_v[i, j][1], 0)
+        if j < 3 && grid_vy[i, j] < 0
+            grid_vy[i, j] = 0.0
         end
-        if j > n_grid - 3 && grid_v[i, j][2] > 0
-            grid_v[i, j] = SVector{2}(grid_v[i, j][1], 0)
+        if j > n_grid - 3 && grid_vy[i, j] > 0
+            grid_vy[i, j] = 0.0
         end
     end
     return nothing
@@ -259,7 +262,7 @@ function substep()
     
     @krun n_particles P2G(x, v, F, Jp, C, material, n_particles, grid_vx, grid_vy, grid_m, n_grid, dt, inv_dx, mu_0, lambda_0, p_mass, p_vol)
 
-    #@krun n_grid^2 grid_update(grid_vx, grid_vy, grid_m, n_grid, gravity_x, gravity_y, attractor_strength, attractor_pos_x, attractor_pos_y, dt, dx)
+    @krun n_grid^2 grid_update(grid_vx, grid_vy, grid_m, n_grid, gravity_x, gravity_y, attractor_strength, attractor_pos_x, attractor_pos_y, dt, dx)
 
     #@krun n_particles G2P(x, v, C, n_particles, grid_v, dt, inv_dx)
 end
