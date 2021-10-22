@@ -108,7 +108,7 @@ function reset_grid(grid_vx, grid_vy, grid_m, n_grid)
 end
 
 
-function P2G(x, v, F, Jp, C, material, n_particles, grid_vx, grid_vy, grid_m, n_grid, dt, inv_dx, mu_0, lambda_0, p_mass, p_vol)
+function P2G(x, v, F, Jp, C, material, n_particles, grid_vx, grid_vy, grid_m, n_grid, dt, dx, inv_dx, mu_0, lambda_0, p_mass, p_vol)
     p = (blockIdx().x - 1)*blockDim().x + threadIdx().x
 
     if (p <= n_particles)
@@ -126,9 +126,9 @@ function P2G(x, v, F, Jp, C, material, n_particles, grid_vx, grid_vy, grid_m, n_
         end
         mu = mu_0*h
         la = lambda_0*h
-        if material[p] == 0  # liquid
-            mu = 0.0
-        end
+        #if material[p] == 0  # liquid
+        #    mu = 0.0
+        #end
         U, sig, V = svd(F[p])
         J = 1.0
         #for d in 1:2
@@ -140,18 +140,18 @@ function P2G(x, v, F, Jp, C, material, n_particles, grid_vx, grid_vy, grid_m, n_
         #    sig[d, d] = new_sig
         #    J *= new_sig
         #end
-        if material[p] == 0  # Reset deformation gradient to avoid numerical instability
-            F[p] = SMatrix{2, 2}(1.0, 0.0, 0.0, 1.0)*sqrt(J)
-        elseif material[p] == 2
-            F[p] = U*sig*transpose(V)  # Reconstruct elastic deformation gradient after plasticity
-        end
-        # stress = 2*mu*(F[p] - transpose(inv(F[p]))) + SMatrix{2,2}(1.0, 0.0, 0.0, 1.0)*la*J*(J - 1)
+        #if material[p] == 0  # Reset deformation gradient to avoid numerical instability
+        #    F[p] = SMatrix{2, 2}(1.0, 0.0, 0.0, 1.0)*sqrt(J)
+        #elseif material[p] == 2
+        #    F[p] = U*sig*transpose(V)  # Reconstruct elastic deformation gradient after plasticity
+        #end
+        #stress = 2*mu*(F[p] - transpose(inv(F[p]))) + SMatrix{2,2}(1.0, 0.0, 0.0, 1.0)*la*J*(J - 1)
         stress = (-dt*p_vol*4*inv_dx*inv_dx)*(2*mu*(F[p] - U*transpose(V))*transpose(F[p]) + SMatrix{2,2}(1.0, 0.0, 0.0, 1.0)*la*J*(J - 1))
         affine = stress + p_mass*C[p]
         for i in 1:3
             for j in 1:3
-                index = base - SVector{2, Int}(i - 1, j - 1)
-                dpos = SVector{2}(i - 1, j - 1) - x[p]*inv_dx + base
+                index = base + SVector{2, Int}(i, j)
+                dpos = (SVector{2}(i - 1, j - 1) - fx)*dx
                 weight = wx[i]*wy[j]
                 dv = weight*(p_mass*v[p] + affine*dpos)
                 @inbounds @atomic grid_vx[index[1], index[2]] += dv[1]
@@ -214,7 +214,7 @@ function grid_update(grid_vx, grid_vy, grid_m, n_grid, gravity_x, gravity_y, att
         grid_vy[i, j] = 1/grid_m[i, j]*grid_vy[i, j]  # Momentum to velocity
         grid_vx[i, j] += dt*gravity_x*30  # gravity
         grid_vy[i, j] += dt*gravity_y*30  # gravity
-        dist = SVector{2}(attractor_pos_x, attractor_pos_y) - dx*SVector{2}(i, j)
+        dist = SVector{2}(attractor_pos_x, attractor_pos_y) - dx*SVector{2}(i - 1, j - 1)
         grid_vx[i, j] += dist[1]/(0.01 + sqrt(dist[1]*dist[1] + dist[2]*dist[2]))*attractor_strength*dt*100
         grid_vy[i, j] += dist[2]/(0.01 + sqrt(dist[1]*dist[1] + dist[2]*dist[2]))*attractor_strength*dt*100
         if i <= 3 && grid_vx[i, j] < 0
@@ -245,7 +245,7 @@ function G2P(x, v, C, n_particles, grid_vx, grid_vy, dt, inv_dx)
         new_C = SMatrix{2,2}(0.0, 0.0, 0.0, 0.0)
         for i in 1:3
             for j in 1:3
-                index = base - SVector{2, Int}(i - 1, j - 1)
+                index = base + SVector{2, Int}(i, j)
         #        #dpos = SVector{2}(i, j) - fx
                 dpos = SVector{2}(i - 1, j - 1) - x[p]*inv_dx + base
                 #        
@@ -261,7 +261,9 @@ function G2P(x, v, C, n_particles, grid_vx, grid_vy, dt, inv_dx)
                 new_C += 4*inv_dx*weight*SMatrix{2,2}(g_v[1]*dpos[1], g_v[1]*dpos[2], g_v[2]*dpos[1], g_v[2]*dpos[2])#1.0, 1.0, 1.0, 1.0)
             end
         end
-        ##@cuprintf("C[%ld]=[%f, %f, %f, %f]", p, new_C[1], new_C[2], new_C[3], new_C[4])
+        if (p==165)
+            @cuprintf("x[%ld]=[%f, %f], v[%ld]=[ %f, %f]\n", p, x[p][1], x[p][2], p, v[p][1], v[p][2])
+        end
         v[p] = new_v
         C[p] = new_C
         x[p] += dt*new_v  # advection
@@ -277,7 +279,7 @@ pp = 165
 function substep()
     @krun n_grid^2 reset_grid(grid_vx, grid_vy, grid_m, n_grid)
     
-    @krun n_particles P2G(x, v, F, Jp, C, material, n_particles, grid_vx, grid_vy, grid_m, n_grid, dt, inv_dx, mu_0, lambda_0, p_mass, p_vol)
+    @krun n_particles P2G(x, v, F, Jp, C, material, n_particles, grid_vx, grid_vy, grid_m, n_grid, dt, dx, inv_dx, mu_0, lambda_0, p_mass, p_vol)
 
     @krun n_grid^2 grid_update(grid_vx, grid_vy, grid_m, n_grid, gravity_x, gravity_y, attractor_strength, attractor_pos_x, attractor_pos_y, dt, dx)
 
