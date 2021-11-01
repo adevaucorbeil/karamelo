@@ -7,7 +7,8 @@ int main(int argc,
 {
   Kokkos::initialize(argc, argv);
 
-  mls_mpm<1000>();
+  for (int i = 0; i < 40; i++)
+    mls_mpm(i + 1);
 
   Kokkos::finalize();
 }
