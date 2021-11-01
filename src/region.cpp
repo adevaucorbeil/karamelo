@@ -33,27 +33,31 @@ void Region::init() {}
 void Region::options(vector<string> *args, vector<string>::iterator it)
 {
 
-  // cout << "In region::options()" << endl;
+  //cout << "In region::options()" << endl;
   if (args->end() < it)
   {
     // error->all(FLERR, "Error: not enough arguments.\n");
     return;
   }
-  if (args->end() > it && universe->me == 0)
+  if (args->end() > it)
   {
     for (it; it != args->end(); ++it)
     {
       if ((*it).compare("exterior") == 0)
-      {
-        cout << "\nRecognized exterior argument\n";
-        interior = 0;
-      }
+	{
+	  if (universe->me == 0)
+	    cout << "\nRecognized exterior argument\n";
+	  interior = 0;
+	}
       else
-      {
-        cout << "Ignoring optional arguments: ";
-        cout << *it << "\t";
-      }
-      cout << endl;
+	{
+	  if (universe->me == 0) {
+	    cout << "Ignoring optional arguments: ";
+	    cout << *it << "\t";
+	  }
+	}
+      if (universe->me == 0)
+	cout << endl;
     }
   }
 }
