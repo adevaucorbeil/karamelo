@@ -76,8 +76,8 @@ void USL::run(Var condition){
 
     update->method->exchange_particles();
 
-    update->method->adjust_dt();
     update->update_time();
+    update->method->adjust_dt();
 
     modify->final_integrate();
 

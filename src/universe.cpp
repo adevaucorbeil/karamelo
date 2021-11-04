@@ -688,7 +688,7 @@ vector<int> tile3d(int p) {
 
   result.push_back(ml[0]);
   result.push_back(ml[1]);
-  sort(result.begin(), result.end());
+  sort(result.begin(), result.end(), greater<int>());
 
   return result;
 }

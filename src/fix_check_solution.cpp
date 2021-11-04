@@ -134,20 +134,20 @@ void FixChecksolution::final_integrate() {
 
       for (int in = 0; in < s->np_local; in++) {
 	if (s->mask[in] & groupbit) {
+	  (*input->vars)["x0"] = Var("x0", s->x0[in][0]);
+	  (*input->vars)["y0"] = Var("y0", s->x0[in][1]);
+	  (*input->vars)["z0"] = Var("z0", s->x0[in][2]);
 	  if (xset) {
-	    (*input->vars)["x0"] = Var("x0", s->x0[in][0]);
 	    ux = xvalue.result(mpm);
 	    error[0] += s->vol0[in]*square(ux-(s->x[in][0]-s->x0[in][0]));
 	    u_th[0] += s->vol0[in]*ux*ux;
 	  }
 	  if (yset) {
-	    (*input->vars)["y0"] = Var("y0", s->x0[in][1]);
 	    uy = yvalue.result(mpm);
 	    error[1] += s->vol0[in]*square(uy-(s->x[in][1]-s->x0[in][1]));
 	    u_th[1] += s->vol0[in]*uy*uy;
 	  }
 	  if (zset) {
-	    (*input->vars)["z0"] = Var("z0", s->x0[in][2]);
 	    uz = zvalue.result(mpm);
 	    error[2] += s->vol0[in]*square(uz-(s->x[in][2]-s->x0[in][2]));
 	    u_th[2] += s->vol0[in]*uz*uz;
@@ -161,20 +161,20 @@ void FixChecksolution::final_integrate() {
 
     for (int in = 0; in < s->np_local; in++) {
       if (s->mask[in] & groupbit) {
+	(*input->vars)["x0"] = Var("x0", s->x0[in][0]);
+	(*input->vars)["y0"] = Var("y0", s->x0[in][1]);
+	(*input->vars)["z0"] = Var("z0", s->x0[in][2]);
 	if (xset) {
-	  (*input->vars)["x0"] = Var("x0", s->x0[in][0]);
 	  ux = xvalue.result(mpm);
 	  error[0] += s->vol0[in]*square(ux-(s->x[in][0]-s->x0[in][0]));
 	  u_th[0] += s->vol0[in]*ux*ux;
 	}
 	if (yset) {
-	  (*input->vars)["y0"] = Var("y0", s->x0[in][1]);
 	  uy = yvalue.result(mpm);
 	  error[1] += s->vol0[in]*square(uy-(s->x[in][1]-s->x0[in][1]));
 	  u_th[1] += s->vol0[in]*uy*uy;
 	}
 	if (zset) {
-	  (*input->vars)["z0"] = Var("z0", s->x0[in][2]);
 	  uz = zvalue.result(mpm);
 	  error[2] += s->vol0[in]*square(uz-(s->x[in][2]-s->x0[in][2]));
 	  u_th[2] += s->vol0[in]*uz*uz;

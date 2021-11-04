@@ -50,7 +50,7 @@ void USF::run(Var condition){
 
     update->method->particles_to_grid_USF_1();
 
-    modify->post_particles_to_grid();
+    modify->post_update_grid_state();
 
     update->method->compute_rate_deformation_gradient(true);
     update->method->update_deformation_gradient();
@@ -76,8 +76,8 @@ void USF::run(Var condition){
 
     update->method->exchange_particles();
 
-    update->method->adjust_dt();
     update->update_time();
+    update->method->adjust_dt();
 
     modify->final_integrate();
 
