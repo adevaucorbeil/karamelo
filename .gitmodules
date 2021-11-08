@@ -9,3 +9,6 @@
 [submodule "third-party/kokkos-tools"]
 	path = third-party/kokkos-tools
 	url = https://github.com/kokkos/kokkos-tools
+[submodule "third-party/cuda-samples"]
+	path = third-party/cuda-samples
+	url = https://github.com/NVIDIA/cuda-samples

@@ -2,6 +2,7 @@
 
 #include <svd.h>
 #include <graphics.h>
+#include <nvToolsExt.h>
 
 #include <chrono>
 #include <iostream>
@@ -69,6 +70,7 @@ void mls_mpm(int quality) {
 
   auto substep = [&]() {
     // reset node
+		nvtxRangePush("Reset_node");
     parallel_for(MDRangePolicy<Rank<2>>({ 0, 0 }, { n_grid, n_grid }), KOKKOS_LAMBDA(int i, int j) {
       Node node = nodes(i, j);
 
@@ -77,8 +79,11 @@ void mls_mpm(int quality) {
 
       nodes(i, j) = node;
     });
+    fence();
+    nvtxRangePop();
 
     // P2G
+		nvtxRangePush("P2G");
     parallel_for(n_particles, KOKKOS_LAMBDA(int p) {
       Particle particle = particles(p);
 
@@ -129,8 +134,11 @@ void mls_mpm(int quality) {
 
       particles(p) = particle;
     });
+    fence();
+    nvtxRangePop();
 
     // node update
+    nvtxRangePush("Grid_update");
     parallel_for(MDRangePolicy<Rank<2>>({ 0, 0 }, { n_grid, n_grid }), KOKKOS_LAMBDA(int i, int j) {
       Node node = nodes(i, j);
 
@@ -149,8 +157,11 @@ void mls_mpm(int quality) {
 
       nodes(i, j) = node;
     });
+    fence();
+    nvtxRangePop();
 
     // G2P
+    nvtxRangePush("G2P");
     parallel_for(n_particles, KOKKOS_LAMBDA(int p) {
       Particle particle = particles(p);
 
@@ -176,6 +187,8 @@ void mls_mpm(int quality) {
 
       particles(p) = particle;
     });
+    fence();
+    nvtxRangePop();
   };
 
   // cout << n_particles << ", " << n_grid << ": ";
