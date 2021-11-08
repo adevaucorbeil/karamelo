@@ -40,7 +40,7 @@ int main(int argc, char *argv[])
 
 		inconf = 10;
 		nbin = 2000;
-		file = "../input/alk.traj.dcd";
+		file = "../../kokkos_demo/alk.traj.dcd";
 		///////////////////////////////////////
 		std::ifstream infile;
 		infile.open(file.c_str());
