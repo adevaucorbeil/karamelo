@@ -12,3 +12,6 @@
 [submodule "third-party/cuda-samples"]
 	path = third-party/cuda-samples
 	url = https://github.com/NVIDIA/cuda-samples
+[submodule "third-party/eigen"]
+	path = third-party/eigen
+	url = https://gitlab.com/libeigen/eigen/

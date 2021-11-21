@@ -45,6 +45,9 @@ void mls_mpm(int quality) {
 
   View<Node**> nodes("nodes", n_grid, n_grid);
 
+  typename View<Particle*>::HostMirror particles_host = create_mirror_view(particles);
+  typename View<Node**>::HostMirror nodes_host = create_mirror_view(nodes);
+
   Vec2 gravity(0, -1);
 
   auto reset = [&]() {
@@ -79,7 +82,7 @@ void mls_mpm(int quality) {
 
       nodes(i, j) = node;
     });
-    fence();
+    //fence();
     nvtxRangePop();
 
     // P2G
@@ -120,21 +123,27 @@ void mls_mpm(int quality) {
       Mat2 stress = 2*mu*(particle.F - U*V.transpose())*particle.F.transpose() + Mat2()*la*J*(J - 1);
       stress = (-dt*p_vol*4*inv_dx*inv_dx)*stress;
       Mat2 affine = stress + p_mass * particle.C;
+      Vec2 offset, dpos, index;
+      double weight;
       for (int i = 0; i < 3; i++)
         for (int j = 0; j < 3; j++) { // Loop over 3x3 node node neighborhood
-          Vec2 offset(i, j);
-          Vec2 dpos = (offset - fx)*dx;
-          double weight = w[i].x*w[j].y;
-          Vec2 index = base + offset;
-          const Vec2 &dv = weight*(p_mass*particle.v + affine*dpos);
+          offset.x = i;
+	  offset.y = j;
+          
+          weight = w[i].x*w[j].y;
+          index = base + offset;
+	  atomic_add(&nodes((int)index.x, (int)index.y).m, weight*p_mass);
+
+	  dpos = (offset - fx)*dx;
+	  const Vec2 &dv = weight*(p_mass*particle.v + affine*dpos);
           atomic_add(&nodes((int)index.x, (int)index.y).v.x, dv.x);
           atomic_add(&nodes((int)index.x, (int)index.y).v.y, dv.y);
-          atomic_add(&nodes((int)index.x, (int)index.y).m, weight*p_mass);
+          
         }
 
       particles(p) = particle;
     });
-    fence();
+    //fence();
     nvtxRangePop();
 
     // node update
@@ -157,7 +166,7 @@ void mls_mpm(int quality) {
 
       nodes(i, j) = node;
     });
-    fence();
+    //fence();
     nvtxRangePop();
 
     // G2P
@@ -173,6 +182,7 @@ void mls_mpm(int quality) {
       Vec2 w[3] = { 0.5*(1.5 - fx).square(), 0.75 - (fx - 1).square(), 0.5*(fx -  0.5).square() };
       particle.v.x = 0; particle.v.y = 0;
       particle.C.m00 = 0; particle.C.m01 = 0; particle.C.m10 = 0; particle.C.m11 = 0;
+      
       for (int i = 0; i < 3; i++)
         for (int j = 0; j < 3; j++) { // loop over 3x3 node node neighborhood
           Vec2 dpos = Vec2(i, j) - fx;
@@ -186,7 +196,9 @@ void mls_mpm(int quality) {
       particle.x += dt*particle.v; // advection
 
       particles(p) = particle;
-    });
+      });
+    nvtxRangePop();
+    nvtxRangePush("fence");
     fence();
     nvtxRangePop();
   };
@@ -200,8 +212,17 @@ void mls_mpm(int quality) {
 
   reset();
 
+  deep_copy(particles_host, particles);
+  deep_copy(nodes_host, nodes);
+
   for (int i = 0; i < 5000; i++) {
+    deep_copy(particles, particles_host);
+    deep_copy(nodes, nodes_host);
+
     substep();
+
+    deep_copy(particles_host, particles);
+    deep_copy(nodes_host, nodes);
   }
 
   fence();

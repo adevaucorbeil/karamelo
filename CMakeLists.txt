@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.5)
 
-set (CMAKE_CXX_STANDARD 14)
+set (CMAKE_CXX_STANDARD 17)
 
 find_package(Git)
 if(Git_FOUND)
@@ -9,19 +9,18 @@ endif()
 
 project(karamelo)
 
-if(WIN32)
-  set(EIGEN3_INCLUDE_DIR "C:/Program Files/Eigen")
-else()
-  find_package(Eigen3 NO_MODULE)
-  if(NOT ${Eigen3_FOUND})
-    message("EIGEN_CFLAGS: $ENV{EIGEN_CFLAGS}")
-  endif()
-endif()
+find_library(LIBNVTOOLSEXT nvToolsExt PATHS ${CMAKE_CUDA_IMPLICIT_LINK_DIRECTORIES})
 
 find_package(MPI REQUIRED)
 include_directories(${MPI_INCLUDE_PATH})
-include_directories(${EIGEN3_INCLUDE_DIR})
 include_directories(${PROJECT_SOURCE_DIR})
+
+set(CMAKE_CUDA_COMPILER "/apps/nvidia-hpc-sdk/21.3/Linux_x86_64/21.3/compilers/bin/nvcc")
+set(CMAKE_CUDA_COMPILER_VERSION "10.2.89")
+set(CMAKE_CUDA_COMPILER_TOOLKIT_ROOT "/apps/nvidia-hpc-sdk/21.3/Linux_x86_64/21.3/cuda/")
+set(CMAKE_CUDA_COMPILER_LIBRARY_ROOT "/apps/nvidia-hpc-sdk/21.3/Linux_x86_64/21.3/cuda/")
+
+set(CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES "/apps/nvidia-hpc-sdk/21.3/Linux_x86_64/21.3/cuda/10.2/include")
 
 # the commit's SHA1, and whether the building workspace was dirty or not
 execute_process(COMMAND
@@ -52,10 +51,13 @@ add_definitions(-D_POSIX_C_SOURCE=200809L)
 file(GLOB MyCSources src/*.cpp)
 add_executable(karamelo ${MyCSources})
 
+set(EIGEN_BUILD_DOC OFF CACHE INTERNAL "")
+
 add_subdirectory(doc EXCLUDE_FROM_ALL)
 add_subdirectory(graphics)
 add_subdirectory(kokkos_demo)
 add_subdirectory(open_acc_demo)
+add_subdirectory(third-party/eigen)
 add_subdirectory(third-party/glad)
 add_subdirectory(third-party/glfw)
 add_subdirectory(third-party/gzstream)
@@ -63,7 +65,7 @@ add_subdirectory(third-party/kokkos)
 
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DDEBUG")
 
-target_compile_options(${PROJECT_NAME} PRIVATE ${MPI_CXX_COMPILE_FLAGS} $ENV{EIGEN_CFLAGS})
+target_compile_options(${PROJECT_NAME} PRIVATE ${MPI_CXX_COMPILE_FLAGS})
 if(WIN32)
   set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O2")
   set(CMAKE_CXX_FLAGS_PROFILING "${CMAKE_CXX_FLAGS_PROFILING} -O2 -g")
@@ -73,4 +75,4 @@ else()
   set(CMAKE_CXX_FLAGS_PROFILING "${CMAKE_CXX_FLAGS_PROFILING} -O3 -g")
 endif()
 
-target_link_libraries(${PROJECT_NAME} PUBLIC ${MPI_CXX_LIBRARIES} ${MPI_CXX_LINK_FLAGS} gzstream)
+target_link_libraries(${PROJECT_NAME} PUBLIC ${MPI_CXX_LIBRARIES} ${MPI_CXX_LINK_FLAGS} gzstream eigen)

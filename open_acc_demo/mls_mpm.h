@@ -1,15 +1,15 @@
 #pragma once
 
 #include <svd.h>
-#include <graphics.h>
 #include <nvToolsExt.h>
+// #include <graphics.h>
 
+#include <vector>
 #include <chrono>
 #include <iostream>
 #include <limits>
 
 using namespace std;
-using namespace Kokkos;
 using namespace std::chrono;
 
 struct Particle {
@@ -41,51 +41,67 @@ void mls_mpm(int quality) {
   constexpr double mu_0 = E/(2*(1 + nu)); // Lame mu
   constexpr double lambda_0 = E*nu/((1 + nu)*(1 - 2*nu)); // Lame lambda
 
-  View<Particle*> particles("particles", n_particles);
+  vector<Particle> particles(n_particles);
 
-  View<Node**> nodes("nodes", n_grid, n_grid);
+  vector<vector<Node>> nodes(n_grid, vector<Node>(n_grid));
 
   Vec2 gravity(0, -1);
 
   auto reset = [&]() {
-    int group_size = n_particles/3;
-    parallel_for(n_particles, KOKKOS_LAMBDA(int i) {
-      Particle particle = particles(i);
 
-      int i_in_group = i%group_size;
-      int dim_size = 4*quality;
-      double row = i_in_group%dim_size;
-      double col = i_in_group/dim_size;
-      particle.x = Vec2(row/dim_size*0.2 + 0.3 + 0.1*(int)(i/group_size),
-                        col/dim_size*0.2 + 0.05 + 0.29*(int)(i/group_size));
-      particle.material = 1;//i/group_size; // 0: fluid 1: jelly 2: snow
-      particle.v = Vec2();
-      particle.F = Mat2();
-      particle.Jp = 1;
-      particle.C = Mat2(0, 0, 0, 0);
-
-      particles(i) = particle;
-    });
   };
 
   auto substep = [&]() {
-    // reset node
-		nvtxRangePush("Reset_node");
-    parallel_for(MDRangePolicy<Rank<2>>({ 0, 0 }, { n_grid, n_grid }), KOKKOS_LAMBDA(int i, int j) {
-      Node node = nodes(i, j);
 
-      node.v = Vec2();
-      node.m = 0;
+    // nvtxRangePop();
+  };
 
-      nodes(i, j) = node;
-    });
-    fence();
+#if 1
+
+  time_point<steady_clock> start_time = steady_clock::now();
+
+  int group_size = n_particles/3;
+  #pragma acc parallel loop
+  for (int i = 0; i < n_particles; i++) {
+    Particle particle = particles.at(i);
+
+    int i_in_group = i%group_size;
+    int dim_size = 4*quality;
+    double row = i_in_group%dim_size;
+    double col = i_in_group/dim_size;
+    particle.x = Vec2(row/dim_size*0.2 + 0.3 + 0.1*(int)(i/group_size),
+                      col/dim_size*0.2 + 0.05 + 0.29*(int)(i/group_size));
+    particle.material = 1;//i/group_size; // 0: fluid 1: jelly 2: snow
+    particle.v = Vec2();
+    particle.F = Mat2();
+    particle.Jp = 1;
+    particle.C = Mat2(0, 0, 0, 0);
+
+    particles.at(i) = particle;
+  }
+
+  for (int i = 0; i < 5000; i++) {
+    nvtxRangePush("Reset_node");
+    #pragma acc kernels copyout(nodes)
+    {
+      for (int i = 0; i < n_grid; i++) {
+        for (int j = 0; j < n_grid; j++) {
+            Node node = nodes.at(i).at(j);
+
+            node.v = Vec2();
+            node.m = 0;
+
+            nodes.at(i).at(j) = node;
+        }
+      }
+    }
     nvtxRangePop();
 
     // P2G
-		nvtxRangePush("P2G");
-    parallel_for(n_particles, KOKKOS_LAMBDA(int p) {
-      Particle particle = particles(p);
+    nvtxRangePush("P2G");
+    //#pragma acc parallel loop
+    for (int p = 0; p < n_particles; p++) {
+      Particle particle = particles.at(p);
 
       Vec2 base = particle.x*inv_dx - 0.5;
       base.x = (int)base.x;
@@ -127,43 +143,48 @@ void mls_mpm(int quality) {
           double weight = w[i].x*w[j].y;
           Vec2 index = base + offset;
           const Vec2 &dv = weight*(p_mass*particle.v + affine*dpos);
-          atomic_add(&nodes((int)index.x, (int)index.y).v.x, dv.x);
-          atomic_add(&nodes((int)index.x, (int)index.y).v.y, dv.y);
-          atomic_add(&nodes((int)index.x, (int)index.y).m, weight*p_mass);
+          #pragma acc atomic update
+          nodes.at((int)index.x).at((int)index.y).v.x += dv.x;
+          #pragma acc atomic update
+          nodes.at((int)index.x).at((int)index.y).v.y += dv.y;
+          #pragma acc atomic update
+          nodes.at((int)index.x).at((int)index.y).m += weight*p_mass;
         }
 
-      particles(p) = particle;
-    });
-    fence();
+      particles.at(p) = particle;
+    }
     nvtxRangePop();
 
     // node update
     nvtxRangePush("Grid_update");
-    parallel_for(MDRangePolicy<Rank<2>>({ 0, 0 }, { n_grid, n_grid }), KOKKOS_LAMBDA(int i, int j) {
-      Node node = nodes(i, j);
+    //#pragma acc parallel loop
+    for (int i = 0; i < n_grid; i++) {
+      for (int j = 0; j < n_grid; j++) {
+        Node node = nodes.at(i).at(j);
 
-      if (node.m > 0) { // No need for epsilon here
-        node.v = (1/node.m)*node.v; // Momentum to velocity
-        node.v += dt*gravity*30; // gravity
-        if (i < 3 && node.v.x < 0)
-          node.v.x = 0; // Boundary conditions
-        if (i > n_grid - 3 && node.v.x > 0)
-          node.v.x = 0;
-        if (j < 3 && node.v.y < 0)
-          node.v.y = 0;
-        if (j > n_grid - 3 && node.v.y > 0)
-          node.v.y = 0;
+        if (node.m > 0) { // No need for epsilon here
+          node.v = (1/node.m)*node.v; // Momentum to velocity
+          node.v += dt*gravity*30; // gravity
+          if (i < 3 && node.v.x < 0)
+            node.v.x = 0; // Boundary conditions
+          if (i > n_grid - 3 && node.v.x > 0)
+            node.v.x = 0;
+          if (j < 3 && node.v.y < 0)
+            node.v.y = 0;
+          if (j > n_grid - 3 && node.v.y > 0)
+            node.v.y = 0;
+        }
+
+        nodes.at(i).at(j) = node;
       }
-
-      nodes(i, j) = node;
-    });
-    fence();
+    }
     nvtxRangePop();
 
     // G2P
     nvtxRangePush("G2P");
-    parallel_for(n_particles, KOKKOS_LAMBDA(int p) {
-      Particle particle = particles(p);
+    //#pragma acc parallel loop
+    for (int p = 0; p < n_particles; p++) {
+      Particle particle = particles.at(p);
 
       Vec2 base = particle.x*inv_dx - 0.5;
       base.x = (int)base.x;
@@ -177,7 +198,7 @@ void mls_mpm(int quality) {
         for (int j = 0; j < 3; j++) { // loop over 3x3 node node neighborhood
           Vec2 dpos = Vec2(i, j) - fx;
           Vec2 offset = base + Vec2(i, j);
-          Vec2 g_v = nodes((int)offset.x, (int)offset.y).v;
+          Vec2 g_v = nodes.at((int)offset.x).at((int)offset.y).v;
           double weight = w[i].x*w[j].y;
           particle.v += weight*g_v;
           particle.C += 4*inv_dx*weight*Mat2(g_v.x*dpos.x, g_v.x*dpos.y, g_v.y*dpos.x, g_v.y*dpos.y);
@@ -185,26 +206,10 @@ void mls_mpm(int quality) {
 
       particle.x += dt*particle.v; // advection
 
-      particles(p) = particle;
-    });
-    fence();
+      particles.at(p) = particle;
+    }
     nvtxRangePop();
-  };
-
-  // cout << n_particles << ", " << n_grid << ": ";
-  // cout.flush();
-
-#if 1
-
-  time_point<steady_clock> start_time = steady_clock::now();
-
-  reset();
-
-  for (int i = 0; i < 5000; i++) {
-    substep();
   }
-
-  fence();
 
   cout << duration_cast<milliseconds>(steady_clock::now() - start_time).count() << endl;
 #else
