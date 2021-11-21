@@ -11,11 +11,11 @@ struct                              Vec2 {
                                     x(x),   
                                     y(y)                                {}
 
-  KOKKOS_INLINE_FUNCTION            Vec2(const Vec2 &)                  = default;
-  KOKKOS_INLINE_FUNCTION            Vec2(      Vec2 &&)                 = default;
+                                    Vec2(const Vec2 &)                  = default;
+                                    Vec2(      Vec2 &&)                 = default;
 
-  KOKKOS_INLINE_FUNCTION Vec2 &     operator=(const Vec2 &)             = default;
-  KOKKOS_INLINE_FUNCTION Vec2 &     operator=(      Vec2 &&)            = default;
+                         Vec2 &     operator=(const Vec2 &)             = default;
+                         Vec2 &     operator=(      Vec2 &&)            = default;
 
   KOKKOS_INLINE_FUNCTION Vec2 &     operator+=(double s)                { x += s; y += s; return *this; }
   KOKKOS_INLINE_FUNCTION Vec2 &     operator-=(double s)                { x -= s; y -= s; return *this; }

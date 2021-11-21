@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.5)
 
-set (CMAKE_CXX_STANDARD 17)
+set (CMAKE_CXX_STANDARD 14)
 
 find_package(Git)
 if(Git_FOUND)
@@ -52,11 +52,12 @@ file(GLOB MyCSources src/*.cpp)
 add_executable(karamelo ${MyCSources})
 
 set(EIGEN_BUILD_DOC OFF CACHE INTERNAL "")
+set(GLFW_BUILD_DOCS OFF CACHE INTERNAL "")
 
 add_subdirectory(doc EXCLUDE_FROM_ALL)
 add_subdirectory(graphics)
 add_subdirectory(kokkos_demo)
-add_subdirectory(open_acc_demo)
+# add_subdirectory(open_acc_demo)
 add_subdirectory(third-party/eigen)
 add_subdirectory(third-party/glad)
 add_subdirectory(third-party/glfw)

@@ -24,7 +24,7 @@ int main(int argc,
          char *argv[]) {
   initialize(argc, argv);
 
-  FILE *out = fopen("gputest.csv", "w");
+  /*FILE *out = fopen("gputest.csv", "w");
   for (int i = 0; i < 300 && false; i++) {
     int n = 500*(i + 1);
 
@@ -60,12 +60,12 @@ int main(int argc,
     printf("%d,%d\n", n, (int)duration_cast<milliseconds>(end_time - start_time).count());
     //cout << i << endl;
   }
-  fclose(out);
+  fclose(out);*/
 
-  // for (int i = 0; i < 40; i++)
-  //   mls_mpm(i + 1);
+  for (int i = 0; i < 50; i++)
+    mls_mpm(i + 1);
   
-  mls_mpm(20);
+  //mls_mpm(20);
 
   finalize();
 }

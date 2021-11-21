@@ -17,11 +17,11 @@ struct                              Mat2 {
                                       m10(m10),
                                       m11(m11)                          {}
 
-  KOKKOS_INLINE_FUNCTION            Mat2(const Mat2 &)                  = default;
-  KOKKOS_INLINE_FUNCTION            Mat2(Mat2 &&)                       = default;
+                                    Mat2(const Mat2 &)                  = default;
+                                    Mat2(Mat2 &&)                       = default;
 
-  KOKKOS_INLINE_FUNCTION Mat2 &     operator=(const Mat2 &)             = default;
-  KOKKOS_INLINE_FUNCTION Mat2 &     operator=(Mat2 &&)                  = default;
+                         Mat2 &     operator=(const Mat2 &)             = default;
+                         Mat2 &     operator=(Mat2 &&)                  = default;
 
   KOKKOS_INLINE_FUNCTION Mat2 &     operator*=(double s)                { m00 *= s; m01 *= s; m10 *= s; m11 *= s; return *this; }
   KOKKOS_INLINE_FUNCTION Mat2 &     operator/=(double s)                { m00 /= s; m01 /= s; m10 /= s; m11 /= s; return *this; }
