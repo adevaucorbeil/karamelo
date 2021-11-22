@@ -62,7 +62,7 @@ int main(int argc,
   }
   fclose(out);*/
 
-  for (int i = 0; i < 50; i++)
+  for (int i = 0; i < 55; i++)
     mls_mpm(i + 1);
   
   //mls_mpm(20);

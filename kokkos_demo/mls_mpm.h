@@ -51,15 +51,24 @@ void mls_mpm(int quality) {
   typename View<Particle*>::HostMirror particles_host = create_mirror_view(particles);
   typename View<Node**>::HostMirror nodes_host = create_mirror_view(nodes);
 #else
-  View<Vec2*> x("x", n_particles);
-  View<Vec2*> v("v", n_particles);
-  View<Mat2*> C("C", n_particles);
-  View<Mat2*> F("F", n_particles);
+  View<float*> xx("x", n_particles);
+  View<float*> xy("x", n_particles);
+  View<float*> vx("v", n_particles);
+  View<float*> vy("v", n_particles);
+  View<float*> C00("C", n_particles);
+  View<float*> C01("C", n_particles);
+  View<float*> C10("C", n_particles);
+  View<float*> C11("C", n_particles);
+  View<float*> F00("F", n_particles);
+  View<float*> F01("F", n_particles);
+  View<float*> F10("F", n_particles);
+  View<float*> F11("F", n_particles);
   View<int*> material("material", n_particles);
-  View<double*> Jp("Jp", n_particles);
+  View<float*> Jp("Jp", n_particles);
 
-  View<Vec2**> grid_v("grid_v", n_grid, n_grid);
-  View<double**> grid_m("grid_m", n_grid, n_grid);
+  View<float**> grid_vx("grid_v", n_grid, n_grid);
+  View<float**> grid_vy("grid_v", n_grid, n_grid);
+  View<float**> grid_m("grid_m", n_grid, n_grid);
 #endif
 
   Vec2 gravity(0, -1);
@@ -84,10 +93,18 @@ void mls_mpm(int quality) {
 #ifdef USE_STRUCTS
       particles(i) = particle;
 #else
-      x(i) = particle.x;
-      v(i) = particle.v;
-      C(i) = particle.C;
-      F(i) = particle.F;
+      xx(i) = particle.x.x;
+      xy(i) = particle.x.y;
+      vx(i) = particle.v.x;
+      vy(i) = particle.v.y;
+      C00(i) = particle.C.m00;
+      C01(i) = particle.C.m01;
+      C10(i) = particle.C.m10;
+      C11(i) = particle.C.m11;
+      F00(i) = particle.F.m00;
+      F01(i) = particle.F.m01;
+      F10(i) = particle.F.m10;
+      F11(i) = particle.F.m11;
       material(i) = particle.material;
       Jp(i) = particle.Jp;
 #endif
@@ -106,7 +123,8 @@ void mls_mpm(int quality) {
 #ifdef USE_STRUCTS
       nodes(i, j) = node;
 #else
-      grid_v(i, j) = node.v;
+      grid_vx(i, j) = node.v.x;
+      grid_vy(i, j) = node.v.y;
       grid_m(i, j) = node.m;
 #endif
     });
@@ -120,10 +138,18 @@ void mls_mpm(int quality) {
       Particle particle = particles(p);
 #else
       Particle particle;
-      particle.x = x(p);
-      particle.v = v(p);
-      particle.C = C(p);
-      particle.F = F(p);
+      particle.x.x = xx(p);
+      particle.x.y = xy(p);
+      particle.v.x = vx(p);
+      particle.v.y = vy(p);
+      particle.C.m00 = C00(p);
+      particle.C.m01 = C01(p);
+      particle.C.m10 = C10(p);
+      particle.C.m11 = C11(p);
+      particle.F.m00 = F00(p);
+      particle.F.m01 = F01(p);
+      particle.F.m10 = F10(p);
+      particle.F.m11 = F11(p);
       particle.material = material(p);
       particle.Jp = Jp(p);
 #endif
@@ -183,8 +209,8 @@ void mls_mpm(int quality) {
           atomic_add(&nodes((int)index.x, (int)index.y).v.x, dv.x);
           atomic_add(&nodes((int)index.x, (int)index.y).v.y, dv.y);
 #else
-          atomic_add(&grid_v((int)index.x, (int)index.y).x, dv.x);
-          atomic_add(&grid_v((int)index.x, (int)index.y).y, dv.y);
+          atomic_add(&grid_vx((int)index.x, (int)index.y), dv.x);
+          atomic_add(&grid_vy((int)index.x, (int)index.y), dv.y);
 #endif
         }
 
@@ -192,7 +218,10 @@ void mls_mpm(int quality) {
       particles(p).F = particle.F;
       particles(p).Jp = particle.Jp;
 #else
-      F(p) = particle.F;
+      F00(p) = particle.F.m00;
+      F01(p) = particle.F.m01;
+      F10(p) = particle.F.m10;
+      F11(p) = particle.F.m11;
       Jp(p) = particle.Jp;
 #endif
     });
@@ -206,7 +235,8 @@ void mls_mpm(int quality) {
       Node node = nodes(i, j);
 #else
       Node node;
-      node.v = grid_v(i, j);
+      node.v.x = grid_vx(i, j);
+      node.v.y = grid_vy(i, j);
       node.m = grid_m(i, j);
 #endif
 
@@ -226,7 +256,8 @@ void mls_mpm(int quality) {
 #ifdef USE_STRUCTS
       nodes(i, j).v = node.v;
 #else
-      grid_v(i, j) = node.v;
+      grid_vx(i, j) = node.v.x;
+      grid_vy(i, j) = node.v.y;
 #endif
     });
     //fence();
@@ -241,9 +272,14 @@ void mls_mpm(int quality) {
       particle.v = particles(p).v;
       particle.C = particles(p).C;
 #else
-      particle.x = x(p);
-      particle.v = v(p);
-      particle.C = C(p);
+      particle.x.x = xx(p);
+      particle.x.y = xy(p);
+      particle.v.x = vx(p);
+      particle.v.y = vy(p);
+      particle.C.m00 = C00(p);
+      particle.C.m01 = C01(p);
+      particle.C.m10 = C10(p);
+      particle.C.m11 = C11(p);
 #endif
 
       Vec2 base = particle.x*inv_dx - 0.5;
@@ -262,7 +298,9 @@ void mls_mpm(int quality) {
 #ifdef USE_STRUCTS
           Vec2 g_v = nodes((int)offset.x, (int)offset.y).v;
 #else
-          Vec2 g_v = grid_v((int)offset.x, (int)offset.y);
+          Vec2 g_v;
+          g_v.x = grid_vx((int)offset.x, (int)offset.y);
+          g_v.y = grid_vy((int)offset.x, (int)offset.y);
 #endif
           double weight = w[i].x*w[j].y;
           particle.v += weight*g_v;
@@ -276,9 +314,14 @@ void mls_mpm(int quality) {
       particles(p).v = particle.v;
       particles(p).C = particle.C;
 #else
-      x(p) = particle.x;
-      v(p) = particle.v;
-      C(p) = particle.C;
+      xx(p) = particle.x.x;
+      xy(p) = particle.x.y;
+      vx(p) = particle.v.x;
+      vy(p) = particle.v.y;
+      C00(p) = particle.C.m00;
+      C01(p) = particle.C.m01;
+      C10(p) = particle.C.m10;
+      C11(p) = particle.C.m11;
 #endif
       });
     //nvtxRangePop();
