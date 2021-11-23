@@ -2,55 +2,30 @@
 
 #include <svd.h>
 #include <graphics.h>
-#include <nvToolsExt.h>
 
 #include <chrono>
 #include <iostream>
 #include <limits>
 
-// #define USE_STRUCTS
-
 using namespace std;
 using namespace Kokkos;
 using namespace std::chrono;
 
-struct Particle {
-  Vec2 x;
-  Vec2 v;
-  Mat2 C;
-  Mat2 F;
-  int material;
-  double Jp;
-};
-
-struct Node {
-  Vec2 v;
-  double m;
-};
-
 void mls_mpm(int quality) {
-  int n_particles = 3*4*4*quality*quality;
-  int n_grid = 9*quality;
+  const int n_particles = 3*4*4*quality*quality;
+  const int n_grid = 9*quality;
 
-  double dx = 1.0/n_grid;
-  double inv_dx = n_grid;
-  double dt = 1e-4/quality;
-  double p_vol = (dx*0.5)*(dx*0.5);
+  const double dx = 1.0/n_grid;
+  const double inv_dx = n_grid;
+  const double dt = 1e-4/quality;
+  const double p_vol = (dx*0.5)*(dx*0.5);
   constexpr double p_rho = 1;
-  double p_mass = p_vol*p_rho;
+  const double p_mass = p_vol*p_rho;
   constexpr double E = 5e3; // Young's modulus
   constexpr double nu = 0.2; // Poisson's ratio
   constexpr double mu_0 = E/(2*(1 + nu)); // Lame mu
   constexpr double lambda_0 = E*nu/((1 + nu)*(1 - 2*nu)); // Lame lambda
 
-#ifdef USE_STRUCTS
-  View<Particle*> particles("particles", n_particles);
-
-  View<Node**> nodes("nodes", n_grid, n_grid);
-
-  typename View<Particle*>::HostMirror particles_host = create_mirror_view(particles);
-  typename View<Node**>::HostMirror nodes_host = create_mirror_view(nodes);
-#else
   View<float*> xx("x", n_particles);
   View<float*> xy("x", n_particles);
   View<float*> vx("v", n_particles);
@@ -69,124 +44,84 @@ void mls_mpm(int quality) {
   View<float**> grid_vx("grid_v", n_grid, n_grid);
   View<float**> grid_vy("grid_v", n_grid, n_grid);
   View<float**> grid_m("grid_m", n_grid, n_grid);
-#endif
 
   Vec2 gravity(0, -1);
 
   auto reset = [&]() {
     int group_size = n_particles/3;
     parallel_for(n_particles, KOKKOS_LAMBDA(int i) {
-      Particle particle;
-
       int i_in_group = i%group_size;
       int dim_size = 4*quality;
       double row = i_in_group%dim_size;
       double col = i_in_group/dim_size;
-      particle.x = Vec2(row/dim_size*0.2 + 0.3 + 0.1*(int)(i/group_size),
-                        col/dim_size*0.2 + 0.05 + 0.29*(int)(i/group_size));
-      particle.v = Vec2();
-      particle.C = Mat2(0, 0, 0, 0);
-      particle.F = Mat2();
-      particle.material = 1;//i/group_size; // 0: fluid 1: jelly 2: snow
-      particle.Jp = 1;
 
-#ifdef USE_STRUCTS
-      particles(i) = particle;
-#else
-      xx(i) = particle.x.x;
-      xy(i) = particle.x.y;
-      vx(i) = particle.v.x;
-      vy(i) = particle.v.y;
-      C00(i) = particle.C.m00;
-      C01(i) = particle.C.m01;
-      C10(i) = particle.C.m10;
-      C11(i) = particle.C.m11;
-      F00(i) = particle.F.m00;
-      F01(i) = particle.F.m01;
-      F10(i) = particle.F.m10;
-      F11(i) = particle.F.m11;
-      material(i) = particle.material;
-      Jp(i) = particle.Jp;
-#endif
+      xx(i) = row/dim_size*0.2 + 0.3  + 0.1 *(int)(i/group_size);
+      xy(i) = col/dim_size*0.2 + 0.05 + 0.29*(int)(i/group_size);
+      vx(i) = 0;
+      vy(i) = 0;
+      C00(i) = 0;
+      C01(i) = 0;
+      C10(i) = 0;
+      C11(i) = 0;
+      F00(i) = 1;
+      F01(i) = 0;
+      F10(i) = 0;
+      F11(i) = 1;
+      material(i) = 1;
+      Jp(i) = 1;
     });
   };
 
   auto substep = [&]() {
     // reset node
-		//nvtxRangePush("Reset_node");
     parallel_for(MDRangePolicy<Rank<2>>({ 0, 0 }, { n_grid, n_grid }), KOKKOS_LAMBDA(int i, int j) {
-      Node node;
-
-      node.v = Vec2();
-      node.m = 0;
-
-#ifdef USE_STRUCTS
-      nodes(i, j) = node;
-#else
-      grid_vx(i, j) = node.v.x;
-      grid_vy(i, j) = node.v.y;
-      grid_m(i, j) = node.m;
-#endif
+      grid_vx(i, j) = 0;
+      grid_vy(i, j) = 0;
+      grid_m(i, j) = 0;
     });
-    //fence();
-    //nvtxRangePop();
 
     // P2G
-		//nvtxRangePush("P2G");
-    parallel_for(n_particles, KOKKOS_LAMBDA(int p) {
-#ifdef USE_STRUCTS
-      Particle particle = particles(p);
-#else
-      Particle particle;
-      particle.x.x = xx(p);
-      particle.x.y = xy(p);
-      particle.v.x = vx(p);
-      particle.v.y = vy(p);
-      particle.C.m00 = C00(p);
-      particle.C.m01 = C01(p);
-      particle.C.m10 = C10(p);
-      particle.C.m11 = C11(p);
-      particle.F.m00 = F00(p);
-      particle.F.m01 = F01(p);
-      particle.F.m10 = F10(p);
-      particle.F.m11 = F11(p);
-      particle.material = material(p);
-      particle.Jp = Jp(p);
-#endif
+    parallel_for(n_particles, KOKKOS_LAMBDA(int i) {
+      Vec2 x(xx(i), xy(i));
+      Vec2 v(vx(i), vy(i));
+      Mat2 C(C00(i), C01(i), C10(i), C11(i));
+      Mat2 F(F00(i), F01(i), F10(i), F11(i));
+      int mat = material(i);
+      double jp = Jp(i);
 
-      Vec2 base = particle.x*inv_dx - 0.5;
+      Vec2 base = x*inv_dx - 0.5;
       base.x = (int)base.x;
       base.y = (int)base.y;
-      Vec2 fx = particle.x*inv_dx - base;
+      Vec2 fx = x*inv_dx - base;
 
       Vec2 w[3] = { 0.5*(1.5 - fx).square(), 0.75 - (fx - 1).square(), 0.5*(fx -  0.5).square() };
 
-      particle.F = (Mat2() + dt*particle.C)*particle.F; // deformation gradient update
-      double h = max(0.1, min(5.0, exp(10*(1 - particle.Jp)))); // Hardening coefficient: snow gets harder when compressed
-      if (particle.material == 1) // jelly, make it softer
+      F = (Mat2() + dt*C)*F; // deformation gradient update
+      double h = max(0.1, min(5.0, exp(10*(1 - jp)))); // Hardening coefficient: snow gets harder when compressed
+      if (mat == 1) // jelly, make it softer
         h = 0.3;
       double mu = mu_0*h, la = lambda_0*h;
-      if (particle.material == 0) // liquid
+      if (mat == 0) // liquid
         mu = 0.0;
       Mat2 U, sig, V;
-      svd(particle.F, U, sig, V);
+      svd(F, U, sig, V);
       double J = 1;
       for (int d = 0; d < 2; d++) {
         double new_sig = sig(d, d);
-        if (particle.material == 2) { // Snow
+        if (mat == 2) { // Snow
           new_sig = min(max(sig(d, d), 1 - 2.5e-2), 1 + 4.5e-3); // Plasticity
         }
-        particle.Jp *= sig(d, d)/new_sig;
+        jp *= sig(d, d)/new_sig;
         sig(d, d) = new_sig;
         J *= new_sig;
       }
-      if (particle.material == 0) // Reset deformation gradient to avoid numerical instability
-        particle.F = Mat2()*sqrt(J);
-      else if (particle.material == 2)
-        particle.F = U*sig*V.transpose(); // Reconstruct elastic deformation gradient after plasticity
-      Mat2 stress = 2*mu*(particle.F - U*V.transpose())*particle.F.transpose() + Mat2()*la*J*(J - 1);
+      if (mat == 0) // Reset deformation gradient to avoid numerical instability
+        F = Mat2()*sqrt(J);
+      else if (mat == 2)
+        F = U*sig*V.transpose(); // Reconstruct elastic deformation gradient after plasticity
+      Mat2 stress = 2*mu*(F - U*V.transpose())*F.transpose() + Mat2()*la*J*(J - 1);
       stress = (-dt*p_vol*4*inv_dx*inv_dx)*stress;
-      Mat2 affine = stress + p_mass * particle.C;
+      Mat2 affine = stress + p_mass * C;
       Vec2 offset, dpos, index;
       double weight;
       for (int i = 0; i < 3; i++)
@@ -197,141 +132,82 @@ void mls_mpm(int quality) {
           weight = w[i].x*w[j].y;
           index = base + offset;
 
-#ifdef USE_STRUCTS
-          atomic_add(&nodes((int)index.x, (int)index.y).m, weight*p_mass);
-#else
           atomic_add(&grid_m((int)index.x, (int)index.y), weight*p_mass);
-#endif
 
           dpos = (offset - fx)*dx;
-          const Vec2 &dv = weight*(p_mass*particle.v + affine*dpos);
-#ifdef USE_STRUCTS
-          atomic_add(&nodes((int)index.x, (int)index.y).v.x, dv.x);
-          atomic_add(&nodes((int)index.x, (int)index.y).v.y, dv.y);
-#else
+          const Vec2 &dv = weight*(p_mass*v + affine*dpos);
           atomic_add(&grid_vx((int)index.x, (int)index.y), dv.x);
           atomic_add(&grid_vy((int)index.x, (int)index.y), dv.y);
-#endif
         }
 
-#ifdef USE_STRUCTS
-      particles(p).F = particle.F;
-      particles(p).Jp = particle.Jp;
-#else
-      F00(p) = particle.F.m00;
-      F01(p) = particle.F.m01;
-      F10(p) = particle.F.m10;
-      F11(p) = particle.F.m11;
-      Jp(p) = particle.Jp;
-#endif
+      F00(i) = F.m00;
+      F01(i) = F.m01;
+      F10(i) = F.m10;
+      F11(i) = F.m11;
+      Jp(i) = jp;
     });
-    //fence();
-    //nvtxRangePop();
 
     // node update
-    //nvtxRangePush("Grid_update");
     parallel_for(MDRangePolicy<Rank<2>>({ 0, 0 }, { n_grid, n_grid }), KOKKOS_LAMBDA(int i, int j) {
-#ifdef USE_STRUCTS
-      Node node = nodes(i, j);
-#else
-      Node node;
-      node.v.x = grid_vx(i, j);
-      node.v.y = grid_vy(i, j);
-      node.m = grid_m(i, j);
-#endif
+      Vec2 v(grid_vx(i, j), grid_vy(i, j));
+      double m = grid_m(i, j);
 
-      if (node.m > 0) { // No need for epsilon here
-        node.v = (1/node.m)*node.v; // Momentum to velocity
-        node.v += dt*gravity*30; // gravity
-        if (i < 3 && node.v.x < 0)
-          node.v.x = 0; // Boundary conditions
-        if (i > n_grid - 3 && node.v.x > 0)
-          node.v.x = 0;
-        if (j < 3 && node.v.y < 0)
-          node.v.y = 0;
-        if (j > n_grid - 3 && node.v.y > 0)
-          node.v.y = 0;
+      if (m > 0) { // No need for epsilon here
+        v /= m; // Momentum to velocity
+        v += dt*gravity*30; // gravity
+        if (i < 3 && v.x < 0)
+          v.x = 0; // Boundary conditions
+        if (i > n_grid - 3 && v.x > 0)
+          v.x = 0;
+        if (j < 3 && v.y < 0)
+          v.y = 0;
+        if (j > n_grid - 3 && v.y > 0)
+          v.y = 0;
       }
 
-#ifdef USE_STRUCTS
-      nodes(i, j).v = node.v;
-#else
-      grid_vx(i, j) = node.v.x;
-      grid_vy(i, j) = node.v.y;
-#endif
+      grid_vx(i, j) = v.x;
+      grid_vy(i, j) = v.y;
     });
-    //fence();
-    //nvtxRangePop();
 
     // G2P
-    //nvtxRangePush("G2P");
-    parallel_for(n_particles, KOKKOS_LAMBDA(int p) {
-      Particle particle;
-#ifdef USE_STRUCTS
-      particle.x = particles(p).x;
-      particle.v = particles(p).v;
-      particle.C = particles(p).C;
-#else
-      particle.x.x = xx(p);
-      particle.x.y = xy(p);
-      particle.v.x = vx(p);
-      particle.v.y = vy(p);
-      particle.C.m00 = C00(p);
-      particle.C.m01 = C01(p);
-      particle.C.m10 = C10(p);
-      particle.C.m11 = C11(p);
-#endif
+    parallel_for(n_particles, KOKKOS_LAMBDA(int i) {
+      Vec2 x(xx(i), xy(i));
+      Vec2 v(vx(i), vy(i));
+      Mat2 C(C00(i), C01(i), C10(i), C11(i));
 
-      Vec2 base = particle.x*inv_dx - 0.5;
+      Vec2 base = x*inv_dx - 0.5;
       base.x = (int)base.x;
       base.y = (int)base.y;
-      Vec2 fx = particle.x*inv_dx - base;
+      Vec2 fx = x*inv_dx - base;
 
       Vec2 w[3] = { 0.5*(1.5 - fx).square(), 0.75 - (fx - 1).square(), 0.5*(fx -  0.5).square() };
-      particle.v.x = 0; particle.v.y = 0;
-      particle.C.m00 = 0; particle.C.m01 = 0; particle.C.m10 = 0; particle.C.m11 = 0;
+      v.x = 0; v.y = 0;
+      C.m00 = 0; C.m01 = 0; C.m10 = 0; C.m11 = 0;
       
       for (int i = 0; i < 3; i++)
         for (int j = 0; j < 3; j++) { // loop over 3x3 node node neighborhood
           Vec2 dpos = Vec2(i, j) - fx;
           Vec2 offset = base + Vec2(i, j);
-#ifdef USE_STRUCTS
-          Vec2 g_v = nodes((int)offset.x, (int)offset.y).v;
-#else
           Vec2 g_v;
           g_v.x = grid_vx((int)offset.x, (int)offset.y);
           g_v.y = grid_vy((int)offset.x, (int)offset.y);
-#endif
           double weight = w[i].x*w[j].y;
-          particle.v += weight*g_v;
-          particle.C += 4*inv_dx*weight*Mat2(g_v.x*dpos.x, g_v.x*dpos.y, g_v.y*dpos.x, g_v.y*dpos.y);
+          v += weight*g_v;
+          C += 4*inv_dx*weight*Mat2(g_v.x*dpos.x, g_v.x*dpos.y, g_v.y*dpos.x, g_v.y*dpos.y);
         }
 
-      particle.x += dt*particle.v; // advection
+      x += dt*v; // advection
 
-#ifdef USE_STRUCTS
-      particles(p).x = particle.x;
-      particles(p).v = particle.v;
-      particles(p).C = particle.C;
-#else
-      xx(p) = particle.x.x;
-      xy(p) = particle.x.y;
-      vx(p) = particle.v.x;
-      vy(p) = particle.v.y;
-      C00(p) = particle.C.m00;
-      C01(p) = particle.C.m01;
-      C10(p) = particle.C.m10;
-      C11(p) = particle.C.m11;
-#endif
-      });
-    //nvtxRangePop();
-    //nvtxRangePush("fence");
-    //fence();
-    //nvtxRangePop();
+      xx(i) = x.x;
+      xy(i) = x.y;
+      vx(i) = v.x;
+      vy(i) = v.y;
+      C00(i) = C.m00;
+      C01(i) = C.m01;
+      C10(i) = C.m10;
+      C11(i) = C.m11;
+    });
   };
-
-  // cout << n_particles << ", " << n_grid << ": ";
-  // cout.flush();
 
 #if 1
 
@@ -339,17 +215,8 @@ void mls_mpm(int quality) {
 
   reset();
 
-  //deep_copy(particles_host, particles);
-  //deep_copy(nodes_host, nodes);
-
   for (int i = 0; i < 10000; i++) {
-    //deep_copy(particles, particles_host);
-    //deep_copy(nodes, nodes_host);
-
     substep();
-
-    //deep_copy(particles_host, particles);
-    //deep_copy(nodes_host, nodes);
   }
 
   fence();
