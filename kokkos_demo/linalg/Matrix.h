@@ -32,7 +32,7 @@ public:
         typename = enable_if_t<O == 2 && O == N>>
     KOKKOS_INLINE_FUNCTION
     Matrix(U00 m00, U01 m01, U10 m10, U11 m11):
-        Vector<Vector<T, N>, M>{ Vector<T, N>{ m00, m01 }, Vector<T, M>{ m00, m01 } }
+        Vector<Vector<T, N>, M>{ Vector<T, N>{ m00, m01 }, Vector<T, M>{ m10, m11 } }
     {}
 
     Matrix(const Matrix<T, M, N> &matrix) = default;

@@ -6,6 +6,8 @@ class LazyReference {
     T local;
 
 public:
+    LazyReference() = default;
+
     LazyReference(T *source):
         source(source),
         local(*source)
@@ -17,7 +19,17 @@ public:
         }
     }
 
-    operator T &() const {
+    operator const T &() const {
+      return local;
+    }
+
+    operator T &() {
         return local;
+    }
+
+    T &
+    operator=(const T &value)
+    {
+      return local = value;
     }
 };

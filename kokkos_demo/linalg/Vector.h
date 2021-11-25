@@ -28,13 +28,14 @@ public:
         elements{ static_cast<T>(elements)... }
     {}
 
-    template<typename U>
+    template<typename U,
+      typename = enable_if_scalar<U>>
     KOKKOS_INLINE_FUNCTION
     Vector(U value)
     {
         for (int i = 0; i < N; i++)
         {
-            (*this)[i] = value;
+            (*this)[i] = static_cast<T>(value);
         }
     }
 
@@ -133,8 +134,9 @@ public:
     }
 
     // addition/subtraction
+    template<typename U>
     KOKKOS_INLINE_FUNCTION Vector<T, N> &
-    operator+=(const Vector<T, N> &vector)
+    operator+=(const Vector<U, N> &vector)
     {
         for (int i = 0; i < N; i++)
             (*this)[i] += vector[i];

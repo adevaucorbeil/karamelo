@@ -2,6 +2,7 @@
 
 #include <svd.h>
 #include <graphics.h>
+#include <LazyReference.h>
 
 #include <chrono>
 #include <iostream>
@@ -26,9 +27,10 @@ void mls_mpm(int quality) {
   constexpr double mu_0 = E/(2*(1 + nu)); // Lame mu
   constexpr double lambda_0 = E*nu/((1 + nu)*(1 - 2*nu)); // Lame lambda
 
-  using FloatingType = double;
+  using FloatingType = float;
   using Vector2 = Vector<FloatingType, 2>;
   using Matrix2 = Matrix<FloatingType, 2, 2>;
+  using LazyVector2 = Vector<LazyReference<FloatingType>, 2>;
 
   View<FloatingType*> xx("x", n_particles);
   View<FloatingType*> xy("x", n_particles);
@@ -98,7 +100,7 @@ void mls_mpm(int quality) {
       base.y() = (int)base.y();
       Vector2 fx = x*inv_dx - base;
 
-      Vector2 w[3] = { -0.5*(fx - 1.5).square(), -((fx - 1).square() - 0.75), 0.5*(fx - 0.5).square() };
+      Vector2 w[3] = { 0.5*(fx - 1.5).square(), -((fx - 1).square() - 0.75), 0.5*(fx - 0.5).square() };
 
       F = (Matrix2(1, 0, 0, 1) + dt*C)*F; // deformation gradient update
       double h = max(0.1, min(5.0, exp(10*(1 - jp)))); // Hardening coefficient: snow gets harder when compressed
@@ -113,7 +115,7 @@ void mls_mpm(int quality) {
       for (int d = 0; d < 2; d++) {
         double new_sig = sig[d][d];
         if (mat == 2) { // Snow
-          new_sig = min(max(sig[d][d], 1 - 2.5e-2), 1 + 4.5e-3); // Plasticity
+          new_sig = min(max(sig[d][d], (FloatingType)(1 - 2.5e-2)), (FloatingType)(1 + 4.5e-3)); // Plasticity
         }
         jp *= sig[d][d]/new_sig;
         sig[d][d] = new_sig;
@@ -153,6 +155,7 @@ void mls_mpm(int quality) {
 
     // node update
     parallel_for(MDRangePolicy<Rank<2>>({ 0, 0 }, { n_grid, n_grid }), KOKKOS_LAMBDA(int i, int j) {
+      // LazyVector2 v(&grid_vx(i, j), &grid_vy(i, j));
       Vector2 v(grid_vx(i, j), grid_vy(i, j));
       double m = grid_m(i, j);
 
@@ -168,7 +171,6 @@ void mls_mpm(int quality) {
         if (j > n_grid - 3 && v.y() > 0)
           v.y() = 0;
       }
-
       grid_vx(i, j) = v.x();
       grid_vy(i, j) = v.y();
     });
@@ -184,7 +186,7 @@ void mls_mpm(int quality) {
       base.y() = (int)base.y();
       Vector2 fx = x*inv_dx - base;
 
-      Vector2 w[3] = { -0.5*(fx - 1.5).square(), -((fx - 1).square() - 0.75), 0.5*(fx - 0.5).square() };
+      Vector2 w[3] = { 0.5*(fx - 1.5).square(), -((fx - 1).square() - 0.75), 0.5*(fx - 0.5).square() };
       v.x() = 0; v.y() = 0;
       C[0][0] = 0; C[0][1] = 0; C[1][0] = 0; C[1][1] = 0;
       
