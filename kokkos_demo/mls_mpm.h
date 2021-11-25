@@ -26,26 +26,30 @@ void mls_mpm(int quality) {
   constexpr double mu_0 = E/(2*(1 + nu)); // Lame mu
   constexpr double lambda_0 = E*nu/((1 + nu)*(1 - 2*nu)); // Lame lambda
 
-  View<float*> xx("x", n_particles);
-  View<float*> xy("x", n_particles);
-  View<float*> vx("v", n_particles);
-  View<float*> vy("v", n_particles);
-  View<float*> C00("C", n_particles);
-  View<float*> C01("C", n_particles);
-  View<float*> C10("C", n_particles);
-  View<float*> C11("C", n_particles);
-  View<float*> F00("F", n_particles);
-  View<float*> F01("F", n_particles);
-  View<float*> F10("F", n_particles);
-  View<float*> F11("F", n_particles);
+  using FloatingType = double;
+  using Vector2 = Vector<FloatingType, 2>;
+  using Matrix2 = Matrix<FloatingType, 2, 2>;
+
+  View<FloatingType*> xx("x", n_particles);
+  View<FloatingType*> xy("x", n_particles);
+  View<FloatingType*> vx("v", n_particles);
+  View<FloatingType*> vy("v", n_particles);
+  View<FloatingType*> C00("C", n_particles);
+  View<FloatingType*> C01("C", n_particles);
+  View<FloatingType*> C10("C", n_particles);
+  View<FloatingType*> C11("C", n_particles);
+  View<FloatingType*> F00("F", n_particles);
+  View<FloatingType*> F01("F", n_particles);
+  View<FloatingType*> F10("F", n_particles);
+  View<FloatingType*> F11("F", n_particles);
   View<int*> material("material", n_particles);
-  View<float*> Jp("Jp", n_particles);
+  View<FloatingType*> Jp("Jp", n_particles);
 
-  View<float**> grid_vx("grid_v", n_grid, n_grid);
-  View<float**> grid_vy("grid_v", n_grid, n_grid);
-  View<float**> grid_m("grid_m", n_grid, n_grid);
+  View<FloatingType**> grid_vx("grid_v", n_grid, n_grid);
+  View<FloatingType**> grid_vy("grid_v", n_grid, n_grid);
+  View<FloatingType**> grid_m("grid_m", n_grid, n_grid);
 
-  Vec2 gravity(0, -1);
+  Vector2 gravity(0, -1);
 
   auto reset = [&]() {
     int group_size = n_particles/3;
@@ -82,130 +86,130 @@ void mls_mpm(int quality) {
 
     // P2G
     parallel_for(n_particles, KOKKOS_LAMBDA(int i) {
-      Vec2 x(xx(i), xy(i));
-      Vec2 v(vx(i), vy(i));
-      Mat2 C(C00(i), C01(i), C10(i), C11(i));
-      Mat2 F(F00(i), F01(i), F10(i), F11(i));
+      Vector2 x(xx(i), xy(i));
+      Vector2 v(vx(i), vy(i));
+      Matrix2 C(C00(i), C01(i), C10(i), C11(i));
+      Matrix2 F(F00(i), F01(i), F10(i), F11(i));
       int mat = material(i);
       double jp = Jp(i);
 
-      Vec2 base = x*inv_dx - 0.5;
-      base.x = (int)base.x;
-      base.y = (int)base.y;
-      Vec2 fx = x*inv_dx - base;
+      Vector2 base = x*inv_dx - 0.5;
+      base.x() = (int)base.x();
+      base.y() = (int)base.y();
+      Vector2 fx = x*inv_dx - base;
 
-      Vec2 w[3] = { 0.5*(1.5 - fx).square(), 0.75 - (fx - 1).square(), 0.5*(fx -  0.5).square() };
+      Vector2 w[3] = { -0.5*(fx - 1.5).square(), -((fx - 1).square() - 0.75), 0.5*(fx - 0.5).square() };
 
-      F = (Mat2() + dt*C)*F; // deformation gradient update
+      F = (Matrix2(1, 0, 0, 1) + dt*C)*F; // deformation gradient update
       double h = max(0.1, min(5.0, exp(10*(1 - jp)))); // Hardening coefficient: snow gets harder when compressed
       if (mat == 1) // jelly, make it softer
         h = 0.3;
       double mu = mu_0*h, la = lambda_0*h;
       if (mat == 0) // liquid
         mu = 0.0;
-      Mat2 U, sig, V;
+      Matrix2 U, sig, V;
       svd(F, U, sig, V);
       double J = 1;
       for (int d = 0; d < 2; d++) {
-        double new_sig = sig(d, d);
+        double new_sig = sig[d][d];
         if (mat == 2) { // Snow
-          new_sig = min(max(sig(d, d), 1 - 2.5e-2), 1 + 4.5e-3); // Plasticity
+          new_sig = min(max(sig[d][d], 1 - 2.5e-2), 1 + 4.5e-3); // Plasticity
         }
-        jp *= sig(d, d)/new_sig;
-        sig(d, d) = new_sig;
+        jp *= sig[d][d]/new_sig;
+        sig[d][d] = new_sig;
         J *= new_sig;
       }
       if (mat == 0) // Reset deformation gradient to avoid numerical instability
-        F = Mat2()*sqrt(J);
+        F = Matrix2(1, 0, 0, 1)*sqrt(J);
       else if (mat == 2)
         F = U*sig*V.transpose(); // Reconstruct elastic deformation gradient after plasticity
-      Mat2 stress = 2*mu*(F - U*V.transpose())*F.transpose() + Mat2()*la*J*(J - 1);
+      Matrix2 stress = 2*mu*(F - U*V.transpose())*F.transpose() + Matrix2()*la*J*(J - 1);
       stress = (-dt*p_vol*4*inv_dx*inv_dx)*stress;
-      Mat2 affine = stress + p_mass * C;
-      Vec2 offset, dpos, index;
+      Matrix2 affine = stress + p_mass*C;
+      Vector2 offset, dpos, index;
       double weight;
       for (int i = 0; i < 3; i++)
         for (int j = 0; j < 3; j++) { // Loop over 3x3 node node neighborhood
-          offset.x = i;
-          offset.y = j;
+          offset.x() = i;
+          offset.y() = j;
                 
-          weight = w[i].x*w[j].y;
+          weight = w[i].x()*w[j].y();
           index = base + offset;
 
-          atomic_add(&grid_m((int)index.x, (int)index.y), weight*p_mass);
+          atomic_add(&grid_m((int)index.x(), (int)index.y()), weight*p_mass);
 
           dpos = (offset - fx)*dx;
-          const Vec2 &dv = weight*(p_mass*v + affine*dpos);
-          atomic_add(&grid_vx((int)index.x, (int)index.y), dv.x);
-          atomic_add(&grid_vy((int)index.x, (int)index.y), dv.y);
+          const Vector2 &dv = weight*(p_mass*v + affine*dpos);
+          atomic_add(&grid_vx((int)index.x(), (int)index.y()), dv.x());
+          atomic_add(&grid_vy((int)index.x(), (int)index.y()), dv.y());
         }
 
-      F00(i) = F.m00;
-      F01(i) = F.m01;
-      F10(i) = F.m10;
-      F11(i) = F.m11;
+      F00(i) = F[0][0];
+      F01(i) = F[0][1];
+      F10(i) = F[1][0];
+      F11(i) = F[1][1];
       Jp(i) = jp;
     });
 
     // node update
     parallel_for(MDRangePolicy<Rank<2>>({ 0, 0 }, { n_grid, n_grid }), KOKKOS_LAMBDA(int i, int j) {
-      Vec2 v(grid_vx(i, j), grid_vy(i, j));
+      Vector2 v(grid_vx(i, j), grid_vy(i, j));
       double m = grid_m(i, j);
 
       if (m > 0) { // No need for epsilon here
         v /= m; // Momentum to velocity
         v += dt*gravity*30; // gravity
-        if (i < 3 && v.x < 0)
-          v.x = 0; // Boundary conditions
-        if (i > n_grid - 3 && v.x > 0)
-          v.x = 0;
-        if (j < 3 && v.y < 0)
-          v.y = 0;
-        if (j > n_grid - 3 && v.y > 0)
-          v.y = 0;
+        if (i < 3 && v.x() < 0)
+          v.x() = 0; // Boundary conditions
+        if (i > n_grid - 3 && v.x() > 0)
+          v.x() = 0;
+        if (j < 3 && v.y() < 0)
+          v.y() = 0;
+        if (j > n_grid - 3 && v.y() > 0)
+          v.y() = 0;
       }
 
-      grid_vx(i, j) = v.x;
-      grid_vy(i, j) = v.y;
+      grid_vx(i, j) = v.x();
+      grid_vy(i, j) = v.y();
     });
 
     // G2P
     parallel_for(n_particles, KOKKOS_LAMBDA(int i) {
-      Vec2 x(xx(i), xy(i));
-      Vec2 v(vx(i), vy(i));
-      Mat2 C(C00(i), C01(i), C10(i), C11(i));
+      Vector2 x(xx(i), xy(i));
+      Vector2 v(vx(i), vy(i));
+      Matrix2 C(C00(i), C01(i), C10(i), C11(i));
 
-      Vec2 base = x*inv_dx - 0.5;
-      base.x = (int)base.x;
-      base.y = (int)base.y;
-      Vec2 fx = x*inv_dx - base;
+      Vector2 base = x*inv_dx - 0.5;
+      base.x() = (int)base.x();
+      base.y() = (int)base.y();
+      Vector2 fx = x*inv_dx - base;
 
-      Vec2 w[3] = { 0.5*(1.5 - fx).square(), 0.75 - (fx - 1).square(), 0.5*(fx -  0.5).square() };
-      v.x = 0; v.y = 0;
-      C.m00 = 0; C.m01 = 0; C.m10 = 0; C.m11 = 0;
+      Vector2 w[3] = { -0.5*(fx - 1.5).square(), -((fx - 1).square() - 0.75), 0.5*(fx - 0.5).square() };
+      v.x() = 0; v.y() = 0;
+      C[0][0] = 0; C[0][1] = 0; C[1][0] = 0; C[1][1] = 0;
       
       for (int i = 0; i < 3; i++)
         for (int j = 0; j < 3; j++) { // loop over 3x3 node node neighborhood
-          Vec2 dpos = Vec2(i, j) - fx;
-          Vec2 offset = base + Vec2(i, j);
-          Vec2 g_v;
-          g_v.x = grid_vx((int)offset.x, (int)offset.y);
-          g_v.y = grid_vy((int)offset.x, (int)offset.y);
-          double weight = w[i].x*w[j].y;
+          Vector2 dpos = Vector2(i, j) - fx;
+          Vector2 offset = base + Vector2(i, j);
+          Vector2 g_v;
+          g_v.x() = grid_vx((int)offset.x(), (int)offset.y());
+          g_v.y() = grid_vy((int)offset.x(), (int)offset.y());
+          double weight = w[i].x()*w[j].y();
           v += weight*g_v;
-          C += 4*inv_dx*weight*Mat2(g_v.x*dpos.x, g_v.x*dpos.y, g_v.y*dpos.x, g_v.y*dpos.y);
+          C += 4*inv_dx*weight*Matrix2(g_v.x()*dpos.x(), g_v.x()*dpos.y(), g_v.y()*dpos.x(), g_v.y()*dpos.y());
         }
 
       x += dt*v; // advection
 
-      xx(i) = x.x;
-      xy(i) = x.y;
-      vx(i) = v.x;
-      vy(i) = v.y;
-      C00(i) = C.m00;
-      C01(i) = C.m01;
-      C10(i) = C.m10;
-      C11(i) = C.m11;
+      xx(i) = x.x();
+      xy(i) = x.y();
+      vx(i) = v.x();
+      vy(i) = v.y();
+      C00(i) = C[0][0];
+      C01(i) = C[0][1];
+      C10(i) = C[1][0];
+      C11(i) = C[1][1];
     });
   };
 
@@ -224,7 +228,7 @@ void mls_mpm(int quality) {
   cout //<< n_particles << " " << n_grid << " "
        << duration_cast<milliseconds>(steady_clock::now() - start_time).count() << endl;
 #else
-  View<Vec2*>::HostMirror x_host = create_mirror_view(x); // position mirror
+  View<Vector2*>::HostMirror x_host = create_mirror_view(x); // position mirror
   View<int*>::HostMirror material_host = create_mirror_view(material); // material mirror
 
   vector<float> vertices(5*n_particles);
@@ -240,15 +244,15 @@ void mls_mpm(int quality) {
         reset();
 
       if (left || right || up || down)
-        gravity = Vec2();
+        gravity = Vector2();
       if (left)
-        gravity.x -= 1;
+        gravity.x() -= 1;
       if (right)
-        gravity.x += 1;
+        gravity.x() += 1;
       if (up)
-        gravity.y += 1;
+        gravity.y() += 1;
       if (down)
-        gravity.y -= 1;
+        gravity.y() -= 1;
 
       for (int s = 0; s < max(1, (int)(2e-3/dt)); s++) {
         substep();
@@ -258,8 +262,8 @@ void mls_mpm(int quality) {
       deep_copy(material_host, material);
 
       for (int i = 0; i < n_particles; i++) {
-        vertices.at(5*i    ) = 2*x_host(i).x - 1;
-        vertices.at(5*i + 1) = 2*x_host(i).y - 1;
+        vertices.at(5*i    ) = 2*x_host(i).x() - 1;
+        vertices.at(5*i + 1) = 2*x_host(i).y() - 1;
         vertices.at(5*i + 2) = material_host(i) == 0;
         vertices.at(5*i + 3) = material_host(i) == 1;
         vertices.at(5*i + 4) = material_host(i) == 2;
