@@ -12,25 +12,25 @@ using namespace std;
 using namespace Kokkos;
 using namespace std::chrono;
 
+using FloatingType = float;
+using Vector2 = Vector<FloatingType, 2>;
+using Matrix2 = Matrix<FloatingType, 2, 2>;
+using LazyVector2 = Vector<LazyReference<FloatingType>, 2>;
+
 void mls_mpm(int quality) {
   const int n_particles = 3*4*4*quality*quality;
   const int n_grid = 9*quality;
 
-  const double dx = 1.0/n_grid;
-  const double inv_dx = n_grid;
-  const double dt = 1e-4/quality;
-  const double p_vol = (dx*0.5)*(dx*0.5);
-  constexpr double p_rho = 1;
-  const double p_mass = p_vol*p_rho;
-  constexpr double E = 5e3; // Young's modulus
-  constexpr double nu = 0.2; // Poisson's ratio
-  constexpr double mu_0 = E/(2*(1 + nu)); // Lame mu
-  constexpr double lambda_0 = E*nu/((1 + nu)*(1 - 2*nu)); // Lame lambda
-
-  using FloatingType = float;
-  using Vector2 = Vector<FloatingType, 2>;
-  using Matrix2 = Matrix<FloatingType, 2, 2>;
-  using LazyVector2 = Vector<LazyReference<FloatingType>, 2>;
+  const FloatingType dx = 1.0/n_grid;
+  const FloatingType inv_dx = n_grid;
+  const FloatingType dt = 1e-4/quality;
+  const FloatingType p_vol = (dx*0.5)*(dx*0.5);
+  constexpr FloatingType p_rho = 1;
+  const FloatingType p_mass = p_vol*p_rho;
+  constexpr FloatingType E = 5e3; // Young's modulus
+  constexpr FloatingType nu = 0.2; // Poisson's ratio
+  constexpr FloatingType mu_0 = E/(2*(1 + nu)); // Lame mu
+  constexpr FloatingType lambda_0 = E*nu/((1 + nu)*(1 - 2*nu)); // Lame lambda
 
   View<FloatingType*> xx("x", n_particles);
   View<FloatingType*> xy("x", n_particles);
@@ -58,11 +58,11 @@ void mls_mpm(int quality) {
     parallel_for(n_particles, KOKKOS_LAMBDA(int i) {
       int i_in_group = i%group_size;
       int dim_size = 4*quality;
-      double row = i_in_group%dim_size;
-      double col = i_in_group/dim_size;
+      FloatingType row = i_in_group%dim_size;
+      FloatingType col = i_in_group/dim_size;
 
-      xx(i) = row/dim_size*0.2 + 0.3  + 0.1 *(int)(i/group_size);
-      xy(i) = col/dim_size*0.2 + 0.05 + 0.29*(int)(i/group_size);
+      xx(i) = row/dim_size*0.2 + 0.3  + 0.1 *(i/group_size);
+      xy(i) = col/dim_size*0.2 + 0.05 + 0.29*(i/group_size);
       vx(i) = 0;
       vy(i) = 0;
       C00(i) = 0;
@@ -93,43 +93,44 @@ void mls_mpm(int quality) {
       Matrix2 C(C00(i), C01(i), C10(i), C11(i));
       Matrix2 F(F00(i), F01(i), F10(i), F11(i));
       int mat = material(i);
-      double jp = Jp(i);
+      FloatingType jp = Jp(i);
 
-      Vector2 base = x*inv_dx - 0.5;
-      base.x() = (int)base.x();
-      base.y() = (int)base.y();
+      Vector<int, 2> base = x*inv_dx - Vector2(0.5, 0.5);
       Vector2 fx = x*inv_dx - base;
 
-      Vector2 w[3] = { 0.5*(fx - 1.5).square(), -((fx - 1).square() - 0.75), 0.5*(fx - 0.5).square() };
+      Vector2 w[]{ 0.5*(Vector2(1.5, 1.5) - fx).square(),
+        Vector2(0.75, 0.75) - (fx - Vector2(1, 1)).square(), 
+        0.5*(fx - Vector2(0.5, 0.5)).square() };
 
       F = (Matrix2(1, 0, 0, 1) + dt*C)*F; // deformation gradient update
-      double h = max(0.1, min(5.0, exp(10*(1 - jp)))); // Hardening coefficient: snow gets harder when compressed
+      FloatingType h = max((FloatingType)0.1, min((FloatingType)5.0, exp(10*(1 - jp)))); // Hardening coefficient: snow gets harder when compressed
       if (mat == 1) // jelly, make it softer
         h = 0.3;
-      double mu = mu_0*h, la = lambda_0*h;
+      FloatingType mu = mu_0*h, la = lambda_0*h;
       if (mat == 0) // liquid
         mu = 0.0;
       Matrix2 U, sig, V;
       svd(F, U, sig, V);
-      double J = 1;
+      FloatingType J = 1;
       for (int d = 0; d < 2; d++) {
-        double new_sig = sig[d][d];
+        FloatingType new_sig = sig(d, d);
         if (mat == 2) { // Snow
-          new_sig = min(max(sig[d][d], (FloatingType)(1 - 2.5e-2)), (FloatingType)(1 + 4.5e-3)); // Plasticity
+          new_sig = min(max(sig(d, d), (FloatingType)(1 - 2.5e-2)), (FloatingType)(1 + 4.5e-3)); // Plasticity
         }
-        jp *= sig[d][d]/new_sig;
-        sig[d][d] = new_sig;
+        jp *= sig(d, d)/new_sig;
+        sig(d, d) = new_sig;
         J *= new_sig;
       }
       if (mat == 0) // Reset deformation gradient to avoid numerical instability
         F = Matrix2(1, 0, 0, 1)*sqrt(J);
       else if (mat == 2)
         F = U*sig*V.transpose(); // Reconstruct elastic deformation gradient after plasticity
-      Matrix2 stress = 2*mu*(F - U*V.transpose())*F.transpose() + Matrix2()*la*J*(J - 1);
+      Matrix2 stress = 2*mu*(F - U*V.transpose())*F.transpose() + Matrix2(1, 0, 0, 1)*(double)(la*J*(J - 1)); // why is this cast necessary? fix
       stress = (-dt*p_vol*4*inv_dx*inv_dx)*stress;
       Matrix2 affine = stress + p_mass*C;
-      Vector2 offset, dpos, index;
-      double weight;
+      Vector2 dpos;
+      Vector<int, 2> offset, index;
+      FloatingType weight;
       for (int i = 0; i < 3; i++)
         for (int j = 0; j < 3; j++) { // Loop over 3x3 node node neighborhood
           offset.x() = i;
@@ -142,22 +143,21 @@ void mls_mpm(int quality) {
 
           dpos = (offset - fx)*dx;
           const Vector2 &dv = weight*(p_mass*v + affine*dpos);
-          atomic_add(&grid_vx((int)index.x(), (int)index.y()), dv.x());
-          atomic_add(&grid_vy((int)index.x(), (int)index.y()), dv.y());
+          atomic_add(&grid_vx(index.x(), index.y()), dv.x());
+          atomic_add(&grid_vy(index.x(), index.y()), dv.y());
         }
 
-      F00(i) = F[0][0];
-      F01(i) = F[0][1];
-      F10(i) = F[1][0];
-      F11(i) = F[1][1];
+      F00(i) = F(0, 0);
+      F01(i) = F(0, 1);
+      F10(i) = F(1, 0);
+      F11(i) = F(1, 1);
       Jp(i) = jp;
     });
 
     // node update
     parallel_for(MDRangePolicy<Rank<2>>({ 0, 0 }, { n_grid, n_grid }), KOKKOS_LAMBDA(int i, int j) {
-      // LazyVector2 v(&grid_vx(i, j), &grid_vy(i, j));
       Vector2 v(grid_vx(i, j), grid_vy(i, j));
-      double m = grid_m(i, j);
+      FloatingType m = grid_m(i, j);
 
       if (m > 0) { // No need for epsilon here
         v /= m; // Momentum to velocity
@@ -181,14 +181,15 @@ void mls_mpm(int quality) {
       Vector2 v(vx(i), vy(i));
       Matrix2 C(C00(i), C01(i), C10(i), C11(i));
 
-      Vector2 base = x*inv_dx - 0.5;
-      base.x() = (int)base.x();
-      base.y() = (int)base.y();
+      Vector<int, 2> base = x*inv_dx - Vector2(0.5, 0.5);
       Vector2 fx = x*inv_dx - base;
 
-      Vector2 w[3] = { 0.5*(fx - 1.5).square(), -((fx - 1).square() - 0.75), 0.5*(fx - 0.5).square() };
+      Vector2 w[]{ 0.5*(Vector2(1.5, 1.5) - fx).square(),
+        Vector2(0.75, 0.75) - (fx - Vector2(1, 1)).square(), 
+        0.5*(fx - Vector2(0.5, 0.5)).square() };
+
       v.x() = 0; v.y() = 0;
-      C[0][0] = 0; C[0][1] = 0; C[1][0] = 0; C[1][1] = 0;
+      C(0, 0) = 0; C(0, 1) = 0; C(1, 0) = 0; C(1, 1) = 0;
       
       for (int i = 0; i < 3; i++)
         for (int j = 0; j < 3; j++) { // loop over 3x3 node node neighborhood
@@ -197,7 +198,7 @@ void mls_mpm(int quality) {
           Vector2 g_v;
           g_v.x() = grid_vx((int)offset.x(), (int)offset.y());
           g_v.y() = grid_vy((int)offset.x(), (int)offset.y());
-          double weight = w[i].x()*w[j].y();
+          FloatingType weight = w[i].x()*w[j].y();
           v += weight*g_v;
           C += 4*inv_dx*weight*Matrix2(g_v.x()*dpos.x(), g_v.x()*dpos.y(), g_v.y()*dpos.x(), g_v.y()*dpos.y());
         }
@@ -208,15 +209,14 @@ void mls_mpm(int quality) {
       xy(i) = x.y();
       vx(i) = v.x();
       vy(i) = v.y();
-      C00(i) = C[0][0];
-      C01(i) = C[0][1];
-      C10(i) = C[1][0];
-      C11(i) = C[1][1];
+      C00(i) = C(0, 0);
+      C01(i) = C(0, 1);
+      C10(i) = C(1, 0);
+      C11(i) = C(1, 1);
     });
   };
 
-#if 1
-
+#if 0
   time_point<steady_clock> start_time = steady_clock::now();
 
   reset();
@@ -230,8 +230,9 @@ void mls_mpm(int quality) {
   cout //<< n_particles << " " << n_grid << " "
        << duration_cast<milliseconds>(steady_clock::now() - start_time).count() << endl;
 #else
-  View<Vector2*>::HostMirror x_host = create_mirror_view(x); // position mirror
-  View<int*>::HostMirror material_host = create_mirror_view(material); // material mirror
+  View<FloatingType*>::HostMirror xx_host = create_mirror_view(xx);
+  View<FloatingType*>::HostMirror xy_host = create_mirror_view(xy);
+  View<int*>::HostMirror material_host = create_mirror_view(material);
 
   vector<float> vertices(5*n_particles);
 
@@ -240,7 +241,7 @@ void mls_mpm(int quality) {
   draw(n_particles, &vertices.front(),
        [&](bool r, bool left, bool right, bool up, bool down,
            bool mouse_left, bool mouse_right,
-           double xpos, double ypos) {
+           FloatingType xpos, FloatingType ypos) {
 
       if (r)
         reset();
@@ -260,16 +261,18 @@ void mls_mpm(int quality) {
         substep();
       }
 
-      deep_copy(x_host, x);
+      deep_copy(xx_host, xx);
+      deep_copy(xy_host, xy);
       deep_copy(material_host, material);
 
       for (int i = 0; i < n_particles; i++) {
-        vertices.at(5*i    ) = 2*x_host(i).x() - 1;
-        vertices.at(5*i + 1) = 2*x_host(i).y() - 1;
+        vertices.at(5*i    ) = 2*xx_host(i) - 1;
+        vertices.at(5*i + 1) = 2*xy_host(i) - 1;
         vertices.at(5*i + 2) = material_host(i) == 0;
         vertices.at(5*i + 3) = material_host(i) == 1;
         vertices.at(5*i + 4) = material_host(i) == 2;
       }
+      cout << "STEP" << endl;
     });
 #endif
 }

@@ -24,48 +24,8 @@ int main(int argc,
          char *argv[]) {
   initialize(argc, argv);
 
-  /*FILE *out = fopen("gputest.csv", "w");
-  for (int i = 0; i < 300 && false; i++) {
-    int n = 500*(i + 1);
-
-    View<int*> results("results", n);
-
-    // View<int[1]> dummy("dummy");
-    // parallel_for(1, KOKKOS_LAMBDA(int j) { dummy(0) = 0; });
-
-    View<garbage[1]> dummy("dummy");
-
-    time_point<steady_clock> start_time = steady_clock::now();
-    parallel_for(n, KOKKOS_LAMBDA(int j) {
-      for (int k = 0;; k++)
-      {
-        for (int l = 0; l < k; l++) {
-          if (l*k == 5000000) {
-	    results(j) = k;
-
-            // if (dummy(0) == 6)
-            //   dummy(0) = 123;
-
-            // atomic_add(&dummy(0), garbage());
-
-            return;
-          }
-        }
-      }
-    });
-    fence();
-    time_point<steady_clock> end_time = steady_clock::now();
-
-    fprintf(out, "%d,%d\n", n, (int)duration_cast<milliseconds>(end_time - start_time).count());
-    printf("%d,%d\n", n, (int)duration_cast<milliseconds>(end_time - start_time).count());
-    //cout << i << endl;
-  }
-  fclose(out);*/
-
   for (int i = 0; i < 55; i++)
     mls_mpm(i + 1);
-  
-  //mls_mpm(20);
 
   finalize();
 }
