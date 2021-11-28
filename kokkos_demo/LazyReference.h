@@ -32,4 +32,16 @@ public:
     {
       return local = value;
     }
+
+    T &
+    operator/=(const T &value)
+    {
+      return local /= value;
+    }
+
+    T &
+    operator*=(const T &value)
+    {
+      return local *= value;
+    }
 };

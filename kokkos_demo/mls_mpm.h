@@ -16,6 +16,7 @@ using FloatingType = float;
 using Vector2 = Vector<FloatingType, 2>;
 using Matrix2 = Matrix<FloatingType, 2, 2>;
 using LazyVector2 = Vector<LazyReference<FloatingType>, 2>;
+using LazyMatrix2 = Matrix<LazyReference<FloatingType>, 2, 2>;
 
 void mls_mpm(int quality) {
   const int n_particles = 3*4*4*quality*quality;
@@ -88,12 +89,12 @@ void mls_mpm(int quality) {
 
     // P2G
     parallel_for(n_particles, KOKKOS_LAMBDA(int i) {
-      Vector2 x(xx(i), xy(i));
-      Vector2 v(vx(i), vy(i));
-      Matrix2 C(C00(i), C01(i), C10(i), C11(i));
-      Matrix2 F(F00(i), F01(i), F10(i), F11(i));
-      int mat = material(i);
-      FloatingType jp = Jp(i);
+      LazyVector2 x(&xx(i), &xy(i));
+      LazyVector2 v(&vx(i), &vy(i));
+      LazyMatrix2 C(&C00(i), &C01(i), &C10(i), &C11(i));
+      LazyMatrix2 F(&F00(i), &F01(i), &F10(i), &F11(i));
+      LazyReference<int> mat(&material(i));
+      LazyReference<FloatingType> jp(&Jp(i));
 
       Vector<int, 2> base = x*inv_dx - Vector2(0.5, 0.5);
       Vector2 fx = x*inv_dx - base;
@@ -146,18 +147,12 @@ void mls_mpm(int quality) {
           atomic_add(&grid_vx(index.x(), index.y()), dv.x());
           atomic_add(&grid_vy(index.x(), index.y()), dv.y());
         }
-
-      F00(i) = F(0, 0);
-      F01(i) = F(0, 1);
-      F10(i) = F(1, 0);
-      F11(i) = F(1, 1);
-      Jp(i) = jp;
     });
 
     // node update
     parallel_for(MDRangePolicy<Rank<2>>({ 0, 0 }, { n_grid, n_grid }), KOKKOS_LAMBDA(int i, int j) {
-      Vector2 v(grid_vx(i, j), grid_vy(i, j));
-      FloatingType m = grid_m(i, j);
+      LazyVector2 v(&grid_vx(i, j), &grid_vy(i, j));
+      FloatingType m = grid_m(i, j); // make lazy, but need to replace std::is_arithmetic
 
       if (m > 0) { // No need for epsilon here
         v /= m; // Momentum to velocity
@@ -171,15 +166,13 @@ void mls_mpm(int quality) {
         if (j > n_grid - 3 && v.y() > 0)
           v.y() = 0;
       }
-      grid_vx(i, j) = v.x();
-      grid_vy(i, j) = v.y();
     });
 
     // G2P
     parallel_for(n_particles, KOKKOS_LAMBDA(int i) {
-      Vector2 x(xx(i), xy(i));
-      Vector2 v(vx(i), vy(i));
-      Matrix2 C(C00(i), C01(i), C10(i), C11(i));
+      LazyVector2 x(&xx(i), &xy(i));
+      LazyVector2 v(&vx(i), &vy(i));
+      LazyMatrix2 C(&C00(i), &C01(i), &C10(i), &C11(i));
 
       Vector<int, 2> base = x*inv_dx - Vector2(0.5, 0.5);
       Vector2 fx = x*inv_dx - base;
@@ -204,14 +197,6 @@ void mls_mpm(int quality) {
         }
 
       x += dt*v; // advection
-      xx(i) = x.x();
-      xy(i) = x.y();
-      vx(i) = v.x();
-      vy(i) = v.y();
-      C00(i) = C(0, 0);
-      C01(i) = C(0, 1);
-      C10(i) = C(1, 0);
-      C11(i) = C(1, 1);
     });
   };
 

@@ -44,6 +44,8 @@ public:
     for (int i = 0; i < M; i++)
       for (int j = 0; j < N; j++)
         elements[i][j] = matrix(i, j);
+
+    return *this;
   }
 
   // accessors
@@ -360,8 +362,9 @@ public:
 
 // scale
 template<typename S, typename = enable_if_scalar_t<S>,
-  typename T, size_t M, size_t N>
-KOKKOS_INLINE_FUNCTION Matrix<T, M, N>
+  typename T, size_t M, size_t N,
+  typename U = decltype(std::declval<T>()/std::declval<S>())>
+KOKKOS_INLINE_FUNCTION Matrix<U, M, N>
 operator*(const S &scalar, const Matrix<T, M, N> &matrix)
 {
   return matrix*scalar;
