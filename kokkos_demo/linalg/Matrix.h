@@ -140,7 +140,7 @@ public:
   }
 
   // addition/subtraction
-  template<typename U, typename V = decltype(T{} + U{})>
+  template<typename U, typename V = decltype(std::declval<T>() + std::declval<U>())>
   KOKKOS_INLINE_FUNCTION Matrix<V, M, N>
   operator+(const Matrix<U, M, N> &matrix) const
   {
@@ -153,7 +153,7 @@ public:
     return sum;
   }
   
-  template<typename U, typename V = decltype(T{} - U{})>
+  template<typename U, typename V = decltype(std::declval<T>() - std::declval<U>())>
   KOKKOS_INLINE_FUNCTION Matrix<V, M, N>
   operator-(const Matrix<U, M, N> &matrix) const
   {
@@ -190,7 +190,7 @@ public:
 
   // scalar multiplication/division
   template<typename S, typename = enable_if_scalar_t<S>,
-    typename U = decltype(T{}*S{})>
+    typename U = decltype(std::declval<T>()*std::declval<S>())>
   KOKKOS_INLINE_FUNCTION Matrix<U, M, N>
   operator*(S &&scalar) const
   {
@@ -204,7 +204,7 @@ public:
   }
 
   template<typename S, typename = enable_if_scalar_t<S>,
-    typename U = decltype(T{}/S{})>
+    typename U = decltype(std::declval<T>()/std::declval<S>())>
   KOKKOS_INLINE_FUNCTION Matrix<U, M, N>
   operator/(S &&scalar) const
   {
@@ -234,7 +234,7 @@ public:
   {
     for (int i = 0; i < M; i++)
       for (int j = 0; j < N; j++)
-        elements[i][j] *= scalar;
+        elements[i][j] /= scalar;
 
     return *this;
   }
@@ -261,9 +261,9 @@ public:
   }
 
   // dot product
-  template<typename U, typename V = decltype(T{}*U{})>
+  template<typename U, typename V = decltype(std::declval<T>()*std::declval<U>())>
   KOKKOS_INLINE_FUNCTION V
-  dot(const Matrix<U, M, N> &matrix)
+  dot(const Matrix<U, M, N> &matrix) const
   {
     V dot_product{};
 
@@ -275,20 +275,20 @@ public:
   }
 
   // norms
-  KOKKOS_INLINE_FUNCTION decltype(T{}*T{})
+  KOKKOS_INLINE_FUNCTION decltype(std::declval<T>()*std::declval<T>())
   norm2() const
   {
     return dot(*this);
   }
 
-  KOKKOS_INLINE_FUNCTION decltype(std::sqrt(T{}*T{}))
+  KOKKOS_INLINE_FUNCTION decltype(std::sqrt(std::declval<T>()*std::declval<T>()))
   norm() const
   {
     return std::sqrt(norm2());
   }
 
   // normalize columns
-  template<typename U = decltype(T{}*T{})>
+  template<typename U = decltype(std::declval<T>()*std::declval<T>())>
   KOKKOS_INLINE_FUNCTION Matrix<T, M, N>
   unit() const
   {
@@ -310,7 +310,7 @@ public:
     return unit;
   }
   
-  template<typename U = decltype(T{}*T{})>
+  template<typename U = decltype(std::declval<T>()*std::declval<T>())>
   KOKKOS_INLINE_FUNCTION Matrix<T, M, N> &
   normalize()
   {
@@ -331,7 +331,7 @@ public:
   }
 
   // element-wise square
-  template<typename U = decltype(T{}*T{})>
+  template<typename U = decltype(std::declval<T>()*std::declval<T>())>
   KOKKOS_INLINE_FUNCTION Matrix<U, M, N>
   square() const
   {

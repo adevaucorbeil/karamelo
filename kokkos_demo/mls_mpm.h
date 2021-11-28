@@ -125,7 +125,7 @@ void mls_mpm(int quality) {
         F = Matrix2(1, 0, 0, 1)*sqrt(J);
       else if (mat == 2)
         F = U*sig*V.transpose(); // Reconstruct elastic deformation gradient after plasticity
-      Matrix2 stress = 2*mu*(F - U*V.transpose())*F.transpose() + Matrix2(1, 0, 0, 1)*(double)(la*J*(J - 1)); // why is this cast necessary? fix
+      Matrix2 stress = 2*mu*(F - U*V.transpose())*F.transpose() + Matrix2(1, 0, 0, 1)*la*J*(J - 1);
       stress = (-dt*p_vol*4*inv_dx*inv_dx)*stress;
       Matrix2 affine = stress + p_mass*C;
       Vector2 dpos;
@@ -204,7 +204,6 @@ void mls_mpm(int quality) {
         }
 
       x += dt*v; // advection
-
       xx(i) = x.x();
       xy(i) = x.y();
       vx(i) = v.x();
@@ -216,7 +215,7 @@ void mls_mpm(int quality) {
     });
   };
 
-#if 0
+#if 1
   time_point<steady_clock> start_time = steady_clock::now();
 
   reset();
@@ -272,7 +271,6 @@ void mls_mpm(int quality) {
         vertices.at(5*i + 3) = material_host(i) == 1;
         vertices.at(5*i + 4) = material_host(i) == 2;
       }
-      cout << "STEP" << endl;
     });
 #endif
 }
