@@ -26,5 +26,6 @@
 /doc/karamelodoxy_header.html
 /doc/karamelodoxy_layout.xml
 /doc/latex/*
-.vs/*
+.vs*
 CMakeSettings.json
+build/

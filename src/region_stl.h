@@ -23,6 +23,12 @@ RegionStyle(stl,Stl)
 
 #include "region.h"
 
+#include <array>
+#include <deque>
+#include <Eigen/Dense>
+
+using namespace Eigen;
+
 /*! \ingroup region regionblock region_block
 
 \section Syntax Syntax
@@ -44,6 +50,14 @@ This command defines a region of space described by an stl file. It is usually u
 \section Class Class description
 */
 
+class Facet : public array<Vector3d, 3> {
+ public:
+  Vector3d normal;
+
+  bool intersects(const Vector3d &origin, const Vector3d &direction) const;
+};
+
+
 class Stl : public Region {
  public:
   Stl(class MPM *, vector<string>);
@@ -53,6 +67,7 @@ class Stl : public Region {
   void read_restart(ifstream *);
 
  protected:
+  deque<Facet> facets;
   double xlo, xhi, ylo, yhi, zlo, zhi;
   string input_file_name;
   string name;
