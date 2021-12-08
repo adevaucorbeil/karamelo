@@ -19,35 +19,6 @@
 
 #include <sstream>
 
-#define BIG 1.0e20
-#define EPSILON 0.0000001
-
-bool Facet::intersects(const Vector3d &origin, const Vector3d &direction) const {
-  Vector3d edge0 = at(1) - at(0);
-  Vector3d edge1 = at(2) - at(0);
-  Vector3d h = direction.cross(edge1);
-  double a = edge0.dot(h);
-  if (abs(a) < EPSILON)
-    return false;    // This ray is parallel to this triangle.
-  double f = 1/a;
-  Vector3d s = origin - at(0);
-  double u = f*s.dot(h);
-  if (u < 0.0 || u > 1.0)
-    return false;
-  Vector3d q = s.cross(edge0);
-  double v = f*direction.dot(q);
-  if (v < 0.0 || u + v > 1.0)
-    return false;
-  // At this stage we can compute t to find out where the intersection point is on the line.
-  double t = f*edge1.dot(q);
-  if (t > EPSILON) // ray intersection
-  {
-    return true;
-  }
-  // This means that there is a line intersection but not a ray intersection.
-  return false;
-}
-
 Stl::Stl(MPM *mpm, vector<string> args) : Region(mpm, args) {
   if (universe->me == 0)
     cout << "Initiate Stl" << endl;
@@ -66,23 +37,17 @@ Stl::Stl(MPM *mpm, vector<string> args) : Region(mpm, args) {
 
   input_file_name = args[2];
 
+  cout << "FILE: " << input_file_name.c_str() << endl;
+
   fstream input_file(input_file_name.c_str(), ios::in | ios::binary);
 
   if (!input_file) {
     error->all(FLERR, "Error: input file could not be opened.\n");
   }
 
-  xlo =  BIG;
-  xhi = -BIG;
-  ylo =  BIG;
-  yhi = -BIG;
-  zlo =  BIG;
-  zhi = -BIG;
-
-  char buffer[5];
+  char buffer[6];
   input_file.read(buffer, 5);
-
-  // whitespace?
+  buffer[5] = '\0';
 
   if (!strcmp(buffer, "solid")) { // ascii stl
     string token;
@@ -134,12 +99,7 @@ Stl::Stl(MPM *mpm, vector<string> args) : Region(mpm, args) {
           input_file >> facet.at(i)(j);
         }
 
-        xlo = min(xlo, facet.at(i)(0));
-        xhi = max(xhi, facet.at(i)(0));
-        ylo = min(xlo, facet.at(i)(1));
-        yhi = max(xhi, facet.at(i)(1));
-        zlo = min(xlo, facet.at(i)(2));
-        zhi = max(xhi, facet.at(i)(2));
+        add(facet.at(i));
       }
 
       require_token("endloop");
@@ -175,49 +135,43 @@ Stl::Stl(MPM *mpm, vector<string> args) : Region(mpm, args) {
           facet.at(j)(k) = value;
         }
 
-        xlo = min(xlo, facet.at(j)(0));
-        xhi = max(xhi, facet.at(j)(0));
-        ylo = min(xlo, facet.at(j)(1));
-        yhi = max(xhi, facet.at(j)(1));
-        zlo = min(xlo, facet.at(j)(2));
-        zhi = max(xhi, facet.at(j)(2));
+        add(facet.at(j));
       }
 
       input_file.ignore(2);
     }
   }
 
-  cout << xlo << ", "
-       << xhi << ", "
-       << ylo << ", "
-       << yhi << ", "
-       << zlo << ", "
-       << zhi << endl;
+  octree = Octree(*this, 128, 8);
+
+  for (const Facet &facet: facets) {
+    octree.add(facet);
+  }
 
   if (update->method_type.compare("tlmpm") == 0) {
-    if (domain->boxlo[0] > xlo)
-      domain->boxlo[0] = xlo;
-    if (domain->boxlo[1] > ylo)
-      domain->boxlo[1] = ylo;
+    if (domain->boxlo[0] > interval_x.x0)
+      domain->boxlo[0] = interval_x.x0;
+    if (domain->boxlo[1] > interval_y.x0)
+      domain->boxlo[1] = interval_y.x0;
     if (domain->dimension == 3)
-      if (domain->boxlo[2] > zlo)
-        domain->boxlo[2] = zlo;
+      if (domain->boxlo[2] > interval_z.x0)
+        domain->boxlo[2] = interval_z.x0;
 
-    if (domain->boxhi[0] < xhi)
-      domain->boxhi[0] = xhi;
-    if (domain->boxhi[1] < yhi)
-      domain->boxhi[1] = yhi;
+    if (domain->boxhi[0] < interval_x.x1)
+      domain->boxhi[0] = interval_x.x1;
+    if (domain->boxhi[1] < interval_y.x1)
+      domain->boxhi[1] = interval_y.x1;
     if (domain->dimension == 3)
-      if (domain->boxhi[2] < zhi)
-        domain->boxhi[2] = zhi;
+      if (domain->boxhi[2] < interval_z.x1)
+        domain->boxhi[2] = interval_z.x1;
   } else {
-    if (domain->boxlo[0] > xlo)
-      xlo = domain->boxlo[0];
-    if (domain->boxlo[1] > ylo)
-      ylo = domain->boxlo[1];
+    if (domain->boxlo[0] > interval_x.x0)
+      interval_x.x0 = domain->boxlo[0];
+    if (domain->boxlo[1] > interval_y.x0)
+      interval_y.x0 = domain->boxlo[1];
     if (domain->dimension == 3)
-      if (domain->boxlo[2] > zlo)
-        zlo = domain->boxlo[2];
+      if (domain->boxlo[2] > interval_z.x0)
+        interval_z.x0 = domain->boxlo[2];
   }
 }
 
@@ -228,22 +182,13 @@ Stl::Stl(MPM *mpm, vector<string> args) : Region(mpm, args) {
 
 int Stl::inside(double x, double y, double z)
 {
-  //cout << "testing " << x << ", " << y << ", " << z << endl;
-  int intersections = 0;
-
   Vector3d p(x, y, z);
+  
+  double theta = M_PI*rand()/RAND_MAX;
+  double phi = 2*M_PI*rand()/RAND_MAX;
+  Vector3d direction(sin(theta)*cos(phi), sin(theta)*sin(phi), cos(theta));
 
-  for (const Facet &facet: facets) {
-    double theta = M_PI*rand()/RAND_MAX;
-    double phi = 2*M_PI*rand()/RAND_MAX;
-    Vector3d direction(sin(theta)*cos(phi), sin(theta)*sin(phi), cos(theta));
-
-    if (facet.intersects(p, Vector3d(0, 0, 1))) {
-      intersections++;
-    }
-  }
-
-  return intersections%2;
+  return octree.intersections(p, direction).size()%2;
 }
 
 /* ----------------------------------------------------------------------
@@ -251,12 +196,12 @@ int Stl::inside(double x, double y, double z)
 ------------------------------------------------------------------------- */
 vector<double> Stl::limits(){
   vector<double> lim;
-  lim.push_back(xlo);
-  lim.push_back(xhi);
-  lim.push_back(ylo);
-  lim.push_back(yhi);
-  lim.push_back(zlo);
-  lim.push_back(zhi);
+  lim.push_back(interval_x.x0);
+  lim.push_back(interval_x.x1);
+  lim.push_back(interval_y.x0);
+  lim.push_back(interval_y.x1);
+  lim.push_back(interval_z.x0);
+  lim.push_back(interval_z.x1);
   return lim;
 }
 
@@ -265,15 +210,13 @@ void Stl::write_restart(ofstream *of) {
   of->write(reinterpret_cast<const char *>(&input_file_name_length), sizeof(int));
   of->write(input_file_name.c_str(), input_file_name_length);
 
-  of->write(reinterpret_cast<const char *>(&xlo), sizeof(double));
-  of->write(reinterpret_cast<const char *>(&xhi), sizeof(double));
-  of->write(reinterpret_cast<const char *>(&ylo), sizeof(double));
-  of->write(reinterpret_cast<const char *>(&yhi), sizeof(double));
-  of->write(reinterpret_cast<const char *>(&zlo), sizeof(double));
-  of->write(reinterpret_cast<const char *>(&zhi), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&interval_x.x0), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&interval_x.x1), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&interval_y.x0), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&interval_y.x1), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&interval_z.x0), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&interval_z.x1), sizeof(double));
 }
-
-
 
 void Stl::read_restart(ifstream *ifr) {
   // cout << "Restart Stl" << endl;
@@ -284,10 +227,10 @@ void Stl::read_restart(ifstream *ifr) {
   buffer.back() = '\0';
   input_file_name = string(buffer.data());
 
-  ifr->read(reinterpret_cast<char *>(&xlo), sizeof(double));
-  ifr->read(reinterpret_cast<char *>(&xhi), sizeof(double));
-  ifr->read(reinterpret_cast<char *>(&ylo), sizeof(double));
-  ifr->read(reinterpret_cast<char *>(&yhi), sizeof(double));
-  ifr->read(reinterpret_cast<char *>(&zlo), sizeof(double));
-  ifr->read(reinterpret_cast<char *>(&zhi), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&interval_x.x0), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&interval_x.x1), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&interval_y.x0), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&interval_y.x1), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&interval_z.x0), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&interval_z.x1), sizeof(double));
 }

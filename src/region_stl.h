@@ -22,12 +22,9 @@ RegionStyle(stl,Stl)
 #define MPM_REGION_STL_H
 
 #include "region.h"
+#include "octree.h"
 
-#include <array>
 #include <deque>
-#include <Eigen/Dense>
-
-using namespace Eigen;
 
 /*! \ingroup region regionblock region_block
 
@@ -50,15 +47,7 @@ This command defines a region of space described by an stl file. It is usually u
 \section Class Class description
 */
 
-class Facet : public array<Vector3d, 3> {
- public:
-  Vector3d normal;
-
-  bool intersects(const Vector3d &origin, const Vector3d &direction) const;
-};
-
-
-class Stl : public Region {
+class Stl : public Region, public BoundingBox {
  public:
   Stl(class MPM *, vector<string>);
   int inside(double, double, double);
@@ -68,10 +57,9 @@ class Stl : public Region {
 
  protected:
   deque<Facet> facets;
-  double xlo, xhi, ylo, yhi, zlo, zhi;
+  Octree octree;
   string input_file_name;
   string name;
-  string usage[3] = {"Usage: region(region-ID, stl, input_file.stl)\n"};
 };
 
 #endif
