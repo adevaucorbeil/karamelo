@@ -4,3 +4,4 @@
 #include <region_union.h>
 #include <region_difference.h>
 #include <region_intersection.h>
+#include <region_stl.h>

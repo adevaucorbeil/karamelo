@@ -25,3 +25,5 @@ CMakeDoxy*
 Makefile
 
 .vs*
+/doc/latex/*
+build/

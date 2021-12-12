@@ -352,8 +352,13 @@ Var Input::evaluate_function(string func, string arg){
 string Input::remove_whitespace(string str){
   string str_;
 
+  bool quote = false;
+
   for(int i=0; i<str.length(); i++){
-    if( str[i] != ' ') str_.append(&str[i],1); // Add the non-whitespace character to str_
+    if (str[i] == '"')
+      quote = !quote;
+    else if (str[i] != ' ' || quote)
+      str_.append(&str[i],1); // Add the non-whitespace character to str_
   }
   return str_;
 }
