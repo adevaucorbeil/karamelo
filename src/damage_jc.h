@@ -21,7 +21,7 @@ DamageStyle(damage_johnson_cook,DamageJohnsonCook)
 #ifndef MPM_DAMAGE_JOHNSON_COOK_H
 #define MPM_DAMAGE_JOHNSON_COOK_H
 
-#include "damage.h"
+#include <damage.h>
 #include <Eigen/Eigen>
 
 class DamageJohnsonCook : public Damage {

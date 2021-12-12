@@ -11,12 +11,12 @@
  *
  * ----------------------------------------------------------------------- */
 
-#include "translate_particles.h"
-#include "domain.h"
-#include "error.h"
-#include "group.h"
-#include "input.h"
-#include "var.h"
+#include <translate_particles.h>
+#include <domain.h>
+#include <error.h>
+#include <group.h>
+#include <input.h>
+#include <var.h>
 #include <iostream>
 
 using namespace std;

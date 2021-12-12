@@ -11,10 +11,10 @@
  *
  * ----------------------------------------------------------------------- */
 
-#include "mpm.h"
-#include "input.h"
-#include "var.h"
-#include "math.h"
+#include <mpm.h>
+#include <input.h>
+#include <var.h>
+#include <math.h>
 #include <sstream>
 
 using namespace std;

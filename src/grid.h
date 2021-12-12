@@ -14,9 +14,9 @@
 #ifndef MPM_GRID_H
 #define MPM_GRID_H
 
-#include "pointers.h"
-#include "grid.h"
-#include "grid.h"
+#include <pointers.h>
+#include <grid.h>
+#include <grid.h>
 #include <vector>
 #include <Eigen/Eigen>
 #include <unordered_map>

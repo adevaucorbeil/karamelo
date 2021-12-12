@@ -14,7 +14,7 @@
 #ifndef MPM_DAMAGE_H
 #define MPM_DAMAGE_H
 
-#include "pointers.h"
+#include <pointers.h>
 #include <vector>
 #include <Eigen/Eigen>
 

@@ -11,21 +11,21 @@
  *
  * ----------------------------------------------------------------------- */
 
-#include "input.h"
-#include "domain.h"
-#include "error.h"
-#include "group.h"
-#include "log.h"
-#include "material.h"
-#include "modify.h"
-#include "mpi_wrappers.h"
-#include "mpm.h"
-#include "output.h"
-#include "scheme.h"
-#include "style_command.h"
-#include "universe.h"
-#include "update.h"
-#include "var.h"
+#include <input.h>
+#include <domain.h>
+#include <error.h>
+#include <group.h>
+#include <log.h>
+#include <material.h>
+#include <modify.h>
+#include <mpi_wrappers.h>
+#include <mpm.h>
+#include <output.h>
+#include <scheme.h>
+#include <style_command.h>
+#include <universe.h>
+#include <update.h>
+#include <var.h>
 #include <fstream>
 #include <iostream>
 #include <map>
@@ -69,7 +69,7 @@ Input::Input(MPM *mpm, int argc, char **argv) : Pointers(mpm)
 #define COMMAND_CLASS
 #define CommandStyle(key,Class)				\
   (*command_map)[#key] = &command_creator<Class>;
-#include "style_command.h"
+#include <style_command.h>
 #undef CommandStyle
 #undef COMMAND_CLASS
 

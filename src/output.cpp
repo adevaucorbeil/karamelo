@@ -11,18 +11,18 @@
  *
  * ----------------------------------------------------------------------- */
 
-#include "output.h"
-#include "dump.h"
-#include "error.h"
-#include "input.h"
-#include "log.h"
-#include "modify.h"
-#include "plot.h"
-#include "style_dump.h"
-#include "universe.h"
-#include "update.h"
-#include "var.h"
-#include "write_restart.h"
+#include <output.h>
+#include <dump.h>
+#include <error.h>
+#include <input.h>
+#include <log.h>
+#include <modify.h>
+#include <plot.h>
+#include <style_dump.h>
+#include <universe.h>
+#include <update.h>
+#include <var.h>
+#include <write_restart.h>
 
 #define MIN(A,B) ((A) < (B) ? (A) : (B))
 
@@ -224,7 +224,7 @@ void Output::add_dump(vector<string> args){
 #define DUMP_CLASS
 #define DumpStyle(key,Class) \
   else if (args[2].compare(#key) == 0) dumps.push_back(new Class(mpm,args));
-#include "style_dump.h"
+#include <style_dump.h>
 #undef DUMP_CLASS
 
   else {

@@ -20,7 +20,7 @@ CommandStyle(xcm,CentreOfMass)
 #ifndef LMP_CENTRE_OF_MASS_H
 #define LMP_CENTRE_OF_MASS_H
 
-#include "pointers.h"
+#include <pointers.h>
 
 class CentreOfMass : protected Pointers {
  public:

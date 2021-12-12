@@ -14,7 +14,7 @@
 #ifndef MPM_LOG_H
 #define MPM_LOG_H
 
-#include "pointers.h"
+#include <pointers.h>
 #include <vector>
 
 class Log;

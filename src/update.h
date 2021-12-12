@@ -14,7 +14,7 @@
 #ifndef MPM_UPDATE_H
 #define MPM_UPDATE_H
 
-#include "pointers.h"
+#include <pointers.h>
 #include <vector>
 #include <map>
 /*! Stores everything related to time steps as well as the Scheme and Method classes.

@@ -14,7 +14,7 @@
 #ifndef MPM_SCHEME_H
 #define MPM_SCHEME_H
 
-#include "pointers.h"
+#include <pointers.h>
 
 class Scheme : protected Pointers {
  public:

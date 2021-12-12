@@ -20,7 +20,7 @@ MethodStyle(ulmpm,ULMPM)
 #ifndef LMP_ULMPM_H
 #define LMP_ULMPM_H
 
-#include "method.h"
+#include <method.h>
 #include <vector>
 #include <Eigen/Eigen>
 

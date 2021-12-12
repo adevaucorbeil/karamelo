@@ -14,7 +14,7 @@
 #ifndef MPM_ERROR_H
 #define MPM_ERROR_H
 
-#include "pointers.h"
+#include <pointers.h>
 
 /*! This class handles all the errors that can occur during the execution of the code.
  *  Terminates the process and prints all the corresponding error messages.

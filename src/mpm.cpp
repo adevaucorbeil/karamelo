@@ -15,18 +15,18 @@
 #include <stdlib.h>
 #include <mpi.h>
 #include <string.h>
-#include "mpm.h"
-#include "domain.h"
-#include "material.h"
-#include "input.h"
-#include "output.h"
-#include "update.h"
-#include "modify.h"
-#include "memory.h"
-#include "group.h"
-#include "universe.h"
-#include "error.h"
-#include "version.h"
+#include <mpm.h>
+#include <domain.h>
+#include <material.h>
+#include <input.h>
+#include <output.h>
+#include <update.h>
+#include <modify.h>
+#include <memory.h>
+#include <group.h>
+#include <universe.h>
+#include <error.h>
+#include <version.h>
 
 MPM::MPM(int narg, char **arg, MPI_Comm communicator)
 {

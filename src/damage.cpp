@@ -11,9 +11,9 @@
  *
  * ----------------------------------------------------------------------- */
 
-#include "damage.h"
-#include "error.h"
-#include "universe.h"
+#include <damage.h>
+#include <error.h>
+#include <universe.h>
 #include <iostream>
 
 using namespace std;

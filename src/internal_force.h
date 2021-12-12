@@ -20,7 +20,7 @@ CommandStyle(internal_force,IntForce)
 #ifndef LMP_INTERNAL_FORCE_H
 #define LMP_INTERNAL_FORCE_H
 
-#include "pointers.h"
+#include <pointers.h>
 
 class IntForce : protected Pointers {
  public:

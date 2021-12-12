@@ -14,9 +14,9 @@
 #ifndef MPM_SOLID_H
 #define MPM_SOLID_H
 
-#include "pointers.h"
-#include "material.h"
-#include "grid.h"
+#include <pointers.h>
+#include <material.h>
+#include <grid.h>
 #include <vector>
 #include <Eigen/Eigen>
 

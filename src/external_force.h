@@ -20,7 +20,7 @@ CommandStyle(external_force,ExtForce)
 #ifndef LMP_EXTERNAL_FORCE_H
 #define LMP_EXTERNAL_FORCE_H
 
-#include "pointers.h"
+#include <pointers.h>
 
 class ExtForce : protected Pointers {
  public:

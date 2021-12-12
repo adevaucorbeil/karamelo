@@ -13,8 +13,8 @@
 
 #include <stdio.h>
 #include <mpi.h>
-#include "mpm.h"
-#include "input.h"
+#include <mpm.h>
+#include <input.h>
 
 /*! Main program to drive MPM. */
 

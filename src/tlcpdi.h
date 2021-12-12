@@ -9,7 +9,7 @@ MethodStyle(tlcpdi,TLCPDI)
 #ifndef LMP_TLCPDI_H
 #define LMP_TLCPDI_H
 
-#include "method.h"
+#include <method.h>
 #include <vector>
 #include <Eigen/Eigen>
 

@@ -14,7 +14,7 @@
 #ifndef LMP_GROUP_H
 #define LMP_GROUP_H
 
-#include "pointers.h"
+#include <pointers.h>
 #include <string>
 #include <vector>
 

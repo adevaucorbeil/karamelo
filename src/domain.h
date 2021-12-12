@@ -16,9 +16,9 @@
 
 #define _USE_MATH_DEFINES // needed to define constants for windows
 
-#include "pointers.h"
-#include "region.h"
-#include "solid.h"
+#include <pointers.h>
+#include <region.h>
+#include <solid.h>
 #include <Eigen/Eigen>
 #include <map>
 #include <math.h>

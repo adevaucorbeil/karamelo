@@ -14,7 +14,7 @@
 #ifndef MPM_PLOT_H
 #define MPM_PLOT_H
 
-#include "pointers.h"
+#include <pointers.h>
 #include <vector>
 
 class Plot;

@@ -9,8 +9,8 @@ CommandStyle(translate_particles,TranslateParticles)
 #ifndef MPM_TRANSLATE_PARTICLES_H
 #define MPM_TRANSLATE_PARTICLES_H
 
-#include "pointers.h"
-#include "var.h"
+#include <pointers.h>
+#include <var.h>
 
 class TranslateParticles : protected Pointers {
  public:

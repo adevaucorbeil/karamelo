@@ -20,8 +20,8 @@ SchemeStyle(musl,MUSL)
 #ifndef LMP_MUSL_H
 #define LMP_MUSL_H
 
-#include "scheme.h"
-#include "var.h"
+#include <scheme.h>
+#include <var.h>
 #include <vector>
 
 class MUSL : public Scheme {

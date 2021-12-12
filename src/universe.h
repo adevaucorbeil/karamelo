@@ -15,7 +15,7 @@
 #ifndef LMP_UNIVERSE_H
 #define LMP_UNIVERSE_H
 
-#include "pointers.h"
+#include <pointers.h>
 #include <vector>
 
 using namespace std;

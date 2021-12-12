@@ -11,12 +11,12 @@
  *
  * ----------------------------------------------------------------------- */
 
-#include "delete_particles.h"
-#include "domain.h"
-#include "error.h"
-#include "group.h"
-#include "universe.h"
-#include "var.h"
+#include <delete_particles.h>
+#include <domain.h>
+#include <error.h>
+#include <group.h>
+#include <universe.h>
+#include <var.h>
 #include <iostream>
 
 using namespace std;

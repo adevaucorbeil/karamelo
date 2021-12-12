@@ -20,8 +20,8 @@ SchemeStyle(usf,USF)
 #ifndef LMP_USF_H
 #define LMP_USF_H
 
-#include "scheme.h"
-#include "var.h"
+#include <scheme.h>
+#include <var.h>
 #include <vector>
 
 class USF : public Scheme {

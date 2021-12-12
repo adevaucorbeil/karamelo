@@ -11,14 +11,14 @@
  *
  * ----------------------------------------------------------------------- */
 
-#include "log.h"
-#include "error.h"
-#include "input.h"
-#include "modify.h"
-#include "mpmtype.h"
-#include "universe.h"
-#include "update.h"
-#include "var.h"
+#include <log.h>
+#include <error.h>
+#include <input.h>
+#include <modify.h>
+#include <mpmtype.h>
+#include <universe.h>
+#include <update.h>
+#include <var.h>
 #include <fstream>
 #include <iostream>
 #include <sstream>

@@ -20,7 +20,7 @@ MethodStyle(tlmpm,TLMPM)
 #ifndef LMP_TLMPM_H
 #define LMP_TLMPM_H
 
-#include "method.h"
+#include <method.h>
 #include <vector>
 #include <Eigen/Eigen>
 

@@ -13,9 +13,9 @@
 
 #include <iostream>
 #include <string>
-#include "string.h"
-#include "memory.h"
-#include "error.h"
+#include <string.h>
+#include <memory.h>
+#include <error.h>
 
 using namespace std;
 

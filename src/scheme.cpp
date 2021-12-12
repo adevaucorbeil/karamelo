@@ -11,7 +11,7 @@
  *
  * ----------------------------------------------------------------------- */
 
-#include "scheme.h"
+#include <scheme.h>
 
 using namespace std;
 

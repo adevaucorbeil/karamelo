@@ -11,16 +11,16 @@
  *
  * ----------------------------------------------------------------------- */
 
-#include "material.h"
-#include "error.h"
-#include "input.h"
-#include "mpm.h"
-#include "style_damage.h"
-#include "style_eos.h"
-#include "style_strength.h"
-#include "style_temperature.h"
-#include "universe.h"
-#include "var.h"
+#include <material.h>
+#include <error.h>
+#include <input.h>
+#include <mpm.h>
+#include <style_damage.h>
+#include <style_eos.h>
+#include <style_strength.h>
+#include <style_temperature.h>
+#include <universe.h>
+#include <var.h>
 #include <mpi.h>
 #include <vector>
 
@@ -40,28 +40,28 @@ Material::Material(MPM *mpm) : Pointers(mpm)
 #define STRENGTH_CLASS
 #define StrengthStyle(key,Class) \
   (*strength_map)[#key] = &strength_creator<Class>;
-#include "style_strength.h"
+#include <style_strength.h>
 #undef StrengthStyle
 #undef STRENGTH_CLASS
 
 #define EOS_CLASS
 #define EOSStyle(key,Class) \
   (*EOS_map)[#key] = &EOS_creator<Class>;
-#include "style_eos.h"
+#include <style_eos.h>
 #undef EOSStyle
 #undef EOS_CLASS
 
 #define DAMAGE_CLASS
 #define DamageStyle(key,Class) \
   (*damage_map)[#key] = &damage_creator<Class>;
-#include "style_damage.h"
+#include <style_damage.h>
 #undef DamageStyle
 #undef DAMAGE_CLASS
 
 #define TEMPERATURE_CLASS
 #define TemperatureStyle(key,Class) \
   (*temperature_map)[#key] = &temperature_creator<Class>;
-#include "style_temperature.h"
+#include <style_temperature.h>
 #undef TemperatureStyle
 #undef TEMPERATURE_CLASS
 }

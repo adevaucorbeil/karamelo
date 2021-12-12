@@ -12,10 +12,10 @@
  * ----------------------------------------------------------------------- */
 
 #include <iostream>
-#include "group.h"
-#include "var.h"
-#include "external_force.h"
-#include "error.h"
+#include <group.h>
+#include <var.h>
+#include <external_force.h>
+#include <error.h>
 
 using namespace std;
 

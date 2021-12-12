@@ -15,8 +15,8 @@
 #ifndef MPM_INPUT_H
 #define MPM_INPUT_H
 
-#include "pointers.h"
-#include "var.h"
+#include <pointers.h>
+#include <var.h>
 #include <vector>
 #include <map>
 

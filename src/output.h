@@ -14,7 +14,7 @@
 #ifndef MPM_OUTPUT_H
 #define MPM_OUTPUT_H
 
-#include "pointers.h"
+#include <pointers.h>
 #include <vector>
 
 

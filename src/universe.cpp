@@ -16,10 +16,10 @@
 #include <string>
 #include <math.h>
 #include <algorithm>
-#include "universe.h"
-#include "version.h"
-#include "domain.h"
-#include "error.h"
+#include <universe.h>
+#include <version.h>
+#include <domain.h>
+#include <error.h>
 
 using namespace std;
 

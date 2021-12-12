@@ -11,18 +11,18 @@
  *
  * ----------------------------------------------------------------------- */
 
-#include "solid.h"
-#include "domain.h"
-#include "error.h"
-#include "input.h"
-#include "material.h"
-#include "memory.h"
-#include "method.h"
-#include "mpm.h"
-#include "mpm_math.h"
-#include "universe.h"
-#include "update.h"
-#include "var.h"
+#include <solid.h>
+#include <domain.h>
+#include <error.h>
+#include <input.h>
+#include <material.h>
+#include <memory.h>
+#include <method.h>
+#include <mpm.h>
+#include <mpm_math.h>
+#include <universe.h>
+#include <update.h>
+#include <var.h>
 #include <Eigen/Eigen>
 #include <Eigen/Eigenvalues> 
 #include <math.h>

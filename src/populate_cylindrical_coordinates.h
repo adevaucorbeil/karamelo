@@ -9,8 +9,8 @@ CommandStyle(populate_cylindrical_coordinates,PopulateCylindricalCoordinates)
 #ifndef MPM_POPULATE_CYLINDRICAL_COORDINATE_H
 #define MPM_POPULATE_CYLINDRICAL_COORDINATE_H
 
-#include "pointers.h"
-#include "var.h"
+#include <pointers.h>
+#include <var.h>
 
 class PopulateCylindricalCoordinates : protected Pointers {
  public:

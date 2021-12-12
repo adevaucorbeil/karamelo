@@ -14,7 +14,7 @@
 #ifndef MPM_METHOD_H
 #define MPM_METHOD_H
 
-#include "pointers.h"
+#include <pointers.h>
 #include <vector>
 
 /*! Parent class of all the MPM methods supported: ULMPM, TLMPM, ULCPDI and TLCPDI, to date.

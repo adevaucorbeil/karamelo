@@ -11,15 +11,15 @@
  *
  * ----------------------------------------------------------------------- */
 
-#include "domain.h"
-#include "error.h"
-#include "input.h"
-#include "memory.h"
-#include "method.h"
-#include "region.h"
-#include "style_region.h"
-#include "universe.h"
-#include "update.h"
+#include <domain.h>
+#include <error.h>
+#include <input.h>
+#include <memory.h>
+#include <method.h>
+#include <region.h>
+#include <style_region.h>
+#include <universe.h>
+#include <update.h>
 #include <Eigen/Eigen>
 
 using namespace std;
@@ -45,14 +45,14 @@ Domain::Domain(MPM *mpm) : Pointers(mpm)
 
 #define REGION_CLASS
 #define RegionStyle(key, Class) (*region_map)[#key] = &region_creator<Class>;
-#include "style_region.h"
+#include <style_region.h>
 #undef RegionStyle
 #undef REGION_CLASS
 
   // #define SOLID_CLASS
   // #define SolidStyle(key,Class) \
 //   (*solid_map)[#key] = &solid_creator<Class>;
-  // #include "style_solid.h"
+  // #include <style_solid.h>
   // #undef SolidStyle
   // #undef SOLID_CLASS
 }

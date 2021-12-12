@@ -20,8 +20,8 @@ SchemeStyle(usl,USL)
 #ifndef LMP_USL_H
 #define LMP_USL_H
 
-#include "scheme.h"
-#include "var.h"
+#include <scheme.h>
+#include <var.h>
 #include <vector>
 
 class USL : public Scheme {

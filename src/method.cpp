@@ -11,7 +11,7 @@
  *
  * ----------------------------------------------------------------------- */
 
-#include "method.h"
+#include <method.h>
 
 using namespace std;
 

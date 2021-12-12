@@ -11,14 +11,14 @@
  *
  * ----------------------------------------------------------------------- */
 
-#include "damage_jc.h"
-#include "domain.h"
-#include "error.h"
-#include "input.h"
-#include "mpm_math.h"
-#include "universe.h"
-#include "update.h"
-#include "var.h"
+#include <damage_jc.h>
+#include <domain.h>
+#include <error.h>
+#include <input.h>
+#include <mpm_math.h>
+#include <universe.h>
+#include <update.h>
+#include <var.h>
 #include <Eigen/Eigen>
 #include <iostream>
 

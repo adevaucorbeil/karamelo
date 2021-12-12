@@ -11,13 +11,13 @@
  *
  * ----------------------------------------------------------------------- */
 
-#include "modify.h"
-#include "compute.h"
-#include "error.h"
-#include "fix.h"
-#include "style_compute.h"
-#include "style_fix.h"
-#include "update.h"
+#include <modify.h>
+#include <compute.h>
+#include <error.h>
+#include <fix.h>
+#include <style_compute.h>
+#include <style_fix.h>
+#include <update.h>
 
 using namespace FixConst;
 
@@ -41,7 +41,7 @@ Modify::Modify(MPM *mpm) : Pointers(mpm)
 #define FIX_CLASS
 #define FixStyle(key,Class) \
   (*fix_map)[#key] = &fix_creator<Class>;
-#include "style_fix.h"
+#include <style_fix.h>
 #undef FixStyle
 #undef FIX_CLASS
 
@@ -52,7 +52,7 @@ Modify::Modify(MPM *mpm) : Pointers(mpm)
 #define COMPUTE_CLASS
 #define ComputeStyle(key,Class) \
   (*compute_map)[#key] = &compute_creator<Class>;
-#include "style_compute.h"
+#include <style_compute.h>
 #undef ComputeStyle
 #undef COMPUTE_CLASS
 }

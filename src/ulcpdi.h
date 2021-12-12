@@ -20,7 +20,7 @@ MethodStyle(ulcpdi,ULCPDI)
 #ifndef LMP_ULCPDI_H
 #define LMP_ULCPDI_H
 
-#include "method.h"
+#include <method.h>
 #include <vector>
 #include <Eigen/Eigen>
 #include <map>

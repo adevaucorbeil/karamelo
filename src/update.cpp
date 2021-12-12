@@ -11,15 +11,15 @@
  *
  * ----------------------------------------------------------------------- */
 
-#include "update.h"
-#include "error.h"
-#include "input.h"
-#include "method.h"
-#include "scheme.h"
-#include "style_method.h"
-#include "style_scheme.h"
-#include "universe.h"
-#include "var.h"
+#include <update.h>
+#include <error.h>
+#include <input.h>
+#include <method.h>
+#include <scheme.h>
+#include <style_method.h>
+#include <style_scheme.h>
+#include <universe.h>
+#include <var.h>
 #include <iostream>
 #include <vector>
 
@@ -92,7 +92,7 @@ void Update::create_scheme(vector<string> args){
 #define SCHEME_CLASS
 #define SchemeStyle(key,Class) \
   else if (scheme_style.compare(#key) == 0) scheme = new Class(mpm);
-#include "style_scheme.h"
+#include <style_scheme.h>
 #undef SchemeStyle
 #undef SCHEME_CLASS
 
@@ -119,7 +119,7 @@ void Update::create_method(vector<string> args){
 #define METHOD_CLASS
 #define MethodStyle(key,Class) \
   else if (method_type.compare(#key) == 0) method = new Class(mpm);
-#include "style_method.h"
+#include <style_method.h>
 #undef MethodStyle
 #undef METHOD_CLASS
 
@@ -309,7 +309,7 @@ void Update::read_restart(ifstream *ifr) {
 #define METHOD_CLASS
 #define MethodStyle(key,Class) \
   else if (method_type.compare(#key) == 0) method = new Class(mpm);
-#include "style_method.h"
+#include <style_method.h>
 #undef MethodStyle
 #undef METHOD_CLASS
 
@@ -333,7 +333,7 @@ void Update::read_restart(ifstream *ifr) {
 #define SCHEME_CLASS
 #define SchemeStyle(key,Class) \
   else if (scheme_style.compare(#key) == 0) scheme = new Class(mpm);
-#include "style_scheme.h"
+#include <style_scheme.h>
 #undef SchemeStyle
 #undef SCHEME_CLASS
 

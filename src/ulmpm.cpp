@@ -11,16 +11,16 @@
  *
  * ----------------------------------------------------------------------- */
 
-#include "ulmpm.h"
-#include "basis_functions.h"
-#include "domain.h"
-#include "error.h"
-#include "grid.h"
-#include "input.h"
-#include "solid.h"
-#include "universe.h"
-#include "update.h"
-#include "var.h"
+#include <ulmpm.h>
+#include <basis_functions.h>
+#include <domain.h>
+#include <error.h>
+#include <grid.h>
+#include <input.h>
+#include <solid.h>
+#include <universe.h>
+#include <update.h>
+#include <var.h>
 #include <Eigen/Eigen>
 #include <algorithm>
 #include <iostream>

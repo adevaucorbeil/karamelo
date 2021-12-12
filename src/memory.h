@@ -14,8 +14,8 @@
 #ifndef MPM_MEMORY_H
 #define MPM_MEMORY_H
 
-#include "mpmtype.h"
-#include "pointers.h"
+#include <mpmtype.h>
+#include <pointers.h>
 
 /*! This class handles the allocation of all large vectors and arrays.
  * This class is directly herited (aka copied) from LAMMPS.\n\n

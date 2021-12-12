@@ -13,12 +13,12 @@
 
 #include <Eigen/Eigen>
 #include <string>
-#include "group.h"
-#include "domain.h"
-#include "region.h"
-#include "solid.h"
-#include "error.h"
-#include "universe.h"
+#include <group.h>
+#include <domain.h>
+#include <region.h>
+#include <solid.h>
+#include <error.h>
+#include <universe.h>
 
 #define MAX_GROUP 32
 

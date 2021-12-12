@@ -11,15 +11,15 @@
  *
  * ----------------------------------------------------------------------- */
 
-#include "usl.h"
+#include <usl.h>
 #include <iostream>
 #include <vector>
-#include "scheme.h"
-#include "method.h"
-#include "update.h"
-#include "output.h"
-#include "modify.h"
-#include "universe.h"
+#include <scheme.h>
+#include <method.h>
+#include <update.h>
+#include <output.h>
+#include <modify.h>
+#include <universe.h>
 
 using namespace std;
 

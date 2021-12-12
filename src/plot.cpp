@@ -16,12 +16,12 @@
 #include <string>
 #include <sstream>
 #include <stdexcept>
-#include "plot.h"
-#include "mpmtype.h"
-#include "update.h"
-#include "input.h"
-#include "var.h"
-#include "error.h"
+#include <plot.h>
+#include <mpmtype.h>
+#include <update.h>
+#include <input.h>
+#include <var.h>
+#include <error.h>
 
 enum{INT,FLOAT,BIGINT};
 

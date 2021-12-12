@@ -21,7 +21,7 @@ CommandStyle(delete_particles,DeleteParticles)
 #define MPM_DELETE_PARTICLES_H
 
 #include <vector>
-#include "pointers.h"
+#include <pointers.h>
 
 class DeleteParticles : protected Pointers {
  public:

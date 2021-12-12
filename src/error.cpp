@@ -12,10 +12,10 @@
  * ----------------------------------------------------------------------- */
 
 #include <iostream>
-#include "string.h"
-#include "universe.h"
-#include "input.h"
-#include "error.h"
+#include <string.h>
+#include <universe.h>
+#include <input.h>
+#include <error.h>
 
 using namespace std;
 

@@ -14,11 +14,11 @@
 #ifndef MPM_MATERIAL_H
 #define MPM_MATERIAL_H
 
-#include "damage.h"
-#include "eos.h"
-#include "pointers.h"
-#include "strength.h"
-#include "temperature.h"
+#include <damage.h>
+#include <eos.h>
+#include <pointers.h>
+#include <strength.h>
+#include <temperature.h>
 #include <vector>
 
 /*! This class stores the information concerning a given material.
