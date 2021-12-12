@@ -5,7 +5,7 @@
 
 #include <pointers.h>
 #include <vector>
-#include <Eigen/Eigen>
+#include <matrix.h>
 
 class Temperature : protected Pointers {
  public:

@@ -18,10 +18,10 @@
 #include <material.h>
 #include <grid.h>
 #include <vector>
-#include <Eigen/Eigen>
+#include <matrix.h>
 
 
-using namespace Eigen;
+
 
 /*! This class represents a given solid.
  * 
@@ -49,35 +49,35 @@ class Solid : protected Pointers {
 
   vector<tagint> ptag;                      ///< Unique identifier for particles in the system
 
-  vector<Eigen::Vector3d> x;                ///< Particles' current position
-  vector<Eigen::Vector3d> x0;               ///< Particles' reference position
+  vector<Vector3d> x;                ///< Particles' current position
+  vector<Vector3d> x0;               ///< Particles' reference position
 
   
-  vector<Eigen::Vector3d> rp;               ///< Current domain vector (CPDI1)
-  vector<Eigen::Vector3d> rp0;              ///< Reference domain vector (CPDI1)
-  vector<Eigen::Vector3d> xpc;              ///< Current position of the corners of the particles' domain (CPDI2o)
-  vector<Eigen::Vector3d> xpc0;             ///< Reference position of the corners of the particles' domain (CPDI2)
+  vector<Vector3d> rp;               ///< Current domain vector (CPDI1)
+  vector<Vector3d> rp0;              ///< Reference domain vector (CPDI1)
+  vector<Vector3d> xpc;              ///< Current position of the corners of the particles' domain (CPDI2o)
+  vector<Vector3d> xpc0;             ///< Reference position of the corners of the particles' domain (CPDI2)
   int nc;                                   ///< Number of corners per particles: \f$2^{dimension}\f$
   
-  vector<Eigen::Vector3d> v;                ///< Particles' current velocity
-  vector<Eigen::Vector3d> v_update;         ///< Particles' velocity at time t+dt
+  vector<Vector3d> v;                ///< Particles' current velocity
+  vector<Vector3d> v_update;         ///< Particles' velocity at time t+dt
 
-  vector<Eigen::Vector3d> a;                ///< Particles' acceleration
+  vector<Vector3d> a;                ///< Particles' acceleration
 
-  vector<Eigen::Vector3d> mbp;              ///< Particles' external forces times mass
-  vector<Eigen::Vector3d> f;                ///< Particles' internal forces
+  vector<Vector3d> mbp;              ///< Particles' external forces times mass
+  vector<Vector3d> f;                ///< Particles' internal forces
 
-  vector<Eigen::Matrix3d> sigma;            ///< Stress matrix
-  vector<Eigen::Matrix3d> strain_el;        ///< Elastic strain matrix
-  vector<Eigen::Matrix3d> vol0PK1;          ///< Transpose of the 1st Piola-Kirchhoff matrix times vol0
-  vector<Eigen::Matrix3d> L;                ///< Velocity gradient matrix
-  vector<Eigen::Matrix3d> F;                ///< Deformation gradient matrix
-  vector<Eigen::Matrix3d> R;                ///< Rotation matrix
-  vector<Eigen::Matrix3d> D;                ///< Symmetric part of L
-  vector<Eigen::Matrix3d> Finv;             ///< Inverse of the deformation gradient matrix
-  vector<Eigen::Matrix3d> Fdot;             ///< Rate of deformation gradient matrix
-  Eigen::Matrix3d Di;                       ///< Inertia tensor
-  // vector<Eigen::Matrix3d> BDinv;            ///< APIC B*Dinv tensor
+  vector<Matrix3d> sigma;            ///< Stress matrix
+  vector<Matrix3d> strain_el;        ///< Elastic strain matrix
+  vector<Matrix3d> vol0PK1;          ///< Transpose of the 1st Piola-Kirchhoff matrix times vol0
+  vector<Matrix3d> L;                ///< Velocity gradient matrix
+  vector<Matrix3d> F;                ///< Deformation gradient matrix
+  vector<Matrix3d> R;                ///< Rotation matrix
+  vector<Matrix3d> D;                ///< Symmetric part of L
+  vector<Matrix3d> Finv;             ///< Inverse of the deformation gradient matrix
+  vector<Matrix3d> Fdot;             ///< Rate of deformation gradient matrix
+  Matrix3d Di;                       ///< Inertia tensor
+  // vector<Matrix3d> BDinv;            ///< APIC B*Dinv tensor
 
   vector<double> J;                         ///< Determinant of the deformation matrix
   vector<double> vol0;                      ///< Particles' reference volume
@@ -94,7 +94,7 @@ class Solid : protected Pointers {
 
   vector<double> T;                         ///< Particles' current temperature
   vector<double> gamma;                     ///< Particles' heat source
-  vector<Eigen::Vector3d> q;                ///< Particles' heat flux
+  vector<Vector3d> q;                ///< Particles' heat flux
 
   double max_p_wave_speed;                  ///< Maximum of the particle wave speed
   double dtCFL;
@@ -108,8 +108,8 @@ class Solid : protected Pointers {
   vector<vector< double >> wf_np;           ///< Array of arrays (matrix) of the weight functions \f$\Phi_{Ip}\f$ effectively the transpose of wf_pn.
   vector<vector< double >> wf_pn_corners;   ///< Array of arrays (matrix) of the weight functions \f$\Phi_{Ic}\f$ evaluated at the corners of the particle's domain (used in CPDI)
 
-  vector<vector< Eigen::Vector3d >> wfd_pn; ///< Array of arrays (matrix) of the derivative of the weight functions \f$\partial \Phi_{pI}/\partial x\f$.
-  vector<vector< Eigen::Vector3d >> wfd_np; ///< Array of arrays (matrix) of the derivative of the weight functions \f$\partial \Phi_{Ip}/ \partial x\f$ effectively the transpose of wfd_pn.
+  vector<vector< Vector3d >> wfd_pn; ///< Array of arrays (matrix) of the derivative of the weight functions \f$\partial \Phi_{pI}/\partial x\f$.
+  vector<vector< Vector3d >> wfd_np; ///< Array of arrays (matrix) of the derivative of the weight functions \f$\partial \Phi_{Ip}/ \partial x\f$ effectively the transpose of wfd_pn.
 
 
   class Mat *mat;                          ///< Pointer to the material

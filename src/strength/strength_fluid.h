@@ -11,7 +11,7 @@ StrengthStyle(fluid,StrengthFluid)
 #define MPM_STRENGTH_FLUID_H
 
 #include <strength.h>
-#include <Eigen/Eigen>
+#include <matrix.h>
 
 class StrengthFluid : public Strength {
 
@@ -24,9 +24,9 @@ public:
   void write_restart(ofstream *);
   void read_restart(ifstream *);
 
-  Eigen::Matrix3d  update_deviatoric_stress
-  ( const Eigen::Matrix3d& sigma,
-    const Eigen::Matrix3d& D,
+  Matrix3d  update_deviatoric_stress
+  ( const Matrix3d& sigma,
+    const Matrix3d& D,
     double &               plastic_strain_increment,
     const double           eff_plastic_strain,
     const double           epsdot,

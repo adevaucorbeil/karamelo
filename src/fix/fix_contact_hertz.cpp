@@ -19,14 +19,14 @@
 #include <solid.h>
 #include <universe.h>
 #include <update.h>
-#include <Eigen/Eigen>
+#include <matrix.h>
 #include <iostream>
 #include <string>
 #include <vector>
 
 using namespace std;
 using namespace FixConst;
-using namespace Eigen;
+
 
 #define four_thirds 1.333333333
 
@@ -85,10 +85,10 @@ void FixContactHertz::initial_integrate() {
   // cout << "In FixContactHertz::initial_integrate()\n";
 
   // Go through all the particles in the group and set b to the right value:
-  Eigen::Vector3d f, dx;
+  Vector3d f, dx;
 
   Solid *s1, *s2;
-  Eigen::Vector3d ftot, ftot_reduced, vtemp1, vtemp2;
+  Vector3d ftot, ftot_reduced, vtemp1, vtemp2;
 
   double Rp, Rp1, Rp2, r, p, fmag, Estar, max_cellsize;
 
@@ -204,10 +204,10 @@ void FixContactHertz::initial_integrate() {
 //   // cout << "In FixContactHertz::initial_integrate()\n";
 
 //   // Go through all the particles in the group and set b to the right value:
-//   Eigen::Vector3d f, dx;
+//   Vector3d f, dx;
 
 //   Solid *s1, *s2;
-//   Eigen::Vector3d ftot, ftot_reduced, vtemp1, vtemp2;
+//   Vector3d ftot, ftot_reduced, vtemp1, vtemp2;
 
 //   double Rp, Rp1, Rp2, r, p, fmag, Estar, max_cellsize;
 

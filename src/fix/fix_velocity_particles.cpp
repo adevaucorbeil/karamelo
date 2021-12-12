@@ -19,13 +19,13 @@
 #include <special_functions.h>
 #include <universe.h>
 #include <update.h>
-#include <Eigen/Eigen>
+#include <matrix.h>
 #include <iostream>
 #include <vector>
 
 using namespace std;
 using namespace FixConst;
-using namespace Eigen;
+
 
 
 FixVelocityParticles::FixVelocityParticles(MPM *mpm, vector<string> args) : Fix(mpm, args)
@@ -214,7 +214,7 @@ void FixVelocityParticles::post_advance_particles() {
   
   int solid = group->solid[igroup];
   Solid *s;
-  Eigen::Vector3d Dv, ftot, ftot_reduced;
+  Vector3d Dv, ftot, ftot_reduced;
 
   int n = 0;
   ftot.setZero();

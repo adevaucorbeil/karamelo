@@ -19,14 +19,14 @@
 #include <solid.h>
 #include <universe.h>
 #include <update.h>
-#include <Eigen/Eigen>
+#include <matrix.h>
 #include <iostream>
 #include <string>
 #include <vector>
 
 using namespace std;
 using namespace FixConst;
-using namespace Eigen;
+
 
 #define four_thirds 1.333333333
 
@@ -99,10 +99,10 @@ void FixContactMinPenetrationPlane::initial_integrate() {
   // cout << "In FixContactMinPenetrationPlane::initial_integrate()\n";
 
   // Go through all the particles in the group and set b to the right value:
-  Eigen::Vector3d f;
+  Vector3d f;
 
   Solid *s;
-  Eigen::Vector3d ftot, ftot_reduced, vt;
+  Vector3d ftot, ftot_reduced, vt;
 
   double Rp, p, d, fnorm, vtnorm;
 
@@ -179,15 +179,15 @@ void FixContactMinPenetrationPlane::write_restart(ofstream *of) {
   of->write(reinterpret_cast<const char *>(&solid), sizeof(int));
   of->write(reinterpret_cast<const char *>(&D), sizeof(double));
   of->write(reinterpret_cast<const char *>(&mu), sizeof(double));
-  of->write(reinterpret_cast<const char *>(&xq), sizeof(Eigen::Vector3d));
-  of->write(reinterpret_cast<const char *>(&n), sizeof(Eigen::Vector3d));
+  of->write(reinterpret_cast<const char *>(&xq), sizeof(Vector3d));
+  of->write(reinterpret_cast<const char *>(&n), sizeof(Vector3d));
 }
 
 void FixContactMinPenetrationPlane::read_restart(ifstream *ifr) {
   ifr->read(reinterpret_cast<char *>(&solid), sizeof(int));
   ifr->read(reinterpret_cast<char *>(&D), sizeof(double));
   ifr->read(reinterpret_cast<char *>(&mu), sizeof(double));
-  ifr->read(reinterpret_cast<char *>(&xq), sizeof(Eigen::Vector3d));
-  ifr->read(reinterpret_cast<char *>(&n), sizeof(Eigen::Vector3d));
+  ifr->read(reinterpret_cast<char *>(&xq), sizeof(Vector3d));
+  ifr->read(reinterpret_cast<char *>(&n), sizeof(Vector3d));
 }
 

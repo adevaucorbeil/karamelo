@@ -13,7 +13,7 @@
 
 #include <vector>
 #include <math.h>
-#include <Eigen/Eigen>
+#include <matrix.h>
 #include <string>
 #include <mpm.h>
 #include <grid.h>
@@ -28,7 +28,7 @@
 #include <error.h>
 
 using namespace std;
-using namespace Eigen;
+
 
 Grid::Grid(MPM *mpm) :
   Pointers(mpm)

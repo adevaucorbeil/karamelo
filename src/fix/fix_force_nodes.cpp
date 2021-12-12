@@ -14,7 +14,7 @@
 #include <iostream>
 #include <vector>
 #include <string>
-#include <Eigen/Eigen>
+#include <matrix.h>
 #include <fix_force_nodes.h>
 #include <input.h>
 #include <group.h>
@@ -26,7 +26,7 @@
 
 using namespace std;
 using namespace FixConst;
-using namespace Eigen;
+
 
 FixForceNodes::FixForceNodes(MPM *mpm, vector<string> args) : Fix(mpm, args)
 {
@@ -120,7 +120,7 @@ void FixForceNodes::post_particles_to_grid() {
   Grid *g;
 
   int n = 0;
-  Eigen::Vector3d ftot, ftot_reduced;
+  Vector3d ftot, ftot_reduced;
   ftot.setZero();
 
   if (solid == -1) {

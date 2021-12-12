@@ -19,14 +19,14 @@
 #include <solid.h>
 #include <universe.h>
 #include <update.h>
-#include <Eigen/Eigen>
+#include <matrix.h>
 #include <iostream>
 #include <string>
 #include <vector>
 
 using namespace std;
 using namespace FixConst;
-using namespace Eigen;
+
 
 // void write_var(Var v, ofstream *of) {
 //   string eq = v.eq();
@@ -118,24 +118,24 @@ void FixCuttingTool::initial_integrate() {
   // cout << "In FixCuttingTool::initial_integrate()\n";
 
   // Go through all the particles in the group and set b to the right value:
-  Eigen::Vector3d f;
+  Vector3d f;
 
   int solid = group->solid[igroup];
 
   Solid *s;
-  Eigen::Vector3d ftot, ftot_reduced, n1, n2, n;
+  Vector3d ftot, ftot_reduced, n1, n2, n;
 
   double zt = ztvalue.result(mpm);
-  Eigen::Vector3d xt(xtvalue.result(mpm),
+  Vector3d xt(xtvalue.result(mpm),
                      ytvalue.result(mpm),
                      zt);
-  Eigen::Vector3d vt(vtxvalue.result(mpm),
+  Vector3d vt(vtxvalue.result(mpm),
                      vtyvalue.result(mpm),
                      vtzvalue.result(mpm));
-  Eigen::Vector3d xA(xAvalue.result(mpm),
+  Vector3d xA(xAvalue.result(mpm),
                      yAvalue.result(mpm),
                      zt);
-  Eigen::Vector3d xB(xBvalue.result(mpm),
+  Vector3d xB(xBvalue.result(mpm),
                      yBvalue.result(mpm),
                      zt);
 

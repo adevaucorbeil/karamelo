@@ -19,14 +19,14 @@
 #include <solid.h>
 #include <universe.h>
 #include <update.h>
-#include <Eigen/Eigen>
+#include <matrix.h>
 #include <iostream>
 #include <string>
 #include <vector>
 
 using namespace std;
 using namespace FixConst;
-using namespace Eigen;
+
 
 FixImpenetrableSurface::FixImpenetrableSurface(MPM *mpm, vector<string> args)
     : Fix(mpm, args) {
@@ -90,18 +90,18 @@ void FixImpenetrableSurface::initial_integrate() {
   // cout << "In FixImpenetrableSurface::initial_integrate()\n";
 
   // Go through all the particles in the group and set b to the right value:
-  Eigen::Vector3d f;
+  Vector3d f;
 
   int solid = group->solid[igroup];
 
   Solid *s;
-  Eigen::Vector3d ftot, ftot_reduced;
+  Vector3d ftot, ftot_reduced;
 
 
-  Eigen::Vector3d xs(xs_x.result(mpm),
+  Vector3d xs(xs_x.result(mpm),
                      xs_y.result(mpm),
                      xs_z.result(mpm));
-  Eigen::Vector3d n(nx.result(mpm),
+  Vector3d n(nx.result(mpm),
                     ny.result(mpm),
                     nz.result(mpm)); // Outgoing normal
 

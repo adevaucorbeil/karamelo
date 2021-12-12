@@ -11,7 +11,7 @@ EOSStyle(fluid,EOSFluid)
 #define MPM_EOS_FLUID_H
 
 #include <eos.h>
-#include <Eigen/Eigen>
+#include <matrix.h>
 
 /*! \ingroup eos eosfluid eos_fluid
 
@@ -53,7 +53,7 @@ public:
   double rho0();
   double K();
   double G();
-  void compute_pressure(double &, double &, const double, const double, const double, const Eigen::Matrix3d, const double, const double T = 0);
+  void compute_pressure(double &, double &, const double, const double, const double, const Matrix3d, const double, const double T = 0);
   void write_restart(ofstream *);
   void read_restart(ifstream *);
 

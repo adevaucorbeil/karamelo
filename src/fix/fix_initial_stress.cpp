@@ -19,14 +19,14 @@
 #include <solid.h>
 #include <universe.h>
 #include <update.h>
-#include <Eigen/Eigen>
+#include <matrix.h>
 #include <iostream>
 #include <string>
 #include <vector>
 
 using namespace std;
 using namespace FixConst;
-using namespace Eigen;
+
 
 FixInitialStress::FixInitialStress(MPM *mpm, vector<string> args) : Fix(mpm, args)
 {

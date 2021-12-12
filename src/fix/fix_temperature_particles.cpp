@@ -19,13 +19,13 @@
 #include <special_functions.h>
 #include <universe.h>
 #include <update.h>
-#include <Eigen/Eigen>
+#include <matrix.h>
 #include <iostream>
 #include <vector>
 
 using namespace std;
 using namespace FixConst;
-using namespace Eigen;
+
 
 
 FixTemperatureParticles::FixTemperatureParticles(MPM *mpm, vector<string> args) : Fix(mpm, args)
@@ -147,7 +147,7 @@ void FixTemperatureParticles::post_advance_particles() {
   // Go through all the particles in the group and set v to the right value:
   int solid = group->solid[igroup];
   Solid *s;
-  // Eigen::Vector3d ftot, ftot_reduced;
+  // Vector3d ftot, ftot_reduced;
 
   int n = 0;
   //ftot.setZero();

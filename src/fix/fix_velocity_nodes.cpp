@@ -14,7 +14,7 @@
 #include <iostream>
 #include <vector>
 #include <string>
-#include <Eigen/Eigen>
+#include <matrix.h>
 #include <fix_velocity_nodes.h>
 #include <input.h>
 #include <group.h>
@@ -25,7 +25,7 @@
 #include <universe.h>
 using namespace std;
 using namespace FixConst;
-using namespace Eigen;
+
 
 FixVelocityNodes::FixVelocityNodes(MPM *mpm, vector<string> args) : Fix(mpm, args)
 {
@@ -158,7 +158,7 @@ void FixVelocityNodes::post_update_grid_state() {
   int solid = group->solid[igroup];
   Grid *g;
 
-  Eigen::Vector3d Dv, ftot, ftot_reduced;
+  Vector3d Dv, ftot, ftot_reduced;
   ftot.setZero();
   double inv_dt = 1.0/update->dt;
 

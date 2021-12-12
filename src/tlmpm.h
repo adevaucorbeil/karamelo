@@ -22,7 +22,7 @@ MethodStyle(tlmpm,TLMPM)
 
 #include <method.h>
 #include <vector>
-#include <Eigen/Eigen>
+#include <matrix.h>
 
 class TLMPM : public Method {
 public:

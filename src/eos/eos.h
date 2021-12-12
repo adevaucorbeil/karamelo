@@ -16,7 +16,7 @@
 
 #include <pointers.h>
 #include <vector>
-#include <Eigen/Eigen>
+#include <matrix.h>
 
 /*! Parent class of all the different kinds of EOS (equations of state) that can be used.
  *
@@ -37,7 +37,7 @@ class EOS : protected Pointers {
   //virtual compute_pressure()
   virtual double rho0() = 0;
   virtual double K() = 0;
-  virtual void compute_pressure(double &, double &, const double, const double, const double, const Eigen::Matrix3d, const double, const double T = 0) = 0;
+  virtual void compute_pressure(double &, double &, const double, const double, const double, const Matrix3d, const double, const double T = 0) = 0;
 
   virtual void write_restart(ofstream*) = 0;
   virtual void read_restart(ifstream*) = 0;

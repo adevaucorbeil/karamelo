@@ -11,7 +11,7 @@ FixStyle(temperature_particles,FixTemperatureParticles)
 
 #include <fix.h>
 #include <var.h>
-#include <Eigen/Eigen>
+#include <matrix.h>
 #include <vector>
 
 class FixTemperatureParticles : public Fix {

@@ -19,11 +19,11 @@
 #include <universe.h>
 #include <update.h>
 #include <var.h>
-#include <Eigen/Eigen>
+#include <matrix.h>
 #include <iostream>
 
 using namespace std;
-using namespace Eigen;
+
 using namespace MPM_Math;
 
 #define SQRT_3_OVER_2 1.224744871 // sqrt(3.0/2.0)
@@ -90,7 +90,7 @@ DamageJohnsonCook::DamageJohnsonCook(MPM *mpm, vector<string> args)
 
 void DamageJohnsonCook::compute_damage(double &damage_init, double &damage,
                                        const double pH,
-                                       const Eigen::Matrix3d Sdev,
+                                       const Matrix3d Sdev,
                                        const double epsdot,
                                        const double plastic_strain_increment,
                                        const double T) {

@@ -11,7 +11,7 @@ TemperatureStyle(plastic_work,TemperaturePlasticWork)
 #define MPM_TEMPERATURE_PLASTIC_WORK_H
 
 #include <temperature.h>
-#include <Eigen/Eigen>
+#include <matrix.h>
 
 class TemperaturePlasticWork : public Temperature {
 

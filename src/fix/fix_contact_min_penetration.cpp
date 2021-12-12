@@ -20,14 +20,14 @@
 #include <solid.h>
 #include <universe.h>
 #include <update.h>
-#include <Eigen/Eigen>
+#include <matrix.h>
 #include <iostream>
 #include <string>
 #include <vector>
 
 using namespace std;
 using namespace FixConst;
-using namespace Eigen;
+
 
 #define four_thirds 1.333333333
 
@@ -89,10 +89,10 @@ void FixContactMinPenetration::initial_integrate() {
   // cout << "In FixContactMinPenetration::initial_integrate()\n";
 
   // Go through all the particles in the group and set b to the right value:
-  Eigen::Vector3d f, dx;
+  Vector3d f, dx;
 
   Solid *s1, *s2;
-  Eigen::Vector3d ftot, ftot_reduced, vtemp1, vtemp2, dv, vt;
+  Vector3d ftot, ftot_reduced, vtemp1, vtemp2, dv, vt;
 
   double Rp, Rp1, Rp2, r, inv_r, Estar, max_cellsize, vtnorm, fmag, ffric, gamma, alpha;
 
@@ -252,10 +252,10 @@ void FixContactMinPenetration::initial_integrate() {
 //   // cout << "In FixContactMinPenetration::initial_integrate()\n";
 
 //   // Go through all the particles in the group and set b to the right value:
-//   Eigen::Vector3d f, dx;
+//   Vector3d f, dx;
 
 //   Solid *s1, *s2;
-//   Eigen::Vector3d ftot, ftot_reduced, vtemp1, vtemp2;
+//   Vector3d ftot, ftot_reduced, vtemp1, vtemp2;
 
 //   double Rp, Rp1, Rp2, r, p, Estar, max_cellsize;
 

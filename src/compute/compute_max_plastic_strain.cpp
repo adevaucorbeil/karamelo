@@ -20,13 +20,13 @@
 #include <output.h>
 #include <universe.h>
 #include <update.h>
-#include <Eigen/Eigen>
+#include <matrix.h>
 #include <iostream>
 #include <vector>
 
 using namespace std;
 using namespace MathSpecial;
-using namespace Eigen;
+
 
 ComputeMaxPlasticStrain::ComputeMaxPlasticStrain(MPM *mpm, vector<string> args)
     : Compute(mpm, args) {

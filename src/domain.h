@@ -19,7 +19,7 @@
 #include <pointers.h>
 #include <region.h>
 #include <solid.h>
-#include <Eigen/Eigen>
+#include <matrix.h>
 #include <map>
 #include <math.h>
 #include <string>
@@ -74,7 +74,7 @@ class Domain : protected Pointers {
   // typedef map<string,SolidCreator> SolidCreatorMap;
   // SolidCreatorMap *solid_map;
 
-  int inside(Eigen::Vector3d);
+  int inside(Vector3d);
 
   void write_restart(ofstream*);      ///< Write box bounds, list of regions and solids to restart file
   void read_restart(ifstream*);       ///< Read box bounds, list of regions and solids to restart file

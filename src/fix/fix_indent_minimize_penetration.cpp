@@ -19,14 +19,14 @@
 #include <solid.h>
 #include <universe.h>
 #include <update.h>
-#include <Eigen/Eigen>
+#include <matrix.h>
 #include <iostream>
 #include <string>
 #include <vector>
 
 using namespace std;
 using namespace FixConst;
-using namespace Eigen;
+
 
 #define four_thirds 1.333333333
 
@@ -98,21 +98,21 @@ void FixIndentMinimizePenetration::setmask() {
 
 void FixIndentMinimizePenetration::initial_integrate() {
   // Go through all the particles in the group and set b to the right value:
-  Eigen::Vector3d f;
+  Vector3d f;
 
   int solid = group->solid[igroup];
 
   Solid *s;
-  Eigen::Vector3d ftot, ftot_reduced, ffric;
+  Vector3d ftot, ftot_reduced, ffric;
 
-  Eigen::Vector3d xs(xvalue.result(mpm),
+  Vector3d xs(xvalue.result(mpm),
                      yvalue.result(mpm),
                      zvalue.result(mpm));
-  Eigen::Vector3d vs(vxvalue.result(mpm),
+  Vector3d vs(vxvalue.result(mpm),
                      vyvalue.result(mpm),
                      vzvalue.result(mpm));
-  Eigen::Vector3d xsp, vps, vt;
-  Eigen::Vector3d ey = {0, 1, 0};
+  Vector3d xsp, vps, vt;
+  Vector3d ey = {0, 1, 0};
 
   double Rs, Rp, r, p, fmag, vtnorm, vndotxsp;
 

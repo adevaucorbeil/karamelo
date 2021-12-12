@@ -22,7 +22,7 @@ DamageStyle(damage_johnson_cook,DamageJohnsonCook)
 #define MPM_DAMAGE_JOHNSON_COOK_H
 
 #include <damage.h>
-#include <Eigen/Eigen>
+#include <matrix.h>
 
 class DamageJohnsonCook : public Damage {
 
@@ -36,7 +36,7 @@ public:
   void compute_damage(double &damage_init,
 			      double &damage,
 			      const double pH,
-			      const Eigen::Matrix3d Sdev,
+			      const Matrix3d Sdev,
 			      const double epsdot,
 			      const double plastic_strain_increment,
 			      const double temperature = 0);

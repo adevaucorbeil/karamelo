@@ -20,7 +20,7 @@
 #include <style_region.h>
 #include <universe.h>
 #include <update.h>
-#include <Eigen/Eigen>
+#include <matrix.h>
 
 using namespace std;
 
@@ -171,7 +171,7 @@ int Domain::find_solid(string name)
 /*! inside = 1 if x,y,z is inside or on the boundary of the simulation domain.
  *  inside = 0 if x,y,z is outside and not on boundary of the simulation domain.
  */
-int Domain::inside(Eigen::Vector3d x)
+int Domain::inside(Vector3d x)
 {
   // cout << "Check if point (" << x << ", " << y << ", " << z << ") is inside
   // the domain" << endl;

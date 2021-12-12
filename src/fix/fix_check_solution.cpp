@@ -14,7 +14,7 @@
 #include <iostream>
 #include <vector>
 #include <string>
-#include <Eigen/Eigen>
+#include <matrix.h>
 #include <fix_check_solution.h>
 #include <input.h>
 #include <group.h>
@@ -30,7 +30,7 @@
 using namespace std;
 using namespace FixConst;
 using namespace MathSpecial;
-using namespace Eigen;
+
 
 FixChecksolution::FixChecksolution(MPM *mpm, vector<string> args) : Fix(mpm, args)
 {
@@ -118,8 +118,8 @@ void FixChecksolution::final_integrate() {
 
   Solid *s;
 
-  Eigen::Vector3d error, error_reduced;
-  Eigen::Vector3d u_th, u_th_reduced;
+  Vector3d error, error_reduced;
+  Vector3d u_th, u_th_reduced;
 
   error.setZero();
   u_th.setZero();

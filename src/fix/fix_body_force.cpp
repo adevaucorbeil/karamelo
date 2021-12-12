@@ -14,7 +14,7 @@
 #include <iostream>
 #include <vector>
 #include <string>
-#include <Eigen/Eigen>
+#include <matrix.h>
 #include <fix_body_force.h>
 #include <input.h>
 #include <group.h>
@@ -26,7 +26,7 @@
 
 using namespace std;
 using namespace FixConst;
-using namespace Eigen;
+
 
 FixBodyforce::FixBodyforce(MPM *mpm, vector<string> args) : Fix(mpm, args)
 {
@@ -107,12 +107,12 @@ void FixBodyforce::post_particles_to_grid() {
   // cout << "In FixBodyforce::post_particles_to_grid()\n";
 
   // Go through all the nodes in the group and set b to the right value:
-  Eigen::Vector3d f;
+  Vector3d f;
 
   int solid = group->solid[igroup];
   Grid *g;
 
-  Eigen::Vector3d ftot, ftot_reduced;
+  Vector3d ftot, ftot_reduced;
 
   // double mtot = 0;
   ftot.setZero();

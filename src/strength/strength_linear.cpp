@@ -19,11 +19,11 @@
 #include <universe.h>
 #include <update.h>
 #include <var.h>
-#include <Eigen/Eigen>
+#include <matrix.h>
 #include <iostream>
 
 using namespace std;
-using namespace Eigen;
+
 using namespace MPM_Math;
 
 
@@ -56,8 +56,8 @@ double StrengthLinear::G(){
   return G_;
 }
 
-Matrix3d StrengthLinear::update_deviatoric_stress(const Eigen::Matrix3d& sigma,
-							const Eigen::Matrix3d& D,
+Matrix3d StrengthLinear::update_deviatoric_stress(const Matrix3d& sigma,
+							const Matrix3d& D,
 							double &               plastic_strain_increment,
 							const double           eff_plastic_strain,
 							const double           epsdot,

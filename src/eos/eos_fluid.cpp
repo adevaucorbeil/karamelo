@@ -6,12 +6,12 @@
 #include <mpm_math.h>
 #include <universe.h>
 #include <var.h>
-#include <Eigen/Eigen>
+#include <matrix.h>
 #include <iostream>
 #include <math.h>
 
 using namespace std;
-using namespace Eigen;
+
 using namespace MPM_Math;
 using namespace MathSpecial;
 
@@ -65,7 +65,7 @@ double EOSFluid::K(){
   return K_;
 }
 
-void EOSFluid::compute_pressure(double &pH, double &e, const double J, const double rho, const double damage, const Eigen::Matrix3d D, const double cellsize, const double T){
+void EOSFluid::compute_pressure(double &pH, double &e, const double J, const double rho, const double damage, const Matrix3d D, const double cellsize, const double T){
   double mu = rho / rho0_;
   pH = K_ * (pow(mu, Gamma) - 1.0);
 

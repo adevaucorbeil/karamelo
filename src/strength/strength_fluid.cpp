@@ -6,11 +6,11 @@
 #include <universe.h>
 #include <update.h>
 #include <var.h>
-#include <Eigen/Eigen>
+#include <matrix.h>
 #include <iostream>
 
 using namespace std;
-using namespace Eigen;
+
 using namespace MPM_Math;
 
 

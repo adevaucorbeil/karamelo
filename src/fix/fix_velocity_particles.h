@@ -11,7 +11,7 @@ FixStyle(velocity_particles,FixVelocityParticles)
 
 #include <fix.h>
 #include <var.h>
-#include <Eigen/Eigen>
+#include <matrix.h>
 #include <vector>
 
 class FixVelocityParticles : public Fix {
@@ -44,7 +44,7 @@ private:
   class Var xprevvalue, yprevvalue, zprevvalue;      //< Velocities in x, y, and z directions from previous time step.
   bool xset, yset, zset;                             //< Does the fix set the x, y, and z velocities of the group?
 
-  vector<Eigen::Vector3d> xold;          // particles' old position
+  vector<Vector3d> xold;          // particles' old position
 };
 
 #endif

@@ -19,14 +19,14 @@
 #include <solid.h>
 #include <universe.h>
 #include <update.h>
-#include <Eigen/Eigen>
+#include <matrix.h>
 #include <iostream>
 #include <string>
 #include <vector>
 
 using namespace std;
 using namespace FixConst;
-using namespace Eigen;
+
 
 FixMeldTool::FixMeldTool(MPM *mpm, vector<string> args)
     : Fix(mpm, args) {
@@ -105,18 +105,18 @@ void FixMeldTool::initial_integrate() {
   // cout << "In FixMeldTool::initial_integrate()\n";
 
   // Go through all the particles in the group and set b to the right value:
-  Eigen::Vector3d f;
+  Vector3d f;
 
   int solid = group->solid[igroup];
 
   Solid *s;
-  Eigen::Vector3d ftot, ftot_reduced;
+  Vector3d ftot, ftot_reduced;
 
 
   double theta_ = theta.result(mpm);
 
-  Eigen::Vector3d xprime, c;
-  Eigen::Matrix3d R, Rt;
+  Vector3d xprime, c;
+  Matrix3d R, Rt;
 
   if (dim == X) {
     R(0,0) = 1;

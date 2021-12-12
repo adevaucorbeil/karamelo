@@ -22,7 +22,7 @@
 #include <universe.h>
 #include <update.h>
 #include <var.h>
-#include <Eigen/Eigen>
+#include <matrix.h>
 #include <algorithm>
 #include <iostream>
 #include <math.h>
@@ -120,16 +120,16 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
       vector<vector< double >> *wf_pn = &domain->solids[isolid]->wf_pn;
       vector<vector< double >> *wf_np = &domain->solids[isolid]->wf_np;
 
-      vector<vector< Eigen::Vector3d >> *wfd_pn = &domain->solids[isolid]->wfd_pn;
-      vector<vector< Eigen::Vector3d >> *wfd_np = &domain->solids[isolid]->wfd_np;
+      vector<vector< Vector3d >> *wfd_pn = &domain->solids[isolid]->wfd_pn;
+      vector<vector< Vector3d >> *wfd_np = &domain->solids[isolid]->wfd_np;
 
-      Eigen::Vector3d r;
+      Vector3d r;
       double s[3], sd[3];
-      vector<Eigen::Vector3d> *xp = &domain->solids[isolid]->x0;
-      vector<Eigen::Vector3d> *xn = &domain->solids[isolid]->grid->x0;
+      vector<Vector3d> *xp = &domain->solids[isolid]->x0;
+      vector<Vector3d> *xn = &domain->solids[isolid]->grid->x0;
       double inv_cellsize = 1.0 / domain->solids[isolid]->grid->cellsize;
       double wf;
-      Eigen::Vector3d wfd;
+      Vector3d wfd;
 
       vector<array<int, 3>> *ntype = &domain->solids[isolid]->grid->ntype;
       vector<bool> *nrigid = &domain->solids[isolid]->grid->rigid;

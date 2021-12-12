@@ -20,14 +20,14 @@
 #include <output.h>
 #include <universe.h>
 #include <update.h>
-#include <Eigen/Eigen>
+#include <matrix.h>
 #include <iostream>
 #include <string>
 #include <vector>
 
 using namespace std;
 using namespace MathSpecial;
-using namespace Eigen;
+
 //using namespace KARAMELO_NS;
 
 ComputeAverageVelocity::ComputeAverageVelocity(MPM *mpm, vector<string> args)

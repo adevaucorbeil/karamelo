@@ -23,15 +23,14 @@
 #include <universe.h>
 #include <update.h>
 #include <var.h>
-#include <Eigen/Eigen>
-#include <Eigen/Eigenvalues> 
+#include <matrix.h>
 #include <math.h>
 #include <mpi.h>
 #include <string>
 #include <vector>
 
 using namespace std;
-using namespace Eigen;
+
 using namespace MPM_Math;
 
 
@@ -335,7 +334,7 @@ void Solid::compute_mass_nodes(bool reset)
 
 void Solid::compute_velocity_nodes(bool reset)
 {
-  Eigen::Vector3d vtemp, vtemp_update;
+  Vector3d vtemp, vtemp_update;
   //double mass_rigid;
   int ip;
   int nn = grid->nnodes_local + grid->nnodes_ghost;
@@ -391,10 +390,10 @@ void Solid::compute_velocity_nodes(bool reset)
 void Solid::compute_velocity_nodes_APIC(bool reset) {
   int ip;
   int nn = grid->nnodes_local + grid->nnodes_ghost;
-  Eigen::Vector3d vtemp;
+  Vector3d vtemp;
 
-  vector<Eigen::Vector3d> *pos;
-  vector<Eigen::Matrix3d> *C;
+  vector<Vector3d> *pos;
+  vector<Matrix3d> *C;
 
   if (is_TL) {
     pos = &x0;
@@ -450,7 +449,7 @@ void Solid::compute_external_forces_nodes(bool reset)
 
 void Solid::compute_internal_forces_nodes_TL()
 {
-  Eigen::Vector3d ftemp;
+  Vector3d ftemp;
   int ip;
   int nn = grid->nnodes_local + grid->nnodes_ghost;
 
@@ -523,7 +522,7 @@ void Solid::compute_external_and_internal_forces_nodes_UL(bool reset)
 void Solid::compute_external_and_internal_forces_nodes_UL_MLS(bool reset) {
   int ip;
   int nn = grid->nnodes_local + grid->nnodes_ghost;
-  vector<Eigen::Vector3d> *pos;
+  vector<Vector3d> *pos;
 
   if (is_TL) {
     pos = &x0;
@@ -574,7 +573,7 @@ void Solid::compute_external_and_internal_forces_nodes_UL_MLS(bool reset) {
 
 void Solid::compute_particle_accelerations_velocities_and_positions() {
 
-  vector<Eigen::Vector3d> vc_update;
+  vector<Vector3d> vc_update;
   vc_update.resize(nc);
 
   int in;
@@ -635,7 +634,7 @@ void Solid::compute_particle_accelerations_velocities_and_positions() {
 
 void Solid::compute_particle_accelerations_velocities() {
 
-  vector<Eigen::Vector3d> vc_update;
+  vector<Vector3d> vc_update;
   vc_update.resize(nc);
 
   int in;
@@ -695,7 +694,7 @@ void Solid::compute_particle_accelerations_velocities() {
 void Solid::compute_particle_velocities_and_positions()
 {
 
-  vector<Eigen::Vector3d> vc_update;
+  vector<Vector3d> vc_update;
   vc_update.resize(nc);
 
   int in;
@@ -799,7 +798,7 @@ void Solid::compute_rate_deformation_gradient_TL(bool doublemapping) {
     return;
 
   int in;
-  vector<Eigen::Vector3d> *vn;
+  vector<Vector3d> *vn;
 
   if (doublemapping)
     vn = &grid->v;
@@ -862,7 +861,7 @@ void Solid::compute_rate_deformation_gradient_UL(bool doublemapping)
     return;
 
   int in;
-  vector<Eigen::Vector3d> *vn;
+  vector<Vector3d> *vn;
 
   if (doublemapping)
     vn = &grid->v;
@@ -940,10 +939,10 @@ void Solid::compute_deformation_gradient()
     return;
 
   int in;
-  vector<Eigen::Vector3d> *xn = &grid->x;
-  vector<Eigen::Vector3d> *x0n = &grid->x0;
-  Eigen::Vector3d dx;
-  Eigen::Matrix3d Ftemp, eye;
+  vector<Vector3d> *xn = &grid->x;
+  vector<Vector3d> *x0n = &grid->x0;
+  Vector3d dx;
+  Matrix3d Ftemp, eye;
   eye.setIdentity();
 
   if (domain->dimension == 1)
@@ -1008,16 +1007,16 @@ void Solid::compute_rate_deformation_gradient_TL_APIC(bool doublemapping)
     return;
 
   int in;
-  vector<Eigen::Vector3d> *x0n = &grid->x0;
+  vector<Vector3d> *x0n = &grid->x0;
 
-  vector<Eigen::Vector3d> *vn;
+  vector<Vector3d> *vn;
 
   if (doublemapping)
     vn = &grid->v;
   else
     vn = &grid->v_update;
 
-  Eigen::Vector3d dx;
+  Vector3d dx;
 
   if (domain->dimension == 1) {
     for (int ip=0; ip<np_local; ip++){
@@ -1083,15 +1082,15 @@ void Solid::compute_rate_deformation_gradient_UL_APIC(bool doublemapping)
     return;
 
   int in;
-  vector<Eigen::Vector3d> *x0n = &grid->x0;
-  vector<Eigen::Vector3d> *vn;
+  vector<Vector3d> *x0n = &grid->x0;
+  vector<Vector3d> *vn;
 
   if (doublemapping)
     vn = &grid->v;
   else
     vn = &grid->v_update;
 
-  Eigen::Vector3d dx;
+  Vector3d dx;
 
   if (domain->dimension == 1) {
     for (int ip=0; ip<np_local; ip++){
@@ -1157,7 +1156,7 @@ void Solid::update_deformation_gradient()
     return;
 
   bool status, nh, vol_cpdi;
-  Eigen::Matrix3d eye;
+  Matrix3d eye;
   eye.setIdentity();
 
   if (mat->type == material->constitutive_model::NEO_HOOKEAN)
@@ -1292,7 +1291,7 @@ void Solid::update_stress()
 
     vector<double> pH(np_local, 0);
     vector<double> plastic_strain_increment(np_local, 0);
-    vector<Eigen::Matrix3d> sigma_dev;
+    vector<Matrix3d> sigma_dev;
     sigma_dev.resize(np_local);
     double tav = 0;
 
@@ -1437,10 +1436,10 @@ void Solid::update_stress()
 }
 
 void Solid::compute_inertia_tensor() {
-  Eigen::Vector3d dx;
+  Vector3d dx;
 
-  vector<Eigen::Vector3d> *pos;
-  Eigen::Matrix3d eye, Dtemp;
+  vector<Vector3d> *pos;
+  Matrix3d eye, Dtemp;
   eye.setIdentity();
   double cellsizeSqInv = 1.0 / (grid->cellsize * grid->cellsize);
 
@@ -1515,7 +1514,7 @@ void Solid::compute_inertia_tensor() {
   //   }
   // }
 
-  // Eigen::Matrix3d eye;
+  // Matrix3d eye;
   // eye.setIdentity();
 
   // double cellsizeSqInv = 1.0 / (grid->cellsize * grid->cellsize);
@@ -2820,15 +2819,15 @@ void Solid::write_restart(ofstream *of) {
   // cout << x[0](0) << ", " << x[0](1) << ", " << x[0](2) << endl;
   for (int ip = 0; ip < np_local; ip++) {
     of->write(reinterpret_cast<const char *>(&ptag[ip]), sizeof(tagint));
-    of->write(reinterpret_cast<const char *>(&x0[ip]), sizeof(Eigen::Vector3d));
-    of->write(reinterpret_cast<const char *>(&x[ip]), sizeof(Eigen::Vector3d));
-    of->write(reinterpret_cast<const char *>(&v[ip]), sizeof(Eigen::Vector3d));
-    of->write(reinterpret_cast<const char *>(&sigma[ip]), sizeof(Eigen::Matrix3d));
-    of->write(reinterpret_cast<const char *>(&strain_el[ip]), sizeof(Eigen::Matrix3d));
+    of->write(reinterpret_cast<const char *>(&x0[ip]), sizeof(Vector3d));
+    of->write(reinterpret_cast<const char *>(&x[ip]), sizeof(Vector3d));
+    of->write(reinterpret_cast<const char *>(&v[ip]), sizeof(Vector3d));
+    of->write(reinterpret_cast<const char *>(&sigma[ip]), sizeof(Matrix3d));
+    of->write(reinterpret_cast<const char *>(&strain_el[ip]), sizeof(Matrix3d));
     if (is_TL) {
-      of->write(reinterpret_cast<const char *>(&vol0PK1[ip]), sizeof(Eigen::Matrix3d));
+      of->write(reinterpret_cast<const char *>(&vol0PK1[ip]), sizeof(Matrix3d));
     }
-    of->write(reinterpret_cast<const char *>(&F[ip]), sizeof(Eigen::Matrix3d));
+    of->write(reinterpret_cast<const char *>(&F[ip]), sizeof(Matrix3d));
     of->write(reinterpret_cast<const char *>(&J[ip]), sizeof(double));
     of->write(reinterpret_cast<const char *>(&vol0[ip]), sizeof(double));
     of->write(reinterpret_cast<const char *>(&rho0[ip]), sizeof(double));
@@ -2875,20 +2874,20 @@ void Solid::read_restart(ifstream *ifr) {
 
   for (int ip = 0; ip < np_local; ip++) {
     ifr->read(reinterpret_cast<char *>(&ptag[ip]), sizeof(tagint));
-    ifr->read(reinterpret_cast<char *>(&x0[ip]), sizeof(Eigen::Vector3d));
-    ifr->read(reinterpret_cast<char *>(&x[ip]), sizeof(Eigen::Vector3d));
-    ifr->read(reinterpret_cast<char *>(&v[ip]), sizeof(Eigen::Vector3d));
+    ifr->read(reinterpret_cast<char *>(&x0[ip]), sizeof(Vector3d));
+    ifr->read(reinterpret_cast<char *>(&x[ip]), sizeof(Vector3d));
+    ifr->read(reinterpret_cast<char *>(&v[ip]), sizeof(Vector3d));
     v_update[ip].setZero();
     a[ip].setZero();
     mbp[ip].setZero();
     f[ip].setZero();
-    ifr->read(reinterpret_cast<char *>(&sigma[ip]), sizeof(Eigen::Matrix3d));
-    ifr->read(reinterpret_cast<char *>(&strain_el[ip]), sizeof(Eigen::Matrix3d));
+    ifr->read(reinterpret_cast<char *>(&sigma[ip]), sizeof(Matrix3d));
+    ifr->read(reinterpret_cast<char *>(&strain_el[ip]), sizeof(Matrix3d));
     if (is_TL) {
-      ifr->read(reinterpret_cast<char *>(&vol0PK1[ip]), sizeof(Eigen::Matrix3d));
+      ifr->read(reinterpret_cast<char *>(&vol0PK1[ip]), sizeof(Matrix3d));
     }
     L[ip].setZero();
-    ifr->read(reinterpret_cast<char *>(&F[ip]), sizeof(Eigen::Matrix3d));
+    ifr->read(reinterpret_cast<char *>(&F[ip]), sizeof(Matrix3d));
     R[ip].setZero();
     D[ip].setZero();
     Finv[ip].setZero();

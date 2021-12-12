@@ -15,9 +15,9 @@
 #ifndef MPM_MATH_H_
 #define MPM_MATH_H_
 
-#include <Eigen/Eigen>
+#include <matrix.h>
 #include <iostream>
-using namespace Eigen;
+
 using namespace std;
 
 namespace MPM_Math {

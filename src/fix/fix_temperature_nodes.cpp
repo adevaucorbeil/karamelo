@@ -20,13 +20,13 @@
 #include <special_functions.h>
 #include <universe.h>
 #include <update.h>
-#include <Eigen/Eigen>
+#include <matrix.h>
 #include <iostream>
 #include <string>
 #include <vector>
 using namespace std;
 using namespace FixConst;
-using namespace Eigen;
+
 
 FixTemperatureNodes::FixTemperatureNodes(MPM *mpm, vector<string> args) : Fix(mpm, args)
 {

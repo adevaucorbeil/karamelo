@@ -9,6 +9,6 @@ endforeach()
 list(REMOVE_DUPLICATES HEADER_DIRECTORIES)
 target_include_directories(karamelo PUBLIC ${HEADER_DIRECTORIES})
 
-target_link_libraries(karamelo PUBLIC MPI::MPI_CXX gzstream eigen)
+target_link_libraries(karamelo PUBLIC MPI::MPI_CXX Kokkos::kokkos gzstream)
 
 add_subdirectory(version)

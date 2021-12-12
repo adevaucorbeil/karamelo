@@ -11,7 +11,7 @@ MethodStyle(tlcpdi,TLCPDI)
 
 #include <method.h>
 #include <vector>
-#include <Eigen/Eigen>
+#include <matrix.h>
 
 
 class TLCPDI : public Method {

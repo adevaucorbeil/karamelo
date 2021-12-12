@@ -22,7 +22,7 @@ FixStyle(contact/minimize_penetration/plane, FixContactMinPenetrationPlane)
 
 #include <fix.h>
 #include <var.h>
-#include <Eigen/Eigen>
+#include <matrix.h>
 #include <vector>
 
 class FixContactMinPenetrationPlane : public Fix {
@@ -49,8 +49,8 @@ private:
   int Nargs = 10;
   int solid;
   double D; // Coordinates of the plane.
-  Eigen::Vector3d xq; // Point in the plane.
-  Eigen::Vector3d n;  // Normal to the plane.
+  Vector3d xq; // Point in the plane.
+  Vector3d n;  // Normal to the plane.
   double mu;          // Friction coefficient.
 };
 

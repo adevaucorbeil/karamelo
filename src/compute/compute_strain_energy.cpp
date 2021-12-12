@@ -14,7 +14,7 @@
 #include <iostream>
 #include <vector>
 #include <string>
-#include <Eigen/Eigen>
+#include <matrix.h>
 #include <compute_strain_energy.h>
 #include <input.h>
 #include <group.h>
@@ -29,7 +29,7 @@
 
 using namespace std;
 using namespace MathSpecial;
-using namespace Eigen;
+
 
 ComputeStrainEnergy::ComputeStrainEnergy(MPM *mpm, vector<string> args) : Compute(mpm, args)
 {

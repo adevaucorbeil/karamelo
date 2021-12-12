@@ -19,14 +19,14 @@
 #include <solid.h>
 #include <universe.h>
 #include <update.h>
-#include <Eigen/Eigen>
+#include <matrix.h>
 #include <iostream>
 #include <string>
 #include <vector>
 
 using namespace std;
 using namespace FixConst;
-using namespace Eigen;
+
 
 #define four_thirds 1.333333333
 
@@ -88,10 +88,10 @@ void FixContactPinball::initial_integrate() {
   // cout << "In FixContactPinball::initial_integrate()\n";
 
   // Go through all the particles in the group and set b to the right value:
-  Eigen::Vector3d f, dx, dv;
+  Vector3d f, dx, dv;
 
   Solid *s1, *s2;
-  Eigen::Vector3d ftot, ftot_reduced;
+  Vector3d ftot, ftot_reduced;
 
   double Rp, Rp1, Rp2, r, p, pdot, fmag1, fmag2, Gstar, max_cellsize;
 

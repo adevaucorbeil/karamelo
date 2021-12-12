@@ -8,7 +8,7 @@
 #include <universe.h>
 #include <update.h>
 #include <var.h>
-#include <Eigen/Eigen>
+#include <matrix.h>
 #include <algorithm>
 #include <iostream>
 #include <math.h>
@@ -124,13 +124,13 @@ void TLCPDI::compute_grid_weight_functions_and_gradients()
       vector<vector< double >> *wf_pn_corners = &domain->solids[isolid]->wf_pn_corners;
       vector<vector< double >> *wf_np = &domain->solids[isolid]->wf_np;
 
-      vector<vector< Eigen::Vector3d >> *wfd_pn = &domain->solids[isolid]->wfd_pn;
-      vector<vector< Eigen::Vector3d >> *wfd_np = &domain->solids[isolid]->wfd_np;
+      vector<vector< Vector3d >> *wfd_pn = &domain->solids[isolid]->wfd_pn;
+      vector<vector< Vector3d >> *wfd_np = &domain->solids[isolid]->wfd_np;
 
-      vector<Eigen::Vector3d> *xp  = &domain->solids[isolid]->x0;
-      vector<Eigen::Vector3d> *xpc = &domain->solids[isolid]->xpc;
-      vector<Eigen::Vector3d> *xn  = &domain->solids[isolid]->grid->x0;
-      vector<Eigen::Vector3d> *rp  = &domain->solids[isolid]->rp;
+      vector<Vector3d> *xp  = &domain->solids[isolid]->x0;
+      vector<Vector3d> *xpc = &domain->solids[isolid]->xpc;
+      vector<Vector3d> *xn  = &domain->solids[isolid]->grid->x0;
+      vector<Vector3d> *rp  = &domain->solids[isolid]->rp;
 
       double inv_cellsize          = 1.0 / domain->solids[isolid]->grid->cellsize;
       vector<double> *vol          = &domain->solids[isolid]->vol;
@@ -138,8 +138,8 @@ void TLCPDI::compute_grid_weight_functions_and_gradients()
 
       double wf;
       double s[3];
-      Eigen::Vector3d r, wfd;
-      vector<Eigen::Vector3d> xcorner(nc, Eigen::Vector3d::Zero());
+      Vector3d r, wfd;
+      vector<Vector3d> xcorner(nc, Vector3d::Zero());
       vector<double> wfc(nc, 0);
 
       double a, b, inv_Vp, alpha_over_Vp, sixVp;

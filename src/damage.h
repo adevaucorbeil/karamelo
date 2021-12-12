@@ -16,7 +16,7 @@
 
 #include <pointers.h>
 #include <vector>
-#include <Eigen/Eigen>
+#include <matrix.h>
 
 class Damage : protected Pointers {
  public:
@@ -35,7 +35,7 @@ class Damage : protected Pointers {
   virtual void compute_damage(double &damage_init,
 			      double &damage,
 			      const double pH,
-			      const Eigen::Matrix3d Sdev,
+			      const Matrix3d Sdev,
 			      const double epsdot,
 			      const double plastic_strain_increment,
 			      const double temperature = 0) = 0;

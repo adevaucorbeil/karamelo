@@ -22,7 +22,7 @@ MethodStyle(ulcpdi,ULCPDI)
 
 #include <method.h>
 #include <vector>
-#include <Eigen/Eigen>
+#include <matrix.h>
 #include <map>
 
 

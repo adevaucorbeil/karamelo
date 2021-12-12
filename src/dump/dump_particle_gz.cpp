@@ -21,7 +21,7 @@
 #include <solid.h>
 #include <universe.h>
 #include <update.h>
-#include <Eigen/Eigen>
+#include <matrix.h>
 #include <gzstream.h>
 #include <iostream>
 
@@ -88,7 +88,7 @@ void DumpParticleGz::write() {
   dumpstream << endl;
 
 
-  Eigen::Matrix3d sigma_;
+  Matrix3d sigma_;
 
   for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
     Solid *s = domain->solids[isolid];

@@ -21,7 +21,7 @@
 #include <universe.h>
 #include <update.h>
 #include <var.h>
-#include <Eigen/Eigen>
+#include <matrix.h>
 #include <algorithm>
 #include <iostream>
 #include <math.h>
@@ -141,21 +141,21 @@ void ULCPDI::compute_grid_weight_functions_and_gradients()
 	vector<vector< double >> *wf_pn_corners = &s->wf_pn_corners;
 	vector<vector< double >> *wf_np = &s->wf_np;
 
-	vector<vector< Eigen::Vector3d >> *wfd_pn = &s->wfd_pn;
-	vector<vector< Eigen::Vector3d >> *wfd_np = &s->wfd_np;
+	vector<vector< Vector3d >> *wfd_pn = &s->wfd_pn;
+	vector<vector< Vector3d >> *wfd_np = &s->wfd_np;
 
-	vector<Eigen::Vector3d> *xp  = &s->x;
-	vector<Eigen::Vector3d> *xpc = &s->xpc;
-	vector<Eigen::Vector3d> *xn  = &s->grid->x0;
-	vector<Eigen::Vector3d> *rp  = &s->rp;
+	vector<Vector3d> *xp  = &s->x;
+	vector<Vector3d> *xpc = &s->xpc;
+	vector<Vector3d> *xn  = &s->grid->x0;
+	vector<Vector3d> *rp  = &s->rp;
 
 	double inv_cellsize          = 1.0 / s->grid->cellsize;
 	vector<array<int, 3>> *ntype = &s->grid->ntype;
 
 	double wf;
 	double phi[3];
-	Eigen::Vector3d r, wfd;
-	vector<Eigen::Vector3d> xcorner(nc, Eigen::Vector3d::Zero());
+	Vector3d r, wfd;
+	vector<Vector3d> xcorner(nc, Vector3d::Zero());
 	vector<double> wfc(nc, 0);
 
 	double a, b, inv_Vp, alpha_over_Vp, sixVp;

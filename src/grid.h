@@ -18,12 +18,12 @@
 #include <grid.h>
 #include <grid.h>
 #include <vector>
-#include <Eigen/Eigen>
+#include <matrix.h>
 #include <unordered_map>
 #include <map>
 #include <array>
 
-using namespace Eigen;
+
 
 /*! This structure is used to duplicate a grid point to another CPU.
  *  
@@ -78,12 +78,12 @@ class Grid : protected Pointers {
 
   double cellsize;       ///< size of the square cells forming the grid
 
-  vector<Eigen::Vector3d> x;            ///< nodes' current position
-  vector<Eigen::Vector3d> x0;           ///< nodes' position in the reference coordinate system
-  vector<Eigen::Vector3d> v;            ///< nodes' velocity at time t
-  vector<Eigen::Vector3d> v_update;     ///< nodes' velocity at time t+dt
-  vector<Eigen::Vector3d> mb;           ///< nodes' external forces times the mass
-  vector<Eigen::Vector3d> f;            ///< nodes' internal forces
+  vector<Vector3d> x;            ///< nodes' current position
+  vector<Vector3d> x0;           ///< nodes' position in the reference coordinate system
+  vector<Vector3d> v;            ///< nodes' velocity at time t
+  vector<Vector3d> v_update;     ///< nodes' velocity at time t+dt
+  vector<Vector3d> mb;           ///< nodes' external forces times the mass
+  vector<Vector3d> f;            ///< nodes' internal forces
 
   vector<double> mass;              ///< nodes' current mass
   vector<int> mask;                 ///< nodes' group mask
