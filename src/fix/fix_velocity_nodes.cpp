@@ -159,7 +159,7 @@ void FixVelocityNodes::post_update_grid_state() {
   Grid *g;
 
   Vector3d Dv, ftot, ftot_reduced;
-  ftot.setZero();
+  ftot = Vector3d();
   double inv_dt = 1.0/update->dt;
 
   if (solid == -1) {
@@ -168,7 +168,7 @@ void FixVelocityNodes::post_update_grid_state() {
 
       for (int ip = 0; ip < g->nnodes_local + g->nnodes_ghost; ip++) {
 	if (g->mask[ip] & groupbit) {
-	  Dv.setZero();
+	  Dv = Vector3d();
 	  if (xset) {
 	    Dv[0] = vx - g->v_update[ip][0];
 	    g->v_update[ip][0] = vx;
@@ -194,7 +194,7 @@ void FixVelocityNodes::post_update_grid_state() {
 
     for (int ip = 0; ip < g->nnodes_local + g->nnodes_ghost; ip++) {
       if (g->mask[ip] & groupbit) {
-	Dv.setZero();
+	Dv = Vector3d();
 	if (xset) {
 	  Dv[0] = vx - g->v_update[ip][0];
 	  g->v_update[ip][0] = vx;
@@ -216,7 +216,7 @@ void FixVelocityNodes::post_update_grid_state() {
   }
 
   // Reduce ftot:
-  MPI_Allreduce(ftot.data(), ftot_reduced.data(), 3, MPI_DOUBLE, MPI_SUM,
+  MPI_Allreduce(ftot.elements, ftot_reduced.elements, 3, MPI_DOUBLE, MPI_SUM,
                 universe->uworld);
 
   (*input->vars)[id + "_x"] = Var(id + "_x", ftot_reduced[0]);

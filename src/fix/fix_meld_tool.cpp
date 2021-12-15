@@ -163,7 +163,7 @@ void FixMeldTool::initial_integrate() {
   }
 
   Rt = R.transpose();
-  ftot.setZero();
+  ftot = Vector3d();
 
   double p0, p1, p2, pext, p, rSq;
 
@@ -197,7 +197,7 @@ void FixMeldTool::initial_integrate() {
 		p2 = xprime[dim];
 		pext = Rmax - sqrt(p0*p0 + p1*p1);
 
-		f.setZero();
+		f = Vector3d();
 
 		if (p0 > w) {
 		  p = p0 - w;
@@ -221,7 +221,7 @@ void FixMeldTool::initial_integrate() {
 
 		if (pext > 0) {
 		  if (pext < f.norm()) {
-		    f.setZero();
+		    f = Vector3d();
 		    double r = sqrt(rSq);
 		    f[axis0] = pext * xprime[axis0]/r;
 		    f[axis1] = pext * xprime[axis1]/r;
@@ -230,7 +230,7 @@ void FixMeldTool::initial_integrate() {
 
 		if (p2 > 0) {
 		  if (p2 < f.norm()) {
-		    f.setZero();
+		    f = Vector3d();
 		    f[dim] = -p2;
 		  }
 		}
@@ -282,7 +282,7 @@ void FixMeldTool::initial_integrate() {
 	      p2 = xprime[dim];
 		  pext = Rmax - sqrt(p0*p0 + p1*p1);
 
-	      f.setZero();
+	      f = Vector3d();
 
 	      if (p0 > w) {
 		p = p0 - w;
@@ -306,7 +306,7 @@ void FixMeldTool::initial_integrate() {
 
 	      if (pext > 0) {
 		if (pext < f.norm()) {
-		  f.setZero();
+		  f = Vector3d();
 		  double r = sqrt(rSq);
 		  f[axis0] = pext * xprime[axis0]/r;
 		  f[axis1] = pext * xprime[axis1]/r;
@@ -315,7 +315,7 @@ void FixMeldTool::initial_integrate() {
 
 	      if (p2 > 0) {
 		if (p2 < f.norm()) {
-		  f.setZero();
+		  f = Vector3d();
 		  f[dim] = -p2;
 		}
 	      }
@@ -338,7 +338,7 @@ void FixMeldTool::initial_integrate() {
     }
   }
   // Reduce ftot:
-  MPI_Allreduce(ftot.data(), ftot_reduced.data(), 3, MPI_DOUBLE, MPI_SUM,
+  MPI_Allreduce(ftot.elements, ftot_reduced.elements, 3, MPI_DOUBLE, MPI_SUM,
                 universe->uworld);
 
   (*input->vars)[id + "_x"] = Var(id + "_x", ftot_reduced[0]);

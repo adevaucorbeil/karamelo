@@ -138,7 +138,7 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
       int inn;
       tagint tag = 0;
       
-      r.setZero();
+      r = Vector3d();
       if (np_local && (nnodes_local + nnodes_ghost)) {
 
 	int nx = domain->solids[isolid]->grid->nx_global;
@@ -520,6 +520,6 @@ void TLMPM::reset()
   for (int isolid=0; isolid<domain->solids.size(); isolid++) {
     domain->solids[isolid]->dtCFL = 1.0e22;
     np_local = domain->solids[isolid]->np_local;
-    for (int ip = 0; ip < np_local; ip++) domain->solids[isolid]->mbp[ip].setZero();
+    for (int ip = 0; ip < np_local; ip++) domain->solids[isolid]->mbp[ip] = Vector3d();
   }
 }

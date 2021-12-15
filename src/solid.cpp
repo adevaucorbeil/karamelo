@@ -343,10 +343,10 @@ void Solid::compute_velocity_nodes(bool reset)
   {
     if (reset)
     {
-      grid->v[in].setZero();
-      //grid->v_update[in].setZero();
+      grid->v[in] = Vector3d();
+      //grid->v_update[in] = Vector3d();
       if (grid->rigid[in]) {
-	grid->mb[in].setZero();
+	grid->mb[in] = Vector3d();
       }
     }
 
@@ -354,9 +354,9 @@ void Solid::compute_velocity_nodes(bool reset)
 
     if (grid->mass[in] > 0)
     {
-      vtemp.setZero();
+      vtemp = Vector3d();
       if (grid->rigid[in])
-	vtemp_update.setZero();
+	vtemp_update = Vector3d();
 
       for (int j = 0; j < numneigh_np[in]; j++)
       {
@@ -405,13 +405,13 @@ void Solid::compute_velocity_nodes_APIC(bool reset) {
 
   for (int in = 0; in < nn; in++) {
     if (reset)
-      grid->v[in].setZero();
+      grid->v[in] = Vector3d();
 
     if (grid->rigid[in] && !mat->rigid)
       continue;
 
     if (grid->mass[in] > 0) {
-      vtemp.setZero();
+      vtemp = Vector3d();
       for (int j = 0; j < numneigh_np[in]; j++) {
         ip = neigh_np[in][j];
         vtemp += (wf_np[in][j] * mass[ip]) *
@@ -431,7 +431,7 @@ void Solid::compute_external_forces_nodes(bool reset)
   for (int in = 0; in < nn; in++)
   {
     if (reset)
-      grid->mb[in].setZero();
+      grid->mb[in] = Vector3d();
 
     if (grid->rigid[in])
       continue;
@@ -457,11 +457,11 @@ void Solid::compute_internal_forces_nodes_TL()
   {
     if (grid->rigid[in])
     {
-      grid->f[in].setZero();
+      grid->f[in] = Vector3d();
       continue;
     }
 
-    ftemp.setZero();
+    ftemp = Vector3d();
     for (int j = 0; j < numneigh_np[in]; j++)
     {
       ip = neigh_np[in][j];
@@ -484,8 +484,8 @@ void Solid::compute_external_and_internal_forces_nodes_UL(bool reset)
 
   for (int in = 0; in < nn; in++) {
     if (reset) {
-      grid->f[in].setZero();
-      grid->mb[in].setZero();
+      grid->f[in] = Vector3d();
+      grid->mb[in] = Vector3d();
     }
 
     if (grid->rigid[in]) {
@@ -532,8 +532,8 @@ void Solid::compute_external_and_internal_forces_nodes_UL_MLS(bool reset) {
 
   for (int in = 0; in < nn; in++) {
     if (reset) {
-      grid->f[in].setZero();
-      grid->mb[in].setZero();
+      grid->f[in] = Vector3d();
+      grid->mb[in] = Vector3d();
     }
 
     if (grid->rigid[in]) {
@@ -590,11 +590,11 @@ void Solid::compute_particle_accelerations_velocities_and_positions() {
     update_corners = false;
 
   for (int ip = 0; ip < np_local; ip++) {
-    v_update[ip].setZero();
-    a[ip].setZero();
+    v_update[ip] = Vector3d();
+    a[ip] = Vector3d();
     if (update_corners)
       for (int i = 0; i < nc; i++)
-        vc_update[i].setZero();
+        vc_update[i] = Vector3d();
 
     for (int j = 0; j < numneigh_pn[ip]; j++) {
       in = neigh_pn[ip][j];
@@ -651,11 +651,11 @@ void Solid::compute_particle_accelerations_velocities() {
     update_corners = false;
 
   for (int ip = 0; ip < np_local; ip++) {
-    v_update[ip].setZero();
-    a[ip].setZero();
+    v_update[ip] = Vector3d();
+    a[ip] = Vector3d();
     if (update_corners)
       for (int i = 0; i < nc; i++)
-        vc_update[i].setZero();
+        vc_update[i] = Vector3d();
 
     for (int j = 0; j < numneigh_pn[ip]; j++) {
       in = neigh_pn[ip][j];
@@ -712,10 +712,10 @@ void Solid::compute_particle_velocities_and_positions()
 
   for (int ip = 0; ip < np_local; ip++)
   {
-    v_update[ip].setZero();
+    v_update[ip] = Vector3d();
     if (update_corners)
       for (int i = 0; i < nc; i++)
-        vc_update[i].setZero();
+        vc_update[i] = Vector3d();
 
     for (int j = 0; j < numneigh_pn[ip]; j++)
       {
@@ -768,7 +768,7 @@ void Solid::compute_particle_acceleration()
   int in;
 
   for (int ip = 0; ip < np_local; ip++){
-    a[ip].setZero();
+    a[ip] = Vector3d();
     if (mat->rigid)
       continue;
     for (int j = 0; j < numneigh_pn[ip]; j++)
@@ -807,7 +807,7 @@ void Solid::compute_rate_deformation_gradient_TL(bool doublemapping) {
 
   if (domain->dimension == 1) {
     for (int ip = 0; ip < np_local; ip++) {
-      Fdot[ip].setZero();
+      Fdot[ip] = Matrix3d();
       for (int j = 0; j < numneigh_pn[ip]; j++) {
         in = neigh_pn[ip][j];
         Fdot[ip](0, 0) += (*vn)[in][0] * wfd_pn[ip][j][0];
@@ -815,7 +815,7 @@ void Solid::compute_rate_deformation_gradient_TL(bool doublemapping) {
     }
   } else if ((domain->dimension == 2) && (domain->axisymmetric == true)) {
     for (int ip = 0; ip < np_local; ip++) {
-      Fdot[ip].setZero();
+      Fdot[ip] = Matrix3d();
       for (int j = 0; j < numneigh_pn[ip]; j++) {
         in = neigh_pn[ip][j];
         Fdot[ip](0, 0) += (*vn)[in][0] * wfd_pn[ip][j][0];
@@ -827,7 +827,7 @@ void Solid::compute_rate_deformation_gradient_TL(bool doublemapping) {
     }
   } else if ((domain->dimension == 2) && (domain->axisymmetric == false)) {
     for (int ip = 0; ip < np_local; ip++) {
-      Fdot[ip].setZero();
+      Fdot[ip] = Matrix3d();
       for (int j = 0; j < numneigh_pn[ip]; j++) {
         in = neigh_pn[ip][j];
         Fdot[ip](0, 0) += (*vn)[in][0] * wfd_pn[ip][j][0];
@@ -838,7 +838,7 @@ void Solid::compute_rate_deformation_gradient_TL(bool doublemapping) {
     }
   } else if (domain->dimension == 3) {
     for (int ip = 0; ip < np_local; ip++) {
-      Fdot[ip].setZero();
+      Fdot[ip] = Matrix3d();
       for (int j = 0; j < numneigh_pn[ip]; j++) {
         in = neigh_pn[ip][j];
         Fdot[ip](0, 0) += (*vn)[in][0] * wfd_pn[ip][j][0];
@@ -872,7 +872,7 @@ void Solid::compute_rate_deformation_gradient_UL(bool doublemapping)
     {
       for (int ip = 0; ip < np_local; ip++)
 	{
-	  L[ip].setZero();
+	  L[ip] = Matrix3d();
 	  for (int j = 0; j < numneigh_pn[ip]; j++)
 	    {
 	      in = neigh_pn[ip][j];
@@ -884,7 +884,7 @@ void Solid::compute_rate_deformation_gradient_UL(bool doublemapping)
     {
       for (int ip = 0; ip < np_local; ip++)
 	{
-	  L[ip].setZero();
+	  L[ip] = Matrix3d();
 	  for (int j = 0; j < numneigh_pn[ip]; j++)
 	    {
 	      in = neigh_pn[ip][j];
@@ -899,7 +899,7 @@ void Solid::compute_rate_deformation_gradient_UL(bool doublemapping)
     {
       for (int ip = 0; ip < np_local; ip++)
 	{
-	  L[ip].setZero();
+	  L[ip] = Matrix3d();
 	  for (int j = 0; j < numneigh_pn[ip]; j++)
 	    {
 	      in = neigh_pn[ip][j];
@@ -915,7 +915,7 @@ void Solid::compute_rate_deformation_gradient_UL(bool doublemapping)
     {
       for (int ip = 0; ip < np_local; ip++)
 	{
-	  L[ip].setZero();
+	  L[ip] = Matrix3d();
 	  for (int j = 0; j < numneigh_pn[ip]; j++)
 	    {
 	      in = neigh_pn[ip][j];
@@ -942,13 +942,12 @@ void Solid::compute_deformation_gradient()
   vector<Vector3d> *xn = &grid->x;
   vector<Vector3d> *x0n = &grid->x0;
   Vector3d dx;
-  Matrix3d Ftemp, eye;
-  eye.setIdentity();
+  Matrix3d Ftemp, eye = Matrix3d::identity();
 
   if (domain->dimension == 1)
     {
     for (int ip = 0; ip < np_local; ip++) {
-      Ftemp.setZero();
+      Ftemp = Matrix3d();
       for (int j = 0; j < numneigh_pn[ip]; j++) {
         in = neigh_pn[ip][j];
         dx = (*xn)[in] - (*x0n)[in];
@@ -961,8 +960,8 @@ void Solid::compute_deformation_gradient()
   {
     for (int ip = 0; ip < np_local; ip++)
     {
-      // F[ip].setZero();
-      Ftemp.setZero();
+      // F[ip] = Vector3d();
+      Ftemp = Matrix3d();
       for (int j = 0; j < numneigh_pn[ip]; j++)
       {
         in = neigh_pn[ip][j];
@@ -979,8 +978,8 @@ void Solid::compute_deformation_gradient()
   {
     for (int ip = 0; ip < np_local; ip++)
     {
-      // F[ip].setZero();
-      Ftemp.setZero();
+      // F[ip] = Vector3d();
+      Ftemp = Matrix3d();
       for (int j = 0; j < numneigh_pn[ip]; j++)
       {
         in = neigh_pn[ip][j];
@@ -1020,17 +1019,17 @@ void Solid::compute_rate_deformation_gradient_TL_APIC(bool doublemapping)
 
   if (domain->dimension == 1) {
     for (int ip=0; ip<np_local; ip++){
-      Fdot[ip].setZero();
+      Fdot[ip] = Matrix3d();
       for (int j=0; j<numneigh_pn[ip]; j++){
 	in = neigh_pn[ip][j];
 	dx = (*x0n)[in] - x0[ip];
 	Fdot[ip](0,0) += (*vn)[in][0]*dx[0]*wf_pn[ip][j];
       }
-      Fdot[ip] *= Di;
+      Fdot[ip] = Fdot[ip]*Di;
     }
   } else if ((domain->dimension == 2) && (domain->axisymmetric == false)) {
     for (int ip=0; ip<np_local; ip++){
-      Fdot[ip].setZero();
+      Fdot[ip] = Matrix3d();
       for (int j=0; j<numneigh_pn[ip]; j++){
 	in = neigh_pn[ip][j];
 	dx = (*x0n)[in] - x0[ip];
@@ -1039,11 +1038,11 @@ void Solid::compute_rate_deformation_gradient_TL_APIC(bool doublemapping)
 	Fdot[ip](1,0) += (*vn)[in][1]*dx[0]*wf_pn[ip][j];
 	Fdot[ip](1,1) += (*vn)[in][1]*dx[1]*wf_pn[ip][j];
       }
-      Fdot[ip] *= Di;
+      Fdot[ip] = Fdot[ip]*Di;
     }
   } else if ((domain->dimension == 2) && (domain->axisymmetric == true)) {
     for (int ip=0; ip<np_local; ip++){
-      Fdot[ip].setZero();
+      Fdot[ip] = Matrix3d();
       for (int j=0; j<numneigh_pn[ip]; j++){
 	in = neigh_pn[ip][j];
 	dx = (*x0n)[in] - x0[ip];
@@ -1053,11 +1052,11 @@ void Solid::compute_rate_deformation_gradient_TL_APIC(bool doublemapping)
 	Fdot[ip](1,1) += (*vn)[in][1]*dx[1]*wf_pn[ip][j];
         Fdot[ip](2,2) += (*vn)[in][0] * wf_pn[ip][j] / x0[ip][0];
       }
-      Fdot[ip] *= Di;
+      Fdot[ip] = Fdot[ip]*Di;
     }
   } else if (domain->dimension == 3) {
     for (int ip=0; ip<np_local; ip++){
-      Fdot[ip].setZero();
+      Fdot[ip] = Matrix3d();
       for (int j=0; j<numneigh_pn[ip]; j++){
 	in = neigh_pn[ip][j];
 	dx = (*x0n)[in] - x0[ip];
@@ -1071,7 +1070,7 @@ void Solid::compute_rate_deformation_gradient_TL_APIC(bool doublemapping)
 	Fdot[ip](2,1) += (*vn)[in][2]*dx[1]*wf_pn[ip][j];
 	Fdot[ip](2,2) += (*vn)[in][2]*dx[2]*wf_pn[ip][j];
       }
-      Fdot[ip] *= Di;
+      Fdot[ip] = Fdot[ip]*Di;
     }
   }
 }
@@ -1094,17 +1093,17 @@ void Solid::compute_rate_deformation_gradient_UL_APIC(bool doublemapping)
 
   if (domain->dimension == 1) {
     for (int ip=0; ip<np_local; ip++){
-      L[ip].setZero();
+      L[ip] = Matrix3d();
       for (int j=0; j<numneigh_pn[ip]; j++){
 	in = neigh_pn[ip][j];
 	dx = (*x0n)[in] - x[ip];
 	L[ip](0,0) += (*vn)[in][0]*dx[0]*wf_pn[ip][j];
       }
-      L[ip] *= Di;
+      L[ip] = L[ip]*Di;
     }
   } else if ((domain->dimension == 2) && (domain->axisymmetric == false)) {
     for (int ip=0; ip<np_local; ip++){
-      L[ip].setZero();
+      L[ip] = Matrix3d();
       for (int j=0; j<numneigh_pn[ip]; j++){
 	in = neigh_pn[ip][j];
 	dx = (*x0n)[in] - x[ip];
@@ -1113,11 +1112,11 @@ void Solid::compute_rate_deformation_gradient_UL_APIC(bool doublemapping)
 	L[ip](1,0) += (*vn)[in][1]*dx[0]*wf_pn[ip][j];
 	L[ip](1,1) += (*vn)[in][1]*dx[1]*wf_pn[ip][j];
       }
-      L[ip] *= Di;
+      L[ip] = L[ip]*Di;
     }
   } else if ((domain->dimension == 2) && (domain->axisymmetric == true)) {
     for (int ip=0; ip<np_local; ip++){
-      L[ip].setZero();
+      L[ip] = Matrix3d();
       for (int j=0; j<numneigh_pn[ip]; j++){
 	in = neigh_pn[ip][j];
 	dx = (*x0n)[in] - x[ip];
@@ -1127,11 +1126,11 @@ void Solid::compute_rate_deformation_gradient_UL_APIC(bool doublemapping)
 	L[ip](1,1) += (*vn)[in][1]*dx[1]*wf_pn[ip][j];
 	L[ip](2,2) += (*vn)[in][0] * wf_pn[ip][j] / x[ip][0];
       }
-      L[ip] *= Di;
+      L[ip] = L[ip]*Di;
     }
   } else if (domain->dimension == 3) {
     for (int ip=0; ip<np_local; ip++){
-      L[ip].setZero();
+      L[ip] = Matrix3d();
       for (int j=0; j<numneigh_pn[ip]; j++){
 	in = neigh_pn[ip][j];
 	dx = (*x0n)[in] - x[ip];
@@ -1145,7 +1144,7 @@ void Solid::compute_rate_deformation_gradient_UL_APIC(bool doublemapping)
 	L[ip](2,1) += (*vn)[in][2]*dx[1]*wf_pn[ip][j];
 	L[ip](2,2) += (*vn)[in][2]*dx[2]*wf_pn[ip][j];
       }
-      L[ip] *= Di;
+      L[ip] = L[ip]*Di;
     }
   }
 }
@@ -1156,8 +1155,7 @@ void Solid::update_deformation_gradient()
     return;
 
   bool status, nh, vol_cpdi;
-  Matrix3d eye;
-  eye.setIdentity();
+  Matrix3d eye = Matrix3d::identity();
 
   if (mat->type == material->constitutive_model::NEO_HOOKEAN)
     nh = true;
@@ -1181,7 +1179,7 @@ void Solid::update_deformation_gradient()
     else
       F[ip] = (eye + update->dt * L[ip]) * F[ip];
 
-    Finv[ip] = F[ip].inverse();
+    Finv[ip] = inverse(F[ip]);
 
     if (vol_cpdi)
     {
@@ -1198,7 +1196,7 @@ void Solid::update_deformation_gradient()
     }
     else
     {
-      J[ip]   = F[ip].determinant();
+      J[ip]   = determinant(F[ip]);
       vol[ip] = J[ip] * vol0[ip];
     }
 
@@ -1261,7 +1259,7 @@ void Solid::update_stress()
   else
     nh = false;
 
-  eye.setIdentity();
+  eye = Matrix3d::identity();
 
   if (lin) {
     for (int ip = 0; ip < np_local; ip++) {
@@ -1396,20 +1394,21 @@ void Solid::update_stress()
     }
 
     if (is_TL) {
-      EigenSolver<Matrix3d> esF(F[ip], false);
-      if (esF.info()!= Success) {
+      Matrix3d eigenvalues = F[ip];
+      eigen_decompose(eigenvalues);
+      if (/*esF.info()!= Success*/false) { // EB: revisit
 	min_h_ratio = MIN(min_h_ratio,1.0);
       } else {
-	min_h_ratio = MIN(min_h_ratio,fabs(esF.eigenvalues()[0].real()));
-	min_h_ratio = MIN(min_h_ratio,fabs(esF.eigenvalues()[1].real()));
-	min_h_ratio = MIN(min_h_ratio,fabs(esF.eigenvalues()[2].real()));
+	min_h_ratio = MIN(min_h_ratio,fabs(eigenvalues(0, 0)));
+	min_h_ratio = MIN(min_h_ratio,fabs(eigenvalues(1, 1)));
+	min_h_ratio = MIN(min_h_ratio,fabs(eigenvalues(2, 2)));
       }
 
       if (min_h_ratio == 0) {
 	cout << "min_h_ratio == 0 with ip=" << ip
 	     << "F=\n" <<  F[ip] << endl
-	     << "eigenvalues of F:" << esF.eigenvalues()[0].real() << "\t" << esF.eigenvalues()[1].real() << "\t" << esF.eigenvalues()[2].real() << endl;
-	cout << "esF.info()=" << esF.info() << endl;
+	     << "eigenvalues of F:" << eigenvalues(0, 0) << "\t" << eigenvalues(1, 1) << "\t" << eigenvalues(2, 2) << endl;
+	//cout << "esF.info()=" << esF.info() << endl;
 	error->one(FLERR, "");
       }
 
@@ -1439,8 +1438,7 @@ void Solid::compute_inertia_tensor() {
   Vector3d dx;
 
   vector<Vector3d> *pos;
-  Matrix3d eye, Dtemp;
-  eye.setIdentity();
+  Matrix3d eye = Matrix3d::identity(), Dtemp;
   double cellsizeSqInv = 1.0 / (grid->cellsize * grid->cellsize);
 
   if (update->shape_function == Update::ShapeFunctions::LINEAR) { 
@@ -1482,7 +1480,7 @@ void Solid::compute_inertia_tensor() {
 
   // if (domain->dimension == 2) {
   //   for (int ip = 0; ip < np_local; ip++) {
-  //     Dtemp.setZero();
+  //     Dtemp = Vector3d();
   //     for (int j = 0; j < numneigh_pn[ip]; j++) {
   //       in = neigh_pn[ip][j];
   //       dx = grid->x0[in] - (*pos)[ip];
@@ -1496,7 +1494,7 @@ void Solid::compute_inertia_tensor() {
   //   }
   // } else if (domain->dimension == 3) {
   //   for (int ip = 0; ip < np_local; ip++) {
-  //     Dtemp.setZero();
+  //     Dtemp = Vector3d();
   //     for (int j = 0; j < numneigh_pn[ip]; j++) {
   //       in = neigh_pn[ip][j];
   //       dx = grid->x0[in] - (*pos)[ip];
@@ -2284,11 +2282,11 @@ void Solid::populate(vector<string> args)
 
   for (int i = 0; i < np_local; i++)
   {
-    a[i].setZero();
-    v[i].setZero();
-    f[i].setZero();
-    mbp[i].setZero();
-    v_update[i].setZero();
+    a[i] = Vector3d();
+    v[i] = Vector3d();
+    f[i] = Vector3d();
+    mbp[i] = Vector3d();
+    v_update[i] = Vector3d();
     rho0[i] = rho[i] = mat->rho0;
 
     if (domain->axisymmetric == true) {
@@ -2306,18 +2304,18 @@ void Solid::populate(vector<string> args)
     if (update->method->temp) {
       T[i]                     = T0;
       gamma[i]                 = 0;
-      q[i].setZero();
+      q[i] = Vector3d();
     }
     ienergy[i]                 = 0;
-    strain_el[i].setZero();
-    sigma[i].setZero();
-    vol0PK1[i].setZero();
-    L[i].setZero();
-    F[i].setIdentity();
-    R[i].setIdentity();
-    D[i].setZero();
-    Finv[i].setZero();
-    Fdot[i].setZero();
+    strain_el[i] = Matrix3d();
+    sigma[i] = Matrix3d();
+    vol0PK1[i] = Matrix3d();
+    L[i] = Matrix3d();
+    F[i] = Matrix3d::identity();
+    R[i] = Matrix3d::identity();
+    D[i] = Matrix3d();
+    Finv[i] = Matrix3d();
+    Fdot[i] = Matrix3d();
     J[i] = 1;
     mask[i] = 1;
 
@@ -2647,11 +2645,11 @@ void Solid::read_mesh(string fileName)
 
   for (int i = 0; i < np; i++)
   {
-    a[i].setZero();
-    v[i].setZero();
-    f[i].setZero();
-    mbp[i].setZero();
-    v_update[i].setZero();
+    a[i] = Vector3d();
+    v[i] = Vector3d();
+    f[i] = Vector3d();
+    mbp[i] = Vector3d();
+    v_update[i] = Vector3d();
     rho0[i] = rho[i]           = mat->rho0;
     mass[i]                    = mat->rho0 * vol0[i];
     eff_plastic_strain[i]      = 0;
@@ -2661,18 +2659,18 @@ void Solid::read_mesh(string fileName)
     if (update->method->temp) {
       T[i]                     = T0;
       gamma[i]                 = 0;
-      q[i].setZero();
+      q[i] = Vector3d();
     }
     ienergy[i]                 = 0;
-    strain_el[i].setZero();
-    sigma[i].setZero();
-    vol0PK1[i].setZero();
-    L[i].setZero();
-    F[i].setIdentity();
-    R[i].setIdentity();
-    D[i].setZero();
-    Finv[i].setZero();
-    Fdot[i].setZero();
+    strain_el[i] = Matrix3d();
+    sigma[i] = Matrix3d();
+    vol0PK1[i] = Matrix3d();
+    L[i] = Matrix3d();
+    F[i] = Matrix3d::identity();
+    R[i] = Matrix3d::identity();
+    D[i] = Matrix3d();
+    Finv[i] = Matrix3d();
+    Fdot[i] = Matrix3d();
     J[i] = 1;
 
     if (x0[i][0] < solidlo[0])
@@ -2776,7 +2774,7 @@ void Solid::update_heat_flux(bool doublemapping) {
 
   if (is_TL) {
     for (int ip = 0; ip < np_local; ip++) {
-      q[ip].setZero();
+      q[ip] = Vector3d();
       for (int j = 0; j < numneigh_pn[ip]; j++) {
         in = neigh_pn[ip][j];
         q[ip] -= wfd_pn[ip][j] * (*Tn)[in];
@@ -2785,7 +2783,7 @@ void Solid::update_heat_flux(bool doublemapping) {
     }
   } else {
     for (int ip = 0; ip < np_local; ip++) {
-      q[ip].setZero();
+      q[ip] = Vector3d();
       for (int j = 0; j < numneigh_pn[ip]; j++) {
         in = neigh_pn[ip][j];
         q[ip] -= wfd_pn[ip][j] * (*Tn)[in];
@@ -2877,21 +2875,21 @@ void Solid::read_restart(ifstream *ifr) {
     ifr->read(reinterpret_cast<char *>(&x0[ip]), sizeof(Vector3d));
     ifr->read(reinterpret_cast<char *>(&x[ip]), sizeof(Vector3d));
     ifr->read(reinterpret_cast<char *>(&v[ip]), sizeof(Vector3d));
-    v_update[ip].setZero();
-    a[ip].setZero();
-    mbp[ip].setZero();
-    f[ip].setZero();
+    v_update[ip] = Vector3d();
+    a[ip] = Vector3d();
+    mbp[ip] = Vector3d();
+    f[ip] = Vector3d();
     ifr->read(reinterpret_cast<char *>(&sigma[ip]), sizeof(Matrix3d));
     ifr->read(reinterpret_cast<char *>(&strain_el[ip]), sizeof(Matrix3d));
     if (is_TL) {
       ifr->read(reinterpret_cast<char *>(&vol0PK1[ip]), sizeof(Matrix3d));
     }
-    L[ip].setZero();
+    L[ip] = Matrix3d();
     ifr->read(reinterpret_cast<char *>(&F[ip]), sizeof(Matrix3d));
-    R[ip].setZero();
-    D[ip].setZero();
-    Finv[ip].setZero();
-    Fdot[ip].setZero();
+    R[ip] = Matrix3d();
+    D[ip] = Matrix3d();
+    Finv[ip] = Matrix3d();
+    Fdot[ip] = Matrix3d();
     ifr->read(reinterpret_cast<char *>(&J[ip]), sizeof(double));
     ifr->read(reinterpret_cast<char *>(&vol0[ip]), sizeof(double));
     vol[ip] = J[ip] * vol0[ip];

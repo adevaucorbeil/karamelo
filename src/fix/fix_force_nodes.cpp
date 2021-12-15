@@ -121,7 +121,7 @@ void FixForceNodes::post_particles_to_grid() {
 
   int n = 0;
   Vector3d ftot, ftot_reduced;
-  ftot.setZero();
+  ftot = Vector3d();
 
   if (solid == -1) {
     for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
@@ -189,7 +189,7 @@ void FixForceNodes::post_particles_to_grid() {
   }
 
   // Reduce ftot:
-  MPI_Allreduce(ftot.data(),ftot_reduced.data(),3,MPI_DOUBLE,MPI_SUM,universe->uworld);
+  MPI_Allreduce(ftot.elements,ftot_reduced.elements,3,MPI_DOUBLE,MPI_SUM,universe->uworld);
 
   if (xset) (*input->vars)[id+"_x"]=Var(id+"_x", ftot_reduced[0]);
   if (yset) (*input->vars)[id+"_y"]=Var(id+"_y", ftot_reduced[1]);

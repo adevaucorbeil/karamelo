@@ -121,8 +121,8 @@ void FixChecksolution::final_integrate() {
   Vector3d error, error_reduced;
   Vector3d u_th, u_th_reduced;
 
-  error.setZero();
-  u_th.setZero();
+  error = Vector3d();
+  u_th = Vector3d();
 
   double vtot;
 
@@ -185,8 +185,8 @@ void FixChecksolution::final_integrate() {
   }
 
   // Reduce error:
-  MPI_Allreduce(error.data(),error_reduced.data(),3,MPI_DOUBLE,MPI_SUM,universe->uworld);
-  MPI_Allreduce(u_th.data(),u_th_reduced.data(),3,MPI_DOUBLE,MPI_SUM,universe->uworld);
+  MPI_Allreduce(error.elements,error_reduced.elements,3,MPI_DOUBLE,MPI_SUM,universe->uworld);
+  MPI_Allreduce(u_th.elements,u_th_reduced.elements,3,MPI_DOUBLE,MPI_SUM,universe->uworld);
 
   (*input->vars)[id+"_s"]=Var(id+"_s", sqrt((error_reduced[0] + error_reduced[1] + error_reduced[2])/vtot));
   (*input->vars)[id+"_x"]=Var(id+"_x", (*input->vars)[id+"_x"].result() + update->dt*(error_reduced[0] + error_reduced[1] + error_reduced[2]));

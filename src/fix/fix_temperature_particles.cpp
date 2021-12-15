@@ -150,7 +150,7 @@ void FixTemperatureParticles::post_advance_particles() {
   // Vector3d ftot, ftot_reduced;
 
   int n = 0;
-  //ftot.setZero();
+  //ftot = Vector3d();
   double inv_dt = 1.0/update->dt;
 
   if (solid == -1) {
@@ -195,7 +195,7 @@ void FixTemperatureParticles::post_advance_particles() {
   }
 
   // Reduce ftot:
-  //MPI_Allreduce(ftot.data(), ftot_reduced.data(), 3, MPI_DOUBLE, MPI_SUM,
+  //MPI_Allreduce(ftot.elements, ftot_reduced.elements, 3, MPI_DOUBLE, MPI_SUM,
   //              universe->uworld);
 
   // (*input->vars)[id + "_x"] = Var(id + "_x", ftot_reduced[0]);

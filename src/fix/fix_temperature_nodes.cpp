@@ -115,7 +115,7 @@ void FixTemperatureNodes::post_update_grid_state() {
   }
 
   // // Reduce ftot:
-  // MPI_Allreduce(ftot.data(), ftot_reduced.data(), 3, MPI_DOUBLE, MPI_SUM,
+  // MPI_Allreduce(ftot.elements, ftot_reduced.elements, 3, MPI_DOUBLE, MPI_SUM,
   //               universe->uworld);
 
   // (*input->vars)[id + "_x"] = Var(id + "_x", ftot_reduced[0]);

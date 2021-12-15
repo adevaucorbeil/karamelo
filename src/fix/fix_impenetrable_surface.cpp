@@ -107,7 +107,7 @@ void FixImpenetrableSurface::initial_integrate() {
 
   // Normalize n:
   n /= n.norm();
-  ftot.setZero();
+  ftot = Vector3d();
 
   double p, fmag;
 
@@ -147,7 +147,7 @@ void FixImpenetrableSurface::initial_integrate() {
               ftot += f;
             } else {
               fmag = 0;
-              f.setZero();
+              f = Vector3d();
             }
           }
         }
@@ -182,14 +182,14 @@ void FixImpenetrableSurface::initial_integrate() {
             ftot += f;
           } else {
             fmag = 0;
-            f.setZero();
+            f = Vector3d();
           }
         }
       }
     }
   }
   // Reduce ftot:
-  MPI_Allreduce(ftot.data(), ftot_reduced.data(), 3, MPI_DOUBLE, MPI_SUM,
+  MPI_Allreduce(ftot.elements, ftot_reduced.elements, 3, MPI_DOUBLE, MPI_SUM,
                 universe->uworld);
 
   (*input->vars)[id + "_x"] = Var(id + "_x", ftot_reduced[0]);

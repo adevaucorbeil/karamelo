@@ -96,7 +96,7 @@ void FixContactMinPenetration::initial_integrate() {
 
   double Rp, Rp1, Rp2, r, inv_r, Estar, max_cellsize, vtnorm, fmag, ffric, gamma, alpha;
 
-  ftot.setZero();
+  ftot = Vector3d();
 
   s1 = domain->solids[solid1];
   s2 = domain->solids[solid2];
@@ -240,7 +240,7 @@ void FixContactMinPenetration::initial_integrate() {
   }
 
   // Reduce ftot:
-  MPI_Allreduce(ftot.data(), ftot_reduced.data(), 3, MPI_DOUBLE, MPI_SUM,
+  MPI_Allreduce(ftot.elements, ftot_reduced.elements, 3, MPI_DOUBLE, MPI_SUM,
                 universe->uworld);
 
   (*input->vars)[id + "_x"] = Var(id + "_x", ftot_reduced[0]);
@@ -259,7 +259,7 @@ void FixContactMinPenetration::initial_integrate() {
 
 //   double Rp, Rp1, Rp2, r, p, Estar, max_cellsize;
 
-//   ftot.setZero();
+//   ftot = Vector3d();
 
 //   s1 = domain->solids[solid1];
 //   s2 = domain->solids[solid2];
@@ -336,7 +336,7 @@ void FixContactMinPenetration::initial_integrate() {
 //   }
 
 //   // Reduce ftot:
-//   MPI_Allreduce(ftot.data(), ftot_reduced.data(), 3, MPI_DOUBLE, MPI_SUM,
+//   MPI_Allreduce(ftot.elements, ftot_reduced.elements, 3, MPI_DOUBLE, MPI_SUM,
 //                 universe->uworld);
 
 //   (*input->vars)[id + "_x"] = (*input->vars)[id + "_x"] + Var(id + "_x", ftot_reduced[0]);

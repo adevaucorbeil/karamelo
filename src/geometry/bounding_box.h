@@ -1,10 +1,7 @@
 #pragma once
 
 #include <interval.h>
-
-#include <Eigen/Dense>
-
-using namespace Eigen;
+#include <matrix.h>
 
 class BoundingBox {
 public:

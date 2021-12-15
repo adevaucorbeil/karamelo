@@ -117,7 +117,7 @@ void FixIndentMinimizePenetration::initial_integrate() {
   double Rs, Rp, r, p, fmag, vtnorm, vndotxsp;
 
   double A, A_reduced, cellsizeSq;
-  ftot.setZero();
+  ftot = Vector3d();
   A = 0;
 
   if (solid == -1) {
@@ -168,7 +168,7 @@ void FixIndentMinimizePenetration::initial_integrate() {
                     ftot += f;
                   } else {
                     fmag = 0;
-                    f.setZero();
+                    f = Vector3d();
                   }
                 }
               }
@@ -240,7 +240,7 @@ void FixIndentMinimizePenetration::initial_integrate() {
                     ftot += f;
                   } else {
                     fmag = 0;
-                    f.setZero();
+                    f = Vector3d();
                   }
                 }
               }
@@ -296,7 +296,7 @@ void FixIndentMinimizePenetration::initial_integrate() {
 		  ftot += f;
 		} else {
 		  fmag = 0;
-		  f.setZero();
+		  f = Vector3d();
 		}
 	      }
 	    }
@@ -344,7 +344,7 @@ void FixIndentMinimizePenetration::initial_integrate() {
 		  ftot += f;
 		} else {
 		  fmag = 0;
-		  f.setZero();
+		  f = Vector3d();
 		}
 	      }
 	    }
@@ -356,7 +356,7 @@ void FixIndentMinimizePenetration::initial_integrate() {
 
   // Reduce ftot:
   MPI_Allreduce(&A, &A_reduced, 1, MPI_DOUBLE, MPI_SUM, universe->uworld);
-  MPI_Allreduce(ftot.data(), ftot_reduced.data(), 3, MPI_DOUBLE, MPI_SUM,
+  MPI_Allreduce(ftot.elements, ftot_reduced.elements, 3, MPI_DOUBLE, MPI_SUM,
                 universe->uworld);
 
   (*input->vars)[id + "_s"] = Var(id + "_s", A_reduced);

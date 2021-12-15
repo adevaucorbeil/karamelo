@@ -139,7 +139,7 @@ void TLCPDI::compute_grid_weight_functions_and_gradients()
       double wf;
       double s[3];
       Vector3d r, wfd;
-      vector<Vector3d> xcorner(nc, Vector3d::Zero());
+      vector<Vector3d> xcorner(nc);
       vector<double> wfc(nc, 0);
 
       double a, b, inv_Vp, alpha_over_Vp, sixVp;
@@ -479,6 +479,6 @@ void TLCPDI::reset()
   for (int isolid=0; isolid<domain->solids.size(); isolid++) {
     domain->solids[isolid]->dtCFL = 1.0e22;
     np_local = domain->solids[isolid]->np_local;
-    for (int ip = 0; ip < np_local; ip++) domain->solids[isolid]->mbp[ip].setZero();
+    for (int ip = 0; ip < np_local; ip++) domain->solids[isolid]->mbp[ip] = Vector3d();
   }
 }

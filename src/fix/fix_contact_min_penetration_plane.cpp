@@ -47,8 +47,8 @@ FixContactMinPenetrationPlane::FixContactMinPenetrationPlane(MPM *mpm, vector<st
 
     solid = -1;
     D = 0;
-    xq.setZero();
-    n.setZero();
+    xq = Vector3d();
+    n = Vector3d();
     mu = 0;
     return;
   }
@@ -106,7 +106,7 @@ void FixContactMinPenetrationPlane::initial_integrate() {
 
   double Rp, p, d, fnorm, vtnorm;
 
-  ftot.setZero();
+  ftot = Vector3d();
 
   s = domain->solids[solid];
 
@@ -167,7 +167,7 @@ void FixContactMinPenetrationPlane::initial_integrate() {
   }
 
   // Reduce ftot:
-  MPI_Allreduce(ftot.data(), ftot_reduced.data(), 3, MPI_DOUBLE, MPI_SUM,
+  MPI_Allreduce(ftot.elements, ftot_reduced.elements, 3, MPI_DOUBLE, MPI_SUM,
                 universe->uworld);
 
   (*input->vars)[id + "_x"] = Var(id + "_x", ftot_reduced[0]);

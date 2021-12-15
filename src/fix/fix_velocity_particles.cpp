@@ -217,7 +217,7 @@ void FixVelocityParticles::post_advance_particles() {
   Vector3d Dv, ftot, ftot_reduced;
 
   int n = 0;
-  ftot.setZero();
+  ftot = Vector3d();
   double inv_dt = 1.0/update->dt;
 
   if (solid == -1) {
@@ -227,7 +227,7 @@ void FixVelocityParticles::post_advance_particles() {
 
       for (int ip = 0; ip < s->np_local; ip++) {
         if (s->mask[ip] & groupbit) {
-          Dv.setZero();
+          Dv = Vector3d();
 	  (*input->vars)["x"] = Var("x", xold[n][0]);
 	  (*input->vars)["x0"] = Var("x0", s->x0[ip][0]);
 	  (*input->vars)["y"] = Var("y", xold[n][1]);
@@ -265,7 +265,7 @@ void FixVelocityParticles::post_advance_particles() {
     n = 0;
     for (int ip = 0; ip < s->np_local; ip++) {
       if (s->mask[ip] & groupbit) {
-        Dv.setZero();
+        Dv = Vector3d();
 	(*input->vars)["x"] = Var("x", xold[n][0]);
 	(*input->vars)["x0"] = Var("x0", s->x0[ip][0]);
 	(*input->vars)["y"] = Var("y", xold[n][1]);
@@ -300,7 +300,7 @@ void FixVelocityParticles::post_advance_particles() {
   }
 
   // Reduce ftot:
-  MPI_Allreduce(ftot.data(), ftot_reduced.data(), 3, MPI_DOUBLE, MPI_SUM,
+  MPI_Allreduce(ftot.elements, ftot_reduced.elements, 3, MPI_DOUBLE, MPI_SUM,
                 universe->uworld);
 
   (*input->vars)[id + "_x"] = Var(id + "_x", ftot_reduced[0]);

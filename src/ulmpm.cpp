@@ -135,7 +135,7 @@ void ULMPM::compute_grid_weight_functions_and_gradients()
       int ny = domain->solids[isolid]->grid->ny_global;
       int nz = domain->solids[isolid]->grid->nz_global;
 
-      r.setZero();
+      r = Vector3d();
 
       for (int in = 0; in < nnodes_local + nnodes_ghost; in++)
       {
@@ -558,7 +558,7 @@ void ULMPM::reset()
   {
     domain->solids[isolid]->dtCFL = 1.0e22;
     np_local = domain->solids[isolid]->np_local;
-    for (int ip = 0; ip < np_local; ip++) domain->solids[isolid]->mbp[ip].setZero();
+    for (int ip = 0; ip < np_local; ip++) domain->solids[isolid]->mbp[ip] = Vector3d();
   }
 }
 

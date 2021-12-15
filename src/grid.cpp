@@ -240,10 +240,10 @@ void Grid::init(double *solidlo, double *solidhi) {
 	}
 
 	x[l] = x0[l];
-	v[l].setZero();
-	v_update[l].setZero();
-	f[l].setZero();
-	mb[l].setZero();
+	v[l] = Vector3d();
+	v_update[l] = Vector3d();
+	f[l] = Vector3d();
+	mb[l] = Vector3d();
 	mass[l] = 0;
 	rigid[l] = false;
 	// R[l].setIdentity();
@@ -400,10 +400,10 @@ void Grid::init(double *solidlo, double *solidhi) {
     ntype[i][1] = gnodes[in].ntype[1];
     ntype[i][2] = gnodes[in].ntype[2];
 
-    v[i].setZero();
-    v_update[i].setZero();
-    f[i].setZero();
-    mb[i].setZero();
+    v[i] = Vector3d();
+    v_update[i] = Vector3d();
+    f[i] = Vector3d();
+    mb[i] = Vector3d();
     mass[i] = 0;
   }
 
@@ -448,7 +448,7 @@ void Grid::grow(int nn){
 void Grid::update_grid_velocities()
 {
   Vector3d vtemp;
-  vtemp.setZero();
+  vtemp = Vector3d();
 
   // Update all particles (even the ghost to not have to communicate the result)
   for (int i=0; i<nnodes_local + nnodes_ghost; i++){
@@ -457,7 +457,7 @@ void Grid::update_grid_velocities()
       else v_update[i] = v[i];
     } else {
       v_update[i] = v[i];
-      //mb[i].setZero();
+      //mb[i] = Vector3d();
     }
     // if (update->ntimestep>450)
     // if (isnan(v_update[i](0)))

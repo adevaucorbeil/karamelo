@@ -13,9 +13,9 @@ using enable_if_scalar_t = std::enable_if_t<std::is_arithmetic<
 template<typename T, size_t M, size_t N>
   class Matrix
 {
+public:
   T elements[M][N];
 
-public:
   // constructors
   KOKKOS_INLINE_FUNCTION
   Matrix():
@@ -288,6 +288,18 @@ public:
     return dot_product;
   }
 
+  // cross product
+  template<typename U, typename V = decltype(std::declval<T>()*std::declval<U>())>
+  KOKKOS_INLINE_FUNCTION Matrix<V, 3, 1>
+  cross(const Matrix<U, 3, 1> &vector) const
+  {
+    static_assert(M == 3 && N == 1, "Cross product requires vector of dimension 3");
+
+    return Matrix<V, 3, 1>(y()*vector.z() - z()*vector.y(),
+                           z()*vector.x() - x()*vector.z(),
+                           x()*vector.y() - y()*vector.x());
+  }
+
   // norms
   KOKKOS_INLINE_FUNCTION decltype(std::declval<T>()*std::declval<T>())
   norm2() const
@@ -369,6 +381,36 @@ public:
         result(j, i) = elements[i][j];
 
     return result;
+  }
+
+  // identity and trace
+  static KOKKOS_INLINE_FUNCTION Matrix<T, M, N>
+  identity()
+  {
+    static_assert(M == N, "Identity requires matrix to be square");
+
+    Matrix<T, M, N> identity;
+
+    for (int i = 0; i < M && i < N; i++)
+      for (int j = 0; j < M && j < N; j++)
+        identity(i, j) = 1;
+
+    return identity;
+  }
+
+  template<typename U = decltype(std::declval<T>() + std::declval<T>())>
+  KOKKOS_INLINE_FUNCTION U
+  trace() const
+  {
+    static_assert(M == N, "Trace requires matrix to be square");
+
+    U trace{};
+
+    for (int i = 0; i < M; i++)
+      for (int j = 0; j < N; j++)
+        trace += elements[i][j];
+
+    return trace;
   }
 };
 

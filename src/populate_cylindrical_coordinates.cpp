@@ -139,11 +139,11 @@ Var PopulateCylindricalCoordinates::command(vector<string> args) {
         if (domain->inside_subdomain(s->x0[l][0], s->x0[l][1], s->x0[l][2]) &&
             domain->regions[iregion]->inside(s->x0[l][0], s->x0[l][1], s->x0[l][2]) ==
                 1) {
-          s->a[l].setZero();
-          s->v[l].setZero();
-          s->f[l].setZero();
-          s->mbp[l].setZero();
-          s->v_update[l].setZero();
+          s->a[l] = Vector3d();
+          s->v[l] = Vector3d();
+          s->f[l] = Vector3d();
+          s->mbp[l] = Vector3d();
+          s->v_update[l] = Vector3d();
           s->rho0[l] = s->rho[l] = s->mat->rho0;
 	  if (domain->axisymmetric == true) {
 	    if (j==0) {
@@ -166,15 +166,15 @@ Var PopulateCylindricalCoordinates::command(vector<string> args) {
           s->damage_init[l] = 0;
           s->T[l] = T0;
           s->ienergy[l] = 0;
-          s->strain_el[l].setZero();
-          s->sigma[l].setZero();
-          s->vol0PK1[l].setZero();
-          s->L[l].setZero();
-          s->F[l].setIdentity();
-          s->R[l].setIdentity();
-          s->D[l].setZero();
-          s->Finv[l].setZero();
-          s->Fdot[l].setZero();
+          s->strain_el[l] = Matrix3d();
+          s->sigma[l] = Matrix3d();
+          s->vol0PK1[l] = Matrix3d();
+          s->L[l] = Matrix3d();
+          s->F[l] = Matrix3d::identity();
+          s->R[l] = Matrix3d::identity();
+          s->D[l] = Matrix3d();
+          s->Finv[l] = Matrix3d();
+          s->Fdot[l] = Matrix3d();
           s->J[l] = 1;
           s->mask[l] = 1;
           l++;

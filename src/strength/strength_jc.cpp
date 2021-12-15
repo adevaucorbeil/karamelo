@@ -105,7 +105,7 @@ Matrix3d StrengthJohnsonCook::update_deviatoric_stress(
   if (damage >= 1.0)
   {
     Matrix3d sigmaFinal_dev;
-    sigmaFinal_dev.setZero();
+    sigmaFinal_dev = Matrix3d();
     return sigmaFinal_dev;
   }
 

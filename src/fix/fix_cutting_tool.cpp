@@ -176,7 +176,7 @@ void FixCuttingTool::initial_integrate() {
   n2[2] = 0;
   n2 *= -line2[3];
 
-  ftot.setZero();
+  ftot = Vector3d();
 
   double p, p1, p2, c1p, c2p, fmag;
 
@@ -223,7 +223,7 @@ void FixCuttingTool::initial_integrate() {
                 ftot += f;
               } else {
                 fmag = 0;
-                f.setZero();
+                f = Vector3d();
               }
             }
           }
@@ -265,7 +265,7 @@ void FixCuttingTool::initial_integrate() {
               ftot += f;
             } else {
               fmag = 0;
-              f.setZero();
+              f = Vector3d();
             }
           }
         }
@@ -278,7 +278,7 @@ void FixCuttingTool::initial_integrate() {
     }
   }
   // Reduce ftot:
-  MPI_Allreduce(ftot.data(), ftot_reduced.data(), 3, MPI_DOUBLE, MPI_SUM,
+  MPI_Allreduce(ftot.elements, ftot_reduced.elements, 3, MPI_DOUBLE, MPI_SUM,
                 universe->uworld);
 
   (*input->vars)[id + "_x"] = Var(id + "_x", ftot_reduced[0]);
