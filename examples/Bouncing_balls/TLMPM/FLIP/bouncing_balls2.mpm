@@ -11,7 +11,7 @@ c      = sqrt(E/rho)
 L    = 1
 hL   = 0.5*L
 A_zy = L*L
-FLIP=0.999
+FLIP=1
 #---------- SET METHOD --------------#
 method(tlmpm, FLIP, linear, FLIP)
 N        = 40     # 20 cells per direction
@@ -38,7 +38,7 @@ fix(v0Ball2, initial_velocity_particles, gBall2, -v, -v, NULL)
 
 #-----------CONTACT------------------------------------#
 
-fix(contact, contact/hertz, sBall1, sBall2)
+fix(contact, contact/minimize_penetration, sBall1, sBall2, 0)
 
 #-----------OUTPUT-------------------------------------#
 N_log = 50
@@ -47,19 +47,14 @@ dump(dump1, all, particle, dumping_interval, dump_p.*.LAMMPS, x, y, z, s11, s22,
 dump(dump2, all, grid, dumping_interval, dump_g.*.LAMMPS, x, y, z)
 #dump(dump3, all, pyplot, 1, dump.*.pdf, 500, 500)
 #-----------OUTPUTS------------------#
-fix(Ek, kinetic_energy, all)
-fix(Es, strain_energy, all)
-Etot = Ek_s + Es_s
+compute(Ek, kinetic_energy, all)
+compute(Es, strain_energy, all)
+Etot = Ek + Es
 #----------- RUN --------------------#
 
 #dt_factor(0.1)  # => adaptive time step with CFL = 0.1
 set_dt(0.001)
 
-log_modify(custom, step, dt, time, Ek_s, Es_s)
-plot(Ek, N_log, time, Ek_s)
-plot(Es, N_log, time, Es_s)
-plot(Etot, N_log, time, Etot)
-save_plot(plot.pdf)
-log(N_log)
+log_modify(custom, step, dt, time, Ek, Es)
 run_time(3.5)
-#run(100)
+
