@@ -1395,7 +1395,7 @@ void Solid::update_stress()
 
     if (is_TL) {
       Matrix3d eigenvalues = F[ip];
-      eigen_decompose(eigenvalues);
+      eigendecompose(eigenvalues);
       if (/*esF.info()!= Success*/false) { // EB: revisit
 	min_h_ratio = MIN(min_h_ratio,1.0);
       } else {

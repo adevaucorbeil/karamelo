@@ -24,7 +24,7 @@ givens_rotation(const Matrix<T, 3, 3> &matrix, size_t i, size_t j)
     c = 0;
     s = ij < 0? -1: 1;
   }
-  else if (std::abs(ii) > st::abs(ij))
+  else if (std::abs(ii) > std::abs(ij))
   {
     t = ij/ii;
     u = (ii < 0? -1: 1)*std::sqrt(1 + t*t);

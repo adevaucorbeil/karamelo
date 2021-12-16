@@ -2,6 +2,8 @@
 
 #include <constants.h>
 
+#include <cmath>
+
 class Interval {
 public:
   double x0;
@@ -20,9 +22,9 @@ public:
   Interval(const Interval &interval) = default;
 
   void add(double x) {
-    if (x > x1 || isnan(x1))
+    if (x > x1 || std::isnan(x1))
       x1 = x;
-    if (x < x0 || isnan(x0))
+    if (x < x0 || std::isnan(x0))
       x0 = x;
   }
 
