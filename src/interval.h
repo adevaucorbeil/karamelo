@@ -2,6 +2,10 @@
 
 #include "constants.h"
 
+#include <cmath>
+
+using namespace std;
+
 class Interval {
 public:
   double x0;
