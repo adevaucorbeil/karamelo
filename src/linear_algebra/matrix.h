@@ -392,8 +392,7 @@ public:
     Matrix<T, M, N> identity;
 
     for (int i = 0; i < M && i < N; i++)
-      for (int j = 0; j < M && j < N; j++)
-        identity(i, j) = 1;
+      identity(i, i) = 1;
 
     return identity;
   }

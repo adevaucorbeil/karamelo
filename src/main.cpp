@@ -16,10 +16,14 @@
 #include <mpm.h>
 #include <input.h>
 
+#include <iostream>
+#include <iomanip>
+
+using namespace std;
+
 /*! Main program to drive MPM. */
 
 int main(int argc, char **argv) {
-
   MPI_Init(&argc,&argv);                        /// Initialized MPI
 
   MPM *mpm = new MPM(argc,argv,MPI_COMM_WORLD); /// Create the MPM entity

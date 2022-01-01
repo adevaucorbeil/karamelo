@@ -3,15 +3,18 @@
 #include <givens_rotation.h>
 
 // returns q and sets matrix to r
-template<typename T, typename V = decltype(std::declval<T>()/std::declval<T>())>
-KOKKOS_INLINE_FUNCTION Matrix<V, 3, 3>
-qr_decompose(Matrix<T, 3, 3> &matrix)
+template<typename T, size_t N,
+  typename V = decltype(std::declval<T>()/std::declval<T>())>
+KOKKOS_INLINE_FUNCTION Matrix<V, N, N>
+qr_decompose(Matrix<T, N, N> &matrix)
 {
-  Matrix<V, 3, 3> q, g;
+  Matrix<V, N, N> q = Matrix<V, N, N>::identity();
+  
+  for (int i = 1; i < N; i++)
+    for (int j = 0; j < i; j++)
+      q = givens_rotation(q*matrix, i, j)*q;
 
-  q = givens_rotation(matrix, 3, 1);
-  q = givens_rotation(q*matrix, 2, 1)*q;
-  q = givens_rotation(q*matrix, 3, 2)*q;
+  matrix = q*matrix;
 
-  return q;
+  return q.transpose();
 }

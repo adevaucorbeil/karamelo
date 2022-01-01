@@ -3,6 +3,7 @@
 #include <type_traits>
 #include <cassert>
 #include <ostream>
+#include <cmath>
 
 #include <Kokkos_Core.hpp>
 

@@ -3,17 +3,24 @@
 #include <qr_decompose.h>
 
 // diagonalizes matrix and returns matrix of eigenvectors
-template<typename T, typename V = decltype(std::declval<T>()/std::declval<T>())>
-KOKKOS_INLINE_FUNCTION Matrix<V, 3, 3>
-eigendecompose(Matrix<T, 3, 3> &matrix)
+template<typename T, size_t N,
+  typename V = decltype(std::declval<T>()/std::declval<T>())>
+KOKKOS_INLINE_FUNCTION Matrix<V, N, N>
+eigendecompose(Matrix<T, N, N> &matrix)
 {
-  Matrix<V, 3, 3> eigenvectors = Matrix<V, 3, 3>::identity();
+  Matrix<V, N, N> eigenvectors = Matrix<V, N, N>::identity();
+  Matrix<V, N, N> deviation    = Matrix<V, N, N>::identity();
 
-  for (int i = 0; i < 20; i++)
+  while (deviation.norm() > 1e-10)
   {
-    const Matrix<V, 3, 3> &q = qr_decompose(matrix);
-    eigenvectors = q*eigenvectors;
+    deviation = matrix;
+
+    const Matrix<V, N, N> &q = qr_decompose(matrix);
     matrix = matrix*q;
+
+    eigenvectors = eigenvectors*q;
+
+    deviation -= matrix;
   }
 
   return eigenvectors;
