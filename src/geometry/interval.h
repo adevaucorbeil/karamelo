@@ -4,6 +4,10 @@
 
 #include <cmath>
 
+#include <cmath>
+
+using namespace std;
+
 class Interval {
 public:
   double x0;
