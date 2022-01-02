@@ -4,10 +4,10 @@
 #include <math_utility.h>
 
 // returns a givens rotation matrix that zeroes element i, j of the given matrix
-template<typename T, size_t M, size_t N,
+template<typename T, std::size_t M, std::size_t N,
   typename V = decltype(std::declval<T>()/std::declval<T>())>
 KOKKOS_INLINE_FUNCTION Matrix<V, M, M>
-givens_rotation(const Matrix<T, M, N> &matrix, size_t i, size_t j)
+givens_rotation(const Matrix<T, M, N> &matrix, std::size_t i, std::size_t j)
 {
   const T &jj =  matrix(j, j);
   const T &ij = -matrix(i, j);

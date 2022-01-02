@@ -3,7 +3,7 @@
 #include <givens_rotation.h>
 
 // returns q and sets matrix to r
-template<typename T, size_t N,
+template<typename T, std::size_t N,
   typename V = decltype(std::declval<T>()/std::declval<T>())>
 KOKKOS_INLINE_FUNCTION Matrix<V, N, N>
 qr_decompose(Matrix<T, N, N> &matrix)

@@ -5,7 +5,7 @@
 #include <utility>
 
 // sets matrix to be diagonal with singular values and returns u and v
-template<typename T, size_t M, size_t N,
+template<typename T, std::size_t M, std::size_t N,
   typename V = decltype(std::declval<T>()/std::declval<T>())>
 KOKKOS_INLINE_FUNCTION std::pair<Matrix<V, M, M>, Matrix<V, N, N>>
 singular_value_decompose(Matrix<T, M, N> &matrix)

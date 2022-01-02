@@ -11,15 +11,9 @@
  *
  * ----------------------------------------------------------------------- */
 
-#include <stdio.h>
 #include <mpi.h>
 #include <mpm.h>
 #include <input.h>
-
-#include <iostream>
-#include <iomanip>
-
-using namespace std;
 
 /*! Main program to drive MPM. */
 

@@ -3,14 +3,15 @@
 #include <type_traits>
 #include <cassert>
 #include <ostream>
+#include <cstddef>
 
-#include <Kokkos_Core.hpp>
+#include <Kokkos_Macros.hpp>
 
 template<typename S>
 using enable_if_scalar_t = std::enable_if_t<std::is_arithmetic<
   std::remove_reference_t<S>>::value>;
 
-template<typename T, size_t M, size_t N>
+template<typename T, std::size_t M, std::size_t N>
   class Matrix
 {
 public:
@@ -50,7 +51,7 @@ public:
 
   // accessors
   KOKKOS_INLINE_FUNCTION const T &
-  operator()(size_t i, size_t j) const
+  operator()(std::size_t i, std::size_t j) const
   {
     assert(i < M && j < N);
 
@@ -58,7 +59,7 @@ public:
   }
 
   KOKKOS_INLINE_FUNCTION T &
-  operator()(size_t i, size_t j)
+  operator()(std::size_t i, std::size_t j)
   {
     assert(i < M && j < N);
 
@@ -66,7 +67,7 @@ public:
   }
 
   KOKKOS_INLINE_FUNCTION const T &
-  operator()(size_t i) const
+  operator()(std::size_t i) const
   {
     static_assert(N == 1, "Vector access requires N == 1");
 
@@ -74,23 +75,23 @@ public:
   }
 
   KOKKOS_INLINE_FUNCTION T &
-  operator()(size_t i)
+  operator()(std::size_t i)
   {
-    return operator()(i);
+    static_assert(N == 1, "Vector access requires N == 1");
+
+    return operator()(i, 0);
   }
 
   KOKKOS_INLINE_FUNCTION const T &
-  operator[](size_t i) const
+  operator[](std::size_t i) const
   {
     return operator()(i);
   }
 
   KOKKOS_INLINE_FUNCTION T &
-  operator[](size_t i)
+  operator[](std::size_t i)
   {
-    static_assert(N == 1, "Vector access requires N == 1");
-    
-    return operator()(i, 0);
+    return operator()(i);
   }
 
   KOKKOS_INLINE_FUNCTION const T &
@@ -260,7 +261,7 @@ public:
   }
 
   // matrix product
-  template<typename U, size_t O>
+  template<typename U, std::size_t O>
   KOKKOS_INLINE_FUNCTION Matrix<T, M, O>
   operator*(const Matrix<U, N, O> &matrix) const
   {
@@ -415,7 +416,7 @@ public:
 
 // scale
 template<typename S, typename = enable_if_scalar_t<S>,
-  typename T, size_t M, size_t N,
+  typename T, std::size_t M, std::size_t N,
   typename U = decltype(std::declval<T>()/std::declval<S>())>
 KOKKOS_INLINE_FUNCTION Matrix<U, M, N>
 operator*(const S &scalar, const Matrix<T, M, N> &matrix)
@@ -424,7 +425,7 @@ operator*(const S &scalar, const Matrix<T, M, N> &matrix)
 }
 
 // printing
-template<typename T, size_t M, size_t N>
+template<typename T, std::size_t M, std::size_t N>
 KOKKOS_INLINE_FUNCTION std::ostream &
 operator<<(std::ostream &os, const Matrix<T, M, N> &matrix)
 {
@@ -444,7 +445,7 @@ operator<<(std::ostream &os, const Matrix<T, M, N> &matrix)
 }
 
 // typedefs
-template<typename T, size_t N>
+template<typename T, std::size_t N>
 using Vector = Matrix<T, N, 1>;
 
 using Vector2d = Vector<double, 2>;
