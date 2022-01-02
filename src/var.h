@@ -15,6 +15,9 @@
 #define MPM_VAR_H
 
 #include <vector>
+#include <string>
+
+using namespace std;
 
 class Var{
  public:
