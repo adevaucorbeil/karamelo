@@ -12,6 +12,7 @@
  * ----------------------------------------------------------------------- */
 
 #include <iostream>
+#include <algorithm>
 #include <output.h>
 #include <dump_grid.h>
 #include <update.h>

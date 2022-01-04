@@ -16,6 +16,7 @@
 #include <domain.h>
 #include <universe.h>
 #include <update.h>
+#include <climits>
 
 #include <sstream>
 

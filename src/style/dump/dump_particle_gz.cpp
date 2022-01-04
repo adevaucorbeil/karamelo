@@ -24,6 +24,7 @@
 #include <matrix.h>
 #include <gzstream.h>
 #include <iostream>
+#include <algorithm>
 
 using namespace std;
 using namespace MPM_Math;

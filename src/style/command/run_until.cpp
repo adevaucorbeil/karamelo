@@ -13,6 +13,7 @@
 
 #include <iostream>
 #include <vector>
+#include <climits>
 #include <run_until.h>
 #include <domain.h>
 #include <output.h>

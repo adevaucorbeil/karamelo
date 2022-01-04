@@ -4,6 +4,7 @@
 #include <cassert>
 #include <ostream>
 #include <cstddef>
+#include <cmath>
 
 #include <Kokkos_Macros.hpp>
 

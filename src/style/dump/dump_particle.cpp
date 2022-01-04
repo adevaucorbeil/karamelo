@@ -23,6 +23,7 @@
 #include <update.h>
 #include <matrix.h>
 #include <iostream>
+#include <algorithm>
 
 using namespace std;
 using namespace MPM_Math;
