@@ -117,8 +117,8 @@ void ULMPM::compute_grid_weight_functions_and_gradients()
 
       Vector3d r;
       double s[3], sd[3];
-      vector<Vector3d> *xp = &domain->solids[isolid]->x;
-      vector<Vector3d> *xn = &domain->solids[isolid]->grid->x0;
+      View<Vector3d*> *xp = &domain->solids[isolid]->x;
+      View<Vector3d*> *xn = &domain->solids[isolid]->grid->x0;
       double inv_cellsize = 1.0 / domain->solids[isolid]->grid->cellsize;
       double wf;
       Vector3d wfd;
@@ -564,7 +564,7 @@ void ULMPM::reset()
 
 void ULMPM::exchange_particles() {
   int ip, np_local_old;
-  vector<Vector3d> *xp;
+  View<Vector3d*> *xp;
   // vector<int> np_send;
   vector<vector<double>> buf_send_vect(universe->nprocs);
   vector<vector<double>> buf_recv_vect(universe->nprocs);

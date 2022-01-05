@@ -144,10 +144,10 @@ void ULCPDI::compute_grid_weight_functions_and_gradients()
 	vector<vector< Vector3d >> *wfd_pn = &s->wfd_pn;
 	vector<vector< Vector3d >> *wfd_np = &s->wfd_np;
 
-	vector<Vector3d> *xp  = &s->x;
-	vector<Vector3d> *xpc = &s->xpc;
-	vector<Vector3d> *xn  = &s->grid->x0;
-	vector<Vector3d> *rp  = &s->rp;
+	View<Vector3d*> *xp  = &s->x;
+	View<Vector3d*> *xpc = &s->xpc;
+	View<Vector3d*> *xn  = &s->grid->x0;
+	View<Vector3d*> *rp  = &s->rp;
 
 	double inv_cellsize          = 1.0 / s->grid->cellsize;
 	vector<array<int, 3>> *ntype = &s->grid->ntype;
@@ -155,7 +155,7 @@ void ULCPDI::compute_grid_weight_functions_and_gradients()
 	double wf;
 	double phi[3];
 	Vector3d r, wfd;
-	vector<Vector3d> xcorner(nc);
+	View<Vector3d*> xcorner("xcorner", nc);
 	vector<double> wfc(nc, 0);
 
 	double a, b, inv_Vp, alpha_over_Vp, sixVp;

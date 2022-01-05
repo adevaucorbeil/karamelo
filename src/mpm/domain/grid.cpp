@@ -425,12 +425,12 @@ void Grid::grow(int nn){
   ntag.resize(nn);
   nowner.resize(nn);
 
-  x0.resize(nn);
-  x.resize(nn);
-  v.resize(nn);
-  v_update.resize(nn);
-  mb.resize(nn);
-  f.resize(nn);
+  x0 = View<Vector3d*>("x0", nn);
+  x = View<Vector3d*>("x", nn);
+  v = View<Vector3d*>("v", nn);
+  v_update = View<Vector3d*>("v_update", nn);
+  mb = View<Vector3d*>("mb", nn);
+  f = View<Vector3d*>("f", nn);
   mass.resize(nn);
   mask.resize(nn);
 

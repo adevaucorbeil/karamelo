@@ -237,9 +237,9 @@ void Solid::options(vector<string> *args, vector<string>::iterator it)
 
 void Solid::grow(int nparticles)
 {
-  ptag.resize(nparticles);
-  x0.resize(nparticles);
-  x.resize(nparticles);
+  ptag = View<tagint*>("ptag", nparticles);
+  x0 = View<Vector3d*>("x0", nparticles);
+  x = View<Vector3d*>("x", nparticles);
 
   if (method_type.compare("tlcpdi") == 0
       || method_type.compare("ulcpdi") == 0)
@@ -247,28 +247,28 @@ void Solid::grow(int nparticles)
 
       if (update->method->style == 0)
 	{ // CPDI-R4
-	  rp0.resize(domain->dimension*nparticles);
-	  rp.resize(domain->dimension*nparticles);
+	  rp0 = View<Vector3d*>("rp0", domain->dimension * nparticles);
+	  rp = View<Vector3d*>("rp", domain->dimension * nparticles);
 	}
       if (update->method->style == 1)
 	{ // CPDI-Q4
-	  xpc0.resize(nc * nparticles);
-	  xpc.resize(nc * nparticles);
+	  xpc0 = View<Vector3d*>("xpc0", nc * nparticles);
+	  xpc = View<Vector3d*>("xpc", nc * nparticles);
 	}
     }
 
   if (method_type.compare("tlcpdi2") == 0
       || method_type.compare("ulcpdi2") == 0)
     {
-      xpc0.resize(nparticles);
-      xpc.resize(nparticles);
+      xpc0 = View<Vector3d*>("xpc0", nparticles);
+      xpc = View<Vector3d*>("xpc", nparticles);
     }
 
-  v.resize(nparticles);
-  v_update.resize(nparticles);
-  a.resize(nparticles);
-  mbp.resize(nparticles);
-  f.resize(nparticles);
+  v = View<Vector3d*>("v", nparticles);
+  v_update = View<Vector3d*>("v_update", nparticles);
+  a = View<Vector3d*>("a", nparticles);
+  mbp = View<Vector3d*>("mbp", nparticles);
+  f = View<Vector3d*>("f", nparticles);
   sigma.resize(nparticles);
   strain_el.resize(nparticles);
   vol0PK1.resize(nparticles);
@@ -308,7 +308,7 @@ void Solid::grow(int nparticles)
   if (mat->temp != nullptr) {
     T.resize(nparticles);
     gamma.resize(nparticles);
-    q.resize(nparticles);
+    q = View<Vector3d*>("q", nparticles);
   }
 }
 
@@ -392,7 +392,7 @@ void Solid::compute_velocity_nodes_APIC(bool reset) {
   int nn = grid->nnodes_local + grid->nnodes_ghost;
   Vector3d vtemp;
 
-  vector<Vector3d> *pos;
+  View<Vector3d*> *pos;
   vector<Matrix3d> *C;
 
   if (is_TL) {
@@ -522,7 +522,7 @@ void Solid::compute_external_and_internal_forces_nodes_UL(bool reset)
 void Solid::compute_external_and_internal_forces_nodes_UL_MLS(bool reset) {
   int ip;
   int nn = grid->nnodes_local + grid->nnodes_ghost;
-  vector<Vector3d> *pos;
+  View<Vector3d*> *pos;
 
   if (is_TL) {
     pos = &x0;
@@ -573,8 +573,8 @@ void Solid::compute_external_and_internal_forces_nodes_UL_MLS(bool reset) {
 
 void Solid::compute_particle_accelerations_velocities_and_positions() {
 
-  vector<Vector3d> vc_update;
-  vc_update.resize(nc);
+  View<Vector3d*> vc_update;
+  vc_update = View<Vector3d*>("vc_update", nc);
 
   int in;
 
@@ -634,8 +634,8 @@ void Solid::compute_particle_accelerations_velocities_and_positions() {
 
 void Solid::compute_particle_accelerations_velocities() {
 
-  vector<Vector3d> vc_update;
-  vc_update.resize(nc);
+  View<Vector3d*> vc_update;
+  vc_update = View<Vector3d*>("vc_update", nc);
 
   int in;
 
@@ -694,8 +694,8 @@ void Solid::compute_particle_accelerations_velocities() {
 void Solid::compute_particle_velocities_and_positions()
 {
 
-  vector<Vector3d> vc_update;
-  vc_update.resize(nc);
+  View<Vector3d*> vc_update;
+  vc_update = View<Vector3d*>("vc_update", nc);
 
   int in;
 
@@ -798,7 +798,7 @@ void Solid::compute_rate_deformation_gradient_TL(bool doublemapping) {
     return;
 
   int in;
-  vector<Vector3d> *vn;
+  View<Vector3d*> *vn;
 
   if (doublemapping)
     vn = &grid->v;
@@ -861,7 +861,7 @@ void Solid::compute_rate_deformation_gradient_UL(bool doublemapping)
     return;
 
   int in;
-  vector<Vector3d> *vn;
+  View<Vector3d*> *vn;
 
   if (doublemapping)
     vn = &grid->v;
@@ -939,8 +939,8 @@ void Solid::compute_deformation_gradient()
     return;
 
   int in;
-  vector<Vector3d> *xn = &grid->x;
-  vector<Vector3d> *x0n = &grid->x0;
+  View<Vector3d*> *xn = &grid->x;
+  View<Vector3d*> *x0n = &grid->x0;
   Vector3d dx;
   Matrix3d Ftemp, eye = Matrix3d::identity();
 
@@ -1006,9 +1006,9 @@ void Solid::compute_rate_deformation_gradient_TL_APIC(bool doublemapping)
     return;
 
   int in;
-  vector<Vector3d> *x0n = &grid->x0;
+  View<Vector3d*> *x0n = &grid->x0;
 
-  vector<Vector3d> *vn;
+  View<Vector3d*> *vn;
 
   if (doublemapping)
     vn = &grid->v;
@@ -1081,8 +1081,8 @@ void Solid::compute_rate_deformation_gradient_UL_APIC(bool doublemapping)
     return;
 
   int in;
-  vector<Vector3d> *x0n = &grid->x0;
-  vector<Vector3d> *vn;
+  View<Vector3d*> *x0n = &grid->x0;
+  View<Vector3d*> *vn;
 
   if (doublemapping)
     vn = &grid->v;
@@ -1437,7 +1437,7 @@ void Solid::update_stress()
 void Solid::compute_inertia_tensor() {
   Vector3d dx;
 
-  vector<Vector3d> *pos;
+  View<Vector3d*> *pos;
   Matrix3d eye = Matrix3d::identity(), Dtemp;
   double cellsizeSqInv = 1.0 / (grid->cellsize * grid->cellsize);
 

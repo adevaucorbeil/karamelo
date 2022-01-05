@@ -19,6 +19,9 @@
 #include <grid.h>
 #include <vector>
 #include <matrix.h>
+#include <Kokkos_Core.hpp>
+
+using namespace Kokkos;
 
 
 
@@ -47,37 +50,37 @@ class Solid : protected Pointers {
   double vtot;                              ///< Total volume
   double mtot;                              ///< Total mass
 
-  vector<tagint> ptag;                      ///< Unique identifier for particles in the system
+  View<tagint*> ptag;                       ///< Unique identifier for particles in the system
 
-  vector<Vector3d> x;                ///< Particles' current position
-  vector<Vector3d> x0;               ///< Particles' reference position
+  View<Vector3d*> x;                        ///< Particles' current position
+  View<Vector3d*> x0;                       ///< Particles' reference position
 
   
-  vector<Vector3d> rp;               ///< Current domain vector (CPDI1)
-  vector<Vector3d> rp0;              ///< Reference domain vector (CPDI1)
-  vector<Vector3d> xpc;              ///< Current position of the corners of the particles' domain (CPDI2o)
-  vector<Vector3d> xpc0;             ///< Reference position of the corners of the particles' domain (CPDI2)
+  View<Vector3d*> rp;                       ///< Current domain vector (CPDI1)
+  View<Vector3d*> rp0;                      ///< Reference domain vector (CPDI1)
+  View<Vector3d*> xpc;                      ///< Current position of the corners of the particles' domain (CPDI2o)
+  View<Vector3d*> xpc0;                     ///< Reference position of the corners of the particles' domain (CPDI2)
   int nc;                                   ///< Number of corners per particles: \f$2^{dimension}\f$
   
-  vector<Vector3d> v;                ///< Particles' current velocity
-  vector<Vector3d> v_update;         ///< Particles' velocity at time t+dt
+  View<Vector3d*> v;                        ///< Particles' current velocity
+  View<Vector3d*> v_update;                 ///< Particles' velocity at time t+dt
 
-  vector<Vector3d> a;                ///< Particles' acceleration
+  View<Vector3d*> a;                        ///< Particles' acceleration
 
-  vector<Vector3d> mbp;              ///< Particles' external forces times mass
-  vector<Vector3d> f;                ///< Particles' internal forces
+  View<Vector3d*> mbp;                      ///< Particles' external forces times mass
+  View<Vector3d*> f;                        ///< Particles' internal forces
 
-  vector<Matrix3d> sigma;            ///< Stress matrix
-  vector<Matrix3d> strain_el;        ///< Elastic strain matrix
-  vector<Matrix3d> vol0PK1;          ///< Transpose of the 1st Piola-Kirchhoff matrix times vol0
-  vector<Matrix3d> L;                ///< Velocity gradient matrix
-  vector<Matrix3d> F;                ///< Deformation gradient matrix
-  vector<Matrix3d> R;                ///< Rotation matrix
-  vector<Matrix3d> D;                ///< Symmetric part of L
-  vector<Matrix3d> Finv;             ///< Inverse of the deformation gradient matrix
-  vector<Matrix3d> Fdot;             ///< Rate of deformation gradient matrix
-  Matrix3d Di;                       ///< Inertia tensor
-  // vector<Matrix3d> BDinv;            ///< APIC B*Dinv tensor
+  vector<Matrix3d> sigma;                   ///< Stress matrix
+  vector<Matrix3d> strain_el;               ///< Elastic strain matrix
+  vector<Matrix3d> vol0PK1;                 ///< Transpose of the 1st Piola-Kirchhoff matrix times vol0
+  vector<Matrix3d> L;                       ///< Velocity gradient matrix
+  vector<Matrix3d> F;                       ///< Deformation gradient matrix
+  vector<Matrix3d> R;                       ///< Rotation matrix
+  vector<Matrix3d> D;                       ///< Symmetric part of L
+  vector<Matrix3d> Finv;                    ///< Inverse of the deformation gradient matrix
+  vector<Matrix3d> Fdot;                    ///< Rate of deformation gradient matrix
+  Matrix3d Di;                              ///< Inertia tensor
+  // vector<Matrix3d> BDinv;                ///< APIC B*Dinv tensor
 
   vector<double> J;                         ///< Determinant of the deformation matrix
   vector<double> vol0;                      ///< Particles' reference volume
@@ -94,7 +97,7 @@ class Solid : protected Pointers {
 
   vector<double> T;                         ///< Particles' current temperature
   vector<double> gamma;                     ///< Particles' heat source
-  vector<Vector3d> q;                ///< Particles' heat flux
+  View<Vector3d*> q;                        ///< Particles' heat flux
 
   double max_p_wave_speed;                  ///< Maximum of the particle wave speed
   double dtCFL;
@@ -112,7 +115,7 @@ class Solid : protected Pointers {
   vector<vector< Vector3d >> wfd_np; ///< Array of arrays (matrix) of the derivative of the weight functions \f$\partial \Phi_{Ip}/ \partial x\f$ effectively the transpose of wfd_pn.
 
 
-  class Mat *mat;                          ///< Pointer to the material
+  class Mat *mat;                           ///< Pointer to the material
 
   class Grid *grid;                         ///< Pointer to the background grid
 
