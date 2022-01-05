@@ -32,5 +32,5 @@ singular_value_decompose(Matrix<T, M, N> &matrix)
       }
     }
 
-  return make_pair(matrix_v*inverse, v);
+  return std::make_pair(matrix_v*inverse, v);
 }

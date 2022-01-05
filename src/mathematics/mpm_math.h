@@ -22,8 +22,6 @@
 
 #include <iostream>
 
-using namespace std;
-
 namespace MPM_Math {
 
   /*
@@ -57,7 +55,7 @@ static inline Matrix2d Deviator(const Matrix2d M) {
 
 static inline bool PolDec(Matrix3d M, Matrix3d &R, Matrix3d &T, bool scaleF) {
 	Matrix3d S = M;
-	const pair<Matrix3d, Matrix3d> &uv = singular_value_decompose(S); // SVD(A) = U S V*
+	const std::pair<Matrix3d, Matrix3d> &uv = singular_value_decompose(S); // SVD(A) = U S V*
 	Matrix3d U = uv.first;
 	Matrix3d V = uv.second;
 	Matrix3d eye = Matrix3d::identity();
@@ -103,7 +101,7 @@ static inline bool PolDec(Matrix3d M, Matrix3d &R, Matrix3d &T, bool scaleF) {
 
 static inline bool PolDec(Matrix3d M, Matrix3d &R) {
 	Matrix3d S = M;
-	const pair<Matrix3d, Matrix3d> &uv = singular_value_decompose(S); // SVD(A) = U S V*
+	const std::pair<Matrix3d, Matrix3d> &uv = singular_value_decompose(S); // SVD(A) = U S V*
 	Matrix3d U = uv.first;
 	Matrix3d V = uv.second;
 	Matrix3d eye = Matrix3d::identity();
