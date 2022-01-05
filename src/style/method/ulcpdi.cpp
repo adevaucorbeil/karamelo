@@ -131,8 +131,8 @@ void ULCPDI::compute_grid_weight_functions_and_gradients()
 	nc = s->nc;
 	nnodes = s->grid->nnodes_local + s->grid->nnodes_ghost;
 
-	vector<int> *numneigh_pn = &s->numneigh_pn;
-	vector<int> *numneigh_np = &s->numneigh_np;
+	View<int*> *numneigh_pn = &s->numneigh_pn;
+	View<int*> *numneigh_np = &s->numneigh_np;
 
 	vector<vector<int>> *neigh_pn = &s->neigh_pn;
 	vector<vector<int>> *neigh_np = &s->neigh_np;
@@ -150,7 +150,7 @@ void ULCPDI::compute_grid_weight_functions_and_gradients()
 	View<Vector3d*> *rp  = &s->rp;
 
 	double inv_cellsize          = 1.0 / s->grid->cellsize;
-	vector<array<int, 3>> *ntype = &s->grid->ntype;
+	View<Vector3i*> *ntype = &s->grid->ntype;
 
 	double wf;
 	double phi[3];

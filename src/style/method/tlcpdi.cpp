@@ -114,8 +114,8 @@ void TLCPDI::compute_grid_weight_functions_and_gradients()
       nc = domain->solids[isolid]->nc;
       nnodes = domain->solids[isolid]->grid->nnodes;
 
-      vector<int> *numneigh_pn = &domain->solids[isolid]->numneigh_pn;
-      vector<int> *numneigh_np = &domain->solids[isolid]->numneigh_np;
+      View<int*> *numneigh_pn = &domain->solids[isolid]->numneigh_pn;
+      View<int*> *numneigh_np = &domain->solids[isolid]->numneigh_np;
 
       vector<vector<int>> *neigh_pn = &domain->solids[isolid]->neigh_pn;
       vector<vector<int>> *neigh_np = &domain->solids[isolid]->neigh_np;
@@ -134,7 +134,7 @@ void TLCPDI::compute_grid_weight_functions_and_gradients()
 
       double inv_cellsize          = 1.0 / domain->solids[isolid]->grid->cellsize;
       View<double*> *vol          = &domain->solids[isolid]->vol;
-      vector<array<int, 3>> *ntype = &domain->solids[isolid]->grid->ntype;
+      View<Vector3i*> *ntype = &domain->solids[isolid]->grid->ntype;
 
       double wf;
       double s[3];

@@ -451,7 +451,6 @@ using Vector = Matrix<T, N, 1>;
 
 using Vector2d = Vector<double, 2>;
 using Vector3d = Vector<double, 3>;
-using Vector4d = Vector<double, 4>;
+using Vector3i = Vector<int, 3>;
 using Matrix2d = Matrix<double, 2, 2>;
 using Matrix3d = Matrix<double, 3, 3>;
-using Matrix4d = Matrix<double, 4, 4>;

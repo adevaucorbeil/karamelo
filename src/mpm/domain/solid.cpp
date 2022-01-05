@@ -288,10 +288,10 @@ void Solid::grow(int nparticles)
   damage = View<double*>("damage", nparticles);
   damage_init = View<double*>("damage_init", nparticles);
   ienergy = View<double*>("ienergy", nparticles);
-  mask.resize(nparticles);
+  mask = View<int*>("mask", nparticles);
   J = View<double*>("J", nparticles);
 
-  numneigh_pn.resize(nparticles);
+  numneigh_pn = View<int*>("numneigh_pn", nparticles);
   neigh_pn.resize(nparticles);
   wf_pn.resize(nparticles);
   if (nc != 0)
@@ -300,7 +300,7 @@ void Solid::grow(int nparticles)
 
   bigint nnodes = grid->nnodes_local + grid->nnodes_ghost;
 
-  numneigh_np.resize(nnodes);
+  numneigh_np = View<int*>("numneigh_np", nnodes);
   neigh_np.resize(nnodes);
   wf_np.resize(nnodes);
   wfd_np.resize(nnodes);

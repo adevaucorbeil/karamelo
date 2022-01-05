@@ -93,7 +93,7 @@ class Solid : protected Pointers {
   View<double*> damage;                    ///< Particles' damage variable
   View<double*> damage_init;               ///< Particles' damage initiation variable
   View<double*> ienergy;                   ///< Particles' internal energy
-  vector<int> mask;                         ///< Particles' group mask
+  View<int*> mask;                         ///< Particles' group mask
 
   View<double*> T;                         ///< Particles' current temperature
   View<double*> gamma;                     ///< Particles' heat source
@@ -101,9 +101,9 @@ class Solid : protected Pointers {
 
   double max_p_wave_speed;                  ///< Maximum of the particle wave speed
   double dtCFL;
-
-  vector<int> numneigh_pn;                  ///< Number of nodes neighbouring a given particle
-  vector<int> numneigh_np;                  ///< Number of nodes neighbouring a given node
+  
+  View<int*> numneigh_pn;                  ///< Number of nodes neighbouring a given particle
+  View<int*> numneigh_np;                  ///< Number of nodes neighbouring a given node
   vector<vector<int>> neigh_pn;             ///< List of the nodes neighbouring a given particle
   vector<vector<int>> neigh_np;             ///< List of the particles neighbouring a given node
 

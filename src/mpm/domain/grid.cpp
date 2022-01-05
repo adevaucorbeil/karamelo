@@ -422,8 +422,8 @@ void Grid::setup(string cs){
 void Grid::grow(int nn){
   //nnodes_local = nn;
 
-  ntag.resize(nn);
-  nowner.resize(nn);
+  ntag = View<tagint*>("ntag", nn);
+  nowner = View<int*>("nowner", nn);
 
   x0 = View<Vector3d*>("x0", nn);
   x = View<Vector3d*>("x", nn);
@@ -432,12 +432,12 @@ void Grid::grow(int nn){
   mb = View<Vector3d*>("mb", nn);
   f = View<Vector3d*>("f", nn);
   mass = View<double*>("mass", nn);
-  mask.resize(nn);
+  mask = View<int*>("mask", nn);
 
   for (int i=0; i<nn; i++) mask[i] = 1;
 
-  ntype.resize(nn);
-  rigid.resize(nn);
+  ntype = View<Vector3i*>("ntype", nn);
+  rigid = View<bool*>("rigid", nn);
 
   T = View<double*>("T", nn);
   T_update = View<double*>("T_update", nn);
@@ -744,7 +744,7 @@ void Grid::reduce_mass_ghost_nodes_old() {
 }
 
 void Grid::reduce_rigid_ghost_nodes() {
-  vector<int> tmp_rigid;
+  View<int*> tmp_rigid;
   int j, size_r, size_s, jproc;
 
   // Some ghost nodes' rigid value on the CPU that owns them:
@@ -771,7 +771,7 @@ void Grid::reduce_rigid_ghost_nodes() {
 
 	size_r = idest->second.size();
 
-        vector<int> buf_recv(size_r);
+        View<int*> buf_recv("buf_recv", size_r);
 
 	// cout << "proc " << universe->me << " receives rigids from " << jproc << endl;
         MPI_Recv(&buf_recv[0], size_r, MPI_INT, jproc, 0, MPI_COMM_WORLD,
@@ -802,7 +802,7 @@ void Grid::reduce_rigid_ghost_nodes() {
 
         // Create the list of masses:
 
-        tmp_rigid.assign(size_s, 0); // Reset vector to all 0
+        tmp_rigid = View<int*>("tmp_rigid", size_s); // Reset vector to all 0
         for (int is = 0; is < size_s; is++) {
           j = origin_nshared[iproc][is];
 
@@ -833,7 +833,7 @@ void Grid::reduce_rigid_ghost_nodes() {
 
         // Create the list of rigids:
 
-        tmp_rigid.assign(size_s, 0);
+        tmp_rigid = View<int*>("tmp_rigid", size_s);
         for (int is = 0; is < size_s; is++) {
           j = idest->second[is];
 
@@ -857,7 +857,7 @@ void Grid::reduce_rigid_ghost_nodes() {
         //          MPI_STATUS_IGNORE);
 
 	size_r = origin_nshared[iproc].size();
-        vector<int> buf_recv(size_r);
+        View<int*> buf_recv("buf_recv", size_r);
 
 	// cout << "proc " << universe->me << " receives rigids from " << iproc << endl;
         MPI_Recv(&buf_recv[0], size_r, MPI_INT, iproc, 0, MPI_COMM_WORLD,

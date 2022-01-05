@@ -61,7 +61,7 @@ class Grid : protected Pointers {
   bigint nnodes;         ///< total number of nodes in the domain
   bigint nnodes_local;   ///< number of nodes (in this CPU)
   bigint nnodes_ghost;   ///< number of ghost nodes (in this CPU)
-  vector<tagint> ntag;   ///< unique identifier for nodes in the system.
+  View<tagint*> ntag;   ///< unique identifier for nodes in the system.
   vector<tagint> map_ntag;  ///< map_ntag[ntag[i]] = i;
 
   int nx;                ///< number of nodes along x on this CPU
@@ -77,7 +77,7 @@ class Grid : protected Pointers {
   map<int, vector<tagint>> dest_nshared;   ///< for each CPU, list the tags of shared nodes
   map<int, vector<tagint>> origin_nshared; ///< for each CPU, list the tags of ghost nodes
 
-  vector<int> nowner;    ///< which CPU owns each node (universe->me for local nodes, other CPU for ghost nodes
+  View<int*> nowner;    ///< which CPU owns each node (universe->me for local nodes, other CPU for ghost nodes
 
   double cellsize;       ///< size of the square cells forming the grid
 
@@ -89,9 +89,9 @@ class Grid : protected Pointers {
   View<Vector3d*> f;            ///< nodes' internal forces
 
   View<double*> mass;              ///< nodes' current mass
-  vector<int> mask;                 ///< nodes' group mask
-  vector<bool> rigid;               ///< are the nodes in the area of influence of a rigid body?
-  vector<array<int, 3>> ntype;      ///< node type in x, y, and z directions (False for an edge, True otherwise)
+  View<int*> mask;                 ///< nodes' group mask
+  View<bool*> rigid;               ///< are the nodes in the area of influence of a rigid body?
+  View<Vector3i*> ntype;      ///< node type in x, y, and z directions (False for an edge, True otherwise)
 
   View<double*> T;                 ///< nodes' temperature at time t
   View<double*> T_update;          ///< nodes' temperature at time t+dt

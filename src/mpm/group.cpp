@@ -121,7 +121,7 @@ void Group::assign(vector<string> args)
 
 	    View<Vector3d*> *x;
 	    int nmax;
-	    vector<int> *mask;
+	    View<int*> *mask;
 
 	    if (pon[igroup].compare("particles") == 0)
 	      {
@@ -179,7 +179,7 @@ void Group::assign(vector<string> args)
 
 	    View<Vector3d*> *x;
 	    int nmax;
-	    vector<int> *mask;
+	    View<int*> *mask;
 
 	    if (pon[igroup].compare("particles") == 0)
 	      {
@@ -263,7 +263,7 @@ double Group::xcm(int igroup, int dir)
   View<Vector3d*> *x;
   View<double*> *mass;
   int nmax;
-  vector<int> *mask;
+  View<int*> *mask;
   double com = 0;
   double mass_tot = 0;
   int groupbit    = group->bitmask[igroup];
@@ -342,7 +342,7 @@ double Group::internal_force(int igroup, int dir)
   
   View<Vector3d*> *f;
   int nmax;
-  vector<int> *mask;
+  View<int*> *mask;
   double resulting_force = 0;
   int groupbit           = group->bitmask[igroup];
 
@@ -417,7 +417,7 @@ double Group::external_force(int igroup, int dir)
   
   View<Vector3d*> *f;
   int nmax;
-  vector<int> *mask;
+  View<int*> *mask;
   double resulting_force = 0;
   int groupbit           = group->bitmask[igroup];
 
@@ -545,7 +545,7 @@ void Group::read_restart(ifstream *ifr) {
 
         View<Vector3d*> *x;
         int nmax;
-        vector<int> *mask;
+        View<int*> *mask;
 
         if (pon[igroup].compare("particles") == 0) {
           x = &domain->solids[isolid]->x0;
@@ -587,7 +587,7 @@ void Group::read_restart(ifstream *ifr) {
     } else {
       View<Vector3d*> *x;
       int nmax;
-      vector<int> *mask;
+      View<int*> *mask;
 
       if (pon[igroup].compare("particles") == 0) {
         x = &domain->solids[solid[igroup]]->x0;
