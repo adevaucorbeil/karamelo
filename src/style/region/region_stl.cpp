@@ -17,6 +17,7 @@
 #include <universe.h>
 #include <update.h>
 #include <climits>
+#include <cstring>
 
 #include <sstream>
 
