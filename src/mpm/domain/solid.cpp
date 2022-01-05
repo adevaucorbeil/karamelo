@@ -269,27 +269,27 @@ void Solid::grow(int nparticles)
   a = View<Vector3d*>("a", nparticles);
   mbp = View<Vector3d*>("mbp", nparticles);
   f = View<Vector3d*>("f", nparticles);
-  sigma.resize(nparticles);
-  strain_el.resize(nparticles);
-  vol0PK1.resize(nparticles);
-  L.resize(nparticles);
-  F.resize(nparticles);
-  R.resize(nparticles);
-  D.resize(nparticles);
-  Finv.resize(nparticles);
-  Fdot.resize(nparticles);
-  vol0.resize(nparticles);
-  vol.resize(nparticles);
-  rho0.resize(nparticles);
-  rho.resize(nparticles);
-  mass.resize(nparticles);
-  eff_plastic_strain.resize(nparticles);
-  eff_plastic_strain_rate.resize(nparticles);
-  damage.resize(nparticles);
-  damage_init.resize(nparticles);
-  ienergy.resize(nparticles);
+  sigma = View<Matrix3d*>("sigma", nparticles);
+  strain_el = View<Matrix3d*>("strain_el", nparticles);
+  vol0PK1 = View<Matrix3d*>("vol0PK1", nparticles);
+  L = View<Matrix3d*>("L", nparticles);
+  F = View<Matrix3d*>("F", nparticles);
+  R = View<Matrix3d*>("R", nparticles);
+  D = View<Matrix3d*>("D", nparticles);
+  Finv = View<Matrix3d*>("Finv", nparticles);
+  Fdot = View<Matrix3d*>("Fdot", nparticles);
+  vol0 = View<double*>("vol0", nparticles);
+  vol = View<double*>("vol", nparticles);
+  rho0 = View<double*>("rho0", nparticles);
+  rho = View<double*>("rho", nparticles);
+  mass = View<double*>("mass", nparticles);
+  eff_plastic_strain = View<double*>("eff_plastic_strain", nparticles);
+  eff_plastic_strain_rate = View<double*>("eff_plastic_strain_rate", nparticles);
+  damage = View<double*>("damage", nparticles);
+  damage_init = View<double*>("damage_init", nparticles);
+  ienergy = View<double*>("ienergy", nparticles);
   mask.resize(nparticles);
-  J.resize(nparticles);
+  J = View<double*>("J", nparticles);
 
   numneigh_pn.resize(nparticles);
   neigh_pn.resize(nparticles);
@@ -306,8 +306,8 @@ void Solid::grow(int nparticles)
   wfd_np.resize(nnodes);
 
   if (mat->temp != nullptr) {
-    T.resize(nparticles);
-    gamma.resize(nparticles);
+    T = View<double*>("T", nparticles);
+    gamma = View<double*>("gamma", nparticles);
     q = View<Vector3d*>("q", nparticles);
   }
 }
@@ -393,7 +393,7 @@ void Solid::compute_velocity_nodes_APIC(bool reset) {
   Vector3d vtemp;
 
   View<Vector3d*> *pos;
-  vector<Matrix3d> *C;
+  View<Matrix3d*> *C;
 
   if (is_TL) {
     pos = &x0;
@@ -573,8 +573,7 @@ void Solid::compute_external_and_internal_forces_nodes_UL_MLS(bool reset) {
 
 void Solid::compute_particle_accelerations_velocities_and_positions() {
 
-  View<Vector3d*> vc_update;
-  vc_update = View<Vector3d*>("vc_update", nc);
+  View<Vector3d*> vc_update("vc_update", nc);
 
   int in;
 
@@ -634,8 +633,7 @@ void Solid::compute_particle_accelerations_velocities_and_positions() {
 
 void Solid::compute_particle_accelerations_velocities() {
 
-  View<Vector3d*> vc_update;
-  vc_update = View<Vector3d*>("vc_update", nc);
+  View<Vector3d*> vc_update("vc_update", nc);
 
   int in;
 
@@ -694,8 +692,7 @@ void Solid::compute_particle_accelerations_velocities() {
 void Solid::compute_particle_velocities_and_positions()
 {
 
-  View<Vector3d*> vc_update;
-  vc_update = View<Vector3d*>("vc_update", nc);
+  View<Vector3d*> vc_update("vc_update", nc);
 
   int in;
 
@@ -1287,10 +1284,9 @@ void Solid::update_stress()
     }
   } else {
 
-    vector<double> pH(np_local, 0);
-    vector<double> plastic_strain_increment(np_local, 0);
-    vector<Matrix3d> sigma_dev;
-    sigma_dev.resize(np_local);
+    View<double*> pH("pH", np_local);
+    View<double*> plastic_strain_increment("plastic_strain_increment", np_local);
+    View<Matrix3d*> sigma_dev("sigma_dev", np_local);
     double tav = 0;
 
     for (int ip = 0; ip < np_local; ip++) {
@@ -2765,7 +2761,7 @@ void Solid::update_particle_temperature() {
 void Solid::update_heat_flux(bool doublemapping) {
   int in;
 
-  vector<double> *Tn;
+  View<double*> *Tn;
 
   if (doublemapping)
     Tn = &grid->T;

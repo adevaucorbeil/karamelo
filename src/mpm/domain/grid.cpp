@@ -431,7 +431,7 @@ void Grid::grow(int nn){
   v_update = View<Vector3d*>("v_update", nn);
   mb = View<Vector3d*>("mb", nn);
   f = View<Vector3d*>("f", nn);
-  mass.resize(nn);
+  mass = View<double*>("mass", nn);
   mask.resize(nn);
 
   for (int i=0; i<nn; i++) mask[i] = 1;
@@ -439,10 +439,10 @@ void Grid::grow(int nn){
   ntype.resize(nn);
   rigid.resize(nn);
 
-  T.resize(nn);
-  T_update.resize(nn);
-  Qext.resize(nn);
-  Qint.resize(nn);
+  T = View<double*>("T", nn);
+  T_update = View<double*>("T_update", nn);
+  Qext = View<double*>("Qext", nn);
+  Qint = View<double*>("Qint", nn);
 }
 
 void Grid::update_grid_velocities()
@@ -477,7 +477,7 @@ void Grid::update_grid_positions()
 void Grid::reduce_mass_ghost_nodes() {
   vector<vector<double>> tmp_mass_vect(universe->nprocs);
   vector<vector<double>> buf_recv_vect(universe->nprocs);
-  //vector<double> tmp_mass;
+  //View<double*> tmp_mass;
   int j, size_r, size_s, jproc;
 
   // 1. Pack mass of nodes to be sent back to their owner:
@@ -622,7 +622,7 @@ void Grid::reduce_mass_ghost_nodes() {
 
 
 void Grid::reduce_mass_ghost_nodes_old() {
-  vector<double> tmp_mass;
+  View<double*> tmp_mass;
   int j, size_r, size_s, jproc;
 
   // Some ghost nodes' mass on the CPU that owns them:
@@ -637,7 +637,7 @@ void Grid::reduce_mass_ghost_nodes_old() {
 
 	size_r = idest->second.size();
 
-        vector<double> buf_recv(size_r);
+        View<double*> buf_recv("buf_recv", size_r);
 
 	// cout << "proc " << universe->me << " receives masses from " << jproc << endl;
         MPI_Recv(&buf_recv[0], size_r, MPI_DOUBLE, jproc, 0, MPI_COMM_WORLD,
@@ -667,7 +667,7 @@ void Grid::reduce_mass_ghost_nodes_old() {
 
         // Create the list of masses:
 
-        tmp_mass.assign(size_s, 0);
+        tmp_mass = View<double*>("tmp_mass", size_s);
         for (int is = 0; is < size_s; is++) {
           j = origin_nshared[iproc][is];
 
@@ -698,7 +698,7 @@ void Grid::reduce_mass_ghost_nodes_old() {
 
         // Create the list of masses:
 
-        tmp_mass.assign(size_s, 0);
+        tmp_mass = View<double*>("tmp_mass", size_s);
         for (int is = 0; is < size_s; is++) {
           j = idest->second[is];
 
@@ -722,7 +722,7 @@ void Grid::reduce_mass_ghost_nodes_old() {
         //          MPI_STATUS_IGNORE);
 
 	size_r = origin_nshared[iproc].size();
-        vector<double> buf_recv(size_r);
+        View<double*> buf_recv("buf_recv", size_r);
 
 	// cout << "proc " << universe->me << " receives masses from " << iproc << endl;
         MPI_Recv(&buf_recv[0], size_r, MPI_DOUBLE, iproc, 0, MPI_COMM_WORLD,
@@ -881,7 +881,7 @@ void Grid::reduce_rigid_ghost_nodes() {
 void Grid::reduce_ghost_nodes(bool reduce_v, bool reduce_forces, bool temp) {
   vector<vector<double>> tmp_vect(universe->nprocs);
   vector<vector<double>> buf_recv_vect(universe->nprocs);
-  //vector<double> tmp_mass;
+  //View<double*> tmp_mass;
   int j, k, m, size_r, size_s, jproc, nsend;
 
   nsend = (3 + temp) * (reduce_v + 2*reduce_forces);
@@ -1132,7 +1132,7 @@ void Grid::reduce_ghost_nodes(bool reduce_v, bool reduce_forces, bool temp) {
 }
 
 void Grid::reduce_ghost_nodes_old(bool only_v, bool temp) {
-  vector<double> tmp;
+  View<double*> tmp;
   int j, k, m, size_r, size_s, jproc, nsend;
 
   if (only_v) {
@@ -1153,7 +1153,7 @@ void Grid::reduce_ghost_nodes_old(bool only_v, bool temp) {
 
         size_r = idest->second.size();
 
-        vector<double> buf_recv(nsend * size_r);
+        View<double*> buf_recv("buf_recv", nsend * size_r);
 
         // cout << "proc " << universe->me << " receives masses from " << jproc
         // << endl;
@@ -1206,7 +1206,7 @@ void Grid::reduce_ghost_nodes_old(bool only_v, bool temp) {
 
         // Create the list of data:
 
-        tmp.assign(nsend * size_s, 0);
+        tmp = View<double*>("tmp", nsend * size_s);
 	k = 0;
         for (int is = 0; is < size_s; is++) {
           j = origin_nshared[iproc][is];
@@ -1261,7 +1261,7 @@ void Grid::reduce_ghost_nodes_old(bool only_v, bool temp) {
 
         // Create the list of data:
 
-        tmp.assign(nsend * size_s, 0);
+        tmp = View<double*>("tmp", nsend * size_s);
 	k = 0;
         for (int is = 0; is < size_s; is++) {
           j = idest->second[is];
@@ -1309,7 +1309,7 @@ void Grid::reduce_ghost_nodes_old(bool only_v, bool temp) {
         //          MPI_STATUS_IGNORE);
 
         size_r = origin_nshared[iproc].size();
-        vector<double> buf_recv(nsend * size_r);
+        View<double*> buf_recv("buf_recv", nsend * size_r);
 
         // cout << "proc " << universe->me << " receives masses from " << iproc
         // << endl;

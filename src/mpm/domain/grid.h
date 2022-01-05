@@ -88,15 +88,15 @@ class Grid : protected Pointers {
   View<Vector3d*> mb;           ///< nodes' external forces times the mass
   View<Vector3d*> f;            ///< nodes' internal forces
 
-  vector<double> mass;              ///< nodes' current mass
+  View<double*> mass;              ///< nodes' current mass
   vector<int> mask;                 ///< nodes' group mask
   vector<bool> rigid;               ///< are the nodes in the area of influence of a rigid body?
   vector<array<int, 3>> ntype;      ///< node type in x, y, and z directions (False for an edge, True otherwise)
 
-  vector<double> T;                 ///< nodes' temperature at time t
-  vector<double> T_update;          ///< nodes' temperature at time t+dt
-  vector<double> Qext;              ///< nodes' external thermal driving force
-  vector<double> Qint;              ///< nodes' internal thermal driving force
+  View<double*> T;                 ///< nodes' temperature at time t
+  View<double*> T_update;          ///< nodes' temperature at time t+dt
+  View<double*> Qext;              ///< nodes' external thermal driving force
+  View<double*> Qint;              ///< nodes' internal thermal driving force
 
   MPI_Datatype Pointtype;           ///< MPI type for struct Point
 

@@ -133,14 +133,14 @@ void TLCPDI::compute_grid_weight_functions_and_gradients()
       View<Vector3d*> *rp  = &domain->solids[isolid]->rp;
 
       double inv_cellsize          = 1.0 / domain->solids[isolid]->grid->cellsize;
-      vector<double> *vol          = &domain->solids[isolid]->vol;
+      View<double*> *vol          = &domain->solids[isolid]->vol;
       vector<array<int, 3>> *ntype = &domain->solids[isolid]->grid->ntype;
 
       double wf;
       double s[3];
       Vector3d r, wfd;
       View<Vector3d*> xcorner("xcorner", nc);
-      vector<double> wfc(nc, 0);
+      View<double*> wfc("wfc", nc);
 
       double a, b, inv_Vp, alpha_over_Vp, sixVp;
 

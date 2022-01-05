@@ -156,7 +156,7 @@ void ULCPDI::compute_grid_weight_functions_and_gradients()
 	double phi[3];
 	Vector3d r, wfd;
 	View<Vector3d*> xcorner("xcorner", nc);
-	vector<double> wfc(nc, 0);
+	View<double*> wfc("nc", nc);
 
 	double a, b, inv_Vp, alpha_over_Vp, sixVp;
 

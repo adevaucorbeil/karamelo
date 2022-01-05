@@ -70,33 +70,33 @@ class Solid : protected Pointers {
   View<Vector3d*> mbp;                      ///< Particles' external forces times mass
   View<Vector3d*> f;                        ///< Particles' internal forces
 
-  vector<Matrix3d> sigma;                   ///< Stress matrix
-  vector<Matrix3d> strain_el;               ///< Elastic strain matrix
-  vector<Matrix3d> vol0PK1;                 ///< Transpose of the 1st Piola-Kirchhoff matrix times vol0
-  vector<Matrix3d> L;                       ///< Velocity gradient matrix
-  vector<Matrix3d> F;                       ///< Deformation gradient matrix
-  vector<Matrix3d> R;                       ///< Rotation matrix
-  vector<Matrix3d> D;                       ///< Symmetric part of L
-  vector<Matrix3d> Finv;                    ///< Inverse of the deformation gradient matrix
-  vector<Matrix3d> Fdot;                    ///< Rate of deformation gradient matrix
+  View<Matrix3d*> sigma;                   ///< Stress matrix
+  View<Matrix3d*> strain_el;               ///< Elastic strain matrix
+  View<Matrix3d*> vol0PK1;                 ///< Transpose of the 1st Piola-Kirchhoff matrix times vol0
+  View<Matrix3d*> L;                       ///< Velocity gradient matrix
+  View<Matrix3d*> F;                       ///< Deformation gradient matrix
+  View<Matrix3d*> R;                       ///< Rotation matrix
+  View<Matrix3d*> D;                       ///< Symmetric part of L
+  View<Matrix3d*> Finv;                    ///< Inverse of the deformation gradient matrix
+  View<Matrix3d*> Fdot;                    ///< Rate of deformation gradient matrix
   Matrix3d Di;                              ///< Inertia tensor
-  // vector<Matrix3d> BDinv;                ///< APIC B*Dinv tensor
+  // View<Matrix3d*> BDinv;                ///< APIC B*Dinv tensor
 
-  vector<double> J;                         ///< Determinant of the deformation matrix
-  vector<double> vol0;                      ///< Particles' reference volume
-  vector<double> vol;                       ///< Particles' current volume
-  vector<double> rho0;                      ///< Particles' reference density
-  vector<double> rho;                       ///< Particles' current density
-  vector<double> mass;                      ///< Particles' current mass
-  vector<double> eff_plastic_strain;        ///< Particles' effective plastic strain
-  vector<double> eff_plastic_strain_rate;   ///< Particles' effective plastic strain rate
-  vector<double> damage;                    ///< Particles' damage variable
-  vector<double> damage_init;               ///< Particles' damage initiation variable
-  vector<double> ienergy;                   ///< Particles' internal energy
+  View<double*> J;                         ///< Determinant of the deformation matrix
+  View<double*> vol0;                      ///< Particles' reference volume
+  View<double*> vol;                       ///< Particles' current volume
+  View<double*> rho0;                      ///< Particles' reference density
+  View<double*> rho;                       ///< Particles' current density
+  View<double*> mass;                      ///< Particles' current mass
+  View<double*> eff_plastic_strain;        ///< Particles' effective plastic strain
+  View<double*> eff_plastic_strain_rate;   ///< Particles' effective plastic strain rate
+  View<double*> damage;                    ///< Particles' damage variable
+  View<double*> damage_init;               ///< Particles' damage initiation variable
+  View<double*> ienergy;                   ///< Particles' internal energy
   vector<int> mask;                         ///< Particles' group mask
 
-  vector<double> T;                         ///< Particles' current temperature
-  vector<double> gamma;                     ///< Particles' heat source
+  View<double*> T;                         ///< Particles' current temperature
+  View<double*> gamma;                     ///< Particles' heat source
   View<Vector3d*> q;                        ///< Particles' heat flux
 
   double max_p_wave_speed;                  ///< Maximum of the particle wave speed

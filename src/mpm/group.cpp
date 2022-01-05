@@ -261,7 +261,7 @@ int Group::find_unused()
 double Group::xcm(int igroup, int dir)
 {
   View<Vector3d*> *x;
-  vector<double> *mass;
+  View<double*> *mass;
   int nmax;
   vector<int> *mask;
   double com = 0;
