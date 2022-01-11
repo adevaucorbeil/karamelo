@@ -126,7 +126,7 @@ public:
   KOKKOS_INLINE_FUNCTION const T &
   z() const
   {
-    static_assert(M > 1, "Z requires dimension >= 3");
+    static_assert(M > 2, "Z requires dimension >= 3");
 
     return operator()(2);
   }
@@ -134,7 +134,7 @@ public:
   KOKKOS_INLINE_FUNCTION T &
   z()
   {
-    static_assert(M > 1, "Z requires dimension >= 3");
+    static_assert(M > 2, "Z requires dimension >= 3");
 
     return operator()(2);
   }
@@ -142,7 +142,7 @@ public:
   KOKKOS_INLINE_FUNCTION const T &
   w() const
   {
-    static_assert(M > 1, "W requires dimension >= 4");
+    static_assert(M > 3, "W requires dimension >= 4");
 
     return operator()(3);
   }
@@ -150,7 +150,7 @@ public:
   KOKKOS_INLINE_FUNCTION T &
   w()
   {
-    static_assert(M > 1, "W requires dimension >= 4");
+    static_assert(M > 3, "W requires dimension >= 4");
 
     return operator()(3);
   }
@@ -393,7 +393,7 @@ public:
 
     Matrix<T, M, N> identity;
 
-    for (int i = 0; i < M && i < N; i++)
+    for (int i = 0; i < N; i++)
       identity(i, i) = 1;
 
     return identity;
@@ -407,9 +407,8 @@ public:
 
     U trace{};
 
-    for (int i = 0; i < M; i++)
-      for (int j = 0; j < N; j++)
-        trace += elements[i][j];
+    for (int i = 0; i < N; i++)
+        trace += elements[i][i];
 
     return trace;
   }
