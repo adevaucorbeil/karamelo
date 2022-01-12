@@ -18,6 +18,7 @@
 #include <material.h>
 #include <grid.h>
 #include <vector>
+#include <deque>
 #include <matrix.h>
 
 
@@ -111,6 +112,10 @@ class Solid : protected Pointers {
   vector<vector< Vector3d >> wfd_pn; ///< Array of arrays (matrix) of the derivative of the weight functions \f$\partial \Phi_{pI}/\partial x\f$.
   vector<vector< Vector3d >> wfd_np; ///< Array of arrays (matrix) of the derivative of the weight functions \f$\partial \Phi_{Ip}/ \partial x\f$ effectively the transpose of wfd_pn.
 
+  deque<int> neigh_p;
+  deque<int> neigh_n;
+  deque<double> wf;
+  deque<Vector3d> wfd;
 
   class Mat *mat;                          ///< Pointer to the material
 

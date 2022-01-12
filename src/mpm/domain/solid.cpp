@@ -314,6 +314,7 @@ void Solid::grow(int nparticles)
 
 void Solid::compute_mass_nodes(bool reset)
 {
+#if 0
   int ip;
   int nn = grid->nnodes_local + grid->nnodes_ghost;
 
@@ -330,10 +331,24 @@ void Solid::compute_mass_nodes(bool reset)
 	}
     }
   return;
+#else
+  if (reset)
+      for (double &mass: grid->mass)
+          mass = 0;
+
+  for (int i = 0; i < neigh_n.size(); i++)
+  {
+      int in = neigh_n.at(i);
+
+      if (!grid->rigid.at(in) || mat->rigid)
+          grid->mass.at(in) += wf.at(i) * mass.at(neigh_p.at(i));
+  }
+#endif
 }
 
 void Solid::compute_velocity_nodes(bool reset)
 {
+#if 0
   Vector3d vtemp, vtemp_update;
   //double mass_rigid;
   int ip;
@@ -385,6 +400,37 @@ void Solid::compute_velocity_nodes(bool reset)
       //        << ", " << grid->v_update[in][1] << ", " << grid->v_update[in][2] << "]\n";
     }
   }
+#else
+    if (reset)
+    {
+        for (Vector3d &v: grid->v)
+            v = Vector3d();
+        for (Vector3d &mb: grid->mb)
+            mb = Vector3d();
+    }
+
+    for (int i = 0; i < neigh_n.size(); i++)
+    {
+        int in = neigh_n.at(i);
+        int ip = neigh_p.at(i);
+
+        if ((!grid->rigid.at(in) || !mat->rigid) && grid->mass.at(in))
+        {
+            double wf_mass = wf.at(i)*mass.at(ip);
+
+            Vector3d vtemp = v.at(ip);
+            if (update->method->ge)
+                vtemp += L.at(ip)*(grid->x0.at(in) - x.at(ip));
+
+            grid->v.at(in) += wf_mass*vtemp/grid->mass.at(in);
+
+            if (grid->rigid.at(in))
+            {
+                grid->mb.at(in) += wf_mass*v_update.at(ip)/grid->mass.at(in);
+            }
+        }
+    }
+#endif
 }
 
 void Solid::compute_velocity_nodes_APIC(bool reset) {
