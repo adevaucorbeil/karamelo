@@ -659,76 +659,22 @@ void Solid::compute_rate_deformation_gradient_TL(bool doublemapping)
   if (mat->rigid)
     return;
 
-  int in;
-  vector<Vector3d> *vn;
+  for (Matrix3d &Fdot: Fdot)
+    Fdot = Matrix3d();
 
-  if (doublemapping)
-    vn = &grid->v;
-  else
-    vn = &grid->v_update;
+  const vector<Vector3d> &vn = doublemapping? grid->v: grid->v_update;
 
-  if (domain->dimension == 1)
+  for (int i = 0; i < neigh_n.size(); i++)
   {
-    for (int ip = 0; ip < np_local; ip++)
-    {
-      Fdot.at(ip) = Matrix3d();
-      for (int j = 0; j < numneigh_pn.at(ip); j++)
-      {
-        in = neigh_pn.at(ip)[j];
-        Fdot.at(ip)(0, 0) += (*vn)[in][0]*wfd_pn.at(ip)[j][0];
-      }
-    }
-  }
-  else if ((domain->dimension == 2) && (domain->axisymmetric == true))
-  {
-    for (int ip = 0; ip < np_local; ip++)
-    {
-      Fdot.at(ip) = Matrix3d();
-      for (int j = 0; j < numneigh_pn.at(ip); j++)
-      {
-        in = neigh_pn.at(ip)[j];
-        Fdot.at(ip)(0, 0) += (*vn)[in][0]*wfd_pn.at(ip)[j][0];
-        Fdot.at(ip)(0, 1) += (*vn)[in][0]*wfd_pn.at(ip)[j][1];
-        Fdot.at(ip)(1, 0) += (*vn)[in][1]*wfd_pn.at(ip)[j][0];
-        Fdot.at(ip)(1, 1) += (*vn)[in][1]*wfd_pn.at(ip)[j][1];
-        Fdot.at(ip)(2, 2) += (*vn)[in][0]*wf_pn.at(ip)[j]/x0.at(ip)[0];
-      }
-    }
-  }
-  else if ((domain->dimension == 2) && (domain->axisymmetric == false))
-  {
-    for (int ip = 0; ip < np_local; ip++)
-    {
-      Fdot.at(ip) = Matrix3d();
-      for (int j = 0; j < numneigh_pn.at(ip); j++)
-      {
-        in = neigh_pn.at(ip)[j];
-        Fdot.at(ip)(0, 0) += (*vn)[in][0]*wfd_pn.at(ip)[j][0];
-        Fdot.at(ip)(0, 1) += (*vn)[in][0]*wfd_pn.at(ip)[j][1];
-        Fdot.at(ip)(1, 0) += (*vn)[in][1]*wfd_pn.at(ip)[j][0];
-        Fdot.at(ip)(1, 1) += (*vn)[in][1]*wfd_pn.at(ip)[j][1];
-      }
-    }
-  }
-  else if (domain->dimension == 3)
-  {
-    for (int ip = 0; ip < np_local; ip++)
-    {
-      Fdot.at(ip) = Matrix3d();
-      for (int j = 0; j < numneigh_pn.at(ip); j++)
-      {
-        in = neigh_pn.at(ip)[j];
-        Fdot.at(ip)(0, 0) += (*vn)[in][0]*wfd_pn.at(ip)[j][0];
-        Fdot.at(ip)(0, 1) += (*vn)[in][0]*wfd_pn.at(ip)[j][1];
-        Fdot.at(ip)(0, 2) += (*vn)[in][0]*wfd_pn.at(ip)[j][2];
-        Fdot.at(ip)(1, 0) += (*vn)[in][1]*wfd_pn.at(ip)[j][0];
-        Fdot.at(ip)(1, 1) += (*vn)[in][1]*wfd_pn.at(ip)[j][1];
-        Fdot.at(ip)(1, 2) += (*vn)[in][1]*wfd_pn.at(ip)[j][2];
-        Fdot.at(ip)(2, 0) += (*vn)[in][2]*wfd_pn.at(ip)[j][0];
-        Fdot.at(ip)(2, 1) += (*vn)[in][2]*wfd_pn.at(ip)[j][1];
-        Fdot.at(ip)(2, 2) += (*vn)[in][2]*wfd_pn.at(ip)[j][2];
-      }
-    }
+    int in = neigh_n.at(i);
+    int ip = neigh_p.at(i);
+
+    for (int j = 0; j < domain->dimension; j++)
+      for (int k = 0; k < domain->dimension; k++)
+        Fdot.at(ip)(j, k) += vn.at(in)[j]*wfd.at(i)[k];
+
+    if (domain->dimension == 2 && domain->axisymmetric)
+      Fdot.at(ip)(2, 2) += vn.at(in)[0]*wf.at(i)/x0.at(ip)[0];
   }
 }
 
@@ -737,76 +683,22 @@ void Solid::compute_rate_deformation_gradient_UL(bool doublemapping)
   if (mat->rigid)
     return;
 
-  int in;
-  vector<Vector3d> *vn;
+  for (Matrix3d &L: L)
+    L = Matrix3d();
 
-  if (doublemapping)
-    vn = &grid->v;
-  else
-    vn = &grid->v_update;
+  const vector<Vector3d> &vn = doublemapping? grid->v: grid->v_update;
 
-  if (domain->dimension == 1)
+  for (int i = 0; i < neigh_n.size(); i++)
   {
-    for (int ip = 0; ip < np_local; ip++)
-    {
-      L.at(ip) = Matrix3d();
-      for (int j = 0; j < numneigh_pn.at(ip); j++)
-      {
-        in = neigh_pn.at(ip)[j];
-        L.at(ip)(0, 0) += (*vn)[in][0]*wfd_pn.at(ip)[j][0];
-      }
-    }
-  }
-  else if ((domain->dimension == 2) && (domain->axisymmetric == false))
-  {
-    for (int ip = 0; ip < np_local; ip++)
-    {
-      L.at(ip) = Matrix3d();
-      for (int j = 0; j < numneigh_pn.at(ip); j++)
-      {
-        in = neigh_pn.at(ip)[j];
-        L.at(ip)(0, 0) += (*vn)[in][0]*wfd_pn.at(ip)[j][0];
-        L.at(ip)(0, 1) += (*vn)[in][0]*wfd_pn.at(ip)[j][1];
-        L.at(ip)(1, 0) += (*vn)[in][1]*wfd_pn.at(ip)[j][0];
-        L.at(ip)(1, 1) += (*vn)[in][1]*wfd_pn.at(ip)[j][1];
-      }
-    }
-  }
-  else if ((domain->dimension == 2) && (domain->axisymmetric == true))
-  {
-    for (int ip = 0; ip < np_local; ip++)
-    {
-      L.at(ip) = Matrix3d();
-      for (int j = 0; j < numneigh_pn.at(ip); j++)
-      {
-        in = neigh_pn.at(ip)[j];
-        L.at(ip)(0, 0) += (*vn)[in][0]*wfd_pn.at(ip)[j][0];
-        L.at(ip)(0, 1) += (*vn)[in][0]*wfd_pn.at(ip)[j][1];
-        L.at(ip)(1, 0) += (*vn)[in][1]*wfd_pn.at(ip)[j][0];
-        L.at(ip)(1, 1) += (*vn)[in][1]*wfd_pn.at(ip)[j][1];
-        L.at(ip)(2, 2) += (*vn)[in][0]*wf_pn.at(ip)[j]/x.at(ip)[0];
-      }
-    }
-  }
-  else if (domain->dimension == 3)
-  {
-    for (int ip = 0; ip < np_local; ip++)
-    {
-      L.at(ip) = Matrix3d();
-      for (int j = 0; j < numneigh_pn.at(ip); j++)
-      {
-        in = neigh_pn.at(ip)[j];
-        L.at(ip)(0, 0) += (*vn)[in][0]*wfd_pn.at(ip)[j][0];
-        L.at(ip)(0, 1) += (*vn)[in][0]*wfd_pn.at(ip)[j][1];
-        L.at(ip)(0, 2) += (*vn)[in][0]*wfd_pn.at(ip)[j][2];
-        L.at(ip)(1, 0) += (*vn)[in][1]*wfd_pn.at(ip)[j][0];
-        L.at(ip)(1, 1) += (*vn)[in][1]*wfd_pn.at(ip)[j][1];
-        L.at(ip)(1, 2) += (*vn)[in][1]*wfd_pn.at(ip)[j][2];
-        L.at(ip)(2, 0) += (*vn)[in][2]*wfd_pn.at(ip)[j][0];
-        L.at(ip)(2, 1) += (*vn)[in][2]*wfd_pn.at(ip)[j][1];
-        L.at(ip)(2, 2) += (*vn)[in][2]*wfd_pn.at(ip)[j][2];
-      }
-    }
+    int in = neigh_n.at(i);
+    int ip = neigh_p.at(i);
+
+    for (int j = 0; j < domain->dimension; j++)
+      for (int k = 0; k < domain->dimension; k++)
+        L.at(ip)(j, k) += vn.at(in)[j]*wfd.at(i)[k];
+
+    if (domain->dimension == 2 && domain->axisymmetric)
+      L.at(ip)(2, 2) += vn.at(in)[0]*wf.at(i)/x0.at(ip)[0];
   }
 }
 
@@ -815,67 +707,19 @@ void Solid::compute_deformation_gradient()
   if (mat->rigid)
     return;
 
-  int in;
-  vector<Vector3d> *xn = &grid->x;
-  vector<Vector3d> *x0n = &grid->x0;
-  Vector3d dx;
-  Matrix3d Ftemp, eye = Matrix3d::identity();
+  for (Matrix3d &F: F)
+    F = Matrix3d::identity();
 
-  if (domain->dimension == 1)
+  for (int i = 0; i < neigh_n.size(); i++)
   {
-    for (int ip = 0; ip < np_local; ip++)
-    {
-      Ftemp = Matrix3d();
-      for (int j = 0; j < numneigh_pn.at(ip); j++)
-      {
-        in = neigh_pn.at(ip)[j];
-        dx = (*xn)[in] - (*x0n)[in];
-        Ftemp(0, 0) += dx[0]*wfd_pn.at(ip)[j][0];
-      }
-      F.at(ip)(0, 0) = Ftemp(0, 0) + 1;
-    }
-  }
-  else if (domain->dimension == 2)
-  {
-    for (int ip = 0; ip < np_local; ip++)
-    {
-      // F.at(ip) = Vector3d();
-      Ftemp = Matrix3d();
-      for (int j = 0; j < numneigh_pn.at(ip); j++)
-      {
-        in = neigh_pn.at(ip)[j];
-        dx = (*xn)[in] - (*x0n)[in];
-        Ftemp(0, 0) += dx[0]*wfd_pn.at(ip)[j][0];
-        Ftemp(0, 1) += dx[0]*wfd_pn.at(ip)[j][1];
-        Ftemp(1, 0) += dx[1]*wfd_pn.at(ip)[j][0];
-        Ftemp(1, 1) += dx[1]*wfd_pn.at(ip)[j][1];
-      }
-      F.at(ip) = Ftemp + eye;
-    }
-  }
-  else if (domain->dimension == 3)
-  {
-    for (int ip = 0; ip < np_local; ip++)
-    {
-      // F.at(ip) = Vector3d();
-      Ftemp = Matrix3d();
-      for (int j = 0; j < numneigh_pn.at(ip); j++)
-      {
-        in = neigh_pn.at(ip)[j];
-        dx = (*xn)[in] - (*x0n)[in];
-        Ftemp(0, 0) += dx[0]*wfd_pn.at(ip)[j][0];
-        Ftemp(0, 1) += dx[0]*wfd_pn.at(ip)[j][1];
-        Ftemp(0, 2) += dx[0]*wfd_pn.at(ip)[j][2];
-        Ftemp(1, 0) += dx[1]*wfd_pn.at(ip)[j][0];
-        Ftemp(1, 1) += dx[1]*wfd_pn.at(ip)[j][1];
-        Ftemp(1, 2) += dx[1]*wfd_pn.at(ip)[j][2];
-        Ftemp(2, 0) += dx[2]*wfd_pn.at(ip)[j][0];
-        Ftemp(2, 1) += dx[2]*wfd_pn.at(ip)[j][1];
-        Ftemp(2, 2) += dx[2]*wfd_pn.at(ip)[j][2];
-      }
-      // F.at(ip).noalias() += eye;
-      F.at(ip) = Ftemp + eye;
-    }
+    int in = neigh_n.at(i);
+    int ip = neigh_p.at(i);
+
+    const Vector3d &dx = grid->x.at(in) - grid->x0.at(in);
+
+    for (int j = 0; j < domain->dimension; j++)
+      for (int k = 0; k < domain->dimension; k++)
+        F.at(ip)(j, k) += dx[j]*wfd.at(i)[k];
   }
 }
 
@@ -884,88 +728,24 @@ void Solid::compute_rate_deformation_gradient_TL_APIC(bool doublemapping)
   if (mat->rigid)
     return;
 
-  int in;
-  vector<Vector3d> *x0n = &grid->x0;
+  for (Matrix3d &Fdot: Fdot)
+    Fdot = Matrix3d();
 
-  vector<Vector3d> *vn;
+  const vector<Vector3d> &vn = doublemapping? grid->v: grid->v_update;
 
-  if (doublemapping)
-    vn = &grid->v;
-  else
-    vn = &grid->v_update;
+  for (int i = 0; i < neigh_n.size(); i++)
+  {
+    int in = neigh_n.at(i);
+    int ip = neigh_p.at(i);
 
-  Vector3d dx;
+    const Vector3d &dx = grid->x.at(in) - grid->x0.at(in);
 
-  if (domain->dimension == 1)
-  {
-    for (int ip = 0; ip<np_local; ip++)
-    {
-      Fdot.at(ip) = Matrix3d();
-      for (int j = 0; j<numneigh_pn.at(ip); j++)
-      {
-        in = neigh_pn.at(ip)[j];
-        dx = (*x0n)[in] - x0.at(ip);
-        Fdot.at(ip)(0, 0) += (*vn)[in][0]*dx[0]*wf_pn.at(ip)[j];
-      }
-      Fdot.at(ip) = Fdot.at(ip)*Di;
-    }
-  }
-  else if ((domain->dimension == 2) && (domain->axisymmetric == false))
-  {
-    for (int ip = 0; ip<np_local; ip++)
-    {
-      Fdot.at(ip) = Matrix3d();
-      for (int j = 0; j<numneigh_pn.at(ip); j++)
-      {
-        in = neigh_pn.at(ip)[j];
-        dx = (*x0n)[in] - x0.at(ip);
-        Fdot.at(ip)(0, 0) += (*vn)[in][0]*dx[0]*wf_pn.at(ip)[j];
-        Fdot.at(ip)(0, 1) += (*vn)[in][0]*dx[1]*wf_pn.at(ip)[j];
-        Fdot.at(ip)(1, 0) += (*vn)[in][1]*dx[0]*wf_pn.at(ip)[j];
-        Fdot.at(ip)(1, 1) += (*vn)[in][1]*dx[1]*wf_pn.at(ip)[j];
-      }
-      Fdot.at(ip) = Fdot.at(ip)*Di;
-    }
-  }
-  else if ((domain->dimension == 2) && (domain->axisymmetric == true))
-  {
-    for (int ip = 0; ip<np_local; ip++)
-    {
-      Fdot.at(ip) = Matrix3d();
-      for (int j = 0; j<numneigh_pn.at(ip); j++)
-      {
-        in = neigh_pn.at(ip)[j];
-        dx = (*x0n)[in] - x0.at(ip);
-        Fdot.at(ip)(0, 0) += (*vn)[in][0]*dx[0]*wf_pn.at(ip)[j];
-        Fdot.at(ip)(0, 1) += (*vn)[in][0]*dx[1]*wf_pn.at(ip)[j];
-        Fdot.at(ip)(1, 0) += (*vn)[in][1]*dx[0]*wf_pn.at(ip)[j];
-        Fdot.at(ip)(1, 1) += (*vn)[in][1]*dx[1]*wf_pn.at(ip)[j];
-        Fdot.at(ip)(2, 2) += (*vn)[in][0]*wf_pn.at(ip)[j]/x0.at(ip)[0];
-      }
-      Fdot.at(ip) = Fdot.at(ip)*Di;
-    }
-  }
-  else if (domain->dimension == 3)
-  {
-    for (int ip = 0; ip<np_local; ip++)
-    {
-      Fdot.at(ip) = Matrix3d();
-      for (int j = 0; j<numneigh_pn.at(ip); j++)
-      {
-        in = neigh_pn.at(ip)[j];
-        dx = (*x0n)[in] - x0.at(ip);
-        Fdot.at(ip)(0, 0) += (*vn)[in][0]*dx[0]*wf_pn.at(ip)[j];
-        Fdot.at(ip)(0, 1) += (*vn)[in][0]*dx[1]*wf_pn.at(ip)[j];
-        Fdot.at(ip)(0, 2) += (*vn)[in][0]*dx[2]*wf_pn.at(ip)[j];
-        Fdot.at(ip)(1, 0) += (*vn)[in][1]*dx[0]*wf_pn.at(ip)[j];
-        Fdot.at(ip)(1, 1) += (*vn)[in][1]*dx[1]*wf_pn.at(ip)[j];
-        Fdot.at(ip)(1, 2) += (*vn)[in][1]*dx[2]*wf_pn.at(ip)[j];
-        Fdot.at(ip)(2, 0) += (*vn)[in][2]*dx[0]*wf_pn.at(ip)[j];
-        Fdot.at(ip)(2, 1) += (*vn)[in][2]*dx[1]*wf_pn.at(ip)[j];
-        Fdot.at(ip)(2, 2) += (*vn)[in][2]*dx[2]*wf_pn.at(ip)[j];
-      }
-      Fdot.at(ip) = Fdot.at(ip)*Di;
-    }
+    for (int j = 0; j < domain->dimension; j++)
+      for (int k = 0; k < domain->dimension; k++)
+        Fdot.at(ip)(j, k) += vn.at(in)[j]*dx[k]*wf.at(i);
+
+    if (domain->dimension == 2 && domain->axisymmetric)
+      Fdot.at(ip)(2, 2) += vn.at(in)[0]*wf.at(i)/x0.at(ip)[0];
   }
 }
 
@@ -974,87 +754,28 @@ void Solid::compute_rate_deformation_gradient_UL_APIC(bool doublemapping)
   if (mat->rigid)
     return;
 
-  int in;
-  vector<Vector3d> *x0n = &grid->x0;
-  vector<Vector3d> *vn;
+  for (Matrix3d &L: L)
+    L = Matrix3d();
 
-  if (doublemapping)
-    vn = &grid->v;
-  else
-    vn = &grid->v_update;
+  const vector<Vector3d> &vn = doublemapping? grid->v: grid->v_update;
 
-  Vector3d dx;
+  for (int i = 0; i < neigh_n.size(); i++)
+  {
+    int in = neigh_n.at(i);
+    int ip = neigh_p.at(i);
 
-  if (domain->dimension == 1)
-  {
-    for (int ip = 0; ip<np_local; ip++)
-    {
-      L.at(ip) = Matrix3d();
-      for (int j = 0; j<numneigh_pn.at(ip); j++)
-      {
-        in = neigh_pn.at(ip)[j];
-        dx = (*x0n)[in] - x.at(ip);
-        L.at(ip)(0, 0) += (*vn)[in][0]*dx[0]*wf_pn.at(ip)[j];
-      }
-      L.at(ip) = L.at(ip)*Di;
-    }
-  }
-  else if ((domain->dimension == 2) && (domain->axisymmetric == false))
-  {
-    for (int ip = 0; ip<np_local; ip++)
-    {
-      L.at(ip) = Matrix3d();
-      for (int j = 0; j<numneigh_pn.at(ip); j++)
-      {
-        in = neigh_pn.at(ip)[j];
-        dx = (*x0n)[in] - x.at(ip);
-        L.at(ip)(0, 0) += (*vn)[in][0]*dx[0]*wf_pn.at(ip)[j];
-        L.at(ip)(0, 1) += (*vn)[in][0]*dx[1]*wf_pn.at(ip)[j];
-        L.at(ip)(1, 0) += (*vn)[in][1]*dx[0]*wf_pn.at(ip)[j];
-        L.at(ip)(1, 1) += (*vn)[in][1]*dx[1]*wf_pn.at(ip)[j];
-      }
-      L.at(ip) = L.at(ip)*Di;
-    }
-  }
-  else if ((domain->dimension == 2) && (domain->axisymmetric == true))
-  {
-    for (int ip = 0; ip<np_local; ip++)
-    {
-      L.at(ip) = Matrix3d();
-      for (int j = 0; j<numneigh_pn.at(ip); j++)
-      {
-        in = neigh_pn.at(ip)[j];
-        dx = (*x0n)[in] - x.at(ip);
-        L.at(ip)(0, 0) += (*vn)[in][0]*dx[0]*wf_pn.at(ip)[j];
-        L.at(ip)(0, 1) += (*vn)[in][0]*dx[1]*wf_pn.at(ip)[j];
-        L.at(ip)(1, 0) += (*vn)[in][1]*dx[0]*wf_pn.at(ip)[j];
-        L.at(ip)(1, 1) += (*vn)[in][1]*dx[1]*wf_pn.at(ip)[j];
-        L.at(ip)(2, 2) += (*vn)[in][0]*wf_pn.at(ip)[j]/x.at(ip)[0];
-      }
-      L.at(ip) = L.at(ip)*Di;
-    }
-  }
-  else if (domain->dimension == 3)
-  {
-    for (int ip = 0; ip<np_local; ip++)
-    {
-      L.at(ip) = Matrix3d();
-      for (int j = 0; j<numneigh_pn.at(ip); j++)
-      {
-        in = neigh_pn.at(ip)[j];
-        dx = (*x0n)[in] - x.at(ip);
-        L.at(ip)(0, 0) += (*vn)[in][0]*dx[0]*wf_pn.at(ip)[j];
-        L.at(ip)(0, 1) += (*vn)[in][0]*dx[1]*wf_pn.at(ip)[j];
-        L.at(ip)(0, 2) += (*vn)[in][0]*dx[2]*wf_pn.at(ip)[j];
-        L.at(ip)(1, 0) += (*vn)[in][1]*dx[0]*wf_pn.at(ip)[j];
-        L.at(ip)(1, 1) += (*vn)[in][1]*dx[1]*wf_pn.at(ip)[j];
-        L.at(ip)(1, 2) += (*vn)[in][1]*dx[2]*wf_pn.at(ip)[j];
-        L.at(ip)(2, 0) += (*vn)[in][2]*dx[0]*wf_pn.at(ip)[j];
-        L.at(ip)(2, 1) += (*vn)[in][2]*dx[1]*wf_pn.at(ip)[j];
-        L.at(ip)(2, 2) += (*vn)[in][2]*dx[2]*wf_pn.at(ip)[j];
-      }
-      L.at(ip) = L.at(ip)*Di;
-    }
+    Matrix3d delta_L;
+
+    const Vector3d &dx = grid->x0.at(in) - x.at(ip);
+
+    for (int j = 0; j < domain->dimension; j++)
+      for (int k = 0; k < domain->dimension; k++)
+        delta_L(j, k) = vn.at(in)[j]*dx[k]*wf.at(i);
+
+    if (domain->dimension == 2 && domain->axisymmetric)
+      delta_L(2, 2) += vn.at(in)[0]*wf.at(i)/x0.at(ip)[0];
+
+    L.at(ip) += delta_L*Di;
   }
 }
 
@@ -2766,55 +2487,28 @@ void Solid::compute_internal_temperature_driving_forces_nodes()
 
 void Solid::update_particle_temperature()
 {
-  int in;
-  for (int ip = 0; ip < np_local; ip++)
+  for (int i = 0; i < neigh_n.size(); i++)
   {
-    T.at(ip) = 0;
-    for (int j = 0; j < numneigh_pn.at(ip); j++)
-    {
-      in = neigh_pn.at(ip)[j];
-      // T.at(ip) += wf_pn.at(ip)[j]*(grid->T_update[in] - grid->T[in]);
-      T.at(ip) += wf_pn.at(ip)[j]*grid->T_update[in];
-    }
+    int in = neigh_n.at(i);
+    int ip = neigh_p.at(i);
+
+    T.at(ip) += wf.at(i)*grid->T_update.at(in);
   }
 }
 
 void Solid::update_heat_flux(bool doublemapping)
 {
-  int in;
+  for (Vector3d &q: q)
+    q = Vector3d();
 
-  vector<double> *Tn;
+  const vector<double> &Tn = doublemapping? grid->T: grid->T_update;
 
-  if (doublemapping)
-    Tn = &grid->T;
-  else
-    Tn = &grid->T_update;
-
-  if (is_TL)
+  for (int i = 0; i < neigh_n.size(); i++)
   {
-    for (int ip = 0; ip < np_local; ip++)
-    {
-      q.at(ip) = Vector3d();
-      for (int j = 0; j < numneigh_pn.at(ip); j++)
-      {
-        in = neigh_pn.at(ip)[j];
-        q.at(ip) -= wfd_pn.at(ip)[j]*(*Tn)[in];
-      }
-      q.at(ip) *= vol0.at(ip)*mat->invcp*mat->kappa;
-    }
-  }
-  else
-  {
-    for (int ip = 0; ip < np_local; ip++)
-    {
-      q.at(ip) = Vector3d();
-      for (int j = 0; j < numneigh_pn.at(ip); j++)
-      {
-        in = neigh_pn.at(ip)[j];
-        q.at(ip) -= wfd_pn.at(ip)[j]*(*Tn)[in];
-      }
-      q.at(ip) *= vol.at(ip)*mat->invcp*mat->kappa;
-    }
+    int in = neigh_n.at(i);
+    int ip = neigh_p.at(i);
+
+    q.at(ip) -= wfd.at(i)*Tn.at(in)*(is_TL? vol0: vol).at(ip)*mat->invcp*mat->kappa;
   }
 }
 
