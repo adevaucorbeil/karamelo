@@ -100,23 +100,11 @@ class Solid : protected Pointers {
   double max_p_wave_speed;                  ///< Maximum of the particle wave speed
   double dtCFL;
 
-  vector<int> numneigh_pn;                  ///< Number of nodes neighbouring a given particle
-  vector<int> numneigh_np;                  ///< Number of nodes neighbouring a given node
-  vector<vector<int>> neigh_pn;             ///< List of the nodes neighbouring a given particle
-  vector<vector<int>> neigh_np;             ///< List of the particles neighbouring a given node
-
-  vector<vector< double >> wf_pn;           ///< Array of arrays (matrix) of the weight functions \f$\Phi_{pI}\f$.
-  vector<vector< double >> wf_np;           ///< Array of arrays (matrix) of the weight functions \f$\Phi_{Ip}\f$ effectively the transpose of wf_pn.
-  vector<vector< double >> wf_pn_corners;   ///< Array of arrays (matrix) of the weight functions \f$\Phi_{Ic}\f$ evaluated at the corners of the particle's domain (used in CPDI)
-
-  vector<vector< Vector3d >> wfd_pn; ///< Array of arrays (matrix) of the derivative of the weight functions \f$\partial \Phi_{pI}/\partial x\f$.
-  vector<vector< Vector3d >> wfd_np; ///< Array of arrays (matrix) of the derivative of the weight functions \f$\partial \Phi_{Ip}/ \partial x\f$ effectively the transpose of wfd_pn.
-
-  deque<int> neigh_p;
-  deque<int> neigh_n;
-  deque<double> wf;
-  deque<double> wf_corners;
-  deque<Vector3d> wfd;
+  deque<int> neigh_p;             ///< List of particle indices for neighbour pairs
+  deque<int> neigh_n;             ///< List of node indices for neighbour pairs
+  deque<double> wf;               ///< List of the weight functions \f$\Phi\f$ for neighbour pairs
+  deque<double> wf_corners;               ///< List of the weight functions \f$\Phi\f$ for neighbour pairs evaluated at the corners of the particle's domain (used in CPDI)
+  deque<Vector3d> wfd;               ///< List ofthe derivative of the weight functions \f$\partial \Phi/ \partial x\f$ for neighbour pairs
 
   class Mat *mat;                          ///< Pointer to the material
 

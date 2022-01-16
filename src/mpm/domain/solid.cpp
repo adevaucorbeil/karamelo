@@ -303,20 +303,6 @@ void Solid::grow(int nparticles)
   mask.resize(nparticles);
   J.resize(nparticles);
 
-  numneigh_pn.resize(nparticles);
-  neigh_pn.resize(nparticles);
-  wf_pn.resize(nparticles);
-  if (nc != 0)
-    wf_pn_corners.resize(nc*nparticles);
-  wfd_pn.resize(nparticles);
-
-  bigint nnodes = grid->nnodes_local + grid->nnodes_ghost;
-
-  numneigh_np.resize(nnodes);
-  neigh_np.resize(nnodes);
-  wf_np.resize(nnodes);
-  wfd_np.resize(nnodes);
-
   if (mat->cp != 0)
   {
     T.resize(nparticles);
@@ -2401,69 +2387,56 @@ void Solid::read_mesh(string fileName)
 
 void Solid::compute_temperature_nodes(bool reset)
 {
-  double Ttemp;
-  int ip, nn = grid->nnodes_local + grid->nnodes_ghost;
+  if (reset)
+    for (double &T: grid->T)
+      T = 0;
 
-  for (int in = 0; in < nn; in++)
+  for (int i = 0; i < neigh_n.size(); i++)
   {
-    if (reset)
-    {
-      grid->T[in] = 0;
-    }
+    int in = neigh_n.at(i);
+    int ip = neigh_p.at(i);
 
-    if (grid->mass[in] > 0)
+    if (grid->mass.at(in))
     {
-      Ttemp = 0;
-
-      for (int j = 0; j < numneigh_np[in]; j++)
-      {
-        ip = neigh_np[in][j];
-        Ttemp += wf_np[in][j]*mass.at(ip)*T.at(ip);
-      }
-      Ttemp /= grid->mass[in];
-      grid->T[in] += Ttemp;
+      grid->T.at(in) += wf.at(i)*mass.at(ip)*T.at(ip)/grid->mass.at(in);
     }
   }
 }
 
 void Solid::compute_external_temperature_driving_forces_nodes(bool reset)
 {
-  int ip, nn = grid->nnodes_local + grid->nnodes_ghost;
+  if (reset)
+    for (double &Qext: grid->Qext)
+      Qext = 0;
 
-  for (int in = 0; in < nn; in++)
+  for (int i = 0; i < neigh_n.size(); i++)
   {
-    if (reset)
-      grid->Qext[in] = 0;
+    int in = neigh_n.at(i);
+    int ip = neigh_p.at(i);
 
-    if (grid->mass[in] > 0)
+    if (grid->mass.at(in))
     {
-      for (int j = 0; j < numneigh_np[in]; j++)
-      {
-        ip = neigh_np[in][j];
-        grid->Qext[in] += wf_np[in][j]*gamma.at(ip);
-      }
+      grid->Qext.at(in) += wf.at(i)*gamma.at(ip);
     }
   }
 }
 
 void Solid::compute_internal_temperature_driving_forces_nodes()
 {
-  int ip, nn = grid->nnodes_local + grid->nnodes_ghost;
+  for (double &Qint: grid->Qint)
+    Qint = 0;
 
-  for (int in = 0; in < nn; in++)
+  if (domain->axisymmetric)
   {
-    grid->Qint[in] = 0;
-    for (int j = 0; j < numneigh_np[in]; j++)
-    {
-      ip = neigh_np[in][j];
-      grid->Qint[in] += wfd_np[in][j].dot(q.at(ip));
+    error->one(FLERR, "Temperature and axisymmetric not yet supported.\n");
+  }
 
-      if (domain->axisymmetric == true)
-      {
-        error->one(FLERR, "Temperature and axisymmetric not yet supported.\n");
-              //ftemp[0] -= vol0PK1.at(ip)(2, 2)*wf_np[in][j]/x0.at(ip)[0];
-      }
-    }
+  for (int i = 0; i < neigh_n.size(); i++)
+  {
+    int in = neigh_n.at(i);
+    int ip = neigh_p.at(i);
+
+    grid->Qint.at(in) += wfd.at(i).dot(q.at(ip));
   }
 }
 
