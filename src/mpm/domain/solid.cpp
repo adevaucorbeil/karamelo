@@ -327,24 +327,6 @@ void Solid::grow(int nparticles)
 
 void Solid::compute_mass_nodes(bool reset)
 {
-#if 0
-  int ip;
-  int nn = grid->nnodes_local + grid->nnodes_ghost;
-
-  for (int in = 0; in < nn; in++)
-  {
-    if (reset) grid->mass[in] = 0;
-
-    if (grid->rigid[in] && !mat->rigid) continue;
-
-    for (int j = 0; j < numneigh_np[in]; j++)
-    {
-      ip = neigh_np[in][j];
-      grid->mass[in] += wf_np[in][j] * mass[ip];
-    }
-  }
-  return;
-#else
   if (reset)
     for (double &mass: grid->mass)
       mass = 0;
@@ -352,74 +334,15 @@ void Solid::compute_mass_nodes(bool reset)
   for (int i = 0; i < neigh_n.size(); i++)
   {
     int in = neigh_n.at(i);
+    int ip = neigh_p.at(i);
 
     if (!grid->rigid.at(in) || mat->rigid)
-      grid->mass.at(in) += wf.at(i) * mass.at(neigh_p.at(i));
+      grid->mass.at(in) += wf.at(i)*mass.at(ip);
   }
-#endif
 }
 
 void Solid::compute_velocity_nodes(bool reset)
 {
-#if 0
-  Vector3d vtemp, vtemp_update;
-  //double mass_rigid;
-  int ip;
-  int nn = grid->nnodes_local + grid->nnodes_ghost;
-
-  for (int in = 0; in < nn; in++)
-  {
-    if (reset)
-    {
-      grid->v[in] = Vector3d();
-      //grid->v_update[in] = Vector3d();
-      if (grid->rigid[in])
-      {
-        grid->mb[in] = Vector3d();
-      }
-    }
-
-    if (grid->rigid[in] && !mat->rigid) continue;
-
-    if (grid->mass[in] > 0)
-    {
-      vtemp = Vector3d();
-      if (grid->rigid[in])
-        vtemp_update = Vector3d();
-
-      for (int j = 0; j < numneigh_np[in]; j++)
-      {
-        ip = neigh_np[in][j];
-        if (grid->rigid[in])
-        {
-          vtemp_update += (wf_np[in][j] * mass[ip]) * v_update[ip];
-        }
-        if (update->method->ge)
-        {
-          vtemp += (wf_np[in][j] * mass[ip]) *
-            (v[ip] + L[ip] * (grid->x0[in] - x[ip]));
-        }
-        else
-        {
-          vtemp += wf_np[in][j] * mass[ip] * v[ip];
-        }
-              // grid->v[in] += (wf_np[in][j] * mass[ip]) * v[ip]/ grid->mass[in];
-      }
-      vtemp /= grid->mass[in];
-      grid->v[in] += vtemp;
-      if (grid->rigid[in])
-      {
-        vtemp_update /= grid->mass[in];
-        grid->mb[in] += vtemp_update; // This should be grid->v_update[in], but we are using mb to make the reduction of ghost particles easy. It will be copied to grid->v_update[in] in Grid::update_grid_velocities()
-      }
-      // if (isnan(grid->v_update[in][0]))
-      //   cout << "in=" << in << "\tvn=[" << grid->v[in][0] << ", " << grid->v[in][1]
-      //        << ", " << grid->v[in][2] << "]\tvp=[" << v[ip][0] << ", " << v[ip][1]
-      //        << ", " << v[ip][2] << "],\tvn_update=[" << grid->v_update[in][0]
-      //        << ", " << grid->v_update[in][1] << ", " << grid->v_update[in][2] << "]\n";
-    }
-  }
-#else
   if (reset)
   {
     for (Vector3d &v: grid->v)
@@ -433,7 +356,7 @@ void Solid::compute_velocity_nodes(bool reset)
     int in = neigh_n.at(i);
     int ip = neigh_p.at(i);
 
-    if ((!grid->rigid.at(in) || !mat->rigid) && grid->mass.at(in))
+    if ((!grid->rigid.at(in) || mat->rigid) && grid->mass.at(in))
     {
       double wf_mass = wf.at(i)*mass.at(ip);
 
@@ -449,222 +372,122 @@ void Solid::compute_velocity_nodes(bool reset)
       }
     }
   }
-#endif
 }
 
 void Solid::compute_velocity_nodes_APIC(bool reset)
 {
-  int ip;
-  int nn = grid->nnodes_local + grid->nnodes_ghost;
-  Vector3d vtemp;
+  if (reset)
+    for (Vector3d &v: grid->v)
+      v = Vector3d();
 
-  vector<Vector3d> *pos;
-  vector<Matrix3d> *C;
-
-  if (is_TL)
+  for (int i = 0; i < neigh_n.size(); i++)
   {
-    pos = &x0;
-    C = &Fdot;
-  }
-  else
-  {
-    pos = &x;
-    C = &L;
-  }
+    int in = neigh_n.at(i);
+    int ip = neigh_p.at(i);
 
-  for (int in = 0; in < nn; in++)
-  {
-    if (reset)
-      grid->v[in] = Vector3d();
-
-    if (grid->rigid[in] && !mat->rigid)
-      continue;
-
-    if (grid->mass[in] > 0)
+    if ((!grid->rigid.at(in) || mat->rigid) && grid->mass.at(in))
     {
-      vtemp = Vector3d();
-      for (int j = 0; j < numneigh_np[in]; j++)
-      {
-        ip = neigh_np[in][j];
-        vtemp += (wf_np[in][j] * mass[ip]) *
-          (v[ip] + (*C)[ip] * (grid->x0[in] - (*pos)[ip]));
-      }
-      vtemp /= grid->mass[in];
-      grid->v[in] += vtemp;
+      Vector3d vtemp = v.at(ip);
+
+      if (is_TL)
+        vtemp += Fdot.at(ip)*(grid->x0.at(in) - x0.at(ip));
+      else
+        vtemp += L.at(ip)*(grid->x0.at(in) - x.at(ip));
+
+      grid->v.at(in) += vtemp/grid->mass.at(in);
     }
   }
 }
 
 void Solid::compute_external_forces_nodes(bool reset)
 {
-  int ip;
-  int nn = grid->nnodes_local + grid->nnodes_ghost;
+  if (reset)
+    for (Vector3d &mb: grid->mb)
+      mb = Vector3d();
 
-  for (int in = 0; in < nn; in++)
+  for (int i = 0; i < neigh_n.size(); i++)
   {
-    if (reset)
-      grid->mb[in] = Vector3d();
+    int in = neigh_n.at(i);
+    int ip = neigh_p.at(i);
 
-    if (grid->rigid[in])
-      continue;
-
-    if (grid->mass[in] > 0)
+    if (!grid->rigid.at(in) && grid->mass.at(in))
     {
-      for (int j = 0; j < numneigh_np[in]; j++)
-      {
-        ip = neigh_np[in][j];
-        grid->mb[in] += wf_np[in][j] * mbp[ip];
-      }
+      grid->mb.at(in) += wf.at(i)*mbp.at(ip);
     }
   }
 }
 
 void Solid::compute_internal_forces_nodes_TL()
 {
-  Vector3d ftemp;
-  int ip;
-  int nn = grid->nnodes_local + grid->nnodes_ghost;
+  for (Vector3d &f: grid->f)
+    f = Vector3d();
 
-  for (int in = 0; in < nn; in++)
+  for (int i = 0; i < neigh_n.size(); i++)
   {
-    if (grid->rigid[in])
+    int in = neigh_n.at(i);
+    int ip = neigh_p.at(i);
+
+    if (!grid->rigid.at(in))
     {
-      grid->f[in] = Vector3d();
-      continue;
+      grid->f.at(in) -= vol0PK1.at(ip)*wfd.at(i);
+
+      if (domain->axisymmetric)
+        grid->f.at(in)[0] -= vol0PK1.at(ip)(2, 2)*wf.at(i)/x0.at(ip)[0];
     }
-
-    ftemp = Vector3d();
-    for (int j = 0; j < numneigh_np[in]; j++)
-    {
-      ip = neigh_np[in][j];
-      ftemp -= vol0PK1[ip] * wfd_np[in][j];
-
-      if (domain->axisymmetric == true)
-      {
-        ftemp[0] -= vol0PK1[ip](2, 2) * wf_np[in][j] / x0[ip][0];
-      }
-    }
-
-    grid->f[in] = ftemp;
   }
 }
 
 void Solid::compute_external_and_internal_forces_nodes_UL(bool reset)
 {
-  int ip;
-  int nn = grid->nnodes_local + grid->nnodes_ghost;
-
-  for (int in = 0; in < nn; in++)
+  if (reset)
   {
-    if (reset)
-    {
-      grid->f[in] = Vector3d();
-      grid->mb[in] = Vector3d();
-    }
+    for (Vector3d &f: grid->f)
+      f = Vector3d();
+    for (Vector3d &mb: grid->mb)
+      mb = Vector3d();
+  }
 
-    if (grid->rigid[in])
-    {
-      for (int j = 0; j < numneigh_np[in]; j++)
-      {
-        ip = neigh_np[in][j];
-        grid->f[in] -= vol[ip] * (sigma[ip] * wfd_np[in][j]);
-      }
+  for (int i = 0; i < neigh_n.size(); i++)
+  {
+    int in = neigh_n.at(i);
+    int ip = neigh_p.at(i);
 
-      if (domain->axisymmetric == true)
-      {
-        for (int j = 0; j < numneigh_np[in]; j++)
-        {
-          ip = neigh_np[in][j];
-          grid->f[in][0] -=
-            vol[ip] * (sigma[ip](2, 2) * wf_np[in][j] / x[ip][0]);
-        }
-      }
-    }
-    else
-    {
-      for (int j = 0; j < numneigh_np[in]; j++)
-      {
-        ip = neigh_np[in][j];
-        grid->f[in] -= vol[ip] * (sigma[ip] * wfd_np[in][j]);
-        grid->mb[in] += wf_np[in][j] * mbp[ip];
-      }
+    grid->f.at(in) -= vol.at(ip)*sigma.at(ip)*wfd.at(i);
 
-      if (domain->axisymmetric == true)
-      {
-        for (int j = 0; j < numneigh_np[in]; j++)
-        {
-          ip = neigh_np[in][j];
-          grid->f[in][0] -=
-            vol[ip] * (sigma[ip](2, 2) * wf_np[in][j] / x[ip][0]);
-        }
-      }
+    if (domain->axisymmetric)
+      grid->f.at(in)[0] -= vol.at(ip)*sigma.at(ip)(2, 2)*wf.at(i)/x.at(ip)[0];
+
+    if (!grid->rigid.at(in))
+    {
+      grid->mb.at(in) += wf.at(i)*mbp.at(ip);
     }
   }
 }
 
 void Solid::compute_external_and_internal_forces_nodes_UL_MLS(bool reset)
 {
-  int ip;
-  int nn = grid->nnodes_local + grid->nnodes_ghost;
-  vector<Vector3d> *pos;
-
-  if (is_TL)
+  if (reset)
   {
-    pos = &x0;
-  }
-  else
-  {
-    pos = &x;
+    for (Vector3d &f: grid->f)
+      f = Vector3d();
+    for (Vector3d &mb: grid->mb)
+      mb = Vector3d();
   }
 
-  for (int in = 0; in < nn; in++)
+  for (int i = 0; i < neigh_n.size(); i++)
   {
-    if (reset)
-    {
-      grid->f[in] = Vector3d();
-      grid->mb[in] = Vector3d();
-    }
+    int in = neigh_n.at(i);
+    int ip = neigh_p.at(i);
 
-    if (grid->rigid[in])
-    {
-      for (int j = 0; j < numneigh_np[in]; j++)
-      {
-        ip = neigh_np[in][j];
-        // grid->f[in] -= vol[ip] * (sigma[ip] * wfd_np[in][j]);
-        grid->f[in] -= vol[ip] * wf_np[in][j] *
-          (sigma[ip] * Di * (grid->x0[in] - (*pos)[ip]));
-      }
+    grid->f.at(in) -= vol.at(ip)*wf.at(i)*sigma.at(ip)*Di*
+      (grid->x0.at(in) - (is_TL? x0: x).at(ip));
 
-      if (domain->axisymmetric == true)
-      {
-        for (int j = 0; j < numneigh_np[in]; j++)
-        {
-          ip = neigh_np[in][j];
-          grid->f[in][0] -=
-            vol[ip] * (sigma[ip](2, 2) * wf_np[in][j] / x[ip][0]);
-        }
-      }
-    }
-    else
-    {
-      for (int j = 0; j < numneigh_np[in]; j++)
-      {
-        ip = neigh_np[in][j];
-        // grid->f[in] -= vol[ip] * (sigma[ip] * wfd_np[in][j]);
-        grid->f[in] -= vol[ip] * wf_np[in][j] *
-          (sigma[ip] * Di * (grid->x0[in] - (*pos)[ip]));
-        grid->mb[in] += wf_np[in][j] * mbp[ip];
-      }
+    if (domain->axisymmetric)
+      grid->f.at(in)[0] -= vol.at(ip)*sigma.at(ip)(2, 2)*wf.at(i)/x.at(ip)[0];
 
-      if (domain->axisymmetric == true)
-      {
-        for (int j = 0; j < numneigh_np[in]; j++)
-        {
-          ip = neigh_np[in][j];
-          grid->f[in][0] -=
-            vol[ip] * (sigma[ip](2, 2) * wf_np[in][j] / x[ip][0]);
-        }
-      }
+    if (!grid->rigid.at(in))
+    {
+      grid->mb.at(in) += wf.at(i)*mbp.at(ip);
     }
   }
 }
