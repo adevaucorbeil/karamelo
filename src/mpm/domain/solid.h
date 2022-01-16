@@ -115,6 +115,7 @@ class Solid : protected Pointers {
   deque<int> neigh_p;
   deque<int> neigh_n;
   deque<double> wf;
+  deque<double> wf_corners;
   deque<Vector3d> wfd;
 
   class Mat *mat;                          ///< Pointer to the material
