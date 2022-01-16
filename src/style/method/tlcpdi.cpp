@@ -127,6 +127,12 @@ void TLCPDI::compute_grid_weight_functions_and_gradients()
       vector<vector< Vector3d >> *wfd_pn = &domain->solids[isolid]->wfd_pn;
       vector<vector< Vector3d >> *wfd_np = &domain->solids[isolid]->wfd_np;
 
+      deque<int> &neigh_p = domain->solids[isolid]->neigh_p; neigh_p.clear();
+      deque<int> &neigh_n = domain->solids[isolid]->neigh_n; neigh_n.clear();
+      deque<double> &wfs = domain->solids[isolid]->wf; wfs.clear();
+      deque<double> &wf_corners = domain->solids[isolid]->wf_corners; wf_corners.clear();
+      deque<Vector3d> &wfds = domain->solids[isolid]->wfd; wfds.clear();
+
       vector<Vector3d> *xp  = &domain->solids[isolid]->x0;
       vector<Vector3d> *xpc = &domain->solids[isolid]->xpc;
       vector<Vector3d> *xn  = &domain->solids[isolid]->grid->x0;
@@ -326,17 +332,21 @@ void TLCPDI::compute_grid_weight_functions_and_gradients()
 		wfd[2] = 0;
 
 		wfd *= 0.5*inv_Vp;
-		for(int ic=0; ic<nc; ic++) (*wf_pn_corners)[nc*ip+ic].push_back(wfc[ic]);
+		for(int ic=0; ic<nc; ic++)
+        {
+          (*wf_pn_corners)[nc*ip+ic].push_back(wfc[ic]);
+          wf_corners.push_back(wfc.at(ic));
+        }
 	      }
 
-	      (*neigh_pn)[ip].push_back(in);
-	      (*neigh_np)[in].push_back(ip);
+	      (*neigh_pn)[ip].push_back(in); neigh_p.push_back(ip);
+	      (*neigh_np)[in].push_back(ip); neigh_n.push_back(in);
 	      (*numneigh_pn)[ip]++;
 	      (*numneigh_np)[in]++;
 
-	      (*wf_pn)[ip].push_back(wf);
+	      (*wf_pn)[ip].push_back(wf); wfs.push_back(wf);
 	      (*wf_np)[in].push_back(wf);
-	      (*wfd_pn)[ip].push_back(wfd);
+	      (*wfd_pn)[ip].push_back(wfd); wfds.push_back(wfd);
 	      (*wfd_np)[in].push_back(wfd);
 	      // cout << "node: " << in << " [ " << (*xn)[in][0] << "," << (*xn)[in][1] << "," << (*xn)[in][2] << "]" <<
 	      // 	" with\twf=" << wf << " and\twfd=["<< wfd[0] << "," << wfd[1] << "," << wfd[2] << "]\n";

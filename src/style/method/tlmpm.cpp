@@ -123,6 +123,11 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
       vector<vector< Vector3d >> *wfd_pn = &domain->solids[isolid]->wfd_pn;
       vector<vector< Vector3d >> *wfd_np = &domain->solids[isolid]->wfd_np;
 
+      deque<int> &neigh_p = domain->solids[isolid]->neigh_p; neigh_p.clear();
+      deque<int> &neigh_n = domain->solids[isolid]->neigh_n; neigh_n.clear();
+      deque<double> &wfs = domain->solids[isolid]->wf; wfs.clear();
+      deque<Vector3d> &wfds = domain->solids[isolid]->wfd; wfds.clear();
+
       Vector3d r;
       double s[3], sd[3];
       vector<Vector3d> *xp = &domain->solids[isolid]->x0;
@@ -295,15 +300,15 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
 	      if (domain->dimension >= 2) sd[1] = derivative_basis_function(r[1], (*ntype)[in][1], inv_cellsize);
 	      if (domain->dimension == 3) sd[2] = derivative_basis_function(r[2], (*ntype)[in][2], inv_cellsize);
 
-	      (*neigh_pn)[ip].push_back(in);
-	      (*neigh_np)[in].push_back(ip);
+	      (*neigh_pn)[ip].push_back(in); neigh_p.push_back(ip);
+	      (*neigh_np)[in].push_back(ip); neigh_n.push_back(in);
 	      (*numneigh_pn)[ip]++;
 	      (*numneigh_np)[in]++;
 	      if (domain->dimension == 1) wf = s[0];
 	      if (domain->dimension == 2) wf = s[0]*s[1];
 	      if (domain->dimension == 3) wf = s[0]*s[1]*s[2];
 
-	      (*wf_pn)[ip].push_back(wf);
+	      (*wf_pn)[ip].push_back(wf); wfs.push_back(wf);
 	      (*wf_np)[in].push_back(wf);
 
 	      if (domain->dimension == 1)
@@ -324,7 +329,7 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
 		  wfd[1] = s[0]*sd[1]*s[2];
 		  wfd[2] = s[0]*s[1]*sd[2];
 		}
-	      (*wfd_pn)[ip].push_back(wfd);
+	      (*wfd_pn)[ip].push_back(wfd); wfds.push_back(wfd);
 	      (*wfd_np)[in].push_back(wfd);
 	      // cout << "ip=" << ip << ", in=" << in << ", wf=" << wf << ", wfd=[" << wfd[0] << "," << wfd[1] << "," << wfd[2] << "]" << endl;
 	    }

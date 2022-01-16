@@ -509,6 +509,10 @@ void Solid::compute_particle_accelerations_velocities_and_positions()
     const Vector3d &delta_a = wf.at(i)*(grid->v_update.at(in) - grid->v.at(in))/update->dt;
     a.at(ip) += delta_a;
     f.at(ip) += mass.at(ip)*delta_a;
+
+    if ((method_type == "tlcpdi" || method_type == "ulcpdi") && update->method->style == 1)
+      for (int ic = 0; ic < nc; ic++)
+        xpc.at(nc*ip + ic) += update->dt*wf.at(nc*i + ic)*grid->v_update.at(in);
   }
 
   if (!is_TL)
@@ -523,16 +527,6 @@ void Solid::compute_particle_accelerations_velocities_and_positions()
 
         error->one(FLERR, "");
       }
-
-  if ((method_type == "tlcpdi" || method_type == "ulcpdi") && update->method->style == 1)
-    for (int ip = 0; ip < np_local; ip++)
-      for (int ic = 0; ic < nc; ic++)
-        for (int j = 0; j < numneigh_pn.at(ip); j++)
-        {
-          int in = neigh_pn.at(ip)[j];
-
-          xpc[nc*ip + ic] += update->dt*wf_pn_corners[nc*ip + ic][j]*grid->v_update[in];
-        }
 }
 
 void Solid::compute_particle_accelerations_velocities()
@@ -555,6 +549,10 @@ void Solid::compute_particle_accelerations_velocities()
     const Vector3d &delta_a = wf.at(i)*(grid->v_update.at(in) - grid->v.at(in))/update->dt;
     a.at(ip) += delta_a;
     f.at(ip) += mass.at(ip)*delta_a;
+
+    if ((method_type == "tlcpdi" || method_type == "ulcpdi") && update->method->style == 1)
+      for (int ic = 0; ic < nc; ic++)
+        xpc.at(nc*ip + ic) += update->dt*wf.at(nc*i + ic)*grid->v_update.at(in);
   }
 
   if (!is_TL)
@@ -569,16 +567,6 @@ void Solid::compute_particle_accelerations_velocities()
 
         error->one(FLERR, "");
       }
-
-  if ((method_type == "tlcpdi" || method_type == "ulcpdi") && update->method->style == 1)
-    for (int ip = 0; ip < np_local; ip++)
-      for (int ic = 0; ic < nc; ic++)
-        for (int j = 0; j < numneigh_pn.at(ip); j++)
-        {
-          int in = neigh_pn.at(ip)[j];
-
-          xpc[nc*ip + ic] += update->dt*wf_pn_corners[nc*ip + ic][j]*grid->v_update[in];
-        }
 }
 
 void Solid::compute_particle_velocities_and_positions()
@@ -594,6 +582,10 @@ void Solid::compute_particle_velocities_and_positions()
     const Vector3d &delta_v = wf.at(i)*grid->v_update.at(in);
     v_update.at(ip) += delta_v;
     x.at(ip) += update->dt*delta_v;
+
+    if ((method_type == "tlcpdi" || method_type == "ulcpdi") && update->method->style == 1)
+      for (int ic = 0; ic < nc; ic++)
+        xpc.at(nc*ip + ic) += update->dt*wf.at(nc*i + ic)*grid->v_update.at(in);
   }
 
   if (!is_TL)
@@ -608,16 +600,6 @@ void Solid::compute_particle_velocities_and_positions()
 
         error->one(FLERR, "");
       }
-
-  if ((method_type == "tlcpdi" || method_type == "ulcpdi") && update->method->style == 1)
-    for (int ip = 0; ip < np_local; ip++)
-      for (int ic = 0; ic < nc; ic++)
-        for (int j = 0; j < numneigh_pn.at(ip); j++)
-        {
-          int in = neigh_pn.at(ip)[j];
-
-          xpc[nc*ip + ic] += update->dt*wf_pn_corners[nc*ip + ic][j]*grid->v_update[in];
-        }
 }
 
 void Solid::compute_particle_acceleration()
