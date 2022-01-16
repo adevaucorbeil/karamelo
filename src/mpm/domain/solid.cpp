@@ -305,7 +305,7 @@ void Solid::grow(int nparticles)
   wf_np.resize(nnodes);
   wfd_np.resize(nnodes);
 
-  if (mat->temp != nullptr) {
+  if (mat->cp != 0) {
     T.resize(nparticles);
     gamma.resize(nparticles);
     q.resize(nparticles);
@@ -1341,7 +1341,7 @@ void Solid::update_stress()
 
     for (int ip = 0; ip < np_local; ip++) {
 
-      if (mat->temp != nullptr) {
+      if (mat->cp != 0) {
         mat->eos->compute_pressure(pH[ip], ienergy[ip], J[ip], rho[ip],
                                    damage[ip], D[ip], grid->cellsize, T[ip]);
         pH[ip] += mat->temp->compute_thermal_pressure(T[ip]);
@@ -1382,7 +1382,7 @@ void Solid::update_stress()
 	}
       }
 
-      if (mat->temp != nullptr) {
+      if (mat->cp != 0) {
 	flow_stress = SQRT_3_OVER_2 * sigma_dev[ip].norm();
         mat->temp->compute_heat_source(T[ip], gamma[ip], flow_stress,
                                        eff_plastic_strain_rate[ip]);

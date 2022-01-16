@@ -282,8 +282,8 @@ void Material::add_material(vector<string> args) {
 
     double kappa = 0, cp = 0;
     if (args.size() >= 6) {
-      kappa = input->parsev(args[6]);
       cp = input->parsev(args[5]);
+      kappa = input->parsev(args[6]);
     }
 
     materials.push_back(Mat{args[0], type, input->parsev(args[2]),
@@ -759,7 +759,10 @@ Mat::Mat(string id_, int type_, double rho0_, double E_, double nu_, double cp_,
   K = E / (3 * (1 - 2 * nu));
   signal_velocity = sqrt(K / rho0);
   cp = cp_;
-  invcp = 1.0 / cp;
+  if (cp != 0)
+    invcp = 1.0 / cp;
+  else
+    invcp = 0;
   kappa = kappa_;
 }
 
