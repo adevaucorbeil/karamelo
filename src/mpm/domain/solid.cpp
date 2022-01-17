@@ -327,7 +327,7 @@ void Solid::compute_mass_nodes(bool reset)
   }
 }
 
-void Solid::compute_velocity_nodes(bool reset)
+void Solid::compute_velocity_nodes(bool reset, bool APIC)
 {
   if (reset)
   {
@@ -345,12 +345,25 @@ void Solid::compute_velocity_nodes(bool reset)
     if ((!grid->rigid.at(in) || mat->rigid) && grid->mass.at(in))
     {
       double wf_mass = wf.at(i)*mass.at(ip);
-
+      
       Vector3d vtemp = v.at(ip);
-      if (update->method->ge)
-        vtemp += L.at(ip)*(grid->x0.at(in) - x.at(ip));
 
-      grid->v.at(in) += wf_mass*vtemp/grid->mass.at(in);
+      if (APIC)
+      {
+        if (is_TL)
+          vtemp += Fdot.at(ip)*(grid->x0.at(in) - x0.at(ip));
+        else
+          vtemp += L.at(ip)*(grid->x0.at(in) - x.at(ip));
+
+        grid->v.at(in) += vtemp/grid->mass.at(in);
+      }
+      else
+      {
+        if (update->method->ge)
+          vtemp += L.at(ip)*(grid->x0.at(in) - x.at(ip));
+
+        grid->v.at(in) += wf_mass*vtemp/grid->mass.at(in);
+      }
 
       if (grid->rigid.at(in))
         grid->mb.at(in) += wf_mass*v_update.at(ip)/grid->mass.at(in);
@@ -358,130 +371,62 @@ void Solid::compute_velocity_nodes(bool reset)
   }
 }
 
-void Solid::compute_velocity_nodes_APIC(bool reset)
+void Solid::compute_forces_nodes(bool reset, bool internal, bool external, bool TL, bool MLS)
 {
   if (reset)
-    for (Vector3d &v: grid->v)
-      v = Vector3d();
+  {
+    if (internal)
+      for (Vector3d &f: grid->f)
+        f = Vector3d();
+    if (external)
+      for (Vector3d &mb: grid->mb)
+        mb = Vector3d();
+  }
 
   for (int i = 0; i < neigh_n.size(); i++)
   {
     int in = neigh_n.at(i);
     int ip = neigh_p.at(i);
 
-    if ((!grid->rigid.at(in) || mat->rigid) && grid->mass.at(in))
+    if (internal)
     {
-      Vector3d vtemp = v.at(ip);
+      if (TL)
+      {
+        grid->f.at(in) -= vol0PK1.at(ip)*wfd.at(i);
 
-      if (is_TL)
-        vtemp += Fdot.at(ip)*(grid->x0.at(in) - x0.at(ip));
+        if (domain->axisymmetric)
+          grid->f.at(in)[0] -= vol0PK1.at(ip)(2, 2)*wf.at(i)/x0.at(ip)[0];
+      }
       else
-        vtemp += L.at(ip)*(grid->x0.at(in) - x.at(ip));
+      {
+        if (MLS)
+          grid->f.at(in) -= vol.at(ip)*wf.at(i)*sigma.at(ip)*Di*
+                            (grid->x0.at(in) - (is_TL? x0: x).at(ip));
+        else
+          grid->f.at(in) -= vol.at(ip)*sigma.at(ip)*wfd.at(i);
 
-      grid->v.at(in) += vtemp/grid->mass.at(in);
+        if (domain->axisymmetric)
+          grid->f.at(in)[0] -= vol.at(ip)*sigma.at(ip)(2, 2)*wf.at(i)/x.at(ip)[0];
+      }
     }
-  }
-}
 
-void Solid::compute_external_forces_nodes(bool reset)
-{
-  if (reset)
-    for (Vector3d &mb: grid->mb)
-      mb = Vector3d();
-
-  for (int i = 0; i < neigh_n.size(); i++)
-  {
-    int in = neigh_n.at(i);
-    int ip = neigh_p.at(i);
-
-    if (!grid->rigid.at(in) && grid->mass.at(in))
+    if (external && !grid->rigid.at(in))
       grid->mb.at(in) += wf.at(i)*mbp.at(ip);
   }
 }
 
-void Solid::compute_internal_forces_nodes_TL()
+void Solid::compute_particle(bool positions, bool velocities, bool accelerations)
 {
-  for (Vector3d &f: grid->f)
-    f = Vector3d();
-
-  for (int i = 0; i < neigh_n.size(); i++)
+  if (velocities)
+    for (Vector3d &v_update: v_update)
+      v_update = Vector3d();
+  if (accelerations)
   {
-    int in = neigh_n.at(i);
-    int ip = neigh_p.at(i);
-
-    if (!grid->rigid.at(in))
-    {
-      grid->f.at(in) -= vol0PK1.at(ip)*wfd.at(i);
-
-      if (domain->axisymmetric)
-        grid->f.at(in)[0] -= vol0PK1.at(ip)(2, 2)*wf.at(i)/x0.at(ip)[0];
-    }
-  }
-}
-
-void Solid::compute_external_and_internal_forces_nodes_UL(bool reset)
-{
-  if (reset)
-  {
-    for (Vector3d &f: grid->f)
+    for (Vector3d &a: a)
+      a = Vector3d();
+    for (Vector3d &f: f)
       f = Vector3d();
-    for (Vector3d &mb: grid->mb)
-      mb = Vector3d();
   }
-
-  for (int i = 0; i < neigh_n.size(); i++)
-  {
-    int in = neigh_n.at(i);
-    int ip = neigh_p.at(i);
-
-    grid->f.at(in) -= vol.at(ip)*sigma.at(ip)*wfd.at(i);
-
-    if (domain->axisymmetric)
-      grid->f.at(in)[0] -= vol.at(ip)*sigma.at(ip)(2, 2)*wf.at(i)/x.at(ip)[0];
-
-    if (!grid->rigid.at(in))
-    {
-      grid->mb.at(in) += wf.at(i)*mbp.at(ip);
-    }
-  }
-}
-
-void Solid::compute_external_and_internal_forces_nodes_UL_MLS(bool reset)
-{
-  if (reset)
-  {
-    for (Vector3d &f: grid->f)
-      f = Vector3d();
-    for (Vector3d &mb: grid->mb)
-      mb = Vector3d();
-  }
-
-  for (int i = 0; i < neigh_n.size(); i++)
-  {
-    int in = neigh_n.at(i);
-    int ip = neigh_p.at(i);
-
-    grid->f.at(in) -= vol.at(ip)*wf.at(i)*sigma.at(ip)*Di*
-      (grid->x0.at(in) - (is_TL? x0: x).at(ip));
-
-    if (domain->axisymmetric)
-      grid->f.at(in)[0] -= vol.at(ip)*sigma.at(ip)(2, 2)*wf.at(i)/x.at(ip)[0];
-
-    if (!grid->rigid.at(in))
-    {
-      grid->mb.at(in) += wf.at(i)*mbp.at(ip);
-    }
-  }
-}
-
-void Solid::compute_particle_accelerations_velocities_and_positions()
-{
-  for (Vector3d &v_update: v_update)
-    v_update = Vector3d();
-  for (Vector3d &a: a)
-    a = Vector3d();
-  for (Vector3d &f: f)
-    f = Vector3d();
 
   for (int i = 0; i < neigh_n.size(); i++)
   {
@@ -489,19 +434,25 @@ void Solid::compute_particle_accelerations_velocities_and_positions()
     int ip = neigh_p.at(i);
 
     const Vector3d &delta_v = wf.at(i)*grid->v_update.at(in);
-    v_update.at(ip) += delta_v;
-    x.at(ip) += update->dt*delta_v;
+    if (velocities)
+      v_update.at(ip) += delta_v;
+    if (positions)
+      x.at(ip) += update->dt*delta_v;
 
-    const Vector3d &delta_a = wf.at(i)*(grid->v_update.at(in) - grid->v.at(in))/update->dt;
-    a.at(ip) += delta_a;
-    f.at(ip) += mass.at(ip)*delta_a;
+    if (accelerations && !mat->rigid)
+    {
+      const Vector3d &delta_a = wf.at(i)*(grid->v_update.at(in) - grid->v.at(in))/update->dt;
+      a.at(ip) += delta_a;
+      f.at(ip) += mass.at(ip)*delta_a;
+    }
 
-    if ((method_type == "tlcpdi" || method_type == "ulcpdi") && update->method->style == 1)
+    if (velocities && update->method->style == 1 &&
+        (method_type == "tlcpdi" || method_type == "ulcpdi"))
       for (int ic = 0; ic < nc; ic++)
         xpc.at(nc*ip + ic) += update->dt*wf.at(nc*i + ic)*grid->v_update.at(in);
   }
 
-  if (!is_TL)
+  if (positions && !is_TL)
     for (int ip = 0; ip < np_local; ip++)
       if (!domain->inside(x.at(ip)))
       {
@@ -515,158 +466,49 @@ void Solid::compute_particle_accelerations_velocities_and_positions()
       }
 }
 
-void Solid::compute_particle_accelerations_velocities()
+void Solid::update_particle(double alpha, bool positions, bool velocities)
 {
-  for (Vector3d &v_update: v_update)
-    v_update = Vector3d();
-  for (Vector3d &a: a)
-    a = Vector3d();
-  for (Vector3d &f: f)
-    f = Vector3d();
+  for (int ip = 0; ip < np_local; ip++)
+  {
+    if (positions)
+      x.at(ip) += update->dt*v.at(ip);
+    if (velocities)
+      v.at(ip) = (1 - alpha)*v_update.at(ip) + alpha*(v.at(ip) + update->dt*a.at(ip));
+  }
+}
+
+void Solid::compute_rate_deformation_gradient(bool doublemapping, bool TL, bool APIC)
+{
+  if (mat->rigid)
+    return;
+
+  vector<Matrix3d> &gradients = TL? Fdot: L;
+
+  for (Matrix3d &gradient: gradients)
+    gradient = Matrix3d();
+
+  const vector<Vector3d> &vn = doublemapping? grid->v: grid->v_update;
 
   for (int i = 0; i < neigh_n.size(); i++)
   {
     int in = neigh_n.at(i);
     int ip = neigh_p.at(i);
 
-    const Vector3d &delta_v = wf.at(i)*grid->v_update.at(in);
-    v_update.at(ip) += delta_v;
-
-    const Vector3d &delta_a = wf.at(i)*(grid->v_update.at(in) - grid->v.at(in))/update->dt;
-    a.at(ip) += delta_a;
-    f.at(ip) += mass.at(ip)*delta_a;
-
-    if ((method_type == "tlcpdi" || method_type == "ulcpdi") && update->method->style == 1)
-      for (int ic = 0; ic < nc; ic++)
-        xpc.at(nc*ip + ic) += update->dt*wf.at(nc*i + ic)*grid->v_update.at(in);
-  }
-
-  if (!is_TL)
-    for (int ip = 0; ip < np_local; ip++)
-      if (!domain->inside(x.at(ip)))
-      {
-        cout << "Error: Particle " << ip << " left the domain ("
-          << domain->boxlo[0] << "," << domain->boxhi[0] << ","
-          << domain->boxlo[1] << "," << domain->boxhi[1] << ","
-          << domain->boxlo[2] << "," << domain->boxhi[2] << "):\n"
-          << x.at(ip) << endl;
-
-        error->one(FLERR, "");
-      }
-}
-
-void Solid::compute_particle_velocities_and_positions()
-{
-  for (Vector3d &v_update: v_update)
-    v_update = Vector3d();
-
-  for (int i = 0; i < neigh_n.size(); i++)
-  {
-    int in = neigh_n.at(i);
-    int ip = neigh_p.at(i);
-
-    const Vector3d &delta_v = wf.at(i)*grid->v_update.at(in);
-    v_update.at(ip) += delta_v;
-    x.at(ip) += update->dt*delta_v;
-
-    if ((method_type == "tlcpdi" || method_type == "ulcpdi") && update->method->style == 1)
-      for (int ic = 0; ic < nc; ic++)
-        xpc.at(nc*ip + ic) += update->dt*wf.at(nc*i + ic)*grid->v_update.at(in);
-  }
-
-  if (!is_TL)
-    for (int ip = 0; ip < np_local; ip++)
-      if (!domain->inside(x.at(ip)))
-      {
-        cout << "Error: Particle " << ip << " left the domain ("
-          << domain->boxlo[0] << "," << domain->boxhi[0] << ","
-          << domain->boxlo[1] << "," << domain->boxhi[1] << ","
-          << domain->boxlo[2] << "," << domain->boxhi[2] << "):\n"
-          << x.at(ip) << endl;
-
-        error->one(FLERR, "");
-      }
-}
-
-void Solid::compute_particle_acceleration()
-{
-  for (Vector3d &a: a)
-    a = Vector3d();
-  for (Vector3d &f: f)
-    f = Vector3d();
-
-  if (!mat->rigid)
-    for (int i = 0; i < neigh_n.size(); i++)
+    if (APIC)
     {
-      int in = neigh_n.at(i);
-      int ip = neigh_p.at(i);
+      const Vector3d &dx = grid->x.at(in) - grid->x0.at(in);
 
-      const Vector3d &delta_a = wf.at(i)*(grid->v_update.at(in) - grid->v.at(in))/update->dt;
-      a.at(ip) += delta_a;
-      f.at(ip) += mass.at(ip)*delta_a;
+      for (int j = 0; j < domain->dimension; j++)
+        for (int k = 0; k < domain->dimension; k++)
+          gradients.at(ip)(j, k) += vn.at(in)[j]*dx[k]*wf.at(i);
     }
-}
-
-void Solid::update_particle_velocities(double alpha)
-{
-  for (int ip = 0; ip < np_local; ip++)
-    v.at(ip) = (1 - alpha)*v_update.at(ip) + alpha*(v.at(ip) + update->dt*a.at(ip));
-}
-
-void Solid::update_particle_velocities_and_positions(double alpha)
-{
-  for (int ip = 0; ip < np_local; ip++)
-  {
-    v.at(ip) = (1 - alpha)*v_update.at(ip) + alpha*(v.at(ip) + update->dt*a.at(ip));
-    x.at(ip) += update->dt*v.at(ip);
-  }
-}
-
-void Solid::compute_rate_deformation_gradient_TL(bool doublemapping)
-{
-  if (mat->rigid)
-    return;
-
-  for (Matrix3d &Fdot: Fdot)
-    Fdot = Matrix3d();
-
-  const vector<Vector3d> &vn = doublemapping? grid->v: grid->v_update;
-
-  for (int i = 0; i < neigh_n.size(); i++)
-  {
-    int in = neigh_n.at(i);
-    int ip = neigh_p.at(i);
-
-    for (int j = 0; j < domain->dimension; j++)
-      for (int k = 0; k < domain->dimension; k++)
-        Fdot.at(ip)(j, k) += vn.at(in)[j]*wfd.at(i)[k];
+    else
+      for (int j = 0; j < domain->dimension; j++)
+        for (int k = 0; k < domain->dimension; k++)
+          gradients.at(ip)(j, k) += vn.at(in)[j]*wfd.at(i)[k];
 
     if (domain->dimension == 2 && domain->axisymmetric)
-      Fdot.at(ip)(2, 2) += vn.at(in)[0]*wf.at(i)/x0.at(ip)[0];
-  }
-}
-
-void Solid::compute_rate_deformation_gradient_UL(bool doublemapping)
-{
-  if (mat->rigid)
-    return;
-
-  for (Matrix3d &L: L)
-    L = Matrix3d();
-
-  const vector<Vector3d> &vn = doublemapping? grid->v: grid->v_update;
-
-  for (int i = 0; i < neigh_n.size(); i++)
-  {
-    int in = neigh_n.at(i);
-    int ip = neigh_p.at(i);
-
-    for (int j = 0; j < domain->dimension; j++)
-      for (int k = 0; k < domain->dimension; k++)
-        L.at(ip)(j, k) += vn.at(in)[j]*wfd.at(i)[k];
-
-    if (domain->dimension == 2 && domain->axisymmetric)
-      L.at(ip)(2, 2) += vn.at(in)[0]*wf.at(i)/x0.at(ip)[0];
+      gradients.at(ip)(2, 2) += vn.at(in)[0]*wf.at(i)/x0.at(ip)[0];
   }
 }
 
@@ -688,62 +530,6 @@ void Solid::compute_deformation_gradient()
     for (int j = 0; j < domain->dimension; j++)
       for (int k = 0; k < domain->dimension; k++)
         F.at(ip)(j, k) += dx[j]*wfd.at(i)[k];
-  }
-}
-
-void Solid::compute_rate_deformation_gradient_TL_APIC(bool doublemapping)
-{
-  if (mat->rigid)
-    return;
-
-  for (Matrix3d &Fdot: Fdot)
-    Fdot = Matrix3d();
-
-  const vector<Vector3d> &vn = doublemapping? grid->v: grid->v_update;
-
-  for (int i = 0; i < neigh_n.size(); i++)
-  {
-    int in = neigh_n.at(i);
-    int ip = neigh_p.at(i);
-
-    const Vector3d &dx = grid->x.at(in) - grid->x0.at(in);
-
-    for (int j = 0; j < domain->dimension; j++)
-      for (int k = 0; k < domain->dimension; k++)
-        Fdot.at(ip)(j, k) += vn.at(in)[j]*dx[k]*wf.at(i);
-
-    if (domain->dimension == 2 && domain->axisymmetric)
-      Fdot.at(ip)(2, 2) += vn.at(in)[0]*wf.at(i)/x0.at(ip)[0];
-  }
-}
-
-void Solid::compute_rate_deformation_gradient_UL_APIC(bool doublemapping)
-{
-  if (mat->rigid)
-    return;
-
-  for (Matrix3d &L: L)
-    L = Matrix3d();
-
-  const vector<Vector3d> &vn = doublemapping? grid->v: grid->v_update;
-
-  for (int i = 0; i < neigh_n.size(); i++)
-  {
-    int in = neigh_n.at(i);
-    int ip = neigh_p.at(i);
-
-    Matrix3d delta_L;
-
-    const Vector3d &dx = grid->x0.at(in) - x.at(ip);
-
-    for (int j = 0; j < domain->dimension; j++)
-      for (int k = 0; k < domain->dimension; k++)
-        delta_L(j, k) = vn.at(in)[j]*dx[k]*wf.at(i);
-
-    if (domain->dimension == 2 && domain->axisymmetric)
-      delta_L(2, 2) += vn.at(in)[0]*wf.at(i)/x0.at(ip)[0];
-
-    L.at(ip) += delta_L*Di;
   }
 }
 

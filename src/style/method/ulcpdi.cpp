@@ -384,9 +384,9 @@ void ULCPDI::particles_to_grid()
     if (isolid == 0) grid_reset = true;
     else grid_reset = false;
 
-    if (method_type.compare("APIC") == 0) domain->solids[isolid]->compute_velocity_nodes_APIC(grid_reset);
-    else domain->solids[isolid]->compute_velocity_nodes(grid_reset);
-    domain->solids[isolid]->compute_external_and_internal_forces_nodes_UL(grid_reset);
+    if (method_type.compare("APIC") == 0) domain->solids[isolid]->compute_velocity_nodes(grid_reset, true);
+    else domain->solids[isolid]->compute_velocity_nodes(grid_reset, false);
+    domain->solids[isolid]->compute_forces_nodes(grid_reset, true, true, false, false);
     /*compute_thermal_energy_nodes();*/
   }
 }
@@ -407,9 +407,9 @@ void ULCPDI::particles_to_grid_USF_1()
     else grid_reset = false;
 
     if (method_type.compare("APIC") == 0)
-      domain->solids[isolid]->compute_velocity_nodes_APIC(grid_reset);
+      domain->solids[isolid]->compute_velocity_nodes(grid_reset, true);
     else
-      domain->solids[isolid]->compute_velocity_nodes(grid_reset);
+      domain->solids[isolid]->compute_velocity_nodes(grid_reset, false);
   }
 }
 
@@ -421,7 +421,7 @@ void ULCPDI::particles_to_grid_USF_2()
     if (isolid == 0) grid_reset = true;
     else grid_reset = false;
 
-    domain->solids[isolid]->compute_external_and_internal_forces_nodes_UL(grid_reset);
+    domain->solids[isolid]->compute_forces_nodes(grid_reset, true, true, false, false);
     /*compute_thermal_energy_nodes();*/
   }
 }
@@ -434,15 +434,15 @@ void ULCPDI::update_grid_state()
 void ULCPDI::grid_to_points()
 {
   for (int isolid=0; isolid<domain->solids.size(); isolid++) {
-    domain->solids[isolid]->compute_particle_velocities_and_positions();
-    domain->solids[isolid]->compute_particle_acceleration();
+    domain->solids[isolid]->compute_particle(true, true, false);
+    domain->solids[isolid]->compute_particle(false, false, true);
   }
 }
 
 void ULCPDI::advance_particles()
 {
   for (int isolid=0; isolid<domain->solids.size(); isolid++) {
-    domain->solids[isolid]->update_particle_velocities(FLIP);
+    domain->solids[isolid]->update_particle(FLIP, false, true);
   }
 }
 
@@ -456,7 +456,7 @@ void ULCPDI::velocities_to_grid()
 
     if (method_type.compare("APIC") != 0) { 
       //domain->solids[isolid]->compute_mass_nodes(grid_reset);
-      domain->solids[isolid]->compute_velocity_nodes(grid_reset);
+      domain->solids[isolid]->compute_velocity_nodes(grid_reset, false);
     }
     // domain->solids[isolid]->grid->update_grid_positions();
   }
@@ -465,9 +465,9 @@ void ULCPDI::velocities_to_grid()
 void ULCPDI::compute_rate_deformation_gradient(bool doublemapping) {
   for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
     if (update->sub_method_type == Update::SubMethodType::APIC)
-      domain->solids[isolid]->compute_rate_deformation_gradient_UL_APIC(doublemapping);
+      domain->solids[isolid]->compute_rate_deformation_gradient(doublemapping, false, true);
     else
-      domain->solids[isolid]->compute_rate_deformation_gradient_UL(doublemapping);
+      domain->solids[isolid]->compute_rate_deformation_gradient(doublemapping, false, false);
   }
 }
 

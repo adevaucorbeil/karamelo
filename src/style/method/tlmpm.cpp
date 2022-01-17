@@ -340,10 +340,10 @@ void TLMPM::particles_to_grid()
   }
 
   for (int isolid=0; isolid<domain->solids.size(); isolid++){
-    if (update->sub_method_type == Update::SubMethodType::APIC) domain->solids[isolid]->compute_velocity_nodes_APIC(grid_reset);
-    else domain->solids[isolid]->compute_velocity_nodes(grid_reset);
-    domain->solids[isolid]->compute_external_forces_nodes(grid_reset);
-    domain->solids[isolid]->compute_internal_forces_nodes_TL();
+    if (update->sub_method_type == Update::SubMethodType::APIC) domain->solids[isolid]->compute_velocity_nodes(grid_reset, true);
+    else domain->solids[isolid]->compute_velocity_nodes(grid_reset, false);
+    domain->solids[isolid]->compute_forces_nodes(grid_reset, false, true, false, false);
+    domain->solids[isolid]->compute_forces_nodes(grid_reset, true, false, true, false);
 
     if (temp) {
       domain->solids[isolid]->compute_temperature_nodes(grid_reset);
@@ -367,9 +367,9 @@ void TLMPM::particles_to_grid_USF_1()
 
   for (int isolid=0; isolid<domain->solids.size(); isolid++){
     if (update->sub_method_type == Update::SubMethodType::APIC)
-      domain->solids[isolid]->compute_velocity_nodes_APIC(grid_reset);
+      domain->solids[isolid]->compute_velocity_nodes(grid_reset, true);
     else
-      domain->solids[isolid]->compute_velocity_nodes(grid_reset);
+      domain->solids[isolid]->compute_velocity_nodes(grid_reset, false);
 
     if (temp)
       domain->solids[isolid]->compute_temperature_nodes(grid_reset);
@@ -383,8 +383,8 @@ void TLMPM::particles_to_grid_USF_2()
   bool grid_reset = true; // Indicate if the grid quantities have to be reset
 
   for (int isolid=0; isolid<domain->solids.size(); isolid++){
-    domain->solids[isolid]->compute_external_forces_nodes(grid_reset);
-    domain->solids[isolid]->compute_internal_forces_nodes_TL();
+    domain->solids[isolid]->compute_forces_nodes(grid_reset, false, true, false, false);
+    domain->solids[isolid]->compute_forces_nodes(grid_reset, true, false, true, false);
 
     if (temp) {
       domain->solids[isolid]->compute_external_temperature_driving_forces_nodes(grid_reset);
@@ -408,10 +408,10 @@ void TLMPM::grid_to_points()
 {
   for (int isolid=0; isolid<domain->solids.size(); isolid++) {
     if (domain->solids[isolid]->mat->rigid) {
-      domain->solids[isolid]->compute_particle_velocities_and_positions();
-      domain->solids[isolid]->compute_particle_acceleration();
+      domain->solids[isolid]->compute_particle(true, true, false);
+      domain->solids[isolid]->compute_particle(false, false, true);
     } else {
-      domain->solids[isolid]->compute_particle_accelerations_velocities_and_positions();
+      domain->solids[isolid]->compute_particle(true, true, true);
     }
     if (temp) {
       domain->solids[isolid]->update_particle_temperature();
@@ -422,7 +422,7 @@ void TLMPM::grid_to_points()
 void TLMPM::advance_particles()
 {
   for (int isolid=0; isolid<domain->solids.size(); isolid++) {
-    domain->solids[isolid]->update_particle_velocities(update->PIC_FLIP);
+    domain->solids[isolid]->update_particle(update->PIC_FLIP, false, true);
   }
 }
 
@@ -430,9 +430,9 @@ void TLMPM::velocities_to_grid()
 {
   for (int isolid=0; isolid<domain->solids.size(); isolid++) {
     if (update->sub_method_type == Update::SubMethodType::APIC)
-      domain->solids[isolid]->compute_velocity_nodes_APIC(true);
+      domain->solids[isolid]->compute_velocity_nodes(true, true);
     else
-      domain->solids[isolid]->compute_velocity_nodes(true);
+      domain->solids[isolid]->compute_velocity_nodes(true, false);
     if (temp) {
       domain->solids[isolid]->compute_temperature_nodes(true);
     }
@@ -450,11 +450,9 @@ void TLMPM::update_grid_positions()
 void TLMPM::compute_rate_deformation_gradient(bool doublemapping) {
   for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
     if (update->sub_method_type == Update::SubMethodType::APIC)
-      domain->solids[isolid]->compute_rate_deformation_gradient_TL_APIC(
-          doublemapping);
+      domain->solids[isolid]->compute_rate_deformation_gradient(doublemapping, true, true);
     else
-      domain->solids[isolid]->compute_rate_deformation_gradient_TL(
-          doublemapping);
+      domain->solids[isolid]->compute_rate_deformation_gradient(doublemapping, true, false);
   }
 }
 

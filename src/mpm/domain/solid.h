@@ -119,25 +119,14 @@ class Solid : protected Pointers {
   void options(vector<string> *, vector<string>::iterator); ///< Determines the material and temperature schemes used.
   void grow(int);                           ///< Allocate memory for the vectors used for particles or resize them.
 
-  void compute_mass_nodes(bool);                    ///< Compute nodal mass step of the Particle to Grid step of the MPM algorithm.
-  void compute_velocity_nodes(bool);                ///< Compute nodal velocity (via momentum) step of the Particle to Grid step of the MPM algorithm.
-  void compute_velocity_nodes_APIC(bool);           ///< Specific function that computes the nodal velocity (via momentum) when using Affine PIC (APIC).
-  void compute_external_forces_nodes(bool);         ///< Compute external forces step of the Particle to Grid step of the MPM algorithm.
-  void compute_internal_forces_nodes_TL();          ///< Compute internal forces step of the Particle to Grid step of the total Lagrangian MPM algorithm.
-  void compute_external_and_internal_forces_nodes_UL(bool);      ///< Compute both external and internal forces step of the Particle to Grid step of the updated Lagrangian MPM algorithm.
-  void compute_external_and_internal_forces_nodes_UL_MLS(bool);      ///< Compute both external and internal forces step of the Particle to Grid step of the moving least square updated Lagrangian MPM algorithm.
-  void compute_particle_velocities_and_positions(); ///< Compute the particles' temporary velocities and position, part of the Grid to Particles step of the MPM algorithm.
-  void compute_particle_accelerations_velocities_and_positions(); ///< Compute the particles' temporary acceleration, velocities and position, part of the Grid to Particles step of the MPM algorithm.
-  void compute_particle_accelerations_velocities(); ///< Compute the particles' temporary acceleration and velocities, part of the Grid to Particles step of the MPM algorithm.
-  void compute_particle_acceleration();             ///< Update the particles' acceleration
-  void update_particle_velocities(double);          ///< Update the particles' velocities based on either PIC and/or FLIP.
-  void update_particle_velocities_and_positions(double);          ///< Update the particles' velocities based on either PIC and/or FLIP and update the positions using the updated velocities.
+  void compute_mass_nodes(bool reset);                    ///< Compute nodal mass step of the Particle to Grid step of the MPM algorithm.
+  void compute_velocity_nodes(bool reset, bool APIC);                ///< Compute nodal velocity (via momentum) step of the Particle to Grid step of the MPM algorithm.
+  void compute_forces_nodes(bool reset, bool internal, bool external, bool TL, bool MLS);      ///< Compute both external and internal forces step of the Particle to Grid step of the updated Lagrangian MPM algorithm.
+  void compute_particle(bool positions, bool velocities, bool accelerations); ///< Compute the particles' temporary velocities and position, part of the Grid to Particles step of the MPM algorithm.
+  void update_particle(double alpha, bool positions, bool velocities);          ///< Update the particles' velocities based on either PIC and/or FLIP and update the positions using the updated velocities.
                                                     ///< The argument is the ratio \f$\alpha\f$ used between PIC and FLIP.
                                                     ///< \f$\alpha = 0\f$ for pure PIC, \f$\alpha = 1\f$ for pure FLIP.
-  void compute_rate_deformation_gradient_TL(bool);      ///< Compute the time derivative of the deformation matrix for TLMPM, when APIC is not used.
-  void compute_rate_deformation_gradient_TL_APIC(bool); ///< Compute the time derivative of the deformation matrix for TLMPM, when APIC is used.
-  void compute_rate_deformation_gradient_UL(bool);  ///< Compute the time derivative of the deformation matrix for ULMPM, when using Update Stress Last and APIC is not used.
-  void compute_rate_deformation_gradient_UL_APIC(bool); ///< Compute the time derivative of the deformation matrix for ULMPM, when APIC is in use.
+  void compute_rate_deformation_gradient(bool doublemapping, bool TL, bool APIC);      ///< Compute the time derivative of the deformation matrix for TLMPM, when APIC is not used.
   void update_deformation_gradient();               ///< Update the deformation gradient, volume, density, and the necessary strain matrices
   void update_stress();                             ///< Calculate the stress, damage and temperature at each particle, and determine the maximum allowed time step.
   void compute_inertia_tensor();                    ///< Compute the inertia tensor necessary for the Affice PIC.
