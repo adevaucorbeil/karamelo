@@ -64,7 +64,7 @@ FixCuttingTool::FixCuttingTool(MPM *mpm, vector<string> args)
       0) { // If the keyword restart, we are expecting to have read_restart()
            // launched right after.
     igroup = stoi(args[3]);
-    if (igroup == -1) {
+    if (igroup == -1 && universe->me == 0) {
       cout << "Could not find group number " << args[3] << endl;
     }
     groupbit = group->bitmask[igroup];
@@ -82,7 +82,9 @@ FixCuttingTool::FixCuttingTool(MPM *mpm, vector<string> args)
                           group->pon[igroup] + ", " + args[2] +
                           " is a group of " + group->pon[igroup] + ".\n");
   }
-  cout << "Creating new fix FixCuttingTool with ID: " << args[0] << endl;
+  if (universe->me == 0) {
+    cout << "Creating new fix FixCuttingTool with ID: " << args[0] << endl;
+  }
   id = args[0];
   K = input->parsev(args[3]).result(mpm);
 
@@ -176,7 +178,7 @@ void FixCuttingTool::initial_integrate() {
 
   ftot.setZero();
 
-  double r, p, p1, p2, c1p, c2p, fmag;
+  double p, p1, p2, c1p, c2p, fmag;
 
   // cout << "line 1: " << line1[0] << "x + " << line1[1] << "y + " << line1[2] << endl;
   // cout << "line 2: " << line2[0] << "x + " << line2[1] << "y + " << line2[2] << endl;

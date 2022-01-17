@@ -41,7 +41,9 @@ ComputeStrainEnergy::ComputeStrainEnergy(MPM *mpm, vector<string> args) : Comput
     error->all(FLERR, "compute_strain_energy needs to be given a group of particles" + group->pon[igroup] + ", " + args[2] + " is a group of " + group->pon[igroup] + ".\n");
   }
 
-  cout << "Creating new compute ComputeStrainEnergy with ID: " << args[0] << endl;
+  
+  if (universe->me == 0) 
+    cout << "Creating new compute ComputeStrainEnergy with ID: " << args[0] << endl;
   id = args[0];
 
   (*input->vars)[id]=Var(id, 0);
@@ -64,7 +66,6 @@ void ComputeStrainEnergy::compute_value() {
   // cout << "In ComputeStrainEnergy::post_particles_to_grid()\n";
 
   // Go through all the nodes in the group and set b to the right value:
-  double ux, uy, uz;
     
   int solid = group->solid[igroup];
 

@@ -3,6 +3,7 @@
 #include "error.h"
 #include "input.h"
 #include "mpm_math.h"
+#include "universe.h"
 #include "update.h"
 #include "var.h"
 #include <Eigen/Eigen>
@@ -15,7 +16,9 @@ using namespace MPM_Math;
 
 StrengthFluid::StrengthFluid(MPM *mpm, vector<string> args) : Strength(mpm, args)
 {
-  cout << "Initiate StrengthFluid" << endl;
+  if (universe->me == 0) {
+    cout << "Initiate StrengthFluid" << endl;
+  }
 
   if (args.size() < 3) {
     error->all(FLERR, "Error: too few arguments for the strength command.\n");
@@ -30,8 +33,10 @@ StrengthFluid::StrengthFluid(MPM *mpm, vector<string> args) : Strength(mpm, args
 
   //options(&args, args.begin()+3);
   G_ = input->parsev(args[2]);
-  cout << "Fluid strength model:\n";
-  cout << "\tmu: shear viscosity " << G_ << endl;
+  if (universe->me == 0) {
+    cout << "Fluid strength model:\n";
+    cout << "\tmu: shear viscosity " << G_ << endl;
+  }
 }
 
 double StrengthFluid::G(){
@@ -57,6 +62,8 @@ void StrengthFluid::write_restart(ofstream *of) {
 }
 
 void StrengthFluid::read_restart(ifstream *ifr) {
-  cout << "Restart StrengthFluid" << endl;
+  if (universe->me == 0) {
+    cout << "Restart StrengthFluid" << endl;
+  }
   ifr->read(reinterpret_cast<char *>(&G_), sizeof(double));
 }

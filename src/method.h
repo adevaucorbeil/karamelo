@@ -33,14 +33,16 @@ class Method : protected Pointers {
   virtual void setup(vector<string>) = 0;
   virtual void compute_grid_weight_functions_and_gradients() = 0;
   virtual void particles_to_grid() = 0;
+  virtual void particles_to_grid_USF_1() = 0;
+  virtual void particles_to_grid_USF_2() = 0;
   virtual void update_grid_state() = 0;
   virtual void grid_to_points() = 0;
   virtual void advance_particles() = 0;
   virtual void velocities_to_grid() = 0;
   virtual void update_grid_positions() = 0;
-  virtual void compute_rate_deformation_gradient() = 0;
+  virtual void compute_rate_deformation_gradient(bool) = 0;
   virtual void update_deformation_gradient() = 0;
-  virtual void update_stress() = 0;
+  virtual void update_stress(bool) = 0;
   virtual void adjust_dt() = 0;
   virtual void reset() = 0;
   virtual void exchange_particles() = 0;
@@ -48,6 +50,7 @@ class Method : protected Pointers {
   bool is_TL;         ///< true: the method is total Lagrangian; false: it is updated Lagrangian
   bool is_CPDI;       ///< true if the method is a CPDI-like
   bool ge;            ///< true if using enhanced gradient projection
+  bool temp;          ///< true for thermo-mechanical simulations
 };
 
 #endif

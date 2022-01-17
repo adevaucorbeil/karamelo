@@ -13,6 +13,7 @@
 
 #include "dump_grid_gz.h"
 #include "domain.h"
+#include "error.h"
 #include "mpmtype.h"
 #include "output.h"
 #include "solid.h"
@@ -36,7 +37,7 @@ DumpGridGz::DumpGridGz(MPM *mpm, vector<string> args) : Dump(mpm, args) {
 	cout << v << ", ";
       }
       cout << endl;
-      exit(1);
+      error->all(FLERR, "");
     }
   }
 }
@@ -134,6 +135,8 @@ void DumpGridGz::write() {
           dumpstream << g->ntype[i][1] << " ";
         else if (v.compare("ntypez") == 0)
           dumpstream << g->ntype[i][2] << " ";
+        else if (v.compare("T") == 0)
+          dumpstream << g->T[i] << " ";
         else if (v.compare("rigid") == 0)
           dumpstream << g->rigid[i] << " ";
       }

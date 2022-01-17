@@ -24,7 +24,7 @@ using namespace std;
 DeleteParticles::DeleteParticles(MPM *mpm) : Pointers(mpm) {}
 
 Var DeleteParticles::command(vector<string> args) {
-  cout << "In DeleteParticles::command()" << endl;
+  // cout << "In DeleteParticles::command()" << endl;
 
   if (args.size() < 3) error->all(FLERR, "Illegal delete_particles command\n");
 
@@ -42,7 +42,7 @@ Var DeleteParticles::command(vector<string> args) {
 
   // Delete particles flagged in dlist:
   for (int i = 0; i < ns; i++) {
-    if (dlist[i] != NULL) {
+    if (dlist[i] != nullptr) {
       int np_local = domain->solids[i]->np_local;
       double vtot_local = 0;
       double mtot_local = 0;
@@ -69,16 +69,20 @@ Var DeleteParticles::command(vector<string> args) {
       MPI_Allreduce(&vtot_local, &domain->solids[i]->vtot, 1, MPI_DOUBLE, MPI_SUM, universe->uworld);
       MPI_Allreduce(&mtot_local, &domain->solids[i]->mtot, 1, MPI_DOUBLE, MPI_SUM, universe->uworld);
 
-      cout << "Deleting " << domain->np_total - np_local_reduced
-           << " particles from solid " << domain->solids[i]->id << endl;
-      cout << "Solid " << domain->solids[i]->id
-           << " new total volume = " << domain->solids[i]->vtot << endl;
+      if (universe->me == 0) {
+	cout << "Deleting " << domain->np_total - np_local_reduced
+	     << " particles from solid " << domain->solids[i]->id << endl;
+	cout << "Solid " << domain->solids[i]->id
+	     << " new total volume = " << domain->solids[i]->vtot << endl;
+      }
 
       domain->solids[i]->np_local = np_local;
       domain->np_total = np_local_reduced;
 
     }
   }
+
+  delete[] dlist;
 
   return Var(0);
 }

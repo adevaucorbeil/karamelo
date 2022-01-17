@@ -11,26 +11,25 @@
  *
  * ----------------------------------------------------------------------- */
 
-#ifdef DUMP_CLASS
+#ifdef SCHEME_CLASS
 
-DumpStyle(pyplot,DumpPyPlot)
+SchemeStyle(usf,USF)
 
 #else
 
-#ifndef MPM_DUMP_PYPLOT_H
-#define MPM_DUMP_PYPLOT_H
+#ifndef LMP_USF_H
+#define LMP_USF_H
 
-#include "dump.h"
+#include "scheme.h"
+#include "var.h"
+#include <vector>
 
-class DumpPyPlot : public Dump {
+class USF : public Scheme {
  public:
-  DumpPyPlot(MPM *, vector<string>);
-  ~DumpPyPlot();
-
-  void write();
-  //protected:
- private:
-  int xsize, ysize;
+  USF(class MPM *);
+  ~USF() {}
+  void setup();
+  void run(class Var);
 };
 
 #endif

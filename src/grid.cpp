@@ -27,19 +27,8 @@
 #include "universe.h"
 #include "error.h"
 
-
-#ifdef DEBUG
-#include <matplotlibcpp.h>
-namespace plt = matplotlibcpp;
-#endif
-
 using namespace std;
 using namespace Eigen;
-
-#ifdef DEBUG
-#include <matplotlibcpp.h>
-namespace plt = matplotlibcpp;
-#endif
 
 Grid::Grid(MPM *mpm) :
   Pointers(mpm)
@@ -78,24 +67,19 @@ Grid::~Grid() {
 
 void Grid::init(double *solidlo, double *solidhi) {
 
-#ifdef DEBUG
-  std::vector<double> x2plot, y2plot;
-#endif
-
-  cout << "In Grid::init() with proc " << universe->me << "\n";
   bool linear = false;
   bool cubic = false;
   bool bernstein = false;
   bool quadratic = false;
   double h = cellsize;
 
-  if (update->shape_function == update->ShapeFunctions::LINEAR)
+  if (update->shape_function == Update::ShapeFunctions::LINEAR)
     linear = true;
-  if (update->shape_function == update->ShapeFunctions::CUBIC_SPLINE)
+  if (update->shape_function == Update::ShapeFunctions::CUBIC_SPLINE)
     cubic = true;
-  if (update->shape_function == update->ShapeFunctions::QUADRATIC_SPLINE)
+  if (update->shape_function == Update::ShapeFunctions::QUADRATIC_SPLINE)
     quadratic = true;
-  if (update->shape_function == update->ShapeFunctions::BERNSTEIN) {
+  if (update->shape_function == Update::ShapeFunctions::BERNSTEIN) {
     bernstein = true;
     h /= 2;
   }
@@ -150,15 +134,15 @@ void Grid::init(double *solidlo, double *solidhi) {
   }
 
   if (universe->procneigh[0][1] >= 0 &&
-      abs(boundlo[0] + noffsethi_[0] * h - subhi[0]) < 1.0e-12) {
+      abs(boundlo[0] + noffsethi_[0] * h - MIN(subhi[0], boundhi[0])) < 1.0e-12) {
     noffsethi_[0]++;
   }
   if (domain->dimension >= 2 && universe->procneigh[1][1] >= 0 &&
-      abs(boundlo[1] + noffsethi_[1] * h - subhi[1]) < 1.0e-12) {
+      abs(boundlo[1] + noffsethi_[1] * h - MIN(subhi[1], boundhi[1])) < 1.0e-12) {
     noffsethi_[1]++;
   }
   if (domain->dimension == 3 && universe->procneigh[2][1] >= 0 &&
-      abs(boundlo[2] + noffsethi_[2] * h - subhi[2]) < 1.0e-12) {
+      abs(boundlo[2] + noffsethi_[2] * h - MIN(subhi[2], boundhi[2])) < 1.0e-12) {
     noffsethi_[2]++;
   }
   // cout << "2--- proc " << universe->me << " noffsetlo=[" << noffsetlo[0] << "," << noffsetlo[1] << "," << noffsetlo[2] << "]\n";
@@ -185,14 +169,18 @@ void Grid::init(double *solidlo, double *solidhi) {
     nz_global = 1;
   }
 
-  nx = noffsethi_[0] - noffsetlo[0];
+  // Determine the total number of nodes:
+  nnodes = nx_global * ny_global * nz_global;
+  map_ntag.assign(nnodes, -1);
+
+  nx = MAX(0, noffsethi_[0] - noffsetlo[0]);
   if (domain->dimension >= 2) {
-    ny = noffsethi_[1] - noffsetlo[1];
+    ny = MAX(0, noffsethi_[1] - noffsetlo[1]);
   } else {
     ny = 1;
   }
   if (domain->dimension >= 3) {
-    nz = noffsethi_[2] - noffsetlo[2];
+    nz = MAX(0, noffsethi_[2] - noffsetlo[2]);
   } else {
     nz = 1;
   }
@@ -210,20 +198,22 @@ void Grid::init(double *solidlo, double *solidhi) {
       nz++;
   }
 
-  // Create nodes that are inside the local subdomain:
-  nnodes_local = nx * ny * nz;
-  if (nnodes_local < 0) {
-    error->one(FLERR,
-               "Bad domain decomposition, some CPUs do not have any grid "
-               "attached to.\nThis is likely to happen when using TLMPM.\n");
-  }
-  grow(nnodes_local);
-
-  // #ifdef DEBUG
+#ifdef DEBUG
   cout << "proc " << universe->me << " nx=" << nx << "\tny=" << ny << "\tnz=" << nz <<endl;
   cout << "proc " << universe->me << " noffsetlo=[" << noffsetlo[0] << "," << noffsetlo[1] << "," << noffsetlo[2] << "]\n";
   cout << "proc " << universe->me << " noffsethi_=[" << noffsethi_[0] << "," << noffsethi_[1] << "," << noffsethi_[2] << "]\n";
-  // #endif
+#endif
+
+  // Create nodes that are inside the local subdomain:
+  nnodes_local = nx * ny * nz;
+
+  if (!update->method->is_TL && nnodes_local <= 0) {
+    error->one(FLERR,
+	       "Bad domain decomposition, some CPUs do not have any grid "
+	       "attached to.\n");
+  }
+  grow(nnodes_local);
+
 
   int l=0;
   for (int i=0; i<nx; i++){
@@ -262,17 +252,12 @@ void Grid::init(double *solidlo, double *solidhi) {
 	// cout << "ntag = " << ntag[l] << endl;
 
 	// Check if ntag[l] already exists:
-	if(map_ntag.count(ntag[l]) > 0 ) {
+	if(map_ntag[ntag[l]] != -1 ) {
 	  error->all(FLERR, "node " + to_string(ntag[l]) + " already exists.");
 	}
 	map_ntag[ntag[l]] = l;
 	nowner[l] = universe->me;
 
-#ifdef DEBUG
-	plt::annotate(to_string(ntag[l]), x0[l][2], x0[l][1]);
-	x2plot.push_back(x0[l][2]);
-	y2plot.push_back(x0[l][1]);
-#endif
 	l++;
       }
     }
@@ -288,7 +273,9 @@ void Grid::init(double *solidlo, double *solidhi) {
   if (cubic || quadratic || bernstein) delta = 2*h - 1.0e-12;
   else delta = h - 1.0e-12;
 
-  cout << "delta=" << delta << endl;
+  if (universe->me == 0) {
+    cout << "delta=" << delta << endl;
+  }
 
   bool isnt_sublo_boundlo[3] = {true, true, true};
   bool isnt_subhi_boundhi[3] = {true, true, true};
@@ -316,9 +303,6 @@ void Grid::init(double *solidlo, double *solidhi) {
   }
 
   nshared = ns.size();
-#ifdef DEBUG
-  cout << "proc " << universe->me << " has " << ns.size() << " node to send.\n";
-#endif
 
   // Send over the tag and coordinates of the nodes to send:
   int size_n;
@@ -353,7 +337,7 @@ void Grid::init(double *solidlo, double *solidhi) {
                    MPI_STATUS_IGNORE);
 
           if (size_origin != 0) {
-            tagint buf_recv[size_origin];
+            vector<tagint> buf_recv(size_origin);
 
             MPI_Recv(&buf_recv[0], size_origin, MPI_MPM_TAGINT, rproc, 0,
                      MPI_COMM_WORLD, MPI_STATUS_IGNORE);
@@ -373,10 +357,6 @@ void Grid::init(double *solidlo, double *solidhi) {
                                               tmp_shared[i_recv].x[2], delta)) {
           gnodes.push_back(tmp_shared[i_recv]);
           origin_gnodes.push_back(tmp_shared[i_recv].tag);
-#ifdef DEBUG
-          cout << "proc " << universe->me << " received node "
-               << tmp_shared[i_recv].tag << " from proc " << sproc << ".\n";
-#endif
         }
       }
 
@@ -392,23 +372,9 @@ void Grid::init(double *solidlo, double *solidhi) {
     }
   }
 
-#ifdef DEBUG
-  // Check that the dest_nshared map is correct:
-  for (auto it = dest_nshared.cbegin(); it != dest_nshared.cend(); ++it) {
-    cout << "On proc " << universe->me << " proc " << it->first
-         << " should receive information of nodes ";
-    for (auto ii : it->second) {
-      cout << ii << ", ";
-    }
-    cout << endl;
-  }
-#endif
 
   nnodes_ghost = gnodes.size();
 
-#ifdef DEBUG
-  cout << "proc " << universe->me << " has " << nnodes_ghost << " ghost nodes.\n";
-#endif
   grow(nnodes_local + nnodes_ghost);
 
   // Copy ghost nodes at the end of the local nodes:
@@ -419,7 +385,7 @@ void Grid::init(double *solidlo, double *solidhi) {
     ntag[i] = gnodes[in].tag;
 
     // Check if ntag[l] already exists:
-    if(map_ntag.count(ntag[i]) > 0 ) {
+    if(map_ntag[ntag[i]] != -1 ) {
       cout << "x0[" << ntag[i] << "]=[" << gnodes[in].x[0] << "," << gnodes[in].x[1] << "," << gnodes[in].x[2] << "]\t exits in x=[" << x0[map_ntag[i]][0] << "," << x0[map_ntag[i]][1] << "," << x0[map_ntag[i]][2] << "]\n";
       error->all(FLERR, "node " + to_string(ntag[i]) + " already exists.");
     }
@@ -439,26 +405,18 @@ void Grid::init(double *solidlo, double *solidhi) {
     f[i].setZero();
     mb[i].setZero();
     mass[i] = 0;
-
-#ifdef DEBUG
-    x2plot.push_back(x0[i][2]);
-    y2plot.push_back(x0[i][1]);
-    plt::annotate(to_string(ntag[i]), x0[i][2], x0[i][1]);
-#endif
   }
 
-#ifdef DEBUG
-  plt::plot(x2plot, y2plot, "g+");
-#endif
-  
-  // Determine the total number of nodes:
-  bigint nnodes_temp = nnodes_local;
-  MPI_Allreduce(&nnodes_temp, &nnodes, 1, MPI_MPM_BIGINT, MPI_SUM, universe->uworld);
+  // // Determine the total number of nodes:
+  // bigint nnodes_temp = nnodes_local;
+  // MPI_Allreduce(&nnodes_temp, &nnodes, 1, MPI_MPM_BIGINT, MPI_SUM, universe->uworld);
 }
 
 void Grid::setup(string cs){
   cellsize = input->parsev(cs);
-  cout << "Set grid cellsize to " << cellsize << endl;
+  if (universe->me == 0) {
+    cout << "Set grid cellsize to " << cellsize << endl;
+  }
 }
 
 void Grid::grow(int nn){
@@ -481,6 +439,10 @@ void Grid::grow(int nn){
   ntype.resize(nn);
   rigid.resize(nn);
 
+  T.resize(nn);
+  T_update.resize(nn);
+  Qext.resize(nn);
+  Qint.resize(nn);
 }
 
 void Grid::update_grid_velocities()
@@ -494,8 +456,8 @@ void Grid::update_grid_velocities()
       if (mass[i] != 0) v_update[i] = v[i] + update->dt * (f[i] + mb[i])/mass[i];
       else v_update[i] = v[i];
     } else {
-      v_update[i] = mb[i];
-      mb[i].setZero();
+      v_update[i] = v[i];
+      //mb[i].setZero();
     }
     // if (update->ntimestep>450)
     // if (isnan(v_update[i](0)))
@@ -511,7 +473,155 @@ void Grid::update_grid_positions()
   }
 }
 
+
 void Grid::reduce_mass_ghost_nodes() {
+  vector<vector<double>> tmp_mass_vect(universe->nprocs);
+  vector<vector<double>> buf_recv_vect(universe->nprocs);
+  //vector<double> tmp_mass;
+  int j, size_r, size_s, jproc;
+
+  // 1. Pack mass of nodes to be sent back to their owner:
+  for (int iproc = 0; iproc < universe->nprocs; iproc++) {
+    if (iproc == universe->me) {
+      for (auto idest = dest_nshared.cbegin(); idest != dest_nshared.cend();
+           ++idest) {
+        jproc = idest->first;
+	size_r = idest->second.size();
+
+        buf_recv_vect[jproc].resize(size_r);
+      }
+    } else {
+      // Check if iproc is listed in origin_nshared:
+
+      if (origin_nshared.count(iproc)) {
+        // me should send the list of masses of all the ghost nodes gotten from
+        // iproc to iproc.
+        size_s = origin_nshared[iproc].size();
+
+        // Create the list of masses:
+
+        tmp_mass_vect[iproc].resize(size_s);
+        for (int is = 0; is < size_s; is++) {
+          j = origin_nshared[iproc][is];
+
+          if (map_ntag[j] != -1) {
+            tmp_mass_vect[iproc][is] = mass[map_ntag[j]];
+          } else {
+	    error->one(FLERR, "Grid node j does not exist on this CPU.\n");
+	  }
+        }
+      }      
+    }
+  }
+
+  // 2. New send and receive
+  for (int i = 0; i < universe->sendnrecv.size(); i++) {
+    if (universe->sendnrecv[i][0] == 0) {
+      // Receive
+      jproc = universe->sendnrecv[i][1];
+
+      MPI_Recv(&buf_recv_vect[jproc][0], dest_nshared[jproc].size(), MPI_DOUBLE,
+               jproc, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+    } else {
+      // Send
+      jproc = universe->sendnrecv[i][1];
+      MPI_Send(tmp_mass_vect[jproc].data(), origin_nshared[jproc].size(),
+               MPI_DOUBLE, jproc, 0, MPI_COMM_WORLD);
+    }
+  }
+
+  // 3. Add the received masses to that of the nodes:
+  for (auto idest = dest_nshared.cbegin(); idest != dest_nshared.cend();
+       ++idest) {
+    for (int is = 0; is < idest->second.size(); is++) {
+      j = idest->second[is];
+      if (map_ntag[j] != -1) {
+	mass[map_ntag[j]] += buf_recv_vect[idest->first][is];
+      } else {
+	error->one(FLERR, "Grid node j does not exist on this CPU.\n");
+      }
+    }
+  }
+
+  // Share the updated masses:
+  // 1. Pack
+  for (int iproc = 0; iproc < universe->nprocs; iproc++) {
+    if (iproc == universe->me) {
+
+      for (auto idest = dest_nshared.cbegin(); idest != dest_nshared.cend();
+           ++idest) {
+        // Send the updated list of masses to jproc:
+
+        jproc = idest->first;
+        size_s = idest->second.size();
+
+	// cout << "proc " << universe->me << " sends size to " << jproc << endl;
+
+        // Create the list of masses:
+        tmp_mass_vect[jproc].resize(size_s);
+        for (int is = 0; is < size_s; is++) {
+          j = idest->second[is];
+
+          if (map_ntag[j] != -1) {
+            tmp_mass_vect[jproc][is] = mass[map_ntag[j]];
+          } else {
+	    error->one(FLERR, "Grid node j does not exist on this CPU.\n");
+	  }
+        }
+      }
+    } else {
+
+      // Check if iproc listed in origin_nshared:
+
+      if (origin_nshared.count(iproc)) {
+        // Receive the updated list of masses from iproc
+
+	// cout << "proc " << universe->me << " receives size from " << iproc << endl;
+
+	size_r = origin_nshared[iproc].size();
+        buf_recv_vect[iproc].resize(size_r);
+      }
+    }
+  }
+
+
+  // 2. New send and receive
+  for (int i = 0; i < universe->sendnrecv.size(); i++) {
+    if (universe->sendnrecv[i][0] == 0) {
+      // Receive
+      jproc = universe->sendnrecv[i][1];
+
+      MPI_Send(tmp_mass_vect[jproc].data(), dest_nshared[jproc].size(), MPI_DOUBLE,
+               jproc, 0, MPI_COMM_WORLD);
+    } else {
+      // Send
+      jproc = universe->sendnrecv[i][1];
+      MPI_Recv(&buf_recv_vect[jproc][0], origin_nshared[jproc].size(),
+	       MPI_DOUBLE, jproc, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+    }
+  }
+
+  // 3. Overwrite the nodes' mass with the received values
+  for (int iproc = 0; iproc < universe->nprocs; iproc++) {
+    if (iproc != universe->me) {
+      // Check if iproc listed in origin_nshared:
+
+      if (origin_nshared.count(iproc)) {
+	size_r = origin_nshared[iproc].size();
+        for (int is = 0; is < size_r; is++) {
+	  j = origin_nshared[iproc][is];
+
+          if (map_ntag[j] != -1) {
+            mass[map_ntag[j]] = buf_recv_vect[iproc][is];
+          }
+        }
+      }
+    }
+  }
+}
+
+
+void Grid::reduce_mass_ghost_nodes_old() {
   vector<double> tmp_mass;
   int j, size_r, size_s, jproc;
 
@@ -525,21 +635,9 @@ void Grid::reduce_mass_ghost_nodes() {
 
         jproc = idest->first;
 
-	// cout << "proc " << universe->me << " receives size from " << jproc << endl;
-        // MPI_Recv(&size_r, 1, MPI_INT, jproc, 0, universe->uworld,
-        //          MPI_STATUS_IGNORE);
-
-        // if (size_r != idest->second.size()) {
-        //   error->one(
-        //       FLERR,
-        //       "proc " + to_string(iproc) +
-        //           " received a conflicting number of shared nodes from proc " +
-        //           to_string(jproc) + "\n");
-        // }
-
 	size_r = idest->second.size();
 
-        double buf_recv[size_r];
+        vector<double> buf_recv(size_r);
 
 	// cout << "proc " << universe->me << " receives masses from " << jproc << endl;
         MPI_Recv(&buf_recv[0], size_r, MPI_DOUBLE, jproc, 0, MPI_COMM_WORLD,
@@ -550,9 +648,8 @@ void Grid::reduce_mass_ghost_nodes() {
         for (int is = 0; is < size_r; is++) {
           j = idest->second[is];
 
-          if (map_ntag.count(j)) {
+          if (map_ntag[j] != -1) {
             mass[map_ntag[j]] += buf_recv[is];
-            // cout << "mass[" << j << "]=" << mass[map_ntag[j]] << "\n";
           }
         }
       }
@@ -574,7 +671,7 @@ void Grid::reduce_mass_ghost_nodes() {
         for (int is = 0; is < size_s; is++) {
           j = origin_nshared[iproc][is];
 
-          if (map_ntag.count(j)) {
+          if (map_ntag[j] != -1) {
             tmp_mass[is] = mass[map_ntag[j]];
           }
         }
@@ -605,7 +702,7 @@ void Grid::reduce_mass_ghost_nodes() {
         for (int is = 0; is < size_s; is++) {
           j = idest->second[is];
 
-          if (map_ntag.count(j)) {
+          if (map_ntag[j] != -1) {
             tmp_mass[is] = mass[map_ntag[j]];
           }
         }
@@ -625,7 +722,7 @@ void Grid::reduce_mass_ghost_nodes() {
         //          MPI_STATUS_IGNORE);
 
 	size_r = origin_nshared[iproc].size();
-        double buf_recv[size_r];
+        vector<double> buf_recv(size_r);
 
 	// cout << "proc " << universe->me << " receives masses from " << iproc << endl;
         MPI_Recv(&buf_recv[0], size_r, MPI_DOUBLE, iproc, 0, MPI_COMM_WORLD,
@@ -636,7 +733,7 @@ void Grid::reduce_mass_ghost_nodes() {
         for (int is = 0; is < size_r; is++) {
 	  j = origin_nshared[iproc][is];
 
-          if (map_ntag.count(j)) {
+          if (map_ntag[j] != -1) {
             mass[map_ntag[j]] = buf_recv[is];
             // cout << "mass[" << j << "]=" << mass[map_ntag[j]] << "\n";
           }
@@ -674,7 +771,7 @@ void Grid::reduce_rigid_ghost_nodes() {
 
 	size_r = idest->second.size();
 
-        int buf_recv[size_r];
+        vector<int> buf_recv(size_r);
 
 	// cout << "proc " << universe->me << " receives rigids from " << jproc << endl;
         MPI_Recv(&buf_recv[0], size_r, MPI_INT, jproc, 0, MPI_COMM_WORLD,
@@ -685,7 +782,7 @@ void Grid::reduce_rigid_ghost_nodes() {
         for (int is = 0; is < size_r; is++) {
           j = idest->second[is];
 
-          if (map_ntag.count(j)) {
+          if (map_ntag[j] != -1) {
 	    if (buf_recv[is] && !rigid[map_ntag[j]])
 	      rigid[map_ntag[j]] = true;
           }
@@ -709,7 +806,7 @@ void Grid::reduce_rigid_ghost_nodes() {
         for (int is = 0; is < size_s; is++) {
           j = origin_nshared[iproc][is];
 
-          if (map_ntag.count(j)) {
+          if (map_ntag[j] != -1) {
             tmp_rigid[is] = (int) rigid[map_ntag[j]]; // Populate tmp_rigid with the value of rigid
           }
         }
@@ -740,7 +837,7 @@ void Grid::reduce_rigid_ghost_nodes() {
         for (int is = 0; is < size_s; is++) {
           j = idest->second[is];
 
-          if (map_ntag.count(j)) {
+          if (map_ntag[j] != -1) {
             tmp_rigid[is] = (int) rigid[map_ntag[j]];
           }
         }
@@ -760,7 +857,7 @@ void Grid::reduce_rigid_ghost_nodes() {
         //          MPI_STATUS_IGNORE);
 
 	size_r = origin_nshared[iproc].size();
-        int buf_recv[size_r];
+        vector<int> buf_recv(size_r);
 
 	// cout << "proc " << universe->me << " receives rigids from " << iproc << endl;
         MPI_Recv(&buf_recv[0], size_r, MPI_INT, iproc, 0, MPI_COMM_WORLD,
@@ -771,7 +868,7 @@ void Grid::reduce_rigid_ghost_nodes() {
         for (int is = 0; is < size_r; is++) {
 	  j = origin_nshared[iproc][is];
 
-          if (map_ntag.count(j)) {
+          if (map_ntag[j] != -1) {
 	    if (buf_recv[is] && !rigid[map_ntag[j]])
 	      rigid[map_ntag[j]] = true;
           }
@@ -781,91 +878,268 @@ void Grid::reduce_rigid_ghost_nodes() {
   }
 }
 
-void Grid::reduce_mass_ghost_nodes_old() {
-  tagint in, j, ng;
-  vector<tagint> tmp_shared;
-  vector<double> tmp_mass, tmp_mass_reduced;
+void Grid::reduce_ghost_nodes(bool reduce_v, bool reduce_forces, bool temp) {
+  vector<vector<double>> tmp_vect(universe->nprocs);
+  vector<vector<double>> buf_recv_vect(universe->nprocs);
+  //vector<double> tmp_mass;
+  int j, k, m, size_r, size_s, jproc, nsend;
 
-  // MPI_Barrier(universe->uworld);
+  nsend = (3 + temp) * (reduce_v + 2*reduce_forces);
 
-  for (int proc = 0; proc < universe->nprocs; proc++) {
-    if (proc == universe->me) {
-      ng = nshared;
+  // 1. Pack mass of nodes to be sent back to their owner:
+  for (int iproc = 0; iproc < universe->nprocs; iproc++) {
+    if (iproc == universe->me) {
+      for (auto idest = dest_nshared.cbegin(); idest != dest_nshared.cend();
+           ++idest) {
+        jproc = idest->first;
+	size_r = idest->second.size();
+
+        buf_recv_vect[jproc].resize(nsend * size_r);
+      }
     } else {
-      ng = 0;
+      // Check if iproc is listed in origin_nshared:
+
+      if (origin_nshared.count(iproc)) {
+        // me should send the list of masses of all the ghost nodes gotten from
+        // iproc to iproc.
+        size_s = origin_nshared[iproc].size();
+
+        // Create the list of masses:
+
+        tmp_vect[iproc].resize(nsend * size_s);
+
+	k = 0;
+
+	for (int is = 0; is < size_s; is++) {
+          j = origin_nshared[iproc][is];
+
+          if (map_ntag[j] != -1) {
+            m = map_ntag[j];
+            //k = nsend * is;
+	    if (reduce_v) {
+	      tmp_vect[iproc][k++] = v[m][0];
+	      tmp_vect[iproc][k++] = v[m][1];
+	      tmp_vect[iproc][k++] = v[m][2];
+	    }
+            if (reduce_forces) {
+              tmp_vect[iproc][k++] = f[m][0];
+              tmp_vect[iproc][k++] = f[m][1];
+              tmp_vect[iproc][k++] = f[m][2];
+
+              tmp_vect[iproc][k++] = mb[m][0];
+              tmp_vect[iproc][k++] = mb[m][1];
+              tmp_vect[iproc][k++] = mb[m][2];
+            }
+
+	    if (temp) {
+	      if (reduce_v)
+		tmp_vect[iproc][k++] = T[m];
+	      if (reduce_forces) {
+		tmp_vect[iproc][k++] = Qint[m];
+		tmp_vect[iproc][k++] = Qext[m];
+	      }	      
+	    }
+          } else {
+	    error->one(FLERR, "Grid node j does not exist on this CPU.\n");
+	  }
+        }
+      }      
     }
+  }
 
-    MPI_Bcast(&ng, 1, MPI_INT, proc, universe->uworld);
+  // 2. New send and receive
+  for (int i = 0; i < universe->sendnrecv.size(); i++) {
+    if (universe->sendnrecv[i][0] == 0) {
+      // Receive
+      jproc = universe->sendnrecv[i][1];
 
-    if (proc == universe->me) {
-      tmp_shared = shared;
+      MPI_Recv(&buf_recv_vect[jproc][0], nsend * dest_nshared[jproc].size(), MPI_DOUBLE,
+               jproc, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
     } else {
-      tmp_shared.resize(ng);
+      // Send
+      jproc = universe->sendnrecv[i][1];
+      MPI_Send(tmp_vect[jproc].data(), nsend * origin_nshared[jproc].size(),
+               MPI_DOUBLE, jproc, 0, MPI_COMM_WORLD);
     }
+  }
 
-    tmp_mass.assign(ng, 0);
-    tmp_mass_reduced.assign(ng, 0);
+  // 3. Add the received masses to that of the nodes:
+  for (auto idest = dest_nshared.cbegin(); idest != dest_nshared.cend();
+       ++idest) {
 
-    MPI_Bcast(tmp_shared.data(), ng, MPI_MPM_TAGINT, proc, universe->uworld);
+    k = 0;
 
-    for (int is = 0; is < ng; is++) {
-      j = tmp_shared[is];
+    for (int is = 0; is < idest->second.size(); is++) {
+      j = idest->second[is];
+      if (map_ntag[j] != -1) {
+	//mass[map_ntag[j]] += buf_recv_vect[idest->first][is];
+	m = map_ntag[j];
+	//k = nsend * is;
+	if (reduce_v) {
+	  v[m][0] += buf_recv_vect[idest->first][k++];
+	  v[m][1] += buf_recv_vect[idest->first][k++];
+	  v[m][2] += buf_recv_vect[idest->first][k++];
+	}
+	if (reduce_forces) {
+	  f[m][0] += buf_recv_vect[idest->first][k++];
+	  f[m][1] += buf_recv_vect[idest->first][k++];
+	  f[m][2] += buf_recv_vect[idest->first][k++];
 
-      if (map_ntag.count(j)) {
-        tmp_mass[is] = mass[map_ntag[j]];
+	  mb[m][0] += buf_recv_vect[idest->first][k++];
+	  mb[m][1] += buf_recv_vect[idest->first][k++];
+	  mb[m][2] += buf_recv_vect[idest->first][k++];
+	}
+
+	if (temp) {
+	  if (reduce_v)
+	    T[m] += buf_recv_vect[idest->first][k++];
+	  if (reduce_forces) {
+	    Qint[m] += buf_recv_vect[idest->first][k++];
+	    Qext[m] += buf_recv_vect[idest->first][k++];
+	  }
+	}
+      } else {
+	error->one(FLERR, "Grid node j does not exist on this CPU.\n");
       }
     }
+  }
 
-    MPI_Allreduce(tmp_mass.data(), tmp_mass_reduced.data(), ng, MPI_DOUBLE,
-                  MPI_SUM, universe->uworld);
+  // Share the updated masses:
+  // 1. Pack
+  for (int iproc = 0; iproc < universe->nprocs; iproc++) {
+    if (iproc == universe->me) {
 
-    for (int is = 0; is < ng; is++) {
-      j = tmp_shared[is];
+      for (auto idest = dest_nshared.cbegin(); idest != dest_nshared.cend();
+           ++idest) {
+        // Send the updated list of masses to jproc:
 
-      if (map_ntag.count(j)) {
-        mass[map_ntag[j]] = tmp_mass_reduced[is];
-        // cout << "mass[" << map_ntag[j] << "]=" << tmp_mass_reduced[is] <<
-        // "\n";
+        jproc = idest->first;
+        size_s = idest->second.size();
+
+	// cout << "proc " << universe->me << " sends size to " << jproc << endl;
+
+        // Create the list of masses:
+        tmp_vect[jproc].resize(nsend * size_s);
+
+	k = 0;
+        for (int is = 0; is < size_s; is++) {
+          j = idest->second[is];
+
+          if (map_ntag[j] != -1) {
+            m = map_ntag[j];
+            //k = nsend * is;
+	    if (reduce_v) {
+	      tmp_vect[jproc][k++] = v[m][0];
+	      tmp_vect[jproc][k++] = v[m][1];
+	      tmp_vect[jproc][k++] = v[m][2];
+	    }
+            if (reduce_forces) {
+              tmp_vect[jproc][k++] = f[m][0];
+              tmp_vect[jproc][k++] = f[m][1];
+              tmp_vect[jproc][k++] = f[m][2];
+
+              tmp_vect[jproc][k++] = mb[m][0];
+              tmp_vect[jproc][k++] = mb[m][1];
+              tmp_vect[jproc][k++] = mb[m][2];
+            }
+
+	    if (temp) {
+	      if (reduce_v)
+		tmp_vect[jproc][k++] = T[m];
+	      if (reduce_forces) {
+		tmp_vect[jproc][k++] = Qint[m];
+		tmp_vect[jproc][k++] = Qext[m];
+	      }	      
+	    }
+          } else {
+	    error->one(FLERR, "Grid node j does not exist on this CPU.\n");
+	  }
+        }
+      }
+    } else {
+
+      // Check if iproc listed in origin_nshared:
+
+      if (origin_nshared.count(iproc)) {
+        // Receive the updated list of masses from iproc
+
+	// cout << "proc " << universe->me << " receives size from " << iproc << endl;
+        buf_recv_vect[iproc].resize(nsend * origin_nshared[iproc].size());
       }
     }
+  }
 
-    // // cout << "------------------\n";
 
-    // for (int is=0; is<ng; is++) {
-    //   if (proc == universe->me) {
-    // 	// Position in array of the shared node: shared[is]
-    // 	j = shared[is];
-    //   }
+  // 2. New send and receive
+  for (int i = 0; i < universe->sendnrecv.size(); i++) {
+    if (universe->sendnrecv[i][0] == 0) {
+      // Receive
+      jproc = universe->sendnrecv[i][1];
 
-    //   // MPI_Barrier(universe->uworld);
-    //   MPI_Bcast(&j,1,MPI_MPM_TAGINT,proc,universe->uworld);
+      MPI_Send(tmp_vect[jproc].data(), nsend * dest_nshared[jproc].size(),
+               MPI_DOUBLE, jproc, 0, MPI_COMM_WORLD);
+    } else {
+      // Send
+      jproc = universe->sendnrecv[i][1];
+      MPI_Recv(&buf_recv_vect[jproc][0], nsend * origin_nshared[jproc].size(),
+               MPI_DOUBLE, jproc, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+    }
+  }
 
-    //   if (map_ntag.count(j)) in = map_ntag[j];
-    //   else in = -1;
+  // 3. Overwrite the nodes' mass with the received values
+  for (int iproc = 0; iproc < universe->nprocs; iproc++) {
+    if (iproc != universe->me) {
+      // Check if iproc listed in origin_nshared:
 
-    //   if (in >= 0) {
-    // 	mass_local = mass[in];
-    //   } else {
-    // 	mass_local = 0;
-    //   }
+      if (origin_nshared.count(iproc)) {
+	k = 0;
+        for (int is = 0; is < origin_nshared[iproc].size(); is++) {
+	  j = origin_nshared[iproc][is];
 
-    //   MPI_Allreduce(&mass_local, &mass_reduced, 1, MPI_DOUBLE, MPI_SUM,
-    //   universe->uworld); if (in >= 0) {
-    // 	//mass[in] = mass_reduced;
-    // 	cout << "mass[" << in << "]=" << mass_reduced << endl;
-    //   }
-    // }
+          if (map_ntag[j] != -1) {
+	    m = map_ntag[j];
+            //k = nsend * is;
+	    if (reduce_v) {
+	      v[m][0] = buf_recv_vect[iproc][k++];
+	      v[m][1] = buf_recv_vect[iproc][k++];
+	      v[m][2] = buf_recv_vect[iproc][k++];
+	    }
+            if (reduce_forces) {
+              f[m][0] = buf_recv_vect[iproc][k++];
+              f[m][1] = buf_recv_vect[iproc][k++];
+              f[m][2] = buf_recv_vect[iproc][k++];
+
+              mb[m][0] = buf_recv_vect[iproc][k++];
+              mb[m][1] = buf_recv_vect[iproc][k++];
+              mb[m][2] = buf_recv_vect[iproc][k++];
+            }
+
+            if (temp) {
+	      if (reduce_v)
+		T[m] = buf_recv_vect[iproc][k++];
+              if (reduce_forces) {
+                Qint[m] = buf_recv_vect[iproc][k++];
+                Qext[m] = buf_recv_vect[iproc][k++];
+              }
+            }
+          } else {
+            error->one(FLERR, "Grid node j does not exist on this CPU.\n");
+          }
+        }
+      }
+    }
   }
 }
 
-void Grid::reduce_ghost_nodes(bool only_v) {
+void Grid::reduce_ghost_nodes_old(bool only_v, bool temp) {
   vector<double> tmp;
   int j, k, m, size_r, size_s, jproc, nsend;
 
-  if (only_v)
-    nsend = 1 * 3;
-  else
-    nsend = 3 * 3;
+  if (only_v) {
+    nsend = 3 + temp;
+  } else {
+    nsend = (3 + temp) * 3;
+  }
 
   // Some ghost nodes' mass on the CPU that owns them:
   for (int iproc = 0; iproc < universe->nprocs; iproc++) {
@@ -879,7 +1153,7 @@ void Grid::reduce_ghost_nodes(bool only_v) {
 
         size_r = idest->second.size();
 
-        double buf_recv[nsend * size_r];
+        vector<double> buf_recv(nsend * size_r);
 
         // cout << "proc " << universe->me << " receives masses from " << jproc
         // << endl;
@@ -888,23 +1162,32 @@ void Grid::reduce_ghost_nodes(bool only_v) {
 
         // Add the received data to that of the nodes:
 
+	k = 0;
         for (int is = 0; is < size_r; is++) {
           j = idest->second[is];
 
-          if (map_ntag.count(j)) {
+          if (map_ntag[j] != -1) {
             m = map_ntag[j];
-            k = nsend * is;
-            v[m][0] += buf_recv[k];
-            v[m][1] += buf_recv[k + 1];
-            v[m][2] += buf_recv[k + 2];
+            //k = nsend * is;
+            v[m][0] += buf_recv[k++];
+            v[m][1] += buf_recv[k++];
+            v[m][2] += buf_recv[k++];
             if (!only_v) {
-              f[m][0] += buf_recv[k + 3];
-              f[m][1] += buf_recv[k + 4];
-              f[m][2] += buf_recv[k + 5];
+              f[m][0] += buf_recv[k++];
+              f[m][1] += buf_recv[k++];
+              f[m][2] += buf_recv[k++];
 
-              mb[m][0] += buf_recv[k + 6];
-              mb[m][1] += buf_recv[k + 7];
-              mb[m][2] += buf_recv[k + 8];
+              mb[m][0] += buf_recv[k++];
+              mb[m][1] += buf_recv[k++];
+              mb[m][2] += buf_recv[k++];
+            }
+
+            if (temp) {
+              T[m] += buf_recv[k++];
+              if (!only_v) {
+                Qint[m] += buf_recv[k++];
+                Qext[m] += buf_recv[k++];
+              }
             }
           }
         }
@@ -924,24 +1207,33 @@ void Grid::reduce_ghost_nodes(bool only_v) {
         // Create the list of data:
 
         tmp.assign(nsend * size_s, 0);
+	k = 0;
         for (int is = 0; is < size_s; is++) {
           j = origin_nshared[iproc][is];
 
-          if (map_ntag.count(j)) {
+          if (map_ntag[j] != -1) {
             m = map_ntag[j];
-            k = nsend * is;
-            tmp[k] = v[m][0];
-            tmp[k + 1] = v[m][1];
-            tmp[k + 2] = v[m][2];
+            //k = nsend * is;
+            tmp[k++] = v[m][0];
+            tmp[k++] = v[m][1];
+            tmp[k++] = v[m][2];
             if (!only_v) {
-              tmp[k + 3] = f[m][0];
-              tmp[k + 4] = f[m][1];
-              tmp[k + 5] = f[m][2];
+              tmp[k++] = f[m][0];
+              tmp[k++] = f[m][1];
+              tmp[k++] = f[m][2];
 
-              tmp[k + 6] = mb[m][0];
-              tmp[k + 7] = mb[m][1];
-              tmp[k + 8] = mb[m][2];
+              tmp[k++] = mb[m][0];
+              tmp[k++] = mb[m][1];
+              tmp[k++] = mb[m][2];
             }
+
+	    if (temp) {
+	      tmp[k++] = T[m];
+	      if (!only_v) {
+		tmp[k++] = Qint[m];
+		tmp[k++] = Qext[m];
+	      }	      
+	    }
           }
         }
 
@@ -970,24 +1262,33 @@ void Grid::reduce_ghost_nodes(bool only_v) {
         // Create the list of data:
 
         tmp.assign(nsend * size_s, 0);
+	k = 0;
         for (int is = 0; is < size_s; is++) {
           j = idest->second[is];
 
-          if (map_ntag.count(j)) {
+          if (map_ntag[j] != -1) {
             m = map_ntag[j];
-            k = nsend * is;
-            tmp[k] = v[m][0];
-            tmp[k + 1] = v[m][1];
-            tmp[k + 2] = v[m][2];
+            //k = nsend * is;
+            tmp[k++] = v[m][0];
+            tmp[k++] = v[m][1];
+            tmp[k++] = v[m][2];
             if (!only_v) {
-              tmp[k + 3] = f[m][0];
-              tmp[k + 4] = f[m][1];
-              tmp[k + 5] = f[m][2];
+              tmp[k++] = f[m][0];
+              tmp[k++] = f[m][1];
+              tmp[k++] = f[m][2];
 
-              tmp[k + 6] = mb[m][0];
-              tmp[k + 7] = mb[m][1];
-              tmp[k + 8] = mb[m][2];
+              tmp[k++] = mb[m][0];
+              tmp[k++] = mb[m][1];
+              tmp[k++] = mb[m][2];
             }
+
+	    if (temp) {
+	      tmp[k++] = T[m];
+	      if (!only_v) {
+		tmp[k++] = Qint[m];
+		tmp[k++] = Qext[m];
+	      }	      
+	    }
           }
         }
 
@@ -1008,7 +1309,7 @@ void Grid::reduce_ghost_nodes(bool only_v) {
         //          MPI_STATUS_IGNORE);
 
         size_r = origin_nshared[iproc].size();
-        double buf_recv[nsend * size_r];
+        vector<double> buf_recv(nsend * size_r);
 
         // cout << "proc " << universe->me << " receives masses from " << iproc
         // << endl;
@@ -1016,24 +1317,32 @@ void Grid::reduce_ghost_nodes(bool only_v) {
                  MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
         // Update the local data with the received values
-
+	k = 0;
         for (int is = 0; is < size_r; is++) {
           j = origin_nshared[iproc][is];
 
-          if (map_ntag.count(j)) {
+          if (map_ntag[j] != -1) {
             m = map_ntag[j];
-            k = nsend * is;
-            v[m][0] = buf_recv[k];
-            v[m][1] = buf_recv[k + 1];
-            v[m][2] = buf_recv[k + 2];
+            //k = nsend * is;
+            v[m][0] = buf_recv[k++];
+            v[m][1] = buf_recv[k++];
+            v[m][2] = buf_recv[k++];
             if (!only_v) {
-              f[m][0] = buf_recv[k + 3];
-              f[m][1] = buf_recv[k + 4];
-              f[m][2] = buf_recv[k + 5];
+              f[m][0] = buf_recv[k++];
+              f[m][1] = buf_recv[k++];
+              f[m][2] = buf_recv[k++];
 
-              mb[m][0] = buf_recv[k + 6];
-              mb[m][1] = buf_recv[k + 7];
-              mb[m][2] = buf_recv[k + 8];
+              mb[m][0] = buf_recv[k++];
+              mb[m][1] = buf_recv[k++];
+              mb[m][2] = buf_recv[k++];
+            }
+
+            if (temp) {
+              T[m] = buf_recv[k++];
+              if (!only_v) {
+                Qint[m] = buf_recv[k++];
+                Qext[m] = buf_recv[k++];
+              }
             }
           }
         }
@@ -1042,83 +1351,12 @@ void Grid::reduce_ghost_nodes(bool only_v) {
   }
 }
 
-void Grid::reduce_ghost_nodes_old(bool only_v) {
-  tagint in, j, ng;
-  vector<tagint> tmp_shared;
-  vector<double> buf, buf_reduced;
-  int nsend, k, m;
-
-  if (only_v)
-    nsend = 1 * 3;
-  else
-    nsend = 3 * 3;
-
-  // MPI_Barrier(universe->uworld);
-
-  for (int proc = 0; proc < universe->nprocs; proc++) {
-    if (proc == universe->me) {
-      ng = nshared;
-    } else {
-      ng = 0;
-    }
-
-    MPI_Bcast(&ng, 1, MPI_INT, proc, universe->uworld);
-
-    if (proc == universe->me) {
-      tmp_shared = shared;
-    } else {
-      tmp_shared.resize(ng);
-    }
-
-    MPI_Bcast(tmp_shared.data(), ng, MPI_MPM_TAGINT, proc, universe->uworld);
-
-    buf.assign(nsend * ng, 0);
-    buf_reduced.assign(nsend * ng, 0);
-
-    for (int is = 0; is < ng; is++) {
-      j = tmp_shared[is];
-
-      if (map_ntag.count(j)) {
-        m = map_ntag[j];
-        k = nsend * is;
-        buf[k] = v[m][0];
-        buf[k + 1] = v[m][1];
-        buf[k + 2] = v[m][2];
-        if (!only_v) {
-          buf[k + 3] = f[m][0];
-          buf[k + 4] = f[m][1];
-          buf[k + 5] = f[m][2];
-
-          buf[k + 6] = mb[m][0];
-          buf[k + 7] = mb[m][1];
-          buf[k + 8] = mb[m][2];
-        }
-      }
-    }
-
-    MPI_Allreduce(buf.data(), buf_reduced.data(), nsend * ng, MPI_DOUBLE,
-                  MPI_SUM, universe->uworld);
-
-    for (int is = 0; is < ng; is++) {
-      j = tmp_shared[is];
-
-      if (map_ntag.count(j)) {
-        m = map_ntag[j];
-        k = nsend * is;
-        v[m][0] = buf_reduced[k];
-        v[m][1] = buf_reduced[k + 1];
-        v[m][2] = buf_reduced[k + 2];
-        if (!only_v) {
-          f[m][0] = buf_reduced[k + 3];
-          f[m][1] = buf_reduced[k + 4];
-          f[m][2] = buf_reduced[k + 5];
-
-          mb[m][0] = buf_reduced[k + 6];
-          mb[m][1] = buf_reduced[k + 7];
-          mb[m][2] = buf_reduced[k + 8];
-        }
-      }
-    }
+void Grid::update_grid_temperature() {
+  // Update all particles (even the ghost to not have to communicate the result)
+  for (int i = 0; i < nnodes_local + nnodes_ghost; i++) {
+    if (mass[i] != 0)
+      T_update[i] = T[i] + update->dt * (Qint[i] + Qext[i]) / mass[i];
+    else
+      T_update[i] = T[i];
   }
 }
-

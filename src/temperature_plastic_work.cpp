@@ -3,6 +3,7 @@
 #include "error.h"
 #include "input.h"
 #include "mpm_math.h"
+#include "universe.h"
 #include "update.h"
 #include "var.h"
 #include <Eigen/Eigen>
@@ -16,7 +17,7 @@ using namespace MPM_Math;
 
 TemperaturePlasticWork::TemperaturePlasticWork(MPM *mpm, vector<string> args) : Temperature(mpm, args)
 {
-  cout << "Initiate TemperaturePlasticWork" << endl;
+  // cout << "Initiate TemperaturePlasticWork" << endl;
 
   if (args.size() < 3) {
     error->all(FLERR, "Error: too few arguments for the strength command.\n");
@@ -25,48 +26,63 @@ TemperaturePlasticWork::TemperaturePlasticWork(MPM *mpm, vector<string> args) : 
   if (args[2].compare("restart") ==
       0) { // If the keyword restart, we are expecting to have read_restart()
            // launched right after.
-    chi, rho, cp, alpha = 0;
+    chi, cp_, kappa_, alpha, T0, Tm = 0;
     return;
   }
 
   if (args.size() < Nargs) {
-    cout << "Error: too few arguments for the temperature command" << endl;
-    cout << usage;
-    exit(1);
+    error->all(FLERR, "Error: not enough arguments.\n" + usage);
   }
   if (args.size() > Nargs) {
-    cout << "Error: too many arguments for the temperature command" << endl;
-    cout << usage;
-    exit(1);
+    error->all(FLERR, "Error: too many arguments.\n" + usage);
   }
 
   //options(&args, args.begin()+3);
   chi = input->parsev(args[2]);
-  rho = input->parsev(args[3]);
-  cp = input->parsev(args[4]);
+  cp_ = input->parsev(args[3]);
+  kappa_ = input->parsev(args[4]);
+  alpha = input->parsev(args[5]);
+  T0 = input->parsev(args[6]);
+  Tm = input->parsev(args[7]);
 
-  cout << "Plastic work material temperature model:\n";
-  cout << "\tTaylor-Quinney coefficient chi:" << chi << endl;
-  cout << "\tdensity rho:" << rho << endl;
-  cout << "\tSpecific heat at constant pressure cp:" << cp << endl;
-  alpha = chi/(rho*cp);
+  if (universe->me == 0) {
+    cout << "Plastic work material temperature model:\n";
+    cout << "\tTaylor-Quinney coefficient chi:" << chi << endl;
+    cout << "\tSpecific heat at constant pressure cp:" << cp_ << endl;
+    cout << "\tThermal conductivity kappa:" << kappa_ << endl;
+    cout << "\tCoefficient of thermal expansion alpha:" << alpha << endl;
+    cout << "\tInitial temperature T0:" << T0 << endl;
+    cout << "\tMelting temperature Tm:" << Tm << endl;
+  }
 }
 
-void TemperaturePlasticWork::compute_temperature(double &T, const double &flow_stress, const double &plastic_strain_increment)
+void TemperaturePlasticWork::compute_heat_source(double T, double &gamma, const double &flow_stress, const double &eff_plastic_strain_rate)
 {
-  T += alpha*flow_stress*plastic_strain_increment;
+  if (T < Tm)
+    gamma = chi * flow_stress * eff_plastic_strain_rate;
+  else
+    gamma = 0;
+}
+
+double TemperaturePlasticWork::compute_thermal_pressure(double T) {
+  return alpha * (T0 - T);
 }
 
 void TemperaturePlasticWork::write_restart(ofstream *of) {
   of->write(reinterpret_cast<const char *>(&chi), sizeof(double));
-  of->write(reinterpret_cast<const char *>(&rho), sizeof(double));
-  of->write(reinterpret_cast<const char *>(&cp), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&kappa_), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&cp_), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&alpha), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&T0), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&Tm), sizeof(double));
 }
 
 void TemperaturePlasticWork::read_restart(ifstream *ifr) {
-  cout << "Restart TemperaturePlasticWork" << endl;
+  // cout << "Restart TemperaturePlasticWork" << endl;
   ifr->read(reinterpret_cast<char *>(&chi), sizeof(double));
-  ifr->read(reinterpret_cast<char *>(&rho), sizeof(double));
-  ifr->read(reinterpret_cast<char *>(&cp), sizeof(double));
-  alpha = chi/(rho*cp);
+  ifr->read(reinterpret_cast<char *>(&kappa_), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&cp_), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&alpha), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&T0), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&Tm), sizeof(double));
 }

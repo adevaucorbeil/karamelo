@@ -6,21 +6,22 @@
  * Copyright (2019) Alban de Vaucorbeil, alban.devaucorbeil@monash.edu
  * Materials Science and Engineering, Monash University
  * Clayton VIC 3800, Australia
-
+ * 
  * This software is distributed under the GNU General Public License.
  *
  * ----------------------------------------------------------------------- */
 
-#include <iostream>
 #include "update.h"
-#include "scheme.h"
-#include "method.h"
-#include "input.h"
-#include "var.h"
-#include "style_scheme.h"
-#include "style_method.h"
-#include <vector>
 #include "error.h"
+#include "input.h"
+#include "method.h"
+#include "scheme.h"
+#include "style_method.h"
+#include "style_scheme.h"
+#include "universe.h"
+#include "var.h"
+#include <iostream>
+#include <vector>
 
 using namespace std;
 
@@ -43,7 +44,7 @@ Update::Update(MPM *mpm) : Pointers(mpm)
   scheme_args.push_back("musl");
   create_scheme(scheme_args);
 
-  method = NULL;
+  method = nullptr;
   shape_function = ShapeFunctions::LINEAR;
   sub_method_type = SubMethodType::FLIP;
   PIC_FLIP = 0.99;
@@ -128,28 +129,32 @@ void Update::create_method(vector<string> args){
 
   bool isFLIP = false;
   n++;
-  // Method used: PIC, FLIP or APIC:
+  // Method used: PIC, FLIP, APIC, or ASFLIP:
   if (map_sub_method_type.count(args[n]) > 0) {
     sub_method_type = map_sub_method_type.at(args[n]);
     if (sub_method_type == SubMethodType::PIC)
       PIC_FLIP = 0;
-    else if (sub_method_type == SubMethodType::FLIP) {
+    else if (sub_method_type == SubMethodType::FLIP ||
+             sub_method_type == SubMethodType::AFLIP ||
+             sub_method_type == SubMethodType::ASFLIP) {
       isFLIP = true;
       if (args.size() < 4) {
 	error->all(FLERR, "Illegal modify_method command: not enough arguments.\n");
       }
     }
   } else {
-    error->all(FLERR, "Error: method type " + args[n] + " not understood. Expect: PIC, FLIP or APIC\n");
+    error->all(
+        FLERR,
+        "Error: method type " + args[n] +
+            " not understood. Expect: PIC, FLIP, APIC, AFLIP, or ASFLIP\n");
   }
 
   n++;
   
   // Check if the shape function given in the inputfile is recognized.
-  if (args.size() > 1 + isFLIP) {
+  if (args.size() > n + isFLIP) {
     if (map_shape_functions.count(args[n]) > 0) {
       shape_function = map_shape_functions.at(args[n]);
-      cout << "Setting up " << args[n] << " basis functions\n";
       n++;
     } else {
       error->all(FLERR, "Illegal method_method argument: form function of type \033[1;31m" + args[2] + "\033[0m is unknown. Available options are:  \033[1;32mlinear\033[0m, \033[1;32mcubic-spline\033[0m, \033[1;32mquadratic-spline\033[0m, \033[1;32mBernstein-quadratic\033[0m.\n");
@@ -160,6 +165,31 @@ void Update::create_method(vector<string> args){
     PIC_FLIP = input->parsev(args[n]);
     n++;
   }
+
+  if (args.size() >= n + 1) {
+    if (args[n].compare("thermo-mechanical") == 0) {
+      method->temp = true;
+    } else if (args[n].compare("mechanical") == 0) {
+      method->temp = false;
+    } else {
+      error->all(
+          FLERR,
+          "Illegal modify_method command: keyword " + args[n] +
+              " unknown. Expected \"thermo-mechanical\" or \"mechanical\".\n");
+    }
+  }
+  n++;
+
+  if (args.size() >= n + 1) {
+    if (args[n].compare("gradient-enhanced") == 0) {
+      method->ge = true;
+    } else {
+      error->all(FLERR,
+                 "Illegal modify_method command: keyword " + args[n] +
+                     " unknown. Expected \"gradient-enhanced\" or nothing.\n");
+    }
+  }
+  n++;
 
   if (n < args.size()) {
     additional_args = vector<string>(args.begin() + n, args.end());
@@ -194,6 +224,7 @@ int Update::update_timestep()
 void Update::write_restart(ofstream *of) {
   // The informations to be stored in the restart file are:
   // - The method type
+  // - If temperature is involved (method->temp)
   // - The scheme style
   // - FLIP and/or PIC, or APIC
   // - PIC_FLIP
@@ -209,6 +240,9 @@ void Update::write_restart(ofstream *of) {
   of->write(reinterpret_cast<const char *>(&N), sizeof(size_t));
   of->write(reinterpret_cast<const char *>(method_type.c_str()), N);
 
+  // method->temp
+  of->write(reinterpret_cast<const char *>(&method->temp), sizeof(bool));
+
   // Scheme style:
   N = scheme_style.size();
   of->write(reinterpret_cast<const char *>(&N), sizeof(size_t));
@@ -219,7 +253,7 @@ void Update::write_restart(ofstream *of) {
 
   // PIC_FLIP
   of->write(reinterpret_cast<const char *>(&PIC_FLIP), sizeof(double));
-  cout << "PIC_FLIP=" << PIC_FLIP << endl;
+  // cout << "PIC_FLIP=" << PIC_FLIP << endl;
 
   // The type of shape function:
   of->write(reinterpret_cast<const char *>(&shape_function), sizeof(int));
@@ -268,7 +302,7 @@ void Update::read_restart(ifstream *ifr) {
   ifr->read(reinterpret_cast<char *>(&N), sizeof(size_t));
   method_type.resize(N);
   ifr->read(reinterpret_cast<char *>(&method_type[0]), N);
-  cout << "method_type=" << method_type << endl;
+  // cout << "method_type=" << method_type << endl;
 
   if (0) return;
 
@@ -284,12 +318,15 @@ void Update::read_restart(ifstream *ifr) {
   }
 
 
+  // method->temp
+  ifr->read(reinterpret_cast<char *>(&method->temp), sizeof(bool));
+
   // Scheme style:
   N = 0;
   ifr->read(reinterpret_cast<char *>(&N), sizeof(size_t));
   scheme_style.resize(N);
   ifr->read(reinterpret_cast<char *>(&scheme_style[0]), N);
-  cout << "scheme_style=" << scheme_style << endl;
+  // cout << "scheme_style=" << scheme_style << endl;
 
   if (0) return;
 
@@ -305,15 +342,15 @@ void Update::read_restart(ifstream *ifr) {
   }
   // Sub-method type (PIC and/or FLIP or APIC):
   ifr->read(reinterpret_cast<char *>(&sub_method_type), sizeof(int));
-  cout << "sub_method_type=" << sub_method_type << endl;
+  // cout << "sub_method_type=" << sub_method_type << endl;
 
   // PIC_FLIP
   ifr->read(reinterpret_cast<char *>(&PIC_FLIP), sizeof(double));
-  cout << "PIC_FLIP=" << PIC_FLIP << endl;
+  // cout << "PIC_FLIP=" << PIC_FLIP << endl;
 
   // The type of shape function:
   ifr->read(reinterpret_cast<char *>(&shape_function), sizeof(int));
-  cout << "shape_functions=" << shape_function << endl;
+  // cout << "shape_functions=" << shape_function << endl;
 
   // additional_args: 
   ifr->read(reinterpret_cast<char *>(&N), sizeof(size_t));
@@ -323,32 +360,32 @@ void Update::read_restart(ifstream *ifr) {
     ifr->read(reinterpret_cast<char *>(&Ns), sizeof(size_t));
     additional_args[i].resize(Ns);
     ifr->read(reinterpret_cast<char *>(&additional_args[i][0]), Ns);
-    cout << "additional_args[" << i << "]=" << additional_args[i] << endl;
+    // cout << "additional_args[" << i << "]=" << additional_args[i] << endl;
   }
   method->setup(additional_args);
 
   // atime:
   ifr->read(reinterpret_cast<char *>(&atime), sizeof(double));
-  cout << "atime=" << atime << endl;
+  // cout << "atime=" << atime << endl;
   (*input->vars)["time"] = Var("time", atime);
 
   // Timestep:
   ifr->read(reinterpret_cast<char *>(&ntimestep), sizeof(bigint));
-  cout << "ntimestep=" << ntimestep << endl;
+  // cout << "ntimestep=" << ntimestep << endl;
   atimestep = ntimestep;
   (*input->vars)["timestep"] = Var("timestep", ntimestep);
 
   // dt:
   ifr->read(reinterpret_cast<char *>(&dt), sizeof(double));
-  cout << "dt=" << dt << endl;
+  // cout << "dt=" << dt << endl;
 
   // dt_factor:
   ifr->read(reinterpret_cast<char *>(&dt_factor), sizeof(double));
-  cout << "dt_factor=" << dt_factor << endl;
+  // cout << "dt_factor=" << dt_factor << endl;
 
   // dt_contant:
   ifr->read(reinterpret_cast<char *>(&dt_constant), sizeof(bool));
-  cout << "dt_constant=" << dt_constant << endl;
+  // cout << "dt_constant=" << dt_constant << endl;
 
   if (dt_constant)
     (*input->vars)["dt"] = Var("dt", dt);

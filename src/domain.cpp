@@ -24,10 +24,6 @@
 
 using namespace std;
 
-#ifdef DEBUG
-#include <matplotlibcpp.h>
-namespace plt = matplotlibcpp;
-#endif
 
 /*! Initializes variables and generates the map of known region types (at compile time).
  */
@@ -37,6 +33,7 @@ Domain::Domain(MPM *mpm) : Pointers(mpm)
   created      = false;
   axisymmetric = false;
   np_total     = 0;
+  np_local     = 0;
 
   boxlo[0] = boxlo[1] = boxlo[2] = 0;
   boxhi[0] = boxhi[1] = boxhi[2] = 0;
@@ -44,6 +41,7 @@ Domain::Domain(MPM *mpm) : Pointers(mpm)
   region_map = new RegionCreatorMap();
   // solid_map = new SolidCreatorMap();
 
+  grid = nullptr;
 
 #define REGION_CLASS
 #define RegionStyle(key, Class) (*region_map)[#key] = &region_creator<Class>;
@@ -72,7 +70,7 @@ Domain::~Domain()
   delete region_map;
   // delete solid_map;
 
-  if (!update->method->is_TL) delete grid;
+  if (grid) delete grid;
 }
 
 /* ----------------------------------------------------------------------
@@ -196,6 +194,158 @@ bool Domain::inside_subdomain(double x, double y, double z) {
   return true;
 }
 
+/*! Determine the CPU owning the particle with x, y, z coordinates.
+ */
+int Domain::which_CPU_owns_me(double x, double y, double z) {
+  if (x < sublo[0]) {
+    // target[0] = -1;
+    if (y < sublo[1]) {
+      // target[1] = -1;
+      if (z < sublo[2]) {
+        // target[2] = -1;
+	// target = {-1, -1, -1};
+	return universe->procneigh[2][0] - 1 - universe->procgrid[1];
+      } else if (z > subhi[2]) {
+        // target[2] = 1;
+	// target = {-1, -1, 1};
+	return universe->procneigh[2][1] - 1 - universe->procgrid[1];
+      } else {
+        // target[2] = 0;
+	// target = {-1, -1, 0};
+	return universe->procneigh[1][0] - 1;
+      }
+    } else if (y > subhi[1]) {
+      // target[1] = 1;
+      if (z < sublo[2]) {
+        // target[2] = -1;
+	// target = {-1, 1, -1};
+	return universe->procneigh[2][1] - 1 + universe->procgrid[1];
+      } else if (z > subhi[2]) {
+        // target[2] = 1;
+	// target = {-1, 1, 1};
+	return universe->procneigh[2][1] - 1 + universe->procgrid[1];
+      } else {
+        // target[2] = 0;
+	// target = {-1, 1, 0};
+	return universe->procneigh[1][1] - 1;
+      }
+    } else {
+      // target[1] = 0;
+      if (z < sublo[2]) {
+        // target[2] = -1;
+	// target = {-1, 0, -1};
+	return universe->procneigh[2][0] - 1;
+      } else if (z > subhi[2]) {
+        // target[2] = 1;
+	// target = {-1, 0, 1};
+	return universe->procneigh[2][1] - 1;
+      } else {
+        // target[2] = 0;
+	// target = {-1, 0, 0};
+	return universe->procneigh[0][0];
+      }
+    }
+  } else if (x > subhi[0]) {
+    // target[0] = 1;
+    if (y < sublo[1]) {
+      // target[1] = -1;
+      if (z < sublo[2]) {
+        // target[2] = -1;
+	// target = {1, -1, -1};
+	return universe->procneigh[2][0] + 1 - universe->procgrid[1];
+      } else if (z > subhi[2]) {
+        // target[2] = 1;
+	// target = {1, -1, 1};
+	return universe->procneigh[2][1] + 1 - universe->procgrid[1];
+      } else {
+        // target[2] = 0;
+	// target = {1, -1, 0};
+	return universe->procneigh[1][0] + 1;
+      }
+    } else if (y > subhi[1]) {
+      // target[1] = 1;
+      if (z < sublo[2]) {
+        // target[2] = -1;
+	// target = {1, 1, -1};
+	return universe->procneigh[2][0] + 1 + universe->procgrid[1];
+      } else if (z > subhi[2]) {
+        // target[2] = 1;
+	// target = {1, 1, 1};
+	return universe->procneigh[2][1] + 1 + universe->procgrid[1];
+      } else {
+        // target[2] = 0;
+	// target = {1, 1, 0};
+	return universe->procneigh[1][1] + 1;
+      }
+    } else {
+      // target[1] = 0;
+      if (z < sublo[2]) {
+        // target[2] = -1;
+	// target = {1, 0, -1};
+	return universe->procneigh[2][0] + 1;
+      } else if (z > subhi[2]) {
+        // target[2] = 1;
+	// target = {1, 0, 1};
+	return universe->procneigh[2][1] + 1;
+      } else {
+        // target[2] = 0;
+	// target = {1, 0, 0};
+	return universe->procneigh[0][1];
+      }
+    }
+  } else {
+    // target[0] = 0;
+    if (y < sublo[1]) {
+      // target[1] = -1;
+      if (z < sublo[2]) {
+        // target[2] = -1;
+	// target = {0, -1, -1};
+	return universe->procneigh[2][0] - universe->procgrid[1];
+      } else if (z > subhi[2]) {
+        // target[2] = 1;
+	// target = {0, -1, 1};
+	return universe->procneigh[2][1] - universe->procgrid[1];
+      } else {
+        // target[2] = 0;
+	// target = {0, -1, 0};
+	return universe->procneigh[1][0];
+      }
+    } else if (y > subhi[1]) {
+      // target[1] = 1;
+      if (z < sublo[2]) {
+        // target[2] = -1;
+	// target = {0, 1, -1};
+	return universe->procneigh[2][0] + universe->procgrid[1];
+      } else if (z > subhi[2]) {
+        // target[2] = 1;
+	// target = {0, 1, 1};
+	return universe->procneigh[2][1] + universe->procgrid[1];
+      } else {
+        // target[2] = 0;
+	// target = {0, 1, 0};
+	return universe->procneigh[1][1];
+      }
+    } else {
+      // target[1] = 0;
+      if (z < sublo[2]) {
+        // target[2] = -1;
+	// target = {0, 0, -1};
+	return universe->procneigh[2][0];
+      } else if (z > subhi[2]) {
+        // target[2] = 1;
+	// target = {0, 0, 1};
+	return universe->procneigh[2][1];
+      } else {
+        // target[2] = 0;
+	// target = {0, 0, 0};
+	return universe->me;
+      }
+    }
+  }
+
+  return -1;
+}
+
 
 /*! inside = 1 if x,y,z is inside or on the boundary of this proc domain, extended by h.
  *  inside = 0 if x,y,z is outside and not on boundary of this proc domain, extended by h.
@@ -246,7 +396,7 @@ void Domain::set_local_box() {
 void Domain::create_domain(vector<string> args) {
 
   // Check that a method is available:
-  if (update->method == NULL)
+  if (update->method == nullptr)
     error->all(FLERR, "Error: a method should be defined before calling create_domain()!\n");
 
   if (!update->method->is_TL) grid = new Grid(mpm);
@@ -363,7 +513,8 @@ void Domain::set_dimension(vector<string> args) {
     dimension = dim;
   }
 
-  cout << "Set dimension to " << dim << endl;
+  if (universe->me == 0)
+    cout << "Set dimension to " << dim << endl;
 
   if (args.size() < Nargs_dimension.find(args[m])->second) {
     error->all(FLERR, "Error: not enough arguments.\n"
@@ -439,11 +590,11 @@ void Domain::write_restart(ofstream* of){
 
   // Write  np_total:
   of->write(reinterpret_cast<const char *>(&np_total), sizeof(tagint));
-  cout << "np_total=" << np_total << endl;
+  // cout << "np_total=" << np_total << endl;
   
   if (!update->method->is_TL) {
     of->write(reinterpret_cast<const char *>(&grid->cellsize), sizeof(double));
-    cout << "cellsize=" << grid->cellsize << endl;
+    // cout << "cellsize=" << grid->cellsize << endl;
   }
 
   // Save regions:
@@ -454,13 +605,13 @@ void Domain::write_restart(ofstream* of){
     size_t Nr = regions[i]->id.size();
     of->write(reinterpret_cast<const char *>(&Nr), sizeof(size_t));
     of->write(reinterpret_cast<const char *>(regions[i]->id.c_str()), Nr);
-    cout << "id = " << regions[i]->id << endl;
+    // cout << "id = " << regions[i]->id << endl;
 
     Nr = regions[i]->style.size();
     of->write(reinterpret_cast<const char *>(&Nr), sizeof(size_t));
     of->write(reinterpret_cast<const char *>(regions[i]->style.c_str()), Nr);
     regions[i]->write_restart(of);
-    cout << "style = " << regions[i]->style << endl;
+    // cout << "style = " << regions[i]->style << endl;
   }
 
   // Save materials:
@@ -474,7 +625,7 @@ void Domain::write_restart(ofstream* of){
     size_t Ns = solids[i]->id.size();
     of->write(reinterpret_cast<const char *>(&Ns), sizeof(size_t));
     of->write(reinterpret_cast<const char *>(solids[i]->id.c_str()), Ns);
-    cout << "id = " << solids[i]->id << endl;
+    // cout << "id = " << solids[i]->id << endl;
     solids[i]->write_restart(of);
   }
 }
@@ -484,33 +635,33 @@ void Domain::write_restart(ofstream* of){
 void Domain::read_restart(ifstream *ifr) {
   // Write boxlo:
   ifr->read(reinterpret_cast<char *>(&boxlo[0]), 3*sizeof(double));
-  cout << "boxlo=[" << boxlo[0] << "," << boxlo[1] << "," << boxlo[2] << endl;
+  // cout << "boxlo=[" << boxlo[0] << "," << boxlo[1] << "," << boxlo[2] << endl;
   
   // Write boxhi:
   ifr->read(reinterpret_cast<char *>(&boxhi[0]), 3*sizeof(double));
-  cout << "boxhi=[" << boxhi[0] << "," << boxhi[1] << "," << boxhi[2] << endl;
+  // cout << "boxhi=[" << boxhi[0] << "," << boxhi[1] << "," << boxhi[2] << endl;
 
   // Write sublo:
   ifr->read(reinterpret_cast<char *>(&sublo[0]), 3*sizeof(double));
-  cout << "sublo=[" << sublo[0] << "," << sublo[1] << "," << sublo[2] << endl;
+  // cout << "sublo=[" << sublo[0] << "," << sublo[1] << "," << sublo[2] << endl;
 
   // Write subhi:
   ifr->read(reinterpret_cast<char *>(&subhi[0]), 3*sizeof(double));
-  cout << "subhi=[" << subhi[0] << "," << subhi[1] << "," << subhi[2] << endl;
+  // cout << "subhi=[" << subhi[0] << "," << subhi[1] << "," << subhi[2] << endl;
 
   // Write axisymmetric:
   ifr->read(reinterpret_cast<char *>(&axisymmetric), sizeof(bool));
-  cout << "axisymmetric=" << axisymmetric << endl;
+  // cout << "axisymmetric=" << axisymmetric << endl;
 
   // Write  np_total:
   ifr->read(reinterpret_cast<char *>(&np_total), sizeof(tagint));
-  cout << "np_total=" << np_total << endl;
+  // cout << "np_total=" << np_total << endl;
   
   universe->set_proc_grid();
   if (!update->method->is_TL) {
     grid = new Grid(mpm);
     ifr->read(reinterpret_cast<char *>(&grid->cellsize), sizeof(double));
-    cout << "cellsize=" << grid->cellsize << endl;
+    // cout << "cellsize=" << grid->cellsize << endl;
     
     grid->init(boxlo, boxhi);
   }
@@ -530,14 +681,14 @@ void Domain::read_restart(ifstream *ifr) {
     id.resize(Nr);
 
     ifr->read(reinterpret_cast<char *>(&id[0]), Nr);
-    cout << "id = " << id << endl;
+    // cout << "id = " << id << endl;
 
     string style = "";
     ifr->read(reinterpret_cast<char *>(&Nr), sizeof(size_t));
     style.resize(Nr);
 
     ifr->read(reinterpret_cast<char *>(&style[0]), Nr);
-    cout << "style = " << style << endl;
+    // cout << "style = " << style << endl;
     RegionCreator region_creator = (*region_map)[style];
     regions[i] = region_creator(mpm, vector<string>{id, style, "restart"});
     regions[i]->read_restart(ifr);
@@ -560,7 +711,7 @@ void Domain::read_restart(ifstream *ifr) {
     id.resize(Ns);
 
     ifr->read(reinterpret_cast<char *>(&id[0]), Ns);
-    cout << "id = " << id << endl;
+    // cout << "id = " << id << endl;
 
     solids[i] = new Solid(mpm, vector<string>{id, "restart"});
     solids[i]->read_restart(ifr);

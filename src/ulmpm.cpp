@@ -31,15 +31,17 @@ using namespace std;
 
 ULMPM::ULMPM(MPM *mpm) : Method(mpm)
 {
-  cout << "In ULMPM::ULMPM()" << endl;
+  // cout << "In ULMPM::ULMPM()" << endl;
 
-  update_wf   = 1;
+  update_Di   = 1;
   update->PIC_FLIP = 0.99;
   apic        = false;
 
   // Default base function (linear):
   basis_function            = &BasisFunction::linear;
   derivative_basis_function = &BasisFunction::derivative_linear;
+
+  rigid_solids = 0;
 }
 
 ULMPM::~ULMPM() {}
@@ -50,39 +52,42 @@ void ULMPM::setup(vector<string> args)
     error->all(FLERR, "Illegal modify_method command: too many arguments.\n");
   }
 
-  if (update->shape_function == update->ShapeFunctions::LINEAR) {
-    cout << "Setting up linear basis functions\n";
+  if (update->shape_function == Update::ShapeFunctions::LINEAR) {
+    if (universe->me == 0)
+      cout << "Setting up linear basis functions\n";
     basis_function = &BasisFunction::linear;
     derivative_basis_function = &BasisFunction::derivative_linear;
-  } else if (update->shape_function == update->ShapeFunctions::CUBIC_SPLINE) {
-    cout << "Setting up cubic-spline basis functions\n";
+  } else if (update->shape_function == Update::ShapeFunctions::CUBIC_SPLINE) {
+    if (universe->me == 0)
+      cout << "Setting up cubic-spline basis functions\n";
     basis_function = &BasisFunction::cubic_spline;
     derivative_basis_function = &BasisFunction::derivative_cubic_spline;
-  } else if (update->shape_function == update->ShapeFunctions::QUADRATIC_SPLINE) {
-    cout << "Setting up quadratic-spline basis functions\n";
+  } else if (update->shape_function == Update::ShapeFunctions::QUADRATIC_SPLINE) {
+    if (universe->me == 0)
+      cout << "Setting up quadratic-spline basis functions\n";
     basis_function = &BasisFunction::quadratic_spline;
     derivative_basis_function = &BasisFunction::derivative_quadratic_spline;
-  } else if (update->shape_function == update->ShapeFunctions::BERNSTEIN) {
-    cout << "Setting up Bernstein-quadratic basis functions\n";
+  } else if (update->shape_function == Update::ShapeFunctions::BERNSTEIN) {
+    if (universe->me == 0)
+      cout << "Setting up Bernstein-quadratic basis functions\n";
     basis_function = &BasisFunction::bernstein_quadratic;
     derivative_basis_function = &BasisFunction::derivative_bernstein_quadratic;
   } else {
     error->all(FLERR, "Error: shape function not supported! Supported functions are:  \033[1;32mlinear\033[0m, \033[1;32mcubic-spline\033[0m, \033[1;32mquadratic-spline\033[0m, \033[1;32mBernstein-quadratic\033[0m.\n");
   }
 
-  if (update->sub_method_type == update->SubMethodType::APIC) {
+  if (update->sub_method_type == Update::SubMethodType::APIC || update->sub_method_type == Update::SubMethodType::MLS) {
     apic = true;
     update->PIC_FLIP = 0;
+  } else if (update->sub_method_type == Update::SubMethodType::ASFLIP ||
+             update->sub_method_type == Update::SubMethodType::AFLIP) {
+    apic = true;
   }
 }
 
 void ULMPM::compute_grid_weight_functions_and_gradients()
 {
-  if (!update_wf)
-    return;
-
-  bigint nsolids, np_local, nnodes_local, nnodes_ghost;
-  int rigid_solids = 0;
+  bigint nsolids, np_local, nnodes_local, nnodes_ghost, nnodes;
 
   nsolids = domain->solids.size();
 
@@ -90,9 +95,11 @@ void ULMPM::compute_grid_weight_functions_and_gradients()
   {
     for (int isolid = 0; isolid < nsolids; isolid++)
     {
-      if (domain->solids[isolid]->mat->rigid) rigid_solids = 1;
+      if (update->ntimestep == 0 && domain->solids[isolid]->mat->rigid)
+        rigid_solids = 1;
 
       np_local = domain->solids[isolid]->np_local;
+      nnodes = domain->solids[isolid]->grid->nnodes;
       nnodes_local = domain->solids[isolid]->grid->nnodes_local;
       nnodes_ghost = domain->solids[isolid]->grid->nnodes_ghost;
 
@@ -119,8 +126,14 @@ void ULMPM::compute_grid_weight_functions_and_gradients()
       vector<array<int, 3>> *ntype = &domain->solids[isolid]->grid->ntype;
       vector<bool> *nrigid = &domain->solids[isolid]->grid->rigid;
 
-      map<int, int> *map_ntag = &domain->solids[isolid]->grid->map_ntag;
-      map<int, int>::iterator it;
+      vector<tagint> *map_ntag = &domain->solids[isolid]->grid->map_ntag;
+
+      vector<int> n_neigh;
+
+      int i0, j0, k0, inn;
+      tagint tag = 0;
+      int ny = domain->solids[isolid]->grid->ny_global;
+      int nz = domain->solids[isolid]->grid->nz_global;
 
       r.setZero();
 
@@ -142,17 +155,14 @@ void ULMPM::compute_grid_weight_functions_and_gradients()
           (*wfd_pn)[ip].clear();
 
           // Calculate what nodes particle ip will interact with:
-	  int nx = domain->solids[isolid]->grid->nx_global;
-	  int ny = domain->solids[isolid]->grid->ny_global;
-	  int nz = domain->solids[isolid]->grid->nz_global;
 
-          vector<int> n_neigh;
+          n_neigh.clear();
 
-          if (update->shape_function == update->ShapeFunctions::LINEAR)
+          if (update->shape_function == Update::ShapeFunctions::LINEAR)
           {
-	    int i0 = (int) (((*xp)[ip][0] - domain->boxlo[0])*inv_cellsize);
-	    int j0 = (int) (((*xp)[ip][1] - domain->boxlo[1])*inv_cellsize);
-	    int k0 = (int) (((*xp)[ip][2] - domain->boxlo[2])*inv_cellsize);
+	    i0 = (int) (((*xp)[ip][0] - domain->boxlo[0])*inv_cellsize);
+	    j0 = (int) (((*xp)[ip][1] - domain->boxlo[1])*inv_cellsize);
+	    k0 = (int) (((*xp)[ip][2] - domain->boxlo[2])*inv_cellsize);
 
             for (int i = i0; i < i0 + 2; i++)
             {
@@ -164,20 +174,24 @@ void ULMPM::compute_grid_weight_functions_and_gradients()
                   {
                     for (int k = k0; k < k0 + 2; k++)
                     {
-		      it = (*map_ntag).find(nz * ny * i + nz * j + k);
-		      if (it != (*map_ntag).end())
-			{
-			  n_neigh.push_back(it->second);
+		      tag = nz * ny * i + nz * j + k;
+		      if (tag < nnodes) {
+			inn = (*map_ntag)[tag];
+			if (inn != -1) {
+			  n_neigh.push_back(inn);
 			}
+		      }
                     }
                   }
                   else
                   {
-		    it = (*map_ntag).find(ny * i + j);
-		    if (it != (*map_ntag).end())
-		      {
-			n_neigh.push_back(it->second);
+		    tag = ny * i + j;
+		    if (tag < nnodes) {
+		      inn = (*map_ntag)[tag];
+		      if (inn != -1) {
+			n_neigh.push_back(inn);
 		      }
+		    }
                   }
                 }
               }
@@ -187,83 +201,35 @@ void ULMPM::compute_grid_weight_functions_and_gradients()
                   n_neigh.push_back(i);
               }
             }
-          }
-          else if (update->shape_function == update->ShapeFunctions::BERNSTEIN)
-          {
-	    int i0 = 2 * (int) (((*xp)[ip][0] - domain->boxlo[0]) * inv_cellsize);
-	    int j0 = 2 * (int) (((*xp)[ip][1] - domain->boxlo[1]) * inv_cellsize);
-	    int k0 = 2 * (int) (((*xp)[ip][2] - domain->boxlo[2]) * inv_cellsize);
-
-            if ((i0 >= 1) && (i0 % 2 != 0))
-              i0--;
-            if ((j0 >= 1) && (j0 % 2 != 0))
-              j0--;
-            if (nz > 1)
-              if ((k0 >= 1) && (k0 % 2 != 0))
-                k0--;
-
-            // cout << "(" << i0 << "," << j0 << "," << k0 << ")\t";
-
-            for (int i = i0; i < i0 + 3; i++)
-            {
-              if (ny > 1)
-              {
-                for (int j = j0; j < j0 + 3; j++)
-                {
-                  if (nz > 1)
-                  {
-                    for (int k = k0; k < k0 + 3; k++)
-                    {
-		      it = (*map_ntag).find(nz * ny * i + nz * j + k);
-		      if (it != (*map_ntag).end())
-			{
-			  n_neigh.push_back(it->second);
-			}
-                    }
-                  }
-                  else
-                  {
-		    it = (*map_ntag).find(ny * i + j);
-		    if (it != (*map_ntag).end())
-		      {
-			n_neigh.push_back(it->second);
-		      }
-                  }
-                }
-              }
-              else
-              {
-		if (i < nnodes_local + nnodes_ghost)
-                  n_neigh.push_back(i);
-              }
-            }
-          } else {
+	  } else {
 	    // cubic and quadratic B-splines
-            int i0 =
-                (int)(((*xp)[ip][0] - domain->boxlo[0]) * inv_cellsize - 1);
-            int j0 =
-                (int)(((*xp)[ip][1] - domain->boxlo[1]) * inv_cellsize - 1);
-            int k0 =
-                (int)(((*xp)[ip][2] - domain->boxlo[2]) * inv_cellsize - 1);
+            i0 = (int)(((*xp)[ip][0] - domain->boxlo[0]) * inv_cellsize - 1);
+            j0 = (int)(((*xp)[ip][1] - domain->boxlo[1]) * inv_cellsize - 1);
+            k0 = (int)(((*xp)[ip][2] - domain->boxlo[2]) * inv_cellsize - 1);
 
             for (int i = i0; i < i0 + 4; i++) {
               if (ny > 1) {
                 for (int j = j0; j < j0 + 4; j++) {
                   if (nz > 1) {
                     for (int k = k0; k < k0 + 4; k++) {
-                      it = (*map_ntag).find(nz * ny * i + nz * j + k);
-                      if (it != (*map_ntag).end()) {
-                        n_neigh.push_back(it->second);
-                      }
+		      tag = nz * ny * i + nz * j + k;
+		      if (tag < nnodes) {
+			inn = (*map_ntag)[tag];
+			if (inn != -1) {
+			  n_neigh.push_back(inn);
+			}
+		      }
                     }
                   }
                   else
                   {
-		    it = (*map_ntag).find(ny * i + j);
-		    if (it != (*map_ntag).end())
-		      {
-			n_neigh.push_back(it->second);
+		    tag = ny * i + j;
+		    if (tag < nnodes) {
+		      inn = (*map_ntag)[tag];
+		      if (inn != -1) {
+			n_neigh.push_back(inn);
 		      }
+		    }
                   }
                 }
               }
@@ -275,12 +241,6 @@ void ULMPM::compute_grid_weight_functions_and_gradients()
             }
           }
 
-          // cout << "[";
-          // for (auto ii: n_neigh)
-          //   cout << domain->solids[isolid]->grid->ntag[ii] << ' ';
-          // cout << "]\n";
-
-          // for (int in=0; in<nnodes; in++) {
           for (auto in : n_neigh)
           {
 
@@ -357,19 +317,23 @@ void ULMPM::compute_grid_weight_functions_and_gradients()
           // cout << endl;
         }
       }
-      if (apic)
+      if (update_Di && apic)
         domain->solids[isolid]->compute_inertia_tensor();
     }
   } // end if (nsolids)
 
-  // Reduce rigid_solids
-  int rigid_solids_reduced = 0;
+  if (update->ntimestep == 0) {
+    // Reduce rigid_solids
+    int rigid_solids_reduced = 0;
 
-  MPI_Allreduce(&rigid_solids, &rigid_solids_reduced, 1, MPI_INT, MPI_LOR,
-                universe->uworld);
-
-  if (rigid_solids_reduced)
+    MPI_Allreduce(&rigid_solids, &rigid_solids_reduced, 1, MPI_INT, MPI_LOR,
+		  universe->uworld);
+    rigid_solids = rigid_solids_reduced;
+  }
+  if (rigid_solids) {
     domain->grid->reduce_rigid_ghost_nodes();
+  }
+  update_Di = 0;
 }
 
 void ULMPM::particles_to_grid() {
@@ -397,23 +361,104 @@ void ULMPM::particles_to_grid() {
       domain->solids[isolid]->compute_velocity_nodes_APIC(grid_reset);
     else
       domain->solids[isolid]->compute_velocity_nodes(grid_reset);
-    domain->solids[isolid]->compute_external_forces_nodes(grid_reset);
-    domain->solids[isolid]->compute_internal_forces_nodes_UL(grid_reset);
-    /*compute_thermal_energy_nodes();*/
+
+    if (update->sub_method_type == Update::SubMethodType::MLS) {
+      domain->solids[isolid]->compute_external_and_internal_forces_nodes_UL_MLS(grid_reset);
+    } else {
+      domain->solids[isolid]->compute_external_and_internal_forces_nodes_UL(grid_reset);
+    }
+
+    if (temp) {
+      domain->solids[isolid]->compute_temperature_nodes(grid_reset);
+      domain->solids[isolid]->compute_external_temperature_driving_forces_nodes(grid_reset);
+      domain->solids[isolid]->compute_internal_temperature_driving_forces_nodes();
+    }
   }
-  domain->grid->reduce_ghost_nodes();
+  domain->grid->reduce_ghost_nodes(true, true, temp);
 }
 
-void ULMPM::update_grid_state() { domain->grid->update_grid_velocities(); }
+void ULMPM::particles_to_grid_USF_1() {
+  bool grid_reset = false; // Indicate if the grid quantities have to be reset
+  for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
+
+    if (isolid == 0)
+      grid_reset = true;
+    else
+      grid_reset = false;
+
+    domain->solids[isolid]->compute_mass_nodes(grid_reset);
+  }
+
+  domain->grid->reduce_mass_ghost_nodes();
+
+  for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
+
+    if (isolid == 0)
+      grid_reset = true;
+    else
+      grid_reset = false;
+
+    if (apic)
+      domain->solids[isolid]->compute_velocity_nodes_APIC(grid_reset);
+    else
+      domain->solids[isolid]->compute_velocity_nodes(grid_reset);
+    if (temp)
+      domain->solids[isolid]->compute_temperature_nodes(grid_reset);
+  }
+  domain->grid->reduce_ghost_nodes(true, false, temp);
+}
+
+void ULMPM::particles_to_grid_USF_2() {
+  bool grid_reset = false; // Indicate if the grid quantities have to be reset
+
+  for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
+
+    if (isolid == 0)
+      grid_reset = true;
+    else
+      grid_reset = false;
+
+    if (update->sub_method_type == Update::SubMethodType::MLS) {
+      domain->solids[isolid]->compute_external_and_internal_forces_nodes_UL_MLS(grid_reset);
+    } else {
+      domain->solids[isolid]->compute_external_and_internal_forces_nodes_UL(grid_reset);
+    }
+
+    if (temp) {
+      domain->solids[isolid]->compute_external_temperature_driving_forces_nodes(grid_reset);
+      domain->solids[isolid]->compute_internal_temperature_driving_forces_nodes();
+    }
+  }
+  domain->grid->reduce_ghost_nodes(false, true, temp);
+}
+
+
+void ULMPM::update_grid_state() {
+  domain->grid->update_grid_velocities();
+  if (temp)
+    domain->grid->update_grid_temperature();
+}
 
 void ULMPM::grid_to_points()
 {
   for (int isolid = 0; isolid < domain->solids.size(); isolid++)
   {
-    if (apic)
-      domain->solids[isolid]->compute_rate_deformation_gradient_UL_APIC();
-    domain->solids[isolid]->compute_particle_velocities_and_positions();
-    domain->solids[isolid]->compute_particle_acceleration();
+    //if (apic)
+    //  domain->solids[isolid]->compute_rate_deformation_gradient_UL_APIC();
+
+    if (domain->solids[isolid]->mat->rigid) {
+      domain->solids[isolid]->compute_particle_velocities_and_positions();
+      domain->solids[isolid]->compute_particle_acceleration();
+    } else {
+      if (update->sub_method_type != Update::SubMethodType::ASFLIP)
+	domain->solids[isolid]->compute_particle_accelerations_velocities_and_positions();
+      else
+	domain->solids[isolid]->compute_particle_accelerations_velocities();	
+    }
+
+    if (temp) {
+      domain->solids[isolid]->update_particle_temperature();
+    }
   }
 }
 
@@ -421,7 +466,10 @@ void ULMPM::advance_particles()
 {
   for (int isolid = 0; isolid < domain->solids.size(); isolid++)
   {
-    domain->solids[isolid]->update_particle_velocities(update->PIC_FLIP);
+    if (update->sub_method_type != Update::SubMethodType::ASFLIP)
+      domain->solids[isolid]->update_particle_velocities(update->PIC_FLIP);
+    else
+      domain->solids[isolid]->update_particle_velocities_and_positions(update->PIC_FLIP);      
   }
 }
 
@@ -436,37 +484,41 @@ void ULMPM::velocities_to_grid()
     else
       grid_reset = false;
 
-    if (!apic)
-    {
-      // domain->solids[isolid]->compute_mass_nodes(grid_reset);
+    if (apic)
+      domain->solids[isolid]->compute_velocity_nodes_APIC(grid_reset);
+    else
       domain->solids[isolid]->compute_velocity_nodes(grid_reset);
+    if (temp) {
+      domain->solids[isolid]->compute_temperature_nodes(grid_reset);
     }
   }
-  domain->grid->reduce_ghost_nodes(true);
+  domain->grid->reduce_ghost_nodes(true, false, temp);
 }
 
-void ULMPM::compute_rate_deformation_gradient() {
-  if (!apic) {
-    for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
-      domain->solids[isolid]->compute_rate_deformation_gradient_UL_MUSL();
-      // domain->solids[isolid]->compute_deformation_gradient();
-    }
+void ULMPM::compute_rate_deformation_gradient(bool doublemapping) {
+  for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
+    if (apic) 
+      domain->solids[isolid]->compute_rate_deformation_gradient_UL_APIC(doublemapping);
+    else
+      domain->solids[isolid]->compute_rate_deformation_gradient_UL(doublemapping);
   }
 }
 
 void ULMPM::update_deformation_gradient()
 {
-  for (int isolid = 0; isolid < domain->solids.size(); isolid++)
-  {
+  for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
     domain->solids[isolid]->update_deformation_gradient();
   }
 }
 
-void ULMPM::update_stress()
+void ULMPM::update_stress(bool doublemapping)
 {
   for (int isolid = 0; isolid < domain->solids.size(); isolid++)
   {
     domain->solids[isolid]->update_stress();
+    if (temp) {
+      domain->solids[isolid]->update_heat_flux(doublemapping);
+    }
   }
 }
 
@@ -510,93 +562,106 @@ void ULMPM::reset()
   }
 }
 
-void ULMPM::exchange_particles()
-{
-  int ip, np_local_old, size_buf_send, size_buf_recv;
+void ULMPM::exchange_particles() {
+  int ip, np_local_old;
   vector<Eigen::Vector3d> *xp;
-  vector<double> buf_send;
+  // vector<int> np_send;
+  vector<vector<double>> buf_send_vect(universe->nprocs);
+  vector<vector<double>> buf_recv_vect(universe->nprocs);
   vector<int> unpack_list;
-  
+  int owner = 0;
+
   // Identify the particles that are not in the subdomain
   // and transfer their variables to the buffer:
 
-  for (int isolid=0; isolid<domain->solids.size(); isolid++)
-    {
-      buf_send.clear();
-      np_local_old = domain->solids[isolid]->np_local;
-      xp = &domain->solids[isolid]->x;
-
-      ip = 0;
-      while(ip < domain->solids[isolid]->np_local)
-	{
-	  if (!domain->inside_subdomain((*xp)[ip][0], (*xp)[ip][1], (*xp)[ip][2]))
-	    {
-	      // The particle is not located in the subdomain anymore:
-	      // transfer it to the buffer
-	      domain->solids[isolid]->pack_particle(ip, buf_send);
-	      domain->solids[isolid]->copy_particle(domain->solids[isolid]->np_local - 1, ip);
-	      domain->solids[isolid]->np_local--;
-	    }
-	  else
-	    {
-	      ip++;
-	    }
-	}
-
-      // Resize particle variables:
-      if (np_local_old - domain->solids[isolid]->np_local != buf_send.size()/domain->solids[isolid]->comm_n)
-	{
-	  error->one(FLERR,"Size of buffer does not match the number of particles that left the domain: " + to_string(np_local_old - domain->solids[isolid]->np_local) + "!=" + to_string(buf_send.size()) + "\n");
-	}
-      if (buf_send.size())
-	{
-	  domain->solids[isolid]->grow(domain->solids[isolid]->np_local);
-	}
-
-      // Exchange buffers:
-      for (int sproc=0; sproc<universe->nprocs; sproc++)
-	{
-	  if (sproc == universe->me)
-	    {
-	      size_buf_send = buf_send.size();
-
-	      for (int rproc=0; rproc<universe->nprocs; rproc++){
-		if (rproc != universe->me) {
-		  MPI_Send(&size_buf_send, 1, MPI_INT, rproc, 0, universe->uworld);
-		  if (size_buf_send)
-		    MPI_Send(buf_send.data(), size_buf_send, MPI_DOUBLE, rproc, 0, MPI_COMM_WORLD);
-		}
-	      }
-	    }
-	  else
-	    {
-	      // Receive buffer:
-	      MPI_Recv(&size_buf_recv, 1, MPI_INT, sproc, 0, universe->uworld, MPI_STATUS_IGNORE);
-
-	      if (size_buf_recv)
-		{
-		  double buf_recv[size_buf_recv];
-		  MPI_Recv(&buf_recv[0], size_buf_recv, MPI_DOUBLE, sproc, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-
-
-		  // Check what particles are within the subdomain:
-		  unpack_list.clear();
-		  ip = 0;
-		  while(ip < size_buf_recv)
-		    {
-		      if (domain->inside_subdomain(buf_recv[ip+1], buf_recv[ip+2], buf_recv[ip+3]))
-			{
-			  unpack_list.push_back(ip);
-			}
-		      ip += domain->solids[isolid]->comm_n;
-		    }
-
-		  domain->solids[isolid]->grow(domain->solids[isolid]->np_local + unpack_list.size());
-
-		  // Unpack buffer:
-		  domain->solids[isolid]->unpack_particle(domain->solids[isolid]->np_local, unpack_list, buf_recv);
-		}
-	    }
-	}
+  for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
+    for (int iproc = 0; iproc < universe->nprocs; iproc++) {
+      buf_send_vect[iproc].clear();
+      buf_recv_vect[iproc].clear();
     }
+
+    np_local_old = domain->solids[isolid]->np_local;
+    xp = &domain->solids[isolid]->x;
+
+    // np_send.assign(universe->nprocs, 0);
+
+    ip = 0;
+    while (ip < domain->solids[isolid]->np_local) {
+      owner = domain->which_CPU_owns_me((*xp)[ip][0], (*xp)[ip][1], (*xp)[ip][2]);
+      if (owner != universe->me) {
+        // The particle is not located in the subdomain anymore:
+        // transfer it to the buffer
+        domain->solids[isolid]->pack_particle(ip, buf_send_vect[owner]);
+        domain->solids[isolid]->copy_particle(
+            domain->solids[isolid]->np_local - 1, ip);
+        domain->solids[isolid]->np_local--;
+	// np_send[owner]++;
+      } else {
+        ip++;
+      }
+    }
+
+    // if (np_local_old != domain->solids[isolid]->np_local) {
+    //   domain->solids[isolid]->grow(domain->solids[isolid]->np_local);
+    // }
+
+    // New send and receive
+    int size_r, size_s;
+    int jproc;
+    for (int i = 0; i < universe->sendnrecv.size(); i++) {
+      if (universe->sendnrecv[i][0] == 0) {
+	// Receive
+	jproc = universe->sendnrecv[i][1];
+
+        MPI_Recv(&size_r, 1, MPI_INT, jproc, 0, MPI_COMM_WORLD,
+                 MPI_STATUS_IGNORE);
+
+	if (size_r > 0) {
+	  buf_recv_vect[jproc].resize(size_r);
+          MPI_Recv(&buf_recv_vect[jproc][0], size_r, MPI_DOUBLE, jproc, 0,
+                   MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        }
+      } else {
+	// Send
+	jproc = universe->sendnrecv[i][1];
+	size_s = buf_send_vect[jproc].size();
+        MPI_Send(&size_s, 1, MPI_INT, jproc, 0, MPI_COMM_WORLD);
+
+	if (size_s > 0) {
+          MPI_Send(buf_send_vect[jproc].data(), size_s, MPI_DOUBLE, jproc, 0,
+                   MPI_COMM_WORLD);
+        }
+      }
+    }
+
+
+    // Check what particles are within the subdomain:
+    for (int sproc = 0; sproc < universe->nprocs; sproc++) {
+      if (sproc != universe->me) {
+        unpack_list.clear();
+        ip = 0;
+        while (ip < buf_recv_vect[sproc].size()) {
+          if (domain->inside_subdomain(buf_recv_vect[sproc][ip + 1],
+                                       buf_recv_vect[sproc][ip + 2],
+                                       buf_recv_vect[sproc][ip + 3])) {
+            unpack_list.push_back(ip);
+          } else {
+            error->one(FLERR, "Particle received from CPU" + to_string(sproc) +
+                                  " that did not belong in this CPU.\n ");
+          }
+          ip += domain->solids[isolid]->comm_n;
+        }
+
+        if (unpack_list.size() > 0) {
+          domain->solids[isolid]->grow(domain->solids[isolid]->np_local +
+                                       unpack_list.size());
+
+          // Unpack buffer:
+          domain->solids[isolid]->unpack_particle(
+              domain->solids[isolid]->np_local, unpack_list,
+              buf_recv_vect[sproc]);
+        }
+      }
+    }
+  }
 }

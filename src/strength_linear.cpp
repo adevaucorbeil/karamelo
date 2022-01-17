@@ -11,15 +11,16 @@
  *
  * ----------------------------------------------------------------------- */
 
-#include <iostream>
-#include <Eigen/Eigen>
 #include "strength_linear.h"
-#include "input.h"
 #include "domain.h"
-#include "update.h"
-#include "mpm_math.h"
-#include "var.h"
 #include "error.h"
+#include "input.h"
+#include "mpm_math.h"
+#include "universe.h"
+#include "update.h"
+#include "var.h"
+#include <Eigen/Eigen>
+#include <iostream>
 
 using namespace std;
 using namespace Eigen;
@@ -28,7 +29,9 @@ using namespace MPM_Math;
 
 StrengthLinear::StrengthLinear(MPM *mpm, vector<string> args) : Strength(mpm, args)
 {
-  cout << "Initiate StrengthLinear" << endl;
+  if (universe->me == 0) {
+    cout << "Initiate StrengthLinear" << endl;
+  }
 
   if (args.size() < 3) {
     error->all(FLERR, "Error: too few arguments for the strength command.\n");
@@ -43,8 +46,10 @@ StrengthLinear::StrengthLinear(MPM *mpm, vector<string> args) : Strength(mpm, ar
 
   //options(&args, args.begin()+3);
   G_ = input->parsev(args[2]);
-  cout << "Linear strength model:\n";
-  cout << "\tG: shear modulus " << G_ << endl;
+  if (universe->me == 0) {
+    cout << "Linear strength model:\n";
+    cout << "\tG: shear modulus " << G_ << endl;
+  }
 }
 
 double StrengthLinear::G(){
@@ -70,7 +75,9 @@ void StrengthLinear::write_restart(ofstream *of) {
 }
 
 void StrengthLinear::read_restart(ifstream *ifr) {
-  cout << "Restart StrengthLinear" << endl;
+  if (universe->me == 0) {
+    cout << "Restart StrengthLinear" << endl;
+  }
   ifr->read(reinterpret_cast<char *>(&G_), sizeof(double));
 }
 

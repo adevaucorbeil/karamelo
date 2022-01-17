@@ -28,7 +28,7 @@ enum { VERSION, DIMENSION, NPROCS };
 /* ---------------------------------------------------------------------- */
 
 WriteRestart::WriteRestart(MPM *mpm) : Pointers(mpm) {
-  of = NULL;
+  of = nullptr;
 }
 
 WriteRestart::~WriteRestart() {
@@ -36,7 +36,7 @@ WriteRestart::~WriteRestart() {
 }
 
 Var WriteRestart::command(vector<string> args) {
-  cout << "In WriteRestart::command()" << endl;
+  // cout << "In WriteRestart::command()" << endl;
 
   if (args.size() < 1) {
     error->all(FLERR, "Illegal write command.\n");
@@ -64,7 +64,8 @@ void WriteRestart::write() {
   } else
     frestart = filename + "proc-" + to_string(universe->me) + ".";
 
-  cout << "write " << frestart << endl;
+  if (universe->me == 0)
+    cout << "write " << frestart << endl;
   of = new ofstream(frestart, ios_base::out | ios_base::binary);
 
   if (of->is_open()) {

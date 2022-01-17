@@ -329,7 +329,7 @@ static inline bool IsOnSegment(double xi, double yi, double xj, double yj, doubl
 static inline char ComputeDirection(double xi, double yi, double xj, double yj, double xk, double yk) {
 	double a = (xk - xi) * (yj - yi);
 	double b = (xj - xi) * (yk - yi);
-	return a < b ? -1.0 : a > b ? 1.0 : 0;
+	return a < b ? -1 : a > b ? 1 : 0;
 }
 
 /** Do line segments (x1, y1)--(x2, y2) and (x3, y3)--(x4, y4) intersect? */

@@ -47,7 +47,7 @@ Input::Input(MPM *mpm, int argc, char **argv) : Pointers(mpm)
   line_number = 0;
   maxline = maxcopy = 0;
   maxarg = 0;
-  arg = NULL;
+  arg = nullptr;
   vars = new map<string, Var>;
 
   (*vars)["time"]     = Var("time", 0);
@@ -100,7 +100,7 @@ Input::~Input()
 
 void Input::file()
 {
-  cout << "In Input::file()\n";
+  // cout << "In Input::file()\n";
   bool ignore = false;
   int end = 0;
 
@@ -207,6 +207,7 @@ Var Input::applyOp(Var a, const string op, Var b){
       error->all(FLERR, "Error: unknown operator " + op + "\n");
     }
   }
+  return Var();
 }
 
 /*! This function checks if op is a known on-character operator: '+', '-', '*', '/', '^', '<', '>', '!'.\n
@@ -344,20 +345,27 @@ Var Input::evaluate_function(string func, string arg){
   else if (func.compare("restart") == 0)
     return Var(restart(args));
   error->all(FLERR, "Error: Unknown function " + func + "\n");
+  return Var();
 }
 
 // remove white spaces from string
 string Input::remove_whitespace(string str){
   string str_;
 
+  bool quote = false;
+
   for(int i=0; i<str.length(); i++){
-    if( str[i] != ' ') str_.append(&str[i],1); // Add the non-whitespace character to str_
+    if (str[i] == '"')
+      quote = !quote;
+    else if (str[i] != ' ' || quote)
+      str_.append(&str[i],1); // Add the non-whitespace character to str_
   }
   return str_;
 }
 
 double Input::parse(string str){
   error->all(FLERR, "Error: Input::parse deprecated function.\n");
+  return nan("");
 }
 
 /*! This function translates the input file syntax, either mathematical expressions or functions, 
@@ -589,14 +597,22 @@ Var Input::parsev(string str)
 	  if (negative) {
 	    if (!returnvar.empty()) {
 	      (*vars)[returnvar] = -(*vars)[word];
-	      cout << returnvar << " = " << (*vars)[returnvar].result() << endl;
+	      if (universe->me == 0) {
+		cout << returnvar << " = " << (*vars)[returnvar].result() << endl;
+	      } else {
+		(*vars)[returnvar].result();
+	      }
 	    }
 	    return -(*vars)[word];
 	  }
 	  else {
 	    if (!returnvar.empty()) {
 	      (*vars)[returnvar] = (*vars)[word];
-	      cout << returnvar << " = " << (*vars)[returnvar].result() << endl;
+	      if (universe->me == 0) {
+		cout << returnvar << " = " << (*vars)[returnvar].result() << endl;
+	      } else {
+		(*vars)[returnvar].result();
+	      }
 	    }
 	    return (*vars)[word];
 	  }
@@ -643,8 +659,7 @@ Var Input::parsev(string str)
           k++;
           if (i + k > str.length())
           {
-            cout << "Error: Unbalanced parenthesis '('" << endl;
-            exit(1);
+	    error->all(FLERR, "Error: Unbalanced parenthesis '('.\n");
           }
         }
         string arg;
@@ -709,7 +724,11 @@ Var Input::parsev(string str)
   else {
     if (!returnvar.empty()) {
       (*vars)[returnvar] = values.top();
-      cout << returnvar << " = " << (*vars)[returnvar].result(mpm) << endl;
+      if (universe->me == 0) {
+	cout << returnvar << " = " << (*vars)[returnvar].result(mpm) << endl;
+      } else {
+	(*vars)[returnvar].result(mpm);
+      }
     }
     return values.top();
   }
@@ -717,7 +736,7 @@ Var Input::parsev(string str)
 
 int Input::dimension(vector<string> args) {
   // Check that a method is available:
-  if (update->method == NULL) {
+  if (update->method == nullptr) {
     error->all(
         FLERR,
         "Error: a method should be defined before calling dimension()!\n");
@@ -871,15 +890,19 @@ int Input::print(vector<string> args) {
   }
 
   Var v = parsev(args[0]);
-  cout << args[0] << " = {equation=\"" << v.eq()
-       << "\", value=" << v.result(mpm) << ", constant=";
+  if (universe->me == 0) {
+    cout << args[0] << " = {equation=\"" << v.eq()
+	 << "\", value=" << v.result(mpm) << ", constant=";
 
-  if (v.is_constant())
-    cout << "true";
-  else
-    cout << "false";
+    if (v.is_constant())
+      cout << "true";
+    else
+      cout << "false";
 
-  cout << "}\n";
+    cout << "}\n";
+  } else {
+    v.result(mpm);
+  }
 
   return 0;
 }

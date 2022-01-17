@@ -56,7 +56,7 @@ void USL::run(Var condition){
 
     modify->post_update_grid_state();
 
-    update->method->compute_rate_deformation_gradient();
+    update->method->compute_rate_deformation_gradient(false);
     update->method->grid_to_points();
 
     modify->post_grid_to_point();
@@ -72,12 +72,12 @@ void USL::run(Var condition){
     update->method->update_grid_positions();
 
     update->method->update_deformation_gradient();
-    update->method->update_stress();
+    update->method->update_stress(false);
 
     update->method->exchange_particles();
 
-    update->method->adjust_dt();
     update->update_time();
+    update->method->adjust_dt();
 
     modify->final_integrate();
 
@@ -91,6 +91,5 @@ void USL::run(Var condition){
       output->write(ntimestep);
     }
   }
-  output->show_plot();
 }
 

@@ -42,7 +42,7 @@ public:
     const double           eff_plastic_strain,
     const double           epsdot,
     const double           damage,
-    const double           temperature);
+    const double           temperature = 0);
 
 protected:
   double G_, A, B, n, m, epsdot0, C, Tr, Tm, Tmr;

@@ -16,6 +16,7 @@
 #define LMP_UNIVERSE_H
 
 #include "pointers.h"
+#include <vector>
 
 using namespace std;
 
@@ -33,6 +34,8 @@ class Universe : protected Pointers {
   int procgrid[3];                  ///< procs assigned in each dim of 3d grid
   int myloc[3];                     ///< which proc I am in each dim
   int procneigh[3][2];              ///< my 6 neighboring procs, 0/1 = left/right
+
+  vector<array<int, 3>> sendnrecv;  ///< stores the send and receive pattern to follow. The vector's length corresponds to the number of steps. For a given step, there is an array of two ints, the first int is either 0 (receive) or 1 (send), the second it the rank of the CPU to receive or send to.
 
   void set_proc_grid();             ///< setup 3d grid of procs
 };

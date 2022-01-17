@@ -11,15 +11,16 @@
  *
  * ----------------------------------------------------------------------- */
 
-#include <iostream>
-#include <Eigen/Eigen>
 #include "strength_jc.h"
 #include "domain.h"
+#include "error.h"
 #include "input.h"
 #include "mpm_math.h"
-#include "var.h"
-#include "error.h"
+#include "universe.h"
 #include "update.h"
+#include "var.h"
+#include <Eigen/Eigen>
+#include <iostream>
 
 using namespace std;
 using namespace Eigen;
@@ -30,7 +31,9 @@ using namespace MPM_Math;
 StrengthJohnsonCook::StrengthJohnsonCook(MPM *mpm, vector<string> args)
     : Strength(mpm, args)
 {
-  cout << "Initiate StrengthJohnsonCook" << endl;
+  if (universe->me == 0) {
+    cout << "Initiate StrengthJohnsonCook" << endl;
+  }
 
   if (args.size() < 3) {
     error->all(FLERR, "Error: too few arguments for the strength command.\n");
@@ -59,34 +62,36 @@ StrengthJohnsonCook::StrengthJohnsonCook(MPM *mpm, vector<string> args)
   Tr      = input->parsev(args[9]);
   Tm      = input->parsev(args[10]);
 
-  cout << "Johnson Cook material strength model:\n";
-  cout << "\tG: shear modulus " << G_ << endl;
-  cout << "\tA: initial yield stress " << A << endl;
-  cout << "\tB: proportionality factor for plastic strain dependency " << B
-       << endl;
-  cout << "\tn: exponent for plastic strain dependency " << n << endl;
-  cout << "\tepsdot0: reference strain rate " << epsdot0 << endl;
-  cout << "\tC: proportionality factor for logarithmic plastic strain rate "
-          "dependency "
-       << C << endl;
-  cout << "\tm: factor for thermal softening " << m << endl;
-  cout << "\tTr: reference temperature " << Tr << endl;
-  cout << "\tTm: melting temperature " << Tm << endl;
-  cout << "\tFlow stress: sigma_f = [" << A << " + " << B << " * (eps_p)^" << n
-       << "]";
-  if (C != 0)
-    cout << "[1 + " << C << " * ln(eps_p_dot/" << epsdot0 << ")]";
-  if (m != 0)
-    cout << "[1 - ((T - " << Tr << ")/(" << Tm << " - " << Tr << "))^" << m
-         << "]";
-  cout << "(1 - D)\n";
-
-  if (Tr == Tm)
-  {
-    cout << "Error: reference temperature Tr=" << Tr
-         << " equals melting temperature Tm=" << Tm << endl;
-    exit(1);
+  if (universe->me == 0) {
+    cout << "Johnson Cook material strength model:\n";
+    cout << "\tG: shear modulus " << G_ << endl;
+    cout << "\tA: initial yield stress " << A << endl;
+    cout << "\tB: proportionality factor for plastic strain dependency " << B
+         << endl;
+    cout << "\tn: exponent for plastic strain dependency " << n << endl;
+    cout << "\tepsdot0: reference strain rate " << epsdot0 << endl;
+    cout << "\tC: proportionality factor for logarithmic plastic strain rate "
+            "dependency "
+         << C << endl;
+    cout << "\tm: factor for thermal softening " << m << endl;
+    cout << "\tTr: reference temperature " << Tr << endl;
+    cout << "\tTm: melting temperature " << Tm << endl;
+    cout << "\tFlow stress: sigma_f = [" << A << " + " << B << " * (eps_p)^"
+         << n << "]";
+    if (C != 0)
+      cout << "[1 + " << C << " * ln(eps_p_dot/" << epsdot0 << ")]";
+    if (m != 0)
+      cout << "[1 - ((T - " << Tr << ")/(" << Tm << " - " << Tr << "))^" << m
+           << "]";
+    cout << "(1 - D)\n";
   }
+
+  if (Tr == Tm) {
+    error->all(FLERR, "Error: reference temperature Tr=" + to_string(Tr) +
+                          " equals melting temperature Tm=" + to_string(Tm) +
+                          ".\n");
+  }
+
   Tmr = Tm - Tr;
 }
 
@@ -113,17 +118,18 @@ Matrix3d StrengthJohnsonCook::update_deviatoric_stress(
   if (eff_plastic_strain < 1.0e-10) {
     yieldStress = A;
   } else {
-    if (T < Tm) {
-      if (C != 0)
-        yieldStress =
-            (A + B * pow(eff_plastic_strain, n)) * pow(1.0 + epsdot_ratio, C);
-      else
-        yieldStress = A + B * pow(eff_plastic_strain, n);
+    yieldStress = A + B * pow(eff_plastic_strain, n);
+  }
+  if (C != 0) {
+    yieldStress *= pow(1.0 + epsdot_ratio, C);
+  }
 
-      if (m != 0 && T >= Tr)
-        yieldStress *= 1.0 - pow((T - Tr) / Tmr, m);
-    } else
-      yieldStress = 0;
+  if (T < Tm) {
+    if (m != 0 && T >= Tr) {
+      yieldStress *= 1.0 - pow((T - Tr) / Tmr, m);
+    }
+  } else {
+    yieldStress = 0;
   }
 
   /*
@@ -190,7 +196,9 @@ void StrengthJohnsonCook::write_restart(ofstream *of) {
 }
 
 void StrengthJohnsonCook::read_restart(ifstream *ifr) {
-  cout << "Restart StrengthJohnsonCook" << endl;
+  if (universe->me == 0) {
+    cout << "Restart StrengthJohnsonCook" << endl;
+  }
   ifr->read(reinterpret_cast<char *>(&G_), sizeof(double));
   ifr->read(reinterpret_cast<char *>(&A), sizeof(double));
   ifr->read(reinterpret_cast<char *>(&B), sizeof(double));

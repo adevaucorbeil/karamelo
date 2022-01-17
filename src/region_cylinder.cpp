@@ -17,6 +17,7 @@
 #include "input.h"
 #include "math_special.h"
 #include "method.h"
+#include "universe.h"
 #include "update.h"
 #include "var.h"
 #include <iostream>
@@ -41,7 +42,8 @@ Cylinder::Cylinder(MPM *mpm, vector<string> args) : Region(mpm, args)
     return;
   }
 
-  cout << "Initiate Cylinder" << endl;
+  if (universe->me == 0)
+    cout << "Initiate Cylinder" << endl;
 
   if (domain->dimension == 3) {
     if (args.size()<8) {
@@ -86,7 +88,8 @@ Cylinder::Cylinder(MPM *mpm, vector<string> args) : Region(mpm, args)
       hi = BIG;
     } else hi = input->parsev(args[7]);
 
-    cout << "lo hi = " << lo << "\t" << hi << endl;
+    if (universe->me == 0)
+      cout << "lo hi = " << lo << "\t" << hi << endl;
   } else {
     axis = 'z';
 
@@ -97,7 +100,8 @@ Cylinder::Cylinder(MPM *mpm, vector<string> args) : Region(mpm, args)
   }
 
   RSq = R*R;
-  cout << "axis, c1, c2, R = " << axis << "\t" << c1 << "\t" << c2 << "\t" << R << endl;
+  if (universe->me == 0)
+    cout << "axis, c1, c2, R = " << axis << "\t" << c1 << "\t" << c2 << "\t" << R << endl;
 
   // error check
 
@@ -194,7 +198,7 @@ void Cylinder::write_restart(ofstream *of) {
 
 void Cylinder::read_restart(ifstream *ifr)
 {
-  cout << "Restart Cylinder" << endl;
+  // cout << "Restart Cylinder" << endl;
   ifr->read(reinterpret_cast<char *>(&c1), sizeof(double));
   ifr->read(reinterpret_cast<char *>(&c2), sizeof(double));
   ifr->read(reinterpret_cast<char *>(&R), sizeof(double));

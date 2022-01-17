@@ -11,9 +11,10 @@
  *
  * ----------------------------------------------------------------------- */
 
-#include <iostream>
 #include "eos.h"
 #include "error.h"
+#include "universe.h"
+#include <iostream>
 
 using namespace std;
 
@@ -21,7 +22,9 @@ using namespace std;
 EOS::EOS(MPM *mpm, vector<string> args) :
   Pointers(mpm)
 {
-  cout << "Creating new EOS with ID: " << args[0] << endl;
+  if (universe->me == 0) {
+    cout << "Creating new EOS with ID: " << args[0] << endl;
+  }
   id = args[0];
   style = args[1];
 }
@@ -37,16 +40,20 @@ void EOS::init()
 
 void EOS::options(vector<string> *args, vector<string>::iterator it)
 {
-  cout << "In EOS::options()" << endl;
+  if (universe->me == 0) {
+    cout << "In EOS::options()" << endl;
+  }
   if (args->end() < it) {
     error->all(FLERR, "Error: not enough arguments.\n");
   }
   if (args->end() > it) {
-    cout << "Ignoring optional arguments: ";
-    for (it; it != args->end(); ++it){
-      cout << *it << "\t";
+    if (universe->me == 0) {
+      cout << "Ignoring optional arguments: ";
+      for (it; it != args->end(); ++it){
+	cout << *it << "\t";
+      }
+      cout << endl;
     }
-    cout << endl;
   }
 }
 

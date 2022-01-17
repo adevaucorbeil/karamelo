@@ -29,17 +29,16 @@ Memory::Memory(MPM *mpm) : Pointers(mpm) {}
 
 void *Memory::smalloc(bigint nbytes, string name)
 {
-  if (nbytes == 0) return NULL;
+  if (nbytes == 0) return nullptr;
 
 #if defined(MPM_MEMALIGN)
   void *ptr;
   int retval = posix_memalign(&ptr, MPM_MEMALIGN, nbytes);
-  if (retval) ptr = NULL;
+  if (retval) ptr = nullptr;
 #else
   void *ptr = malloc(nbytes);
 #endif
-  if (ptr == NULL) {
-    char str[128];
+  if (ptr == nullptr) {
     error->all(FLERR, "Failed to allocate " + to_string(nbytes) + " bytes for array " + name + ".\n");
   }
   return ptr;
@@ -53,12 +52,11 @@ void *Memory::srealloc(void *ptr, bigint nbytes, string name)
 {
   if (nbytes == 0) {
     destroy(ptr);
-    return NULL;
+    return nullptr;
   }
 
   ptr = realloc(ptr,nbytes);
-  if (ptr == NULL) {
-    char str[128];
+  if (ptr == nullptr) {
     error->all(FLERR, "Failed to allocate " + to_string(nbytes) + " bytes for array " + name + ".\n");
   }
   return ptr;
@@ -70,7 +68,7 @@ void *Memory::srealloc(void *ptr, bigint nbytes, string name)
 
 void Memory::sfree(void *ptr)
 {
-  if (ptr == NULL) return;
+  if (ptr == nullptr) return;
   free(ptr);
 }
 
@@ -80,6 +78,5 @@ void Memory::sfree(void *ptr)
 
 void Memory::fail(string name)
 {
-  char str[128];
   error->all(FLERR, "Cannot create/grow a vector/array of pointers for " + name + ".\n");
 }

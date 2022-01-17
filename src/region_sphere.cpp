@@ -16,6 +16,7 @@
 #include "error.h"
 #include "input.h"
 #include "math_special.h"
+#include "universe.h"
 #include "update.h"
 #include "var.h"
 #include <iostream>
@@ -26,7 +27,8 @@ using namespace MathSpecial;
 #define BIG 1.0e20
 
 Sphere::Sphere(MPM *mpm, vector<string> args) : Region(mpm, args) {
-  cout << "Initiate Sphere" << endl;
+  if (universe->me == 0)
+    cout << "Initiate Sphere" << endl;
 
   c1 = c2 = c3 = 0;
   R = 0;
@@ -67,8 +69,9 @@ Sphere::Sphere(MPM *mpm, vector<string> args) : Region(mpm, args) {
   }
 
   RSq = R * R;
-  cout << "c1, c2, c3, R = " << c1 << "\t" << c2 << "\t" << c3 << "\t" << R
-       << endl;
+  if (universe->me == 0)
+    cout << "c1, c2, c3, R = " << c1 << "\t" << c2 << "\t" << c3 << "\t" << R
+         << endl;
 
   xlo = c1 - R;
   xhi = c1 + R;
@@ -155,7 +158,7 @@ void Sphere::write_restart(ofstream *of) {
 
 
 void Sphere::read_restart(ifstream *ifr) {
-  cout << "Restart Sphere" << endl;
+  // cout << "Restart Sphere" << endl;
   ifr->read(reinterpret_cast<char *>(&c1), sizeof(double));
   ifr->read(reinterpret_cast<char *>(&c2), sizeof(double));
   ifr->read(reinterpret_cast<char *>(&c3), sizeof(double));

@@ -42,6 +42,7 @@ class Solid : protected Pointers {
 
   bigint np;                                ///< Total number of particles in the domain
   int np_local;                             ///< Number of local particles (in this CPU)
+  int np_per_cell;                          ///< Number of particles per cell (at the beginning)
   int comm_n;                               ///< Number of double to pack for particle exchange between CPU
   double vtot;                              ///< Total volume
   double mtot;                              ///< Total mass
@@ -75,7 +76,7 @@ class Solid : protected Pointers {
   vector<Eigen::Matrix3d> D;                ///< Symmetric part of L
   vector<Eigen::Matrix3d> Finv;             ///< Inverse of the deformation gradient matrix
   vector<Eigen::Matrix3d> Fdot;             ///< Rate of deformation gradient matrix
-  vector<Eigen::Matrix3d> Di;               ///< Inertia tensor
+  Eigen::Matrix3d Di;                       ///< Inertia tensor
   // vector<Eigen::Matrix3d> BDinv;            ///< APIC B*Dinv tensor
 
   vector<double> J;                         ///< Determinant of the deformation matrix
@@ -88,9 +89,12 @@ class Solid : protected Pointers {
   vector<double> eff_plastic_strain_rate;   ///< Particles' effective plastic strain rate
   vector<double> damage;                    ///< Particles' damage variable
   vector<double> damage_init;               ///< Particles' damage initiation variable
-  vector<double> T;                         ///< Particles' temperature
   vector<double> ienergy;                   ///< Particles' internal energy
   vector<int> mask;                         ///< Particles' group mask
+
+  vector<double> T;                         ///< Particles' current temperature
+  vector<double> gamma;                     ///< Particles' heat source
+  vector<Eigen::Vector3d> q;                ///< Particles' heat flux
 
   double max_p_wave_speed;                  ///< Maximum of the particle wave speed
   double dtCFL;
@@ -108,7 +112,7 @@ class Solid : protected Pointers {
   vector<vector< Eigen::Vector3d >> wfd_np; ///< Array of arrays (matrix) of the derivative of the weight functions \f$\partial \Phi_{Ip}/ \partial x\f$ effectively the transpose of wfd_pn.
 
 
-  struct Mat *mat;                          ///< Pointer to the material
+  class Mat *mat;                          ///< Pointer to the material
 
   class Grid *grid;                         ///< Pointer to the background grid
 
@@ -126,17 +130,20 @@ class Solid : protected Pointers {
   void compute_velocity_nodes_APIC(bool);           ///< Specific function that computes the nodal velocity (via momentum) when using Affine PIC (APIC).
   void compute_external_forces_nodes(bool);         ///< Compute external forces step of the Particle to Grid step of the MPM algorithm.
   void compute_internal_forces_nodes_TL();          ///< Compute internal forces step of the Particle to Grid step of the total Lagrangian MPM algorithm.
-  void compute_internal_forces_nodes_UL(bool);      ///< Compute internal forces step of the Particle to Grid step of the updated Lagrangian MPM algorithm.
+  void compute_external_and_internal_forces_nodes_UL(bool);      ///< Compute both external and internal forces step of the Particle to Grid step of the updated Lagrangian MPM algorithm.
+  void compute_external_and_internal_forces_nodes_UL_MLS(bool);      ///< Compute both external and internal forces step of the Particle to Grid step of the moving least square updated Lagrangian MPM algorithm.
   void compute_particle_velocities_and_positions(); ///< Compute the particles' temporary velocities and position, part of the Grid to Particles step of the MPM algorithm.
+  void compute_particle_accelerations_velocities_and_positions(); ///< Compute the particles' temporary acceleration, velocities and position, part of the Grid to Particles step of the MPM algorithm.
+  void compute_particle_accelerations_velocities(); ///< Compute the particles' temporary acceleration and velocities, part of the Grid to Particles step of the MPM algorithm.
   void compute_particle_acceleration();             ///< Update the particles' acceleration
   void update_particle_velocities(double);          ///< Update the particles' velocities based on either PIC and/or FLIP.
+  void update_particle_velocities_and_positions(double);          ///< Update the particles' velocities based on either PIC and/or FLIP and update the positions using the updated velocities.
                                                     ///< The argument is the ratio \f$\alpha\f$ used between PIC and FLIP.
                                                     ///< \f$\alpha = 0\f$ for pure PIC, \f$\alpha = 1\f$ for pure FLIP.
-  void compute_rate_deformation_gradient_TL();      ///< Compute the time derivative of the deformation matrix for TLMPM, when APIC is not used.
-  void compute_rate_deformation_gradient_TL_APIC(); ///< Compute the time derivative of the deformation matrix for TLMPM, when APIC is used.
-  void compute_rate_deformation_gradient_UL_USL();  ///< Compute the time derivative of the deformation matrix for TLMPM, when using Update Stress Last and APIC is not used.
-  void compute_rate_deformation_gradient_UL_MUSL(); ///< Compute the time derivative of the deformation matrix for TLMPM, when using Modified Update Stress Last and APIC is not used.
-  void compute_rate_deformation_gradient_UL_APIC(); ///< Compute the time derivative of the deformation matrix for TLMPM, when APIC is in use.
+  void compute_rate_deformation_gradient_TL(bool);      ///< Compute the time derivative of the deformation matrix for TLMPM, when APIC is not used.
+  void compute_rate_deformation_gradient_TL_APIC(bool); ///< Compute the time derivative of the deformation matrix for TLMPM, when APIC is used.
+  void compute_rate_deformation_gradient_UL(bool);  ///< Compute the time derivative of the deformation matrix for ULMPM, when using Update Stress Last and APIC is not used.
+  void compute_rate_deformation_gradient_UL_APIC(bool); ///< Compute the time derivative of the deformation matrix for ULMPM, when APIC is in use.
   void update_deformation_gradient();               ///< Update the deformation gradient, volume, density, and the necessary strain matrices
   void update_stress();                             ///< Calculate the stress, damage and temperature at each particle, and determine the maximum allowed time step.
   void compute_inertia_tensor();                    ///< Compute the inertia tensor necessary for the Affice PIC.
@@ -147,10 +154,16 @@ class Solid : protected Pointers {
                                                     ///< This function is used to re-order the memory arrangment of particles.
                                                     ///< Usually this is done when particle j is deleted.
   void pack_particle(int, vector<double> &);        ///< Pack particles attributes into a buffer (used for generating a restart).
-  void unpack_particle(int &, vector<int>, double[]); ///< Unpack particles attributes from a buffer (used when reading a restart).
+  void unpack_particle(int &, vector<int>, vector<double> &); ///< Unpack particles attributes from a buffer (used when reading a restart).
 
   void write_restart(ofstream*);                    ///< Write solid information in the restart file
   void read_restart(ifstream*);                     ///< Read solid information from the restart file
+
+  void compute_temperature_nodes(bool);             ///< Compute nodal temperature step of the particle
+  void compute_external_temperature_driving_forces_nodes(bool); ///< Compute external temperature driving forces
+  void compute_internal_temperature_driving_forces_nodes(); ///< Compute internal forces step of the Particle to Grid step of the total Lagrangian MPM algorithm.
+  void update_particle_temperature();               ///< Update the particles' temperature
+  void update_heat_flux(bool);                      ///< Update the particles' heat source and fluxes
 
 private:
   void populate(vector<string>);

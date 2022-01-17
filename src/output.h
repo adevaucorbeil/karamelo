@@ -54,7 +54,6 @@ public:
 
   void setup();
   void write(bigint);                  ///< output for current timestep
-  void show_plot();                    ///< show plot
 
   void set_log(vector<string>);        ///< set log output frequency
 

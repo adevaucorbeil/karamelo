@@ -40,7 +40,7 @@ FixContactHertz::FixContactHertz(MPM *mpm, vector<string> args)
       0) { // If the keyword restart, we are expecting to have read_restart()
            // launched right after.
     igroup = stoi(args[3]);
-    if (igroup == -1) {
+    if (igroup == -1 && universe->me == 0) {
       cout << "Could not find group number " << args[3] << endl;
     }
     groupbit = group->bitmask[igroup];
@@ -63,7 +63,9 @@ FixContactHertz::FixContactHertz(MPM *mpm, vector<string> args)
     error->all(FLERR, "Error: solid " + args[3] + " unknown.\n");
   }
 
-  cout << "Creating new fix FixContactHertz with ID: " << args[0] << endl;
+  if (universe->me == 0) {
+    cout << "Creating new fix FixContactHertz with ID: " << args[0] << endl;
+  }
   id = args[0];
   requires_ghost_particles = true;
 }

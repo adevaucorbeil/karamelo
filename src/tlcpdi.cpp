@@ -5,6 +5,7 @@
 #include "grid.h"
 #include "input.h"
 #include "solid.h"
+#include "universe.h"
 #include "update.h"
 #include "var.h"
 #include <Eigen/Eigen>
@@ -16,7 +17,7 @@
 using namespace std;
 
 TLCPDI::TLCPDI(MPM *mpm) : Method(mpm) {
-  cout << "In TLCPDI::TLCPDI()" << endl;
+  // cout << "In TLCPDI::TLCPDI()" << endl;
 
   update_wf = true;
   update->PIC_FLIP = 0.99;
@@ -38,20 +39,24 @@ void TLCPDI::setup(vector<string> args)
   if (args.size() > 1) {
     error->all(FLERR, "Illegal modify_method command: too many arguments.\n");
   }
-  if (update->shape_function == update->ShapeFunctions::LINEAR) {
-    cout << "Setting up linear basis functions\n";
+  if (update->shape_function == Update::ShapeFunctions::LINEAR) {
+    if (universe->me == 0)
+      cout << "Setting up linear basis functions\n";
     basis_function = &BasisFunction::linear;
     derivative_basis_function = &BasisFunction::derivative_linear;
-  } else if (update->shape_function == update->ShapeFunctions::CUBIC_SPLINE) {
-    cout << "Setting up cubic-spline basis functions\n";
+  } else if (update->shape_function == Update::ShapeFunctions::CUBIC_SPLINE) {
+    if (universe->me == 0)
+      cout << "Setting up cubic-spline basis functions\n";
     basis_function = &BasisFunction::cubic_spline;
     derivative_basis_function = &BasisFunction::derivative_cubic_spline;
-  } else if (update->shape_function == update->ShapeFunctions::QUADRATIC_SPLINE) {
-    cout << "Setting up quadratic-spline basis functions\n";
+  } else if (update->shape_function == Update::ShapeFunctions::QUADRATIC_SPLINE) {
+    if (universe->me == 0)
+      cout << "Setting up quadratic-spline basis functions\n";
     basis_function = &BasisFunction::quadratic_spline;
     derivative_basis_function = &BasisFunction::derivative_quadratic_spline;
-  } else if (update->shape_function == update->ShapeFunctions::BERNSTEIN) {
-    cout << "Setting up Bernstein-quadratic basis functions\n";
+  } else if (update->shape_function == Update::ShapeFunctions::BERNSTEIN) {
+    if (universe->me == 0)
+      cout << "Setting up Bernstein-quadratic basis functions\n";
     basis_function = &BasisFunction::bernstein_quadratic;
     derivative_basis_function = &BasisFunction::derivative_bernstein_quadratic;
   } else {
@@ -86,7 +91,8 @@ void TLCPDI::setup(vector<string> args)
     error->all(FLERR, error_str);
   }
 
-  cout << "Using CPDI-" << known_styles[style] << endl;
+  if (universe->me == 0)
+    cout << "Using CPDI-" << known_styles[style] << endl;
 }
 
 void TLCPDI::compute_grid_weight_functions_and_gradients()
@@ -94,10 +100,9 @@ void TLCPDI::compute_grid_weight_functions_and_gradients()
   if (!update_wf) return;
 
   if (domain->dimension !=2) {
-    cout << "Error: ULCPDI is only 2D....\n";
-    exit(1);
+    error->all(FLERR, "Error: ULCPDI is only 2D....\n");
   }
-  cout << "In TLCPDI::compute_grid_weight_functions_and_gradients()\n";
+  // cout << "In TLCPDI::compute_grid_weight_functions_and_gradients()\n";
   bigint nsolids, np_local, nnodes, nc;
 
   nsolids = domain->solids.size();
@@ -177,8 +182,7 @@ void TLCPDI::compute_grid_weight_functions_and_gradients()
 	    }
 
 	    if (domain->dimension == 3) {
-	      cout << "Unsupported!\n";
-	      exit(1);
+	      error->all(FLERR, "Unsupported!\n");
 	    }
 	  }
 
@@ -192,14 +196,14 @@ void TLCPDI::compute_grid_weight_functions_and_gradients()
 
 	    int i0, j0, k0;
 
-	    if (update->shape_function == update->ShapeFunctions::LINEAR) {
+	    if (update->shape_function == Update::ShapeFunctions::LINEAR) {
 	      i0 = (int) ((xcorner[ic][0] - domain->boxlo[0])*inv_cellsize);
 	      j0 = (int) ((xcorner[ic][1] - domain->boxlo[1])*inv_cellsize);
 	      k0 = (int) ((xcorner[ic][2] - domain->boxlo[2])*inv_cellsize);
 
 	      m = 2;
 
-	    } else if (update->shape_function == update->ShapeFunctions::BERNSTEIN){
+	    } else if (update->shape_function == Update::ShapeFunctions::BERNSTEIN){
 	      i0 = 2*(int) ((xcorner[ic][0] - domain->boxlo[0])*inv_cellsize);
 	      j0 = 2*(int) ((xcorner[ic][1] - domain->boxlo[1])*inv_cellsize);
 	      k0 = 2*(int) ((xcorner[ic][2] - domain->boxlo[2])*inv_cellsize);
@@ -211,7 +215,7 @@ void TLCPDI::compute_grid_weight_functions_and_gradients()
 	      m = 3;
 
 	    } else {
-	      //(update->shape_function == update->ShapeFunctions::CUBIC_SPLINE || update->shape_function == update->ShapeFunctions::QUADRATIC_SPLINE){
+	      //(update->shape_function == Update::ShapeFunctions::CUBIC_SPLINE || update->shape_function == Update::ShapeFunctions::QUADRATIC_SPLINE){
 	      i0 = (int) ((xcorner[ic][0] - domain->boxlo[0])*inv_cellsize - 1);
 	      j0 = (int) ((xcorner[ic][1] - domain->boxlo[1])*inv_cellsize - 1);
 	      k0 = (int) ((xcorner[ic][2] - domain->boxlo[2])*inv_cellsize - 1);
@@ -357,7 +361,30 @@ void TLCPDI::particles_to_grid()
     domain->solids[isolid]->compute_external_forces_nodes(grid_reset);
     domain->solids[isolid]->compute_internal_forces_nodes_TL();
     /*compute_thermal_energy_nodes();*/
-    }
+  }
+}
+
+void TLCPDI::particles_to_grid_USF_1()
+{
+  bool grid_reset = true; // Indicate if the grid quantities have to be reset
+  for (int isolid=0; isolid<domain->solids.size(); isolid++){
+    domain->solids[isolid]->compute_mass_nodes(grid_reset);
+    //domain->solids[isolid]->compute_node_rotation_matrix(grid_reset);
+    if (method_type.compare("APIC") == 0)
+      domain->solids[isolid]->compute_velocity_nodes_APIC(grid_reset);
+    else
+      domain->solids[isolid]->compute_velocity_nodes(grid_reset);
+  }
+}
+
+void TLCPDI::particles_to_grid_USF_2()
+{
+  bool grid_reset = true; // Indicate if the grid quantities have to be reset
+  for (int isolid=0; isolid<domain->solids.size(); isolid++){
+    domain->solids[isolid]->compute_external_forces_nodes(grid_reset);
+    domain->solids[isolid]->compute_internal_forces_nodes_TL();
+    /*compute_thermal_energy_nodes();*/
+  }
 }
 
 void TLCPDI::update_grid_state()
@@ -399,12 +426,12 @@ void TLCPDI::update_grid_positions()
   }
 }
 
-void TLCPDI::compute_rate_deformation_gradient()
-{
+void TLCPDI::compute_rate_deformation_gradient(bool doublemapping) {
   for (int isolid=0; isolid<domain->solids.size(); isolid++) {
-    if (method_type.compare("APIC") == 0) domain->solids[isolid]->compute_rate_deformation_gradient_TL_APIC();
-    else domain->solids[isolid]->compute_rate_deformation_gradient_TL();
-    //domain->solids[isolid]->compute_deformation_gradient();
+    if (update->sub_method_type == Update::SubMethodType::APIC)
+      domain->solids[isolid]->compute_rate_deformation_gradient_TL_APIC(doublemapping);
+    else
+      domain->solids[isolid]->compute_rate_deformation_gradient_TL(doublemapping);
   }
 }
 
@@ -415,7 +442,7 @@ void TLCPDI::update_deformation_gradient()
   }
 }
 
-void TLCPDI::update_stress()
+void TLCPDI::update_stress(bool doublemapping)
 {
   for (int isolid=0; isolid<domain->solids.size(); isolid++) {
     domain->solids[isolid]->update_stress();
@@ -434,11 +461,11 @@ void TLCPDI::adjust_dt()
     if (dtCFL == 0) {
       cout << "Error: dtCFL == 0\n";
       cout << "domain->solids[" << isolid << "]->dtCFL == 0\n";
-      exit(1);
+      error->all(FLERR, "");
     } else if (std::isnan(dtCFL)) {
       cout << "Error: dtCFL = " << dtCFL << "\n";
       cout << "domain->solids[" << isolid << "]->dtCFL == " << domain->solids[isolid]->dtCFL << "\n";
-      exit(1);
+      error->all(FLERR, "");
     }
   }
   update->dt = dtCFL * update->dt_factor;

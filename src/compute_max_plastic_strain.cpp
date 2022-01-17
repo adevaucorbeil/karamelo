@@ -45,7 +45,9 @@ ComputeMaxPlasticStrain::ComputeMaxPlasticStrain(MPM *mpm, vector<string> args)
             group->pon[igroup] + ".\n");
   }
 
-  cout << "Creating new compute ComputeMaxPlasticStrain with ID: " << args[0] << endl;
+  
+  if (universe->me == 0)
+    cout << "Creating new compute ComputeMaxPlasticStrain with ID: " << args[0] << endl;
   id = args[0];
 
   (*input->vars)[id + "_Epmax"] = Var(id + "_Epmax", 0);
@@ -64,7 +66,6 @@ void ComputeMaxPlasticStrain::compute_value() {
   // cout << "In ComputeMaxPlasticStrain::post_particles_to_grid()\n";
 
   // Go through all the nodes in the group and set b to the right value:
-  double ux, uy, uz;
 
   int solid = group->solid[igroup];
 

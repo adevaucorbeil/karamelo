@@ -38,7 +38,7 @@ FixVelocityParticles::FixVelocityParticles(MPM *mpm, vector<string> args) : Fix(
       0) { // If the keyword restart, we are expecting to have read_restart()
            // launched right after.
     igroup = stoi(args[3]);
-    if (igroup == -1) {
+    if (igroup == -1 && universe->me == 0) {
       cout << "Could not find group number " << args[3] << endl;
     }
     groupbit = group->bitmask[igroup];
@@ -53,10 +53,13 @@ FixVelocityParticles::FixVelocityParticles(MPM *mpm, vector<string> args) : Fix(
   }
 
   if (group->pon[igroup].compare("particles") !=0 ) {
-    cout << "fix_velocity_particles needs to be given a group of particles" << group->pon[igroup] << ", " << args[2] << " is a group of "<< group->pon[igroup] << "." << endl;
-    exit(1);
+    error->one(FLERR, "fix_velocity_nodes needs to be given a group of nodes" +
+                          group->pon[igroup] + ", " + args[2] +
+                          " is a group of " + group->pon[igroup] + ".\n");
   }
-  cout << "Creating new fix FixVelocityParticles with ID: " << args[0] << endl;
+  if (universe->me == 0) {
+    cout << "Creating new fix FixVelocityParticles with ID: " << args[0] << endl;
+  }
   id = args[0];
 
   xset = yset = zset = false;
@@ -86,7 +89,7 @@ FixVelocityParticles::FixVelocityParticles(MPM *mpm, vector<string> args) : Fix(
 
       // Replace "time" by "time - dt" in the y argument:
       previous = SpecialFunc::replace_all(input->parsev(previous).str(), "time", "(time - dt)");
-      xprevvalue = input->parsev(previous);
+      yprevvalue = input->parsev(previous);
     }
   }
 
@@ -99,7 +102,7 @@ FixVelocityParticles::FixVelocityParticles(MPM *mpm, vector<string> args) : Fix(
 
       // Replace "time" by "time - dt" in the z argument:
       previous = SpecialFunc::replace_all(input->parsev(previous).str(), "time", "(time - dt)");
-      xprevvalue = input->parsev(previous);
+      zprevvalue = input->parsev(previous);
     }
   }
 }
@@ -160,7 +163,7 @@ void FixVelocityParticles::initial_integrate() {
 	    s->v_update[ip][2] = zvalue.result(mpm);
 	    s->v[ip][2] = zprevvalue.result(mpm);
 	  }
-	  // if (s->ptag[ip] == 533) {
+	  // if (s->ptag[ip] == 4371) {
 	  //   printf("fix: v=[%4.3e %4.3e %4.3e]\tv_update=[%4.3e %4.3e %4.3e]\ta=[%4.3e %4.3e %4.3e]\n", s->v[ip][0], s->v[ip][1], s->v[ip][2], s->v_update[ip][0], s->v_update[ip][1], s->v_update[ip][2], s->a[ip][0], s->a[ip][1], s->a[ip][2]);
 	  // }
 	  xold.push_back(xtemp);
@@ -194,7 +197,7 @@ void FixVelocityParticles::initial_integrate() {
 	  s->v_update[ip][2] = zvalue.result(mpm);
 	  s->v[ip][2] = zprevvalue.result(mpm);
 	}
-	// if (s->ptag[ip] == 533) {
+	// if (s->ptag[ip] == 4371) {
 	//   printf("fix: v=[%4.3e %4.3e %4.3e]\tv_update=[%4.3e %4.3e %4.3e]\ta=[%4.3e %4.3e %4.3e]\n", s->v[ip][0], s->v[ip][1], s->v[ip][2], s->v_update[ip][0], s->v_update[ip][1], s->v_update[ip][2], s->a[ip][0], s->a[ip][1], s->a[ip][2]);
 	// }
 	xold.push_back(xtemp);

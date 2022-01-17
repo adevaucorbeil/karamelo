@@ -11,9 +11,10 @@
  *
  * ----------------------------------------------------------------------- */
 
-#include <iostream>
 #include "strength.h"
 #include "error.h"
+#include "universe.h"
+#include <iostream>
 
 using namespace std;
 
@@ -21,7 +22,9 @@ using namespace std;
 Strength::Strength(MPM *mpm, vector<string> args) :
   Pointers(mpm)
 {
-  cout << "Creating new Strength with ID: " << args[0] << endl;
+  if (universe->me == 0) {
+    cout << "Creating new Strength with ID: " << args[0] << endl;
+  }
   id = args[0];
   style = args[1];
 }
@@ -37,16 +40,21 @@ void Strength::init()
 
 void Strength::options(vector<string> *args, vector<string>::iterator it)
 {
-  cout << "In Strength::options()" << endl;
+  if (universe->me == 0) {
+    cout << "In Strength::options()" << endl;
+  }
+
   if (args->end() < it) {
     error->all(FLERR, "Error: not enough arguments.\n");
   }
   if (args->end() > it) {
-    cout << "Ignoring optional arguments: ";
-    for (it; it != args->end(); ++it){
-      cout << *it << "\t";
+    if (universe->me == 0) {
+      cout << "Ignoring optional arguments: ";
+      for (it; it != args->end(); ++it){
+	cout << *it << "\t";
+      }
+      cout << endl;
     }
-    cout << endl;
   }
 }
 

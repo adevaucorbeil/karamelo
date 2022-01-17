@@ -70,16 +70,17 @@ void MUSL::run(Var condition){
 
     update->method->update_grid_positions();
 
-    update->method->compute_rate_deformation_gradient();
+    update->method->compute_rate_deformation_gradient(true);
     update->method->update_deformation_gradient();
-    update->method->update_stress();
+    update->method->update_stress(true);
 
     update->method->exchange_particles();
 
-    update->method->adjust_dt();
     update->update_time();
+    update->method->adjust_dt();
 
     modify->final_integrate();
+
 
     if ((update->maxtime != -1) && (update->atime > update->maxtime)) {
       update->nsteps = ntimestep;
@@ -91,6 +92,5 @@ void MUSL::run(Var condition){
       output->write(ntimestep);
     }
   }
-  output->show_plot();
 }
 

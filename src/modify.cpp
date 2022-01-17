@@ -23,15 +23,15 @@ using namespace FixConst;
 
 Modify::Modify(MPM *mpm) : Pointers(mpm)
 {
-  end_of_step_every = NULL;
+  end_of_step_every = nullptr;
 
-  list_timeflag = NULL;
+  list_timeflag = nullptr;
 
   nfix_restart_global = 0;
-  id_restart_global = style_restart_global = state_restart_global = NULL;
+  id_restart_global = style_restart_global = state_restart_global = nullptr;
   nfix_restart_peratom = 0;
-  id_restart_peratom = style_restart_peratom = NULL;
-  index_restart_peratom = NULL;
+  id_restart_peratom = style_restart_peratom = nullptr;
+  index_restart_peratom = nullptr;
 
 
   // fill map with fixes listed in style_fix.h
@@ -106,7 +106,7 @@ void Modify::setup()
 ------------------------------------------------------------------------- */
 
 void Modify::add_fix(vector<string> args){
-  cout << "In add_fix" << endl;
+  // cout << "In add_fix" << endl;
 
   int ifix = find_fix(args[0]);
 
@@ -173,7 +173,7 @@ void Modify::delete_fix(int ifix)
 ------------------------------------------------------------------------- */
 
 void Modify::add_compute(vector<string> args){
-  cout << "In add_compute" << endl;
+  // cout << "In add_compute" << endl;
 
   if (find_compute(args[0]) >= 0) {
     error->all(FLERR, "Error: reuse of compute ID.\n");
@@ -195,7 +195,7 @@ void Modify::add_compute(vector<string> args){
 int Modify::find_compute(string name)
 {
   for (int icompute = 0; icompute < compute.size(); icompute++) {
-    cout << "compute["<< icompute <<"]->id=" << compute[icompute]->id << endl;
+    // cout << "compute["<< icompute <<"]->id=" << compute[icompute]->id << endl;
     if (name.compare(compute[icompute]->id) == 0) return icompute;
   }
   return -1;
@@ -319,14 +319,14 @@ void Modify::write_restart(ofstream *of) {
     size_t Nr = fix[i]->id.size();
     of->write(reinterpret_cast<const char *>(&Nr), sizeof(size_t));
     of->write(reinterpret_cast<const char *>(fix[i]->id.c_str()), Nr);
-    cout << "id = " << fix[i]->id << endl;
+    // cout << "id = " << fix[i]->id << endl;
 
     Nr = fix[i]->style.size();
     of->write(reinterpret_cast<const char *>(&Nr), sizeof(size_t));
     of->write(reinterpret_cast<const char *>(fix[i]->style.c_str()), Nr);
     of->write(reinterpret_cast<const char *>(&fix[i]->igroup), sizeof(int));
     fix[i]->write_restart(of);
-    cout << "style = " << fix[i]->style << endl;
+    // cout << "style = " << fix[i]->style << endl;
   }
 }
 
@@ -347,14 +347,14 @@ void Modify::read_restart(ifstream *ifr) {
     id.resize(Nr);
 
     ifr->read(reinterpret_cast<char *>(&id[0]), Nr);
-    cout << "id = " << id << endl;
+    // cout << "id = " << id << endl;
 
     string style = "";
     ifr->read(reinterpret_cast<char *>(&Nr), sizeof(size_t));
     style.resize(Nr);
 
     ifr->read(reinterpret_cast<char *>(&style[0]), Nr);
-    cout << "style = " << style << endl;
+    // cout << "style = " << style << endl;
     int igroup = -1;
     ifr->read(reinterpret_cast<char *>(&igroup), sizeof(int));
     FixCreator fix_creator = (*fix_map)[style];

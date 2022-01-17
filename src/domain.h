@@ -14,6 +14,8 @@
 #ifndef LMP_DOMAIN_H
 #define LMP_DOMAIN_H
 
+#define _USE_MATH_DEFINES // needed to define constants for windows
+
 #include "pointers.h"
 #include "region.h"
 #include "solid.h"
@@ -37,6 +39,7 @@ class Domain : protected Pointers {
   bool created;                          ///< has the domain been created?
   bool axisymmetric;                     ///< true if axisymmetric,  false otherwise
   tagint np_total;                       ///< total number of particles
+  tagint np_local;                       ///< sum of the local number of particles
 
   double boxlo[3];                       ///< Lower orthogonal box global bounds
   double boxhi[3];                       ///< Higher orthogonal box global bounds
@@ -55,6 +58,7 @@ class Domain : protected Pointers {
   void set_dimension(vector<string>);    ///< Called when user calls dimension()
   void set_axisymmetric(vector<string>); ///< Called when user calls axisymmetric()
   bool inside_subdomain(double, double, double); ///< Checks if the set of coordinates lies in the simulation domain.
+  int which_CPU_owns_me(double, double, double); ///< Determine in which CPU a particle belongs.
   bool inside_subdomain_extended(double, double, double, double); ///< Checks if the set of coordinates lies in this proc sub-domain.
   void set_local_box();                  ///< Determine the boundaries of this proc subdomain
   void add_region(vector<string>);       ///< Create a new region

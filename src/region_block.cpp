@@ -15,6 +15,7 @@
 #include "domain.h"
 #include "error.h"
 #include "input.h"
+#include "universe.h"
 #include "var.h"
 #include <iostream>
 
@@ -24,7 +25,8 @@ using namespace std;
 
 Block_::Block_(MPM *mpm, vector<string> args) : Region(mpm, args)
 {
-  cout << "Initiate Block_" << endl;
+  if (universe->me == 0)
+    cout << "Initiate Block_" << endl;
 
   if (args.size()<3) {
     error->all(FLERR, "Error: not enough arguments.\n");
@@ -67,7 +69,8 @@ Block_::Block_(MPM *mpm, vector<string> args) : Region(mpm, args)
     if (domain->boxhi[0] < xhi) domain->boxhi[0] = xhi;
   }
 
-  cout << "xlo xhi = " << xlo << "\t" << xhi << endl;
+  if (universe->me == 0)
+    cout << "xlo xhi = " << xlo << "\t" << xhi << endl;
 
   if (domain->dimension >= 2) {
     if (args[4].compare("-INF") == 0 || args[4].compare("INF") == 0 || args[4].compare("EDGE") == 0) {
@@ -90,7 +93,8 @@ Block_::Block_(MPM *mpm, vector<string> args) : Region(mpm, args)
       if (domain->boxhi[1] < yhi) domain->boxhi[1] = yhi;
     }
 
-    cout << "ylo yhi = " << ylo << "\t" << yhi << endl;
+    if (universe->me == 0)
+      cout << "ylo yhi = " << ylo << "\t" << yhi << endl;
   } else {
     ylo = yhi = 0;
     zlo = zhi = 0;
@@ -117,7 +121,8 @@ Block_::Block_(MPM *mpm, vector<string> args) : Region(mpm, args)
       if (domain->boxhi[2] < zhi) domain->boxhi[2] = zhi;
     }
 
-    cout << "zlo zhi = " << zlo << "\t" << zhi << endl;
+    if (universe->me == 0)
+      cout << "zlo zhi = " << zlo << "\t" << zhi << endl;
   } else {
     zlo = zhi = 0;
   }

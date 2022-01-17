@@ -19,7 +19,9 @@
 #include "style_eos.h"
 #include "style_strength.h"
 #include "style_temperature.h"
+#include "universe.h"
 #include "var.h"
+#include <mpi.h>
 #include <vector>
 
 using namespace std;
@@ -90,7 +92,6 @@ Material::~Material()
  * If not, it creates an entry in the vector Material::EOSs and calls EOS::EOS()
  */
 void Material::add_EOS(vector<string> args){
-  cout << "In add_EOS" << endl;
 
   if (find_EOS(args[0]) >= 0) {
     error->all(FLERR, "Error: reuse of EOS ID.\n");
@@ -99,7 +100,6 @@ void Material::add_EOS(vector<string> args){
     // create the EOS
 
   if (EOS_map->find(args[1]) != EOS_map->end()) {
-    cout << "Create EOS\n";
     EOSCreator EOS_creator = (*EOS_map)[args[1]];
     EOSs.push_back(EOS_creator(mpm, args));
     EOSs.back()->init();
@@ -114,9 +114,7 @@ void Material::add_EOS(vector<string> args){
  */
 int Material::find_EOS(string name)
 {
-  cout << "In find_EOS\n";
   for (int iEOS = 0; iEOS < EOSs.size(); iEOS++) {
-    cout << "EOSs["<< iEOS <<"]->id=" << EOSs[iEOS]->id << endl;
     if (name.compare(EOSs[iEOS]->id) == 0) return iEOS;
   }
   return -1;
@@ -132,7 +130,6 @@ int Material::find_EOS(string name)
  * If not, it creates an entry in the vector Material::strengths and calls Strength::Strength()
  */
 void Material::add_strength(vector<string> args){
-  cout << "In add_strength" << endl;
 
   if (find_strength(args[0]) >= 0) {
     error->all(FLERR, "Error: reuse of strength ID.\n");
@@ -173,7 +170,6 @@ int Material::find_strength(string name)
  * If not, it creates an entry in the vector Material::damages and calls Damage::Damage()
  */
 void Material::add_damage(vector<string> args){
-  cout << "In add_damage" << endl;
 
   if (find_damage(args[0]) >= 0) {
     error->all(FLERR, "Error: reuse of damage ID.\n");
@@ -213,7 +209,6 @@ int Material::find_damage(string name)
  * If not, it creates an entry in the vector Material::temperatures and calls Temperature::Temperature()
  */
 void Material::add_temperature(vector<string> args){
-  cout << "In add_temperature" << endl;
 
   if (find_temperature(args[0]) >= 0) {
     error->all(FLERR, "Error: reuse of temperature ID.\n");
@@ -253,7 +248,6 @@ int Material::find_temperature(string name)
  * If not, it creates an entry in the vector Material::EOSs and calls EOS::EOS()
  */
 void Material::add_material(vector<string> args) {
-  // cout << "In add_material" << endl;
 
   if (args.size() < 2) {
     string error_str = "Error: material command not enough arguments\n";
@@ -286,8 +280,15 @@ void Material::add_material(vector<string> args) {
     else
       type = NEO_HOOKEAN;
 
+    double kappa = 0, cp = 0;
+    if (args.size() >= 6) {
+      cp = input->parsev(args[5]);
+      kappa = input->parsev(args[6]);
+    }
+
     materials.push_back(Mat{args[0], type, input->parsev(args[2]),
-                            input->parsev(args[3]), input->parsev(args[4])});
+                            input->parsev(args[3]), input->parsev(args[4]),
+			    cp, kappa});
 
   } else if (args[1].compare("rigid") == 0) {
     materials.push_back(Mat{args[0], RIGID});
@@ -305,8 +306,8 @@ void Material::add_material(vector<string> args) {
                  "Error: could not find strength named: " + args[3] + ".\n");
     }
 
-    Damage *damage_ = NULL;
-    Temperature *temp_ = NULL;
+    Damage *damage_ = nullptr;
+    Temperature *temp_ = nullptr;
 
     if (args.size() > Nargs.find(args[1])->second) {
       int iDamage, iTemp;
@@ -356,7 +357,18 @@ void Material::add_material(vector<string> args) {
     materials.push_back(
         Mat{args[0], SHOCK, EOSs[iEOS], strengths[iStrength], damage_, temp_});
   }
-  cout << "Creating new mat with ID: " << args[0] << endl;
+
+  if (universe->me == 0) {
+    cout << "Creating new mat with ID: " << args[0] << endl;
+    cout << "Properties for material " << materials.back().id << endl;
+    cout << "\tReference density: " << materials.back().rho0 << endl;
+    cout << "\tYoung\'s modulus: " << materials.back().E << endl;
+    cout << "\tPoisson\'s ratio: " << materials.back().nu << endl;
+    cout << "\tShear modulus: " << materials.back().G << endl;
+    cout << "\tBulk modulus: " << materials.back().K << endl;
+    cout << "\tLame first parameter (Lambda): " << materials.back().lambda << endl;
+    cout << "\tSignal velocity: " << materials.back().signal_velocity << endl;    
+  }
 }
 
 /*! This function checks if 'name' is already used for a Material.\n
@@ -378,13 +390,13 @@ void Material::write_restart(ofstream *of) {
     size_t Neos = EOSs[i]->id.size();
     of->write(reinterpret_cast<const char *>(&Neos), sizeof(size_t));
     of->write(reinterpret_cast<const char *>(EOSs[i]->id.c_str()), Neos);
-    cout << "id = " << EOSs[i]->id << endl;
+    // cout << "id = " << EOSs[i]->id << endl;
 
     Neos = EOSs[i]->style.size();
     of->write(reinterpret_cast<const char *>(&Neos), sizeof(size_t));
     of->write(reinterpret_cast<const char *>(EOSs[i]->style.c_str()), Neos);
     EOSs[i]->write_restart(of);
-    cout << "style = " << EOSs[i]->style << endl;
+    // cout << "style = " << EOSs[i]->style << endl;
   }
 
   // Save strengths:
@@ -395,13 +407,13 @@ void Material::write_restart(ofstream *of) {
     size_t Nstrengths = strengths[i]->id.size();
     of->write(reinterpret_cast<const char *>(&Nstrengths), sizeof(size_t));
     of->write(reinterpret_cast<const char *>(strengths[i]->id.c_str()), Nstrengths);
-    cout << "id = " << strengths[i]->id << endl;
+    // cout << "id = " << strengths[i]->id << endl;
 
     Nstrengths = strengths[i]->style.size();
     of->write(reinterpret_cast<const char *>(&Nstrengths), sizeof(size_t));
     of->write(reinterpret_cast<const char *>(strengths[i]->style.c_str()), Nstrengths);
     strengths[i]->write_restart(of);
-    cout << "style = " << strengths[i]->style << endl;
+    // cout << "style = " << strengths[i]->style << endl;
   }
 
   // Save damages:
@@ -412,13 +424,13 @@ void Material::write_restart(ofstream *of) {
     size_t Ndamages = damages[i]->id.size();
     of->write(reinterpret_cast<const char *>(&Ndamages), sizeof(size_t));
     of->write(reinterpret_cast<const char *>(damages[i]->id.c_str()), Ndamages);
-    cout << "id = " << damages[i]->id << endl;
+    // cout << "id = " << damages[i]->id << endl;
 
     Ndamages = damages[i]->style.size();
     of->write(reinterpret_cast<const char *>(&Ndamages), sizeof(size_t));
     of->write(reinterpret_cast<const char *>(damages[i]->style.c_str()), Ndamages);
     damages[i]->write_restart(of);
-    cout << "style = " << damages[i]->style << endl;
+    // cout << "style = " << damages[i]->style << endl;
   }
 
   // Save temperatures:
@@ -429,13 +441,13 @@ void Material::write_restart(ofstream *of) {
     size_t Ntemperatures = temperatures[i]->id.size();
     of->write(reinterpret_cast<const char *>(&Ntemperatures), sizeof(size_t));
     of->write(reinterpret_cast<const char *>(temperatures[i]->id.c_str()), Ntemperatures);
-    cout << "id = " << temperatures[i]->id << endl;
+    // cout << "id = " << temperatures[i]->id << endl;
 
     Ntemperatures = temperatures[i]->style.size();
     of->write(reinterpret_cast<const char *>(&Ntemperatures), sizeof(size_t));
     of->write(reinterpret_cast<const char *>(temperatures[i]->style.c_str()), Ntemperatures);
     temperatures[i]->write_restart(of);
-    cout << "style = " << temperatures[i]->style << endl;
+    // cout << "style = " << temperatures[i]->style << endl;
   }
 
   // Save materials:
@@ -446,10 +458,10 @@ void Material::write_restart(ofstream *of) {
     size_t Nmats = materials[i].id.size();
     of->write(reinterpret_cast<const char *>(&Nmats), sizeof(size_t));
     of->write(reinterpret_cast<const char *>(materials[i].id.c_str()), Nmats);
-    cout << "id = " << materials[i].id << endl;
+    // cout << "id = " << materials[i].id << endl;
 
     of->write(reinterpret_cast<const char *>(&materials[i].type), sizeof(int));
-    cout << "type = " << materials[i].type << endl;
+    // cout << "type = " << materials[i].type << endl;
 
     if (materials[i].type == SHOCK) {
       int iEOS = find_EOS(materials[i].eos->id);
@@ -459,13 +471,13 @@ void Material::write_restart(ofstream *of) {
       of->write(reinterpret_cast<const char *>(&iStrength), sizeof(int));
 
       int iDamage = -1;
-      if (materials[i].damage != NULL) {
+      if (materials[i].damage != nullptr) {
 	iDamage = find_damage(materials[i].damage->id);
       }
       of->write(reinterpret_cast<const char *>(&iDamage), sizeof(int));
 
       int iTemperature = -1;
-      if (materials[i].temp != NULL) {
+      if (materials[i].temp != nullptr) {
 	iTemperature = find_temperature(materials[i].temp->id);
       }
       of->write(reinterpret_cast<const char *>(&iTemperature), sizeof(int));
@@ -473,6 +485,8 @@ void Material::write_restart(ofstream *of) {
       of->write(reinterpret_cast<const char *>(&materials[i].rho0), sizeof(double));
       of->write(reinterpret_cast<const char *>(&materials[i].E), sizeof(double));
       of->write(reinterpret_cast<const char *>(&materials[i].nu), sizeof(double));
+      of->write(reinterpret_cast<const char *>(&materials[i].cp), sizeof(double));
+      of->write(reinterpret_cast<const char *>(&materials[i].kappa), sizeof(double));
     }
   }
 
@@ -483,7 +497,6 @@ void Material::write_restart(ofstream *of) {
 
 
 void Material::read_restart(ifstream *ifr) {
-  cout << "In Material::read_restart" << endl;
 
   // Pull EOSs:
   size_t N = 0;
@@ -498,14 +511,14 @@ void Material::read_restart(ifstream *ifr) {
     id.resize(Neos);
 
     ifr->read(reinterpret_cast<char *>(&id[0]), Neos);
-    cout << "id = " << id << endl;
+    // cout << "id = " << id << endl;
 
     string style = "";
     ifr->read(reinterpret_cast<char *>(&Neos), sizeof(size_t));
     style.resize(Neos);
 
     ifr->read(reinterpret_cast<char *>(&style[0]), Neos);
-    cout << "style = " << style << endl;
+    // cout << "style = " << style << endl;
     EOSCreator EOS_creator = (*EOS_map)[style];
     EOSs[i] = EOS_creator(mpm, vector<string>{id, style, "restart"});
     EOSs[i]->read_restart(ifr);
@@ -525,14 +538,14 @@ void Material::read_restart(ifstream *ifr) {
     id.resize(Nstrengths);
 
     ifr->read(reinterpret_cast<char *>(&id[0]), Nstrengths);
-    cout << "id = " << id << endl;
+    // cout << "id = " << id << endl;
 
     string style = "";
     ifr->read(reinterpret_cast<char *>(&Nstrengths), sizeof(size_t));
     style.resize(Nstrengths);
 
     ifr->read(reinterpret_cast<char *>(&style[0]), Nstrengths);
-    cout << "style = " << style << endl;
+    // cout << "style = " << style << endl;
     StrengthCreator strength_creator = (*strength_map)[style];
     strengths[i] = strength_creator(mpm, vector<string>{id, style, "restart"});
     strengths[i]->read_restart(ifr);
@@ -552,14 +565,14 @@ void Material::read_restart(ifstream *ifr) {
     id.resize(Ndamages);
 
     ifr->read(reinterpret_cast<char *>(&id[0]), Ndamages);
-    cout << "id = " << id << endl;
+    // cout << "id = " << id << endl;
 
     string style = "";
     ifr->read(reinterpret_cast<char *>(&Ndamages), sizeof(size_t));
     style.resize(Ndamages);
 
     ifr->read(reinterpret_cast<char *>(&style[0]), Ndamages);
-    cout << "style = " << style << endl;
+    // cout << "style = " << style << endl;
     DamageCreator damage_creator = (*damage_map)[style];
     damages[i] = damage_creator(mpm, vector<string>{id, style, "restart"});
     damages[i]->read_restart(ifr);
@@ -579,14 +592,14 @@ void Material::read_restart(ifstream *ifr) {
     id.resize(Ntemperatures);
 
     ifr->read(reinterpret_cast<char *>(&id[0]), Ntemperatures);
-    cout << "id = " << id << endl;
+    // cout << "id = " << id << endl;
 
     string style = "";
     ifr->read(reinterpret_cast<char *>(&Ntemperatures), sizeof(size_t));
     style.resize(Ntemperatures);
 
     ifr->read(reinterpret_cast<char *>(&style[0]), Ntemperatures);
-    cout << "style = " << style << endl;
+    // cout << "style = " << style << endl;
     TemperatureCreator temperature_creator = (*temperature_map)[style];
     temperatures[i] = temperature_creator(mpm, vector<string>{id, style, "restart"});
     temperatures[i]->read_restart(ifr);
@@ -605,7 +618,7 @@ void Material::read_restart(ifstream *ifr) {
     id.resize(Nmaterials);
 
     ifr->read(reinterpret_cast<char *>(&id[0]), Nmaterials);
-    cout << "id = " << id << endl;
+    // cout << "id = " << id << endl;
 
     int type = 0;
     ifr->read(reinterpret_cast<char *>(&type), sizeof(int));
@@ -621,8 +634,8 @@ void Material::read_restart(ifstream *ifr) {
       ifr->read(reinterpret_cast<char *>(&iDamage), sizeof(int));
       ifr->read(reinterpret_cast<char *>(&iTemp), sizeof(int));
 
-      Damage *damage_ = NULL;
-      Temperature *temp_ = NULL;
+      Damage *damage_ = nullptr;
+      Temperature *temp_ = nullptr;
 
       if (iDamage != -1) {
         damage_ = damages[iDamage];
@@ -634,12 +647,14 @@ void Material::read_restart(ifstream *ifr) {
       materials.push_back(
           Mat{id, SHOCK, EOSs[iEOS], strengths[iStrength], damage_, temp_});
     } else if (type == LINEAR || type == NEO_HOOKEAN) {
-      double rho0, E, nu = 0;
+      double rho0, E, nu, cp, kappa = 0;
       ifr->read(reinterpret_cast<char *>(&rho0), sizeof(double));
       ifr->read(reinterpret_cast<char *>(&E), sizeof(double));
       ifr->read(reinterpret_cast<char *>(&nu), sizeof(double));
+      ifr->read(reinterpret_cast<char *>(&cp), sizeof(double));
+      ifr->read(reinterpret_cast<char *>(&kappa), sizeof(double));
 
-      materials.push_back(Mat{id, type, rho0, E, nu});
+      materials.push_back(Mat{id, type, rho0, E, nu, cp, kappa});
     } else if (type == RIGID) {
       materials.push_back(Mat{id, RIGID});
     } else {
@@ -715,26 +730,27 @@ Mat::Mat(string id_, int type_, class EOS* eos_, class Strength* strength_, clas
   lambda = K - 2*G/3;
   signal_velocity = sqrt((lambda+2*G)/rho0);
 
-  cout << "Properties for material " << id << endl;
-  cout << "\tReference density: " << rho0 << endl;
-  cout << "\tYoung\'s modulus: " << E << endl;
-  cout << "\tPoisson\'s ratio: " << nu << endl;
-  cout << "\tShear modulus: " << G << endl;
-  cout << "\tBulk modulus: " << K << endl;
-  cout << "\tLame first parameter (Lambda): " << lambda << endl;
-  cout << "\tSignal velocity: " << signal_velocity << endl;
+  if (temp != nullptr) {
+    cp = temp->cp();
+    invcp = 1.0 / cp;  
+    kappa = temp->kappa();
+  } else {
+    cp = 0;
+    invcp = 0;
+    kappa = 0;
+  }
 }
 
 /*! The arguments are: material ID, material type (see Material::constitutive_model)
  * the density in the reference state, the Young's modulus and Poisson's ratio.
  */
-Mat::Mat(string id_, int type_, double rho0_, double E_, double nu_) {
+Mat::Mat(string id_, int type_, double rho0_, double E_, double nu_, double cp_, double kappa_) {
   id = id_;
   type = type_;
-  eos = NULL;
-  strength = NULL;
-  damage = NULL;
-  temp = NULL;
+  eos = nullptr;
+  strength = nullptr;
+  damage = nullptr;
+  temp = nullptr;
   rho0 = rho0_;
   E = E_;
   nu = nu_;
@@ -742,6 +758,12 @@ Mat::Mat(string id_, int type_, double rho0_, double E_, double nu_) {
   lambda = E * nu / ((1 + nu) * (1 - 2 * nu));
   K = E / (3 * (1 - 2 * nu));
   signal_velocity = sqrt(K / rho0);
+  cp = cp_;
+  if (cp != 0)
+    invcp = 1.0 / cp;
+  else
+    invcp = 0;
+  kappa = kappa_;
 }
 
 /*! The arguments are: material ID, material type (see Material::constitutive_model)

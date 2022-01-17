@@ -38,7 +38,7 @@ FixBodyforce::FixBodyforce(MPM *mpm, vector<string> args) : Fix(mpm, args)
       0) { // If the keyword restart, we are expecting to have read_restart()
            // launched right after.
     igroup = stoi(args[3]);
-    if (igroup == -1) {
+    if (igroup == -1 && universe->me == 0) {
       cout << "Could not find group number " << args[3] << endl;
     }
     groupbit = group->bitmask[igroup];
@@ -58,7 +58,9 @@ FixBodyforce::FixBodyforce(MPM *mpm, vector<string> args) : Fix(mpm, args)
   if (group->pon[igroup].compare("nodes") !=0 && group->pon[igroup].compare("all") !=0) {
     error->all(FLERR,"fix_body_force needs to be given a group of nodes" + group->pon[igroup] + ", " + args[2] + " is a group of " + group->pon[igroup] + ".\n");
   }
-  cout << "Creating new fix FixBodyforce with ID: " << args[0] << endl;
+  if (universe->me == 0) {
+    cout << "Creating new fix FixBodyforce with ID: " << args[0] << endl;
+  }
   id = args[0];
 
   xset = yset = zset = false;
@@ -111,7 +113,6 @@ void FixBodyforce::post_particles_to_grid() {
   Grid *g;
 
   Eigen::Vector3d ftot, ftot_reduced;
-  Eigen::Matrix3d *R;
 
   // double mtot = 0;
   ftot.setZero();

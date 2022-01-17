@@ -69,7 +69,7 @@ MPM::MPM(int narg, char **arg, MPI_Comm communicator)
     iarg++;
   }
 
-  wlogfile = NULL;
+  wlogfile = nullptr;
 
   if (universe->me == 0) {
     cout << "Karamelo -- Parallel Material Point Methods Simulator Build SHA1:"
@@ -121,7 +121,7 @@ MPM::~MPM()
     if (wlogfile->is_open()) wlogfile->close();
   }
 
-  if (wlogfile) wlogfile = NULL;
+  if (wlogfile) wlogfile = nullptr;
 }
 
 void MPM::init() {

@@ -21,7 +21,10 @@ class Temperature : protected Pointers {
   virtual void read_restart(ifstream*) = 0;
 
   // implemented by each Temperature
-  virtual void compute_temperature(double &, const double &, const double &) = 0;
+  virtual double cp() = 0;
+  virtual double kappa() = 0;
+  virtual void compute_heat_source(double, double &, const double &, const double &) = 0;
+  virtual double compute_thermal_pressure(double) = 0;
 };
 
 #endif

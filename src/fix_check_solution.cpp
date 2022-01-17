@@ -42,7 +42,7 @@ FixChecksolution::FixChecksolution(MPM *mpm, vector<string> args) : Fix(mpm, arg
       0) { // If the keyword restart, we are expecting to have read_restart()
            // launched right after.
     igroup = stoi(args[3]);
-    if (igroup == -1) {
+    if (igroup == -1 && universe->me == 0) {
       cout << "Could not find group number " << args[3] << endl;
     }
     groupbit = group->bitmask[igroup];
@@ -62,7 +62,9 @@ FixChecksolution::FixChecksolution(MPM *mpm, vector<string> args) : Fix(mpm, arg
   if (group->pon[igroup].compare("nodes") !=0 && group->pon[igroup].compare("all") !=0) {
     error->all(FLERR,"_check_solution needs to be given a group of nodes" + group->pon[igroup] + ", " + args[2] + " is a group of " + group->pon[igroup] + ".\n");
   }
-  cout << "Creating new fix FixChecksolution with ID: " << args[0] << endl;
+  if (universe->me == 0) {
+    cout << "Creating new fix FixChecksolution with ID: " << args[0] << endl;
+  }
   id = args[0];
 
   xset = yset = zset = false;
@@ -117,7 +119,7 @@ void FixChecksolution::final_integrate() {
   Solid *s;
 
   Eigen::Vector3d error, error_reduced;
-  Eigen::Vector3d u_th;
+  Eigen::Vector3d u_th, u_th_reduced;
 
   error.setZero();
   u_th.setZero();
@@ -132,20 +134,20 @@ void FixChecksolution::final_integrate() {
 
       for (int in = 0; in < s->np_local; in++) {
 	if (s->mask[in] & groupbit) {
+	  (*input->vars)["x0"] = Var("x0", s->x0[in][0]);
+	  (*input->vars)["y0"] = Var("y0", s->x0[in][1]);
+	  (*input->vars)["z0"] = Var("z0", s->x0[in][2]);
 	  if (xset) {
-	    (*input->vars)["x0"] = Var("x0", s->x0[in][0]);
 	    ux = xvalue.result(mpm);
 	    error[0] += s->vol0[in]*square(ux-(s->x[in][0]-s->x0[in][0]));
 	    u_th[0] += s->vol0[in]*ux*ux;
 	  }
 	  if (yset) {
-	    (*input->vars)["y0"] = Var("y0", s->x0[in][1]);
 	    uy = yvalue.result(mpm);
 	    error[1] += s->vol0[in]*square(uy-(s->x[in][1]-s->x0[in][1]));
 	    u_th[1] += s->vol0[in]*uy*uy;
 	  }
 	  if (zset) {
-	    (*input->vars)["z0"] = Var("z0", s->x0[in][2]);
 	    uz = zvalue.result(mpm);
 	    error[2] += s->vol0[in]*square(uz-(s->x[in][2]-s->x0[in][2]));
 	    u_th[2] += s->vol0[in]*uz*uz;
@@ -159,20 +161,20 @@ void FixChecksolution::final_integrate() {
 
     for (int in = 0; in < s->np_local; in++) {
       if (s->mask[in] & groupbit) {
+	(*input->vars)["x0"] = Var("x0", s->x0[in][0]);
+	(*input->vars)["y0"] = Var("y0", s->x0[in][1]);
+	(*input->vars)["z0"] = Var("z0", s->x0[in][2]);
 	if (xset) {
-	  (*input->vars)["x0"] = Var("x0", s->x0[in][0]);
 	  ux = xvalue.result(mpm);
 	  error[0] += s->vol0[in]*square(ux-(s->x[in][0]-s->x0[in][0]));
 	  u_th[0] += s->vol0[in]*ux*ux;
 	}
 	if (yset) {
-	  (*input->vars)["y0"] = Var("y0", s->x0[in][1]);
 	  uy = yvalue.result(mpm);
 	  error[1] += s->vol0[in]*square(uy-(s->x[in][1]-s->x0[in][1]));
 	  u_th[1] += s->vol0[in]*uy*uy;
 	}
 	if (zset) {
-	  (*input->vars)["z0"] = Var("z0", s->x0[in][2]);
 	  uz = zvalue.result(mpm);
 	  error[2] += s->vol0[in]*square(uz-(s->x[in][2]-s->x0[in][2]));
 	  u_th[2] += s->vol0[in]*uz*uz;
@@ -184,10 +186,11 @@ void FixChecksolution::final_integrate() {
 
   // Reduce error:
   MPI_Allreduce(error.data(),error_reduced.data(),3,MPI_DOUBLE,MPI_SUM,universe->uworld);
+  MPI_Allreduce(u_th.data(),u_th_reduced.data(),3,MPI_DOUBLE,MPI_SUM,universe->uworld);
 
   (*input->vars)[id+"_s"]=Var(id+"_s", sqrt((error_reduced[0] + error_reduced[1] + error_reduced[2])/vtot));
   (*input->vars)[id+"_x"]=Var(id+"_x", (*input->vars)[id+"_x"].result() + update->dt*(error_reduced[0] + error_reduced[1] + error_reduced[2]));
-  (*input->vars)[id+"_y"]=Var(id+"_y", (*input->vars)[id+"_y"].result() + update->dt*(u_th[0] + u_th[1] + u_th[2]));
+  (*input->vars)[id+"_y"]=Var(id+"_y", (*input->vars)[id+"_y"].result() + update->dt*(u_th_reduced[0] + u_th_reduced[1] + u_th_reduced[2]));
   (*input->vars)[id+"_z"]=Var(id+"_z", sqrt((*input->vars)[id+"_x"].result()/(*input->vars)[id+"_y"].result()));
     // cout << "f for " << n << " nodes from solid " << domain->solids[solid]->id << " set." << endl;
   // cout << "ftot = [" << ftot[0] << ", " << ftot[1] << ", " << ftot[2] << "]\n"; 

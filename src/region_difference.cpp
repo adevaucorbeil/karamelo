@@ -15,6 +15,7 @@
 #include "domain.h"
 #include "error.h"
 #include "input.h"
+#include "universe.h"
 #include "var.h"
 #include <iostream>
 
@@ -23,7 +24,8 @@ using namespace std;
 #define BIG 1.0e20
 
 Difference::Difference(MPM *mpm, vector<string> args) : Region(mpm, args) {
-  cout << "Initiate Difference" << endl;
+  if (universe->me == 0)
+    cout << "Initiate Difference" << endl;
 
   if (args.size() < 3) {
     error->all(FLERR, "Error: not enough arguments.\n");
@@ -128,7 +130,7 @@ void Difference::write_restart(ofstream *of) {
 
 
 void Difference::read_restart(ifstream *ifr) {
-  cout << "Restart Difference" << endl;
+  // cout << "Restart Difference" << endl;
 
   size_t N;
   ifr->read(reinterpret_cast<char *>(&N), sizeof(size_t));

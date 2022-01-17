@@ -16,6 +16,7 @@
 #include "error.h"
 #include "input.h"
 #include "mpm_math.h"
+#include "universe.h"
 #include "update.h"
 #include "var.h"
 #include <Eigen/Eigen>
@@ -41,7 +42,8 @@ DamageJohnsonCook::DamageJohnsonCook(MPM *mpm, vector<string> args)
     return;
   }
 
-  cout << "Initiate DamageJohnsonCook" << endl;
+  if (universe->me == 0)
+    cout << "Initiate DamageJohnsonCook" << endl;
 
   if (args.size() < Nargs) {
     error->all(FLERR,
@@ -58,29 +60,30 @@ DamageJohnsonCook::DamageJohnsonCook(MPM *mpm, vector<string> args)
   Tr      = input->parsev(args[8]);
   Tm      = input->parsev(args[9]);
 
-  cout << "Johnson Cook material damage model:\n";
-  cout << "\tparameter d1:" << d1 << endl;
-  cout << "\tparameter d2:" << d2 << endl;
-  cout << "\tparameter d3:" << d3 << endl;
-  cout << "\tparameter d4:" << d4 << endl;
-  cout << "\tparameter d5:" << d5 << endl;
-  cout << "\tepsdot0: reference strain rate " << epsdot0 << endl;
-  cout << "\tTr: reference temperature " << Tr << endl;
-  cout << "\tTm: melting temperature " << Tm << endl;
-  cout << "\tFailure strain equation: eps_f = [" << d1 << " + " << d2
-       << " * exp(" << d3 << "*sigma*)]";
-  if (d4 != 0)
-    cout << "[ 1 + " << d4 << " * ln(epsdot/" << epsdot0 << ")]";
-  if (d5 != 0)
-    cout << "[1 + " << d5 << " * (T - " << Tr << ")/(" << Tm << " - " << Tr
-         << ")]";
-  cout << endl;
+  if (universe->me == 0) {
+    cout << "Johnson Cook material damage model:\n";
+    cout << "\tparameter d1:" << d1 << endl;
+    cout << "\tparameter d2:" << d2 << endl;
+    cout << "\tparameter d3:" << d3 << endl;
+    cout << "\tparameter d4:" << d4 << endl;
+    cout << "\tparameter d5:" << d5 << endl;
+    cout << "\tepsdot0: reference strain rate " << epsdot0 << endl;
+    cout << "\tTr: reference temperature " << Tr << endl;
+    cout << "\tTm: melting temperature " << Tm << endl;
+    cout << "\tFailure strain equation: eps_f = [" << d1 << " + " << d2
+         << " * exp(" << d3 << "*sigma*)]";
+    if (d4 != 0)
+      cout << "[ 1 + " << d4 << " * ln(epsdot/" << epsdot0 << ")]";
+    if (d5 != 0)
+      cout << "[1 + " << d5 << " * (T - " << Tr << ")/(" << Tm << " - " << Tr
+           << ")]";
+    cout << endl;
+  }
 
-  if (Tr == Tm)
-  {
-    cout << "Error: reference temperature Tr=" << Tr
-         << " equals melting temperature Tm=" << Tm << endl;
-    exit(1);
+  if (Tr == Tm) {
+    error->all(FLERR, "Error: reference temperature Tr=" + to_string(Tr) +
+                          " equals melting temperature Tm=" + to_string(Tm) +
+                          ".\n");
   }
   Tmr = Tm - Tr;
 }
@@ -99,7 +102,7 @@ void DamageJohnsonCook::compute_damage(double &damage_init, double &damage,
 
   if (vm < 0.0)
   {
-    cout << "this is sdev " << endl << Sdev << endl;
+    // cout << "this is sdev " << endl << Sdev << endl;
     char str[128];
     sprintf(str,"vm=%f < 0.0, surely must be an error\n", vm);
     error->all(FLERR, str);
@@ -113,7 +116,10 @@ void DamageJohnsonCook::compute_damage(double &damage_init, double &damage,
                                            // avoid divison by zero
   }
 
-  // if (triax <= 0) return ;
+  if (triax <= -3) {
+    damage_init = 0;
+    return ;
+  }
 
   // Johnson-Cook failure strain, dependence on stress triaxiality
   double jc_failure_strain = d1 + d2 * exp(d3 * triax);
@@ -148,7 +154,7 @@ void DamageJohnsonCook::write_restart(ofstream *of) {
 }
 
 void DamageJohnsonCook::read_restart(ifstream *ifr) {
-  cout << "Restart DamageJohnsonCook" << endl;
+  // cout << "Restart DamageJohnsonCook" << endl;
   ifr->read(reinterpret_cast<char *>(&d1), sizeof(double));
   ifr->read(reinterpret_cast<char *>(&d2), sizeof(double));
   ifr->read(reinterpret_cast<char *>(&d3), sizeof(double));

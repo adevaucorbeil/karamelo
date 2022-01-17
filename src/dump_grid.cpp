@@ -26,7 +26,7 @@ using namespace std;
 
 DumpGrid::DumpGrid(MPM *mpm, vector<string> args) : Dump(mpm, args)
 {
-  cout << "In DumpGrid::DumpGrid()" << endl;
+  // cout << "In DumpGrid::DumpGrid()" << endl;
   for (int i=5; i<args.size(); i++){
     if (find(known_var.begin(), known_var.end(), args[i]) != known_var.end()) {
       output_var.push_back(args[i]);
@@ -37,7 +37,7 @@ DumpGrid::DumpGrid(MPM *mpm, vector<string> args) : Dump(mpm, args)
 	cout << v << ", ";
       }
       cout << endl;
-      exit(1);
+      error->all(FLERR,"");
     }
   }
 }
@@ -127,6 +127,7 @@ void DumpGrid::write()
 	  else if (v.compare("ntypey")==0) dumpstream << g->ntype[i][1] << " ";
 	  else if (v.compare("ntypez")==0) dumpstream << g->ntype[i][2] << " ";
 	  else if (v.compare("rigid")==0) dumpstream << g->rigid[i] << " ";
+	  else if (v.compare("T")==0) dumpstream << g->T[i] << " ";
 	}
 	dumpstream << endl;
       }

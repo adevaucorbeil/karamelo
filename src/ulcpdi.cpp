@@ -31,7 +31,7 @@ using namespace std;
 
 ULCPDI::ULCPDI(MPM *mpm) : Method(mpm) {
 
-  cout << "In ULCPDI::ULCPDI()" << endl;
+  // cout << "In ULCPDI::ULCPDI()" << endl;
 
   update_wf = 1;
   is_CPDI = true;
@@ -52,20 +52,24 @@ void ULCPDI::setup(vector<string> args)
     error->all(FLERR, "Illegal modify_method command: too many arguments.\n");
   }
 
-  if (update->shape_function == update->ShapeFunctions::LINEAR) {
-    cout << "Setting up linear basis functions\n";
+  if (update->shape_function == Update::ShapeFunctions::LINEAR) {
+    if (universe->me == 0)
+      cout << "Setting up linear basis functions\n";
     basis_function = &BasisFunction::linear;
     derivative_basis_function = &BasisFunction::derivative_linear;
-  } else if (update->shape_function == update->ShapeFunctions::CUBIC_SPLINE) {
-    cout << "Setting up cubic-spline basis functions\n";
+  } else if (update->shape_function == Update::ShapeFunctions::CUBIC_SPLINE) {
+    if (universe->me == 0)
+      cout << "Setting up cubic-spline basis functions\n";
     basis_function = &BasisFunction::cubic_spline;
     derivative_basis_function = &BasisFunction::derivative_cubic_spline;
-  } else if (update->shape_function == update->ShapeFunctions::QUADRATIC_SPLINE) {
-    cout << "Setting up quadratic-spline basis functions\n";
+  } else if (update->shape_function == Update::ShapeFunctions::QUADRATIC_SPLINE) {
+    if (universe->me == 0)
+      cout << "Setting up quadratic-spline basis functions\n";
     basis_function = &BasisFunction::quadratic_spline;
     derivative_basis_function = &BasisFunction::derivative_quadratic_spline;
-  } else if (update->shape_function == update->ShapeFunctions::BERNSTEIN) {
-    cout << "Setting up Bernstein-quadratic basis functions\n";
+  } else if (update->shape_function == Update::ShapeFunctions::BERNSTEIN) {
+    if (universe->me == 0)
+      cout << "Setting up Bernstein-quadratic basis functions\n";
     basis_function = &BasisFunction::bernstein_quadratic;
     derivative_basis_function = &BasisFunction::derivative_bernstein_quadratic;
   } else {
@@ -100,7 +104,8 @@ void ULCPDI::setup(vector<string> args)
     error->all(FLERR, error_str);
   }
 
-  cout << "Using CPDI-" << known_styles[style] << endl;
+  if (universe->me == 0)
+    cout << "Using CPDI-" << known_styles[style] << endl;
 }
 
 void ULCPDI::compute_grid_weight_functions_and_gradients()
@@ -217,7 +222,7 @@ void ULCPDI::compute_grid_weight_functions_and_gradients()
 
 		  int i0, j0, k0;
 
-		  if (update->shape_function == update->ShapeFunctions::LINEAR)
+		  if (update->shape_function == Update::ShapeFunctions::LINEAR)
 		    {
 		      i0 = (int) ((xcorner[ic][0] - domain->boxlo[0])*inv_cellsize);
 		      j0 = (int) ((xcorner[ic][1] - domain->boxlo[1])*inv_cellsize);
@@ -226,7 +231,7 @@ void ULCPDI::compute_grid_weight_functions_and_gradients()
 		      m = 2;
 
 		    }
-		  else if (update->shape_function == update->ShapeFunctions::BERNSTEIN)
+		  else if (update->shape_function == Update::ShapeFunctions::BERNSTEIN)
 		    {
 		      i0 = 2*(int) ((xcorner[ic][0] - domain->boxlo[0])*inv_cellsize);
 		      j0 = 2*(int) ((xcorner[ic][1] - domain->boxlo[1])*inv_cellsize);
@@ -404,8 +409,42 @@ void ULCPDI::particles_to_grid()
 
     if (method_type.compare("APIC") == 0) domain->solids[isolid]->compute_velocity_nodes_APIC(grid_reset);
     else domain->solids[isolid]->compute_velocity_nodes(grid_reset);
-    domain->solids[isolid]->compute_external_forces_nodes(grid_reset);
-    domain->solids[isolid]->compute_internal_forces_nodes_UL(grid_reset);
+    domain->solids[isolid]->compute_external_and_internal_forces_nodes_UL(grid_reset);
+    /*compute_thermal_energy_nodes();*/
+  }
+}
+
+void ULCPDI::particles_to_grid_USF_1()
+{
+  bool grid_reset = false; // Indicate if the grid quantities have to be reset
+  for (int isolid=0; isolid<domain->solids.size(); isolid++){
+
+    if (isolid == 0) grid_reset = true;
+    else grid_reset = false;
+
+    domain->solids[isolid]->compute_mass_nodes(grid_reset);
+  }
+  for (int isolid=0; isolid<domain->solids.size(); isolid++){
+
+    if (isolid == 0) grid_reset = true;
+    else grid_reset = false;
+
+    if (method_type.compare("APIC") == 0)
+      domain->solids[isolid]->compute_velocity_nodes_APIC(grid_reset);
+    else
+      domain->solids[isolid]->compute_velocity_nodes(grid_reset);
+  }
+}
+
+void ULCPDI::particles_to_grid_USF_2()
+{
+  bool grid_reset = false; // Indicate if the grid quantities have to be reset
+  for (int isolid=0; isolid<domain->solids.size(); isolid++){
+
+    if (isolid == 0) grid_reset = true;
+    else grid_reset = false;
+
+    domain->solids[isolid]->compute_external_and_internal_forces_nodes_UL(grid_reset);
     /*compute_thermal_energy_nodes();*/
   }
 }
@@ -446,12 +485,12 @@ void ULCPDI::velocities_to_grid()
   }
 }
 
-void ULCPDI::compute_rate_deformation_gradient()
-{
-  for (int isolid=0; isolid<domain->solids.size(); isolid++) {
-    if (method_type.compare("APIC") == 0) domain->solids[isolid]->compute_rate_deformation_gradient_UL_APIC();
-    else domain->solids[isolid]->compute_rate_deformation_gradient_UL_MUSL();
-    //domain->solids[isolid]->compute_deformation_gradient();
+void ULCPDI::compute_rate_deformation_gradient(bool doublemapping) {
+  for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
+    if (update->sub_method_type == Update::SubMethodType::APIC)
+      domain->solids[isolid]->compute_rate_deformation_gradient_UL_APIC(doublemapping);
+    else
+      domain->solids[isolid]->compute_rate_deformation_gradient_UL(doublemapping);
   }
 }
 
@@ -463,7 +502,7 @@ void ULCPDI::update_deformation_gradient()
   }
 }
 
-void ULCPDI::update_stress()
+void ULCPDI::update_stress(bool doublemapping)
 {
   for (int isolid=0; isolid<domain->solids.size(); isolid++) {
     domain->solids[isolid]->update_stress();
