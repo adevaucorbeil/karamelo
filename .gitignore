@@ -21,6 +21,7 @@ CMakeCache.txt
 cmake_install.cmake
 CMakeDoxy*
 Makefile
+CMakeFiles
 
 .vs*
 /doc/latex/*

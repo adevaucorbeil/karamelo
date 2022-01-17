@@ -4,7 +4,7 @@ set (CMAKE_CXX_STANDARD 14)
 
 project(karamelo)
 
-find_library(LIBNVTOOLSEXT nvToolsExt PATHS ${CMAKE_CUDA_IMPLICIT_LINK_DIRECTORIES})
+#find_library(LIBNVTOOLSEXT nvToolsExt PATHS ${CMAKE_CUDA_IMPLICIT_LINK_DIRECTORIES})
 
 find_package(MPI REQUIRED)
 include_directories(${MPI_INCLUDE_PATH})

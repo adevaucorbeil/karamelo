@@ -4,4 +4,4 @@ target_include_directories(kokkos_demo PUBLIC ./
                                               ./linalg)
 
 target_link_libraries(kokkos_demo PUBLIC Kokkos::kokkos graphics)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -lnvToolsExt")
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -lnvToolsExt")
