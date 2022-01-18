@@ -1276,6 +1276,7 @@ void Solid::update_stress()
 	  (R[ip] * sigma[ip] * R[ip].transpose()) *
 	  Finv[ip].transpose();
       }
+      gamma[ip] = 0;
     }
   } else if (nh) {
     for (int ip = 0; ip < np_local; ip++) {
@@ -1287,6 +1288,7 @@ void Solid::update_stress()
 
       strain_el[ip] =
           0.5 * (F[ip].transpose() * F[ip] - eye); // update->dt * D[ip];
+      gamma[ip] = 0;
     }
   } else {
 
@@ -1301,7 +1303,7 @@ void Solid::update_stress()
       if (mat->cp != 0) {
         mat->eos->compute_pressure(pH[ip], ienergy[ip], J[ip], rho[ip],
                                    damage[ip], D[ip], grid->cellsize, T[ip]);
-        pH[ip] += mat->temp->compute_thermal_pressure(T[ip]);
+        pH[ip] += mat->alpha * (T[ip] - T0);
 
         sigma_dev[ip] = mat->strength->update_deviatoric_stress(
             sigma[ip], D[ip], plastic_strain_increment[ip],
@@ -1339,7 +1341,7 @@ void Solid::update_stress()
 	}
       }
 
-      if (mat->cp != 0) {
+      if (mat->temp != nullptr) {
 	flow_stress = SQRT_3_OVER_2 * sigma_dev[ip].norm();
         mat->temp->compute_heat_source(T[ip], gamma[ip], flow_stress,
                                        eff_plastic_strain_rate[ip]);
@@ -1347,6 +1349,8 @@ void Solid::update_stress()
           gamma[ip] *= vol0[ip] * mat->invcp;
         else
           gamma[ip] *= vol[ip] * mat->invcp;
+      } else {
+	gamma[ip] = 0;
       }
 
       if (damage[ip] == 0 || pH[ip] >= 0)

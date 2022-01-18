@@ -26,7 +26,7 @@ TemperaturePlasticWork::TemperaturePlasticWork(MPM *mpm, vector<string> args) : 
   if (args[2].compare("restart") ==
       0) { // If the keyword restart, we are expecting to have read_restart()
            // launched right after.
-    chi, cp_, kappa_, alpha, T0, Tm = 0;
+    chi, cp_, kappa_, alpha_, T0, Tm = 0;
     return;
   }
 
@@ -38,21 +38,21 @@ TemperaturePlasticWork::TemperaturePlasticWork(MPM *mpm, vector<string> args) : 
   }
 
   //options(&args, args.begin()+3);
-  chi = input->parsev(args[2]);
-  cp_ = input->parsev(args[3]);
+  chi    = input->parsev(args[2]);
+  cp_    = input->parsev(args[3]);
   kappa_ = input->parsev(args[4]);
-  alpha = input->parsev(args[5]);
-  T0 = input->parsev(args[6]);
-  Tm = input->parsev(args[7]);
+  alpha_ = input->parsev(args[5]);
+  T0     = input->parsev(args[6]);
+  Tm     = input->parsev(args[7]);
 
   if (universe->me == 0) {
     cout << "Plastic work material temperature model:\n";
-    cout << "\tTaylor-Quinney coefficient chi:" << chi << endl;
-    cout << "\tSpecific heat at constant pressure cp:" << cp_ << endl;
-    cout << "\tThermal conductivity kappa:" << kappa_ << endl;
-    cout << "\tCoefficient of thermal expansion alpha:" << alpha << endl;
-    cout << "\tInitial temperature T0:" << T0 << endl;
-    cout << "\tMelting temperature Tm:" << Tm << endl;
+    cout << "\tTaylor-Quinney coefficient chi:"          << chi << endl;
+    cout << "\tSpecific heat at constant pressure cp:"   << cp_ << endl;
+    cout << "\tThermal conductivity kappa:"              << kappa_ << endl;
+    cout << "\tCoefficient of thermal expansion alpha:"  << alpha_ << endl;
+    cout << "\tInitial temperature T0:"                  << T0 << endl;
+    cout << "\tMelting temperature Tm:"                  << Tm << endl;
   }
 }
 
@@ -64,15 +64,11 @@ void TemperaturePlasticWork::compute_heat_source(double T, double &gamma, const 
     gamma = 0;
 }
 
-double TemperaturePlasticWork::compute_thermal_pressure(double T) {
-  return alpha * (T0 - T);
-}
-
 void TemperaturePlasticWork::write_restart(ofstream *of) {
   of->write(reinterpret_cast<const char *>(&chi), sizeof(double));
   of->write(reinterpret_cast<const char *>(&kappa_), sizeof(double));
   of->write(reinterpret_cast<const char *>(&cp_), sizeof(double));
-  of->write(reinterpret_cast<const char *>(&alpha), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&alpha_), sizeof(double));
   of->write(reinterpret_cast<const char *>(&T0), sizeof(double));
   of->write(reinterpret_cast<const char *>(&Tm), sizeof(double));
 }
@@ -82,7 +78,7 @@ void TemperaturePlasticWork::read_restart(ifstream *ifr) {
   ifr->read(reinterpret_cast<char *>(&chi), sizeof(double));
   ifr->read(reinterpret_cast<char *>(&kappa_), sizeof(double));
   ifr->read(reinterpret_cast<char *>(&cp_), sizeof(double));
-  ifr->read(reinterpret_cast<char *>(&alpha), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&alpha_), sizeof(double));
   ifr->read(reinterpret_cast<char *>(&T0), sizeof(double));
   ifr->read(reinterpret_cast<char *>(&Tm), sizeof(double));
 }
