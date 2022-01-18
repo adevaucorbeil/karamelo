@@ -331,10 +331,16 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
 void TLMPM::particles_to_grid()
 {
   bool grid_reset = true; // Indicate if the grid quantities have to be reset
-  if (update_mass_nodes) {
-    for (int isolid=0; isolid<domain->solids.size(); isolid++){
-      domain->solids[isolid]->compute_mass_nodes(grid_reset);
-      domain->solids[isolid]->grid->reduce_mass_ghost_nodes();
+  if (update_mass_nodes)
+  {
+    for (Solid *solid: domain->solids)
+    {
+      solid->grid->reset_mass();
+      for (int i = 0; i < solid->neigh_n.size(); i++)
+        solid->compute_mass_nodes(solid->neigh_n.at(i),
+                                  solid->neigh_p.at(i),
+                                  solid->wf.at(i));
+      solid->grid->reduce_mass_ghost_nodes();
     }
     update_mass_nodes = false;
   }
@@ -357,10 +363,16 @@ void TLMPM::particles_to_grid()
 void TLMPM::particles_to_grid_USF_1()
 {
   bool grid_reset = true; // Indicate if the grid quantities have to be reset
-  if (update_mass_nodes) {
-    for (int isolid=0; isolid<domain->solids.size(); isolid++){
-      domain->solids[isolid]->compute_mass_nodes(grid_reset);
-      domain->solids[isolid]->grid->reduce_mass_ghost_nodes();
+  if (update_mass_nodes)
+  {
+    for (Solid *solid: domain->solids)
+    {
+      solid->grid->reset_mass();
+      for (int i = 0; i < solid->neigh_n.size(); i++)
+        solid->compute_mass_nodes(solid->neigh_n.at(i),
+                                  solid->neigh_p.at(i),
+                                  solid->wf.at(i));
+      solid->grid->reduce_mass_ghost_nodes();
     }
     update_mass_nodes = false;
   }

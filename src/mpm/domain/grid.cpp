@@ -1360,3 +1360,9 @@ void Grid::update_grid_temperature() {
       T_update[i] = T[i];
   }
 }
+
+void Grid::reset_mass()
+{
+  for (double &mass: mass)
+    mass = 0;
+}

@@ -311,20 +311,10 @@ void Solid::grow(int nparticles)
   }
 }
 
-void Solid::compute_mass_nodes(bool reset)
+void Solid::compute_mass_nodes(int in, int ip, double wf)
 {
-  if (reset)
-    for (double &mass: grid->mass)
-      mass = 0;
-
-  for (int i = 0; i < neigh_n.size(); i++)
-  {
-    int in = neigh_n.at(i);
-    int ip = neigh_p.at(i);
-
-    if (!grid->rigid.at(in) || mat->rigid)
-      grid->mass.at(in) += wf.at(i)*mass.at(ip);
-  }
+  if (!grid->rigid.at(in) || mat->rigid)
+    grid->mass.at(in) += wf*mass.at(ip);
 }
 
 void Solid::compute_velocity_nodes(bool reset, bool APIC)

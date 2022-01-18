@@ -330,28 +330,31 @@ void TLCPDI::compute_grid_weight_functions_and_gradients()
 
 void TLCPDI::particles_to_grid()
 {
-  bool grid_reset = true; // Indicate if the grid quantities have to be reset
-  for (int isolid=0; isolid<domain->solids.size(); isolid++){
-    domain->solids[isolid]->compute_mass_nodes(grid_reset);
-    //domain->solids[isolid]->compute_node_rotation_matrix(grid_reset);
-    if (method_type.compare("APIC") == 0) domain->solids[isolid]->compute_velocity_nodes(grid_reset, true);
-    else domain->solids[isolid]->compute_velocity_nodes(grid_reset, false);
-    domain->solids[isolid]->compute_forces_nodes(grid_reset, false, true, false, false);
-    domain->solids[isolid]->compute_forces_nodes(grid_reset, true, false, true, false);
-    /*compute_thermal_energy_nodes();*/
+  for (Solid *solid: domain->solids)
+  {
+    solid->grid->reset_mass();
+    for (int i = 0; i < solid->neigh_n.size(); i++)
+      solid->compute_mass_nodes(solid->neigh_n.at(i),
+                                solid->neigh_p.at(i),
+                                solid->wf.at(i));
+    bool grid_reset = true;
+    solid->compute_velocity_nodes(grid_reset, method_type == "APIC");
+    solid->compute_forces_nodes(grid_reset, false, true, false, false);
+    solid->compute_forces_nodes(grid_reset, true, false, true, false);
   }
 }
 
 void TLCPDI::particles_to_grid_USF_1()
 {
-  bool grid_reset = true; // Indicate if the grid quantities have to be reset
-  for (int isolid=0; isolid<domain->solids.size(); isolid++){
-    domain->solids[isolid]->compute_mass_nodes(grid_reset);
-    //domain->solids[isolid]->compute_node_rotation_matrix(grid_reset);
-    if (method_type.compare("APIC") == 0)
-      domain->solids[isolid]->compute_velocity_nodes(grid_reset, true);
-    else
-      domain->solids[isolid]->compute_velocity_nodes(grid_reset, false);
+  for (Solid *solid: domain->solids)
+  {
+    solid->grid->reset_mass();
+    for (int i = 0; i < solid->neigh_n.size(); i++)
+      solid->compute_mass_nodes(solid->neigh_n.at(i),
+                                solid->neigh_p.at(i),
+                                solid->wf.at(i));
+    bool grid_reset = true;
+    solid->compute_velocity_nodes(grid_reset, method_type == "APIC");
   }
 }
 

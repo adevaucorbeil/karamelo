@@ -112,6 +112,8 @@ class Grid : protected Pointers {
   void update_grid_velocities();                   ///< Determine the temporary grid velocities \f$\tilde{v}_{n}\f$. 
   void update_grid_positions();                    ///< Determine the new position of the grid nodes.
   void update_grid_temperature();                  ///< Determine the temporary grid temperature \f$\tilde{T}_{n}\f$.
+
+  void reset_mass();
 };
 
 #endif

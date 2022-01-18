@@ -119,7 +119,7 @@ class Solid : protected Pointers {
   void options(vector<string> *, vector<string>::iterator); ///< Determines the material and temperature schemes used.
   void grow(int);                           ///< Allocate memory for the vectors used for particles or resize them.
 
-  void compute_mass_nodes(bool reset);                    ///< Compute nodal mass step of the Particle to Grid step of the MPM algorithm.
+  void compute_mass_nodes(int in, int ip, double wf);                    ///< Compute nodal mass step of the Particle to Grid step of the MPM algorithm.
   void compute_velocity_nodes(bool reset, bool APIC);                ///< Compute nodal velocity (via momentum) step of the Particle to Grid step of the MPM algorithm.
   void compute_forces_nodes(bool reset, bool internal, bool external, bool TL, bool MLS);      ///< Compute both external and internal forces step of the Particle to Grid step of the updated Lagrangian MPM algorithm.
   void compute_particle(bool positions, bool velocities, bool accelerations); ///< Compute the particles' temporary velocities and position, part of the Grid to Particles step of the MPM algorithm.

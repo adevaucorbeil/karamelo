@@ -371,14 +371,15 @@ void ULCPDI::compute_grid_weight_functions_and_gradients()
 
 void ULCPDI::particles_to_grid()
 {
+  domain->grid->reset_mass();
+  for (Solid *solid: domain->solids)
+    for (int i = 0; i < solid->neigh_n.size(); i++)
+      solid->compute_mass_nodes(solid->neigh_n.at(i),
+                                solid->neigh_p.at(i),
+                                solid->wf.at(i));
+
   bool grid_reset = false; // Indicate if the grid quantities have to be reset
-  for (int isolid=0; isolid<domain->solids.size(); isolid++){
 
-    if (isolid == 0) grid_reset = true;
-    else grid_reset = false;
-
-    domain->solids[isolid]->compute_mass_nodes(grid_reset);
-  }
   for (int isolid=0; isolid<domain->solids.size(); isolid++){
 
     if (isolid == 0) grid_reset = true;
@@ -393,14 +394,15 @@ void ULCPDI::particles_to_grid()
 
 void ULCPDI::particles_to_grid_USF_1()
 {
+  domain->grid->reset_mass();
+  for (Solid *solid: domain->solids)
+      for (int i = 0; i < solid->neigh_n.size(); i++)
+        solid->compute_mass_nodes(solid->neigh_n.at(i),
+                                  solid->neigh_p.at(i),
+                                  solid->wf.at(i));
+
   bool grid_reset = false; // Indicate if the grid quantities have to be reset
-  for (int isolid=0; isolid<domain->solids.size(); isolid++){
 
-    if (isolid == 0) grid_reset = true;
-    else grid_reset = false;
-
-    domain->solids[isolid]->compute_mass_nodes(grid_reset);
-  }
   for (int isolid=0; isolid<domain->solids.size(); isolid++){
 
     if (isolid == 0) grid_reset = true;
