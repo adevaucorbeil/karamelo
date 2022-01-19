@@ -51,6 +51,11 @@ FixConvectionParticles::FixConvectionParticles(MPM *mpm, vector<string> args) : 
                           usage);
   }
 
+  if (args.size() > Nargs) {
+    error->all(FLERR, "Error: many few arguments for fix_convection_particles.\n" +
+                          usage);
+  }
+
   if (group->pon[igroup].compare("particles") !=0 ) {
     error->one(FLERR, "fix_convection_nodes needs to be given a group of particles" +
                           group->pon[igroup] + ", " + args[2] +

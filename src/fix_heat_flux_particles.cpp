@@ -50,6 +50,11 @@ FixHeatFluxParticles::FixHeatFluxParticles(MPM *mpm, vector<string> args) : Fix(
                           usage);
   }
 
+  if (args.size() > Nargs) {
+    error->all(FLERR, "Error: too many arguments for fix_heat_flux_particles.\n" +
+	       usage);
+  }
+
   if (igroup == -1) {
     error->all(FLERR, "Could not find group ID " + args[2] + "\n");
   }
@@ -111,15 +116,22 @@ void FixHeatFluxParticles::initial_integrate() {
 	  (*input->vars)["z"] = Var("z", s->x[ip][2]);
 	  (*input->vars)["z0"] = Var("z0", s->x0[ip][2]);
 
-	  Ap = pow(s->vol[ip], 2/3);
+	  if (domain->dimension == 1)
+	    Ap = 1;
+	  else if (domain->dimension == 2)
+	    Ap = sqrt(s->vol[ip]);
+	  else
+	    Ap = pow(s->vol[ip], 2/3);
+
 	  qtemp = q.result(mpm);
-	  s->gamma[ip] -= qtemp * invcp;
+	  s->gamma[ip] += Ap * qtemp * invcp;
 	  qtot += qtemp;
 	}
       }
     }
   } else {
     s = domain->solids[solid];
+    invcp = s->mat->invcp;
 
     for (int ip = 0; ip < s->np_local; ip++) {
       if (s->mask[ip] & groupbit) {
@@ -130,9 +142,15 @@ void FixHeatFluxParticles::initial_integrate() {
 	(*input->vars)["z"] = Var("z", s->x[ip][2]);
 	(*input->vars)["z0"] = Var("z0", s->x0[ip][2]);
 
-	Ap = pow(s->vol[ip], 2/3);
+	if (domain->dimension == 1)
+	  Ap = 1;
+	else if (domain->dimension == 2)
+	  Ap = sqrt(s->vol[ip]);
+	else
+	  Ap = pow(s->vol[ip], 2/3);
+
 	qtemp = q.result(mpm);
-	s->gamma[ip] -= qtemp * invcp;
+	s->gamma[ip] += Ap * qtemp * invcp;
 	qtot += qtemp;
       }
     }
