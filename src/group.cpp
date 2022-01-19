@@ -33,6 +33,7 @@ Group::Group(MPM *mpm) : Pointers(mpm)
   pon         = new string[MAX_GROUP];
   solid       = new int[MAX_GROUP];
   region      = new int[MAX_GROUP];
+  n_tot_      = new int[MAX_GROUP];
 
   for (int i = 0; i < MAX_GROUP; i++) {
     names[i] = "";
@@ -41,6 +42,7 @@ Group::Group(MPM *mpm) : Pointers(mpm)
     pon[i] = "all";
     solid[i] = -1;
     region[i] = -1;
+    n_tot_[i] = 0;
   }
 
   // create "all" group
@@ -158,11 +160,11 @@ void Group::assign(vector<string> args)
 		  }
 	      }
 
-	    int n_tot = 0;
-	    MPI_Allreduce(&n,&n_tot,1,MPI_INT,MPI_SUM,universe->uworld);
+	    n_tot_[igroup] = 0;
+	    MPI_Allreduce(&n,&n_tot_[igroup],1,MPI_INT,MPI_SUM,universe->uworld);
 
             if (universe->me == 0) {
-              cout << n_tot << " " << pon[igroup] << " from solid "
+              cout << n_tot_[igroup] << " " << pon[igroup] << " from solid "
                    << domain->solids[isolid]->id << " found" << endl;
             }
           }
@@ -213,11 +215,11 @@ void Group::assign(vector<string> args)
 		}
 	      }
 
-	    int n_tot = 0;
-	    MPI_Allreduce(&n,&n_tot,1,MPI_INT,MPI_SUM,universe->uworld);
+	    n_tot_[igroup] = 0;
+	    MPI_Allreduce(&n,&n_tot_[igroup],1,MPI_INT,MPI_SUM,universe->uworld);
 
             if (universe->me == 0) {
-              cout << n_tot << " " << pon[igroup] << " from solid "
+              cout << n_tot_[igroup] << " " << pon[igroup] << " from solid "
                    << domain->solids[solid[igroup]]->id << " found" << endl;
             }
           }
@@ -576,11 +578,11 @@ void Group::read_restart(ifstream *ifr) {
           }
         }
 
-        int n_tot = 0;
-        MPI_Allreduce(&n, &n_tot, 1, MPI_INT, MPI_SUM, universe->uworld);
+        n_tot_[igroup] = 0;
+        MPI_Allreduce(&n, &n_tot_[igroup], 1, MPI_INT, MPI_SUM, universe->uworld);
 
 	if (universe->me == 0) {
-	  cout << n_tot << " " << pon[igroup] << " from solid "
+	  cout << n_tot_[igroup] << " " << pon[igroup] << " from solid "
 	       << domain->solids[isolid]->id << " found" << endl;
 	}
       }
@@ -618,11 +620,11 @@ void Group::read_restart(ifstream *ifr) {
         }
       }
 
-      int n_tot = 0;
-      MPI_Allreduce(&n, &n_tot, 1, MPI_INT, MPI_SUM, universe->uworld);
+      n_tot_[igroup] = 0;
+      MPI_Allreduce(&n, &n_tot_[igroup], 1, MPI_INT, MPI_SUM, universe->uworld);
 
       if (universe->me == 0) {
-	cout << n_tot << " " << pon[igroup] << " from solid "
+	cout << n_tot_[igroup] << " " << pon[igroup] << " from solid "
 	     << domain->solids[solid[igroup]]->id << " found" << endl;
       }
     }

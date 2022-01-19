@@ -108,15 +108,17 @@ MPM::~MPM()
   delete modify;
   delete group;
 
-  double totalclock = MPI_Wtime() - initclock;
-
-  int seconds = fmod(totalclock,60.0);
-  totalclock  = (totalclock - seconds) / 60.0;
-  int minutes = fmod(totalclock,60.0);
-  int hours = (totalclock - minutes) / 60.0;
-  cout << "Total wall time: " << hours << ":" << minutes << ":" << seconds << endl;
-
   if (universe->me == 0) {
+
+    double totalclock = MPI_Wtime() - initclock;
+
+    int seconds = fmod(totalclock,60.0);
+    totalclock  = (totalclock - seconds) / 60.0;
+    int minutes = fmod(totalclock,60.0);
+    int hours = (totalclock - minutes) / 60.0;
+    
+    cout << "Total wall time: " << hours << ":" << minutes << ":" << seconds << endl;
+
     if (infile.is_open()) infile.close();
     if (wlogfile->is_open()) wlogfile->close();
   }

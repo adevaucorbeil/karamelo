@@ -30,7 +30,10 @@ public:
   string *pon;      ///< Group of particles if pon == "particles", or nodes if pon = "nodes"
   int *solid;       ///< Solids corresponding to each group
   int *region;      ///< Index of the region corresponding to each group
+private:
+  int *n_tot_;      ///< Total number of particles or nodes in within the group
 
+public:
   Group(class MPM *);
   virtual ~Group();
 
@@ -47,7 +50,9 @@ public:
       int);                    ///< Determine the resulting internal force applied onto the group
 
   void write_restart(ofstream *);
-  void read_restart(ifstream *);  
+  void read_restart(ifstream *);
+
+  int n_tot(int igroup) const {return n_tot_[igroup];} 
 };
 
 #endif
