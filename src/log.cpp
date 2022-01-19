@@ -80,11 +80,13 @@ void Log::parse_keywords(vector<string> keyword)
     else if (keyword[i].compare("dt")==0)   addfield("dt", &Log::compute_dt, FLOAT);
     else if (keyword[i].compare("time")==0) addfield("Time", &Log::compute_time, FLOAT);
     else {
-      try {
-	//(*input->vars).at(keyword[i]);
+      // Check if the variable exists:
+      map<string, Var>::iterator it;
+      
+      it = input->vars->find(keyword[i]);
+      if (it != input->vars->end()){
 	addfield(keyword[i], &Log::compute_var, FLOAT);
-      }
-      catch (const std::out_of_range&) {
+      } else {
 	error->all(FLERR,"Error: unknown log keyword " + keyword[i] + ".\n");
 	// std::cerr << "Out of Range error: " << oor.what() << '\n';
       }
