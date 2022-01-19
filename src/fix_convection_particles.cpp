@@ -95,7 +95,7 @@ void FixConvectionParticles::initial_integrate() {
   if (solid == -1) {
     for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
       s = domain->solids[isolid];
-      invcp = s->mat->cp;
+      invcp = s->mat->invcp;
 
       for (int ip = 0; ip < s->np_local; ip++) {
 	if (s->mask[ip] & groupbit) {
@@ -121,7 +121,7 @@ void FixConvectionParticles::initial_integrate() {
     }
   } else {
     s = domain->solids[solid];
-    invcp = s->mat->cp;
+    invcp = s->mat->invcp;
 
     for (int ip = 0; ip < s->np_local; ip++) {
       if (s->mask[ip] & groupbit) {
