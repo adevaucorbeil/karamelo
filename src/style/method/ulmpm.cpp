@@ -316,9 +316,19 @@ void ULMPM::particles_to_grid() {
                                 solid->neigh_p.at(i),
                                 solid->wf.at(i));
 
-  bool grid_reset = false; // Indicate if the grid quantities have to be reset
-
   domain->grid->reduce_mass_ghost_nodes();
+
+  domain->grid->reset_velocity();
+  for (Solid *solid: domain->solids)
+    for (int i = 0; i < solid->neigh_n.size(); i++)
+    {
+      int in = solid->neigh_n.at(i);
+      int ip = solid->neigh_p.at(i);
+      double wf = solid->wf.at(i);
+      solid->compute_velocity_nodes(in, ip, wf, apic);           
+    }
+
+  bool grid_reset = false; // Indicate if the grid quantities have to be reset
 
   for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
 
@@ -326,11 +336,6 @@ void ULMPM::particles_to_grid() {
       grid_reset = true;
     else
       grid_reset = false;
-
-    if (apic)
-      domain->solids[isolid]->compute_velocity_nodes(grid_reset, true);
-    else
-      domain->solids[isolid]->compute_velocity_nodes(grid_reset, false);
 
     if (update->sub_method_type == Update::SubMethodType::MLS) {
       domain->solids[isolid]->compute_forces_nodes(grid_reset, true, true, false, true);
@@ -355,21 +360,26 @@ void ULMPM::particles_to_grid_USF_1() {
                                 solid->neigh_p.at(i),
                                 solid->wf.at(i));
 
-  bool grid_reset = false; // Indicate if the grid quantities have to be reset
-
   domain->grid->reduce_mass_ghost_nodes();
 
-  for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
+  domain->grid->reset_velocity();
+  for (Solid *solid: domain->solids)
+    for (int i = 0; i < solid->neigh_n.size(); i++)
+    {
+      int in = solid->neigh_n.at(i);
+      int ip = solid->neigh_p.at(i);
+      double wf = solid->wf.at(i);
+      solid->compute_velocity_nodes(in, ip, wf, apic);           
+    }
 
+  bool grid_reset = false; // Indicate if the grid quantities have to be reset
+  
+  for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
     if (isolid == 0)
       grid_reset = true;
     else
       grid_reset = false;
 
-    if (apic)
-      domain->solids[isolid]->compute_velocity_nodes(grid_reset, true);
-    else
-      domain->solids[isolid]->compute_velocity_nodes(grid_reset, false);
     if (temp)
       domain->solids[isolid]->compute_temperature_nodes(grid_reset);
   }
@@ -443,19 +453,23 @@ void ULMPM::advance_particles()
 
 void ULMPM::velocities_to_grid()
 {
+  domain->grid->reset_velocity();
+  for (Solid *solid: domain->solids)
+    for (int i = 0; i < solid->neigh_n.size(); i++)
+    {
+      int in = solid->neigh_n.at(i);
+      int ip = solid->neigh_p.at(i);
+      double wf = solid->wf.at(i);
+      solid->compute_velocity_nodes(in, ip, wf, apic);           
+    }
+
   bool grid_reset = false; // Indicate if the grid quantities have to be reset
   for (int isolid = 0; isolid < domain->solids.size(); isolid++)
   {
-
     if (isolid == 0)
       grid_reset = true;
     else
       grid_reset = false;
-
-    if (apic)
-      domain->solids[isolid]->compute_velocity_nodes(grid_reset, true);
-    else
-      domain->solids[isolid]->compute_velocity_nodes(grid_reset, false);
     if (temp) {
       domain->solids[isolid]->compute_temperature_nodes(grid_reset);
     }

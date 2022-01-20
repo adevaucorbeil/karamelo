@@ -114,6 +114,7 @@ class Grid : protected Pointers {
   void update_grid_temperature();                  ///< Determine the temporary grid temperature \f$\tilde{T}_{n}\f$.
 
   void reset_mass();
+  void reset_velocity();
 };
 
 #endif

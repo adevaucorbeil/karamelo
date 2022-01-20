@@ -317,47 +317,33 @@ void Solid::compute_mass_nodes(int in, int ip, double wf)
     grid->mass.at(in) += wf*mass.at(ip);
 }
 
-void Solid::compute_velocity_nodes(bool reset, bool APIC)
+void Solid::compute_velocity_nodes(int in, int ip, double wf, bool APIC)
 {
-  if (reset)
+  if ((!grid->rigid.at(in) || mat->rigid) && grid->mass.at(in))
   {
-    for (Vector3d &v: grid->v)
-      v = Vector3d();
-    for (Vector3d &mb: grid->mb)
-      mb = Vector3d();
-  }
+    double wf_mass = wf*mass.at(ip);
+    
+    Vector3d vtemp = v.at(ip);
 
-  for (int i = 0; i < neigh_n.size(); i++)
-  {
-    int in = neigh_n.at(i);
-    int ip = neigh_p.at(i);
-
-    if ((!grid->rigid.at(in) || mat->rigid) && grid->mass.at(in))
+    if (APIC)
     {
-      double wf_mass = wf.at(i)*mass.at(ip);
-      
-      Vector3d vtemp = v.at(ip);
-
-      if (APIC)
-      {
-        if (is_TL)
-          vtemp += Fdot.at(ip)*(grid->x0.at(in) - x0.at(ip));
-        else
-          vtemp += L.at(ip)*(grid->x0.at(in) - x.at(ip));
-
-        grid->v.at(in) += vtemp/grid->mass.at(in);
-      }
+      if (is_TL)
+        vtemp += Fdot.at(ip)*(grid->x0.at(in) - x0.at(ip));
       else
-      {
-        if (update->method->ge)
-          vtemp += L.at(ip)*(grid->x0.at(in) - x.at(ip));
+        vtemp += L.at(ip)*(grid->x0.at(in) - x.at(ip));
 
-        grid->v.at(in) += wf_mass*vtemp/grid->mass.at(in);
-      }
-
-      if (grid->rigid.at(in))
-        grid->mb.at(in) += wf_mass*v_update.at(ip)/grid->mass.at(in);
+      grid->v.at(in) += vtemp/grid->mass.at(in);
     }
+    else
+    {
+      if (update->method->ge)
+        vtemp += L.at(ip)*(grid->x0.at(in) - x.at(ip));
+
+      grid->v.at(in) += wf_mass*vtemp/grid->mass.at(in);
+    }
+
+    if (grid->rigid.at(in))
+      grid->mb.at(in) += wf_mass*v_update.at(ip)/grid->mass.at(in);
   }
 }
 

@@ -1366,3 +1366,11 @@ void Grid::reset_mass()
   for (double &mass: mass)
     mass = 0;
 }
+
+void Grid::reset_velocity()
+{
+    for (Vector3d &v: v)
+      v = Vector3d();
+    for (Vector3d &mb: mb)
+      mb = Vector3d();
+}

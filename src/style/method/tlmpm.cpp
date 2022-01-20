@@ -330,7 +330,6 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
 
 void TLMPM::particles_to_grid()
 {
-  bool grid_reset = true; // Indicate if the grid quantities have to be reset
   if (update_mass_nodes)
   {
     for (Solid *solid: domain->solids)
@@ -345,9 +344,20 @@ void TLMPM::particles_to_grid()
     update_mass_nodes = false;
   }
 
+  for (Solid *solid: domain->solids)
+  {
+    solid->grid->reset_velocity();
+    for (int i = 0; i < solid->neigh_n.size(); i++)
+    {
+      int in = solid->neigh_n.at(i);
+      int ip = solid->neigh_p.at(i);
+      double wf = solid->wf.at(i);
+      solid->compute_velocity_nodes(in, ip, wf, update->sub_method_type == Update::SubMethodType::APIC);
+    }
+  }
+
+  bool grid_reset = true; // Indicate if the grid quantities have to be reset
   for (int isolid=0; isolid<domain->solids.size(); isolid++){
-    if (update->sub_method_type == Update::SubMethodType::APIC) domain->solids[isolid]->compute_velocity_nodes(grid_reset, true);
-    else domain->solids[isolid]->compute_velocity_nodes(grid_reset, false);
     domain->solids[isolid]->compute_forces_nodes(grid_reset, false, true, false, false);
     domain->solids[isolid]->compute_forces_nodes(grid_reset, true, false, true, false);
 
@@ -362,7 +372,6 @@ void TLMPM::particles_to_grid()
 
 void TLMPM::particles_to_grid_USF_1()
 {
-  bool grid_reset = true; // Indicate if the grid quantities have to be reset
   if (update_mass_nodes)
   {
     for (Solid *solid: domain->solids)
@@ -377,11 +386,20 @@ void TLMPM::particles_to_grid_USF_1()
     update_mass_nodes = false;
   }
 
+  for (Solid *solid: domain->solids)
+  {
+    solid->grid->reset_velocity();
+    for (int i = 0; i < solid->neigh_n.size(); i++)
+    {
+      int in = solid->neigh_n.at(i);
+      int ip = solid->neigh_p.at(i);
+      double wf = solid->wf.at(i);
+      solid->compute_velocity_nodes(in, ip, wf, update->sub_method_type == Update::SubMethodType::APIC);
+    }
+  }
+
+  bool grid_reset = true; // Indicate if the grid quantities have to be reset
   for (int isolid=0; isolid<domain->solids.size(); isolid++){
-    if (update->sub_method_type == Update::SubMethodType::APIC)
-      domain->solids[isolid]->compute_velocity_nodes(grid_reset, true);
-    else
-      domain->solids[isolid]->compute_velocity_nodes(grid_reset, false);
 
     if (temp)
       domain->solids[isolid]->compute_temperature_nodes(grid_reset);
@@ -440,11 +458,19 @@ void TLMPM::advance_particles()
 
 void TLMPM::velocities_to_grid()
 {
+  for (Solid *solid: domain->solids)
+  {
+    solid->grid->reset_velocity();
+    for (int i = 0; i < solid->neigh_n.size(); i++)
+    {
+      int in = solid->neigh_n.at(i);
+      int ip = solid->neigh_p.at(i);
+      double wf = solid->wf.at(i);
+      solid->compute_velocity_nodes(in, ip, wf, update->sub_method_type == Update::SubMethodType::APIC);
+    }
+  }
+
   for (int isolid=0; isolid<domain->solids.size(); isolid++) {
-    if (update->sub_method_type == Update::SubMethodType::APIC)
-      domain->solids[isolid]->compute_velocity_nodes(true, true);
-    else
-      domain->solids[isolid]->compute_velocity_nodes(true, false);
     if (temp) {
       domain->solids[isolid]->compute_temperature_nodes(true);
     }

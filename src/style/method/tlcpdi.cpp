@@ -333,12 +333,17 @@ void TLCPDI::particles_to_grid()
   for (Solid *solid: domain->solids)
   {
     solid->grid->reset_mass();
+    solid->grid->reset_velocity();
     for (int i = 0; i < solid->neigh_n.size(); i++)
-      solid->compute_mass_nodes(solid->neigh_n.at(i),
-                                solid->neigh_p.at(i),
-                                solid->wf.at(i));
+    {
+      int in = solid->neigh_n.at(i);
+      int ip = solid->neigh_p.at(i);
+      double wf = solid->wf.at(i);
+      solid->compute_mass_nodes(in, ip, wf);
+      solid->compute_velocity_nodes(in, ip, wf, method_type == "APIC");
+    }
+
     bool grid_reset = true;
-    solid->compute_velocity_nodes(grid_reset, method_type == "APIC");
     solid->compute_forces_nodes(grid_reset, false, true, false, false);
     solid->compute_forces_nodes(grid_reset, true, false, true, false);
   }
@@ -349,12 +354,15 @@ void TLCPDI::particles_to_grid_USF_1()
   for (Solid *solid: domain->solids)
   {
     solid->grid->reset_mass();
+    solid->grid->reset_velocity();
     for (int i = 0; i < solid->neigh_n.size(); i++)
-      solid->compute_mass_nodes(solid->neigh_n.at(i),
-                                solid->neigh_p.at(i),
-                                solid->wf.at(i));
-    bool grid_reset = true;
-    solid->compute_velocity_nodes(grid_reset, method_type == "APIC");
+    {
+      int in = solid->neigh_n.at(i);
+      int ip = solid->neigh_p.at(i);
+      double wf = solid->wf.at(i);
+      solid->compute_mass_nodes(in, ip, wf);
+      solid->compute_velocity_nodes(in, ip, wf, method_type == "APIC");
+    }
   }
 }
 
@@ -392,12 +400,18 @@ void TLCPDI::advance_particles()
 
 void TLCPDI::velocities_to_grid()
 {
-  if (method_type.compare("APIC") != 0) {
-    for (int isolid=0; isolid<domain->solids.size(); isolid++) {
-      //domain->solids[isolid]->compute_mass_nodes();
-      domain->solids[isolid]->compute_velocity_nodes(true, false);
+  if (method_type.compare("APIC") != 0)
+    for (Solid *solid: domain->solids)
+    {
+      solid->grid->reset_velocity();
+      for (int i = 0; i < solid->neigh_n.size(); i++)
+      {
+        int in = solid->neigh_n.at(i);
+        int ip = solid->neigh_p.at(i);
+        double wf = solid->wf.at(i);
+        solid->compute_velocity_nodes(in, ip, wf, method_type == "APIC");
+      }
     }
-  }
 }
 
 void TLCPDI::update_grid_positions()
