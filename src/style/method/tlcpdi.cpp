@@ -388,9 +388,8 @@ void TLCPDI::particles_to_grid_USF_2()
 
 void TLCPDI::update_grid_state()
 {
-  for (int isolid=0; isolid<domain->solids.size(); isolid++) {
-    domain->solids[isolid]->grid->update_grid_velocities();
-  }
+  for (Solid *solid: domain->solids)
+    solid->grid->update_grid_velocities();
 }
 
 void TLCPDI::grid_to_points()
@@ -403,32 +402,32 @@ void TLCPDI::grid_to_points()
 
 void TLCPDI::advance_particles()
 {
-  for (int isolid=0; isolid<domain->solids.size(); isolid++) {
-    domain->solids[isolid]->update_particle(update->PIC_FLIP, false, true);
+  for (Solid *solid: domain->solids) {
+    solid->update_particle(update->PIC_FLIP, false, true);
   }
 }
 
 void TLCPDI::velocities_to_grid()
 {
-  if (method_type.compare("APIC") != 0)
+  if (method_type != "APIC")
     for (Solid *solid: domain->solids)
     {
       solid->grid->reset_velocity();
+
       for (int i = 0; i < solid->neigh_n.size(); i++)
       {
         int in = solid->neigh_n.at(i);
         int ip = solid->neigh_p.at(i);
         double wf = solid->wf.at(i);
-        solid->compute_velocity_nodes(in, ip, wf, method_type == "APIC");
+        solid->compute_velocity_nodes(in, ip, wf, false);
       }
     }
 }
 
 void TLCPDI::update_grid_positions()
 {
-  for (int isolid=0; isolid<domain->solids.size(); isolid++) {
-    domain->solids[isolid]->grid->update_grid_positions();
-  }
+  for (Solid *solid: domain->solids)
+    solid->grid->update_grid_positions();
 }
 
 void TLCPDI::compute_rate_deformation_gradient(bool doublemapping) {
@@ -456,9 +455,9 @@ void TLCPDI::update_stress(bool doublemapping)
 
 void TLCPDI::adjust_dt()
 {
-  if (update->dt_constant) return; // dt is set as a constant, do not update
-
-
+  if (update->dt_constant)
+    return; // dt is set as a constant, do not update
+    
   double dtCFL = 1.0e22;
 
   for (int isolid=0; isolid<domain->solids.size(); isolid++) {
@@ -479,11 +478,11 @@ void TLCPDI::adjust_dt()
 
 void TLCPDI::reset()
 {
-  int np_local;
+  for (Solid *solid: domain->solids)
+  {
+    solid->dtCFL = 1.0e22;
 
-  for (int isolid=0; isolid<domain->solids.size(); isolid++) {
-    domain->solids[isolid]->dtCFL = 1.0e22;
-    np_local = domain->solids[isolid]->np_local;
-    for (int ip = 0; ip < np_local; ip++) domain->solids[isolid]->mbp[ip] = Vector3d();
+    for (int ip = 0; ip < solid->np_local; ip++)
+      solid->mbp[ip] = Vector3d();
   }
 }

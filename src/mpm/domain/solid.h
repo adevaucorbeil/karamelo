@@ -122,6 +122,9 @@ class Solid : protected Pointers {
   void compute_mass_nodes(int in, int ip, double wf);                    ///< Compute nodal mass step of the Particle to Grid step of the MPM algorithm.
   void compute_velocity_nodes(int in, int ip, double wf, bool APIC);                ///< Compute nodal velocity (via momentum) step of the Particle to Grid step of the MPM algorithm.
   void compute_force_nodes(int in, int ip, double wf, const Vector3d &wfd, bool TL, bool MLS);      ///< Compute both external and internal forces step of the Particle to Grid step of the updated Lagrangian MPM algorithm.
+  void compute_temperature_nodes(int in, int ip, double wf);             ///< Compute nodal temperature step of the particle
+  void compute_temperature_driving_force_nodes(int in, int ip, double wf, const Vector3d &wfd); ///< Compute external temperature driving forces
+  
   void compute_particle(bool positions, bool velocities, bool accelerations); ///< Compute the particles' temporary velocities and position, part of the Grid to Particles step of the MPM algorithm.
   void update_particle(double alpha, bool positions, bool velocities);          ///< Update the particles' velocities based on either PIC and/or FLIP and update the positions using the updated velocities.
                                                     ///< The argument is the ratio \f$\alpha\f$ used between PIC and FLIP.
@@ -142,9 +145,6 @@ class Solid : protected Pointers {
   void write_restart(ofstream*);                    ///< Write solid information in the restart file
   void read_restart(ifstream*);                     ///< Read solid information from the restart file
 
-  void compute_temperature_nodes(bool);             ///< Compute nodal temperature step of the particle
-  void compute_external_temperature_driving_forces_nodes(bool); ///< Compute external temperature driving forces
-  void compute_internal_temperature_driving_forces_nodes(); ///< Compute internal forces step of the Particle to Grid step of the total Lagrangian MPM algorithm.
   void update_particle_temperature();               ///< Update the particles' temperature
   void update_heat_flux(bool);                      ///< Update the particles' heat source and fluxes
 

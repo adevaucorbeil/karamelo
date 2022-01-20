@@ -116,6 +116,8 @@ class Grid : protected Pointers {
   void reset_mass();
   void reset_velocity();
   void reset_forces();
+  void reset_temperatures();
+  void reset_temperature_driving_forces();
 };
 
 #endif

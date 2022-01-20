@@ -348,6 +348,11 @@ void TLMPM::particles_to_grid()
   {
     solid->grid->reset_velocity();
     solid->grid->reset_forces();
+    if (temp)
+    {
+      solid->grid->reset_temperatures();
+      solid->grid->reset_temperature_driving_forces();
+    }
     
     for (int i = 0; i < solid->neigh_n.size(); i++)
     {
@@ -358,18 +363,14 @@ void TLMPM::particles_to_grid()
 
       solid->compute_velocity_nodes(in, ip, wf, update->sub_method_type == Update::SubMethodType::APIC);
       solid->compute_force_nodes(in, ip, wf, wfd, true, false);
+      if (temp)
+      {
+        solid->compute_temperature_nodes(in, ip, wf);
+        solid->compute_temperature_driving_force_nodes(in, ip, wf, wfd);
+      }
     }
-  }
 
-  bool grid_reset = true; // Indicate if the grid quantities have to be reset
-  for (int isolid=0; isolid<domain->solids.size(); isolid++)
-  {
-    if (temp) {
-      domain->solids[isolid]->compute_temperature_nodes(grid_reset);
-      domain->solids[isolid]->compute_external_temperature_driving_forces_nodes(grid_reset);
-      domain->solids[isolid]->compute_internal_temperature_driving_forces_nodes();
-    }
-    domain->solids[isolid]->grid->reduce_ghost_nodes(true, true, temp);
+    solid->grid->reduce_ghost_nodes(true, true, temp);
   }
 }
 
@@ -392,22 +393,21 @@ void TLMPM::particles_to_grid_USF_1()
   for (Solid *solid: domain->solids)
   {
     solid->grid->reset_velocity();
+    if (temp)
+      domain->grid->reset_temperatures();
+
     for (int i = 0; i < solid->neigh_n.size(); i++)
     {
       int in = solid->neigh_n.at(i);
       int ip = solid->neigh_p.at(i);
       double wf = solid->wf.at(i);
+
       solid->compute_velocity_nodes(in, ip, wf, update->sub_method_type == Update::SubMethodType::APIC);
+      if (temp)
+        solid->compute_temperature_nodes(in, ip, wf);
     }
-  }
 
-  bool grid_reset = true; // Indicate if the grid quantities have to be reset
-  for (int isolid=0; isolid<domain->solids.size(); isolid++){
-
-    if (temp)
-      domain->solids[isolid]->compute_temperature_nodes(grid_reset);
-
-    domain->solids[isolid]->grid->reduce_ghost_nodes(true, false, temp);
+    solid->grid->reduce_ghost_nodes(true, false, temp);
   }
 }
 
@@ -416,6 +416,8 @@ void TLMPM::particles_to_grid_USF_2()
   for (Solid *solid: domain->solids)
   {
     solid->grid->reset_forces();
+    if (temp)
+      solid->grid->reset_temperature_driving_forces();
     
     for (int i = 0; i < solid->neigh_n.size(); i++)
     {
@@ -425,17 +427,11 @@ void TLMPM::particles_to_grid_USF_2()
       const Vector3d &wfd = solid->wfd.at(i);
       
       solid->compute_force_nodes(in, ip, wf, wfd, true, false);
+      if (temp)
+        solid->compute_temperature_driving_force_nodes(in, ip, wf, wfd);
     }
-  }
 
-  bool grid_reset = true; // Indicate if the grid quantities have to be reset
-
-  for (int isolid=0; isolid<domain->solids.size(); isolid++){
-    if (temp) {
-      domain->solids[isolid]->compute_external_temperature_driving_forces_nodes(grid_reset);
-      domain->solids[isolid]->compute_internal_temperature_driving_forces_nodes();
-    }
-    domain->solids[isolid]->grid->reduce_ghost_nodes(false, true, temp);
+    solid->grid->reduce_ghost_nodes(false, true, temp);
   }
 }
 
@@ -476,20 +472,21 @@ void TLMPM::velocities_to_grid()
   for (Solid *solid: domain->solids)
   {
     solid->grid->reset_velocity();
+    if (temp)
+      domain->grid->reset_temperatures();
+
     for (int i = 0; i < solid->neigh_n.size(); i++)
     {
       int in = solid->neigh_n.at(i);
       int ip = solid->neigh_p.at(i);
       double wf = solid->wf.at(i);
-      solid->compute_velocity_nodes(in, ip, wf, update->sub_method_type == Update::SubMethodType::APIC);
-    }
-  }
 
-  for (int isolid=0; isolid<domain->solids.size(); isolid++) {
-    if (temp) {
-      domain->solids[isolid]->compute_temperature_nodes(true);
+      solid->compute_velocity_nodes(in, ip, wf, update->sub_method_type == Update::SubMethodType::APIC);
+      if (temp)
+        solid->compute_temperature_nodes(in, ip, wf);
     }
-    domain->solids[isolid]->grid->reduce_ghost_nodes(true, false, temp);
+
+    solid->grid->reduce_ghost_nodes(true, false, temp);
   }
 }
 

@@ -372,6 +372,28 @@ void Solid::compute_force_nodes(int in, int ip, double wf, const Vector3d &wfd, 
     grid->mb.at(in) += wf*mbp.at(ip);
 }
 
+void Solid::compute_temperature_nodes(int in, int ip, double wf)
+{
+  if (grid->mass.at(in))
+  {
+    grid->T.at(in) += wf*mass.at(ip)*T.at(ip)/grid->mass.at(in);
+  }
+}
+
+void Solid::compute_temperature_driving_force_nodes(int in, int ip, double wf, const Vector3d &wfd)
+{
+  if (domain->axisymmetric)
+  {
+    error->one(FLERR, "Temperature and axisymmetric not yet supported.\n");
+  }
+
+  if (grid->mass.at(in))
+  {
+    grid->Qext.at(in) += wf*gamma.at(ip);
+  }
+  grid->Qint.at(in) += wfd.dot(q.at(ip));
+}
+
 void Solid::compute_particle(bool positions, bool velocities, bool accelerations)
 {
   if (velocities)
@@ -2124,62 +2146,6 @@ void Solid::read_mesh(string fileName)
   if (grid->nnodes == 0)
   {
     grid->init(solidlo, solidhi);
-  }
-}
-
-
-void Solid::compute_temperature_nodes(bool reset)
-{
-  if (reset)
-    for (double &T: grid->T)
-      T = 0;
-
-  for (int i = 0; i < neigh_n.size(); i++)
-  {
-    int in = neigh_n.at(i);
-    int ip = neigh_p.at(i);
-
-    if (grid->mass.at(in))
-    {
-      grid->T.at(in) += wf.at(i)*mass.at(ip)*T.at(ip)/grid->mass.at(in);
-    }
-  }
-}
-
-void Solid::compute_external_temperature_driving_forces_nodes(bool reset)
-{
-  if (reset)
-    for (double &Qext: grid->Qext)
-      Qext = 0;
-
-  for (int i = 0; i < neigh_n.size(); i++)
-  {
-    int in = neigh_n.at(i);
-    int ip = neigh_p.at(i);
-
-    if (grid->mass.at(in))
-    {
-      grid->Qext.at(in) += wf.at(i)*gamma.at(ip);
-    }
-  }
-}
-
-void Solid::compute_internal_temperature_driving_forces_nodes()
-{
-  for (double &Qint: grid->Qint)
-    Qint = 0;
-
-  if (domain->axisymmetric)
-  {
-    error->one(FLERR, "Temperature and axisymmetric not yet supported.\n");
-  }
-
-  for (int i = 0; i < neigh_n.size(); i++)
-  {
-    int in = neigh_n.at(i);
-    int ip = neigh_p.at(i);
-
-    grid->Qint.at(in) += wfd.at(i).dot(q.at(ip));
   }
 }
 

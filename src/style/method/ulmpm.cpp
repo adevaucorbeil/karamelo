@@ -320,6 +320,11 @@ void ULMPM::particles_to_grid() {
 
   domain->grid->reset_velocity();
   domain->grid->reset_forces();
+  if (temp)
+  {
+    domain->grid->reset_temperatures();
+    domain->grid->reset_temperature_driving_forces();
+  }
 
   for (Solid *solid: domain->solids)
     for (int i = 0; i < solid->neigh_n.size(); i++)
@@ -330,24 +335,14 @@ void ULMPM::particles_to_grid() {
       const Vector3d &wfd = solid->wfd.at(i);
 
       solid->compute_velocity_nodes(in, ip, wf, apic);    
-      solid->compute_force_nodes(in, ip, wf, wfd, false, false);        
+      solid->compute_force_nodes(in, ip, wf, wfd, false, false);
+      if (temp)
+      {
+        solid->compute_temperature_nodes(in, ip, wf);
+        solid->compute_temperature_driving_force_nodes(in, ip, wf, wfd);
+      }
     }
 
-  bool grid_reset = false; // Indicate if the grid quantities have to be reset
-
-  for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
-
-    if (isolid == 0)
-      grid_reset = true;
-    else
-      grid_reset = false;
-
-    if (temp) {
-      domain->solids[isolid]->compute_temperature_nodes(grid_reset);
-      domain->solids[isolid]->compute_external_temperature_driving_forces_nodes(grid_reset);
-      domain->solids[isolid]->compute_internal_temperature_driving_forces_nodes();
-    }
-  }
   domain->grid->reduce_ghost_nodes(true, true, temp);
 }
 
@@ -362,31 +357,28 @@ void ULMPM::particles_to_grid_USF_1() {
   domain->grid->reduce_mass_ghost_nodes();
 
   domain->grid->reset_velocity();
+  if (temp)
+    domain->grid->reset_temperatures();
+
   for (Solid *solid: domain->solids)
     for (int i = 0; i < solid->neigh_n.size(); i++)
     {
       int in = solid->neigh_n.at(i);
       int ip = solid->neigh_p.at(i);
       double wf = solid->wf.at(i);
-      solid->compute_velocity_nodes(in, ip, wf, apic);           
+
+      solid->compute_velocity_nodes(in, ip, wf, apic);   
+      if (temp)
+        solid->compute_temperature_nodes(in, ip, wf);        
     }
 
-  bool grid_reset = false; // Indicate if the grid quantities have to be reset
-  
-  for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
-    if (isolid == 0)
-      grid_reset = true;
-    else
-      grid_reset = false;
-
-    if (temp)
-      domain->solids[isolid]->compute_temperature_nodes(grid_reset);
-  }
   domain->grid->reduce_ghost_nodes(true, false, temp);
 }
 
 void ULMPM::particles_to_grid_USF_2() {
   domain->grid->reset_forces();
+  if (temp)
+    domain->grid->reset_temperature_driving_forces();
   
   for (Solid *solid: domain->solids)
     for (int i = 0; i < solid->neigh_n.size(); i++)
@@ -397,23 +389,11 @@ void ULMPM::particles_to_grid_USF_2() {
       const Vector3d &wfd = solid->wfd.at(i);
        
       solid->compute_force_nodes(in, ip, wf, wfd, false,
-                                  update->sub_method_type == Update::SubMethodType::MLS);       
+                                  update->sub_method_type == Update::SubMethodType::MLS);
+      if (temp)
+        solid->compute_temperature_driving_force_nodes(in, ip, wf, wfd);   
     }
-
-  bool grid_reset = false; // Indicate if the grid quantities have to be reset
-
-  for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
-
-    if (isolid == 0)
-      grid_reset = true;
-    else
-      grid_reset = false;
-
-    if (temp) {
-      domain->solids[isolid]->compute_external_temperature_driving_forces_nodes(grid_reset);
-      domain->solids[isolid]->compute_internal_temperature_driving_forces_nodes();
-    }
-  }
+    
   domain->grid->reduce_ghost_nodes(false, true, temp);
 }
 
@@ -461,26 +441,21 @@ void ULMPM::advance_particles()
 void ULMPM::velocities_to_grid()
 {
   domain->grid->reset_velocity();
+  if (temp)
+    domain->grid->reset_temperatures();
+
   for (Solid *solid: domain->solids)
     for (int i = 0; i < solid->neigh_n.size(); i++)
     {
       int in = solid->neigh_n.at(i);
       int ip = solid->neigh_p.at(i);
       double wf = solid->wf.at(i);
-      solid->compute_velocity_nodes(in, ip, wf, apic);           
-    }
 
-  bool grid_reset = false; // Indicate if the grid quantities have to be reset
-  for (int isolid = 0; isolid < domain->solids.size(); isolid++)
-  {
-    if (isolid == 0)
-      grid_reset = true;
-    else
-      grid_reset = false;
-    if (temp) {
-      domain->solids[isolid]->compute_temperature_nodes(grid_reset);
+      solid->compute_velocity_nodes(in, ip, wf, apic);    
+      if (temp)
+        solid->compute_temperature_nodes(in, ip, wf);       
     }
-  }
+  
   domain->grid->reduce_ghost_nodes(true, false, temp);
 }
 

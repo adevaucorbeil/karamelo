@@ -1382,3 +1382,17 @@ void Grid::reset_forces()
   for (Vector3d &mb: mb)
     mb = Vector3d();
 }
+
+void Grid::reset_temperatures()
+{
+  for (double &T: T)
+      T = 0;
+}
+
+void Grid::reset_temperature_driving_forces()
+{
+  for (double &Qint: Qint)
+    Qint = 0;
+  for (double &Qext: Qext)
+    Qext = 0;
+}
