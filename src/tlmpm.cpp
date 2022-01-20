@@ -425,7 +425,7 @@ void TLMPM::grid_to_points()
       domain->solids[isolid]->compute_particle_accelerations_velocities_and_positions();
     }
     if (temp) {
-      domain->solids[isolid]->update_particle_temperature();
+      domain->solids[isolid]->update_particle_temperature(update->PIC_FLIP);
     }
   }
 }

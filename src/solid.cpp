@@ -156,7 +156,7 @@ Solid::Solid(MPM *mpm, vector<string> args) : Pointers(mpm)
   }
 
   if (update->method->temp)
-    comm_n = 54; // Number of double to pack for particle exchange between CPUs.
+    comm_n = 55; // Number of double to pack for particle exchange between CPUs.
   else
     comm_n = 49;
 }
@@ -308,6 +308,7 @@ void Solid::grow(int nparticles)
 
   if (mat->cp != 0) {
     T.resize(nparticles);
+    T_old.resize(nparticles);
     gamma.resize(nparticles);
     q.resize(nparticles);
   }
@@ -1267,6 +1268,9 @@ void Solid::update_stress()
   if (lin) {
     for (int ip = 0; ip < np_local; ip++) {
       strain_increment = update->dt * D[ip];
+      if (mat->alpha != 0)
+	strain_increment -= mat->alpha * (T[ip] - T_old[ip]) * eye;
+
       strain_el[ip] += strain_increment;
       sigma[ip] += 2 * mat->G * strain_increment +
                    mat->lambda * strain_increment.trace() * eye;
@@ -1286,8 +1290,14 @@ void Solid::update_stress()
       vol0PK1[ip] = vol0[ip] * PK1;
       sigma[ip] = 1.0 / J[ip] * (F[ip] * PK1.transpose());
 
+      if (mat->alpha != 0)
+	sigma[ip] -= 3 * mat->K * mat->alpha * (T[ip] - T0) * eye;
+
       strain_el[ip] =
           0.5 * (F[ip].transpose() * F[ip] - eye); // update->dt * D[ip];
+
+      if (mat->alpha != 0)
+	strain_el[ip] -= mat->alpha * (T[ip] - T0) * eye;
       gamma[ip] = 0;
     }
   } else {
@@ -1303,7 +1313,7 @@ void Solid::update_stress()
       if (mat->cp != 0) {
         mat->eos->compute_pressure(pH[ip], ienergy[ip], J[ip], rho[ip],
                                    damage[ip], D[ip], grid->cellsize, T[ip]);
-        pH[ip] += mat->alpha * (T[ip] - T0);
+        pH[ip] += 3 * mat->K * mat->alpha * (T[ip] - T0);
 
         sigma_dev[ip] = mat->strength->update_deviatoric_stress(
             sigma[ip], D[ip], plastic_strain_increment[ip],
@@ -1575,8 +1585,9 @@ void Solid::copy_particle(int i, int j) {
   damage_init[j]             = damage_init[i];
   if (update->method->temp) {
     T[j]                     = T[i];
-    gamma[j]                   = gamma[i];
-    q[j]                       = q[i];
+    T_old[j]                 = T_old[i];
+    gamma[j]                 = gamma[i];
+    q[j]                     = q[i];
   }
   ienergy[j]                 = ienergy[i];
   mask[j]                    = mask[i];
@@ -1657,6 +1668,7 @@ void Solid::pack_particle(int i, vector<double> &buf)
   buf.push_back(damage_init[i]);
   if (update->method->temp) {
     buf.push_back(T[i]);
+    buf.push_back(T_old[i]);
     buf.push_back(gamma[i]);
     buf.push_back(q[i][0]);
     buf.push_back(q[i][1]);
@@ -1755,6 +1767,7 @@ void Solid::unpack_particle(int &i, vector<int> list, vector<double> &buf)
       damage_init[i] = buf[m++];
       if (update->method->temp) {
 	T[i] = buf[m++];
+	T_old[i] = buf[m++];
 	gamma[i] = buf[m++];
 
 	q[i][0] = buf[m++];
@@ -2310,6 +2323,7 @@ void Solid::populate(vector<string> args)
     damage_init[i]             = 0;
     if (update->method->temp) {
       T[i]                     = T0;
+      T_old[i]                 = T0;
       gamma[i]                 = 0;
       q[i].setZero();
     }
@@ -2665,6 +2679,7 @@ void Solid::read_mesh(string fileName)
     damage_init[i]             = 0;
     if (update->method->temp) {
       T[i]                     = T0;
+      T_old[i]                 = T0;
       gamma[i]                 = 0;
       q[i].setZero();
     }
@@ -2757,14 +2772,16 @@ void Solid::compute_internal_temperature_driving_forces_nodes() {
   }
 }
 
-void Solid::update_particle_temperature() {
+void Solid::update_particle_temperature(double alpha) {
   int in;
+
   for (int ip = 0; ip < np_local; ip++) {
-    T[ip] = 0;
+    T_old[ip] = T[ip];
+    T[ip] *= alpha;
+
     for (int j = 0; j < numneigh_pn[ip]; j++) {
       in = neigh_pn[ip][j];
-      // T[ip] += wf_pn[ip][j] * (grid->T_update[in] - grid->T[in]);
-      T[ip] += wf_pn[ip][j] * grid->T_update[in];
+      T[ip] += wf_pn[ip][j] * (grid->T_update[in] - alpha * grid->T[in]);
     }
   }
 }
@@ -2841,6 +2858,7 @@ void Solid::write_restart(ofstream *of) {
     of->write(reinterpret_cast<const char *>(&damage[ip]), sizeof(double));
     of->write(reinterpret_cast<const char *>(&damage_init[ip]), sizeof(double));
     of->write(reinterpret_cast<const char *>(&T[ip]), sizeof(double));
+    of->write(reinterpret_cast<const char *>(&T_old[ip]), sizeof(double));
     of->write(reinterpret_cast<const char *>(&ienergy[ip]), sizeof(double));
     of->write(reinterpret_cast<const char *>(&mask[ip]), sizeof(int));
   }
@@ -2908,6 +2926,7 @@ void Solid::read_restart(ifstream *ifr) {
     ifr->read(reinterpret_cast<char *>(&damage[ip]), sizeof(double));
     ifr->read(reinterpret_cast<char *>(&damage_init[ip]), sizeof(double));
     ifr->read(reinterpret_cast<char *>(&T[ip]), sizeof(double));
+    ifr->read(reinterpret_cast<char *>(&T_old[ip]), sizeof(double));
     ifr->read(reinterpret_cast<char *>(&ienergy[ip]), sizeof(double));
     ifr->read(reinterpret_cast<char *>(&mask[ip]), sizeof(int));
   }

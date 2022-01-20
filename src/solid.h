@@ -93,6 +93,7 @@ class Solid : protected Pointers {
   vector<int> mask;                         ///< Particles' group mask
 
   vector<double> T;                         ///< Particles' current temperature
+  vector<double> T_old;                     ///< Particles' temperature at previous step
   vector<double> gamma;                     ///< Particles' heat source
   vector<Eigen::Vector3d> q;                ///< Particles' heat flux
 
@@ -162,7 +163,7 @@ class Solid : protected Pointers {
   void compute_temperature_nodes(bool);             ///< Compute nodal temperature step of the particle
   void compute_external_temperature_driving_forces_nodes(bool); ///< Compute external temperature driving forces
   void compute_internal_temperature_driving_forces_nodes(); ///< Compute internal forces step of the Particle to Grid step of the total Lagrangian MPM algorithm.
-  void update_particle_temperature();               ///< Update the particles' temperature
+  void update_particle_temperature(double);         ///< Update the particles' temperature
   void update_heat_flux(bool);                      ///< Update the particles' heat source and fluxes
 
 private:
