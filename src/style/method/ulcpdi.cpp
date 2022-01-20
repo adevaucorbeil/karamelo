@@ -373,26 +373,20 @@ void ULCPDI::particles_to_grid()
 {
   domain->grid->reset_mass();
   domain->grid->reset_velocity();
+  domain->grid->reset_forces();
+  
   for (Solid *solid: domain->solids)
     for (int i = 0; i < solid->neigh_n.size(); i++)
     {
       int in = solid->neigh_n.at(i);
       int ip = solid->neigh_p.at(i);
       double wf = solid->wf.at(i);
+      const Vector3d &wfd = solid->wfd.at(i);
+      
       solid->compute_mass_nodes(in, ip, wf);
-      solid->compute_velocity_nodes(in, ip, wf, method_type == "APIC");           
+      solid->compute_velocity_nodes(in, ip, wf, method_type == "APIC");    
+      solid->compute_force_nodes(in, ip, wf, wfd, false, false);       
     }
-
-  bool grid_reset = false; // Indicate if the grid quantities have to be reset
-
-  for (int isolid=0; isolid<domain->solids.size(); isolid++){
-
-    if (isolid == 0) grid_reset = true;
-    else grid_reset = false;
-
-    domain->solids[isolid]->compute_forces_nodes(grid_reset, true, true, false, false);
-    /*compute_thermal_energy_nodes();*/
-  }
 }
 
 void ULCPDI::particles_to_grid_USF_1()
@@ -412,15 +406,18 @@ void ULCPDI::particles_to_grid_USF_1()
 
 void ULCPDI::particles_to_grid_USF_2()
 {
-  bool grid_reset = false; // Indicate if the grid quantities have to be reset
-  for (int isolid=0; isolid<domain->solids.size(); isolid++){
-
-    if (isolid == 0) grid_reset = true;
-    else grid_reset = false;
-
-    domain->solids[isolid]->compute_forces_nodes(grid_reset, true, true, false, false);
-    /*compute_thermal_energy_nodes();*/
-  }
+  domain->grid->reset_forces();
+  
+  for (Solid *solid: domain->solids)
+    for (int i = 0; i < solid->neigh_n.size(); i++)
+    {
+      int in = solid->neigh_n.at(i);
+      int ip = solid->neigh_p.at(i);
+      double wf = solid->wf.at(i);
+      const Vector3d &wfd = solid->wfd.at(i);
+       
+      solid->compute_force_nodes(in, ip, wf, wfd, false, false);       
+    }
 }
 
 void ULCPDI::update_grid_state()

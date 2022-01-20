@@ -121,7 +121,7 @@ class Solid : protected Pointers {
 
   void compute_mass_nodes(int in, int ip, double wf);                    ///< Compute nodal mass step of the Particle to Grid step of the MPM algorithm.
   void compute_velocity_nodes(int in, int ip, double wf, bool APIC);                ///< Compute nodal velocity (via momentum) step of the Particle to Grid step of the MPM algorithm.
-  void compute_forces_nodes(bool reset, bool internal, bool external, bool TL, bool MLS);      ///< Compute both external and internal forces step of the Particle to Grid step of the updated Lagrangian MPM algorithm.
+  void compute_force_nodes(int in, int ip, double wf, const Vector3d &wfd, bool TL, bool MLS);      ///< Compute both external and internal forces step of the Particle to Grid step of the updated Lagrangian MPM algorithm.
   void compute_particle(bool positions, bool velocities, bool accelerations); ///< Compute the particles' temporary velocities and position, part of the Grid to Particles step of the MPM algorithm.
   void update_particle(double alpha, bool positions, bool velocities);          ///< Update the particles' velocities based on either PIC and/or FLIP and update the positions using the updated velocities.
                                                     ///< The argument is the ratio \f$\alpha\f$ used between PIC and FLIP.

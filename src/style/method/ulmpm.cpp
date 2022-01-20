@@ -319,13 +319,18 @@ void ULMPM::particles_to_grid() {
   domain->grid->reduce_mass_ghost_nodes();
 
   domain->grid->reset_velocity();
+  domain->grid->reset_forces();
+
   for (Solid *solid: domain->solids)
     for (int i = 0; i < solid->neigh_n.size(); i++)
     {
       int in = solid->neigh_n.at(i);
       int ip = solid->neigh_p.at(i);
       double wf = solid->wf.at(i);
-      solid->compute_velocity_nodes(in, ip, wf, apic);           
+      const Vector3d &wfd = solid->wfd.at(i);
+
+      solid->compute_velocity_nodes(in, ip, wf, apic);    
+      solid->compute_force_nodes(in, ip, wf, wfd, false, false);        
     }
 
   bool grid_reset = false; // Indicate if the grid quantities have to be reset
@@ -336,12 +341,6 @@ void ULMPM::particles_to_grid() {
       grid_reset = true;
     else
       grid_reset = false;
-
-    if (update->sub_method_type == Update::SubMethodType::MLS) {
-      domain->solids[isolid]->compute_forces_nodes(grid_reset, true, true, false, true);
-    } else {
-      domain->solids[isolid]->compute_forces_nodes(grid_reset, true, true, false, false);
-    }
 
     if (temp) {
       domain->solids[isolid]->compute_temperature_nodes(grid_reset);
@@ -387,6 +386,20 @@ void ULMPM::particles_to_grid_USF_1() {
 }
 
 void ULMPM::particles_to_grid_USF_2() {
+  domain->grid->reset_forces();
+  
+  for (Solid *solid: domain->solids)
+    for (int i = 0; i < solid->neigh_n.size(); i++)
+    {
+      int in = solid->neigh_n.at(i);
+      int ip = solid->neigh_p.at(i);
+      double wf = solid->wf.at(i);
+      const Vector3d &wfd = solid->wfd.at(i);
+       
+      solid->compute_force_nodes(in, ip, wf, wfd, false,
+                                  update->sub_method_type == Update::SubMethodType::MLS);       
+    }
+
   bool grid_reset = false; // Indicate if the grid quantities have to be reset
 
   for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
@@ -395,12 +408,6 @@ void ULMPM::particles_to_grid_USF_2() {
       grid_reset = true;
     else
       grid_reset = false;
-
-    if (update->sub_method_type == Update::SubMethodType::MLS) {
-      domain->solids[isolid]->compute_forces_nodes(grid_reset, true, true, false, true);
-    } else {
-      domain->solids[isolid]->compute_forces_nodes(grid_reset, true, true, false, false);
-    }
 
     if (temp) {
       domain->solids[isolid]->compute_external_temperature_driving_forces_nodes(grid_reset);

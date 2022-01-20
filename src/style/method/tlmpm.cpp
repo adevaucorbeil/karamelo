@@ -347,20 +347,23 @@ void TLMPM::particles_to_grid()
   for (Solid *solid: domain->solids)
   {
     solid->grid->reset_velocity();
+    solid->grid->reset_forces();
+    
     for (int i = 0; i < solid->neigh_n.size(); i++)
     {
       int in = solid->neigh_n.at(i);
       int ip = solid->neigh_p.at(i);
       double wf = solid->wf.at(i);
+      const Vector3d &wfd = solid->wfd.at(i);
+
       solid->compute_velocity_nodes(in, ip, wf, update->sub_method_type == Update::SubMethodType::APIC);
+      solid->compute_force_nodes(in, ip, wf, wfd, true, false);
     }
   }
 
   bool grid_reset = true; // Indicate if the grid quantities have to be reset
-  for (int isolid=0; isolid<domain->solids.size(); isolid++){
-    domain->solids[isolid]->compute_forces_nodes(grid_reset, false, true, false, false);
-    domain->solids[isolid]->compute_forces_nodes(grid_reset, true, false, true, false);
-
+  for (int isolid=0; isolid<domain->solids.size(); isolid++)
+  {
     if (temp) {
       domain->solids[isolid]->compute_temperature_nodes(grid_reset);
       domain->solids[isolid]->compute_external_temperature_driving_forces_nodes(grid_reset);
@@ -410,12 +413,24 @@ void TLMPM::particles_to_grid_USF_1()
 
 void TLMPM::particles_to_grid_USF_2()
 {
+  for (Solid *solid: domain->solids)
+  {
+    solid->grid->reset_forces();
+    
+    for (int i = 0; i < solid->neigh_n.size(); i++)
+    {
+      int in = solid->neigh_n.at(i);
+      int ip = solid->neigh_p.at(i);
+      double wf = solid->wf.at(i);
+      const Vector3d &wfd = solid->wfd.at(i);
+      
+      solid->compute_force_nodes(in, ip, wf, wfd, true, false);
+    }
+  }
+
   bool grid_reset = true; // Indicate if the grid quantities have to be reset
 
   for (int isolid=0; isolid<domain->solids.size(); isolid++){
-    domain->solids[isolid]->compute_forces_nodes(grid_reset, false, true, false, false);
-    domain->solids[isolid]->compute_forces_nodes(grid_reset, true, false, true, false);
-
     if (temp) {
       domain->solids[isolid]->compute_external_temperature_driving_forces_nodes(grid_reset);
       domain->solids[isolid]->compute_internal_temperature_driving_forces_nodes();

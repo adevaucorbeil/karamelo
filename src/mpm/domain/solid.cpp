@@ -347,48 +347,29 @@ void Solid::compute_velocity_nodes(int in, int ip, double wf, bool APIC)
   }
 }
 
-void Solid::compute_forces_nodes(bool reset, bool internal, bool external, bool TL, bool MLS)
+void Solid::compute_force_nodes(int in, int ip, double wf, const Vector3d &wfd, bool TL, bool MLS)
 {
-  if (reset)
+  if (TL)
   {
-    if (internal)
-      for (Vector3d &f: grid->f)
-        f = Vector3d();
-    if (external)
-      for (Vector3d &mb: grid->mb)
-        mb = Vector3d();
+    grid->f.at(in) -= vol0PK1.at(ip)*wfd;
+
+    if (domain->axisymmetric)
+      grid->f.at(in)[0] -= vol0PK1.at(ip)(2, 2)*wf/x0.at(ip)[0];
+  }
+  else
+  {
+    if (MLS)
+      grid->f.at(in) -= vol.at(ip)*wf*sigma.at(ip)*Di*
+                        (grid->x0.at(in) - (is_TL? x0: x).at(ip));
+    else
+      grid->f.at(in) -= vol.at(ip)*sigma.at(ip)*wfd;
+
+    if (domain->axisymmetric)
+      grid->f.at(in)[0] -= vol.at(ip)*sigma.at(ip)(2, 2)*wf/x.at(ip)[0];
   }
 
-  for (int i = 0; i < neigh_n.size(); i++)
-  {
-    int in = neigh_n.at(i);
-    int ip = neigh_p.at(i);
-
-    if (internal)
-    {
-      if (TL)
-      {
-        grid->f.at(in) -= vol0PK1.at(ip)*wfd.at(i);
-
-        if (domain->axisymmetric)
-          grid->f.at(in)[0] -= vol0PK1.at(ip)(2, 2)*wf.at(i)/x0.at(ip)[0];
-      }
-      else
-      {
-        if (MLS)
-          grid->f.at(in) -= vol.at(ip)*wf.at(i)*sigma.at(ip)*Di*
-                            (grid->x0.at(in) - (is_TL? x0: x).at(ip));
-        else
-          grid->f.at(in) -= vol.at(ip)*sigma.at(ip)*wfd.at(i);
-
-        if (domain->axisymmetric)
-          grid->f.at(in)[0] -= vol.at(ip)*sigma.at(ip)(2, 2)*wf.at(i)/x.at(ip)[0];
-      }
-    }
-
-    if (external && !grid->rigid.at(in))
-      grid->mb.at(in) += wf.at(i)*mbp.at(ip);
-  }
+  if (!grid->rigid.at(in))
+    grid->mb.at(in) += wf*mbp.at(ip);
 }
 
 void Solid::compute_particle(bool positions, bool velocities, bool accelerations)

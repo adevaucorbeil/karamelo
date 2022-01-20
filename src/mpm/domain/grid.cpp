@@ -1374,3 +1374,11 @@ void Grid::reset_velocity()
     for (Vector3d &mb: mb)
       mb = Vector3d();
 }
+
+void Grid::reset_forces()
+{
+  for (Vector3d &f: f)
+    f = Vector3d();
+  for (Vector3d &mb: mb)
+    mb = Vector3d();
+}
