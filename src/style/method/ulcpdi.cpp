@@ -427,9 +427,21 @@ void ULCPDI::update_grid_state()
 
 void ULCPDI::grid_to_points()
 {
-  for (int isolid=0; isolid<domain->solids.size(); isolid++) {
-    domain->solids[isolid]->compute_particle(true, true, false);
-    domain->solids[isolid]->compute_particle(false, false, true);
+  for (Solid *solid: domain->solids)
+  {
+    solid->reset_velocity_acceleration();
+    
+    for (int i = 0; i < solid->neigh_n.size(); i++)
+    {
+      int in = solid->neigh_n.at(i);
+      int ip = solid->neigh_p.at(i);
+      double wf = solid->wf.at(i);
+
+      solid->compute_velocity_acceleration(in, ip, wf);
+    }
+
+    solid->update_position();
+    solid->compute_position_corners();
   }
 }
 
@@ -456,13 +468,24 @@ void ULCPDI::velocities_to_grid()
   }
 }
 
-void ULCPDI::compute_rate_deformation_gradient(bool doublemapping) {
-  for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
-    if (update->sub_method_type == Update::SubMethodType::APIC)
-      domain->solids[isolid]->compute_rate_deformation_gradient(doublemapping, false, true);
-    else
-      domain->solids[isolid]->compute_rate_deformation_gradient(doublemapping, false, false);
-  }
+void ULCPDI::compute_rate_deformation_gradient(bool doublemapping)
+{
+  for (Solid *solid: domain->solids)
+    if (!solid->mat->rigid)
+    {
+      solid->reset_rate_deformation_gradient(false);
+      
+      for (int i = 0; i < solid->neigh_n.size(); i++)
+      {
+        int in = solid->neigh_n.at(i);
+        int ip = solid->neigh_p.at(i);
+        double wf = solid->wf.at(i);
+        const Vector3d &wfd = solid->wfd.at(i);
+
+        solid->compute_rate_deformation_gradient(in, ip, wf, wfd, doublemapping, false,
+          update->sub_method_type == Update::SubMethodType::APIC);
+      }
+    }
 }
 
 void ULCPDI::update_deformation_gradient()

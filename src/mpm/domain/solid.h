@@ -125,15 +125,24 @@ class Solid : protected Pointers {
   void compute_temperature_nodes(int in, int ip, double wf);             ///< Compute nodal temperature step of the particle
   void compute_temperature_driving_force_nodes(int in, int ip, double wf, const Vector3d &wfd); ///< Compute external temperature driving forces
   
-  void compute_particle(bool positions, bool velocities, bool accelerations); ///< Compute the particles' temporary velocities and position, part of the Grid to Particles step of the MPM algorithm.
+  void compute_velocity_acceleration(int in, int ip, double wf);
+  void compute_particle_temperature(int in, int ip, double wf);               ///< Update the particles' temperature
+  void compute_heat_flux(int in, int ip, const Vector3d &wfd, bool doublemapping);                      ///< Update the particles' heat source and fluxes
+  void compute_rate_deformation_gradient(int in, int ip, double wf, const Vector3d &wfd,
+                                         bool doublemapping, bool TL, bool APIC);      ///< Compute the time derivative of the deformation matrix for TLMPM, when APIC is not used.
+  void compute_position_corners();
+  
+  void reset_velocity_acceleration();
+  void reset_heat_flux();
+  void reset_rate_deformation_gradient(bool TL);
+  
+  void update_position();
   void update_particle(double alpha, bool positions, bool velocities);          ///< Update the particles' velocities based on either PIC and/or FLIP and update the positions using the updated velocities.
                                                     ///< The argument is the ratio \f$\alpha\f$ used between PIC and FLIP.
                                                     ///< \f$\alpha = 0\f$ for pure PIC, \f$\alpha = 1\f$ for pure FLIP.
-  void compute_rate_deformation_gradient(bool doublemapping, bool TL, bool APIC);      ///< Compute the time derivative of the deformation matrix for TLMPM, when APIC is not used.
   void update_deformation_gradient();               ///< Update the deformation gradient, volume, density, and the necessary strain matrices
   void update_stress();                             ///< Calculate the stress, damage and temperature at each particle, and determine the maximum allowed time step.
   void compute_inertia_tensor();                    ///< Compute the inertia tensor necessary for the Affice PIC.
-  void compute_deformation_gradient();              ///< Compute the deformation gradient directly from the grid nodes' positions
   void update_particle_domain();                    ///< Update the particle domain. Used with CPDI
 
   void copy_particle(int, int);                     ///< Copy particle i attribute and copy it to particle j.
@@ -144,9 +153,6 @@ class Solid : protected Pointers {
 
   void write_restart(ofstream*);                    ///< Write solid information in the restart file
   void read_restart(ifstream*);                     ///< Read solid information from the restart file
-
-  void update_particle_temperature();               ///< Update the particles' temperature
-  void update_heat_flux(bool);                      ///< Update the particles' heat source and fluxes
 
 private:
   void populate(vector<string>);

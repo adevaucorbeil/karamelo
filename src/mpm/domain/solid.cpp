@@ -394,44 +394,96 @@ void Solid::compute_temperature_driving_force_nodes(int in, int ip, double wf, c
   grid->Qint.at(in) += wfd.dot(q.at(ip));
 }
 
-void Solid::compute_particle(bool positions, bool velocities, bool accelerations)
+void Solid::compute_velocity_acceleration(int in, int ip, double wf)
 {
-  if (velocities)
-    for (Vector3d &v_update: v_update)
-      v_update = Vector3d();
-  if (accelerations)
-  {
-    for (Vector3d &a: a)
-      a = Vector3d();
-    for (Vector3d &f: f)
-      f = Vector3d();
-  }
+  v_update.at(ip) += wf*grid->v_update.at(in);
 
+  if (!mat->rigid)
+  {
+    const Vector3d &delta_a = wf*(grid->v_update.at(in) - grid->v.at(in))/update->dt;
+    a.at(ip) += delta_a;
+    f.at(ip) += mass.at(ip)*delta_a;
+  }
+}
+
+void Solid::compute_particle_temperature(int in, int ip, double wf)
+{
+  T.at(ip) += wf*grid->T_update.at(in);
+}
+
+void Solid::compute_heat_flux(int in, int ip, const Vector3d &wfd, bool doublemapping)
+{
+  const vector<double> &Tn = doublemapping? grid->T: grid->T_update;
+
+  q.at(ip) -= wfd*Tn.at(in)*(is_TL? vol0: vol).at(ip)*mat->invcp*mat->kappa;
+}
+
+void Solid::compute_rate_deformation_gradient(int in, int ip, double wf, const Vector3d &wfd,
+                                              bool doublemapping, bool TL, bool APIC)
+{
+  vector<Matrix3d> &gradients = TL? Fdot: L;
+  const vector<Vector3d> &vn = doublemapping? grid->v: grid->v_update;
+
+  if (APIC)
+  {
+    const Vector3d &dx = grid->x.at(in) - grid->x0.at(in);
+
+    for (int j = 0; j < domain->dimension; j++)
+      for (int k = 0; k < domain->dimension; k++)
+        gradients.at(ip)(j, k) += vn.at(in)[j]*dx[k]*wf;
+  }
+  else
+    for (int j = 0; j < domain->dimension; j++)
+      for (int k = 0; k < domain->dimension; k++)
+        gradients.at(ip)(j, k) += vn.at(in)[j]*wfd[k];
+
+  if (domain->dimension == 2 && domain->axisymmetric)
+    gradients.at(ip)(2, 2) += vn.at(in)[0]*wf/x0.at(ip)[0];
+}
+
+void Solid::compute_position_corners()
+{
   for (int i = 0; i < neigh_n.size(); i++)
   {
     int in = neigh_n.at(i);
     int ip = neigh_p.at(i);
-
-    const Vector3d &delta_v = wf.at(i)*grid->v_update.at(in);
-    if (velocities)
-      v_update.at(ip) += delta_v;
-    if (positions)
-      x.at(ip) += update->dt*delta_v;
-
-    if (accelerations && !mat->rigid)
-    {
-      const Vector3d &delta_a = wf.at(i)*(grid->v_update.at(in) - grid->v.at(in))/update->dt;
-      a.at(ip) += delta_a;
-      f.at(ip) += mass.at(ip)*delta_a;
-    }
-
-    if (velocities && update->method->style == 1 &&
-        (method_type == "tlcpdi" || method_type == "ulcpdi"))
+    
+    if (update->method->style == 1)
       for (int ic = 0; ic < nc; ic++)
         xpc.at(nc*ip + ic) += update->dt*wf.at(nc*i + ic)*grid->v_update.at(in);
   }
+}
 
-  if (positions && !is_TL)
+void Solid::reset_velocity_acceleration()
+{
+  for (Vector3d &v_update: v_update)
+    v_update = Vector3d();
+  for (Vector3d &a: a)
+    a = Vector3d();
+  for (Vector3d &f: f)
+    f = Vector3d();
+}
+
+void Solid::reset_heat_flux()
+{
+  for (Vector3d &q: q)
+    q = Vector3d();
+}
+
+void Solid::reset_rate_deformation_gradient(bool TL)
+{
+  vector<Matrix3d> &gradients = TL? Fdot: L;
+
+  for (Matrix3d &gradient: gradients)
+    gradient = Matrix3d();
+}
+
+void Solid::update_position()
+{
+  for (int ip = 0; ip < np_local; ip++)
+    x.at(ip) += update->dt*v_update.at(ip);
+
+  if (!is_TL)
     for (int ip = 0; ip < np_local; ip++)
       if (!domain->inside(x.at(ip)))
       {
@@ -453,62 +505,6 @@ void Solid::update_particle(double alpha, bool positions, bool velocities)
       x.at(ip) += update->dt*v.at(ip);
     if (velocities)
       v.at(ip) = (1 - alpha)*v_update.at(ip) + alpha*(v.at(ip) + update->dt*a.at(ip));
-  }
-}
-
-void Solid::compute_rate_deformation_gradient(bool doublemapping, bool TL, bool APIC)
-{
-  if (mat->rigid)
-    return;
-
-  vector<Matrix3d> &gradients = TL? Fdot: L;
-
-  for (Matrix3d &gradient: gradients)
-    gradient = Matrix3d();
-
-  const vector<Vector3d> &vn = doublemapping? grid->v: grid->v_update;
-
-  for (int i = 0; i < neigh_n.size(); i++)
-  {
-    int in = neigh_n.at(i);
-    int ip = neigh_p.at(i);
-
-    if (APIC)
-    {
-      const Vector3d &dx = grid->x.at(in) - grid->x0.at(in);
-
-      for (int j = 0; j < domain->dimension; j++)
-        for (int k = 0; k < domain->dimension; k++)
-          gradients.at(ip)(j, k) += vn.at(in)[j]*dx[k]*wf.at(i);
-    }
-    else
-      for (int j = 0; j < domain->dimension; j++)
-        for (int k = 0; k < domain->dimension; k++)
-          gradients.at(ip)(j, k) += vn.at(in)[j]*wfd.at(i)[k];
-
-    if (domain->dimension == 2 && domain->axisymmetric)
-      gradients.at(ip)(2, 2) += vn.at(in)[0]*wf.at(i)/x0.at(ip)[0];
-  }
-}
-
-void Solid::compute_deformation_gradient()
-{
-  if (mat->rigid)
-    return;
-
-  for (Matrix3d &F: F)
-    F = Matrix3d::identity();
-
-  for (int i = 0; i < neigh_n.size(); i++)
-  {
-    int in = neigh_n.at(i);
-    int ip = neigh_p.at(i);
-
-    const Vector3d &dx = grid->x.at(in) - grid->x0.at(in);
-
-    for (int j = 0; j < domain->dimension; j++)
-      for (int k = 0; k < domain->dimension; k++)
-        F.at(ip)(j, k) += dx[j]*wfd.at(i)[k];
   }
 }
 
@@ -2146,33 +2142,6 @@ void Solid::read_mesh(string fileName)
   if (grid->nnodes == 0)
   {
     grid->init(solidlo, solidhi);
-  }
-}
-
-void Solid::update_particle_temperature()
-{
-  for (int i = 0; i < neigh_n.size(); i++)
-  {
-    int in = neigh_n.at(i);
-    int ip = neigh_p.at(i);
-
-    T.at(ip) += wf.at(i)*grid->T_update.at(in);
-  }
-}
-
-void Solid::update_heat_flux(bool doublemapping)
-{
-  for (Vector3d &q: q)
-    q = Vector3d();
-
-  const vector<double> &Tn = doublemapping? grid->T: grid->T_update;
-
-  for (int i = 0; i < neigh_n.size(); i++)
-  {
-    int in = neigh_n.at(i);
-    int ip = neigh_p.at(i);
-
-    q.at(ip) -= wfd.at(i)*Tn.at(in)*(is_TL? vol0: vol).at(ip)*mat->invcp*mat->kappa;
   }
 }
 

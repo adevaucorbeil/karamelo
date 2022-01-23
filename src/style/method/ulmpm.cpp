@@ -406,24 +406,23 @@ void ULMPM::update_grid_state() {
 
 void ULMPM::grid_to_points()
 {
-  for (int isolid = 0; isolid < domain->solids.size(); isolid++)
+  for (Solid *solid: domain->solids)
   {
-    //if (apic)
-    //  domain->solids[isolid]->compute_rate_deformation_gradient_UL_APIC();
+    solid->reset_velocity_acceleration();
+    
+    for (int i = 0; i < solid->neigh_n.size(); i++)
+    {
+      int in = solid->neigh_n.at(i);
+      int ip = solid->neigh_p.at(i);
+      double wf = solid->wf.at(i);
 
-    if (domain->solids[isolid]->mat->rigid) {
-      domain->solids[isolid]->compute_particle(true, true, false);
-      domain->solids[isolid]->compute_particle(false, false, true);
-    } else {
-      if (update->sub_method_type != Update::SubMethodType::ASFLIP)
-	domain->solids[isolid]->compute_particle(true, true, true);
-      else
-	domain->solids[isolid]->compute_particle(false, true, true);	
+      solid->compute_velocity_acceleration(in, ip, wf);
+      if (temp)
+        solid->compute_particle_temperature(in, ip, wf);
     }
 
-    if (temp) {
-      domain->solids[isolid]->update_particle_temperature();
-    }
+    if (solid->mat->rigid || update->sub_method_type != Update::SubMethodType::ASFLIP)
+      solid->update_position();
   }
 }
 
@@ -459,13 +458,24 @@ void ULMPM::velocities_to_grid()
   domain->grid->reduce_ghost_nodes(true, false, temp);
 }
 
-void ULMPM::compute_rate_deformation_gradient(bool doublemapping) {
-  for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
-    if (apic) 
-      domain->solids[isolid]->compute_rate_deformation_gradient(doublemapping, false, true);
-    else
-      domain->solids[isolid]->compute_rate_deformation_gradient(doublemapping, false, false);
-  }
+void ULMPM::compute_rate_deformation_gradient(bool doublemapping)
+{
+  for (Solid *solid: domain->solids)
+    if (!solid->mat->rigid)
+    {
+      solid->reset_rate_deformation_gradient(false);
+      
+      for (int i = 0; i < solid->neigh_n.size(); i++)
+      {
+        int in = solid->neigh_n.at(i);
+        int ip = solid->neigh_p.at(i);
+        double wf = solid->wf.at(i);
+        const Vector3d &wfd = solid->wfd.at(i);
+
+        solid->compute_rate_deformation_gradient(in, ip, wf, wfd, doublemapping, false,
+          update->sub_method_type == Update::SubMethodType::APIC);
+      }
+    }
 }
 
 void ULMPM::update_deformation_gradient()
@@ -477,11 +487,22 @@ void ULMPM::update_deformation_gradient()
 
 void ULMPM::update_stress(bool doublemapping)
 {
-  for (int isolid = 0; isolid < domain->solids.size(); isolid++)
+  for (Solid *solid: domain->solids)
   {
-    domain->solids[isolid]->update_stress();
-    if (temp) {
-      domain->solids[isolid]->update_heat_flux(doublemapping);
+    solid->update_stress();
+
+    if (temp)
+    {
+      solid->reset_heat_flux();
+
+      for (int i = 0; i < solid->neigh_n.size(); i++)
+      {
+        int in = solid->neigh_n.at(i);
+        int ip = solid->neigh_p.at(i);
+        const Vector3d &wfd = solid->wfd.at(i);
+
+        solid->compute_heat_flux(in, ip, wfd, doublemapping);
+      }
     }
   }
 }

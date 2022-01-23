@@ -447,16 +447,22 @@ void TLMPM::update_grid_state()
 
 void TLMPM::grid_to_points()
 {
-  for (int isolid=0; isolid<domain->solids.size(); isolid++) {
-    if (domain->solids[isolid]->mat->rigid) {
-      domain->solids[isolid]->compute_particle(true, true, false);
-      domain->solids[isolid]->compute_particle(false, false, true);
-    } else {
-      domain->solids[isolid]->compute_particle(true, true, true);
+  for (Solid *solid: domain->solids)
+  {
+    solid->reset_velocity_acceleration();
+    
+    for (int i = 0; i < solid->neigh_n.size(); i++)
+    {
+      int in = solid->neigh_n.at(i);
+      int ip = solid->neigh_p.at(i);
+      double wf = solid->wf.at(i);
+
+      solid->compute_velocity_acceleration(in, ip, wf);
+      if (temp)
+        solid->compute_particle_temperature(in, ip, wf);
     }
-    if (temp) {
-      domain->solids[isolid]->update_particle_temperature();
-    }
+
+    solid->update_position();
   }
 }
 
@@ -497,13 +503,24 @@ void TLMPM::update_grid_positions()
   }
 }
 
-void TLMPM::compute_rate_deformation_gradient(bool doublemapping) {
-  for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
-    if (update->sub_method_type == Update::SubMethodType::APIC)
-      domain->solids[isolid]->compute_rate_deformation_gradient(doublemapping, true, true);
-    else
-      domain->solids[isolid]->compute_rate_deformation_gradient(doublemapping, true, false);
-  }
+void TLMPM::compute_rate_deformation_gradient(bool doublemapping)
+{
+  for (Solid *solid: domain->solids)
+    if (!solid->mat->rigid)
+    {
+      solid->reset_rate_deformation_gradient(true);
+      
+      for (int i = 0; i < solid->neigh_n.size(); i++)
+      {
+        int in = solid->neigh_n.at(i);
+        int ip = solid->neigh_p.at(i);
+        double wf = solid->wf.at(i);
+        const Vector3d &wfd = solid->wfd.at(i);
+
+        solid->compute_rate_deformation_gradient(in, ip, wf, wfd, doublemapping, true,
+          update->sub_method_type == Update::SubMethodType::APIC);
+      }
+    }
 }
 
 void TLMPM::update_deformation_gradient()
@@ -515,10 +532,22 @@ void TLMPM::update_deformation_gradient()
 
 void TLMPM::update_stress(bool doublemapping)
 {
-  for (int isolid=0; isolid<domain->solids.size(); isolid++) {
-    domain->solids[isolid]->update_stress();
-    if (temp) {
-      domain->solids[isolid]->update_heat_flux(doublemapping);
+  for (Solid *solid: domain->solids)
+  {
+    solid->update_stress();
+
+    if (temp)
+    {
+      solid->reset_heat_flux();
+
+      for (int i = 0; i < solid->neigh_n.size(); i++)
+      {
+        int in = solid->neigh_n.at(i);
+        int ip = solid->neigh_p.at(i);
+        const Vector3d &wfd = solid->wfd.at(i);
+
+        solid->compute_heat_flux(in, ip, wfd, doublemapping);
+      }
     }
   }
 }
