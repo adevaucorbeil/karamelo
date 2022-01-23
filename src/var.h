@@ -68,5 +68,6 @@ Var sinv(Var);                 // sine function
 Var tanv(Var);                 // tangent function
 Var logv(Var);                 // natural logarithmic function
 Var atan2v(Var, Var);          // arc tangent function of two variables
+Var ifv(Var, Var, Var);        // if statement
 
 #endif

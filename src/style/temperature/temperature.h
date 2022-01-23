@@ -23,8 +23,11 @@ class Temperature : protected Pointers {
   // implemented by each Temperature
   virtual double cp() = 0;
   virtual double kappa() = 0;
+  virtual double alpha() = 0;
   virtual void compute_heat_source(double, double &, const double &, const double &) = 0;
-  virtual double compute_thermal_pressure(double) = 0;
+
+protected:
+  double cp_, kappa_, alpha_ = 0;
 };
 
 #endif

@@ -279,6 +279,12 @@ Var Input::evaluate_function(string func, string arg){
     }
     return atan2v(parsev(args[0]), parsev(args[1]));
   }
+  if (func.compare("if") == 0) {
+    if ((args.size() < 3) || (args.size() > 3)) {
+      error->all(FLERR, "Error: if takes exactly three positional arguments.\n");
+    }
+    return ifv(parsev(args[0]), parsev(args[1]), parsev(args[2]));
+  }
   if (func.compare("log") == 0)
     return logv(parsev(arg));
   if (func.compare("dimension") == 0)

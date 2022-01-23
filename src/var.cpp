@@ -308,6 +308,23 @@ Var atan2v(Var x, Var y){
   }
 }
 
+Var ifv(Var condition, Var x, Var y) {
+  if (condition.is_constant()) {
+    if (condition.result())
+      return x;
+    else
+      return y;
+  } else {
+    double value;
+    if (condition.result())
+      value = x.result();
+    else
+      value = y.result();
+    Var result("if(" + condition.str() + "," + x.str() + "," + y.str() + ")",
+               value, false);
+    return result;
+  }
+}
 
 void Var::write_to_restart(ofstream *of) {
   size_t N = equation.size();

@@ -61,9 +61,10 @@ public:
   double cp = 0;                                     ///< Heat capacity at constant pressure
   double invcp = 0;                                  ///< Inverse of the heat capacity at constant pressure
   double kappa = 0;                                  ///< Thermal conductivity
+  double alpha = 0;                                  ///< Coefficient of thermal expansion
   Mat(string, int, class EOS *, class Strength *, class Damage *,
       class Temperature *);                          ///< Creates an elasto-plastic material
-  Mat(string, int, double, double, double, double, double); ///< Creates a linear or Neo-Hookean material
+  Mat(string, int, double, double, double, double, double, double); ///< Creates a linear or Neo-Hookean material
   Mat(string, int);                                  ///< Creates a rigid material
 };
 
