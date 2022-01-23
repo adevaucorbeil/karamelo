@@ -303,10 +303,10 @@ void Solid::grow(int nparticles)
   mask.resize(nparticles);
   J.resize(nparticles);
 
+  gamma.resize(nparticles);
   if (mat->cp != 0)
   {
     T.resize(nparticles);
-    gamma.resize(nparticles);
     q.resize(nparticles);
   }
 }
@@ -639,7 +639,7 @@ void Solid::update_stress()
           (R.at(ip)*sigma.at(ip)*R.at(ip).transpose()) *
           Finv.at(ip).transpose();
       }
-      gamma[ip] = 0;
+      gamma.at(ip) = 0;
     }
   }
   else if (nh)
@@ -654,7 +654,7 @@ void Solid::update_stress()
 
       strain_el.at(ip) =
         0.5*(F.at(ip).transpose()*F.at(ip) - eye); // update->dt*D.at(ip);
-      gamma[ip] = 0;
+      gamma.at(ip) = 0;
     }
   }
   else
@@ -673,7 +673,7 @@ void Solid::update_stress()
       {
         mat->eos->compute_pressure(pH.at(ip), ienergy.at(ip), J.at(ip), rho.at(ip),
                                    damage.at(ip), D.at(ip), grid->cellsize, T.at(ip));
-        pH.at(ip) += pH[ip] += mat->alpha * (T[ip] - T0);
+        pH.at(ip) += mat->alpha * (T.at(ip) - T0);
 
         sigma_dev.at(ip) = mat->strength->update_deviatoric_stress(
           sigma.at(ip), D.at(ip), plastic_strain_increment.at(ip),
@@ -717,7 +717,7 @@ void Solid::update_stress()
         }
       }
 
-      if (mat->temp != nullptr)
+      if (mat->temp)
       {
         flow_stress = SQRT_3_OVER_2*sigma_dev.at(ip).norm();
         mat->temp->compute_heat_source(T.at(ip), gamma.at(ip), flow_stress,
@@ -729,7 +729,7 @@ void Solid::update_stress()
       }
       else
       {
-	      gamma[ip] = 0;
+	      gamma.at(ip) = 0;
       }
 
       if (damage.at(ip) == 0 || pH.at(ip) >= 0)
