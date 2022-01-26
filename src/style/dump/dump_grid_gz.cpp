@@ -107,37 +107,37 @@ void DumpGridGz::write() {
     for (bigint i = 0; i < g->nnodes_local; i++) {
       dumpstream << g->ntag[i] << " " << igrid + 1 << " ";
       for (auto v : output_var) {
-        if (v.compare("x") == 0)
+        if (v == "x")
           dumpstream << g->x[i][0] << " ";
-        else if (v.compare("y") == 0)
+        else if (v == "y")
           dumpstream << g->x[i][1] << " ";
-        else if (v.compare("z") == 0)
+        else if (v == "z")
           dumpstream << g->x[i][2] << " ";
-        else if (v.compare("vx") == 0)
+        else if (v == "vx")
           dumpstream << g->v[i][0] << " ";
-        else if (v.compare("vy") == 0)
+        else if (v == "vy")
           dumpstream << g->v[i][1] << " ";
-        else if (v.compare("vz") == 0)
+        else if (v == "vz")
           dumpstream << g->v[i][2] << " ";
-        else if (v.compare("bx") == 0)
+        else if (v == "bx")
           dumpstream << g->mb[i][0] << " ";
-        else if (v.compare("by") == 0)
+        else if (v == "by")
           dumpstream << g->mb[i][1] << " ";
-        else if (v.compare("bz") == 0)
+        else if (v == "bz")
           dumpstream << g->mb[i][2] << " ";
-        else if (v.compare("mass") == 0)
+        else if (v == "mass")
           dumpstream << g->mass[i] << " ";
 	else if (v.compare("mask")==0)
 	  dumpstream << g->mask[i] << " ";
-        else if (v.compare("ntypex") == 0)
+        else if (v == "ntypex")
           dumpstream << g->ntype[i][0] << " ";
-        else if (v.compare("ntypey") == 0)
+        else if (v == "ntypey")
           dumpstream << g->ntype[i][1] << " ";
-        else if (v.compare("ntypez") == 0)
+        else if (v == "ntypez")
           dumpstream << g->ntype[i][2] << " ";
-        else if (v.compare("T") == 0)
+        else if (v == "T")
           dumpstream << g->T[i] << " ";
-        else if (v.compare("rigid") == 0)
+        else if (v == "rigid")
           dumpstream << g->rigid[i] << " ";
       }
       dumpstream << endl;

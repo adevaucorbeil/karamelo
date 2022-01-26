@@ -58,7 +58,7 @@ FixHeatFluxParticles::FixHeatFluxParticles(MPM *mpm, vector<string> args):
     error->all(FLERR, "Could not find group ID " + args[2] + "\n");
   }
 
-  if (group->pon[igroup].compare("particles") != 0) {
+  if (group->pon[igroup] != "particles") {
     error->one(FLERR, "fix_heat_flux_nodes needs to be given a group of particles" +
                           group->pon[igroup] + ", " + args[2] +
                           " is a group of " + group->pon[igroup] + ".\n");
@@ -69,7 +69,7 @@ FixHeatFluxParticles::FixHeatFluxParticles(MPM *mpm, vector<string> args):
 
   id = args[0];
 
-  if (args[3].compare("NULL") != 0) {
+  if (args[3] != "NULL") {
     q = input->parsev(args[3]);
   }
 }

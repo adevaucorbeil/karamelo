@@ -364,7 +364,7 @@ void ULCPDI::compute_grid_weight_functions_and_gradients()
 		}
 	    }
 	  }
-	if (method_type.compare("APIC") == 0) s->compute_inertia_tensor();
+	if (method_type == "APIC") s->compute_inertia_tensor();
       }
     }
 }

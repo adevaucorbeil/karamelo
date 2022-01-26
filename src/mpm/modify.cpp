@@ -131,7 +131,7 @@ int Modify::find_fix(string name)
 {
   for (int ifix = 0; ifix < fix.size(); ifix++) {
     //cout << "fix["<< ifix <<"]->id=" << fix[ifix]->id << endl;
-    if (name.compare(fix[ifix]->id) == 0) return ifix;
+    if (name == fix[ifix]->id) return ifix;
   }
   return -1;
 }
@@ -193,7 +193,7 @@ int Modify::find_compute(string name)
 {
   for (int icompute = 0; icompute < compute.size(); icompute++) {
     // cout << "compute["<< icompute <<"]->id=" << compute[icompute]->id << endl;
-    if (name.compare(compute[icompute]->id) == 0) return icompute;
+    if (name == compute[icompute]->id) return icompute;
   }
   return -1;
 }
@@ -296,6 +296,16 @@ void Modify::post_velocities_to_grid(){
 void Modify::final_integrate(){
   for (int i = 0; i < list_final_integrate.size(); i++)
     fix[list_final_integrate[i]]->final_integrate();
+}
+
+void Modify::prepare(){
+  for (int i = 0; i < list_final_integrate.size(); i++)
+    fix[list_final_integrate[i]]->prepare();
+}
+
+void Modify::reduce(){
+  for (int i = 0; i < list_final_integrate.size(); i++)
+    fix[list_final_integrate[i]]->reduce();
 }
 
 

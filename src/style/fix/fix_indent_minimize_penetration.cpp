@@ -56,8 +56,8 @@ FixIndentMinimizePenetration::FixIndentMinimizePenetration(MPM *mpm, vector<stri
     error->all(FLERR, "Error: too many arguments.\n" + usage);
   }
 
-  if (group->pon[igroup].compare("particles") != 0 &&
-      group->pon[igroup].compare("all") != 0) {
+  if (group->pon[igroup] != "particles" &&
+      group->pon[igroup] != "all") {
     error->all(FLERR, "fix_indent_hertz needs to be given a group of particles" +
                           group->pon[igroup] + ", " + args[2] +
                           " is a group of " + group->pon[igroup] + ".\n");
@@ -68,7 +68,7 @@ FixIndentMinimizePenetration::FixIndentMinimizePenetration(MPM *mpm, vector<stri
   id = args[0];
 
   type = args[3];
-  if (args[3].compare("sphere") == 0) {
+  if (args[3] == "sphere") {
     type = "sphere";
   } else {
     error->all(FLERR, "Error indent type " + args[3] +

@@ -49,8 +49,8 @@ FixMeldTool::FixMeldTool(MPM *mpm, vector<string> args)
     error->all(FLERR, "Error: not enough arguments.\n" + usage);
   }
 
-  if (group->pon[igroup].compare("particles") != 0 &&
-      group->pon[igroup].compare("all") != 0) {
+  if (group->pon[igroup] != "particles" &&
+      group->pon[igroup] != "all") {
     error->all(FLERR, "fix_meldtool needs to be given a group of nodes" +
                           group->pon[igroup] + ", " + args[2] +
                           " is a group of " + group->pon[igroup] + ".\n");
@@ -64,15 +64,15 @@ FixMeldTool::FixMeldTool(MPM *mpm, vector<string> args)
   
   K = input->parsev(args[++k]).result(mpm);
   k++;
-  if (args[k].compare("x") == 0) {
+  if (args[k] == "x") {
     dim = X;
     axis0 = Y;
     axis1 = Z;
-  } else if (args[k].compare("y") == 0) {
+  } else if (args[k] == "y") {
     dim = Y;
     axis0 = X;
     axis1 = Z;
-  } else if (args[k].compare("z") == 0) {
+  } else if (args[k] == "z") {
     dim = Z;
     axis0 = X;
     axis1 = Y;

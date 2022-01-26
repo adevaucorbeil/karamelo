@@ -32,7 +32,7 @@ Block_::Block_(MPM *mpm, vector<string> args) : Region(mpm, args)
     error->all(FLERR, "Error: not enough arguments.\n");
   }
 
-  if (args[2].compare("restart") == 0) {
+  if (args[2] == "restart") {
     xlo, xhi, ylo, yhi, zlo, zhi = 0;
     return;
   }
@@ -49,7 +49,7 @@ Block_::Block_(MPM *mpm, vector<string> args) : Region(mpm, args)
   else if (domain->dimension == 2) options(&args, args.begin()+6);
   else if (domain->dimension == 1) options(&args, args.begin()+4);
 
-  if (args[2].compare("INF") == 0 || args[2].compare("-INF") == 0 || args[2].compare("EDGE") == 0) {
+  if (args[2].compare("INF") == 0 || args[2] == "-INF" || args[2] == "EDGE") {
     if (domain->regions.size() == 0) {
       error->all(FLERR, "Cannot use region INF or EDGE when box does not exist.\n");
     }
@@ -59,7 +59,7 @@ Block_::Block_(MPM *mpm, vector<string> args) : Region(mpm, args)
     if (domain->boxlo[0] > xlo) domain->boxlo[0] = xlo;
   }
 
-  if (args[3].compare("INF") == 0 || args[3].compare("+INF") == 0 || args[3].compare("EDGE") == 0) {
+  if (args[3].compare("INF") == 0 || args[3] == "+INF" || args[3] == "EDGE") {
     if (domain->regions.size() == 0) {
       error->all(FLERR, "Cannot use region INF or EDGE when box does not exist.\n");
     }
@@ -73,7 +73,7 @@ Block_::Block_(MPM *mpm, vector<string> args) : Region(mpm, args)
     cout << "xlo xhi = " << xlo << "\t" << xhi << endl;
 
   if (domain->dimension >= 2) {
-    if (args[4].compare("-INF") == 0 || args[4].compare("INF") == 0 || args[4].compare("EDGE") == 0) {
+    if (args[4].compare("-INF") == 0 || args[4] == "INF" || args[4] == "EDGE") {
       if (domain->regions.size() == 0) {
 	error->all(FLERR, "Cannot use region INF or EDGE when box does not exist.\n");
       }
@@ -83,7 +83,7 @@ Block_::Block_(MPM *mpm, vector<string> args) : Region(mpm, args)
       if (domain->boxlo[1] > ylo) domain->boxlo[1] = ylo;
     }
 
-    if (args[5].compare("INF") == 0 || args[5].compare("+INF") == 0 || args[5].compare("EDGE") == 0) {
+    if (args[5].compare("INF") == 0 || args[5] == "+INF" || args[5] == "EDGE") {
       if (domain->regions.size() == 0) {
 	error->all(FLERR, "Cannot use region INF or EDGE when box does not exist.\n");
       }
@@ -101,7 +101,7 @@ Block_::Block_(MPM *mpm, vector<string> args) : Region(mpm, args)
   }
 
   if (domain->dimension == 3) {
-    if (args[6].compare("+INF") == 0 || args[6].compare("INF") == 0 || args[6].compare("EDGE") == 0) {
+    if (args[6].compare("+INF") == 0 || args[6] == "INF" || args[6] == "EDGE") {
       if (domain->regions.size() == 0) {
 	error->all(FLERR, "Cannot use region INF or EDGE when box does not exist.\n");
       }
@@ -111,7 +111,7 @@ Block_::Block_(MPM *mpm, vector<string> args) : Region(mpm, args)
       if (domain->boxlo[2] > zlo) domain->boxlo[2] = zlo;
     }
 
-    if (args[7].compare("+INF") == 0 || args[7].compare("INF") == 0 || args[7].compare("EDGE") == 0) {
+    if (args[7].compare("+INF") == 0 || args[7] == "INF" || args[7] == "EDGE") {
       if (domain->regions.size() == 0) {
 	error->all(FLERR, "Cannot use region INF or EDGE when box does not exist.\n");
       }

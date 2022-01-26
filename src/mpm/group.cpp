@@ -88,11 +88,11 @@ void Group::assign(vector<string> args)
   int bit = bitmask[igroup];
 
   // Operates on particles or nodes:
-  if (args[1].compare("particles") == 0)
+  if (args[1] == "particles")
   {
     pon[igroup] = "particles";
   }
-  else if (args[1].compare("nodes") == 0)
+  else if (args[1] == "nodes")
   {
     pon[igroup] = "nodes";
   } else {
@@ -102,7 +102,7 @@ void Group::assign(vector<string> args)
   // style = region
   // add to group if atom is in region
 
-  if (args[2].compare("region") == 0)
+  if (args[2] == "region")
   {
     // Look for the region ID (if exists):
     region[igroup] = domain->find_region(args[3]);
@@ -111,7 +111,7 @@ void Group::assign(vector<string> args)
       error->all(FLERR, "Error: could not find region " + args[3] + ".\n");
       }
 
-    if (args[4].compare("all") == 0)
+    if (args[4] == "all")
       {
 
 	/* For all particles of all solids, check if they are in the region.
@@ -125,7 +125,7 @@ void Group::assign(vector<string> args)
 	    int nmax;
 	    vector<int> *mask;
 
-	    if (pon[igroup].compare("particles") == 0)
+	    if (pon[igroup] == "particles")
 	      {
 		x    = &domain->solids[isolid]->x0;
 		nmax = domain->solids[isolid]->np_local;
@@ -169,7 +169,7 @@ void Group::assign(vector<string> args)
             }
           }
       }
-    else if (args[4].compare("solid") == 0)
+    else if (args[4] == "solid")
       {
 
 	for (int i=5; i<args.size(); i++)
@@ -183,7 +183,7 @@ void Group::assign(vector<string> args)
 	    int nmax;
 	    vector<int> *mask;
 
-	    if (pon[igroup].compare("particles") == 0)
+	    if (pon[igroup] == "particles")
 	      {
 		x    = &domain->solids[solid[igroup]]->x0;
 		nmax = domain->solids[solid[igroup]]->np_local;
@@ -242,7 +242,7 @@ void Group::assign(vector<string> args)
 int Group::find(string name)
 {
   for (int igroup = 0; igroup < MAX_GROUP; igroup++)
-    if (name.compare(names[igroup]) == 0)
+    if (name == names[igroup])
       return igroup;
   return -1;
 }
@@ -276,7 +276,7 @@ double Group::xcm(int igroup, int dir)
 
     for (int isolid = 0; isolid < domain->solids.size(); isolid++)
       {
-	if (pon[igroup].compare("particles") == 0)
+	if (pon[igroup] == "particles")
 	  {
 	    x    = &domain->solids[solid[igroup]]->x;
 	    mass = &domain->solids[solid[igroup]]->mass;
@@ -305,7 +305,7 @@ double Group::xcm(int igroup, int dir)
     {
       int isolid = solid[igroup];
 
-	  if (pon[igroup].compare("particles") == 0)
+	  if (pon[igroup] == "particles")
 	    {
 	      x    = &domain->solids[solid[igroup]]->x;
 	      mass = &domain->solids[solid[igroup]]->mass;
@@ -354,7 +354,7 @@ double Group::internal_force(int igroup, int dir)
 
     for (int isolid = 0; isolid < domain->solids.size(); isolid++)
       {
-	if (pon[igroup].compare("particles") == 0)
+	if (pon[igroup] == "particles")
 	  {
 	    f =    &domain->solids[solid[igroup]]->f;
 	    nmax = domain->solids[solid[igroup]]->np_local;
@@ -380,7 +380,7 @@ double Group::internal_force(int igroup, int dir)
   {
     int isolid = solid[igroup];
 
-    if (pon[igroup].compare("particles") == 0)
+    if (pon[igroup] == "particles")
       {
 	f =    &domain->solids[solid[igroup]]->f;
 	nmax = domain->solids[solid[igroup]]->np_local;
@@ -411,7 +411,7 @@ double Group::internal_force(int igroup, int dir)
 
 double Group::external_force(int igroup, int dir)
 {
-  if (pon[igroup].compare("nodes") == 0)
+  if (pon[igroup] == "nodes")
     {
       error->all(FLERR, "Error: cannot calculate the external forces applied to the node group "
 		 + names[igroup] + ".\n");
@@ -486,12 +486,12 @@ void Group::write_restart(ofstream *of) {
     of->write(reinterpret_cast<const char *>(&bitmask[igroup]), sizeof(int));
     //of->write(reinterpret_cast<const char *>(&inversemask[igroup]), sizeof(int));
 
-    if (pon[igroup].compare("particles") == 0)
+    if (pon[igroup] == "particles")
       p_or_n = false;
     else 
       p_or_n = true;
 
-    if (pon[igroup].compare("all") == 0) {
+    if (pon[igroup] == "all") {
       error->all(FLERR,"Error: pon==all \n");
     }
 
@@ -549,7 +549,7 @@ void Group::read_restart(ifstream *ifr) {
         int nmax;
         vector<int> *mask;
 
-        if (pon[igroup].compare("particles") == 0) {
+        if (pon[igroup] == "particles") {
           x = &domain->solids[isolid]->x0;
           nmax = domain->solids[isolid]->np_local;
           mask = &domain->solids[isolid]->mask;
@@ -591,7 +591,7 @@ void Group::read_restart(ifstream *ifr) {
       int nmax;
       vector<int> *mask;
 
-      if (pon[igroup].compare("particles") == 0) {
+      if (pon[igroup] == "particles") {
         x = &domain->solids[solid[igroup]]->x0;
         nmax = domain->solids[solid[igroup]]->np_local;
         mask = &domain->solids[solid[igroup]]->mask;

@@ -43,7 +43,7 @@ void Region::options(vector<string> *args, vector<string>::iterator it)
   {
     for (it; it != args->end(); ++it)
     {
-      if ((*it).compare("exterior") == 0)
+      if ((*it) == "exterior")
 	{
 	  if (universe->me == 0)
 	    cout << "\nRecognized exterior argument\n";

@@ -91,7 +91,7 @@ void Update::create_scheme(vector<string> args){
 
 #define SCHEME_CLASS
 #define SchemeStyle(key,Class) \
-  else if (scheme_style.compare(#key) == 0) scheme = new Class(mpm);
+  else if (scheme_style == (#key)) scheme = new Class(mpm);
 #include <style_scheme.h>
 #undef SchemeStyle
 #undef SCHEME_CLASS
@@ -118,7 +118,7 @@ void Update::create_method(vector<string> args){
 
 #define METHOD_CLASS
 #define MethodStyle(key,Class) \
-  else if (method_type.compare(#key) == 0) method = new Class(mpm);
+  else if (method_type == (#key)) method = new Class(mpm);
 #include <style_method.h>
 #undef MethodStyle
 #undef METHOD_CLASS
@@ -167,9 +167,9 @@ void Update::create_method(vector<string> args){
   }
 
   if (args.size() >= n + 1) {
-    if (args[n].compare("thermo-mechanical") == 0) {
+    if (args[n] == "thermo-mechanical") {
       method->temp = true;
-    } else if (args[n].compare("mechanical") == 0) {
+    } else if (args[n] == "mechanical") {
       method->temp = false;
     } else {
       error->all(
@@ -181,7 +181,7 @@ void Update::create_method(vector<string> args){
   n++;
 
   if (args.size() >= n + 1) {
-    if (args[n].compare("gradient-enhanced") == 0) {
+    if (args[n] == "gradient-enhanced") {
       method->ge = true;
     } else {
       error->all(FLERR,
@@ -308,7 +308,7 @@ void Update::read_restart(ifstream *ifr) {
 
 #define METHOD_CLASS
 #define MethodStyle(key,Class) \
-  else if (method_type.compare(#key) == 0) method = new Class(mpm);
+  else if (method_type == (#key)) method = new Class(mpm);
 #include <style_method.h>
 #undef MethodStyle
 #undef METHOD_CLASS
@@ -332,7 +332,7 @@ void Update::read_restart(ifstream *ifr) {
 
 #define SCHEME_CLASS
 #define SchemeStyle(key,Class) \
-  else if (scheme_style.compare(#key) == 0) scheme = new Class(mpm);
+  else if (scheme_style == (#key)) scheme = new Class(mpm);
 #include <style_scheme.h>
 #undef SchemeStyle
 #undef SCHEME_CLASS

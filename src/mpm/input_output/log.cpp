@@ -40,7 +40,7 @@ Log::Log(MPM *mpm, vector<string> args) : Pointers(mpm)
 
   vector<string> keyword;
 
-  if (style.compare("default") == 0){
+  if (style == "default"){
     keyword.push_back("step");
     keyword.push_back("dt");
     keyword.push_back("time");
@@ -161,11 +161,11 @@ void Log::modify(vector<string> args)
 
   vector<string> keyword;
 
-  if (style.compare("default") == 0){
+  if (style == "default"){
     keyword.push_back("step");
     keyword.push_back("dt");
     keyword.push_back("time");
-  } else if (style.compare("custom") == 0) {
+  } else if (style == "custom") {
     
     if (args.size() < 2) {
       error->all(FLERR, "Error: too few arguments given to log_modify(custom,...) command.\n");

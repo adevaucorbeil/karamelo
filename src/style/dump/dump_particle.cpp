@@ -96,8 +96,8 @@ void DumpParticle::write()
     for (int isolid=0; isolid < domain->solids.size(); isolid++) {
       Solid *s = domain->solids[isolid];
       for (bigint i=0; i<s->np_local;i++) {
-	if (update->method_type.compare("tlmpm") == 0 ||
-	    update->method_type.compare("tlcpdi") == 0)
+	if (update->method_type == "tlmpm" ||
+	    update->method_type == "tlcpdi")
 	  sigma_ = s->R[i] * s->sigma[i] * s->R[i].transpose();
 	else
 	  sigma_ = s->sigma[i];

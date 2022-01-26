@@ -109,7 +109,7 @@ int Domain::find_region(string name)
     for (int iregion = 0; iregion < regions.size(); iregion++)
     {
       //cout << "regions[" << iregion << "]->id=" << regions[iregion]->id << endl;
-      if (name.compare(regions[iregion]->id) == 0)
+      if (name == regions[iregion]->id)
         return iregion;
     }
     return -1;
@@ -153,7 +153,7 @@ void Domain::add_solid(vector<string> args)
 int Domain::find_solid(string name)
 {
   for (int isolid = 0; isolid < solids.size(); isolid++)
-    if (name.compare(solids[isolid]->id) == 0)
+    if (name == solids[isolid]->id)
       return isolid;
   return -1;
 }
@@ -562,9 +562,9 @@ void Domain::set_axisymmetric(vector<string> args) {
     error->all(FLERR, "Error: too many arguments.\n" + usage_axisymmetric);
   }
 
-  if (args[0].compare("true") == 0) {
+  if (args[0] == "true") {
     axisymmetric = true;
-  } else if (args[0].compare("false") == 0) {
+  } else if (args[0] == "false") {
     axisymmetric = false;
   }
 }

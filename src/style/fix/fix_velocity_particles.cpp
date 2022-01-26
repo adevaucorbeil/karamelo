@@ -69,7 +69,7 @@ FixVelocityParticles::FixVelocityParticles(MPM *mpm, vector<string> args):
   string time = "time";
 
 
-  if (args[3].compare("NULL") != 0) {
+  if (args[3] != "NULL") {
     // xvalue = input->parsev(args[3]);
     xset = true;
     xvalue = input->parsev(args[3]);
@@ -82,7 +82,7 @@ FixVelocityParticles::FixVelocityParticles(MPM *mpm, vector<string> args):
   }
 
   if (domain->dimension >= 2) {
-    if (args[4].compare("NULL") != 0) {
+    if (args[4] != "NULL") {
       yvalue = input->parsev(args[4]);
       yset = true;
 
@@ -95,7 +95,7 @@ FixVelocityParticles::FixVelocityParticles(MPM *mpm, vector<string> args):
   }
 
   if (domain->dimension == 3) {
-    if (args[5].compare("NULL") != 0) {
+    if (args[5] != "NULL") {
       zvalue = input->parsev(args[5]);
       zset = true;
 

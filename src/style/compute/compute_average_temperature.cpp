@@ -36,8 +36,8 @@ ComputeAverageTemperature::ComputeAverageTemperature(MPM *mpm, vector<string> ar
                           to_string(args.size()) + " received.\n");
   }
 
-  if (group->pon[igroup].compare("particles") != 0 &&
-      group->pon[igroup].compare("all") != 0) {
+  if (group->pon[igroup] != "particles" &&
+      group->pon[igroup] != "all") {
     error->all(FLERR,
                "compute_average_temperature needs to be given a group of particles" +
                    group->pon[igroup] + ", " + args[2] + " is a group of " +

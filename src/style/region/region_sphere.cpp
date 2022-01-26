@@ -80,7 +80,7 @@ Sphere::Sphere(MPM *mpm, vector<string> args) : Region(mpm, args) {
   zlo = c3 - R;
   zhi = c3 + R;
 
-  if (update->method_type.compare("tlmpm") == 0) {
+  if (update->method_type == "tlmpm") {
     if (domain->boxlo[0] > xlo)
       domain->boxlo[0] = xlo;
     if (domain->boxlo[1] > ylo)

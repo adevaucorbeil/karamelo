@@ -29,7 +29,7 @@ Stl::Stl(MPM *mpm, vector<string> args) : Region(mpm, args) {
     error->all(FLERR, "Error: wrong number of arguments.\n");
   }
 
-  if (args[2].compare("restart") == 0) {
+  if (args[2] == "restart") {
     // If the keyword restart, we are expecting to have read_restart()
     // launched right after.
     input_file_name = "";
@@ -150,7 +150,7 @@ Stl::Stl(MPM *mpm, vector<string> args) : Region(mpm, args) {
     octree.add(facet);
   }
 
-  if (update->method_type.compare("tlmpm") == 0) {
+  if (update->method_type == "tlmpm") {
     if (domain->boxlo[0] > interval_x.x0)
       domain->boxlo[0] = interval_x.x0;
     if (domain->boxlo[1] > interval_y.x0)

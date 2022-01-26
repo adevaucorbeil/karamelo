@@ -119,7 +119,7 @@ Solid::Solid(MPM *mpm, vector<string> args): Pointers(mpm)
   comm_n = 50; // Number of double to pack for particle exchange between CPUs.
 
 
-  if (args[1].compare("restart") == 0)
+  if (args[1] == "restart")
   {
 // If the keyword restart, we are expecting to have read_restart()
 // launched right after.
@@ -140,7 +140,7 @@ Solid::Solid(MPM *mpm, vector<string> args): Pointers(mpm)
                + usage.find(args[1])->second);
   }
 
-  if (args[1].compare("region") == 0)
+  if (args[1] == "region")
   {
     // Set material, cellsize, and initial temperature:
     options(&args, args.begin() + 4);
@@ -148,14 +148,14 @@ Solid::Solid(MPM *mpm, vector<string> args): Pointers(mpm)
     // Create particles:
     populate(args);
   }
-  else if (args[1].compare("mesh") == 0)
+  else if (args[1] == "mesh")
   {
     // Set material and cellsize and initial temperature:
     options(&args, args.begin() + 3);
 
     read_mesh(args[2]);
   }
-  else if (args[1].compare("file") == 0)
+  else if (args[1] == "file")
   {
     // Set material and cellsize and initial temperature:
     options(&args, args.begin() + 3);
@@ -253,8 +253,8 @@ void Solid::grow(int nparticles)
   x0.resize(nparticles);
   x.resize(nparticles);
 
-  if (method_type.compare("tlcpdi") == 0
-      || method_type.compare("ulcpdi") == 0)
+  if (method_type == "tlcpdi"
+      || method_type == "ulcpdi")
   {
 
     if (update->method->style == 0)
@@ -269,8 +269,8 @@ void Solid::grow(int nparticles)
     }
   }
 
-  if (method_type.compare("tlcpdi2") == 0
-      || method_type.compare("ulcpdi2") == 0)
+  if (method_type == "tlcpdi2"
+      || method_type == "ulcpdi2")
   {
     xpc0.resize(nparticles);
     xpc.resize(nparticles);
@@ -521,8 +521,8 @@ void Solid::update_deformation_gradient()
   else
     nh = false;
 
-  if ((method_type.compare("tlcpdi") == 0 ||
-      method_type.compare("ulcpdi") == 0) &&
+  if ((method_type == "tlcpdi" ||
+      method_type == "ulcpdi") &&
       (update->method->style == 1))
   {
     vol_cpdi = true;
@@ -935,20 +935,20 @@ void Solid::compute_inertia_tensor()
 
   // for (int ip = 0; ip < np_local; ip++)
   //   {
-  //     if ( form_function.compare("linear") == 0)
+  //     if ( form_function == "linear")
   // 	{
   // 	  // If the form function is linear:
   // 	  if ((Di.at(ip)(0,0) != 16.0/4.0*cellsizeSqInv ) || (Di.at(ip)(1,1) != 16.0/4.0*cellsizeSqInv) || (Di.at(ip)(2,2) != 16.0/4.0*cellsizeSqInv ))
   // 	    cout << "2 - Di[" << ip << "]=\n" << Di.at(ip) << "\n and " << 4.0*cellsizeSqInv*eye << endl;
   // 	  // Di.at(ip) = 16.0/4.0*cellsizeSqInv*eye;
   // 	}
-  //     else if (form_function.compare("quadratic-spline") == 0)
+  //     else if (form_function == "quadratic-spline")
   // 	{
   // 	  // If the form function is a quadratic spline:
   // 	  if ((Di.at(ip)(0,0) != 4.0*cellsizeSqInv ) || (Di.at(ip)(1,1) != 4.0*cellsizeSqInv) || (Di.at(ip)(2,2) != 4.0*cellsizeSqInv ))
   // 	    cout << "2 - Di[" << ip << "]=\n" << Di.at(ip) << "\n and " << 4.0*cellsizeSqInv*eye << endl;
   // 	}
-  //     else if (form_function.compare("cubic-spline") == 0)
+  //     else if (form_function == "cubic-spline")
   // 	{
   // 	  // If the form function is a quadratic spline:
   // 	  if ((Di.at(ip)(0,0) != 3.0*cellsizeSqInv ) || (Di.at(ip)(1,1) != 3.0*cellsizeSqInv) || (Di.at(ip)(2,2) != 3.0*cellsizeSqInv ))
@@ -956,7 +956,7 @@ void Solid::compute_inertia_tensor()
   // 	  // If the form function is a cubic spline:
   // 	  // Di.at(ip) = 3.0*cellsizeSqInv*eye;
   // 	}
-  //     else if (form_function.compare("Bernstein-quadratic") == 0)
+  //     else if (form_function == "Bernstein-quadratic")
   // 	  if ((Di.at(ip)(0,0) != 12.0*cellsizeSqInv ) || (Di.at(ip)(1,1) != 12.0*cellsizeSqInv) || (Di.at(ip)(2,2) != 12.0*cellsizeSqInv ))
   // 	    cout << "2 - Di[" << ip << "]=\n" << Di.at(ip) << "\n and " << 12.0*cellsizeSqInv*eye << endl;
   //     //Di.at(ip) = 12.0*cellsizeSqInv*eye;
@@ -1001,7 +1001,7 @@ void Solid::copy_particle(int i, int j)
   Finv[j] = Finv[i];
   Fdot[j] = Fdot[i];
   J[j] = J[i];
-  // if (method_type.compare("tlcpdi") == 0 || method_type.compare("ulcpdi") == 0)
+  // if (method_type == "tlcpdi" || method_type == "ulcpdi")
   //   {
   //     if (update->method->style == 0)
   // 	{ // CPDI-R4
@@ -1586,7 +1586,7 @@ void Solid::populate(vector<string> args)
   bool r4 = false;
   bool q4 = false;
 
-  if (method_type.compare("tlcpdi") == 0 || method_type.compare("ulcpdi") == 0)
+  if (method_type == "tlcpdi" || method_type == "ulcpdi")
   {
     if (update->method->style == 0)
     { // CPDI-R4
@@ -1850,7 +1850,7 @@ void Solid::read_mesh(string fileName)
   while (getline(file, line))
   {
 
-    if (line.compare("$MeshFormat") == 0)
+    if (line == "$MeshFormat")
     {
       // Read mesh format informations:
       double version;
@@ -1863,7 +1863,7 @@ void Solid::read_mesh(string fileName)
       }
 
       getline(file, line);
-      if (line.compare("$EndMeshFormat") == 0)
+      if (line == "$EndMeshFormat")
       {
 
         if (universe->me == 0)
@@ -1875,7 +1875,7 @@ void Solid::read_mesh(string fileName)
           cout << "Unexpected line: " << line << ". $EndMeshFormat expected!!\n";
     }
 
-    if (line.compare("$Nodes") == 0)
+    if (line == "$Nodes")
     {
       if (universe->me == 0)
         cout << "Reading nodes...\n";
@@ -1925,7 +1925,7 @@ void Solid::read_mesh(string fileName)
       }
 
       getline(file, line);
-      if (line.compare("$EndNodes") == 0)
+      if (line == "$EndNodes")
       {
         if (universe->me == 0)
           cout << "Reading nodes...done!\n";
@@ -1935,7 +1935,7 @@ void Solid::read_mesh(string fileName)
           cout << "Unexpected line: " << line << ". $EndNodes expected!!\n";
     }
 
-    if (line.compare("$Elements") == 0)
+    if (line == "$Elements")
     {
       if (universe->me == 0)
         cout << "Reading elements...\n";
@@ -1990,8 +1990,8 @@ void Solid::read_mesh(string fileName)
           int no3 = stoi(splitLine[7]) - 1;
           int no4 = stoi(splitLine[8]) - 1;
 
-          if (method_type.compare("tlcpdi") == 0 ||
-              method_type.compare("ulcpdi") == 0)
+          if (method_type == "tlcpdi" ||
+              method_type == "ulcpdi")
           {
 
             xpc0[nc*ie][0] = xpc[nc*ie][0] = nodes[no1][0];
@@ -2084,7 +2084,7 @@ void Solid::read_mesh(string fileName)
       }
 
       getline(file, line);
-      if (line.compare("$EndElements") == 0)
+      if (line == "$EndElements")
       {
         if (universe->me == 0)
           cout << "Reading elements...done!\n";

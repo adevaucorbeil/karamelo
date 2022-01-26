@@ -60,11 +60,11 @@ Cylinder::Cylinder(MPM *mpm, vector<string> args) : Region(mpm, args)
   }
 
   if (domain->dimension == 3) {
-    if (args[2].compare("x") == 0) {
+    if (args[2] == "x") {
       axis = 'x';
-    } else if (args[2].compare("y") == 0) {
+    } else if (args[2] == "y") {
       axis = 'y';
-    } else if (args[2].compare("z") == 0) {
+    } else if (args[2] == "z") {
       axis = 'z';
     } else {
       error->all(FLERR, "Error: region cylinder axis not understood, expect x, y, or z, received " + args[2]+".\n");
@@ -74,14 +74,14 @@ Cylinder::Cylinder(MPM *mpm, vector<string> args) : Region(mpm, args)
     c2 = input->parsev(args[4]);
     R = input->parsev(args[5]);
 
-    if (args[6].compare("INF") == 0 || args[6].compare("EDGE") == 0) {
+    if (args[6] == "INF" || args[6] == "EDGE") {
       if (domain->regions.size() == 0) {
 	error->all(FLERR, "Cannot use region INF or EDGE when box does not exist.\n");
       }
       lo = -BIG;
     } else lo = input->parsev(args[6]);
 
-    if (args[7].compare("INF") == 0 || args[7].compare("EDGE") == 0) {
+    if (args[7] == "INF" || args[7] == "EDGE") {
       if (domain->regions.size() == 0) {
 	error->all(FLERR, "Cannot use region INF or EDGE when box does not exist.\n");
       }

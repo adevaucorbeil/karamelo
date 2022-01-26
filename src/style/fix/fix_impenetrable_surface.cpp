@@ -61,8 +61,8 @@ FixImpenetrableSurface::FixImpenetrableSurface(MPM *mpm, vector<string> args)
   ny = input->parsev(args[++k]);
   nz = input->parsev(args[++k]);
 
-  if (group->pon[igroup].compare("particles") != 0 &&
-      group->pon[igroup].compare("all") != 0) {
+  if (group->pon[igroup] != "particles" &&
+      group->pon[igroup] != "all") {
     error->all(FLERR,
                "fix_impenetrablesurface needs to be given a group of nodes" +
                    group->pon[igroup] + ", " + args[2] + " is a group of " +

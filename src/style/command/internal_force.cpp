@@ -34,9 +34,9 @@ Var IntForce::command(vector<string> args) {
     error->all(FLERR, "Error: could not find group named: " + args[0] + ".\n");
   }
 
-  if (args[1].compare("x") == 0) dir = 0;
-  else if (args[1].compare("y") == 0) dir = 1;
-  else if (args[1].compare("z") == 0) dir = 2;
+  if (args[1] == "x") dir = 0;
+  else if (args[1] == "y") dir = 1;
+  else if (args[1] == "z") dir = 2;
   else {
     error->all(FLERR, "Error: directions should be either x,y or z: " + args[1] + " not understood.\n");
   }

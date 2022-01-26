@@ -64,7 +64,7 @@ FixInitialStress::FixInitialStress(MPM *mpm, vector<string> args):
   id = args[0];
 
   for (int i = 0; i < 6; i++) {
-    if (args[i + 3].compare("NULL") != 0) {
+    if (args[i + 3] != "NULL") {
       s_value[i] = input->parsev(args[i + 3]);
       s_set[i] = true;
     } else {

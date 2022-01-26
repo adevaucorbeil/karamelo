@@ -61,6 +61,8 @@ public:
   void post_advance_particles();
   void post_velocities_to_grid();
   void final_integrate();
+  void prepare();
+  void reduce();
 
   void run_computes();
 

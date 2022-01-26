@@ -62,17 +62,17 @@ FixForceNodes::FixForceNodes(MPM *mpm, vector<string> args):
 
   xset = yset = zset = false;
 
-  if (args[3].compare("NULL") != 0) {
+  if (args[3] != "NULL") {
     xvalue = input->parsev(args[3]);
     xset = true;
   }
 
-  if (args[4].compare("NULL") != 0) {
+  if (args[4] != "NULL") {
     yvalue = input->parsev(args[4]);
     yset = true;
   }
 
-  if (args[5].compare("NULL") != 0) {
+  if (args[5] != "NULL") {
     zvalue = input->parsev(args[5]);
     zset = true;
   }

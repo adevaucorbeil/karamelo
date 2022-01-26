@@ -263,79 +263,79 @@ Var Input::evaluate_function(string func, string arg){
   }
 
 
-  if (func.compare("exp") == 0)
+  if (func == "exp")
     return expv(parsev(arg));
-  if (func.compare("sqrt") == 0)
+  if (func == "sqrt")
     return sqrtv(parsev(arg));
-  if (func.compare("cos") == 0)
+  if (func == "cos")
     return cosv(parsev(arg));
-  if (func.compare("sin") == 0)
+  if (func == "sin")
     return sinv(parsev(arg));
-  if (func.compare("tan") == 0)
+  if (func == "tan")
     return tanv(parsev(arg));
-  if (func.compare("atan2") == 0) {
+  if (func == "atan2") {
     if ((args.size() < 2) || (args.size() > 2)) {
       error->all(FLERR, "Error: atan2 takes exactly two positional arguments.\n");
     }
     return atan2v(parsev(args[0]), parsev(args[1]));
   }
-  if (func.compare("if") == 0) {
+  if (func == "if") {
     if ((args.size() < 3) || (args.size() > 3)) {
       error->all(FLERR, "Error: if takes exactly three positional arguments.\n");
     }
     return ifv(parsev(args[0]), parsev(args[1]), parsev(args[2]));
   }
-  if (func.compare("log") == 0)
+  if (func == "log")
     return logv(parsev(arg));
-  if (func.compare("dimension") == 0)
+  if (func == "dimension")
     return Var(dimension(args));
-  if (func.compare("axisymmetric") == 0)
+  if (func == "axisymmetric")
     return Var(axisymmetric(args));
-  if (func.compare("region") == 0)
+  if (func == "region")
     return Var(region(args));
-  if (func.compare("solid") == 0)
+  if (func == "solid")
     return Var(solid(args));
-  if (func.compare("eos") == 0)
+  if (func == "eos")
     return Var(add_EOS(args));
-  if (func.compare("strength") == 0)
+  if (func == "strength")
     return Var(add_strength(args));
-  if (func.compare("material") == 0)
+  if (func == "material")
     return Var(add_material(args));
-  if (func.compare("damage") == 0)
+  if (func == "damage")
     return Var(add_damage(args));
-  if (func.compare("temperature") == 0)
+  if (func == "temperature")
     return Var(add_temperature(args));
-  if (func.compare("dump") == 0)
+  if (func == "dump")
     return Var(dump(args));
-  if (func.compare("group") == 0)
+  if (func == "group")
     return Var(group_command(args));
-  if (func.compare("set_output") == 0)
+  if (func == "set_output")
     return Var(set_output(args));
-  if (func.compare("log_modify") == 0)
+  if (func == "log_modify")
     return Var(log_modify(args));
-  if (func.compare("method") == 0)
+  if (func == "method")
     return Var(method(args));
-  if (func.compare("scheme") == 0)
+  if (func == "scheme")
     return Var(scheme(args));
-  if (func.compare("fix") == 0)
+  if (func == "fix")
     return Var(fix(args));
-  if (func.compare("delete_fix") == 0)
+  if (func == "delete_fix")
     return Var(delete_fix(args));
-  if (func.compare("compute") == 0)
+  if (func == "compute")
     return Var(compute(args));
-  if (func.compare("delete_compute") == 0)
+  if (func == "delete_compute")
     return Var(delete_compute(args));
-  if (func.compare("dt_factor") == 0)
+  if (func == "dt_factor")
     return Var(set_dt_factor(args));
-  if (func.compare("set_dt") == 0)
+  if (func == "set_dt")
     return Var(set_dt(args));
-  if (func.compare("value") == 0)
+  if (func == "value")
     return value(args);
-  if (func.compare("plot") == 0)
+  if (func == "plot")
     return Var(plot(args));
-  if (func.compare("create_domain") == 0)
+  if (func == "create_domain")
     return Var(create_domain(args));
-  if (func.compare("save_plot") == 0)
+  if (func == "save_plot")
     return Var(save_plot(args));
 
   // invoke commands added via style_command.h
@@ -344,11 +344,11 @@ Var Input::evaluate_function(string func, string arg){
     CommandCreator command_creator = (*command_map)[func];
     return command_creator(mpm,args);
   }
-  else if (func.compare("evaluate") == 0)
+  else if (func == "evaluate")
     return Var(parsev(arg).result(mpm));
-  else if (func.compare("print") == 0)
+  else if (func == "print")
     return Var(print(args));
-  else if (func.compare("restart") == 0)
+  else if (func == "restart")
     return Var(restart(args));
   error->all(FLERR, "Error: Unknown function " + func + "\n");
   return Var();
@@ -931,7 +931,7 @@ Var Input::command_creator(MPM *mpm, vector<string> args) {
 
 bool Input::protected_variable(string variable) {
   for (int i = 0; i < protected_vars.size(); i++) {
-    if (variable.compare(protected_vars[i]) == 0)
+    if (variable == protected_vars[i])
       return 1;
   }
   return 0;

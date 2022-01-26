@@ -223,7 +223,7 @@ void Output::add_dump(vector<string> args){
 
 #define DUMP_CLASS
 #define DumpStyle(key,Class) \
-  else if (args[2].compare(#key) == 0) dumps.push_back(new Class(mpm,args));
+  else if (args[2] == (#key)) dumps.push_back(new Class(mpm,args));
 #include <style_dump.h>
 #undef DUMP_CLASS
 
@@ -265,7 +265,7 @@ void Output::delete_dump(string name){
 
 int Output::find_dump(string name){
   for (int idump = 0; idump < dumps.size(); idump++){
-    if (name.compare(dumps[idump]->id) == 0) return idump;
+    if (name == dumps[idump]->id) return idump;
   }
   return -1;
 }
@@ -313,7 +313,7 @@ void Output::delete_plot(string name){
 
 int Output::find_plot(string name){
   for (int iplot = 0; iplot < plots.size(); iplot++){
-    if (name.compare(plots[iplot]->id) == 0) return iplot;
+    if (name == plots[iplot]->id) return iplot;
   }
   return -1;
 }

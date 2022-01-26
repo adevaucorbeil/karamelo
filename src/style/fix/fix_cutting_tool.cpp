@@ -76,8 +76,8 @@ FixCuttingTool::FixCuttingTool(MPM *mpm, vector<string> args)
   if (args.size() < Nargs) {
     error->all(FLERR, "Error: not enough arguments.\n" + usage);
   }
-  if (group->pon[igroup].compare("particles") != 0 &&
-      group->pon[igroup].compare("all") != 0) {
+  if (group->pon[igroup] != "particles" &&
+      group->pon[igroup] != "all") {
     error->all(FLERR, "fix_cuttingtool needs to be given a group of nodes" +
                           group->pon[igroup] + ", " + args[2] +
                           " is a group of " + group->pon[igroup] + ".\n");

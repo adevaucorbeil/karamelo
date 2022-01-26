@@ -94,8 +94,8 @@ void DumpParticleGz::write() {
   for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
     Solid *s = domain->solids[isolid];
     for (bigint i = 0; i < s->np_local; i++) {
-      if (update->method_type.compare("tlmpm") == 0 ||
-	  update->method_type.compare("tlcpdi") == 0)
+      if (update->method_type == "tlmpm" ||
+	  update->method_type == "tlcpdi")
 	sigma_ = s->R[i] * s->sigma[i] * s->R[i].transpose();
       else
 	sigma_ = s->sigma[i];
@@ -103,77 +103,77 @@ void DumpParticleGz::write() {
       dumpstream << isolid + 1 << " ";
       dumpstream << s->ptag[i] << " ";
       for (auto v : output_var) {
-        if (v.compare("x") == 0)
+        if (v == "x")
           dumpstream << s->x[i][0] << " ";
-        else if (v.compare("y") == 0)
+        else if (v == "y")
           dumpstream << s->x[i][1] << " ";
-        else if (v.compare("z") == 0)
+        else if (v == "z")
           dumpstream << s->x[i][2] << " ";
-        else if (v.compare("x0") == 0)
+        else if (v == "x0")
           dumpstream << s->x0[i][0] << " ";
-        else if (v.compare("y0") == 0)
+        else if (v == "y0")
           dumpstream << s->x0[i][1] << " ";
-        else if (v.compare("z0") == 0)
+        else if (v == "z0")
           dumpstream << s->x0[i][2] << " ";
-        else if (v.compare("vx") == 0)
+        else if (v == "vx")
           dumpstream << s->v[i][0] << " ";
-        else if (v.compare("vy") == 0)
+        else if (v == "vy")
           dumpstream << s->v[i][1] << " ";
-        else if (v.compare("vz") == 0)
+        else if (v == "vz")
           dumpstream << s->v[i][2] << " ";
-        else if (v.compare("s11") == 0)
+        else if (v == "s11")
           dumpstream << sigma_(0, 0) << " ";
-        else if (v.compare("s22") == 0)
+        else if (v == "s22")
           dumpstream << sigma_(1, 1) << " ";
-        else if (v.compare("s33") == 0)
+        else if (v == "s33")
           dumpstream << sigma_(2, 2) << " ";
-        else if (v.compare("s12") == 0)
+        else if (v == "s12")
           dumpstream << sigma_(0, 1) << " ";
-        else if (v.compare("s13") == 0)
+        else if (v == "s13")
           dumpstream << sigma_(0, 2) << " ";
-        else if (v.compare("s23") == 0)
+        else if (v == "s23")
           dumpstream << sigma_(1, 2) << " ";
-        else if (v.compare("seq") == 0)
+        else if (v == "seq")
           dumpstream << sqrt(3. / 2.) * Deviator(sigma_).norm() << " ";
-        else if (v.compare("e11") == 0)
+        else if (v == "e11")
           dumpstream << s->strain_el[i](0, 0) << " ";
-        else if (v.compare("e22") == 0)
+        else if (v == "e22")
           dumpstream << s->strain_el[i](1, 1) << " ";
-        else if (v.compare("e33") == 0)
+        else if (v == "e33")
           dumpstream << s->strain_el[i](2, 2) << " ";
-        else if (v.compare("e12") == 0)
+        else if (v == "e12")
           dumpstream << s->strain_el[i](0, 1) << " ";
-        else if (v.compare("e13") == 0)
+        else if (v == "e13")
           dumpstream << s->strain_el[i](0, 2) << " ";
-        else if (v.compare("e23") == 0)
+        else if (v == "e23")
           dumpstream << s->strain_el[i](1, 2) << " ";
-        else if (v.compare("damage") == 0)
+        else if (v == "damage")
           dumpstream << s->damage[i] << " ";
-        else if (v.compare("damage_init") == 0)
+        else if (v == "damage_init")
           dumpstream << s->damage_init[i] << " ";
-        else if (v.compare("volume") == 0)
+        else if (v == "volume")
           dumpstream << s->vol[i] << " ";
-        else if (v.compare("mass") == 0)
+        else if (v == "mass")
           dumpstream << s->mass[i] << " ";
-        else if (v.compare("bx") == 0)
+        else if (v == "bx")
           dumpstream << s->mbp[i][0] << " ";
-        else if (v.compare("by") == 0)
+        else if (v == "by")
           dumpstream << s->mbp[i][1] << " ";
-        else if (v.compare("bz") == 0)
+        else if (v == "bz")
           dumpstream << s->mbp[i][2] << " ";
-        else if (v.compare("ep") == 0)
+        else if (v == "ep")
           dumpstream << s->eff_plastic_strain[i] << " ";
-        else if (v.compare("epdot") == 0)
+        else if (v == "epdot")
           dumpstream << s->eff_plastic_strain_rate[i] << " ";
-        else if (v.compare("ienergy") == 0)
+        else if (v == "ienergy")
           dumpstream << s->ienergy[i] << " ";
-        else if (v.compare("T") == 0) {
+        else if (v == "T") {
           if (update->method->temp) {
             dumpstream << s->T[i] << " ";
           } else {
             dumpstream << "0 ";
           }
-        } else if (v.compare("gamma") == 0) {
+        } else if (v == "gamma") {
           if (update->method->temp) {
             dumpstream << s->gamma[i] << " ";
           } else {

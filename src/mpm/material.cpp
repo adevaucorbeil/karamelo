@@ -115,7 +115,7 @@ void Material::add_EOS(vector<string> args){
 int Material::find_EOS(string name)
 {
   for (int iEOS = 0; iEOS < EOSs.size(); iEOS++) {
-    if (name.compare(EOSs[iEOS]->id) == 0) return iEOS;
+    if (name == EOSs[iEOS]->id) return iEOS;
   }
   return -1;
 }
@@ -155,7 +155,7 @@ void Material::add_strength(vector<string> args){
 int Material::find_strength(string name)
 {
   for (int istrength = 0; istrength < strengths.size(); istrength++)
-    if (name.compare(strengths[istrength]->id) == 0) return istrength;
+    if (name == strengths[istrength]->id) return istrength;
   return -1;
 }
 
@@ -195,7 +195,7 @@ void Material::add_damage(vector<string> args){
 int Material::find_damage(string name)
 {
   for (int idamage = 0; idamage < damages.size(); idamage++)
-    if (name.compare(damages[idamage]->id) == 0) return idamage;
+    if (name == damages[idamage]->id) return idamage;
   return -1;
 }
 
@@ -234,7 +234,7 @@ void Material::add_temperature(vector<string> args){
 int Material::find_temperature(string name)
 {
   for (int itemperature = 0; itemperature < temperatures.size(); itemperature++)
-    if (name.compare(temperatures[itemperature]->id) == 0) return itemperature;
+    if (name == temperatures[itemperature]->id) return itemperature;
   return -1;
 }
 
@@ -273,9 +273,9 @@ void Material::add_material(vector<string> args) {
                "Error: not enough arguments.\n" + usage.find(args[1])->second);
   }
 
-  if (args[1].compare("linear") == 0 || args[1].compare("neo-hookean") == 0) {
+  if (args[1] == "linear" || args[1] == "neo-hookean") {
     int type;
-    if (args[1].compare("linear") == 0)
+    if (args[1] == "linear")
       type = LINEAR;
     else
       type = NEO_HOOKEAN;
@@ -291,7 +291,7 @@ void Material::add_material(vector<string> args) {
                             input->parsev(args[3]), input->parsev(args[4]),
 			    cp, kappa, alpha});
 
-  } else if (args[1].compare("rigid") == 0) {
+  } else if (args[1] == "rigid") {
     materials.push_back(Mat{args[0], RIGID});
   } else {
     // create the Material
@@ -381,7 +381,7 @@ void Material::add_material(vector<string> args) {
 int Material::find_material(string name)
 {
   for (int imaterial = 0; imaterial < materials.size(); imaterial++)
-    if (name.compare(materials[imaterial].id) == 0) return imaterial;
+    if (name == materials[imaterial].id) return imaterial;
   return -1;
 }
 

@@ -56,17 +56,17 @@ Var PopulateCylindricalCoordinates::command(vector<string> args) {
   int ii, jj, kk;
 
   if (domain->dimension == 3) {
-    if (args[2].compare("x") == 0) {
+    if (args[2] == "x") {
       axis = 'x';
       ii = 1;
       jj = 2;
       kk = 0;      
-    } else if (args[2].compare("y") == 0) {
+    } else if (args[2] == "y") {
       axis = 'y';
       ii = 2;
       jj = 0;
       kk = 1;
-    } else if (args[2].compare("z") == 0) {
+    } else if (args[2] == "z") {
       axis = 'z';
       ii = 0;
       jj = 1;

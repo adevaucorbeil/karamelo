@@ -322,7 +322,7 @@ void TLCPDI::compute_grid_weight_functions_and_gradients()
 	  }
 	}
       }
-      if (method_type.compare("APIC") == 0) domain->solids[isolid]->compute_inertia_tensor();
+      if (method_type == "APIC") domain->solids[isolid]->compute_inertia_tensor();
     }
   }
   update_wf = false;
