@@ -11,10 +11,7 @@
  *
  * ----------------------------------------------------------------------- */
 
-#include <iostream>
-#include <vector>
-#include <string>
-#include <matrix.h>
+
 #include <fix_velocity_nodes.h>
 #include <input.h>
 #include <group.h>
@@ -109,6 +106,24 @@ FixVelocityNodes::FixVelocityNodes(MPM *mpm, vector<string> args):
   }
 }
 
+void FixVelocityNodes::prepare()
+{
+  ftot = Vector3d();
+}
+
+void FixVelocityNodes::reduce()
+{
+  Vector3d ftot_reduced;
+
+  // Reduce ftot:
+  MPI_Allreduce(ftot.elements, ftot_reduced.elements, 3, MPI_DOUBLE, MPI_SUM,
+                universe->uworld);
+
+  (*input->vars)[id + "_x"] = Var(id + "_x", ftot_reduced[0]);
+  (*input->vars)[id + "_y"] = Var(id + "_y", ftot_reduced[1]);
+  (*input->vars)[id + "_z"] = Var(id + "_z", ftot_reduced[2]);
+}
+
 void FixVelocityNodes::post_update_grid_state() {
   // cout << "In FixVelocityNodes::post_update_grid_state()" << endl;
 
@@ -140,7 +155,7 @@ void FixVelocityNodes::post_update_grid_state() {
   int solid = group->solid[igroup];
   Grid *g;
 
-  Vector3d Dv, ftot, ftot_reduced;
+  Vector3d Dv;
   ftot = Vector3d();
   double inv_dt = 1.0/update->dt;
 
@@ -196,14 +211,6 @@ void FixVelocityNodes::post_update_grid_state() {
       }
     }
   }
-
-  // Reduce ftot:
-  MPI_Allreduce(ftot.elements, ftot_reduced.elements, 3, MPI_DOUBLE, MPI_SUM,
-                universe->uworld);
-
-  (*input->vars)[id + "_x"] = Var(id + "_x", ftot_reduced[0]);
-  (*input->vars)[id + "_y"] = Var(id + "_y", ftot_reduced[1]);
-  (*input->vars)[id + "_z"] = Var(id + "_z", ftot_reduced[2]);
 }
 
 void FixVelocityNodes::post_velocities_to_grid() {

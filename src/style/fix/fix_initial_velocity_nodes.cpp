@@ -19,10 +19,7 @@
 #include <input.h>
 #include <universe.h>
 #include <update.h>
-#include <matrix.h>
-#include <iostream>
-#include <string>
-#include <vector>
+
 
 using namespace std;
 using namespace FixConst;
@@ -84,7 +81,6 @@ FixInitialVelocityNodes::FixInitialVelocityNodes(MPM *mpm, vector<string> args):
     }
   }
 }
-
 
 void FixInitialVelocityNodes::post_update_grid_state() {
   if (update->ntimestep !=1) return;

@@ -22,11 +22,14 @@ FixStyle(initial_stress,FixInitialStress)
 
 #include <fix.h>
 #include <var.h>
-#include <vector>
+#include <matrix.h>
 
 class FixInitialStress : public Fix {
  public:
   FixInitialStress(MPM *, vector<string>);
+
+  void prepare();
+  void reduce();
   
   void initial_integrate();
 

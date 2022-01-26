@@ -11,10 +11,7 @@
  *
  * ----------------------------------------------------------------------- */
 
-#include <iostream>
-#include <vector>
-#include <string>
-#include <matrix.h>
+
 #include <fix_body_force.h>
 #include <input.h>
 #include <group.h>
@@ -86,6 +83,22 @@ FixBodyforce::FixBodyforce(MPM *mpm, vector<string> args):
   }
 }
 
+void FixBodyforce::prepare()
+{
+  ftot = Vector3d();
+}
+
+void FixBodyforce::reduce()
+{
+  Vector3d ftot_reduced;
+  // Reduce ftot:
+  MPI_Allreduce(ftot.elements,ftot_reduced.elements,3,MPI_DOUBLE,MPI_SUM,universe->uworld);
+
+  if (xset) (*input->vars)[id+"_x"]=Var(id+"_x", ftot_reduced[0]);
+  if (yset) (*input->vars)[id+"_y"]=Var(id+"_y", ftot_reduced[1]);
+  if (zset) (*input->vars)[id+"_z"]=Var(id+"_z", ftot_reduced[2]);
+  // cout << "ftot = [" << ftot[0] << ", " << ftot[1] << ", " << ftot[2] << "], mass = " << mtot << "\n"; 
+}
 
 void FixBodyforce::post_particles_to_grid() {
   // cout << "In FixBodyforce::post_particles_to_grid()\n";
@@ -95,8 +108,6 @@ void FixBodyforce::post_particles_to_grid() {
 
   int solid = group->solid[igroup];
   Grid *g;
-
-  Vector3d ftot, ftot_reduced;
 
   // double mtot = 0;
   ftot = Vector3d();
@@ -152,14 +163,6 @@ void FixBodyforce::post_particles_to_grid() {
       }
     }
   }
-
-  // Reduce ftot:
-  MPI_Allreduce(ftot.elements,ftot_reduced.elements,3,MPI_DOUBLE,MPI_SUM,universe->uworld);
-
-  if (xset) (*input->vars)[id+"_x"]=Var(id+"_x", ftot_reduced[0]);
-  if (yset) (*input->vars)[id+"_y"]=Var(id+"_y", ftot_reduced[1]);
-  if (zset) (*input->vars)[id+"_z"]=Var(id+"_z", ftot_reduced[2]);
-  // cout << "ftot = [" << ftot[0] << ", " << ftot[1] << ", " << ftot[2] << "], mass = " << mtot << "\n"; 
 }
 
 void FixBodyforce::write_restart(ofstream *of) {

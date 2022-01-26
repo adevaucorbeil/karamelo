@@ -22,11 +22,13 @@ FixStyle(convection_particles,FixConvectionParticles)
 
 #include <fix.h>
 #include <var.h>
-#include <vector>
 
 class FixConvectionParticles : public Fix {
  public:
   FixConvectionParticles(MPM *, vector<string>);
+
+  void prepare();
+  void reduce();
   
   void initial_integrate();
 
@@ -39,8 +41,7 @@ private:
 
   Var Tinf;                  //< Ambiant temperature.
   double h;                        //< Heat transfer coefficient.
-
-
+  double qtot;
 };
 
 #endif

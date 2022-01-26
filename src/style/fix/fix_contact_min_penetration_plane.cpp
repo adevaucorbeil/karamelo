@@ -19,10 +19,7 @@
 #include <solid.h>
 #include <universe.h>
 #include <update.h>
-#include <matrix.h>
-#include <iostream>
-#include <string>
-#include <vector>
+
 
 using namespace std;
 using namespace FixConst;
@@ -82,6 +79,24 @@ FixContactMinPenetrationPlane::FixContactMinPenetrationPlane(MPM *mpm, vector<st
   n /= n.norm();
   
   D = -n[0] * xq[0] - n[1] * xq[1] - n[2] * xq[2];
+}
+
+void FixContactMinPenetrationPlane::prepare()
+{
+  ftot = Vector3d();
+}
+
+void FixContactMinPenetrationPlane::reduce()
+{
+  Vector3d ftot_reduced;
+
+  // Reduce ftot:
+  MPI_Allreduce(ftot.elements, ftot_reduced.elements, 3, MPI_DOUBLE, MPI_SUM,
+                universe->uworld);
+
+  (*input->vars)[id + "_x"] = Var(id + "_x", ftot_reduced[0]);
+  (*input->vars)[id + "_y"] = Var(id + "_y", ftot_reduced[1]);
+  (*input->vars)[id + "_z"] = Var(id + "_z", ftot_reduced[2]);
 }
 
 void FixContactMinPenetrationPlane::initial_integrate() {
@@ -154,14 +169,6 @@ void FixContactMinPenetrationPlane::initial_integrate() {
       }
     }
   }
-
-  // Reduce ftot:
-  MPI_Allreduce(ftot.elements, ftot_reduced.elements, 3, MPI_DOUBLE, MPI_SUM,
-                universe->uworld);
-
-  (*input->vars)[id + "_x"] = Var(id + "_x", ftot_reduced[0]);
-  (*input->vars)[id + "_y"] = Var(id + "_y", ftot_reduced[1]);
-  (*input->vars)[id + "_z"] = Var(id + "_z", ftot_reduced[2]);
 }
 
 void FixContactMinPenetrationPlane::write_restart(ofstream *of) {

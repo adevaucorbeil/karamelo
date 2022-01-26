@@ -22,11 +22,13 @@ FixStyle(heat_flux_particles,FixHeatFluxParticles)
 
 #include <fix.h>
 #include <var.h>
-#include <vector>
 
 class FixHeatFluxParticles : public Fix {
  public:
   FixHeatFluxParticles(MPM *, vector<string>);
+
+  void prepare();
+  void reduce();
   
   void initial_integrate();
 
@@ -38,6 +40,7 @@ private:
   const int Nargs = 4;
 
   Var q;                  //< Flux
+  double qtot;
 };
 
 #endif

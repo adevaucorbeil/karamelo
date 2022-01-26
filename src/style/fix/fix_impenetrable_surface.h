@@ -22,11 +22,14 @@ FixStyle(impenetrablesurface, FixImpenetrableSurface)
 
 #include <fix.h>
 #include <var.h>
-#include <vector>
+#include <matrix.h>
 
 class FixImpenetrableSurface : public Fix {
 public:
   FixImpenetrableSurface(MPM *, vector<string>);
+
+  void prepare();
+  void reduce();
 
   void initial_integrate();
 
@@ -41,6 +44,7 @@ private:
   Var xs_x, xs_y, xs_z;                  //< Position of a point on the surface
   Var nx, ny, nz;                        //< Normal to the plane
   double K;                                    //< Contact stiffness
+  Vector3d ftot;
 };
 
 #endif

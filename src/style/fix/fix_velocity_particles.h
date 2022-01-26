@@ -12,11 +12,13 @@ FixStyle(velocity_particles,FixVelocityParticles)
 #include <fix.h>
 #include <var.h>
 #include <matrix.h>
-#include <vector>
 
 class FixVelocityParticles : public Fix {
  public:
   FixVelocityParticles(MPM *, vector<string>);
+
+  void prepare();
+  void reduce();
   
   void initial_integrate();
   void post_advance_particles();
@@ -36,6 +38,7 @@ private:
   bool xset, yset, zset;                             //< Does the fix set the x, y, and z velocities of the group?
 
   vector<Vector3d> xold;          // particles' old position
+  Vector3d ftot;
 };
 
 #endif

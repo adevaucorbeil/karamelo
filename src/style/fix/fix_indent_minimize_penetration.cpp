@@ -19,10 +19,7 @@
 #include <solid.h>
 #include <universe.h>
 #include <update.h>
-#include <matrix.h>
-#include <iostream>
-#include <string>
-#include <vector>
+
 
 using namespace std;
 using namespace FixConst;
@@ -85,6 +82,28 @@ FixIndentMinimizePenetration::FixIndentMinimizePenetration(MPM *mpm, vector<stri
   mu = input->parsev(args[11]);
 }
 
+void FixIndentMinimizePenetration::prepare()
+{
+  A = 0;
+  ftot = Vector3d();
+}
+
+void FixIndentMinimizePenetration::reduce()
+{
+  double A_reduced;
+  Vector3d ftot_reduced;
+
+  // Reduce ftot:
+  MPI_Allreduce(&A, &A_reduced, 1, MPI_DOUBLE, MPI_SUM, universe->uworld);
+  MPI_Allreduce(ftot.elements, ftot_reduced.elements, 3, MPI_DOUBLE, MPI_SUM,
+                universe->uworld);
+
+  (*input->vars)[id + "_s"] = Var(id + "_s", A_reduced);
+  (*input->vars)[id + "_x"] = Var(id + "_x", ftot_reduced[0]);
+  (*input->vars)[id + "_y"] = Var(id + "_y", ftot_reduced[1]);
+  (*input->vars)[id + "_z"] = Var(id + "_z", ftot_reduced[2]);
+}
+
 void FixIndentMinimizePenetration::initial_integrate() {
   // Go through all the particles in the group and set b to the right value:
   Vector3d f;
@@ -92,7 +111,7 @@ void FixIndentMinimizePenetration::initial_integrate() {
   int solid = group->solid[igroup];
 
   Solid *s;
-  Vector3d ftot, ftot_reduced, ffric;
+  Vector3d ffric;
 
   Vector3d xs(xvalue.result(mpm),
                      yvalue.result(mpm),
@@ -105,9 +124,7 @@ void FixIndentMinimizePenetration::initial_integrate() {
 
   double Rs, Rp, r, p, fmag, vtnorm, vndotxsp;
 
-  double A, A_reduced, cellsizeSq;
-  ftot = Vector3d();
-  A = 0;
+  double cellsizeSq;
 
   if (solid == -1) {
     for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
@@ -342,16 +359,6 @@ void FixIndentMinimizePenetration::initial_integrate() {
       }
     }
   }
-
-  // Reduce ftot:
-  MPI_Allreduce(&A, &A_reduced, 1, MPI_DOUBLE, MPI_SUM, universe->uworld);
-  MPI_Allreduce(ftot.elements, ftot_reduced.elements, 3, MPI_DOUBLE, MPI_SUM,
-                universe->uworld);
-
-  (*input->vars)[id + "_s"] = Var(id + "_s", A_reduced);
-  (*input->vars)[id + "_x"] = Var(id + "_x", ftot_reduced[0]);
-  (*input->vars)[id + "_y"] = Var(id + "_y", ftot_reduced[1]);
-  (*input->vars)[id + "_z"] = Var(id + "_z", ftot_reduced[2]);
 }
 
 void FixIndentMinimizePenetration::write_restart(ofstream *of) {

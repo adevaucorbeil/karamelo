@@ -21,15 +21,16 @@ FixStyle(contact/minimize_penetration/plane, FixContactMinPenetrationPlane)
 #define MPM_FIX_CONTACT_MIN_PENETRATION_PLANE_H
 
 #include <fix.h>
-#include <var.h>
 #include <matrix.h>
-#include <vector>
 
 class FixContactMinPenetrationPlane : public Fix {
 public:
   FixContactMinPenetrationPlane(MPM *, vector<string>);
 
   void initial_integrate();
+
+  void prepare();
+  void reduce();
 
   void write_restart(ofstream *);
   void read_restart(ifstream *);
@@ -42,6 +43,7 @@ private:
   Vector3d xq; // Point in the plane.
   Vector3d n;  // Normal to the plane.
   double mu;          // Friction coefficient.
+  Vector3d ftot;
 };
 
 #endif

@@ -22,7 +22,7 @@ FixStyle(initial_velocity_particles,FixInitialVelocityParticles)
 
 #include <fix.h>
 #include <var.h>
-#include <vector>
+#include <matrix.h>
 
 class FixInitialVelocityParticles : public Fix {
  public:

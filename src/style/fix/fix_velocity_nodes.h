@@ -22,11 +22,14 @@ FixStyle(velocity_nodes,FixVelocityNodes)
 
 #include <fix.h>
 #include <var.h>
-#include <vector>
+#include <matrix.h>
 
 class FixVelocityNodes : public Fix {
  public:
   FixVelocityNodes(MPM *, vector<string>);
+
+  void prepare();
+  void reduce();
   
   void post_update_grid_state();
   void post_velocities_to_grid();
@@ -44,6 +47,7 @@ private:
   Var xvalue, yvalue, zvalue;                  //< Velocities in x, y, and z directions.
   Var xprevvalue, yprevvalue, zprevvalue;      //< Velocities in x, y, and z directions from previous time step.
   bool xset, yset, zset;                             //< Does the fix set the x, y, and z velocities of the group?
+  Vector3d ftot;
 };
 
 #endif

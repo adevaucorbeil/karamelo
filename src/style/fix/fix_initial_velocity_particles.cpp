@@ -19,10 +19,7 @@
 #include <solid.h>
 #include <universe.h>
 #include <update.h>
-#include <matrix.h>
-#include <iostream>
-#include <string>
-#include <vector>
+
 
 using namespace std;
 using namespace FixConst;

@@ -22,11 +22,14 @@ FixStyle(temperature_nodes,FixTemperatureNodes)
 
 #include <fix.h>
 #include <var.h>
-#include <vector>
+#include <matrix.h>
 
 class FixTemperatureNodes : public Fix {
  public:
   FixTemperatureNodes(MPM *, vector<string>);
+
+  void prepare();
+  void reduce();
   
   void post_update_grid_state();
   void post_velocities_to_grid();

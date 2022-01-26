@@ -22,7 +22,7 @@ FixStyle(check_solution,FixChecksolution)
 
 #include <fix.h>
 #include <var.h>
-#include <vector>
+#include <matrix.h>
 
 /*! \ingroup fix fixchecksolution fix_check_solution
 
@@ -81,7 +81,10 @@ This command determine the error in displacement of the particles from the group
 class FixChecksolution : public Fix {
  public:
   FixChecksolution(MPM *, vector<string>);
-  
+
+  void prepare();
+  void reduce();
+
   void final_integrate();
 
   void write_restart(ofstream *);
@@ -90,6 +93,8 @@ class FixChecksolution : public Fix {
 private:
   Var xvalue, yvalue, zvalue;    // Set force in x, y, and z directions.
   bool xset, yset, zset;               // Does the fix set the x, y, and z forces of the group?
+  Vector3d error_vec, u_th;
+  double vtot;
 };
 
 #endif

@@ -19,8 +19,6 @@
 #include <special_functions.h>
 #include <universe.h>
 #include <update.h>
-#include <iostream>
-#include <vector>
 
 using namespace std;
 using namespace FixConst;
@@ -74,12 +72,26 @@ FixHeatFluxParticles::FixHeatFluxParticles(MPM *mpm, vector<string> args):
   }
 }
 
+void FixHeatFluxParticles::prepare()
+{
+  qtot = 0;
+}
+
+void FixHeatFluxParticles::reduce()
+{
+  double qtot_reduced;
+
+  // Reduce qtot:
+  MPI_Allreduce(&qtot, &qtot_reduced, 1, MPI_DOUBLE, MPI_SUM,
+                universe->uworld);
+
+  (*input->vars)[id + "_s"] = Var(id + "_s", qtot_reduced);
+}
+
 void FixHeatFluxParticles::initial_integrate() {
   // Go through all the particles in the group and set v_update to the right value:
   int solid = group->solid[igroup];
   Solid *s;
-
-  double qtot, qtot_reduced = 0;
 
   double qtemp, Ap, invcp = 0;
 
@@ -136,12 +148,6 @@ void FixHeatFluxParticles::initial_integrate() {
       }
     }
   }
-
-  // Reduce qtot:
-  MPI_Allreduce(&qtot, &qtot_reduced, 1, MPI_DOUBLE, MPI_SUM,
-                universe->uworld);
-
-  (*input->vars)[id + "_s"] = Var(id + "_s", qtot_reduced);
 }
 
 void FixHeatFluxParticles::write_restart(ofstream *of) {

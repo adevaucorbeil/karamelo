@@ -44,6 +44,7 @@ void MUSL::run(Var condition){
     ntimestep = update->update_timestep();
 
     update->method->compute_grid_weight_functions_and_gradients();
+    modify->prepare();
 
     update->method->reset();
     modify->initial_integrate();

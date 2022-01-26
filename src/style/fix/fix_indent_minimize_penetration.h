@@ -22,11 +22,14 @@ FixStyle(indent/minimize_penetration, FixIndentMinimizePenetration)
 
 #include <fix.h>
 #include <var.h>
-#include <vector>
+#include <matrix.h>
 
 class FixIndentMinimizePenetration : public Fix {
 public:
   FixIndentMinimizePenetration(MPM *, vector<string>);
+
+  void prepare();
+  void reduce();
 
   void initial_integrate();
 
@@ -42,6 +45,8 @@ private:
   Var xvalue, yvalue, zvalue, vxvalue, vyvalue, vzvalue;
   double R;  //< Sphere radius
   double mu; //< Friction coefficient
+  double A;
+  Vector3d ftot;
 };
 
 #endif

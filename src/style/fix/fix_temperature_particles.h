@@ -12,11 +12,13 @@ FixStyle(temperature_particles,FixTemperatureParticles)
 #include <fix.h>
 #include <var.h>
 #include <matrix.h>
-#include <vector>
 
 class FixTemperatureParticles : public Fix {
  public:
   FixTemperatureParticles(MPM *, vector<string>);
+
+  void prepare();
+  void reduce();
   
   void initial_integrate();
   void post_advance_particles();

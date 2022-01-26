@@ -19,10 +19,7 @@
 #include <solid.h>
 #include <universe.h>
 #include <update.h>
-#include <matrix.h>
-#include <iostream>
-#include <string>
-#include <vector>
+
 
 using namespace std;
 using namespace FixConst;
@@ -70,6 +67,24 @@ FixContactHertz::FixContactHertz(MPM *mpm, vector<string> args)
   requires_ghost_particles = true;
 }
 
+void FixContactHertz::prepare()
+{
+  ftot = Vector3d();
+}
+
+void FixContactHertz::reduce()
+{
+  Vector3d ftot_reduced;
+
+  // Reduce ftot:
+  MPI_Allreduce(ftot.elements, ftot_reduced.elements, 3, MPI_DOUBLE, MPI_SUM,
+                universe->uworld);
+
+  (*input->vars)[id + "_x"] = Var(id + "_x", ftot_reduced[0]);
+  (*input->vars)[id + "_y"] = Var(id + "_y", ftot_reduced[1]);
+  (*input->vars)[id + "_z"] = Var(id + "_z", ftot_reduced[2]);
+}
+
 void FixContactHertz::initial_integrate() {
   // cout << "In FixContactHertz::initial_integrate()\n";
 
@@ -77,11 +92,9 @@ void FixContactHertz::initial_integrate() {
   Vector3d f, dx;
 
   Solid *s1, *s2;
-  Vector3d ftot, ftot_reduced, vtemp1, vtemp2;
+  Vector3d vtemp1, vtemp2;
 
   double Rp, Rp1, Rp2, r, p, fmag, Estar, max_cellsize;
-
-  ftot = Vector3d();
 
   s1 = domain->solids[solid1];
   s2 = domain->solids[solid2];
@@ -179,14 +192,6 @@ void FixContactHertz::initial_integrate() {
       }
     }
   }
-
-  // Reduce ftot:
-  MPI_Allreduce(ftot.elements, ftot_reduced.elements, 3, MPI_DOUBLE, MPI_SUM,
-                universe->uworld);
-
-  (*input->vars)[id + "_x"] = Var(id + "_x", ftot_reduced[0]);
-  (*input->vars)[id + "_y"] = Var(id + "_y", ftot_reduced[1]);
-  (*input->vars)[id + "_z"] = Var(id + "_z", ftot_reduced[2]);
 }
 
 // void FixContactHertz::post_advance_particles() {

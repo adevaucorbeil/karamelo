@@ -19,10 +19,7 @@
 #include <solid.h>
 #include <universe.h>
 #include <update.h>
-#include <matrix.h>
-#include <iostream>
-#include <string>
-#include <vector>
+
 
 using namespace std;
 using namespace FixConst;
@@ -90,6 +87,24 @@ FixMeldTool::FixMeldTool(MPM *mpm, vector<string> args)
   RmaxSq = Rmax * Rmax;
 }
 
+void FixMeldTool::prepare()
+{
+  ftot = Vector3d();
+}
+
+void FixMeldTool::reduce()
+{
+  Vector3d ftot_reduced;
+
+  // Reduce ftot:
+  MPI_Allreduce(ftot.elements, ftot_reduced.elements, 3, MPI_DOUBLE, MPI_SUM,
+                universe->uworld);
+
+  (*input->vars)[id + "_x"] = Var(id + "_x", ftot_reduced[0]);
+  (*input->vars)[id + "_y"] = Var(id + "_y", ftot_reduced[1]);
+  (*input->vars)[id + "_z"] = Var(id + "_z", ftot_reduced[2]);
+}
+
 void FixMeldTool::initial_integrate() {
   // cout << "In FixMeldTool::initial_integrate()\n";
 
@@ -99,7 +114,6 @@ void FixMeldTool::initial_integrate() {
   int solid = group->solid[igroup];
 
   Solid *s;
-  Vector3d ftot, ftot_reduced;
 
 
   double theta_ = theta.result(mpm);
@@ -326,13 +340,6 @@ void FixMeldTool::initial_integrate() {
       }
     }
   }
-  // Reduce ftot:
-  MPI_Allreduce(ftot.elements, ftot_reduced.elements, 3, MPI_DOUBLE, MPI_SUM,
-                universe->uworld);
-
-  (*input->vars)[id + "_x"] = Var(id + "_x", ftot_reduced[0]);
-  (*input->vars)[id + "_y"] = Var(id + "_y", ftot_reduced[1]);
-  (*input->vars)[id + "_z"] = Var(id + "_z", ftot_reduced[2]);
 }
 
 

@@ -19,8 +19,6 @@
 #include <special_functions.h>
 #include <universe.h>
 #include <update.h>
-#include <iostream>
-#include <vector>
 
 using namespace std;
 using namespace FixConst;
@@ -70,13 +68,28 @@ FixConvectionParticles::FixConvectionParticles(MPM *mpm, vector<string> args):
   Tinf = input->parsev(args[4]);
 }
 
+void FixConvectionParticles::prepare()
+{
+  qtot = 0;
+}
+
+void FixConvectionParticles::reduce()
+{
+  double qtot_reduced;
+
+  // Reduce qtot:
+  MPI_Allreduce(&qtot, &qtot_reduced, 1, MPI_DOUBLE, MPI_SUM,
+                universe->uworld);
+
+  (*input->vars)[id + "_s"] = Var(id + "_s", qtot_reduced);
+}
 
 void FixConvectionParticles::initial_integrate() {
   // Go through all the particles in the group and set v_update to the right value:
   int solid = group->solid[igroup];
   Solid *s;
 
-  double qtemp, q, qtot, qtot_reduced, invcp, Ap = 0;
+  double qtemp, q, invcp, Ap = 0;
 
   if (solid == -1) {
     for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
@@ -131,12 +144,6 @@ void FixConvectionParticles::initial_integrate() {
       }
     }
   }
-
-  // Reduce qtot:
-  MPI_Allreduce(&qtot, &qtot_reduced, 1, MPI_DOUBLE, MPI_SUM,
-                universe->uworld);
-
-  (*input->vars)[id + "_s"] = Var(id + "_s", qtot_reduced);
 }
 
 void FixConvectionParticles::write_restart(ofstream *of) {

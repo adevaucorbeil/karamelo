@@ -22,11 +22,14 @@ FixStyle(cuttingtool, FixCuttingTool)
 
 #include <fix.h>
 #include <var.h>
-#include <vector>
+#include <matrix.h>
 
 class FixCuttingTool : public Fix {
 public:
   FixCuttingTool(MPM *, vector<string>);
+
+  void prepare();
+  void reduce();
 
   void initial_integrate();
 
@@ -42,6 +45,7 @@ private:
   Var vtxvalue, vtyvalue, vtzvalue;
   Var xAvalue, yAvalue;
   Var xBvalue, yBvalue;
+  Vector3d ftot;
 };
 
 #endif

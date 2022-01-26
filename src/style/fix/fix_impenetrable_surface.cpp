@@ -19,10 +19,7 @@
 #include <solid.h>
 #include <universe.h>
 #include <update.h>
-#include <matrix.h>
-#include <iostream>
-#include <string>
-#include <vector>
+
 
 using namespace std;
 using namespace FixConst;
@@ -75,6 +72,24 @@ FixImpenetrableSurface::FixImpenetrableSurface(MPM *mpm, vector<string> args)
   id = args[0];
 }
 
+void FixImpenetrableSurface::prepare()
+{
+  ftot = Vector3d();
+}
+
+void FixImpenetrableSurface::reduce()
+{
+  Vector3d ftot_reduced;
+
+  // Reduce ftot:
+  MPI_Allreduce(ftot.elements, ftot_reduced.elements, 3, MPI_DOUBLE, MPI_SUM,
+                universe->uworld);
+
+  (*input->vars)[id + "_x"] = Var(id + "_x", ftot_reduced[0]);
+  (*input->vars)[id + "_y"] = Var(id + "_y", ftot_reduced[1]);
+  (*input->vars)[id + "_z"] = Var(id + "_z", ftot_reduced[2]);
+}
+
 void FixImpenetrableSurface::initial_integrate() {
   // cout << "In FixImpenetrableSurface::initial_integrate()\n";
 
@@ -84,7 +99,6 @@ void FixImpenetrableSurface::initial_integrate() {
   int solid = group->solid[igroup];
 
   Solid *s;
-  Vector3d ftot, ftot_reduced;
 
 
   Vector3d xs(xs_x.result(mpm),
@@ -177,13 +191,6 @@ void FixImpenetrableSurface::initial_integrate() {
       }
     }
   }
-  // Reduce ftot:
-  MPI_Allreduce(ftot.elements, ftot_reduced.elements, 3, MPI_DOUBLE, MPI_SUM,
-                universe->uworld);
-
-  (*input->vars)[id + "_x"] = Var(id + "_x", ftot_reduced[0]);
-  (*input->vars)[id + "_y"] = Var(id + "_y", ftot_reduced[1]);
-  (*input->vars)[id + "_z"] = Var(id + "_z", ftot_reduced[2]);
 }
 
 void FixImpenetrableSurface::write_restart(ofstream *of) {

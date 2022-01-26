@@ -21,12 +21,14 @@ FixStyle(contact/minimize_penetration, FixContactMinPenetration)
 #define MPM_FIX_CONTACT_MIN_PENETRATION_H
 
 #include <fix.h>
-#include <var.h>
-#include <vector>
+#include <matrix.h>
 
 class FixContactMinPenetration : public Fix {
 public:
   FixContactMinPenetration(MPM *, vector<string>);
+
+  void prepare();
+  void reduce();
 
   void initial_integrate();
 
@@ -38,6 +40,7 @@ private:
   int Nargs = 5;
   int solid1, solid2;
   double mu;    // Friction coefficient
+  Vector3d ftot;
 };
 
 #endif

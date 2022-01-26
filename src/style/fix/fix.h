@@ -37,6 +37,8 @@ class Fix : protected Pointers {
   virtual void setup() {}
 
   virtual void prepare() {}
+  virtual void reduce() {}
+
   virtual void initial_integrate() {}
   virtual void post_particles_to_grid() {}
   virtual void post_update_grid_state() {}
@@ -44,7 +46,6 @@ class Fix : protected Pointers {
   virtual void post_advance_particles() {}
   virtual void post_velocities_to_grid() {}
   virtual void final_integrate() {}
-  virtual void reduce() {}
 
   virtual void write_restart(ofstream *of) = 0;
   virtual void read_restart(ifstream *ifr) = 0;

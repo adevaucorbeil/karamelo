@@ -19,10 +19,7 @@
 #include <solid.h>
 #include <universe.h>
 #include <update.h>
-#include <matrix.h>
-#include <iostream>
-#include <string>
-#include <vector>
+
 
 using namespace std;
 using namespace FixConst;
@@ -73,6 +70,16 @@ FixInitialStress::FixInitialStress(MPM *mpm, vector<string> args):
   }
 }
 
+void FixInitialStress::prepare()
+{
+
+}
+
+void FixInitialStress::reduce()
+{
+
+}
+
 void FixInitialStress::initial_integrate() {
   if (update->ntimestep !=1) return;
   // cout << "In FixInitialStress::initial_integrate()" << endl;
@@ -85,8 +92,8 @@ void FixInitialStress::initial_integrate() {
 
   bool tl;
 
-  if (update->method_type.compare("tlmpm") == 0 ||
-      update->method_type.compare("tlcpdi") == 0)
+  if (update->method_type == "tlmpm" ||
+      update->method_type == "tlcpdi")
     tl = true;
   else
     tl = false;

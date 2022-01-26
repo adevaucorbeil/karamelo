@@ -20,10 +20,6 @@
 #include <solid.h>
 #include <universe.h>
 #include <update.h>
-#include <matrix.h>
-#include <iostream>
-#include <string>
-#include <vector>
 
 using namespace std;
 using namespace FixConst;
@@ -74,6 +70,24 @@ FixContactMinPenetration::FixContactMinPenetration(MPM *mpm, vector<string> args
   mu = input->parsev(args[4]);
 }
 
+void FixContactMinPenetration::prepare()
+{
+  ftot = Vector3d();
+}
+
+void FixContactMinPenetration::reduce()
+{
+  Vector3d ftot_reduced;
+
+  // Reduce ftot:
+  MPI_Allreduce(ftot.elements, ftot_reduced.elements, 3, MPI_DOUBLE, MPI_SUM,
+                universe->uworld);
+
+  (*input->vars)[id + "_x"] = Var(id + "_x", ftot_reduced[0]);
+  (*input->vars)[id + "_y"] = Var(id + "_y", ftot_reduced[1]);
+  (*input->vars)[id + "_z"] = Var(id + "_z", ftot_reduced[2]);
+}
+
 void FixContactMinPenetration::initial_integrate() {
   // cout << "In FixContactMinPenetration::initial_integrate()\n";
 
@@ -81,7 +95,7 @@ void FixContactMinPenetration::initial_integrate() {
   Vector3d f, dx;
 
   Solid *s1, *s2;
-  Vector3d ftot, ftot_reduced, vtemp1, vtemp2, dv, vt;
+  Vector3d vtemp1, vtemp2, dv, vt;
 
   double Rp, Rp1, Rp2, r, inv_r, Estar, max_cellsize, vtnorm, fmag, ffric, gamma, alpha;
 
@@ -227,14 +241,6 @@ void FixContactMinPenetration::initial_integrate() {
       }
     }
   }
-
-  // Reduce ftot:
-  MPI_Allreduce(ftot.elements, ftot_reduced.elements, 3, MPI_DOUBLE, MPI_SUM,
-                universe->uworld);
-
-  (*input->vars)[id + "_x"] = Var(id + "_x", ftot_reduced[0]);
-  (*input->vars)[id + "_y"] = Var(id + "_y", ftot_reduced[1]);
-  (*input->vars)[id + "_z"] = Var(id + "_z", ftot_reduced[2]);
 }
 
 // void FixContactMinPenetration::post_advance_particles() {

@@ -22,7 +22,7 @@ FixStyle(initial_velocity_nodes,FixInitialVelocityNodes)
 
 #include <fix.h>
 #include <var.h>
-#include <vector>
+#include <matrix.h>
 
 class FixInitialVelocityNodes : public Fix {
  public:

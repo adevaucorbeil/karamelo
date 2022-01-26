@@ -19,9 +19,7 @@
 #include <special_functions.h>
 #include <universe.h>
 #include <update.h>
-#include <matrix.h>
-#include <iostream>
-#include <vector>
+
 
 using namespace std;
 using namespace FixConst;
@@ -73,6 +71,22 @@ FixTemperatureParticles::FixTemperatureParticles(MPM *mpm, vector<string> args):
   // Replace "time" by "time - dt" in the x argument:
   previous = SpecialFunc::replace_all(input->parsev(previous).str(), "time", "(time - dt)");
   Tprevvalue = input->parsev(previous);
+}
+
+void FixTemperatureParticles::prepare()
+{
+
+}
+
+void FixTemperatureParticles::reduce()
+{
+  // Reduce ftot:
+  //MPI_Allreduce(ftot.elements, ftot_reduced.elements, 3, MPI_DOUBLE, MPI_SUM,
+  //              universe->uworld);
+
+  // (*input->vars)[id + "_x"] = Var(id + "_x", ftot_reduced[0]);
+  // (*input->vars)[id + "_y"] = Var(id + "_y", ftot_reduced[1]);
+  // (*input->vars)[id + "_z"] = Var(id + "_z", ftot_reduced[2]);
 }
 
 void FixTemperatureParticles::initial_integrate() {
@@ -175,14 +189,6 @@ void FixTemperatureParticles::post_advance_particles() {
     // cout << "v for " << n << " particles from solid " <<
     // domain->solids[solid]->id << " set." << endl;
   }
-
-  // Reduce ftot:
-  //MPI_Allreduce(ftot.elements, ftot_reduced.elements, 3, MPI_DOUBLE, MPI_SUM,
-  //              universe->uworld);
-
-  // (*input->vars)[id + "_x"] = Var(id + "_x", ftot_reduced[0]);
-  // (*input->vars)[id + "_y"] = Var(id + "_y", ftot_reduced[1]);
-  // (*input->vars)[id + "_z"] = Var(id + "_z", ftot_reduced[2]);
 }
 
 void FixTemperatureParticles::write_restart(ofstream *of) {

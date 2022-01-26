@@ -22,7 +22,7 @@ FixStyle(body_force,FixBodyforce)
 
 #include <fix.h>
 #include <var.h>
-#include <vector>
+#include <matrix.h>
 
 /*! \ingroup fix fixbodyforce fix_body_force
 
@@ -62,6 +62,9 @@ class FixBodyforce : public Fix {
  public:
   FixBodyforce(MPM *, vector<string>);
   
+  void prepare();
+  void reduce();
+
   void post_particles_to_grid();
 
   void write_restart(ofstream *);
@@ -70,6 +73,7 @@ class FixBodyforce : public Fix {
 private:
   Var xvalue, yvalue, zvalue;    // Set force in x, y, and z directions.
   bool xset, yset, zset;               // Does the fix set the x, y, and z forces of the group?
+  Vector3d ftot;
 };
 
 #endif

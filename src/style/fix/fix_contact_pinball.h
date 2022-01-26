@@ -21,12 +21,14 @@ FixStyle(contact/pinball, FixContactPinball)
 #define MPM_FIX_CONTACT_PINBALL_H
 
 #include <fix.h>
-#include <var.h>
-#include <vector>
+#include <matrix.h>
 
 class FixContactPinball : public Fix {
 public:
   FixContactPinball(MPM *, vector<string>);
+
+  void prepare();
+  void reduce();
 
   void initial_integrate();
 
@@ -38,6 +40,7 @@ private:
   int Nargs = 5;
   int solid1, solid2;
   double K;
+  Vector3d ftot;
 };
 
 #endif

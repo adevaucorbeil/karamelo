@@ -19,8 +19,6 @@
 #include <special_functions.h>
 #include <universe.h>
 #include <update.h>
-#include <iostream>
-#include <vector>
 
 using namespace std;
 using namespace FixConst;
@@ -71,6 +69,24 @@ FixNeumannBCMech::FixNeumannBCMech(MPM *mpm, vector<string> args):
   }
 }
 
+void FixNeumannBCMech::prepare()
+{
+  ftot = Vector3d();
+}
+
+void FixNeumannBCMech::reduce()
+{
+  Vector3d ftot_reduced;
+
+  // Reduce ftot:
+  MPI_Allreduce(&ftot, &ftot_reduced, 3, MPI_DOUBLE, MPI_SUM,
+                universe->uworld);
+
+  (*input->vars)[id + "_x"] = Var(id + "_x", ftot_reduced[0]);
+  (*input->vars)[id + "_y"] = Var(id + "_y", ftot_reduced[1]);
+  (*input->vars)[id + "_z"] = Var(id + "_z", ftot_reduced[2]);
+}
+
 void FixNeumannBCMech::initial_integrate() {
   // Go through all the particles in the group and set v_update to the right value:
   int solid = group->solid[igroup];
@@ -79,7 +95,7 @@ void FixNeumannBCMech::initial_integrate() {
   int n = 0;
   double Ap = 0;
 
-  Vector3d f, ftot, ftot_reduced;
+  Vector3d f;
 
   if (solid == -1) {
     for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
@@ -139,14 +155,6 @@ void FixNeumannBCMech::initial_integrate() {
       }
     }
  }
-
-  // Reduce ftot:
-  MPI_Allreduce(&ftot, &ftot_reduced, 3, MPI_DOUBLE, MPI_SUM,
-                universe->uworld);
-
-  (*input->vars)[id + "_x"] = Var(id + "_x", ftot_reduced[0]);
-  (*input->vars)[id + "_y"] = Var(id + "_y", ftot_reduced[1]);
-  (*input->vars)[id + "_z"] = Var(id + "_z", ftot_reduced[2]);
 }
 
 void FixNeumannBCMech::write_restart(ofstream *of) {

@@ -22,11 +22,14 @@ FixStyle(force_nodes,FixForceNodes)
 
 #include <fix.h>
 #include <var.h>
-#include <vector>
+#include <matrix.h>
 
 class FixForceNodes : public Fix {
  public:
   FixForceNodes(MPM *, vector<string>);
+
+  void prepare();
+  void reduce();
   
   void post_particles_to_grid();
 
@@ -36,6 +39,7 @@ class FixForceNodes : public Fix {
 private:
   Var xvalue, yvalue, zvalue;    // Set force in x, y, and z directions.
   bool xset, yset, zset;               // Does the fix set the x, y, and z forces of the group?
+  Vector3d ftot;
 };
 
 #endif

@@ -19,10 +19,7 @@
 #include <solid.h>
 #include <universe.h>
 #include <update.h>
-#include <matrix.h>
-#include <iostream>
-#include <string>
-#include <vector>
+
 
 using namespace std;
 using namespace FixConst;
@@ -103,6 +100,24 @@ FixCuttingTool::FixCuttingTool(MPM *mpm, vector<string> args)
   yBvalue = input->parsev(args[13]);
 }
 
+void FixCuttingTool::prepare()
+{
+  ftot = Vector3d();
+}
+
+void FixCuttingTool::reduce()
+{
+  Vector3d ftot_reduced;
+
+  // Reduce ftot:
+  MPI_Allreduce(ftot.elements, ftot_reduced.elements, 3, MPI_DOUBLE, MPI_SUM,
+                universe->uworld);
+
+  (*input->vars)[id + "_x"] = Var(id + "_x", ftot_reduced[0]);
+  (*input->vars)[id + "_y"] = Var(id + "_y", ftot_reduced[1]);
+  (*input->vars)[id + "_z"] = Var(id + "_z", ftot_reduced[2]);
+}
+
 void FixCuttingTool::initial_integrate() {
   // cout << "In FixCuttingTool::initial_integrate()\n";
 
@@ -112,7 +127,7 @@ void FixCuttingTool::initial_integrate() {
   int solid = group->solid[igroup];
 
   Solid *s;
-  Vector3d ftot, ftot_reduced, n1, n2, n;
+  Vector3d n1, n2, n;
 
   double zt = ztvalue.result(mpm);
   Vector3d xt(xtvalue.result(mpm),
@@ -266,13 +281,6 @@ void FixCuttingTool::initial_integrate() {
       error->one(FLERR, "fix_cuttingtool not supported in 3D\n");
     }
   }
-  // Reduce ftot:
-  MPI_Allreduce(ftot.elements, ftot_reduced.elements, 3, MPI_DOUBLE, MPI_SUM,
-                universe->uworld);
-
-  (*input->vars)[id + "_x"] = Var(id + "_x", ftot_reduced[0]);
-  (*input->vars)[id + "_y"] = Var(id + "_y", ftot_reduced[1]);
-  (*input->vars)[id + "_z"] = Var(id + "_z", ftot_reduced[2]);
 }
 
 void FixCuttingTool::write_restart(ofstream *of) {

@@ -22,11 +22,14 @@ FixStyle(neumann_bc_mech,FixNeumannBCMech)
 
 #include <fix.h>
 #include <var.h>
-#include <vector>
+#include <matrix.h>
 
 class FixNeumannBCMech : public Fix {
  public:
   FixNeumannBCMech(MPM *, vector<string>);
+
+  void prepare();
+  void reduce();
   
   void initial_integrate();
 
@@ -41,6 +44,7 @@ private:
   const map<int, int> Nargs = {{1, 4}, {2, 5}, {3, 6}};
 
   Var t[3];                     //< Surface traction/compression pressure
+  Vector3d ftot;
 };
 
 #endif

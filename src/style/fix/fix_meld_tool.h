@@ -22,11 +22,14 @@ FixStyle(meldtool, FixMeldTool)
 
 #include <fix.h>
 #include <var.h>
-#include <vector>
+#include <matrix.h>
 
 class FixMeldTool : public Fix {
 public:
   FixMeldTool(MPM *, vector<string>);
+
+  void prepare();
+  void reduce();
 
   void initial_integrate();
 
@@ -40,6 +43,7 @@ private:
   double K, w, lo, hi, Rmax, RmaxSq;
 
   Var c1, c2, theta;         //< Position and angle of the tool
+  Vector3d ftot;
 
   enum Axis { X, Y, Z, };
 };

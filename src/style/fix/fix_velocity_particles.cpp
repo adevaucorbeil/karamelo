@@ -19,9 +19,7 @@
 #include <special_functions.h>
 #include <universe.h>
 #include <update.h>
-#include <matrix.h>
-#include <iostream>
-#include <vector>
+
 
 using namespace std;
 using namespace FixConst;
@@ -106,6 +104,24 @@ FixVelocityParticles::FixVelocityParticles(MPM *mpm, vector<string> args):
       zprevvalue = input->parsev(previous);
     }
   }
+}
+
+void FixVelocityParticles::prepare()
+{
+  ftot = Vector3d();
+}
+
+void FixVelocityParticles::reduce()
+{
+  Vector3d ftot_reduced;
+
+  // Reduce ftot:
+  MPI_Allreduce(ftot.elements, ftot_reduced.elements, 3, MPI_DOUBLE, MPI_SUM,
+                universe->uworld);
+
+  (*input->vars)[id + "_x"] = Var(id + "_x", ftot_reduced[0]);
+  (*input->vars)[id + "_y"] = Var(id + "_y", ftot_reduced[1]);
+  (*input->vars)[id + "_z"] = Var(id + "_z", ftot_reduced[2]);
 }
 
 void FixVelocityParticles::initial_integrate() {
@@ -196,10 +212,9 @@ void FixVelocityParticles::post_advance_particles() {
   
   int solid = group->solid[igroup];
   Solid *s;
-  Vector3d Dv, ftot, ftot_reduced;
+  Vector3d Dv;
 
   int n = 0;
-  ftot = Vector3d();
   double inv_dt = 1.0/update->dt;
 
   if (solid == -1) {
@@ -280,14 +295,6 @@ void FixVelocityParticles::post_advance_particles() {
     // cout << "v for " << n << " particles from solid " <<
     // domain->solids[solid]->id << " set." << endl;
   }
-
-  // Reduce ftot:
-  MPI_Allreduce(ftot.elements, ftot_reduced.elements, 3, MPI_DOUBLE, MPI_SUM,
-                universe->uworld);
-
-  (*input->vars)[id + "_x"] = Var(id + "_x", ftot_reduced[0]);
-  (*input->vars)[id + "_y"] = Var(id + "_y", ftot_reduced[1]);
-  (*input->vars)[id + "_z"] = Var(id + "_z", ftot_reduced[2]);
 }
 
 void FixVelocityParticles::write_restart(ofstream *of) {

@@ -11,10 +11,7 @@
  *
  * ----------------------------------------------------------------------- */
 
-#include <iostream>
-#include <vector>
-#include <string>
-#include <matrix.h>
+
 #include <fix_force_nodes.h>
 #include <input.h>
 #include <group.h>
@@ -78,6 +75,25 @@ FixForceNodes::FixForceNodes(MPM *mpm, vector<string> args):
   }
 }
 
+void FixForceNodes::prepare()
+{
+  ftot = Vector3d();
+}
+
+void FixForceNodes::reduce()
+{
+  Vector3d ftot_reduced;
+  
+  // Reduce ftot:
+  MPI_Allreduce(ftot.elements,ftot_reduced.elements,3,MPI_DOUBLE,MPI_SUM,universe->uworld);
+
+  if (xset) (*input->vars)[id+"_x"]=Var(id+"_x", ftot_reduced[0]);
+  if (yset) (*input->vars)[id+"_y"]=Var(id+"_y", ftot_reduced[1]);
+  if (zset) (*input->vars)[id+"_z"]=Var(id+"_z", ftot_reduced[2]);
+  // cout << "f for " << n << " nodes from solid " << domain->solids[solid]->id << " set." << endl;
+  // cout << "ftot = [" << ftot[0] << ", " << ftot[1] << ", " << ftot[2] << "]\n"; 
+}
+
 void FixForceNodes::post_particles_to_grid() {
   // cout << "In FixForceNodes::post_particles_to_grid()\n";
 
@@ -103,8 +119,6 @@ void FixForceNodes::post_particles_to_grid() {
   Grid *g;
 
   int n = 0;
-  Vector3d ftot, ftot_reduced;
-  ftot = Vector3d();
 
   if (solid == -1) {
     for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
@@ -170,15 +184,6 @@ void FixForceNodes::post_particles_to_grid() {
       }
     }
   }
-
-  // Reduce ftot:
-  MPI_Allreduce(ftot.elements,ftot_reduced.elements,3,MPI_DOUBLE,MPI_SUM,universe->uworld);
-
-  if (xset) (*input->vars)[id+"_x"]=Var(id+"_x", ftot_reduced[0]);
-  if (yset) (*input->vars)[id+"_y"]=Var(id+"_y", ftot_reduced[1]);
-  if (zset) (*input->vars)[id+"_z"]=Var(id+"_z", ftot_reduced[2]);
-  // cout << "f for " << n << " nodes from solid " << domain->solids[solid]->id << " set." << endl;
-  // cout << "ftot = [" << ftot[0] << ", " << ftot[1] << ", " << ftot[2] << "]\n"; 
 }
 
 void FixForceNodes::write_restart(ofstream *of) {
