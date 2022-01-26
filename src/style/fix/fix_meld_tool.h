@@ -26,19 +26,9 @@ FixStyle(meldtool, FixMeldTool)
 
 class FixMeldTool : public Fix {
 public:
-  FixMeldTool(class MPM *, vector<string>);
-  ~FixMeldTool();
-  void setmask();
-  void init();
-  void setup();
+  FixMeldTool(MPM *, vector<string>);
 
   void initial_integrate();
-  void post_particles_to_grid(){};
-  void post_update_grid_state(){};
-  void post_grid_to_point(){};
-  void post_advance_particles(){};
-  void post_velocities_to_grid(){};
-  void final_integrate(){};
 
   void write_restart(ofstream *);
   void read_restart(ifstream *);
@@ -49,7 +39,7 @@ private:
   int dim, axis0, axis1;
   double K, w, lo, hi, Rmax, RmaxSq;
 
-  class Var c1, c2, theta;         //< Position and angle of the tool
+  Var c1, c2, theta;         //< Position and angle of the tool
 
   enum Axis { X, Y, Z, };
 };

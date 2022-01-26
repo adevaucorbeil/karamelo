@@ -28,7 +28,8 @@ using namespace std;
 using namespace FixConst;
 
 
-FixBodyforce::FixBodyforce(MPM *mpm, vector<string> args) : Fix(mpm, args)
+FixBodyforce::FixBodyforce(MPM *mpm, vector<string> args):
+  Fix(mpm, args, POST_PARTICLES_TO_GRID)
 {
   if (args.size() < 3) {
     error->all(FLERR, "Error: not enough arguments.\n");
@@ -83,23 +84,6 @@ FixBodyforce::FixBodyforce(MPM *mpm, vector<string> args) : Fix(mpm, args)
       zset = true;
     }
   }
-}
-
-FixBodyforce::~FixBodyforce()
-{
-}
-
-void FixBodyforce::init()
-{
-}
-
-void FixBodyforce::setup()
-{
-}
-
-void FixBodyforce::setmask() {
-  mask = 0;
-  mask |= POST_PARTICLES_TO_GRID;
 }
 
 

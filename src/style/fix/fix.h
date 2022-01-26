@@ -28,27 +28,26 @@ class Fix : protected Pointers {
   string id, style;
   int igroup, groupbit;
   int mask;
-  vector<string> args; // Store arguments
 
   bool requires_ghost_particles = false;
 
-  Fix(class MPM *, vector<string>);
-  virtual ~Fix() {};
-  virtual void init() = 0;
-  virtual void setup() = 0;
-  virtual void setmask() = 0;
+  Fix(MPM *mpm, const vector<string> &args, int mask);
 
-  
-  virtual void initial_integrate() = 0;
-  virtual void post_particles_to_grid() = 0;
-  virtual void post_update_grid_state() = 0;
-  virtual void post_grid_to_point() = 0;
-  virtual void post_advance_particles() = 0;
-  virtual void post_velocities_to_grid() = 0;
-  virtual void final_integrate() = 0;
+  virtual void init() {}
+  virtual void setup() {}
 
-  virtual void write_restart(ofstream *) = 0;
-  virtual void read_restart(ifstream *) = 0;
+  virtual void prepare() {}
+  virtual void initial_integrate() {}
+  virtual void post_particles_to_grid() {}
+  virtual void post_update_grid_state() {}
+  virtual void post_grid_to_point() {}
+  virtual void post_advance_particles() {}
+  virtual void post_velocities_to_grid() {}
+  virtual void final_integrate() {}
+  virtual void reduce() {}
+
+  virtual void write_restart(ofstream *of) = 0;
+  virtual void read_restart(ifstream *ifr) = 0;
 };
 
 namespace FixConst {

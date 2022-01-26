@@ -125,9 +125,6 @@ void Modify::add_fix(vector<string> args){
   else {
     error->all(FLERR, "Unknown fix style " + args[1] + ".\n");
   }
-
-  fix[ifix]->setmask();
-
 }
 
 int Modify::find_fix(string name)
@@ -361,6 +358,5 @@ void Modify::read_restart(ifstream *ifr) {
     fix[i] = fix_creator(mpm, vector<string>{id, style, "restart", to_string(igroup)});
     fix[i]->read_restart(ifr);
     fix[i]->init();
-    fix[i]->setmask();
   }
 }

@@ -28,7 +28,8 @@ using namespace FixConst;
 
 
 
-FixTemperatureParticles::FixTemperatureParticles(MPM *mpm, vector<string> args) : Fix(mpm, args)
+FixTemperatureParticles::FixTemperatureParticles(MPM *mpm, vector<string> args):
+  Fix(mpm, args, INITIAL_INTEGRATE | POST_ADVANCE_PARTICLES)
 {
   if (args.size() < 3) {
     error->all(FLERR, "Error: not enough arguments.\n");
@@ -73,25 +74,6 @@ FixTemperatureParticles::FixTemperatureParticles(MPM *mpm, vector<string> args) 
   previous = SpecialFunc::replace_all(input->parsev(previous).str(), "time", "(time - dt)");
   Tprevvalue = input->parsev(previous);
 }
-
-FixTemperatureParticles::~FixTemperatureParticles()
-{
-}
-
-void FixTemperatureParticles::init()
-{
-}
-
-void FixTemperatureParticles::setup()
-{
-}
-
-void FixTemperatureParticles::setmask() {
-  mask = 0;
-  mask |= INITIAL_INTEGRATE;
-  mask |= POST_ADVANCE_PARTICLES;
-}
-
 
 void FixTemperatureParticles::initial_integrate() {
   // Go through all the particles in the group and set v_update to the right value:

@@ -28,7 +28,8 @@ using namespace std;
 using namespace FixConst;
 
 
-FixInitialStress::FixInitialStress(MPM *mpm, vector<string> args) : Fix(mpm, args)
+FixInitialStress::FixInitialStress(MPM *mpm, vector<string> args):
+  Fix(mpm, args, INITIAL_INTEGRATE)
 {
   if (args.size() < 3) {
     error->all(FLERR, "Error: not enough arguments.\n");
@@ -71,24 +72,6 @@ FixInitialStress::FixInitialStress(MPM *mpm, vector<string> args) : Fix(mpm, arg
     }
   }
 }
-
-FixInitialStress::~FixInitialStress()
-{
-}
-
-void FixInitialStress::init()
-{
-}
-
-void FixInitialStress::setup()
-{
-}
-
-void FixInitialStress::setmask() {
-  mask = 0;
-  mask |= INITIAL_INTEGRATE;
-}
-
 
 void FixInitialStress::initial_integrate() {
   if (update->ntimestep !=1) return;

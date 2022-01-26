@@ -26,19 +26,9 @@ FixStyle(indent/minimize_penetration, FixIndentMinimizePenetration)
 
 class FixIndentMinimizePenetration : public Fix {
 public:
-  FixIndentMinimizePenetration(class MPM *, vector<string>);
-  ~FixIndentMinimizePenetration();
-  void setmask();
-  void init();
-  void setup();
+  FixIndentMinimizePenetration(MPM *, vector<string>);
 
   void initial_integrate();
-  void post_particles_to_grid(){};
-  void post_update_grid_state(){};
-  void post_grid_to_point(){};
-  void post_advance_particles(){};
-  void post_velocities_to_grid(){};
-  void final_integrate(){};
 
   void write_restart(ofstream *);
   void read_restart(ifstream *);

@@ -28,7 +28,8 @@ using namespace std;
 using namespace FixConst;
 
 
-FixInitialVelocityNodes::FixInitialVelocityNodes(MPM *mpm, vector<string> args) : Fix(mpm, args)
+FixInitialVelocityNodes::FixInitialVelocityNodes(MPM *mpm, vector<string> args):
+  Fix(mpm, args, POST_UPDATE_GRID_STATE | POST_VELOCITIES_TO_GRID)
 {
   if (args.size() < 3) {
     error->all(FLERR, "Error: not enough arguments.\n");
@@ -82,24 +83,6 @@ FixInitialVelocityNodes::FixInitialVelocityNodes(MPM *mpm, vector<string> args) 
       zset = true;
     }
   }
-}
-
-FixInitialVelocityNodes::~FixInitialVelocityNodes()
-{
-}
-
-void FixInitialVelocityNodes::init()
-{
-}
-
-void FixInitialVelocityNodes::setup()
-{
-}
-
-void FixInitialVelocityNodes::setmask() {
-  mask = 0;
-  mask |= POST_UPDATE_GRID_STATE;
-  mask |= POST_VELOCITIES_TO_GRID;
 }
 
 

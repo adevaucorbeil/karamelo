@@ -29,7 +29,7 @@ using namespace FixConst;
 
 
 FixImpenetrableSurface::FixImpenetrableSurface(MPM *mpm, vector<string> args)
-    : Fix(mpm, args) {
+    : Fix(mpm, args, INITIAL_INTEGRATE) {
 
   if (args.size() < 3) {
     error->all(FLERR, "Error: not enough arguments.\n");
@@ -73,17 +73,6 @@ FixImpenetrableSurface::FixImpenetrableSurface(MPM *mpm, vector<string> args)
 	 << endl;
   }
   id = args[0];
-}
-
-FixImpenetrableSurface::~FixImpenetrableSurface() {}
-
-void FixImpenetrableSurface::init() {}
-
-void FixImpenetrableSurface::setup() {}
-
-void FixImpenetrableSurface::setmask() {
-  mask = 0;
-  mask |= INITIAL_INTEGRATE;
 }
 
 void FixImpenetrableSurface::initial_integrate() {

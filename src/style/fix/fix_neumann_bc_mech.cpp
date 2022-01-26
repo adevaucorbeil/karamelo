@@ -26,7 +26,8 @@ using namespace std;
 using namespace FixConst;
 
 
-FixNeumannBCMech::FixNeumannBCMech(MPM *mpm, vector<string> args) : Fix(mpm, args)
+FixNeumannBCMech::FixNeumannBCMech(MPM *mpm, vector<string> args):
+  Fix(mpm, args, INITIAL_INTEGRATE)
 {
   if (args.size() < 3) {
     error->all(FLERR, "Error: not enough arguments.\n");
@@ -69,24 +70,6 @@ FixNeumannBCMech::FixNeumannBCMech(MPM *mpm, vector<string> args) : Fix(mpm, arg
     t[2] = input->parsev(args[5]);
   }
 }
-
-FixNeumannBCMech::~FixNeumannBCMech()
-{
-}
-
-void FixNeumannBCMech::init()
-{
-}
-
-void FixNeumannBCMech::setup()
-{
-}
-
-void FixNeumannBCMech::setmask() {
-  mask = 0;
-  mask |= INITIAL_INTEGRATE;
-}
-
 
 void FixNeumannBCMech::initial_integrate() {
   // Go through all the particles in the group and set v_update to the right value:

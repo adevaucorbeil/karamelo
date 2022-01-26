@@ -31,7 +31,7 @@ using namespace FixConst;
 #define four_thirds 1.333333333
 
 FixIndentMinimizePenetration::FixIndentMinimizePenetration(MPM *mpm, vector<string> args)
-    : Fix(mpm, args) {
+    : Fix(mpm, args, INITIAL_INTEGRATE) {
   if (args.size() < 3) {
     error->all(FLERR, "Error: not enough arguments.\n");
   }
@@ -83,17 +83,6 @@ FixIndentMinimizePenetration::FixIndentMinimizePenetration(MPM *mpm, vector<stri
   vyvalue = input->parsev(args[9]);
   vzvalue = input->parsev(args[10]);
   mu = input->parsev(args[11]);
-}
-
-FixIndentMinimizePenetration::~FixIndentMinimizePenetration() {}
-
-void FixIndentMinimizePenetration::init() {}
-
-void FixIndentMinimizePenetration::setup() {}
-
-void FixIndentMinimizePenetration::setmask() {
-  mask = 0;
-  mask |= INITIAL_INTEGRATE;
 }
 
 void FixIndentMinimizePenetration::initial_integrate() {

@@ -26,19 +26,9 @@ FixStyle(initial_velocity_particles,FixInitialVelocityParticles)
 
 class FixInitialVelocityParticles : public Fix {
  public:
-  FixInitialVelocityParticles(class MPM *, vector<string>);
-  ~FixInitialVelocityParticles();
-  void setmask();
-  void init();
-  void setup();
+  FixInitialVelocityParticles(MPM *, vector<string>);
   
   void initial_integrate();
-  void post_particles_to_grid() {};
-  void post_update_grid_state() {};
-  void post_grid_to_point() {};
-  void post_advance_particles() {};
-  void post_velocities_to_grid() {};
-  void final_integrate() {};
 
   void write_restart(ofstream *) {};
   void read_restart(ifstream *) {};
@@ -46,7 +36,7 @@ class FixInitialVelocityParticles : public Fix {
 private:
   string usage = "Usage: fix(fix-ID, initial_velocity_particles, group-ID, vx, vy, vz)\n";
   int Nargs = 6;
-  class Var xvalue, yvalue, zvalue;    // Set velocities in x, y, and z directions.
+  Var xvalue, yvalue, zvalue;    // Set velocities in x, y, and z directions.
   bool xset, yset, zset;               // Does the fix set the x, y, and z velocities of the group?
 };
 

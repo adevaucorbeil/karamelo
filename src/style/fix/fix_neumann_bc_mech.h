@@ -26,19 +26,9 @@ FixStyle(neumann_bc_mech,FixNeumannBCMech)
 
 class FixNeumannBCMech : public Fix {
  public:
-  FixNeumannBCMech(class MPM *, vector<string>);
-  ~FixNeumannBCMech();
-  void setmask();
-  void init();
-  void setup();
+  FixNeumannBCMech(MPM *, vector<string>);
   
   void initial_integrate();
-  void post_particles_to_grid() {};
-  void post_update_grid_state() {};
-  void post_grid_to_point() {};
-  void post_advance_particles() {};
-  void post_velocities_to_grid() {};
-  void final_integrate() {};
 
   void write_restart(ofstream *);
   void read_restart(ifstream *);
@@ -50,7 +40,7 @@ private:
       {3, "Usage: fix(fix-ID, neumann_bc_mech, group, tx, ty, tz)\n"}};
   const map<int, int> Nargs = {{1, 4}, {2, 5}, {3, 6}};
 
-  class Var t[3];                     //< Surface traction/compression pressure
+  Var t[3];                     //< Surface traction/compression pressure
 };
 
 #endif

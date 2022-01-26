@@ -29,7 +29,7 @@ using namespace FixConst;
 
 
 FixMeldTool::FixMeldTool(MPM *mpm, vector<string> args)
-    : Fix(mpm, args) {
+    : Fix(mpm, args, INITIAL_INTEGRATE) {
 
   if (args.size() < 3) {
     error->all(FLERR, "Error: not enough arguments.\n");
@@ -88,17 +88,6 @@ FixMeldTool::FixMeldTool(MPM *mpm, vector<string> args)
   hi = input->parsev(args[++k]).result(mpm);
   Rmax = input->parsev(args[++k]).result(mpm);
   RmaxSq = Rmax * Rmax;
-}
-
-FixMeldTool::~FixMeldTool() {}
-
-void FixMeldTool::init() {}
-
-void FixMeldTool::setup() {}
-
-void FixMeldTool::setmask() {
-  mask = 0;
-  mask |= INITIAL_INTEGRATE;
 }
 
 void FixMeldTool::initial_integrate() {

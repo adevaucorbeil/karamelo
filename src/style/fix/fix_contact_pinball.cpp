@@ -31,7 +31,7 @@ using namespace FixConst;
 #define four_thirds 1.333333333
 
 FixContactPinball::FixContactPinball(MPM *mpm, vector<string> args)
-    : Fix(mpm, args) {
+    : Fix(mpm, args, INITIAL_INTEGRATE) {
   if (args.size() < 3) {
     error->all(FLERR, "Error: not enough arguments.\n");
   }
@@ -71,17 +71,6 @@ FixContactPinball::FixContactPinball(MPM *mpm, vector<string> args)
   requires_ghost_particles = true;
 
   K = input->parsev(args[4]);
-}
-
-FixContactPinball::~FixContactPinball() {}
-
-void FixContactPinball::init() {}
-
-void FixContactPinball::setup() {}
-
-void FixContactPinball::setmask() {
-  mask = 0;
-  mask |= INITIAL_INTEGRATE;
 }
 
 void FixContactPinball::initial_integrate() {

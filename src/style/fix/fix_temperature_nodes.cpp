@@ -28,7 +28,8 @@ using namespace std;
 using namespace FixConst;
 
 
-FixTemperatureNodes::FixTemperatureNodes(MPM *mpm, vector<string> args) : Fix(mpm, args)
+FixTemperatureNodes::FixTemperatureNodes(MPM *mpm, vector<string> args):
+  Fix(mpm, args, POST_UPDATE_GRID_STATE | POST_VELOCITIES_TO_GRID)
 {
   if (args.size() < Nargs) {
     error->all(FLERR, "Error: not enough arguments.\n" + usage);
@@ -44,6 +45,7 @@ FixTemperatureNodes::FixTemperatureNodes(MPM *mpm, vector<string> args) : Fix(mp
 
   string time = "time";
 
+  Targ = args[3];
   Tvalue = input->parsev(args[3]);
 
   string previous = args[3];
@@ -52,25 +54,6 @@ FixTemperatureNodes::FixTemperatureNodes(MPM *mpm, vector<string> args) : Fix(mp
   previous = SpecialFunc::replace_all(input->parsev(previous).str(), "time", "(time - dt)");
   Tprevvalue = input->parsev(previous);
 }
-
-FixTemperatureNodes::~FixTemperatureNodes()
-{
-}
-
-void FixTemperatureNodes::init()
-{
-}
-
-void FixTemperatureNodes::setup()
-{
-}
-
-void FixTemperatureNodes::setmask() {
-  mask = 0;
-  mask |= POST_UPDATE_GRID_STATE;
-  mask |= POST_VELOCITIES_TO_GRID;
-}
-
 
 void FixTemperatureNodes::post_update_grid_state() {
   // cout << "In FixTemperatureNodes::post_update_grid_state()" << endl;
@@ -127,7 +110,7 @@ void FixTemperatureNodes::post_velocities_to_grid() {
   // cout << "In FixTemperatureNodes::post_velocities_to_grid()" << endl;
 
   // Go through all the particles in the group and set v to the right value:
-  double T = input->parsev(args[3]).result(mpm);
+  double T = input->parsev(Targ).result(mpm);
 
   int solid = group->solid[igroup];
   Grid *g;

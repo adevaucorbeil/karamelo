@@ -26,19 +26,9 @@ FixStyle(contact/pinball, FixContactPinball)
 
 class FixContactPinball : public Fix {
 public:
-  FixContactPinball(class MPM *, vector<string>);
-  ~FixContactPinball();
-  void setmask();
-  void init();
-  void setup();
+  FixContactPinball(MPM *, vector<string>);
 
   void initial_integrate();
-  void post_particles_to_grid(){};
-  void post_update_grid_state(){};
-  void post_grid_to_point(){};
-  void post_advance_particles(){};
-  void post_velocities_to_grid(){};
-  void final_integrate(){};
 
   void write_restart(ofstream *);
   void read_restart(ifstream *);

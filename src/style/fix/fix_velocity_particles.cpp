@@ -28,7 +28,8 @@ using namespace FixConst;
 
 
 
-FixVelocityParticles::FixVelocityParticles(MPM *mpm, vector<string> args) : Fix(mpm, args)
+FixVelocityParticles::FixVelocityParticles(MPM *mpm, vector<string> args):
+  Fix(mpm, args, INITIAL_INTEGRATE | POST_ADVANCE_PARTICLES)
 {
   if (args.size() < 3) {
     error->all(FLERR, "Error: not enough arguments.\n");
@@ -106,25 +107,6 @@ FixVelocityParticles::FixVelocityParticles(MPM *mpm, vector<string> args) : Fix(
     }
   }
 }
-
-FixVelocityParticles::~FixVelocityParticles()
-{
-}
-
-void FixVelocityParticles::init()
-{
-}
-
-void FixVelocityParticles::setup()
-{
-}
-
-void FixVelocityParticles::setmask() {
-  mask = 0;
-  mask |= INITIAL_INTEGRATE;
-  mask |= POST_ADVANCE_PARTICLES;
-}
-
 
 void FixVelocityParticles::initial_integrate() {
   // Go through all the particles in the group and set v_update to the right value:

@@ -32,7 +32,8 @@ using namespace FixConst;
 using namespace MathSpecial;
 
 
-FixChecksolution::FixChecksolution(MPM *mpm, vector<string> args) : Fix(mpm, args)
+FixChecksolution::FixChecksolution(MPM *mpm, vector<string> args):
+  Fix(mpm, args, FINAL_INTEGRATE)
 {
   if (args.size() < 3) {
     error->all(FLERR, "Error: not enough arguments.\n");
@@ -88,24 +89,6 @@ FixChecksolution::FixChecksolution(MPM *mpm, vector<string> args) : Fix(mpm, arg
     }
   }
 }
-
-FixChecksolution::~FixChecksolution()
-{
-}
-
-void FixChecksolution::init()
-{
-}
-
-void FixChecksolution::setup()
-{
-}
-
-void FixChecksolution::setmask() {
-  mask = 0;
-  mask |= FINAL_INTEGRATE;
-}
-
 
 void FixChecksolution::final_integrate() {
   if (update->ntimestep != output->next && update->ntimestep != update->nsteps) return;

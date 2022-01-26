@@ -26,7 +26,8 @@ using namespace std;
 using namespace FixConst;
 
 
-FixHeatFluxParticles::FixHeatFluxParticles(MPM *mpm, vector<string> args) : Fix(mpm, args)
+FixHeatFluxParticles::FixHeatFluxParticles(MPM *mpm, vector<string> args):
+  Fix(mpm, args, INITIAL_INTEGRATE)
 {
   if (args.size() < 3) {
     error->all(FLERR, "Error: not enough arguments.\n");
@@ -72,24 +73,6 @@ FixHeatFluxParticles::FixHeatFluxParticles(MPM *mpm, vector<string> args) : Fix(
     q = input->parsev(args[3]);
   }
 }
-
-FixHeatFluxParticles::~FixHeatFluxParticles()
-{
-}
-
-void FixHeatFluxParticles::init()
-{
-}
-
-void FixHeatFluxParticles::setup()
-{
-}
-
-void FixHeatFluxParticles::setmask() {
-  mask = 0;
-  mask |= INITIAL_INTEGRATE;
-}
-
 
 void FixHeatFluxParticles::initial_integrate() {
   // Go through all the particles in the group and set v_update to the right value:

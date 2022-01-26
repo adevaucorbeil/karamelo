@@ -31,7 +31,7 @@ using namespace FixConst;
 #define four_thirds 1.333333333
 
 FixContactMinPenetrationPlane::FixContactMinPenetrationPlane(MPM *mpm, vector<string> args)
-    : Fix(mpm, args) {
+    : Fix(mpm, args, INITIAL_INTEGRATE) {
   if (args.size() < 3) {
     error->all(FLERR, "Error: not enough arguments.\n");
   }
@@ -84,17 +84,6 @@ FixContactMinPenetrationPlane::FixContactMinPenetrationPlane(MPM *mpm, vector<st
   D = -n[0] * xq[0] - n[1] * xq[1] - n[2] * xq[2];
 }
 
-FixContactMinPenetrationPlane::~FixContactMinPenetrationPlane() {}
-
-void FixContactMinPenetrationPlane::init() {}
-
-void FixContactMinPenetrationPlane::setup() {}
-
-void FixContactMinPenetrationPlane::setmask() {
-  mask = 0;
-  mask |= INITIAL_INTEGRATE;
-  //mask |= POST_ADVANCE_PARTICLES;
-}
 void FixContactMinPenetrationPlane::initial_integrate() {
   // cout << "In FixContactMinPenetrationPlane::initial_integrate()\n";
 

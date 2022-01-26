@@ -26,19 +26,9 @@ FixStyle(impenetrablesurface, FixImpenetrableSurface)
 
 class FixImpenetrableSurface : public Fix {
 public:
-  FixImpenetrableSurface(class MPM *, vector<string>);
-  ~FixImpenetrableSurface();
-  void setmask();
-  void init();
-  void setup();
+  FixImpenetrableSurface(MPM *, vector<string>);
 
   void initial_integrate();
-  void post_particles_to_grid(){};
-  void post_update_grid_state(){};
-  void post_grid_to_point(){};
-  void post_advance_particles(){};
-  void post_velocities_to_grid(){};
-  void final_integrate(){};
 
   void write_restart(ofstream *);
   void read_restart(ifstream *);
@@ -48,8 +38,8 @@ private:
                  "zs, nx, ny, nz)\n";
   int Nargs = 10;
 
-  class Var xs_x, xs_y, xs_z;                  //< Position of a point on the surface
-  class Var nx, ny, nz;                        //< Normal to the plane
+  Var xs_x, xs_y, xs_z;                  //< Position of a point on the surface
+  Var nx, ny, nz;                        //< Normal to the plane
   double K;                                    //< Contact stiffness
 };
 

@@ -28,7 +28,8 @@ using namespace std;
 using namespace FixConst;
 
 
-FixInitialVelocityParticles::FixInitialVelocityParticles(MPM *mpm, vector<string> args) : Fix(mpm, args)
+FixInitialVelocityParticles::FixInitialVelocityParticles(MPM *mpm, vector<string> args):
+  Fix(mpm, args, INITIAL_INTEGRATE)
 {
   if (args.size() < 3) {
     error->all(FLERR, "Error: not enough arguments.\n");
@@ -77,24 +78,6 @@ FixInitialVelocityParticles::FixInitialVelocityParticles(MPM *mpm, vector<string
     zset = true;
   }
 }
-
-FixInitialVelocityParticles::~FixInitialVelocityParticles()
-{
-}
-
-void FixInitialVelocityParticles::init()
-{
-}
-
-void FixInitialVelocityParticles::setup()
-{
-}
-
-void FixInitialVelocityParticles::setmask() {
-  mask = 0;
-  mask |= INITIAL_INTEGRATE;
-}
-
 
 void FixInitialVelocityParticles::initial_integrate() {
   if (update->ntimestep !=1) return;

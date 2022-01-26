@@ -32,7 +32,7 @@ using namespace FixConst;
 #define four_thirds 1.333333333
 
 FixContactMinPenetration::FixContactMinPenetration(MPM *mpm, vector<string> args)
-    : Fix(mpm, args) {
+    : Fix(mpm, args, INITIAL_INTEGRATE) {
   if (args.size() < 3) {
     error->all(FLERR, "Error: not enough arguments.\n");
   }
@@ -74,17 +74,6 @@ FixContactMinPenetration::FixContactMinPenetration(MPM *mpm, vector<string> args
   mu = input->parsev(args[4]);
 }
 
-FixContactMinPenetration::~FixContactMinPenetration() {}
-
-void FixContactMinPenetration::init() {}
-
-void FixContactMinPenetration::setup() {}
-
-void FixContactMinPenetration::setmask() {
-  mask = 0;
-  mask |= INITIAL_INTEGRATE;
-  //mask |= POST_ADVANCE_PARTICLES;
-}
 void FixContactMinPenetration::initial_integrate() {
   // cout << "In FixContactMinPenetration::initial_integrate()\n";
 

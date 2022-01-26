@@ -26,19 +26,10 @@ FixStyle(velocity_nodes,FixVelocityNodes)
 
 class FixVelocityNodes : public Fix {
  public:
-  FixVelocityNodes(class MPM *, vector<string>);
-  ~FixVelocityNodes();
-  void setmask();
-  void init();
-  void setup();
+  FixVelocityNodes(MPM *, vector<string>);
   
-  void initial_integrate() {};
-  void post_particles_to_grid() {};
   void post_update_grid_state();
-  void post_grid_to_point() {};
-  void post_advance_particles() {};
   void post_velocities_to_grid();
-  void final_integrate() {};
 
   void write_restart(ofstream *);
   void read_restart(ifstream *);
@@ -50,8 +41,8 @@ private:
       {3, "Usage: fix(fix-ID, velocity_nodes, group, vx, vy, vz)\n"}};
   const map<int, int> Nargs = {{1, 4}, {2, 5}, {3, 6}};
 
-  class Var xvalue, yvalue, zvalue;                  //< Velocities in x, y, and z directions.
-  class Var xprevvalue, yprevvalue, zprevvalue;      //< Velocities in x, y, and z directions from previous time step.
+  Var xvalue, yvalue, zvalue;                  //< Velocities in x, y, and z directions.
+  Var xprevvalue, yprevvalue, zprevvalue;      //< Velocities in x, y, and z directions from previous time step.
   bool xset, yset, zset;                             //< Does the fix set the x, y, and z velocities of the group?
 };
 

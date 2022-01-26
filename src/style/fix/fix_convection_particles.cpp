@@ -26,7 +26,8 @@ using namespace std;
 using namespace FixConst;
 
 
-FixConvectionParticles::FixConvectionParticles(MPM *mpm, vector<string> args) : Fix(mpm, args)
+FixConvectionParticles::FixConvectionParticles(MPM *mpm, vector<string> args):
+  Fix(mpm, args, INITIAL_INTEGRATE | FINAL_INTEGRATE)
 {
   if (args.size() < 3) {
     error->all(FLERR, "Error: not enough arguments.\n");
@@ -67,24 +68,6 @@ FixConvectionParticles::FixConvectionParticles(MPM *mpm, vector<string> args) : 
 
   h = input->parsev(args[3]);
   Tinf = input->parsev(args[4]);
-}
-
-FixConvectionParticles::~FixConvectionParticles()
-{
-}
-
-void FixConvectionParticles::init()
-{
-}
-
-void FixConvectionParticles::setup()
-{
-}
-
-void FixConvectionParticles::setmask() {
-  mask = 0;
-  mask |= INITIAL_INTEGRATE;
-  mask |= FINAL_INTEGRATE;
 }
 
 

@@ -31,7 +31,7 @@ using namespace FixConst;
 #define four_thirds 1.333333333
 
 FixContactHertz::FixContactHertz(MPM *mpm, vector<string> args)
-    : Fix(mpm, args) {
+    : Fix(mpm, args, INITIAL_INTEGRATE) {
   if (args.size() < 3) {
     error->all(FLERR, "Error: not enough arguments.\n");
   }
@@ -68,17 +68,6 @@ FixContactHertz::FixContactHertz(MPM *mpm, vector<string> args)
   }
   id = args[0];
   requires_ghost_particles = true;
-}
-
-FixContactHertz::~FixContactHertz() {}
-
-void FixContactHertz::init() {}
-
-void FixContactHertz::setup() {}
-
-void FixContactHertz::setmask() {
-  mask = 0;
-  mask |= INITIAL_INTEGRATE;
 }
 
 void FixContactHertz::initial_integrate() {

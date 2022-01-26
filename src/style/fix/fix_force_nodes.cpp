@@ -28,7 +28,8 @@ using namespace std;
 using namespace FixConst;
 
 
-FixForceNodes::FixForceNodes(MPM *mpm, vector<string> args) : Fix(mpm, args)
+FixForceNodes::FixForceNodes(MPM *mpm, vector<string> args):
+  Fix(mpm, args, POST_PARTICLES_TO_GRID)
 {
   if (args.size() < 3) {
     error->all(FLERR, "Error: not enough arguments.\n");
@@ -76,24 +77,6 @@ FixForceNodes::FixForceNodes(MPM *mpm, vector<string> args) : Fix(mpm, args)
     zset = true;
   }
 }
-
-FixForceNodes::~FixForceNodes()
-{
-}
-
-void FixForceNodes::init()
-{
-}
-
-void FixForceNodes::setup()
-{
-}
-
-void FixForceNodes::setmask() {
-  mask = 0;
-  mask |= POST_PARTICLES_TO_GRID;
-}
-
 
 void FixForceNodes::post_particles_to_grid() {
   // cout << "In FixForceNodes::post_particles_to_grid()\n";

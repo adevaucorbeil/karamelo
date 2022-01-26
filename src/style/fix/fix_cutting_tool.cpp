@@ -55,7 +55,7 @@ using namespace FixConst;
 // }
 
 FixCuttingTool::FixCuttingTool(MPM *mpm, vector<string> args)
-    : Fix(mpm, args) {
+    : Fix(mpm, args, INITIAL_INTEGRATE) {
   if (args.size() < 3) {
     error->all(FLERR, "Error: not enough arguments.\n");
   }
@@ -101,17 +101,6 @@ FixCuttingTool::FixCuttingTool(MPM *mpm, vector<string> args)
 
   xBvalue = input->parsev(args[12]);
   yBvalue = input->parsev(args[13]);
-}
-
-FixCuttingTool::~FixCuttingTool() {}
-
-void FixCuttingTool::init() {}
-
-void FixCuttingTool::setup() {}
-
-void FixCuttingTool::setmask() {
-  mask = 0;
-  mask |= INITIAL_INTEGRATE;
 }
 
 void FixCuttingTool::initial_integrate() {
