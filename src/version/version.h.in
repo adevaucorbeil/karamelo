@@ -1,0 +1,6 @@
+struct Version
+{
+  static constexpr const char GIT_SHA1[] = "@GIT_SHA1@";
+  static constexpr const char GIT_DATE[] = "@GIT_DATE@";
+  static constexpr const char GIT_COMMIT_SUBJECT[] = "@GIT_COMMIT_SUBJECT@";
+};

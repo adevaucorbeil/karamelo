@@ -25,4 +25,5 @@ execute_process(COMMAND
   ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
 
 # generate version.cpp
-configure_file("version.cpp.in" "version.cpp" @ONLY)
+configure_file("version.h.in" "version.h" @ONLY)
+target_include_directories(karamelo PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
