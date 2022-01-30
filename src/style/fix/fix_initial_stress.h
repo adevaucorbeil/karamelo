@@ -29,9 +29,8 @@ class FixInitialStress : public Fix {
   FixInitialStress(MPM *, vector<string>);
 
   void prepare();
-  void reduce();
   
-  void initial_integrate();
+  void initial_integrate(Solid &solid, int ip);
 
   void write_restart(ofstream *) {};
   void read_restart(ifstream *) {};

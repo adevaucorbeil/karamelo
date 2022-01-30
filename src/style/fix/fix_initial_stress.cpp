@@ -72,81 +72,32 @@ FixInitialStress::FixInitialStress(MPM *mpm, vector<string> args):
 
 void FixInitialStress::prepare()
 {
-
+  for (Var &s_value: s_value)
+    s_value.result(mpm);
 }
 
-void FixInitialStress::reduce()
+void FixInitialStress::initial_integrate(Solid &solid, int ip)
 {
-
-}
-
-void FixInitialStress::initial_integrate() {
-  if (update->ntimestep !=1) return;
   // cout << "In FixInitialStress::initial_integrate()" << endl;
 
   // Go through all the particles in the group and set v to the right value:
+  if (update->ntimestep != 1 || !(solid.mask.at(ip) & groupbit))
+    return;
 
-  int solid = group->solid[igroup];
-
-  Solid *s;
-
-  bool tl;
-
-  if (update->method_type == "tlmpm" ||
-      update->method_type == "tlcpdi")
-    tl = true;
-  else
-    tl = false;
-
-  if (solid == -1) {
-    for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
-      s = domain->solids[isolid];
-
-      for (int ip = 0; ip < s->np_local; ip++) {
-	if (s->mask[ip] & groupbit) {
-	  (*input->vars)["x0"] = Var("x0", s->x0[ip][0]);
-	  (*input->vars)["y0"] = Var("y0", s->x0[ip][1]);
-	  (*input->vars)["z0"] = Var("z0", s->x0[ip][2]);
-	  (*input->vars)["x"] = Var("x", s->x[ip][0]);
-	  (*input->vars)["y"] = Var("y", s->x[ip][1]);
-	  (*input->vars)["z"] = Var("z", s->x[ip][2]);
+  (*input->vars)["x0"] = Var("x0", solid.x0.at(ip)[0]);
+  (*input->vars)["y0"] = Var("y0", solid.x0.at(ip)[1]);
+  (*input->vars)["z0"] = Var("z0", solid.x0.at(ip)[2]);
+  (*input->vars)["x" ] = Var("x",  solid.x .at(ip)[0]);
+  (*input->vars)["y" ] = Var("y",  solid.x .at(ip)[1]);
+  (*input->vars)["z" ] = Var("z",  solid.x .at(ip)[2]);
 	  
-	  if (s_set[0])  s->sigma[ip](0,0) = s_value[0].result(mpm);
-	  if (s_set[1])  s->sigma[ip](1,1) = s_value[1].result(mpm);
-	  if (s_set[2])  s->sigma[ip](2,2) = s_value[2].result(mpm);
-	  if (s_set[3])  s->sigma[ip](1,2) = s->sigma[ip](2,1) = s_value[3].result(mpm);
-	  if (s_set[4])  s->sigma[ip](0,2) = s->sigma[ip](2,0) = s_value[4].result(mpm);
-	  if (s_set[5])  s->sigma[ip](0,1) = s->sigma[ip](1,0) = s_value[5].result(mpm);
+  if (s_set[0]) solid.sigma.at(ip)(0,0) = s_value[0].result(mpm, true);
+  if (s_set[1]) solid.sigma.at(ip)(1,1) = s_value[1].result(mpm, true);
+  if (s_set[2]) solid.sigma.at(ip)(2,2) = s_value[2].result(mpm, true);
+  if (s_set[3]) solid.sigma.at(ip)(1,2) = solid.sigma.at(ip)(2,1) = s_value[3].result(mpm, true);
+  if (s_set[4]) solid.sigma.at(ip)(0,2) = solid.sigma.at(ip)(2,0) = s_value[4].result(mpm, true);
+  if (s_set[5]) solid.sigma.at(ip)(0,1) = solid.sigma.at(ip)(1,0) = s_value[5].result(mpm, true);
 
-	  if (tl) {
-	    s->vol0PK1[ip] = s->vol0[ip] * s->sigma[ip];
-	  }
-	}
-      }
-    }
-  } else {
-    s = domain->solids[solid];
-
-    for (int ip = 0; ip < s->np_local; ip++) {
-      if (s->mask[ip] & groupbit) {
-	(*input->vars)["x0"] = Var("x0", s->x0[ip][0]);
-	(*input->vars)["y0"] = Var("y0", s->x0[ip][1]);
-	(*input->vars)["z0"] = Var("z0", s->x0[ip][2]);
-	(*input->vars)["x"] = Var("x", s->x[ip][0]);
-	(*input->vars)["y"] = Var("y", s->x[ip][1]);
-	(*input->vars)["z"] = Var("z", s->x[ip][2]);
-	  
-	if (s_set[0])  s->sigma[ip](0,0) = s_value[0].result(mpm);
-	if (s_set[1])  s->sigma[ip](1,1) = s_value[1].result(mpm);
-	if (s_set[2])  s->sigma[ip](2,2) = s_value[2].result(mpm);
-	if (s_set[3])  s->sigma[ip](1,2) = s->sigma[ip](2,1) = s_value[3].result(mpm);
-	if (s_set[4])  s->sigma[ip](0,2) = s->sigma[ip](2,0) = s_value[4].result(mpm);
-	if (s_set[5])  s->sigma[ip](0,1) = s->sigma[ip](1,0) = s_value[5].result(mpm);
-
-	if (tl) {
-	  s->vol0PK1[ip] = s->vol0[ip] * s->sigma[ip];
-	}
-      }
-    }
-  }
+  if (update->method_type == "tlmpm" || update->method_type == "tlcpdi")
+	solid.vol0PK1.at(ip) = solid.vol0.at(ip)*solid.sigma.at(ip);
 }

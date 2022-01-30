@@ -55,7 +55,8 @@ FixTemperatureNodes::FixTemperatureNodes(MPM *mpm, vector<string> args):
 
 void FixTemperatureNodes::prepare()
 {
-
+  Tvalue    .result(mpm);
+  Tprevvalue.result(mpm);
 }
 
 void FixTemperatureNodes::reduce()
@@ -69,77 +70,25 @@ void FixTemperatureNodes::reduce()
   // (*input->vars)[id + "_z"] = Var(id + "_z", ftot_reduced[2]);
 }
 
-void FixTemperatureNodes::post_update_grid_state() {
+void FixTemperatureNodes::post_update_grid_state(Grid &grid, int in)
+{
   // cout << "In FixTemperatureNodes::post_update_grid_state()" << endl;
 
   // Go through all the nodes in the group and set v_update to the right value:
-  double T;
-  double T_old;
+  if (!(grid.mask.at(in) & groupbit))
+    return;
 
-  T = Tvalue.result(mpm);
-  T_old = Tprevvalue.result(mpm);
-
-  int solid = group->solid[igroup];
-  Grid *g;
-
-  double DT;
-
-  if (solid == -1) {
-    for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
-      g = domain->solids[isolid]->grid;
-
-      for (int ip = 0; ip < g->nnodes_local + g->nnodes_ghost; ip++) {
-	if (g->mask[ip] & groupbit) {
-	  DT = 0;
-	  DT = T - g->T_update[ip];
-	  g->T_update[ip] = T;
-	  g->T[ip] = T_old;
-	}
-      }
-    }
-  } else {
-
-    g = domain->solids[solid]->grid;
-
-    for (int ip = 0; ip < g->nnodes_local + g->nnodes_ghost; ip++) {
-      if (g->mask[ip] & groupbit) {
-	DT = 0;
-	DT = T - g->T_update[ip];
-	g->T_update[ip] = T;
-	g->T[ip] = T_old;
-      }
-    }
-  }
+  grid.T_update.at(in) = Tvalue    .result(mpm, true);
+  grid.T       .at(in) = Tprevvalue.result(mpm, true);
 }
 
-void FixTemperatureNodes::post_velocities_to_grid() {
+void FixTemperatureNodes::post_velocities_to_grid(Grid &grid, int in)
+{
   // cout << "In FixTemperatureNodes::post_velocities_to_grid()" << endl;
 
   // Go through all the particles in the group and set v to the right value:
-  double T = input->parsev(Targ).result(mpm);
-
-  int solid = group->solid[igroup];
-  Grid *g;
-
-  if (solid == -1) {
-    for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
-      g = domain->solids[isolid]->grid;
-
-      for (int ip = 0; ip < g->nnodes_local + g->nnodes_ghost; ip++) {
-	if (g->mask[ip] & groupbit) {
-	  g->T[ip] = T;
-	}
-      }
-    }
-  } else {
-    g = domain->solids[solid]->grid;
-
-    for (int ip = 0; ip < g->nnodes_local + g->nnodes_ghost; ip++) {
-      if (g->mask[ip] & groupbit) {
-	g->T[ip] = T;
-      }
-    }
-  }
+  if (grid.mask.at(in) & groupbit)
+	grid.T.at(in) = input->parsev(Targ).result(mpm);
 }
 
 void FixTemperatureNodes::write_restart(ofstream *of) {

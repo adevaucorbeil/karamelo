@@ -74,6 +74,13 @@ FixImpenetrableSurface::FixImpenetrableSurface(MPM *mpm, vector<string> args)
 
 void FixImpenetrableSurface::prepare()
 {
+  xs_x.result(mpm);
+  xs_y.result(mpm);
+  xs_z.result(mpm);
+  nx  .result(mpm);
+  ny  .result(mpm);
+  nz  .result(mpm);
+
   ftot = Vector3d();
 }
 
@@ -90,107 +97,45 @@ void FixImpenetrableSurface::reduce()
   (*input->vars)[id + "_z"] = Var(id + "_z", ftot_reduced[2]);
 }
 
-void FixImpenetrableSurface::initial_integrate() {
+void FixImpenetrableSurface::initial_integrate(Solid &solid, int ip) {
   // cout << "In FixImpenetrableSurface::initial_integrate()\n";
 
   // Go through all the particles in the group and set b to the right value:
-  Vector3d f;
-
-  int solid = group->solid[igroup];
-
-  Solid *s;
-
-
-  Vector3d xs(xs_x.result(mpm),
-                     xs_y.result(mpm),
-                     xs_z.result(mpm));
-  Vector3d n(nx.result(mpm),
-                    ny.result(mpm),
-                    nz.result(mpm)); // Outgoing normal
-
-  // Normalize n:
-  n /= n.norm();
-  ftot = Vector3d();
-
-  double p, fmag;
-
-  double D = -n[0] * xs[0] - n[1] * xs[1] - n[2] * xs[2];
+  Vector3d xs(xs_x.result(mpm, true),
+              xs_y.result(mpm, true),
+              xs_z.result(mpm, true));
+  Vector3d n(nx.result(mpm, true),
+             ny.result(mpm, true),
+             nz.result(mpm, true)); // Outgoing normal
+  n.normalize();
 
   // cout << "line 1: " << line1[0] << "x + " << line1[1] << "y + " << line1[2]
   // << endl; cout << "line 2: " << line2[0] << "x + " << line2[1] << "y + " <<
   // line2[2] << endl;
 
-  if (solid == -1) {
-    for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
-      s = domain->solids[isolid];
+  if (!solid.mass.at(ip) || !(solid.mask.at(ip) & groupbit))
+    return;
 
-      for (int ip = 0; ip < s->np_local; ip++) {
-        if (s->mass[ip] > 0) {
-          if (s->mask[ip] & groupbit) {
+  double p = n.dot(solid.x.at(ip) - xs);
+  // if (s->ptag[ip] == 1) {
+  //   cout << id << "- Particle " << s->ptag[ip] << "\t";
+  //   cout << "p = " << p << "\t";
+  //   cout << "xp = [" << s->x[ip][0] << "," << s->x[ip][1] << ","
+  //        << s->x[ip][2] << "]\t" << endl;
+  //   cout << "xs = [" << xs[0] << "," << xs[1] << "," << xs[2] << "]\t"
+  //        << endl;
+  //   cout << "n = [" << n[0] << "," << n[1] << "," << n[2] << "]"
+  //        << endl;
+  // }
 
-            p = -(n[0] * s->x[ip][0] + n[1] * s->x[ip][1] + n[2] * s->x[ip][2] +
-                  D);
-            // if (s->ptag[ip] == 1) {
-            //   cout << id << "- Particle " << s->ptag[ip] << "\t";
-            //   cout << "p = " << p << "\t";
-            //   cout << "xp = [" << s->x[ip][0] << "," << s->x[ip][1] << ","
-            //        << s->x[ip][2] << "]\t" << endl;
-            //   cout << "xs = [" << xs[0] << "," << xs[1] << "," << xs[2] << "]\t"
-            //        << endl;
-            //   cout << "n = [" << n[0] << "," << n[1] << "," << n[2] << "]"
-            //        << endl;
-            // }
+  if (p < 0)
+    return;
 
-            if (p >= 0) {
-              // cout << "Particle " << s->ptag[ip] << " is inside " << id << "\n";
-              fmag = K * s->mat->G * p * (1.0 - s->damage[ip]);
+    // cout << "Particle " << s->ptag[ip] << " is inside\n";
 
-              f = fmag * n;
-              s->mbp[ip] += f;
-              ftot += f;
-            } else {
-              fmag = 0;
-              f = Vector3d();
-            }
-          }
-        }
-      }
-    }
-  } else {
-    s = domain->solids[solid];
-
-    for (int ip = 0; ip < s->np_local; ip++) {
-      if (s->mass[ip] > 0) {
-        if (s->mask[ip] & groupbit) {
-
-          p = -(n[0] * s->x[ip][0] + n[1] * s->x[ip][1] + n[2] * s->x[ip][2] +
-                D);
-          // if (s->ptag[ip] == 1) {
-          //   cout << id << "- Particle " << s->ptag[ip] << "\t";
-          //   cout << "p = " << p << "\t";
-          //   cout << "xp = [" << s->x[ip][0] << "," << s->x[ip][1] << ","
-          //        << s->x[ip][2] << "]\t" << endl;
-          //   cout << "xs = [" << xs[0] << "," << xs[1] << "," << xs[2] << "]\t"
-          //        << endl;
-          //   cout << "n = [" << n[0] << "," << n[1] << "," << n[2] << "]"
-          //        << endl;
-          // }
-
-          if (p >= 0) {
-            // cout << "Particle " << s->ptag[ip] << " is inside\n";
-            fmag = K * s->mat->G * p * (1.0 - s->damage[ip]);
-
-            f = fmag * n;
-            s->mbp[ip] += f;
-            ftot += f;
-          } else {
-            fmag = 0;
-            f = Vector3d();
-          }
-        }
-      }
-    }
-  }
+  const Vector3d &f = K*solid.mat->G*p*(1 - solid.damage.at(ip))*n;
+  solid.mbp.at(ip) += f;
+  ftot += f;
 }
 
 void FixImpenetrableSurface::write_restart(ofstream *of) {

@@ -131,6 +131,13 @@ void FixCuttingTool::reduce()
 
 void FixCuttingTool::initial_integrate(Solid &solid, int ip) {
   // cout << "In FixCuttingTool::initial_integrate()\n";
+  
+  // Not supported
+  if (domain->dimension == 3)
+    error->one(FLERR, "fix_cuttingtool not supported in 3D\n");
+
+  if (domain->dimension != 2 || !solid.mass.at(ip) || !(solid.mask.at(ip) & groupbit))
+    return;
 
   // Go through all the particles in the group and set b to the right value:
   Vector3d xt(xtvalue .result(mpm, true),
@@ -153,27 +160,29 @@ void FixCuttingTool::initial_integrate(Solid &solid, int ip) {
   double line1[4], line2[4];
   line1[0] = xA[1] - xt[1];
   line1[1] = -xA[0] + xt[0];
-  line1[2] = xt[1] * xA[0] - xt[0] * xA[1];
-  line1[3] = 1.0 / sqrt(line1[0] * line1[0] + line1[1] * line1[1]);
+  line1[2] = xt[1]*xA[0] - xt[0]*xA[1];
+  line1[3] = 1/sqrt(line1[0]*line1[0] + line1[1]*line1[1]);
 
   line2[0] = xB[1] - xt[1];
   line2[1] = -xB[0] + xt[0];
-  line2[2] = xt[1] * xB[0] - xt[0] * xB[1];
-  line2[3] = 1.0 / sqrt(line2[0] * line2[0] + line2[1] * line2[1]);
+  line2[2] = xt[1]*xB[0] - xt[0]*xB[1];
+  line2[3] = 1/sqrt(line2[0]*line2[0] + line2[1]*line2[1]);
 
-  if (line1[0] * xB[0] + line1[1] * xB[1] + line1[2] < 0) {
+  if (line1[0]*xB[0] + line1[1]*xB[1] + line1[2] < 0)
+  {
     line1[0] *= -1;
     line1[1] *= -1;
     line1[2] *= -1;
   }
 
-  if (line2[0] * xA[0] + line2[1] * xA[1] + line2[2] < 0) {
+  if (line2[0]*xA[0] + line2[1]*xA[1] + line2[2] < 0)
+  {
     line2[0] *= -1;
     line2[1] *= -1;
     line2[2] *= -1;
   }
   
-  Vector3d n1, n2, n;
+  Vector3d n1, n2;
 
   n1[0] = line1[0];
   n1[1] = line1[1];
@@ -188,40 +197,33 @@ void FixCuttingTool::initial_integrate(Solid &solid, int ip) {
   // cout << "line 1: " << line1[0] << "x + " << line1[1] << "y + " << line1[2] << endl;
   // cout << "line 2: " << line2[0] << "x + " << line2[1] << "y + " << line2[2] << endl;
 
-  if (domain->dimension == 2 && solid.mass.at(ip) && solid.mask.at(ip) & groupbit)
+  double c1p = line1[0]*solid.x.at(ip)[0] + line1[1]*solid.x.at(ip)[1] + line1[1];
+  double c2p = line2[0]*solid.x.at(ip)[0] + line2[1]*solid.x.at(ip)[1] + line2[1];
+
+  if (c1p < 0 || c2p < 0)
+    return;
+
+  // The particle is inside the tool
+  double p1 = fabs(c1p*line1[3]);
+  double p2 = fabs(c2p*line2[3]);
+
+  double p;
+  Vector3d n;
+
+  if (p1 < p2)
   {
-    double c1p = line1[0]*solid.x.at(ip)[0] + line1[1]*solid.x.at(ip)[1] + line1[1];
-    double c2p = line2[0]*solid.x.at(ip)[0] + line2[1]*solid.x.at(ip)[1] + line2[1];
-
-    if (c1p < 0 || c2p < 0)
-      return;
-
-    // The particle is inside the tool
-    double p1 = fabs(c1p * line1[3]);
-    double p2 = fabs(c2p * line2[3]);
-
-    double p;
-    Vector3d n;
-
-    if (p1 < p2)
-    {
-      p = p1;
-      n = n1;
-    }
-    else
-    {
-      p = p2;
-      n = n2;
-    }
-
-    const Vector3d &f = K*solid.mat->G*p*(1.0 - solid.damage.at(ip))*n;
-    solid.mbp.at(ip) += f;
-    ftot += f;
+    p = p1;
+    n = n1;
   }
-  
-  // Not supported
-  if (domain->dimension == 3)
-    error->one(FLERR, "fix_cuttingtool not supported in 3D\n");
+  else
+  {
+    p = p2;
+    n = n2;
+  }
+
+  const Vector3d &f = K*solid.mat->G*p*(1.0 - solid.damage.at(ip))*n;
+  solid.mbp.at(ip) += f;
+  ftot += f;
 }
 
 void FixCuttingTool::write_restart(ofstream *of) {

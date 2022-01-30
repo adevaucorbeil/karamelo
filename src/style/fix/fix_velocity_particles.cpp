@@ -124,7 +124,8 @@ void FixVelocityParticles::reduce()
   (*input->vars)[id + "_z"] = Var(id + "_z", ftot_reduced[2]);
 }
 
-void FixVelocityParticles::initial_integrate() {
+void FixVelocityParticles::initial_integrate(Solid &solid, int ip)
+{
   // Go through all the particles in the group and set v_update to the right value:
   Vector3d xtemp;
 

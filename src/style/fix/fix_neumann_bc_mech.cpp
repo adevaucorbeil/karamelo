@@ -71,6 +71,9 @@ FixNeumannBCMech::FixNeumannBCMech(MPM *mpm, vector<string> args):
 
 void FixNeumannBCMech::prepare()
 {
+  for (int i = 0; i < domain->dimension; i++)
+	t[i].result(mpm);
+
   ftot = Vector3d();
 }
 
@@ -87,74 +90,33 @@ void FixNeumannBCMech::reduce()
   (*input->vars)[id + "_z"] = Var(id + "_z", ftot_reduced[2]);
 }
 
-void FixNeumannBCMech::initial_integrate() {
+void FixNeumannBCMech::initial_integrate(Solid &solid, int ip)
+{
   // Go through all the particles in the group and set v_update to the right value:
-  int solid = group->solid[igroup];
-  Solid *s;
+  if (!(solid.mask.at(ip) & groupbit))
+    return;
 
-  int n = 0;
-  double Ap = 0;
+  (*input->vars)["x" ] = Var("x",  solid.x .at(ip)[0]);
+  (*input->vars)["y" ] = Var("y",  solid.x .at(ip)[1]);
+  (*input->vars)["z" ] = Var("z",  solid.x .at(ip)[2]);
+  (*input->vars)["x0"] = Var("x0", solid.x0.at(ip)[0]);
+  (*input->vars)["y0"] = Var("y0", solid.x0.at(ip)[1]);
+  (*input->vars)["z0"] = Var("z0", solid.x0.at(ip)[2]);
+
+  double Ap;
+  if (domain->dimension == 1)
+	Ap = 1;
+  else if (domain->dimension == 2)
+	Ap = sqrt(solid.vol.at(ip));
+  else 		
+	Ap = pow(solid.vol.at(ip), 2/3);
 
   Vector3d f;
+  for (int i = 0; i < domain->dimension; i++)
+	f[i] = Ap*t[i].result(mpm, true);
 
-  if (solid == -1) {
-    for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
-      s = domain->solids[isolid];
-      n = 0;
-
-      for (int ip = 0; ip < s->np_local; ip++) {
-        if (s->mask[ip] & groupbit) {
-          (*input->vars)["x"] = Var("x", s->x[ip][0]);
-          (*input->vars)["x0"] = Var("x0", s->x0[ip][0]);
-          (*input->vars)["y"] = Var("y", s->x[ip][1]);
-          (*input->vars)["y0"] = Var("y0", s->x0[ip][1]);
-          (*input->vars)["z"] = Var("z", s->x[ip][2]);
-          (*input->vars)["z0"] = Var("z0", s->x0[ip][2]);
-
-	  if (domain->dimension == 1)
-	    Ap = 1;
-	  else if (domain->dimension == 2)
-	    Ap = sqrt(s->vol[ip]);
-	  else 		
-	    Ap = pow(s->vol[ip], 2/3);
-
-
-	  for (int i = 0; i < domain->dimension; i++) {
-            f[i] = Ap * t[i].result(mpm);
-          }
-          s->mbp[ip] += f;
-          ftot += f;
-        }
-        n++;
-      }
-    }
-  } else {
-    s = domain->solids[solid];
-
-    for (int ip = 0; ip < s->np_local; ip++) {
-      if (s->mask[ip] & groupbit) {
-	(*input->vars)["x"] = Var("x", s->x[ip][0]);
-	(*input->vars)["x0"] = Var("x0", s->x0[ip][0]);
-	(*input->vars)["y"] = Var("y", s->x[ip][1]);
-	(*input->vars)["y0"] = Var("y0", s->x0[ip][1]);
-	(*input->vars)["z"] = Var("z", s->x[ip][2]);
-	(*input->vars)["z0"] = Var("z0", s->x0[ip][2]);
-
-	if (domain->dimension == 1)
-	  Ap = 1;
-	else if (domain->dimension == 2)
-	  Ap = sqrt(s->vol[ip]);
-	else 		
-	  Ap = pow(s->vol[ip], 2/3);
-
-	for (int i = 0; i < domain->dimension; i++) {
-	  f[i] = Ap * t[i].result(mpm);
-	}
-	s->mbp[ip] += f;
-	ftot += f;
-      }
-    }
- }
+  solid.mbp.at(ip) += f;
+  ftot += f;
 }
 
 void FixNeumannBCMech::write_restart(ofstream *of) {

@@ -108,6 +108,13 @@ FixVelocityNodes::FixVelocityNodes(MPM *mpm, vector<string> args):
 
 void FixVelocityNodes::prepare()
 {
+  xvalue.result(mpm);
+  yvalue.result(mpm);
+  zvalue.result(mpm);
+  xprevvalue.result(mpm);
+  yprevvalue.result(mpm);
+  zprevvalue.result(mpm);
+
   ftot = Vector3d();
 }
 
@@ -124,139 +131,58 @@ void FixVelocityNodes::reduce()
   (*input->vars)[id + "_z"] = Var(id + "_z", ftot_reduced[2]);
 }
 
-void FixVelocityNodes::post_update_grid_state() {
+void FixVelocityNodes::post_update_grid_state(Grid &grid, int in)
+{
   // cout << "In FixVelocityNodes::post_update_grid_state()" << endl;
 
   // Go through all the nodes in the group and set v_update to the right value:
-  double vx, vy, vz;
-  double vx_old, vy_old, vz_old;
-
-  if (xset) {
-    vx = xvalue.result(mpm);
-    vx_old = xprevvalue.result(mpm);
-    // cout << "Set v_update[0] to " << xvalue.eq() << "=" << vx << endl;
-    // cout << "Set v[0] to " << vx_old << endl;
-  }
-
-  if (yset) {
-    vy = yvalue.result(mpm);
-    vy_old = yprevvalue.result(mpm);
-    // cout << "Set v_update[1] to " << "=" <<  vy << endl;
-    // cout << "Set v[1] to " << "=" <<  vy_old << endl;
-  }
-
-  if (zset) {
-    vz = zvalue.result(mpm);
-    vz_old = zprevvalue.result(mpm);
-    // cout << "Set v_update[2] to " << "=" <<  vz << endl;
-    // cout << "Set v[2] to " << "=" <<  vz_old << endl;
-  }
-
-  int solid = group->solid[igroup];
-  Grid *g;
+  if (!(grid.mask.at(in) & groupbit))
+    return;
 
   Vector3d Dv;
-  ftot = Vector3d();
-  double inv_dt = 1.0/update->dt;
-
-  if (solid == -1) {
-    for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
-      g = domain->solids[isolid]->grid;
-
-      for (int ip = 0; ip < g->nnodes_local + g->nnodes_ghost; ip++) {
-	if (g->mask[ip] & groupbit) {
-	  Dv = Vector3d();
-	  if (xset) {
-	    Dv[0] = vx - g->v_update[ip][0];
-	    g->v_update[ip][0] = vx;
-	    g->v[ip][0] = vx_old;
-	  }
-	  if (yset) {
-	    Dv[1] = vy - g->v_update[ip][1];
-	    g->v_update[ip][1] = vy;
-	    g->v[ip][1] = vy_old;
-	  }
-	  if (zset) {
-	    Dv[2] = vz - g->v_update[ip][2];
-	    g->v_update[ip][2] = vz;
-	    g->v[ip][2] = vz_old;
-	  }
-          ftot += (inv_dt * g->mass[ip]) * Dv;
-	}
-      }
-    }
-  } else {
-
-    g = domain->solids[solid]->grid;
-
-    for (int ip = 0; ip < g->nnodes_local + g->nnodes_ghost; ip++) {
-      if (g->mask[ip] & groupbit) {
-	Dv = Vector3d();
-	if (xset) {
-	  Dv[0] = vx - g->v_update[ip][0];
-	  g->v_update[ip][0] = vx;
-	  g->v[ip][0] = vx_old;
-	}
-	if (yset) {
-	  Dv[1] = vy - g->v_update[ip][1];
-	  g->v_update[ip][1] = vy;
-	  g->v[ip][1] = vy_old;
-	}
-	if (zset) {
-	  Dv[2] = vz - g->v_update[ip][2];
-	  g->v_update[ip][2] = vz;
-	  g->v[ip][2] = vz_old;
-	}
-	ftot += (inv_dt * g->mass[ip]) * Dv;
-      }
-    }
+  if (xset)
+  {
+    double vx = xvalue.result(mpm, true);
+    double vx_old = xprevvalue.result(mpm, true);
+    // cout << "Set v_update[0] to " << xvalue.eq() << "=" << vx << endl;
+    // cout << "Set v[0] to " << vx_old << endl;
+	Dv[0] = vx - grid.v_update.at(in)[0];
+	grid.v_update.at(in)[0] = vx;
+	grid.v.at(in)[0] = vx_old;
   }
+  if (yset)
+  {
+    double vy = yvalue.result(mpm, true);
+    double vy_old = yprevvalue.result(mpm, true);
+    // cout << "Set v_update[1] to " << "=" <<  vy << endl;
+    // cout << "Set v[1] to " << "=" <<  vy_old << endl;
+	Dv[1] = vy - grid.v_update.at(in)[1];
+	grid.v_update.at(in)[1] = vy;
+	grid.v.at(in)[1] = vy_old;
+  }
+  if (zset)
+  {
+    double vz = zvalue.result(mpm, true);
+    double vz_old = zprevvalue.result(mpm, true);
+    // cout << "Set v_update[2] to " << "=" <<  vz << endl;
+    // cout << "Set v[2] to " << "=" <<  vz_old << endl;
+	Dv[2] = vz - grid.v_update.at(in)[2];
+	grid.v_update.at(in)[2] = vz;
+	grid.v.at(in)[2] = vz_old;
+  }
+  ftot += grid.mass.at(in)*Dv/update->dt;
 }
 
-void FixVelocityNodes::post_velocities_to_grid() {
+void FixVelocityNodes::post_velocities_to_grid(Grid &grid, int in) {
   // cout << "In FixVelocityNodes::post_velocities_to_grid()" << endl;
 
   // Go through all the particles in the group and set v to the right value:
-  double vx, vy, vz;
+  if (!(grid.mask.at(in) & groupbit))
+    return;
 
-  if (xset) {
-    vx = xvalue.result(mpm);
-  }
-
-  if (yset) {
-    vy = yvalue.result(mpm);
-  }
-
-  if (zset) {
-    vz = zvalue.result(mpm);
-  }
-  
-  int solid = group->solid[igroup];
-  Grid *g;
-
-  if (solid == -1) {
-    for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
-      g = domain->solids[isolid]->grid;
-
-      for (int ip = 0; ip < g->nnodes_local + g->nnodes_ghost; ip++) {
-	if (g->mask[ip] & groupbit) {
-	  if (xset) g->v[ip][0] = vx;
-	  if (yset) g->v[ip][1] = vy;
-	  if (zset) g->v[ip][2] = vz;
-	}
-      }
-    }
-  } else {
-    g = domain->solids[solid]->grid;
-
-    for (int ip = 0; ip < g->nnodes_local + g->nnodes_ghost; ip++) {
-      if (g->mask[ip] & groupbit) {
-	if (xset) g->v[ip][0] = vx;
-	if (yset) g->v[ip][1] = vy;
-	if (zset) g->v[ip][2] = vz;
-      }
-    }
-  }
+  if (xset) grid.v.at(in)[0] = xvalue.result(mpm, true);
+  if (yset) grid.v.at(in)[1] = yvalue.result(mpm, true);
+  if (zset) grid.v.at(in)[2] = zvalue.result(mpm, true);
 }
 
 void FixVelocityNodes::write_restart(ofstream *of) {

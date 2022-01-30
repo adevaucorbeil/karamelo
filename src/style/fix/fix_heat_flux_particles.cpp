@@ -74,6 +74,8 @@ FixHeatFluxParticles::FixHeatFluxParticles(MPM *mpm, vector<string> args):
 
 void FixHeatFluxParticles::prepare()
 {
+  q.result(mpm);
+
   qtot = 0;
 }
 
@@ -88,66 +90,30 @@ void FixHeatFluxParticles::reduce()
   (*input->vars)[id + "_s"] = Var(id + "_s", qtot_reduced);
 }
 
-void FixHeatFluxParticles::initial_integrate() {
+void FixHeatFluxParticles::initial_integrate(Solid &solid, int ip)
+{
   // Go through all the particles in the group and set v_update to the right value:
-  int solid = group->solid[igroup];
-  Solid *s;
+  if (!(solid.mask.at(ip) & groupbit))
+    return;
 
-  double qtemp, Ap, invcp = 0;
+  (*input->vars)["x" ] = Var("x",  solid.x .at(ip)[0]);
+  (*input->vars)["y" ] = Var("y",  solid.x .at(ip)[1]);
+  (*input->vars)["z" ] = Var("z",  solid.x .at(ip)[2]);
+  (*input->vars)["x0"] = Var("x0", solid.x0.at(ip)[0]);
+  (*input->vars)["y0"] = Var("y0", solid.x0.at(ip)[1]);
+  (*input->vars)["z0"] = Var("z0", solid.x0.at(ip)[2]);
 
-  if (solid == -1) {
-    for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
-      s = domain->solids[isolid];
-      invcp = s->mat->invcp;
+  double Ap;
+  if (domain->dimension == 1)
+    Ap = 1;
+  else if (domain->dimension == 2)
+    Ap = sqrt(solid.vol.at(ip));
+  else
+    Ap = pow(solid.vol.at(ip), 2/3);
 
-      for (int ip = 0; ip < s->np_local; ip++) {
-	if (s->mask[ip] & groupbit) {
-	  (*input->vars)["x"] = Var("x", s->x[ip][0]);
-	  (*input->vars)["x0"] = Var("x0", s->x0[ip][0]);
-	  (*input->vars)["y"] = Var("y", s->x[ip][1]);
-	  (*input->vars)["y0"] = Var("y0", s->x0[ip][1]);
-	  (*input->vars)["z"] = Var("z", s->x[ip][2]);
-	  (*input->vars)["z0"] = Var("z0", s->x0[ip][2]);
-
-	  if (domain->dimension == 1)
-	    Ap = 1;
-	  else if (domain->dimension == 2)
-	    Ap = sqrt(s->vol[ip]);
-	  else
-	    Ap = pow(s->vol[ip], 2/3);
-
-	  qtemp = q.result(mpm);
-	  s->gamma[ip] += Ap * qtemp * invcp;
-	  qtot += qtemp;
-	}
-      }
-    }
-  } else {
-    s = domain->solids[solid];
-    invcp = s->mat->invcp;
-
-    for (int ip = 0; ip < s->np_local; ip++) {
-      if (s->mask[ip] & groupbit) {
-	(*input->vars)["x"] = Var("x", s->x[ip][0]);
-	(*input->vars)["x0"] = Var("x0", s->x0[ip][0]);
-	(*input->vars)["y"] = Var("y", s->x[ip][1]);
-	(*input->vars)["y0"] = Var("y0", s->x0[ip][1]);
-	(*input->vars)["z"] = Var("z", s->x[ip][2]);
-	(*input->vars)["z0"] = Var("z0", s->x0[ip][2]);
-
-	if (domain->dimension == 1)
-	  Ap = 1;
-	else if (domain->dimension == 2)
-	  Ap = sqrt(s->vol[ip]);
-	else
-	  Ap = pow(s->vol[ip], 2/3);
-
-	qtemp = q.result(mpm);
-	s->gamma[ip] += Ap * qtemp * invcp;
-	qtot += qtemp;
-      }
-    }
-  }
+  double qtemp = q.result(mpm, true);
+  solid.gamma.at(ip) += Ap*qtemp*solid.mat->invcp;
+  qtot += qtemp;
 }
 
 void FixHeatFluxParticles::write_restart(ofstream *of) {

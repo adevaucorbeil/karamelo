@@ -27,8 +27,10 @@ FixStyle(initial_velocity_particles,FixInitialVelocityParticles)
 class FixInitialVelocityParticles : public Fix {
  public:
   FixInitialVelocityParticles(MPM *, vector<string>);
-  
-  void initial_integrate();
+
+  void prepare();
+
+  void initial_integrate(Solid &solid, int ip);
 
   void write_restart(ofstream *) {};
   void read_restart(ifstream *) {};

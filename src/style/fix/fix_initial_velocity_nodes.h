@@ -27,9 +27,11 @@ FixStyle(initial_velocity_nodes,FixInitialVelocityNodes)
 class FixInitialVelocityNodes : public Fix {
  public:
   FixInitialVelocityNodes(MPM *, vector<string>);
-  
-  void post_update_grid_state();
-  void post_velocities_to_grid();
+
+  void prepare();
+
+  void post_update_grid_state(Grid &grid, int in);
+  void post_velocities_to_grid(Grid &grid, int in);
 
   void write_restart(ofstream *) {};
   void read_restart(ifstream *) {};

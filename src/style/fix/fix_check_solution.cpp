@@ -115,41 +115,41 @@ void FixChecksolution::reduce()
   else
     vtot += domain->solids.at(solid)->vtot;
 
-  (*input->vars)[id+"_s"]=Var(id+"_s", sqrt((error_reduced[0] + error_reduced[1] + error_reduced[2])/vtot));
-  (*input->vars)[id+"_x"]=Var(id+"_x", (*input->vars)[id+"_x"].result() + update->dt*(error_reduced[0] + error_reduced[1] + error_reduced[2]));
-  (*input->vars)[id+"_y"]=Var(id+"_y", (*input->vars)[id+"_y"].result() + update->dt*(u_th_reduced[0] + u_th_reduced[1] + u_th_reduced[2]));
-  (*input->vars)[id+"_z"]=Var(id+"_z", sqrt((*input->vars)[id+"_x"].result()/(*input->vars)[id+"_y"].result()));
+  (*input->vars)[id + "_s"] = Var(id + "_s", sqrt((error_reduced[0] + error_reduced[1] + error_reduced[2])/vtot));
+  (*input->vars)[id + "_x"] = Var(id + "_x", (*input->vars)[id + "_x"].result() + update->dt*(error_reduced[0] + error_reduced[1] + error_reduced[2]));
+  (*input->vars)[id + "_y"] = Var(id + "_y", (*input->vars)[id + "_y"].result() + update->dt*(u_th_reduced[0] + u_th_reduced[1] + u_th_reduced[2]));
+  (*input->vars)[id + "_z"] = Var(id + "_z", sqrt((*input->vars)[id + "_x"].result()/(*input->vars)[id + "_y"].result()));
     // cout << "f for " << n << " nodes from solid " << domain->solids[solid]->id << " set." << endl;
   // cout << "ftot = [" << ftot[0] << ", " << ftot[1] << ", " << ftot[2] << "]\n"; 
 }
 
 void FixChecksolution::final_integrate(Solid &solid, int ip)
 {
-  if ((update->ntimestep == output->next || update->ntimestep == update->nsteps) &&
-      solid.mask.at(ip) & groupbit)
-  {
-	(*input->vars)["x0"] = Var("x0", solid.x0.at(ip)[0]);
-	(*input->vars)["y0"] = Var("y0", solid.x0.at(ip)[1]);
-	(*input->vars)["z0"] = Var("z0", solid.x0.at(ip)[2]);
+  if ((update->ntimestep != output->next && update->ntimestep != update->nsteps) ||
+      !(solid.mask.at(ip) & groupbit))
+    return;
 
-	if (xset)
-    {
-	  double ux = xvalue.result(mpm);
-	  error_vec[0] += solid.vol0.at(ip)*square(ux - (solid.x.at(ip)[0] - solid.x0.at(ip)[0]));
-	  u_th[0] += solid.vol0.at(ip)*ux*ux;                  
-	}                                                
-	if (yset)
-    {                                      
-	  double uy = yvalue.result(mpm);                       
-	  error_vec[1] += solid.vol0.at(ip)*square(uy - (solid.x.at(ip)[1] - solid.x0.at(ip)[1]));
-	  u_th[1] += solid.vol0.at(ip)*uy*uy;                  
-	}                                                
-	if (zset)
-    {                                      
-	  double uz = zvalue.result(mpm);                       
-	  error_vec[2] += solid.vol0.at(ip)*square(uz - (solid.x.at(ip)[2] - solid.x0.at(ip)[2]));
-	  u_th[2] += solid.vol0.at(ip)*uz*uz;
-	}
+  (*input->vars)["x0"] = Var("x0", solid.x0.at(ip)[0]);
+  (*input->vars)["y0"] = Var("y0", solid.x0.at(ip)[1]);
+  (*input->vars)["z0"] = Var("z0", solid.x0.at(ip)[2]);
+
+  if (xset)
+  {
+	double ux = xvalue.result(mpm);
+	error_vec[0] += solid.vol0.at(ip)*square(ux - (solid.x.at(ip)[0] - solid.x0.at(ip)[0]));
+	u_th[0] += solid.vol0.at(ip)*ux*ux;                  
+  }                                                
+  if (yset)
+  {                                      
+	double uy = yvalue.result(mpm);                       
+	error_vec[1] += solid.vol0.at(ip)*square(uy - (solid.x.at(ip)[1] - solid.x0.at(ip)[1]));
+	u_th[1] += solid.vol0.at(ip)*uy*uy;                  
+  }                                                
+  if (zset)
+  {                                      
+	double uz = zvalue.result(mpm);                       
+	error_vec[2] += solid.vol0.at(ip)*square(uz - (solid.x.at(ip)[2] - solid.x0.at(ip)[2]));
+	u_th[2] += solid.vol0.at(ip)*uz*uz;
   }
 }
 
