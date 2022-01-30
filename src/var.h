@@ -27,7 +27,7 @@ class Var{
   Var(string, double, bool c = false);
 
   void evaluate(class MPM * = nullptr);
-  double result(class MPM *);
+  double result(class MPM *mpm, bool only_position_changed = false);
   double result() const {return value;};
   string str() const;
   string eq() const {return equation;};
@@ -57,6 +57,7 @@ protected:
   string equation;             // formula
   double value;                // current value
   bool constant;               // is the variables constant?
+  bool position_independent;
 };
 
 

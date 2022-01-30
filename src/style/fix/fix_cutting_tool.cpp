@@ -102,6 +102,17 @@ FixCuttingTool::FixCuttingTool(MPM *mpm, vector<string> args)
 
 void FixCuttingTool::prepare()
 {
+  xtvalue .result(mpm);
+  ytvalue .result(mpm);
+  ztvalue .result(mpm);
+  vtxvalue.result(mpm);
+  vtyvalue.result(mpm);
+  vtzvalue.result(mpm);
+  xAvalue .result(mpm);
+  yAvalue .result(mpm);
+  xBvalue .result(mpm);
+  yBvalue .result(mpm);
+
   ftot = Vector3d();
 }
 
@@ -118,30 +129,22 @@ void FixCuttingTool::reduce()
   (*input->vars)[id + "_z"] = Var(id + "_z", ftot_reduced[2]);
 }
 
-void FixCuttingTool::initial_integrate() {
+void FixCuttingTool::initial_integrate(Solid &solid, int ip) {
   // cout << "In FixCuttingTool::initial_integrate()\n";
 
   // Go through all the particles in the group and set b to the right value:
-  Vector3d f;
-
-  int solid = group->solid[igroup];
-
-  Solid *s;
-  Vector3d n1, n2, n;
-
-  double zt = ztvalue.result(mpm);
-  Vector3d xt(xtvalue.result(mpm),
-                     ytvalue.result(mpm),
-                     zt);
-  Vector3d vt(vtxvalue.result(mpm),
-                     vtyvalue.result(mpm),
-                     vtzvalue.result(mpm));
-  Vector3d xA(xAvalue.result(mpm),
-                     yAvalue.result(mpm),
-                     zt);
-  Vector3d xB(xBvalue.result(mpm),
-                     yBvalue.result(mpm),
-                     zt);
+  Vector3d xt(xtvalue .result(mpm, true),
+              ytvalue .result(mpm, true),
+              ztvalue .result(mpm, true));
+  Vector3d vt(vtxvalue.result(mpm, true),
+              vtyvalue.result(mpm, true),
+              vtzvalue.result(mpm, true));
+  Vector3d xA(xAvalue .result(mpm, true),
+              yAvalue .result(mpm, true),
+              xt.z());
+  Vector3d xB(xBvalue .result(mpm, true),
+              yBvalue .result(mpm, true),
+              xt.z());
 
   // The equation of line 1 is: (yA - yt) * x - (xA - xt) * y + yt * xA - yA *
   // xt = 0 The equation of line 2 is: (yB - yt) * x - (xB - xt) * y + yt * xB -
@@ -169,6 +172,8 @@ void FixCuttingTool::initial_integrate() {
     line2[1] *= -1;
     line2[2] *= -1;
   }
+  
+  Vector3d n1, n2, n;
 
   n1[0] = line1[0];
   n1[1] = line1[1];
@@ -180,107 +185,43 @@ void FixCuttingTool::initial_integrate() {
   n2[2] = 0;
   n2 *= -line2[3];
 
-  ftot = Vector3d();
-
-  double p, p1, p2, c1p, c2p, fmag;
-
   // cout << "line 1: " << line1[0] << "x + " << line1[1] << "y + " << line1[2] << endl;
   // cout << "line 2: " << line2[0] << "x + " << line2[1] << "y + " << line2[2] << endl;
 
-  if (solid == -1) {
-    for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
-      s = domain->solids[isolid];
+  if (domain->dimension == 2 && solid.mass.at(ip) && solid.mask.at(ip) & groupbit)
+  {
+    double c1p = line1[0]*solid.x.at(ip)[0] + line1[1]*solid.x.at(ip)[1] + line1[1];
+    double c2p = line2[0]*solid.x.at(ip)[0] + line2[1]*solid.x.at(ip)[1] + line2[1];
 
-      if (domain->dimension == 2) {
-        for (int ip = 0; ip < s->np_local; ip++) {
-          if (s->mass[ip] > 0) {
-            if (s->mask[ip] & groupbit) {
+    if (c1p < 0 || c2p < 0)
+      return;
 
-              c1p = line1[0] * s->x[ip][0] + line1[1] * s->x[ip][1] + line1[2];
-              c2p = line2[0] * s->x[ip][0] + line2[1] * s->x[ip][1] + line2[2];
+    // The particle is inside the tool
+    double p1 = fabs(c1p * line1[3]);
+    double p2 = fabs(c2p * line2[3]);
 
-              // if (s->ptag[ip] == 158) {
-              //   cout << "Particle " << s->ptag[ip] << "\t";
-              // 	cout << "c1p = " << c1p * line1[3] << "\t";
-              // 	cout << "c2p = " << c2p * line1[3] << "\n";
-              // 	cout << s->x[ip] << endl;
-              // }
+    double p;
+    Vector3d n;
 
-              if (c1p >= 0 && c2p >= 0) {
-                // cout << "Particle " << s->ptag[ip] << " is inside\n";
-
-                // The particle is inside the tool
-                p1 = fabs(c1p * line1[3]);
-                p2 = fabs(c2p * line2[3]);
-
-                if (p1 < p2) {
-                  p = p1;
-                  n = n1;
-                } else {
-                  p = p2;
-                  n = n2;
-                }
-                fmag = K * s->mat->G * p * (1.0 - s->damage[ip]);
-
-                f = fmag * n;
-                s->mbp[ip] += f;
-                ftot += f;
-              } else {
-                fmag = 0;
-                f = Vector3d();
-              }
-            }
-          }
-        }
-      }
-
-      if (domain->dimension == 3) {
-        // Not supported
-        error->one(FLERR, "fix_cuttingtool not supported in 3D\n");
-      }
+    if (p1 < p2)
+    {
+      p = p1;
+      n = n1;
     }
-  } else {
-    s = domain->solids[solid];
-
-    if (domain->dimension == 2) {
-      for (int ip = 0; ip < s->np_local; ip++) {
-        if (s->mass[ip] > 0) {
-          if (s->mask[ip] & groupbit) {
-
-            c1p = line1[0] * s->x[ip][0] + line1[1] * s->x[ip][1] + line1[1];
-            c2p = line2[0] * s->x[ip][0] + line2[1] * s->x[ip][1] + line2[1];
-
-            if (c1p >= 0 && c2p >= 0) {
-              // The particle is inside the tool
-              p1 = fabs(c1p * line1[3]);
-              p2 = fabs(c2p * line2[3]);
-
-              if (p1 < p2) {
-                p = p1;
-                n = n1;
-              } else {
-                p = p2;
-                n = n2;
-              }
-              fmag = K * s->mat->G * p * (1.0 - s->damage[ip]);;
-
-              f = fmag * n;
-              s->mbp[ip] += f;
-              ftot += f;
-            } else {
-              fmag = 0;
-              f = Vector3d();
-            }
-          }
-        }
-      }
+    else
+    {
+      p = p2;
+      n = n2;
     }
 
-    if (domain->dimension == 3) {
-      // Not supported
-      error->one(FLERR, "fix_cuttingtool not supported in 3D\n");
-    }
+    const Vector3d &f = K*solid.mat->G*p*(1.0 - solid.damage.at(ip))*n;
+    solid.mbp.at(ip) += f;
+    ftot += f;
   }
+  
+  // Not supported
+  if (domain->dimension == 3)
+    error->one(FLERR, "fix_cuttingtool not supported in 3D\n");
 }
 
 void FixCuttingTool::write_restart(ofstream *of) {

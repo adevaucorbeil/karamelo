@@ -50,9 +50,9 @@ void Var::evaluate(MPM * mpm)
 }
 
 
-double Var::result(MPM * mpm)
+double Var::result(MPM * mpm, bool only_position_changed)
 {
-  if (constant) return value;
+  if (constant || position_independent && only_position_changed) return value;
   else {
     evaluate(mpm);
     return value;

@@ -85,7 +85,7 @@ class FixChecksolution : public Fix {
   void prepare();
   void reduce();
 
-  void final_integrate();
+  void final_integrate(Solid &solid, int ip);
 
   void write_restart(ofstream *);
   void read_restart(ifstream *);
@@ -94,7 +94,6 @@ private:
   Var xvalue, yvalue, zvalue;    // Set force in x, y, and z directions.
   bool xset, yset, zset;               // Does the fix set the x, y, and z forces of the group?
   Vector3d error_vec, u_th;
-  double vtot;
 };
 
 #endif

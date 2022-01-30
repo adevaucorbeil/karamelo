@@ -65,7 +65,7 @@ class FixBodyforce : public Fix {
   void prepare();
   void reduce();
 
-  void post_particles_to_grid();
+  void post_particles_to_grid(Grid &grid, int in);
 
   void write_restart(ofstream *);
   void read_restart(ifstream *);

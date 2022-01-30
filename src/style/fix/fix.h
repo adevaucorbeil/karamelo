@@ -17,6 +17,9 @@
 #include <pointers.h>
 #include <vector>
 
+class Solid;
+class Grid;
+
 /*! Parent class of all the different kinds of fixes that can be used.
  *
  * Stores the fix id, the information about the group involved,  as well
@@ -33,19 +36,16 @@ class Fix : protected Pointers {
 
   Fix(MPM *mpm, const vector<string> &args, int mask);
 
-  virtual void init() {}
-  virtual void setup() {}
-
   virtual void prepare() {}
   virtual void reduce() {}
 
-  virtual void initial_integrate() {}
-  virtual void post_particles_to_grid() {}
+  virtual void initial_integrate(Solid &solid, int ip) {}
+  virtual void post_particles_to_grid(Grid &grid, int in) {}
   virtual void post_update_grid_state() {}
   virtual void post_grid_to_point() {}
   virtual void post_advance_particles() {}
   virtual void post_velocities_to_grid() {}
-  virtual void final_integrate() {}
+  virtual void final_integrate(Solid &solid, int ip) {}
 
   virtual void write_restart(ofstream *of) = 0;
   virtual void read_restart(ifstream *ifr) = 0;

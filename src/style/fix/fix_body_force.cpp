@@ -85,83 +85,41 @@ FixBodyforce::FixBodyforce(MPM *mpm, vector<string> args):
 
 void FixBodyforce::prepare()
 {
+  xvalue.result(mpm);
+  yvalue.result(mpm);
+  zvalue.result(mpm);
+
   ftot = Vector3d();
 }
 
 void FixBodyforce::reduce()
 {
   Vector3d ftot_reduced;
-  // Reduce ftot:
-  MPI_Allreduce(ftot.elements,ftot_reduced.elements,3,MPI_DOUBLE,MPI_SUM,universe->uworld);
+  MPI_Allreduce(ftot.elements, ftot_reduced.elements, 3, MPI_DOUBLE, MPI_SUM, universe->uworld);
 
-  if (xset) (*input->vars)[id+"_x"]=Var(id+"_x", ftot_reduced[0]);
-  if (yset) (*input->vars)[id+"_y"]=Var(id+"_y", ftot_reduced[1]);
-  if (zset) (*input->vars)[id+"_z"]=Var(id+"_z", ftot_reduced[2]);
+  if (xset) (*input->vars)[id + "_x"] = Var(id + "_x", ftot_reduced[0]);
+  if (yset) (*input->vars)[id + "_y"] = Var(id + "_y", ftot_reduced[1]);
+  if (zset) (*input->vars)[id + "_z"] = Var(id + "_z", ftot_reduced[2]);
   // cout << "ftot = [" << ftot[0] << ", " << ftot[1] << ", " << ftot[2] << "], mass = " << mtot << "\n"; 
 }
 
-void FixBodyforce::post_particles_to_grid() {
-  // cout << "In FixBodyforce::post_particles_to_grid()\n";
+void FixBodyforce::post_particles_to_grid(Grid &grid, int in)
+{
+  if (grid.mass.at(in) && grid.mask.at(in) & groupbit)
+  {
+	(*input->vars)["x0"] = Var("x0", grid.x0[in][0]);
+	(*input->vars)["y0"] = Var("y0", grid.x0[in][1]);
+	(*input->vars)["z0"] = Var("z0", grid.x0[in][2]);
 
-  // Go through all the nodes in the group and set b to the right value:
-  Vector3d f;
+	Vector3d f;
+	if (xset) f[0] = xvalue.result(mpm);
+	if (yset) f[1] = yvalue.result(mpm);
+	if (zset) f[2] = zvalue.result(mpm);
 
-  int solid = group->solid[igroup];
-  Grid *g;
+	grid.mb.at(in) += grid.mass.at(in)*f;
 
-  // double mtot = 0;
-  ftot = Vector3d();
-
-  if (solid == -1) {
-    for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
-      g = domain->solids[isolid]->grid;
-
-      for (int in = 0; in < g->nnodes_local + g->nnodes_ghost; in++) {
-	if (g->mass[in] > 0) {
-	  if (g->mask[in] & groupbit) {
-	      (*input->vars)["x0"] = Var("x0", g->x0[in][0]);
-	      (*input->vars)["y0"] = Var("y0", g->x0[in][1]);
-	      (*input->vars)["z0"] = Var("z0", g->x0[in][2]);
-              f = Vector3d();
-	      if (xset) f[0] = xvalue.result(mpm);
-	      if (yset) f[1] = yvalue.result(mpm);
-	      if (zset) f[2] = zvalue.result(mpm);
-
-	      f *= g->mass[in];
-	      g->mb[in] += f;
-	      if (in < g->nnodes_local) {
-		ftot += f;
-		// mtot += g->mass[in];
-	      }
-	  }
-	}
-      }
-    }
-  } else {
-    g = domain->solids[solid]->grid;
-
-    for (int in = 0; in < g->nnodes_local + g->nnodes_ghost; in++) {
-      if (g->mass[in] > 0) {
-	if (g->mask[in] & groupbit) {
-	  (*input->vars)["x0"] = Var("x0", g->x0[in][0]);
-	  (*input->vars)["y0"] = Var("y0", g->x0[in][1]);
-	  (*input->vars)["z0"] = Var("z0", g->x0[in][2]);
-
-	  f = Vector3d();
-	  if (xset) f[0] = xvalue.result(mpm);
-	  if (yset) f[1] = yvalue.result(mpm);
-	  if (zset) f[2] = zvalue.result(mpm);
-
-	  f *= g->mass[in];
-	  g->mb[in] += f;
-
-	  if (in < g->nnodes_local) {
-	    ftot += f;
-	    // mtot += g->mass[in];
-	  }
-	}
-      }
-    }
+	if (in < grid.nnodes_local)
+	  ftot += f;
   }
 }
 
