@@ -100,11 +100,11 @@ void FixConvectionParticles::initial_integrate(Solid &solid, int ip) {
 
   double Ap;
   if (domain->dimension == 1)
-	Ap = 1;
+    Ap = 1;
   else if (domain->dimension == 2)
-	Ap = sqrt(solid.vol.at(ip));
-  else 		
-	Ap = pow(solid.vol.at(ip), 2/3);
+    Ap = sqrt(solid.vol.at(ip));
+  else         
+    Ap = pow(solid.vol.at(ip), 2/3);
 
   double qtemp = h*(Tinf.result(mpm, true) - solid.T.at(ip));
   solid.gamma.at(ip) += Ap*qtemp*solid.mat->invcp;

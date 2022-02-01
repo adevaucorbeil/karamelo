@@ -109,22 +109,22 @@ void FixContactHertz::initial_integrate() {
       for (int ip2 = 0; ip2 < s2->np_local; ip2++) {
         dx = s2->x[ip2] - s1->x[ip1];
 
-	// Extremely gross screening:
-	if ((dx[0] < max_cellsize) && (dx[1] < max_cellsize) &&
-	    (dx[2] < max_cellsize) && (dx[0] > -max_cellsize) &&
+    // Extremely gross screening:
+    if ((dx[0] < max_cellsize) && (dx[1] < max_cellsize) &&
+        (dx[2] < max_cellsize) && (dx[0] > -max_cellsize) &&
             (dx[1] > -max_cellsize) && (dx[2] > -max_cellsize)) {
-	  Rp1 = 0.5 * sqrt(s1->vol[ip1]);
-	  Rp2 = 0.5 * sqrt(s2->vol[ip2]);
-	  Rp = Rp1 + Rp2;
+      Rp1 = 0.5 * sqrt(s1->vol[ip1]);
+      Rp2 = 0.5 * sqrt(s2->vol[ip2]);
+      Rp = Rp1 + Rp2;
 
-	  // Gross screening:
-	  if ((dx[0] < Rp) && (dx[1] < Rp) && (dx[2] < Rp) && (dx[0] > -Rp) &&
-	      (dx[1] > -Rp) && (dx[2] > -Rp)) {
+      // Gross screening:
+      if ((dx[0] < Rp) && (dx[1] < Rp) && (dx[2] < Rp) && (dx[0] > -Rp) &&
+          (dx[1] > -Rp) && (dx[2] > -Rp)) {
 
-	    r = dx.norm();
+        r = dx.norm();
 
-	    // Finer screening:
-	    if (r < Rp) {
+        // Finer screening:
+        if (r < Rp) {
 
               p = Rp - r; // penetration
 
@@ -133,8 +133,8 @@ void FixContactHertz::initial_integrate() {
 
               f = fmag * dx / r;
               ftot += f;
-	      s1->mbp[ip1] -= f;
-	      s2->mbp[ip2] += f;
+          s1->mbp[ip1] -= f;
+          s2->mbp[ip2] += f;
               // vtemp1 = -update->dt * f / s1->mass[ip1];
               // s1->v[ip1] += vtemp1;
               // s1->x[ip1] += update->dt * vtemp1;
@@ -153,31 +153,31 @@ void FixContactHertz::initial_integrate() {
       for (int ip2 = 0; ip2 < s2->np_local; ip2++) {
         dx = s2->x[ip2] - s1->x[ip1];
 
-	// Extremely gross screening:
-	if ((dx[0] < max_cellsize) && (dx[1] < max_cellsize) &&
-	    (dx[2] < max_cellsize) && (dx[0] > -max_cellsize) &&
+    // Extremely gross screening:
+    if ((dx[0] < max_cellsize) && (dx[1] < max_cellsize) &&
+        (dx[2] < max_cellsize) && (dx[0] > -max_cellsize) &&
             (dx[1] > -max_cellsize) && (dx[2] > -max_cellsize)) {
-	  Rp1 = 0.5 * pow(s1->vol[ip1], 0.333333333);
-	  Rp2 = 0.5 * pow(s2->vol[ip2], 0.333333333);
-	  Rp = Rp1 + Rp2;
+      Rp1 = 0.5 * pow(s1->vol[ip1], 0.333333333);
+      Rp2 = 0.5 * pow(s2->vol[ip2], 0.333333333);
+      Rp = Rp1 + Rp2;
 
 
-	  // Gross screening:
-	  if ((dx[0] < Rp) && (dx[1] < Rp) && (dx[2] < Rp) && (dx[0] > -Rp) &&
-	      (dx[1] > -Rp) && (dx[2] > -Rp)) {
+      // Gross screening:
+      if ((dx[0] < Rp) && (dx[1] < Rp) && (dx[2] < Rp) && (dx[0] > -Rp) &&
+          (dx[1] > -Rp) && (dx[2] > -Rp)) {
 
-	    r = dx.norm();
+        r = dx.norm();
 
-	    // Finer screening:
-	    if (r < Rp) {
+        // Finer screening:
+        if (r < Rp) {
               p = Rp - r; // penetration
 
               fmag = four_thirds * Estar *
                      sqrt(Rp1 * Rp2 / (Rp1 + Rp2) * p * p * p);
 
               f = fmag * dx / r;
-	      s1->mbp[ip1] -= f;
-	      s2->mbp[ip2] += f;
+          s1->mbp[ip1] -= f;
+          s2->mbp[ip2] += f;
               ftot += f;
               // vtemp1 = -update->dt * f / s1->mass[ip1];
               // s1->v[ip1] += vtemp1;
@@ -220,23 +220,23 @@ void FixContactHertz::initial_integrate() {
 //       for (int ip2 = 0; ip2 < s2->np_local; ip2++) {
 //         dx = s2->x[ip2] - s1->x[ip1];
 
-// 	// Extremely gross screening:
-// 	if ((dx[0] < max_cellsize) && (dx[1] < max_cellsize) &&
-// 	    (dx[2] < max_cellsize) && (dx[0] > -max_cellsize) &&
+//     // Extremely gross screening:
+//     if ((dx[0] < max_cellsize) && (dx[1] < max_cellsize) &&
+//         (dx[2] < max_cellsize) && (dx[0] > -max_cellsize) &&
 //             (dx[1] > -max_cellsize) && (dx[2] > -max_cellsize)) {
-// 	  Rp1 = 0.5 * pow(s1->vol[ip1], 0.333333333);
-// 	  Rp2 = 0.5 * pow(s2->vol[ip2], 0.333333333);
-// 	  Rp = Rp1 + Rp2;
+//       Rp1 = 0.5 * pow(s1->vol[ip1], 0.333333333);
+//       Rp2 = 0.5 * pow(s2->vol[ip2], 0.333333333);
+//       Rp = Rp1 + Rp2;
 
 
-// 	  // Gross screening:
-// 	  if ((dx[0] < Rp) && (dx[1] < Rp) && (dx[2] < Rp) && (dx[0] > -Rp) &&
-// 	      (dx[1] > -Rp) && (dx[2] > -Rp)) {
+//       // Gross screening:
+//       if ((dx[0] < Rp) && (dx[1] < Rp) && (dx[2] < Rp) && (dx[0] > -Rp) &&
+//           (dx[1] > -Rp) && (dx[2] > -Rp)) {
 
-// 	    r = dx.norm();
+//         r = dx.norm();
 
-// 	    // Finer screening:
-// 	    if (r < Rp) {
+//         // Finer screening:
+//         if (r < Rp) {
 
 //               p = Rp - r; // penetration
 
@@ -245,8 +245,8 @@ void FixContactHertz::initial_integrate() {
 
 //               f = fmag * dx / r;
 //               ftot += f;
-// 	      //s1->mbp[ip1] -= f;
-// 	      //s2->mbp[ip2] += f;
+//           //s1->mbp[ip1] -= f;
+//           //s2->mbp[ip2] += f;
 //               vtemp1 = -update->dt * f / s1->mass[ip1];
 //               s1->v[ip1] += vtemp1;
 //               s1->x[ip1] += update->dt * vtemp1;
@@ -265,31 +265,31 @@ void FixContactHertz::initial_integrate() {
 //       for (int ip2 = 0; ip2 < s2->np_local; ip2++) {
 //         dx = s2->x[ip2] - s1->x[ip1];
 
-// 	// Extremely gross screening:
-// 	if ((dx[0] < max_cellsize) && (dx[1] < max_cellsize) &&
-// 	    (dx[2] < max_cellsize) && (dx[0] > -max_cellsize) &&
+//     // Extremely gross screening:
+//     if ((dx[0] < max_cellsize) && (dx[1] < max_cellsize) &&
+//         (dx[2] < max_cellsize) && (dx[0] > -max_cellsize) &&
 //             (dx[1] > -max_cellsize) && (dx[2] > -max_cellsize)) {
-// 	  Rp1 = 0.5 * pow(s1->vol[ip1], 0.333333333);
-// 	  Rp2 = 0.5 * pow(s2->vol[ip2], 0.333333333);
-// 	  Rp = Rp1 + Rp2;
+//       Rp1 = 0.5 * pow(s1->vol[ip1], 0.333333333);
+//       Rp2 = 0.5 * pow(s2->vol[ip2], 0.333333333);
+//       Rp = Rp1 + Rp2;
 
 
-// 	  // Gross screening:
-// 	  if ((dx[0] < Rp) && (dx[1] < Rp) && (dx[2] < Rp) && (dx[0] > -Rp) &&
-// 	      (dx[1] > -Rp) && (dx[2] > -Rp)) {
+//       // Gross screening:
+//       if ((dx[0] < Rp) && (dx[1] < Rp) && (dx[2] < Rp) && (dx[0] > -Rp) &&
+//           (dx[1] > -Rp) && (dx[2] > -Rp)) {
 
-// 	    r = dx.norm();
+//         r = dx.norm();
 
-// 	    // Finer screening:
-// 	    if (r < Rp) {
+//         // Finer screening:
+//         if (r < Rp) {
 //               p = Rp - r; // penetration
 
 //               fmag = four_thirds * Estar *
 //                      sqrt(Rp1 * Rp2 / (Rp1 + Rp2) * p * p * p);
 
 //               f = fmag * dx / r;
-// 	      s1->mbp[ip1] -= f;
-// 	      s2->mbp[ip2] += f;
+//           s1->mbp[ip1] -= f;
+//           s2->mbp[ip2] += f;
 //               ftot += f;
 //               // vtemp1 = -update->dt * f / s1->mass[ip1];
 //               // s1->v[ip1] += vtemp1;

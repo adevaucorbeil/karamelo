@@ -113,14 +113,14 @@ void FixBodyforce::post_particles_to_grid(Grid &grid, int in)
   (*input->vars)["z0"] = Var("z0", grid.x0[in][2]);
 
   Vector3d f;
-  if (xset) f[0] = xvalue.result(mpm);
-  if (yset) f[1] = yvalue.result(mpm);
-  if (zset) f[2] = zvalue.result(mpm);
+  if (xset) f[0] = xvalue.result(mpm, true);
+  if (yset) f[1] = yvalue.result(mpm, true);
+  if (zset) f[2] = zvalue.result(mpm, true);
 
   grid.mb.at(in) += grid.mass.at(in)*f;
 
   if (in < grid.nnodes_local)
-	  ftot += f;
+      ftot += f;
 }
 
 void FixBodyforce::write_restart(ofstream *of) {

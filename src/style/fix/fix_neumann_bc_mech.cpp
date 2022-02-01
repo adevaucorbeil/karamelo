@@ -72,7 +72,7 @@ FixNeumannBCMech::FixNeumannBCMech(MPM *mpm, vector<string> args):
 void FixNeumannBCMech::prepare()
 {
   for (int i = 0; i < domain->dimension; i++)
-	t[i].result(mpm);
+    t[i].result(mpm);
 
   ftot = Vector3d();
 }
@@ -105,15 +105,15 @@ void FixNeumannBCMech::initial_integrate(Solid &solid, int ip)
 
   double Ap;
   if (domain->dimension == 1)
-	Ap = 1;
+    Ap = 1;
   else if (domain->dimension == 2)
-	Ap = sqrt(solid.vol.at(ip));
-  else 		
-	Ap = pow(solid.vol.at(ip), 2/3);
+    Ap = sqrt(solid.vol.at(ip));
+  else         
+    Ap = pow(solid.vol.at(ip), 2/3);
 
   Vector3d f;
   for (int i = 0; i < domain->dimension; i++)
-	f[i] = Ap*t[i].result(mpm, true);
+    f[i] = Ap*t[i].result(mpm, true);
 
   solid.mbp.at(ip) += f;
   ftot += f;

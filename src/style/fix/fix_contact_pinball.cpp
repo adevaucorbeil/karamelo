@@ -123,28 +123,28 @@ void FixContactPinball::initial_integrate() {
 
             r = dx.norm();
 
-	    // Finer screening:
-	    if (r < Rp) {
+        // Finer screening:
+        if (r < Rp) {
 
-	      p = Rp - r; // penetration
+          p = Rp - r; // penetration
 
-	      dv = s2->v[ip2] - s1->v[ip1];
-	      pdot = -dx.dot(dv) / r; // penetration speed
+          dv = s2->v[ip2] - s1->v[ip1];
+          pdot = -dx.dot(dv) / r; // penetration speed
 
-	      if (pdot > 0) {
-		fmag1 = s1->rho[ip1] * s2->rho[ip2] * Rp1 * Rp1 * Rp1 * Rp2 *
-		  Rp2 * Rp2 * pdot /
-		  ((s1->rho[ip1] * Rp1 * Rp1 * Rp1 +
-		    s2->rho[ip2] * Rp2 * Rp2 * Rp2) *
-		   update->dt);
-		fmag2 = Gstar * sqrt(Rp1 * Rp2 / (Rp1 + Rp2) * p * p * p);
+          if (pdot > 0) {
+        fmag1 = s1->rho[ip1] * s2->rho[ip2] * Rp1 * Rp1 * Rp1 * Rp2 *
+          Rp2 * Rp2 * pdot /
+          ((s1->rho[ip1] * Rp1 * Rp1 * Rp1 +
+            s2->rho[ip2] * Rp2 * Rp2 * Rp2) *
+           update->dt);
+        fmag2 = Gstar * sqrt(Rp1 * Rp2 / (Rp1 + Rp2) * p * p * p);
 
-		f = MIN(fmag1, fmag2) * dx / r;
-		ftot += f;
-		s1->mbp[ip1] -= f;
-		s2->mbp[ip2] += f;
-	      }
-	    }
+        f = MIN(fmag1, fmag2) * dx / r;
+        ftot += f;
+        s1->mbp[ip1] -= f;
+        s2->mbp[ip2] += f;
+          }
+        }
           }
         }
       }
@@ -152,46 +152,46 @@ void FixContactPinball::initial_integrate() {
   } else if (domain->dimension == 3) {
     for (int ip1 = 0; ip1 < s1->np_local; ip1++) {
       for (int ip2 = 0; ip2 < s2->np_local; ip2++) {
-	dx = s2->x[ip2] - s1->x[ip1];
+    dx = s2->x[ip2] - s1->x[ip1];
 
-	// Extremely gross screening:
-	if ((dx[0] < max_cellsize) && (dx[1] < max_cellsize) &&
-	    (dx[2] < max_cellsize) && (dx[0] > -max_cellsize) &&
-	    (dx[1] > -max_cellsize) && (dx[2] > -max_cellsize)) {
-	  Rp1 = 0.5 * cbrt(s1->vol[ip1]);
-	  Rp2 = 0.5 * cbrt(s2->vol[ip2]);
-	  Rp = Rp1 + Rp2;
+    // Extremely gross screening:
+    if ((dx[0] < max_cellsize) && (dx[1] < max_cellsize) &&
+        (dx[2] < max_cellsize) && (dx[0] > -max_cellsize) &&
+        (dx[1] > -max_cellsize) && (dx[2] > -max_cellsize)) {
+      Rp1 = 0.5 * cbrt(s1->vol[ip1]);
+      Rp2 = 0.5 * cbrt(s2->vol[ip2]);
+      Rp = Rp1 + Rp2;
 
-	  // Gross screening:
-	  if ((dx[0] < Rp) && (dx[1] < Rp) && (dx[2] < Rp) && (dx[0] > -Rp) &&
-	      (dx[1] > -Rp) && (dx[2] > -Rp)) {
+      // Gross screening:
+      if ((dx[0] < Rp) && (dx[1] < Rp) && (dx[2] < Rp) && (dx[0] > -Rp) &&
+          (dx[1] > -Rp) && (dx[2] > -Rp)) {
 
-	    r = dx.norm();
+        r = dx.norm();
 
-	    // Finer screening:
-	    if (r < Rp) {
+        // Finer screening:
+        if (r < Rp) {
 
-	      p = Rp - r; // penetration
+          p = Rp - r; // penetration
 
-	      dv = s2->v[ip2] - s1->v[ip1];
-	      pdot = -dx.dot(dv) / r; // penetration speed
+          dv = s2->v[ip2] - s1->v[ip1];
+          pdot = -dx.dot(dv) / r; // penetration speed
 
-	      if (pdot > 0) {
-		fmag1 = s1->rho[ip1] * s2->rho[ip2] * Rp1 * Rp1 * Rp1 * Rp2 *
-		  Rp2 * Rp2 * pdot /
-		  ((s1->rho[ip1] * Rp1 * Rp1 * Rp1 +
-		    s2->rho[ip2] * Rp2 * Rp2 * Rp2) *
-		   update->dt);
-		fmag2 = Gstar * sqrt(Rp1 * Rp2 / (Rp1 + Rp2) * p * p * p);
+          if (pdot > 0) {
+        fmag1 = s1->rho[ip1] * s2->rho[ip2] * Rp1 * Rp1 * Rp1 * Rp2 *
+          Rp2 * Rp2 * pdot /
+          ((s1->rho[ip1] * Rp1 * Rp1 * Rp1 +
+            s2->rho[ip2] * Rp2 * Rp2 * Rp2) *
+           update->dt);
+        fmag2 = Gstar * sqrt(Rp1 * Rp2 / (Rp1 + Rp2) * p * p * p);
 
-		f = MIN(fmag1, fmag2) * dx / r;
-		ftot += f;
-		s1->mbp[ip1] -= f;
-		s2->mbp[ip2] += f;
-	      }
-	    }
-	  }
-	}
+        f = MIN(fmag1, fmag2) * dx / r;
+        ftot += f;
+        s1->mbp[ip1] -= f;
+        s2->mbp[ip2] += f;
+          }
+        }
+      }
+    }
       }
     }
   }

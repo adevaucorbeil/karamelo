@@ -49,7 +49,7 @@ FixHeatFluxParticles::FixHeatFluxParticles(MPM *mpm, vector<string> args):
 
   if (args.size() > Nargs) {
     error->all(FLERR, "Error: too many arguments for fix_heat_flux_particles.\n" +
-	       usage);
+           usage);
   }
 
   if (igroup == -1) {

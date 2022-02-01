@@ -118,50 +118,50 @@ void FixContactMinPenetration::initial_integrate() {
 
         // Extremely gross screening:
         if ((dx[0] < max_cellsize) && (dx[1] < max_cellsize) &&
-	    (dx[0] > -max_cellsize) && (dx[1] > -max_cellsize) ) {
-	  if (domain->axisymmetric) {
-	    Rp1 = 0.5 * sqrt(s1->vol[ip1]/s1->x[ip1][0]);
-	    Rp2 = 0.5 * sqrt(s2->vol[ip2]/s2->x[ip2][0]);
-	  } else {
-	    Rp1 = 0.5 * sqrt(s1->vol[ip1]);
-	    Rp2 = 0.5 * sqrt(s2->vol[ip2]);
-	  }
+        (dx[0] > -max_cellsize) && (dx[1] > -max_cellsize) ) {
+      if (domain->axisymmetric) {
+        Rp1 = 0.5 * sqrt(s1->vol[ip1]/s1->x[ip1][0]);
+        Rp2 = 0.5 * sqrt(s2->vol[ip2]/s2->x[ip2][0]);
+      } else {
+        Rp1 = 0.5 * sqrt(s1->vol[ip1]);
+        Rp2 = 0.5 * sqrt(s2->vol[ip2]);
+      }
           Rp = Rp1 + Rp2;
 
 
           // Gross screening:
           if ((dx[0] < Rp) && (dx[1] < Rp) && (dx[0] > -Rp)
-	      && (dx[1] > -Rp)) {
+          && (dx[1] > -Rp)) {
 
             r = dx.norm();
 
-	    // Finer screening:
+        // Finer screening:
             if (r < Rp) {
-	      inv_r = 1.0/r;
+          inv_r = 1.0/r;
               fmag =
                   s1->mass[ip1] * s2->mass[ip2] /
                   ((s1->mass[ip1] + s2->mass[ip2]) * update->dt * update->dt) *
                   (1 - Rp * inv_r);
               f = fmag * dx;
 
-	      if (mu != 0) {
+          if (mu != 0) {
                 dv = s2->v[ip2] - s1->v[ip1];
                 vt = dv - dv.dot(dx) * inv_r * inv_r* dx;
-		vtnorm = vt.norm();
+        vtnorm = vt.norm();
                 if (vtnorm != 0) {
-		  vt /= vtnorm;
-		  ffric = mu * fmag * r;
-		  f -= ffric * vt;
-		  if (update->method->temp) {
+          vt /= vtnorm;
+          ffric = mu * fmag * r;
+          f -= ffric * vt;
+          if (update->method->temp) {
                     gamma = ffric * vtnorm * update->dt;
                     s1->gamma[ip1] += alpha * s1->vol0[ip1] * s1->mat->invcp * gamma;
                     s2->gamma[ip2] += (1.0 - alpha) * s2->vol0[ip2] * s2->mat->invcp * gamma;
                   }
-		}
-	      }
+        }
+          }
 
-	      s1->mbp[ip1] += f;
-	      s2->mbp[ip2] -= f;
+          s1->mbp[ip1] += f;
+          s2->mbp[ip2] -= f;
               ftot += f;
 
               // if ((s1->ptag[ip1] == 12862 && s2->ptag[ip2] == 12902) ||
@@ -195,24 +195,24 @@ void FixContactMinPenetration::initial_integrate() {
 
             r = dx.norm();
 
-	    // Finer screening:
+        // Finer screening:
             if (r < Rp) {
-	      inv_r = 1.0/r;
+          inv_r = 1.0/r;
               fmag =
                   s1->mass[ip1] * s2->mass[ip2] /
                   ((s1->mass[ip1] + s2->mass[ip2]) * update->dt * update->dt) *
                   (1 - Rp * inv_r);
               f = fmag * dx;
 
-	      if (mu != 0) {
+          if (mu != 0) {
                 dv = s2->v[ip2] - s1->v[ip1];
                 vt = dv - dv.dot(dx) * inv_r * inv_r* dx;
-		vtnorm = vt.norm();
+        vtnorm = vt.norm();
                 if (vtnorm != 0) {
-		  vt /= vtnorm;
-		  ffric = mu * fmag * r;
-		  f -= ffric * vt;
-		  if (update->method->temp) {
+          vt /= vtnorm;
+          ffric = mu * fmag * r;
+          f -= ffric * vt;
+          if (update->method->temp) {
                     gamma = alpha * ffric * vtnorm * update->dt;
                     s1->gamma[ip1] += s1->vol0[ip1] * s1->mat->invcp * gamma;
                     s2->gamma[ip2] += s2->vol0[ip2] * s2->mat->invcp * gamma;
@@ -220,20 +220,20 @@ void FixContactMinPenetration::initial_integrate() {
                     //      << "]=" << s1->gamma[ip1] << "gamma_2["
                     //      << s2->ptag[ip2] << "]=" << s2->gamma[ip2] << endl;
                   }
-		}
-	      }
-	      s1->mbp[ip1] += f;
-	      s2->mbp[ip2] -= f;
+        }
+          }
+          s1->mbp[ip1] += f;
+          s2->mbp[ip2] -= f;
               ftot += f;
               // if ((s1->ptag[ip1] == 12862 && s2->ptag[ip2] == 12902) ||
               //     (s1->ptag[ip1] == 12835 && s2->ptag[ip2] == 12875)) {
-	      // cout << "dx[" << s1->ptag[ip1] << "," << s2->ptag[ip2] << "]= ["
-	      // 	   << dx[0] << "\t" << dx[1] << "\t" << dx[2] << "]\n";
-	      // cout << "(v2 - v1)[" << s1->ptag[ip1] << "," << s2->ptag[ip2] << "]= ["
-	      // 	   << dv[0] << "\t" << dv[1] << "\t" << dv[2] << "]\n";
-	      // cout << "f1[" << s1->ptag[ip1] << "," << s2->ptag[ip2] << "]= ["
-	      // 	   << f[0] << "\t" << f[1] << "\t" << f[2] << "]\n";
-	      // cout << "fmag = " << fmag << endl;
+          // cout << "dx[" << s1->ptag[ip1] << "," << s2->ptag[ip2] << "]= ["
+          //        << dx[0] << "\t" << dx[1] << "\t" << dx[2] << "]\n";
+          // cout << "(v2 - v1)[" << s1->ptag[ip1] << "," << s2->ptag[ip2] << "]= ["
+          //        << dv[0] << "\t" << dv[1] << "\t" << dv[2] << "]\n";
+          // cout << "f1[" << s1->ptag[ip1] << "," << s2->ptag[ip2] << "]= ["
+          //        << f[0] << "\t" << f[1] << "\t" << f[2] << "]\n";
+          // cout << "fmag = " << fmag << endl;
               // }
             }
           }
@@ -282,12 +282,12 @@ void FixContactMinPenetration::initial_integrate() {
 //               (dx[1] > -Rp) && (dx[2] > -Rp)) {
 
 //             r = dx.norm();
-// 	    // Finer screening:
+//         // Finer screening:
 //             if (r < Rp) {
 //               f = (1.0 / (s1->mass[ip1] + s2->mass[ip2])) * (1 - Rp / r) * dx;
 //               //s1->x[ip1] += s2->mass[ip2] * f;
 //               //s2->x[ip2] -= s1->mass[ip1] * f;
-// 	      f /= update->dt; 
+//           f /= update->dt; 
 //               s1->v[ip1] += s2->mass[ip2] * f;
 //               s2->v[ip2] -= s1->mass[ip1] * f;
 //               ftot += f * (s1->mass[ip1] * s2->mass[ip2])/update->dt;
@@ -319,7 +319,7 @@ void FixContactMinPenetration::initial_integrate() {
 //               f = (1.0 / (s1->mass[ip1] + s2->mass[ip2])) * (1 - Rp / r) * dx;
 //               //s1->x[ip1] += s2->mass[ip2] * f;
 //               //s2->x[ip2] -= s1->mass[ip1] * f;
-// 	      f /= update->dt; 
+//           f /= update->dt; 
 //               s1->v[ip1] += s2->mass[ip2] * f;
 //               s2->v[ip2] -= s1->mass[ip1] * f;
 //               ftot += f * (s1->mass[ip1] * s2->mass[ip2])/update->dt;

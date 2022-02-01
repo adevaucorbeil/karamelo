@@ -90,7 +90,7 @@ void FixInitialStress::initial_integrate(Solid &solid, int ip)
   (*input->vars)["x" ] = Var("x",  solid.x .at(ip)[0]);
   (*input->vars)["y" ] = Var("y",  solid.x .at(ip)[1]);
   (*input->vars)["z" ] = Var("z",  solid.x .at(ip)[2]);
-	  
+      
   if (s_set[0]) solid.sigma.at(ip)(0,0) = s_value[0].result(mpm, true);
   if (s_set[1]) solid.sigma.at(ip)(1,1) = s_value[1].result(mpm, true);
   if (s_set[2]) solid.sigma.at(ip)(2,2) = s_value[2].result(mpm, true);
@@ -99,5 +99,5 @@ void FixInitialStress::initial_integrate(Solid &solid, int ip)
   if (s_set[5]) solid.sigma.at(ip)(0,1) = solid.sigma.at(ip)(1,0) = s_value[5].result(mpm, true);
 
   if (update->method_type == "tlmpm" || update->method_type == "tlcpdi")
-	solid.vol0PK1.at(ip) = solid.vol0.at(ip)*solid.sigma.at(ip);
+    solid.vol0PK1.at(ip) = solid.vol0.at(ip)*solid.sigma.at(ip);
 }

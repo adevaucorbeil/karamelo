@@ -88,7 +88,7 @@ void FixTemperatureNodes::post_velocities_to_grid(Grid &grid, int in)
 
   // Go through all the particles in the group and set v to the right value:
   if (grid.mask.at(in) & groupbit)
-	grid.T.at(in) = input->parsev(Targ).result(mpm);
+    grid.T.at(in) = input->parsev(Targ).result(mpm);
 }
 
 void FixTemperatureNodes::write_restart(ofstream *of) {

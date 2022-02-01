@@ -100,7 +100,7 @@ void FixInitialVelocityParticles::initial_integrate(Solid &solid, int ip) {
   if (xset)
     solid.v.at(ip)[0] = xvalue.result(mpm, true);
   if (yset)
-	solid.v.at(ip)[1] = yvalue.result(mpm, true);
+    solid.v.at(ip)[1] = yvalue.result(mpm, true);
   if (zset)
-	solid.v.at(ip)[2] = zvalue.result(mpm, true);
+    solid.v.at(ip)[2] = zvalue.result(mpm, true);
 }

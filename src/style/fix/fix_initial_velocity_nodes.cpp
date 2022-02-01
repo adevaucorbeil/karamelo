@@ -102,11 +102,11 @@ void FixInitialVelocityNodes::post_update_grid_state(Grid &grid, int in)
   (*input->vars)["z0"] = Var("z0", grid.x0.at(in)[2]);
 
   if (xset)
-	grid.v_update.at(in)[0] = xvalue.result(mpm, true);
+    grid.v_update.at(in)[0] = xvalue.result(mpm, true);
   if (yset)
-	grid.v_update.at(in)[1] = yvalue.result(mpm, true);
+    grid.v_update.at(in)[1] = yvalue.result(mpm, true);
   if (zset)
-	grid.v_update.at(in)[2] = zvalue.result(mpm, true);
+    grid.v_update.at(in)[2] = zvalue.result(mpm, true);
   // cout << "grid.v_update for " << n << " nodes from solid " << domain->solids[solid]->id << " set." << endl;
 }
 
@@ -123,10 +123,10 @@ void FixInitialVelocityNodes::post_velocities_to_grid(Grid &grid, int in)
   (*input->vars)["z0"] = Var("z0", grid.x0.at(in)[2]);
 
   if (xset)
-	grid.v.at(in)[0] = xvalue.result(mpm, true);
+    grid.v.at(in)[0] = xvalue.result(mpm, true);
   if (yset)
-	grid.v.at(in)[1] = yvalue.result(mpm, true);
+    grid.v.at(in)[1] = yvalue.result(mpm, true);
   if (zset)
-	grid.v.at(in)[2] = zvalue.result(mpm, true);
+    grid.v.at(in)[2] = zvalue.result(mpm, true);
   // cout << "v for " << n << " nodes from solid " << domain->solids[solid]->id << " set." << endl;
 }

@@ -126,30 +126,30 @@ void FixForceNodes::post_particles_to_grid() {
       n = 0;
 
       for (int in = 0; in < g->nnodes_local + g->nnodes_ghost; in++) {
-	if (g->mass[in] > 0) {
-	  if (g->mask[in] & groupbit) {
-	    n++;
-	  }
-	}
+    if (g->mass[in] > 0) {
+      if (g->mask[in] & groupbit) {
+        n++;
       }
-	    
+    }
+      }
+        
       for (int in = 0; in < g->nnodes_local + g->nnodes_ghost; in++) {
-	if (g->mass[in] > 0) {
-	  if (g->mask[in] & groupbit) {
-	    if (xset) {
-	      g->mb[in][0] += fx/((double) n);
-	      if(in < g->nnodes_local) ftot[0] += fx/((double) n);
-	    }
-	    if (yset) {
-	      g->mb[in][1] += fy/((double) n);
-	      if(in < g->nnodes_local) ftot[1] += fy/((double) n);
-	    }
-	    if (zset) {
-	      g->mb[in][2] += fz/((double) n);
-	      if(in < g->nnodes_local) ftot[2] += fz/((double) n);
-	    }
-	  }
-	}
+    if (g->mass[in] > 0) {
+      if (g->mask[in] & groupbit) {
+        if (xset) {
+          g->mb[in][0] += fx/((double) n);
+          if(in < g->nnodes_local) ftot[0] += fx/((double) n);
+        }
+        if (yset) {
+          g->mb[in][1] += fy/((double) n);
+          if(in < g->nnodes_local) ftot[1] += fy/((double) n);
+        }
+        if (zset) {
+          g->mb[in][2] += fz/((double) n);
+          if(in < g->nnodes_local) ftot[2] += fz/((double) n);
+        }
+      }
+    }
       }
     }
   } else {
@@ -159,28 +159,28 @@ void FixForceNodes::post_particles_to_grid() {
 
     for (int in = 0; in < g->nnodes_local + g->nnodes_ghost; in++) {
       if (g->mass[in] > 0) {
-	if (g->mask[in] & groupbit) {
-	  n++;
-	}
+    if (g->mask[in] & groupbit) {
+      n++;
+    }
       }
     }
 
     for (int in = 0; in < g->nnodes_local + g->nnodes_ghost; in++) {
       if (g->mass[in] > 0) {
-	if (g->mask[in] & groupbit) {
-	  if (xset) {
-	    g->mb[in][0] += fx/((double) n);
-	    if(in < g->nnodes_local) ftot[0] += fx/((double) n);
-	  }
-	  if (yset) {
-	    g->mb[in][1] += fy/((double) n);
-	    if(in < g->nnodes_local) ftot[1] += fy/((double) n);
-	  }
-	  if (zset) {
-	    g->mb[in][2] += fz/((double) n);
-	    if(in < g->nnodes_local) ftot[2] += fz/((double) n);
-	  }
-	}
+    if (g->mask[in] & groupbit) {
+      if (xset) {
+        g->mb[in][0] += fx/((double) n);
+        if(in < g->nnodes_local) ftot[0] += fx/((double) n);
+      }
+      if (yset) {
+        g->mb[in][1] += fy/((double) n);
+        if(in < g->nnodes_local) ftot[1] += fy/((double) n);
+      }
+      if (zset) {
+        g->mb[in][2] += fz/((double) n);
+        if(in < g->nnodes_local) ftot[2] += fz/((double) n);
+      }
+    }
       }
     }
   }

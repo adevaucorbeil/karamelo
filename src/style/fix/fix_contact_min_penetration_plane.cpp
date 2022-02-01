@@ -120,25 +120,25 @@ void FixContactMinPenetrationPlane::initial_integrate() {
 
       // Extremely gross screening:
       if (d < s->grid->cellsize) {
-	Rp = 0.5 * sqrt(s->vol[ip]);
+    Rp = 0.5 * sqrt(s->vol[ip]);
 
-	p = Rp - d;
-	// Fine screening:
-	if (p >= 0) {
-	  fnorm = s->mass[ip] * p / (update->dt * update->dt);
-	  f = fnorm * n;
+    p = Rp - d;
+    // Fine screening:
+    if (p >= 0) {
+      fnorm = s->mass[ip] * p / (update->dt * update->dt);
+      f = fnorm * n;
 
-	  if (mu != 0) {
-	    vt = s->v[ip] - n.dot(s->v[ip]) * n;
-	    vtnorm = vt.norm();
-	    if (vtnorm != 0) {
-	      vt /= vtnorm;
-	      f -= mu * fnorm * vt;
-	    }
-	  }
-	  s->mbp[ip] += f;
-	  ftot += f;
-	}
+      if (mu != 0) {
+        vt = s->v[ip] - n.dot(s->v[ip]) * n;
+        vtnorm = vt.norm();
+        if (vtnorm != 0) {
+          vt /= vtnorm;
+          f -= mu * fnorm * vt;
+        }
+      }
+      s->mbp[ip] += f;
+      ftot += f;
+    }
       }
     }
   } else if (domain->dimension == 3) {
@@ -147,25 +147,25 @@ void FixContactMinPenetrationPlane::initial_integrate() {
 
       // Extremely gross screening:
       if (d < s->grid->cellsize) {
-	Rp = 0.5 * cbrt(s->vol[ip]);
+    Rp = 0.5 * cbrt(s->vol[ip]);
 
-	p = Rp - d;
-	// Fine screening:
-	if (p >= 0) {
-	  fnorm = s->mass[ip] * p / (update->dt * update->dt);
-	  f = fnorm * n;
+    p = Rp - d;
+    // Fine screening:
+    if (p >= 0) {
+      fnorm = s->mass[ip] * p / (update->dt * update->dt);
+      f = fnorm * n;
 
-	  if (mu != 0) {
-	    vt = s->v[ip] - n.dot(s->v[ip]) * n;
-	    vtnorm = vt.norm();
-	    if (vtnorm != 0) {
-	      vt /= vtnorm;
-	      f -= mu * fnorm * vt;
-	    }
-	  }
-	  s->mbp[ip] += f;
-	  ftot += f;
-	}
+      if (mu != 0) {
+        vt = s->v[ip] - n.dot(s->v[ip]) * n;
+        vtnorm = vt.norm();
+        if (vtnorm != 0) {
+          vt /= vtnorm;
+          f -= mu * fnorm * vt;
+        }
+      }
+      s->mbp[ip] += f;
+      ftot += f;
+    }
       }
     }
   }

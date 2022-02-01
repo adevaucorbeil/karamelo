@@ -139,21 +139,21 @@ void FixIndentMinimizePenetration::initial_integrate(Solid &solid, int ip)
   double Rs = 0;
   if (domain->dimension == 2)
   {
-	if (domain->axisymmetric)
-	  Rs = 0.5*sqrt(solid.vol0.at(ip)/solid.x0.at(ip)[0]);
-	else
-	  Rs = 0.5*sqrt(solid.vol0.at(ip));
-	Rs += R;
+    if (domain->axisymmetric)
+      Rs = 0.5*sqrt(solid.vol0.at(ip)/solid.x0.at(ip)[0]);
+    else
+      Rs = 0.5*sqrt(solid.vol0.at(ip));
+    Rs += R;
 
-	if (xsp[0] >=  Rs || xsp[1] >=  Rs ||
+    if (xsp[0] >=  Rs || xsp[1] >=  Rs ||
         xsp[0] <= -Rs || xsp[1] <= -Rs)
       return;
   }
   else if (domain->dimension == 3)
   {
-	Rs = R + 0.5*cbrt(solid.vol0.at(ip));
+    Rs = R + 0.5*cbrt(solid.vol0.at(ip));
 
-	if (xsp[0] >=  Rs || xsp[1] >=  Rs || xsp[2] >=  Rs ||
+    if (xsp[0] >=  Rs || xsp[1] >=  Rs || xsp[2] >=  Rs ||
         xsp[0] <= -Rs || xsp[1] <= -Rs || xsp[2] <= -Rs)
       return;
   }
@@ -176,15 +176,15 @@ void FixIndentMinimizePenetration::initial_integrate(Solid &solid, int ip)
 
   if (mu)
   {
-	const Vector3d &vps = vs - solid.v.at(ip);
-	Vector3d vt = vps - vps.dot(xsp)*xsp;
-	double vtnorm = vt.norm();
+    const Vector3d &vps = vs - solid.v.at(ip);
+    Vector3d vt = vps - vps.dot(xsp)*xsp;
+    double vtnorm = vt.norm();
 
-	if (vtnorm)
+    if (vtnorm)
     {
-	  vt /= vtnorm;
-	  f += MIN(solid.mass.at(ip)*vtnorm/update->dt, mu*fmag)*vt;
-	}
+      vt /= vtnorm;
+      f += MIN(solid.mass.at(ip)*vtnorm/update->dt, mu*fmag)*vt;
+    }
   }
 
   A += cellsizeSq*solid.F.at(ip)(0, 0)*solid.F.at(ip)(2, 2);

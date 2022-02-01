@@ -141,33 +141,33 @@ void FixVelocityParticles::initial_integrate(Solid &solid, int ip)
       n = 0;
 
       for (int ip = 0; ip < s->np_local; ip++) {
-	if (s->mask[ip] & groupbit) {
-	  xtemp = s->x[ip];
-	  (*input->vars)["x"] = Var("x", s->x[ip][0]);
-	  (*input->vars)["x0"] = Var("x0", s->x0[ip][0]);
-	  (*input->vars)["y"] = Var("y", s->x[ip][1]);
-	  (*input->vars)["y0"] = Var("y0", s->x0[ip][1]);
-	  (*input->vars)["z"] = Var("z", s->x[ip][2]);
-	  (*input->vars)["z0"] = Var("z0", s->x0[ip][2]);
+    if (s->mask[ip] & groupbit) {
+      xtemp = s->x[ip];
+      (*input->vars)["x"] = Var("x", s->x[ip][0]);
+      (*input->vars)["x0"] = Var("x0", s->x0[ip][0]);
+      (*input->vars)["y"] = Var("y", s->x[ip][1]);
+      (*input->vars)["y0"] = Var("y0", s->x0[ip][1]);
+      (*input->vars)["z"] = Var("z", s->x[ip][2]);
+      (*input->vars)["z0"] = Var("z0", s->x0[ip][2]);
 
-	  if (xset) {
-	    s->v_update[ip][0] = xvalue.result(mpm);
-	    s->v[ip][0] = xprevvalue.result(mpm);
-	  }
-	  if (yset) {
-	    s->v_update[ip][1] = yvalue.result(mpm);
-	    s->v[ip][1] = yprevvalue.result(mpm);
-	  }
-	  if (zset) {
-	    s->v_update[ip][2] = zvalue.result(mpm);
-	    s->v[ip][2] = zprevvalue.result(mpm);
-	  }
-	  // if (s->ptag[ip] == 4371) {
-	  //   printf("fix: v=[%4.3e %4.3e %4.3e]\tv_update=[%4.3e %4.3e %4.3e]\ta=[%4.3e %4.3e %4.3e]\n", s->v[ip][0], s->v[ip][1], s->v[ip][2], s->v_update[ip][0], s->v_update[ip][1], s->v_update[ip][2], s->a[ip][0], s->a[ip][1], s->a[ip][2]);
-	  // }
-	  xold.push_back(xtemp);
-	  n++;
-	}
+      if (xset) {
+        s->v_update[ip][0] = xvalue.result(mpm);
+        s->v[ip][0] = xprevvalue.result(mpm);
+      }
+      if (yset) {
+        s->v_update[ip][1] = yvalue.result(mpm);
+        s->v[ip][1] = yprevvalue.result(mpm);
+      }
+      if (zset) {
+        s->v_update[ip][2] = zvalue.result(mpm);
+        s->v[ip][2] = zprevvalue.result(mpm);
+      }
+      // if (s->ptag[ip] == 4371) {
+      //   printf("fix: v=[%4.3e %4.3e %4.3e]\tv_update=[%4.3e %4.3e %4.3e]\ta=[%4.3e %4.3e %4.3e]\n", s->v[ip][0], s->v[ip][1], s->v[ip][2], s->v_update[ip][0], s->v_update[ip][1], s->v_update[ip][2], s->a[ip][0], s->a[ip][1], s->a[ip][2]);
+      // }
+      xold.push_back(xtemp);
+      n++;
+    }
       }
       // cout << "v_update for " << n << " particles from solid " << domain->solids[isolid]->id << " set." << endl;
     }
@@ -176,31 +176,31 @@ void FixVelocityParticles::initial_integrate(Solid &solid, int ip)
 
     for (int ip = 0; ip < s->np_local; ip++) {
       if (s->mask[ip] & groupbit) {
-	xtemp = s->x[ip];
-	(*input->vars)["x"] = Var("x", s->x[ip][0]);
-	(*input->vars)["x0"] = Var("x0", s->x0[ip][0]);
-	(*input->vars)["y"] = Var("y", s->x[ip][1]);
-	(*input->vars)["y0"] = Var("y0", s->x0[ip][1]);
-	(*input->vars)["z"] = Var("z", s->x[ip][2]);
-	(*input->vars)["z0"] = Var("z0", s->x0[ip][2]);
+    xtemp = s->x[ip];
+    (*input->vars)["x"] = Var("x", s->x[ip][0]);
+    (*input->vars)["x0"] = Var("x0", s->x0[ip][0]);
+    (*input->vars)["y"] = Var("y", s->x[ip][1]);
+    (*input->vars)["y0"] = Var("y0", s->x0[ip][1]);
+    (*input->vars)["z"] = Var("z", s->x[ip][2]);
+    (*input->vars)["z0"] = Var("z0", s->x0[ip][2]);
 
-	if (xset) {
-	  s->v_update[ip][0] = xvalue.result(mpm);
-	  s->v[ip][0] = xprevvalue.result(mpm);
-	}
-	if (yset) {
-	  s->v_update[ip][1] = yvalue.result(mpm);
-	  s->v[ip][1] = yprevvalue.result(mpm);
-	}
-	if (zset) {
-	  s->v_update[ip][2] = zvalue.result(mpm);
-	  s->v[ip][2] = zprevvalue.result(mpm);
-	}
-	// if (s->ptag[ip] == 4371) {
-	//   printf("fix: v=[%4.3e %4.3e %4.3e]\tv_update=[%4.3e %4.3e %4.3e]\ta=[%4.3e %4.3e %4.3e]\n", s->v[ip][0], s->v[ip][1], s->v[ip][2], s->v_update[ip][0], s->v_update[ip][1], s->v_update[ip][2], s->a[ip][0], s->a[ip][1], s->a[ip][2]);
-	// }
-	xold.push_back(xtemp);
-	n++;
+    if (xset) {
+      s->v_update[ip][0] = xvalue.result(mpm);
+      s->v[ip][0] = xprevvalue.result(mpm);
+    }
+    if (yset) {
+      s->v_update[ip][1] = yvalue.result(mpm);
+      s->v[ip][1] = yprevvalue.result(mpm);
+    }
+    if (zset) {
+      s->v_update[ip][2] = zvalue.result(mpm);
+      s->v[ip][2] = zprevvalue.result(mpm);
+    }
+    // if (s->ptag[ip] == 4371) {
+    //   printf("fix: v=[%4.3e %4.3e %4.3e]\tv_update=[%4.3e %4.3e %4.3e]\ta=[%4.3e %4.3e %4.3e]\n", s->v[ip][0], s->v[ip][1], s->v[ip][2], s->v_update[ip][0], s->v_update[ip][1], s->v_update[ip][2], s->a[ip][0], s->a[ip][1], s->a[ip][2]);
+    // }
+    xold.push_back(xtemp);
+    n++;
       }
     }
     // cout << "v_update for " << n << " particles from solid " << domain->solids[solid]->id << " set." << endl;
@@ -226,12 +226,12 @@ void FixVelocityParticles::post_advance_particles() {
       for (int ip = 0; ip < s->np_local; ip++) {
         if (s->mask[ip] & groupbit) {
           Dv = Vector3d();
-	  (*input->vars)["x"] = Var("x", xold[n][0]);
-	  (*input->vars)["x0"] = Var("x0", s->x0[ip][0]);
-	  (*input->vars)["y"] = Var("y", xold[n][1]);
-	  (*input->vars)["y0"] = Var("y0", s->x0[ip][1]);
-	  (*input->vars)["z"] = Var("z", xold[n][2]);
-	  (*input->vars)["z0"] = Var("z0", s->x0[ip][2]);
+      (*input->vars)["x"] = Var("x", xold[n][0]);
+      (*input->vars)["x0"] = Var("x0", s->x0[ip][0]);
+      (*input->vars)["y"] = Var("y", xold[n][1]);
+      (*input->vars)["y0"] = Var("y0", s->x0[ip][1]);
+      (*input->vars)["z"] = Var("z", xold[n][2]);
+      (*input->vars)["z0"] = Var("z0", s->x0[ip][2]);
 
           if (xset) {
             vx = xvalue.result(mpm);
@@ -264,12 +264,12 @@ void FixVelocityParticles::post_advance_particles() {
     for (int ip = 0; ip < s->np_local; ip++) {
       if (s->mask[ip] & groupbit) {
         Dv = Vector3d();
-	(*input->vars)["x"] = Var("x", xold[n][0]);
-	(*input->vars)["x0"] = Var("x0", s->x0[ip][0]);
-	(*input->vars)["y"] = Var("y", xold[n][1]);
-	(*input->vars)["y0"] = Var("y0", s->x0[ip][1]);
-	(*input->vars)["z"] = Var("z", xold[n][2]);
-	(*input->vars)["z0"] = Var("z0", s->x0[ip][2]);
+    (*input->vars)["x"] = Var("x", xold[n][0]);
+    (*input->vars)["x0"] = Var("x0", s->x0[ip][0]);
+    (*input->vars)["y"] = Var("y", xold[n][1]);
+    (*input->vars)["y0"] = Var("y0", s->x0[ip][1]);
+    (*input->vars)["z"] = Var("z", xold[n][2]);
+    (*input->vars)["z0"] = Var("z0", s->x0[ip][2]);
 
         if (xset) {
           vx = xvalue.result(mpm);

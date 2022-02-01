@@ -67,7 +67,7 @@ FixImpenetrableSurface::FixImpenetrableSurface(MPM *mpm, vector<string> args)
   }
   if (universe->me == 0) {
     cout << "Creating new fix FixImpenetrableSurface with ID: " << args[0]
-	 << endl;
+     << endl;
   }
   id = args[0];
 }
