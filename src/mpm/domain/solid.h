@@ -34,7 +34,7 @@
  * as used in the Updated Lagrangian MPM.
  * This class has Pointers as parent in order to be accessible from anywhere within the MPM class.
  */
-class Solid : protected Pointers {
+class Solid : public Pointers {
  public:
   string id;                                ///< Solid id
 

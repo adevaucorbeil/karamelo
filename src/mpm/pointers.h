@@ -44,7 +44,7 @@ class Pointers {
    modify(ptr->modify),
    group(ptr->group) {}
   virtual ~Pointers() {}
- protected:
+ public:
   MPM *mpm;
   Memory *&memory;
   Error *&error;

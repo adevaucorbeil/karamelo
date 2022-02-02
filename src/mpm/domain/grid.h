@@ -52,7 +52,7 @@ struct Point {
  * Either a local grid, as used in the Total Lagrangian MPM, or the global grid, as used in the Updated Lagrangian MPM.
  * This class has Pointers as parent in order to be accessible from anywhere within the MPM class.
  */
-class Grid : protected Pointers {
+class Grid : public Pointers {
  public:
   int ncells;            ///< number of cells
   bigint nnodes;         ///< total number of nodes in the domain

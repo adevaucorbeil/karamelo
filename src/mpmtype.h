@@ -11,6 +11,8 @@
  *
  * ----------------------------------------------------------------------- */
 
+#include <cstdint>
+
 #define MPI_LL MPI_LONG_LONG
 
 typedef int64_t bigint;

@@ -78,7 +78,6 @@ Modify::~Modify()
 
 void Modify::init()
 {
-  for (int i = 0; i < fix.size(); i++) fix[i]->init();
   for (int i = 0; i < compute.size(); i++) compute[i]->init();
 
   list_init(INITIAL_INTEGRATE, list_initial_integrate);
@@ -97,7 +96,6 @@ void Modify::init()
 
 void Modify::setup()
 {
-  for (int i = 0; i < fix.size(); i++) fix[i]->setup();
   for (int i = 0; i < compute.size(); i++) compute[i]->setup();
 }
 
@@ -114,13 +112,11 @@ void Modify::add_fix(vector<string> args){
     delete fix[ifix];
     FixCreator fix_creator = (*fix_map)[args[1]];
     fix[ifix] = fix_creator(mpm, args);
-    fix[ifix]->init();
   }
   else if (fix_map->find(args[1]) != fix_map->end()) {
     ifix = fix.size();
     FixCreator fix_creator = (*fix_map)[args[1]];
     fix.push_back(fix_creator(mpm, args));
-    fix.back()->init();
   }
   else {
     error->all(FLERR, "Unknown fix style " + args[1] + ".\n");
