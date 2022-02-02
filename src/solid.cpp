@@ -306,10 +306,11 @@ void Solid::grow(int nparticles)
   wf_np.resize(nnodes);
   wfd_np.resize(nnodes);
 
+  gamma.resize(nparticles);
+
   if (mat->cp != 0) {
     T.resize(nparticles);
     T_old.resize(nparticles);
-    gamma.resize(nparticles);
     q.resize(nparticles);
   }
 }
@@ -1332,12 +1333,14 @@ void Solid::update_stress()
       // // compute a characteristic time over which to average the plastic
       // strain
 
-      tav = 1000 * grid->cellsize / mat->signal_velocity;
+      // tav = 100 * grid->cellsize / mat->signal_velocity;
 
-      eff_plastic_strain_rate[ip] -=
-          eff_plastic_strain_rate[ip] * update->dt / tav;
-      eff_plastic_strain_rate[ip] += plastic_strain_increment[ip] / tav;
-      eff_plastic_strain_rate[ip] = MAX(0.0, eff_plastic_strain_rate[ip]);
+      // eff_plastic_strain_rate[ip] -=
+      //     eff_plastic_strain_rate[ip] * update->dt / tav;
+      // eff_plastic_strain_rate[ip] += plastic_strain_increment[ip] / tav;
+      // eff_plastic_strain_rate[ip] = MAX(0.0, eff_plastic_strain_rate[ip]);
+
+      eff_plastic_strain_rate[ip] = MAX(0.0,plastic_strain_increment[ip]/update->dt);
 
       if (mat->damage != nullptr) {
 	if (update->method->temp) {
