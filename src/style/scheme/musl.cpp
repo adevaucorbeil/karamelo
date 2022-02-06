@@ -20,6 +20,7 @@
 #include <output.h>
 #include <modify.h>
 #include <universe.h>
+#include <domain.h>
 
 using namespace std;
 
@@ -39,48 +40,102 @@ void MUSL::run(Var condition){
 
   output->write(ntimestep);
 
+  Method &method = *update->method;
+
   //for (int i=0; i<nsteps; i++){
-  while ((bool) condition.result(mpm)) {
+  while (condition.result(mpm))
+  {
+    // prepare
     ntimestep = update->update_timestep();
 
-    update->method->compute_grid_weight_functions_and_gradients();
+    method.compute_grid_weight_functions_and_gradients();
     modify->prepare();
 
-    update->method->reset();
-    modify->initial_integrate();
+    // grid reset
+    method.reset();
+    method.reset_mass_nodes();
+    method.reset_nodes();
 
-    update->method->particles_to_grid();
+    // p2g
+    for (Solid *solid: domain->solids)
+      for (int ip = 0; ip < solid->np_local; ip++)
+        modify->initial_integrate(*solid, ip);
 
-    modify->post_particles_to_grid();
+    for (Solid *solid: domain->solids)
+      for (int i = 0; i < solid->neigh_n.size(); i++)
+        method.compute_mass_nodes(*solid,
+                                   solid->neigh_n.at(i),
+                                   solid->neigh_p.at(i),
+                                   solid->wf.at(i));
 
-    update->method->update_grid_state();
+    method.reduce_mass_ghost_nodes();
 
-    modify->post_update_grid_state();
+    for (Solid *solid: domain->solids)
+      for (int i = 0; i < solid->neigh_n.size(); i++)
+      {
+        int in = solid->neigh_n.at(i);
+        int ip = solid->neigh_p.at(i);
+        double wf = solid->wf.at(i);
+        const Vector3d &wfd = solid->wfd.at(i);
 
-    update->method->grid_to_points();
+        method.compute_velocity_nodes(*solid, in, ip, wf);
+        method.compute_force_nodes(*solid, in, ip, wf, wfd);
+        if (method.temp)
+        {
+          method.compute_temperature_nodes(*solid, in, ip, wf);
+          method.compute_temperature_driving_force_nodes(*solid, in, ip, wf, wfd);
+        }
+      }
+
+    // grid update
+    method.reduce_ghost_nodes();
+
+    //modify->post_particles_to_grid();
+
+    method.update_grid_state();
+
+    //modify->post_update_grid_state();
+
+    // g2p
+    method.grid_to_points();
 
     modify->post_grid_to_point();
 
-    update->method->advance_particles();
+    method.advance_particles();
 
-    modify->post_advance_particles();
-    
-    update->method->velocities_to_grid();
+    //modify->post_advance_particles();
 
-    modify->post_velocities_to_grid();
+    // velocities to grid
+    method.reset_nodes(true, false);
 
-    update->method->update_grid_positions();
+    for (Solid *solid: domain->solids)
+      for (int i = 0; i < solid->neigh_n.size(); i++)
+      {
+        int in = solid->neigh_n.at(i);
+        int ip = solid->neigh_p.at(i);
+        double wf = solid->wf.at(i);
 
-    update->method->compute_rate_deformation_gradient(true);
-    update->method->update_deformation_gradient();
-    update->method->update_stress(true);
+        method.compute_velocity_nodes(*solid, in, ip, wf);
+        if (method.temp)
+          method.compute_temperature_nodes(*solid, in, ip, wf);
+      }
 
-    update->method->exchange_particles();
+    method.reduce_ghost_nodes(true, false);
+
+    //modify->post_velocities_to_grid();
+
+    method.update_grid_positions();
+
+    method.compute_rate_deformation_gradient(true);
+    method.update_deformation_gradient();
+    method.update_stress(true);
+
+    method.exchange_particles();
 
     update->update_time();
-    update->method->adjust_dt();
+    method.adjust_dt();
 
-    modify->final_integrate();
+    //modify->final_integrate();
 
 
     if ((update->maxtime != -1) && (update->atime > update->maxtime)) {

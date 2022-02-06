@@ -328,111 +328,62 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
   update_wf = false;
 }
 
-void TLMPM::particles_to_grid()
+void TLMPM::reset_mass_nodes()
 {
-  if (update_mass_nodes)
-  {
-    for (Solid *solid: domain->solids)
-    {
-      solid->grid->reset_mass();
-      for (int i = 0; i < solid->neigh_n.size(); i++)
-        solid->compute_mass_nodes(solid->neigh_n.at(i),
-                                  solid->neigh_p.at(i),
-                                  solid->wf.at(i));
-      solid->grid->reduce_mass_ghost_nodes();
-    }
-    update_mass_nodes = false;
-  }
+  for (Solid *solid: domain->solids)
+    solid->grid->reset_mass();
+}
 
+bool TLMPM::should_compute_mass_nodes()
+{
+  return update_mass_nodes;
+}
+
+void TLMPM::reduce_mass_ghost_nodes()
+{
+  for (Solid *solid: domain->solids)
+    solid->grid->reduce_mass_ghost_nodes();
+}
+
+void TLMPM::reset_nodes(bool velocities, bool forces)
+{
   for (Solid *solid: domain->solids)
   {
-    solid->grid->reset_velocity();
-    solid->grid->reset_forces();
+    Grid &grid = *solid->grid;
+    
+    if (velocities)
+      grid.reset_velocity();
+    if (forces)
+      grid.reset_forces();
     if (temp)
     {
-      solid->grid->reset_temperatures();
-      solid->grid->reset_temperature_driving_forces();
+      if (velocities)
+        grid.reset_temperatures();  
+      if (forces)
+        grid.reset_temperature_driving_forces();
     }
-    
-    for (int i = 0; i < solid->neigh_n.size(); i++)
-    {
-      int in = solid->neigh_n.at(i);
-      int ip = solid->neigh_p.at(i);
-      double wf = solid->wf.at(i);
-      const Vector3d &wfd = solid->wfd.at(i);
-
-      solid->compute_velocity_nodes(in, ip, wf, update->sub_method_type == Update::SubMethodType::APIC);
-      solid->compute_force_nodes(in, ip, wf, wfd, true, false);
-      if (temp)
-      {
-        solid->compute_temperature_nodes(in, ip, wf);
-        solid->compute_temperature_driving_force_nodes(in, ip, wf, wfd);
-      }
-    }
-
-    solid->grid->reduce_ghost_nodes(true, true, temp);
   }
 }
 
-void TLMPM::particles_to_grid_USF_1()
+void TLMPM::compute_internal_force_nodes(Solid &solid, int in, int ip, double wf, const Vector3d &wfd)
 {
-  if (update_mass_nodes)
-  {
-    for (Solid *solid: domain->solids)
-    {
-      solid->grid->reset_mass();
-      for (int i = 0; i < solid->neigh_n.size(); i++)
-        solid->compute_mass_nodes(solid->neigh_n.at(i),
-                                  solid->neigh_p.at(i),
-                                  solid->wf.at(i));
-      solid->grid->reduce_mass_ghost_nodes();
-    }
-    update_mass_nodes = false;
-  }
+  Vector3d &f = solid.grid->f.at(in);
+  const Matrix3d &vol0PK1 = solid.vol0PK1.at(ip);
+  const Vector3d &x0 = solid.x0.at(ip);
 
-  for (Solid *solid: domain->solids)
-  {
-    solid->grid->reset_velocity();
-    if (temp)
-      domain->grid->reset_temperatures();
+  if (update->sub_method_type == Update::SubMethodType::MLS)
+    f -= vol0PK1*wf*solid.Di*(solid.grid->x0.at(in) - x0);
+  else
+    f -= vol0PK1*wfd;
 
-    for (int i = 0; i < solid->neigh_n.size(); i++)
-    {
-      int in = solid->neigh_n.at(i);
-      int ip = solid->neigh_p.at(i);
-      double wf = solid->wf.at(i);
-
-      solid->compute_velocity_nodes(in, ip, wf, update->sub_method_type == Update::SubMethodType::APIC);
-      if (temp)
-        solid->compute_temperature_nodes(in, ip, wf);
-    }
-
-    solid->grid->reduce_ghost_nodes(true, false, temp);
-  }
+  if (domain->axisymmetric)
+    f[0] -= vol0PK1(2, 2)*wf/x0[0];
 }
 
-void TLMPM::particles_to_grid_USF_2()
+void TLMPM::reduce_ghost_nodes(bool velocities, bool forces)
 {
   for (Solid *solid: domain->solids)
-  {
-    solid->grid->reset_forces();
-    if (temp)
-      solid->grid->reset_temperature_driving_forces();
-    
-    for (int i = 0; i < solid->neigh_n.size(); i++)
-    {
-      int in = solid->neigh_n.at(i);
-      int ip = solid->neigh_p.at(i);
-      double wf = solid->wf.at(i);
-      const Vector3d &wfd = solid->wfd.at(i);
-      
-      solid->compute_force_nodes(in, ip, wf, wfd, true, false);
-      if (temp)
-        solid->compute_temperature_driving_force_nodes(in, ip, wf, wfd);
-    }
-
-    solid->grid->reduce_ghost_nodes(false, true, temp);
-  }
+    solid->grid->reduce_ghost_nodes(velocities, forces, temp);
 }
 
 void TLMPM::update_grid_state()
@@ -470,29 +421,6 @@ void TLMPM::advance_particles()
 {
   for (int isolid=0; isolid<domain->solids.size(); isolid++) {
     domain->solids[isolid]->update_particle(update->PIC_FLIP, false, true);
-  }
-}
-
-void TLMPM::velocities_to_grid()
-{
-  for (Solid *solid: domain->solids)
-  {
-    solid->grid->reset_velocity();
-    if (temp)
-      domain->grid->reset_temperatures();
-
-    for (int i = 0; i < solid->neigh_n.size(); i++)
-    {
-      int in = solid->neigh_n.at(i);
-      int ip = solid->neigh_p.at(i);
-      double wf = solid->wf.at(i);
-
-      solid->compute_velocity_nodes(in, ip, wf, update->sub_method_type == Update::SubMethodType::APIC);
-      if (temp)
-        solid->compute_temperature_nodes(in, ip, wf);
-    }
-
-    solid->grid->reduce_ghost_nodes(true, false, temp);
   }
 }
 

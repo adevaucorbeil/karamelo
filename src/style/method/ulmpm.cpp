@@ -44,8 +44,6 @@ ULMPM::ULMPM(MPM *mpm) : Method(mpm)
   rigid_solids = 0;
 }
 
-ULMPM::~ULMPM() {}
-
 void ULMPM::setup(vector<string> args)
 {
   if (args.size() > 0) {
@@ -76,13 +74,8 @@ void ULMPM::setup(vector<string> args)
     error->all(FLERR, "Error: shape function not supported! Supported functions are:  \033[1;32mlinear\033[0m, \033[1;32mcubic-spline\033[0m, \033[1;32mquadratic-spline\033[0m, \033[1;32mBernstein-quadratic\033[0m.\n");
   }
 
-  if (update->sub_method_type == Update::SubMethodType::APIC || update->sub_method_type == Update::SubMethodType::MLS) {
-    apic = true;
+  if (update->sub_method_type == Update::SubMethodType::APIC || update->sub_method_type == Update::SubMethodType::MLS)
     update->PIC_FLIP = 0;
-  } else if (update->sub_method_type == Update::SubMethodType::ASFLIP ||
-             update->sub_method_type == Update::SubMethodType::AFLIP) {
-    apic = true;
-  }
 }
 
 void ULMPM::compute_grid_weight_functions_and_gradients()
@@ -308,95 +301,55 @@ void ULMPM::compute_grid_weight_functions_and_gradients()
   update_Di = 0;
 }
 
-void ULMPM::particles_to_grid() {
+void ULMPM::reset_mass_nodes()
+{
   domain->grid->reset_mass();
-  for (Solid *solid: domain->solids)
-    for (int i = 0; i < solid->neigh_n.size(); i++)
-      solid->compute_mass_nodes(solid->neigh_n.at(i),
-                                solid->neigh_p.at(i),
-                                solid->wf.at(i));
+}
 
+bool ULMPM::should_compute_mass_nodes()
+{
+  return true;
+}
+
+void ULMPM::reduce_mass_ghost_nodes()
+{
   domain->grid->reduce_mass_ghost_nodes();
+}
 
-  domain->grid->reset_velocity();
-  domain->grid->reset_forces();
+void ULMPM::reset_nodes(bool velocities, bool forces)
+{
+  if (velocities)
+    domain->grid->reset_velocity();
+  if (forces)
+    domain->grid->reset_forces();
   if (temp)
   {
-    domain->grid->reset_temperatures();
-    domain->grid->reset_temperature_driving_forces();
+    if (velocities)
+      domain->grid->reset_temperatures();
+    if (forces)
+      domain->grid->reset_temperature_driving_forces();
   }
-
-  for (Solid *solid: domain->solids)
-    for (int i = 0; i < solid->neigh_n.size(); i++)
-    {
-      int in = solid->neigh_n.at(i);
-      int ip = solid->neigh_p.at(i);
-      double wf = solid->wf.at(i);
-      const Vector3d &wfd = solid->wfd.at(i);
-
-      solid->compute_velocity_nodes(in, ip, wf, apic);    
-      solid->compute_force_nodes(in, ip, wf, wfd, false, false);
-      if (temp)
-      {
-        solid->compute_temperature_nodes(in, ip, wf);
-        solid->compute_temperature_driving_force_nodes(in, ip, wf, wfd);
-      }
-    }
-
-  domain->grid->reduce_ghost_nodes(true, true, temp);
 }
 
-void ULMPM::particles_to_grid_USF_1() {
-  domain->grid->reset_mass();
-  for (Solid *solid: domain->solids)
-    for (int i = 0; i < solid->neigh_n.size(); i++)
-      solid->compute_mass_nodes(solid->neigh_n.at(i),
-                                solid->neigh_p.at(i),
-                                solid->wf.at(i));
+void ULMPM::compute_internal_force_nodes(Solid &solid, int in, int ip, double wf, const Vector3d &wfd)
+{
+  Vector3d &f = solid.grid->f.at(in);
+  const Matrix3d &vol_sigma = solid.vol.at(ip)*solid.sigma.at(ip);
+  const Vector3d &x = solid.x.at(ip);
 
-  domain->grid->reduce_mass_ghost_nodes();
+  if (update->sub_method_type == Update::SubMethodType::MLS)
+    f -= vol_sigma*wf*solid.Di*(solid.grid->x0.at(in) - x);
+  else
+    f -= vol_sigma*wfd;
 
-  domain->grid->reset_velocity();
-  if (temp)
-    domain->grid->reset_temperatures();
-
-  for (Solid *solid: domain->solids)
-    for (int i = 0; i < solid->neigh_n.size(); i++)
-    {
-      int in = solid->neigh_n.at(i);
-      int ip = solid->neigh_p.at(i);
-      double wf = solid->wf.at(i);
-
-      solid->compute_velocity_nodes(in, ip, wf, apic);   
-      if (temp)
-        solid->compute_temperature_nodes(in, ip, wf);        
-    }
-
-  domain->grid->reduce_ghost_nodes(true, false, temp);
+  if (domain->axisymmetric)
+    f[0] -= vol_sigma(2, 2)*wf/x[0];
 }
 
-void ULMPM::particles_to_grid_USF_2() {
-  domain->grid->reset_forces();
-  if (temp)
-    domain->grid->reset_temperature_driving_forces();
-  
-  for (Solid *solid: domain->solids)
-    for (int i = 0; i < solid->neigh_n.size(); i++)
-    {
-      int in = solid->neigh_n.at(i);
-      int ip = solid->neigh_p.at(i);
-      double wf = solid->wf.at(i);
-      const Vector3d &wfd = solid->wfd.at(i);
-       
-      solid->compute_force_nodes(in, ip, wf, wfd, false,
-                                  update->sub_method_type == Update::SubMethodType::MLS);
-      if (temp)
-        solid->compute_temperature_driving_force_nodes(in, ip, wf, wfd);   
-    }
-    
-  domain->grid->reduce_ghost_nodes(false, true, temp);
+void ULMPM::reduce_ghost_nodes(bool velocities, bool forces)
+{
+  domain->grid->reduce_ghost_nodes(velocities, forces, temp);
 }
-
 
 void ULMPM::update_grid_state() {
   domain->grid->update_grid_velocities();
@@ -435,27 +388,6 @@ void ULMPM::advance_particles()
     else
       domain->solids[isolid]->update_particle(update->PIC_FLIP, true, true);      
   }
-}
-
-void ULMPM::velocities_to_grid()
-{
-  domain->grid->reset_velocity();
-  if (temp)
-    domain->grid->reset_temperatures();
-
-  for (Solid *solid: domain->solids)
-    for (int i = 0; i < solid->neigh_n.size(); i++)
-    {
-      int in = solid->neigh_n.at(i);
-      int ip = solid->neigh_p.at(i);
-      double wf = solid->wf.at(i);
-
-      solid->compute_velocity_nodes(in, ip, wf, apic);    
-      if (temp)
-        solid->compute_temperature_nodes(in, ip, wf);       
-    }
-  
-  domain->grid->reduce_ghost_nodes(true, false, temp);
 }
 
 void ULMPM::compute_rate_deformation_gradient(bool doublemapping)

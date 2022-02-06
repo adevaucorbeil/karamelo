@@ -233,29 +233,29 @@ void Modify::list_init(int mask, vector<int> &list) {
    1st half of integrate call, only for relevant fixes
 ------------------------------------------------------------------------- */
 
-void Modify::initial_integrate()
+void Modify::initial_integrate(Solid &solid, int ip)
 {
   for (int i = 0; i < list_initial_integrate.size(); i++)
-    fix[list_initial_integrate[i]]->initial_integrate();
+    fix[list_initial_integrate[i]]->initial_integrate(solid, ip);
 }
 
 /* ----------------------------------------------------------------------
    after post_particles_to_grid(), only for relevant fixes
 ------------------------------------------------------------------------- */
 
-void Modify::post_particles_to_grid()
+void Modify::post_particles_to_grid(Grid &grid, int in)
 {
   for (int i = 0; i < list_post_particles_to_grid.size(); i++)
-    fix[list_post_particles_to_grid[i]]->post_particles_to_grid();
+    fix[list_post_particles_to_grid[i]]->post_particles_to_grid(grid, in);
 }
 
 /* ----------------------------------------------------------------------
    after update_grid_state(), only for relevant fixes
 ------------------------------------------------------------------------- */
 
-void Modify::post_update_grid_state(){
+void Modify::post_update_grid_state(Grid &grid, int in){
   for (int i = 0; i < list_post_update_grid_state.size(); i++)
-    fix[list_post_update_grid_state[i]]->post_update_grid_state();
+    fix[list_post_update_grid_state[i]]->post_update_grid_state(grid, in);
 }
 
 /* ----------------------------------------------------------------------
@@ -271,27 +271,27 @@ void Modify::post_grid_to_point(){
    after advance_particles(), only for relevant fixes
 ------------------------------------------------------------------------- */
 
-void Modify::post_advance_particles(){
+void Modify::post_advance_particles(Solid &solid, int ip){
   for (int i = 0; i < list_post_advance_particles.size(); i++)
-    fix[list_post_advance_particles[i]]->post_advance_particles();
+    fix[list_post_advance_particles[i]]->post_advance_particles(solid, ip);
 }
 
 /* ----------------------------------------------------------------------
    after velocities_to_grid(), only for relevant fixes
 ------------------------------------------------------------------------- */
 
-void Modify::post_velocities_to_grid(){
+void Modify::post_velocities_to_grid(Grid &grid, int in){
   for (int i = 0; i < list_post_velocities_to_grid.size(); i++)
-    fix[list_post_velocities_to_grid[i]]->post_velocities_to_grid();
+    fix[list_post_velocities_to_grid[i]]->post_velocities_to_grid(grid, in);
 }
 
 /* ----------------------------------------------------------------------
    final_integrate, only for relevant fixes
 ------------------------------------------------------------------------- */
 
-void Modify::final_integrate(){
+void Modify::final_integrate(Solid &solid, int ip){
   for (int i = 0; i < list_final_integrate.size(); i++)
-    fix[list_final_integrate[i]]->final_integrate();
+    fix[list_final_integrate[i]]->final_integrate(solid, ip);
 }
 
 void Modify::prepare(){
@@ -363,6 +363,5 @@ void Modify::read_restart(ifstream *ifr) {
     FixCreator fix_creator = (*fix_map)[style];
     fix[i] = fix_creator(mpm, vector<string>{id, style, "restart", to_string(igroup)});
     fix[i]->read_restart(ifr);
-    fix[i]->init();
   }
 }

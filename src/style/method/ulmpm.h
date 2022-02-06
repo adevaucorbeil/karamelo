@@ -30,20 +30,24 @@ class ULMPM : public Method {
   bool apic;
   
   ULMPM(class MPM *);
-  ~ULMPM();
 
   void setup(vector<string>);
 
   void compute_grid_weight_functions_and_gradients();
   double (*basis_function)(double, int);
   double (*derivative_basis_function)(double, int, double);
-  void particles_to_grid();
-  void particles_to_grid_USF_1();
-  void particles_to_grid_USF_2();
+  
+  void reset_mass_nodes() override;
+  bool should_compute_mass_nodes() override;
+  void reduce_mass_ghost_nodes() override;
+
+  void reset_nodes(bool velocities = true, bool forces = true) override;
+  void compute_internal_force_nodes(Solid &solid, int in, int ip, double wf, const Vector3d &wfd) override;
+  void reduce_ghost_nodes(bool velocities = true, bool forces = true) override;
+
   void update_grid_state();
   void grid_to_points();
   void advance_particles();
-  void velocities_to_grid();
   void update_grid_positions() {};
   void compute_rate_deformation_gradient(bool);
   void update_deformation_gradient();

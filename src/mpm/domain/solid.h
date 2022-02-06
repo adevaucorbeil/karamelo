@@ -118,12 +118,6 @@ class Solid : public Pointers {
   void init();                              ///< Launch the initialization of the grid.
   void options(vector<string> *, vector<string>::iterator); ///< Determines the material and temperature schemes used.
   void grow(int);                           ///< Allocate memory for the vectors used for particles or resize them.
-
-  void compute_mass_nodes(int in, int ip, double wf);                    ///< Compute nodal mass step of the Particle to Grid step of the MPM algorithm.
-  void compute_velocity_nodes(int in, int ip, double wf, bool APIC);                ///< Compute nodal velocity (via momentum) step of the Particle to Grid step of the MPM algorithm.
-  void compute_force_nodes(int in, int ip, double wf, const Vector3d &wfd, bool TL, bool MLS);      ///< Compute both external and internal forces step of the Particle to Grid step of the updated Lagrangian MPM algorithm.
-  void compute_temperature_nodes(int in, int ip, double wf);             ///< Compute nodal temperature step of the particle
-  void compute_temperature_driving_force_nodes(int in, int ip, double wf, const Vector3d &wfd); ///< Compute external temperature driving forces
   
   void compute_velocity_acceleration(int in, int ip, double wf);
   void compute_particle_temperature(int in, int ip, double wf);               ///< Update the particles' temperature

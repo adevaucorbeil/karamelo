@@ -19,6 +19,9 @@
 #include <string>
 #include <vector>
 
+class Solid;
+class Grid;
+
 using namespace std;
 
 class Modify : protected Pointers
@@ -54,13 +57,13 @@ public:
   void addstep_compute(bigint);
   void addstep_compute_all(bigint);
 
-  void initial_integrate();
-  void post_particles_to_grid();
-  void post_update_grid_state();
+  void initial_integrate(Solid &solid, int ip);
+  void post_particles_to_grid(Grid &grid, int in);
+  void post_update_grid_state(Grid &grid, int in);
   void post_grid_to_point();
-  void post_advance_particles();
-  void post_velocities_to_grid();
-  void final_integrate();
+  void post_advance_particles(Solid &solid, int ip);
+  void post_velocities_to_grid(Grid &grid, int in);
+  void final_integrate(Solid &solid, int ip);
   void prepare();
   void reduce();
 
