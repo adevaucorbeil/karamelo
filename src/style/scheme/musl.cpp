@@ -32,29 +32,38 @@ void MUSL::setup(){
   output->setup();
 }
 
-void MUSL::run(Var condition){
-
-  bigint ntimestep = update->ntimestep;
-  
+void MUSL::run(Var condition)
+{
   // cout << "In MUSL::run" << endl;
 
-  output->write(ntimestep);
+  output->write(update->ntimestep);
 
   Method &method = *update->method;
 
-  //for (int i=0; i<nsteps; i++){
   while (condition.result(mpm))
   {
     // prepare
-    ntimestep = update->update_timestep();
-
+    int ntimestep = update->update_timestep();
     method.compute_grid_weight_functions_and_gradients();
     modify->prepare();
 
     // grid reset
     method.reset();
-    method.reset_mass_nodes();
-    method.reset_nodes();
+
+    for (Grid *grid: method.grids())
+      for (int in = 0; in < grid->nnodes_local + grid->nnodes_ghost; in++)
+      {
+        grid->mass.at(in) = 0;
+        grid->v.at(in) = Vector3d();
+        grid->f.at(in) = Vector3d();
+        grid->mb.at(in) = Vector3d();
+        if (method.temp)
+        {
+          grid->T.at(in) = 0;
+          grid->Qint.at(in) = 0;
+          grid->Qext.at(in) = 0;
+        }
+      }
 
     // p2g
     for (Solid *solid: domain->solids)
@@ -67,8 +76,9 @@ void MUSL::run(Var condition){
                                    solid->neigh_n.at(i),
                                    solid->neigh_p.at(i),
                                    solid->wf.at(i));
-
-    method.reduce_mass_ghost_nodes();
+    
+    for (Grid *grid: method.grids())
+      grid->reduce_mass_ghost_nodes();
 
     for (Solid *solid: domain->solids)
       for (int i = 0; i < solid->neigh_n.size(); i++)
@@ -88,13 +98,21 @@ void MUSL::run(Var condition){
       }
 
     // grid update
-    method.reduce_ghost_nodes();
+    for (Grid *grid: method.grids())
+    {
+      grid->reduce_ghost_nodes(true, true, method.temp);
 
-    //modify->post_particles_to_grid();
+      for (int in = 0; in < grid->nnodes_local + grid->nnodes_ghost; in++)
+      {
+        modify->post_particles_to_grid(*grid, in);
 
-    method.update_grid_state();
+        method.update_grid_velocities(*grid, in);
+        if (method.temp)
+          method.update_grid_temperature(*grid, in);
 
-    //modify->post_update_grid_state();
+        modify->post_update_grid_state(*grid, in);
+      }
+    }
 
     // g2p
     method.grid_to_points();
@@ -106,7 +124,14 @@ void MUSL::run(Var condition){
     //modify->post_advance_particles();
 
     // velocities to grid
-    method.reset_nodes(true, false);
+    for (Grid *grid: method.grids())
+      for (int in = 0; in < grid->nnodes_local + grid->nnodes_ghost; in++)
+      {
+        grid->v.at(in) = Vector3d();
+        grid->mb.at(in) = Vector3d();
+        if (method.temp)
+          grid->T.at(in) = 0;
+      }
 
     for (Solid *solid: domain->solids)
       for (int i = 0; i < solid->neigh_n.size(); i++)
@@ -120,7 +145,8 @@ void MUSL::run(Var condition){
           method.compute_temperature_nodes(*solid, in, ip, wf);
       }
 
-    method.reduce_ghost_nodes(true, false);
+    for (Grid *grid: method.grids())
+      grid->reduce_ghost_nodes(true, false, update->temp);
 
     //modify->post_velocities_to_grid();
 
@@ -137,16 +163,14 @@ void MUSL::run(Var condition){
 
     //modify->final_integrate();
 
-
     if ((update->maxtime != -1) && (update->atime > update->maxtime)) {
       update->nsteps = ntimestep;
       output->write(ntimestep);
       break;
     }
 
-    if (ntimestep == output->next || ntimestep == update->nsteps) {
+    if (ntimestep == output->next || ntimestep == update->nsteps)
       output->write(ntimestep);
-    }
   }
 }
 

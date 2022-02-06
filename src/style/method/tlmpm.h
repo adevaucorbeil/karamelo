@@ -34,16 +34,11 @@ public:
   void compute_grid_weight_functions_and_gradients();
   double (*basis_function)(double, int);
   double (*derivative_basis_function)(double, int, double);
-
-  void reset_mass_nodes() override;
+  
+  vector<Grid *> grids() override;
   bool should_compute_mass_nodes() override;
-  void reduce_mass_ghost_nodes() override;
-
-  void reset_nodes(bool velocities = true, bool forces = true) override;
   void compute_internal_force_nodes(Solid &solid, int in, int ip, double wf, const Vector3d &wfd) override;
-  void reduce_ghost_nodes(bool velocities = true, bool forces = true) override;
 
-  void update_grid_state();
   void grid_to_points();
   void advance_particles();
   void update_grid_positions();

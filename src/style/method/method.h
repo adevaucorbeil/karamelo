@@ -37,21 +37,19 @@ class Method : protected Pointers {
   virtual void compute_grid_weight_functions_and_gradients() = 0;
 
   bool apic();
+  virtual vector<Grid *> grids() = 0;
 
-  virtual void reset_mass_nodes() = 0;
   virtual bool should_compute_mass_nodes() = 0;
   void compute_mass_nodes(Solid &solid, int in, int ip, double wf);
-  virtual void reduce_mass_ghost_nodes() = 0;
-
-  virtual void reset_nodes(bool velocities = true, bool forces = true) = 0;
   void compute_velocity_nodes(Solid &solid, int in, int ip, double wf);
   virtual void compute_internal_force_nodes(Solid &solid, int in, int ip, double wf, const Vector3d &wfd) = 0;
   void compute_force_nodes(Solid &solid, int in, int ip, double wf, const Vector3d &wfd);
   void compute_temperature_nodes(Solid &solid, int in, int ip, double wf);
   void compute_temperature_driving_force_nodes(Solid &solid, int in, int ip, double wf, const Vector3d &wfd);
-  virtual void reduce_ghost_nodes(bool velocities = true, bool forces = true) = 0;
 
-  virtual void update_grid_state() = 0;
+  void update_grid_velocities(Grid &grid, int in);
+  void update_grid_temperature(Grid &grid, int in);
+
   virtual void grid_to_points() = 0;
   virtual void advance_particles() = 0;
   virtual void update_grid_positions() = 0;

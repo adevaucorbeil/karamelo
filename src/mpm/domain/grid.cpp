@@ -445,26 +445,6 @@ void Grid::grow(int nn){
   Qint.resize(nn);
 }
 
-void Grid::update_grid_velocities()
-{
-  Vector3d vtemp;
-  vtemp = Vector3d();
-
-  // Update all particles (even the ghost to not have to communicate the result)
-  for (int i=0; i<nnodes_local + nnodes_ghost; i++){
-    if (!rigid[i]) {
-      if (mass[i] != 0) v_update[i] = v[i] + update->dt * (f[i] + mb[i])/mass[i];
-      else v_update[i] = v[i];
-    } else {
-      v_update[i] = v[i];
-      //mb[i] = Vector3d();
-    }
-    // if (update->ntimestep>450)
-    // if (isnan(v_update[i](0)))
-    //   cout << "update_grid_velocities: in=" << i << ", vn=[" << v[i][0] << "," << v[i][1] << "," << v[i][2] << "], f=[" << f[i][0] << "," << f[i][1] << "," << f[i][2] << "], mb=[" << mb[i][0] << "," << mb[i][1] << "," << mb[i][2] << "], dt=" << update->dt << ", mass[i]=" << mass[i] << endl;
-  }
-}
-
 void Grid::update_grid_positions()
 {
   // Update all particles (even the ghost to not have to communicate the result)
@@ -1349,50 +1329,4 @@ void Grid::reduce_ghost_nodes_old(bool only_v, bool temp) {
       }
     }
   }
-}
-
-void Grid::update_grid_temperature() {
-  // Update all particles (even the ghost to not have to communicate the result)
-  for (int i = 0; i < nnodes_local + nnodes_ghost; i++) {
-    if (mass[i] != 0)
-      T_update[i] = T[i] + update->dt * (Qint[i] + Qext[i]) / mass[i];
-    else
-      T_update[i] = T[i];
-  }
-}
-
-void Grid::reset_mass()
-{
-  for (double &mass: mass)
-    mass = 0;
-}
-
-void Grid::reset_velocity()
-{
-    for (Vector3d &v: v)
-      v = Vector3d();
-    for (Vector3d &mb: mb)
-      mb = Vector3d();
-}
-
-void Grid::reset_forces()
-{
-  for (Vector3d &f: f)
-    f = Vector3d();
-  for (Vector3d &mb: mb)
-    mb = Vector3d();
-}
-
-void Grid::reset_temperatures()
-{
-  for (double &T: T)
-      T = 0;
-}
-
-void Grid::reset_temperature_driving_forces()
-{
-  for (double &Qint: Qint)
-    Qint = 0;
-  for (double &Qext: Qext)
-    Qext = 0;
 }

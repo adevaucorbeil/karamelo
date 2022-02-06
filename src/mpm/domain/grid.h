@@ -100,7 +100,6 @@ class Grid : public Pointers {
   Grid(class MPM *);
   virtual ~Grid();
   void grow(int);              ///< Allocate memory for the vectors used for local nodes or resize them  
-  void grow_ghosts(int);       ///< Allocate memory for the vectors used for ghost nodes or resize them
   void setup(string);
   void init(double*, double*); ///< Create the array of nodes. Give them their position, tag, and type
 
@@ -109,15 +108,7 @@ class Grid : public Pointers {
   void reduce_rigid_ghost_nodes();                 ///< Reduce the rigid bool of all the ghost nodes from that computed on each CPU.
   void reduce_ghost_nodes(bool reduce_v, bool reduce_forces, bool temp = false);    ///< Reduce the force and velocities of all the ghost nodes from that computed on each CPU.
   void reduce_ghost_nodes_old(bool only_v = false, bool temp = false);    ///< Deprecated
-  void update_grid_velocities();                   ///< Determine the temporary grid velocities \f$\tilde{v}_{n}\f$. 
   void update_grid_positions();                    ///< Determine the new position of the grid nodes.
-  void update_grid_temperature();                  ///< Determine the temporary grid temperature \f$\tilde{T}_{n}\f$.
-
-  void reset_mass();
-  void reset_velocity();
-  void reset_forces();
-  void reset_temperatures();
-  void reset_temperature_driving_forces();
 };
 
 #endif

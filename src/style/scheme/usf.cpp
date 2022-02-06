@@ -51,8 +51,15 @@ void USF::run(Var condition){
     
     // grid reset
     method.reset();
-    method.reset_mass_nodes();
-    method.reset_nodes(true, false);
+    for (Grid *grid: method.grids())
+      for (int in = 0; in < grid->nnodes_local + grid->nnodes_ghost; in++)
+      {
+        grid->mass.at(in) = 0;
+        grid->v.at(in) = Vector3d();
+        grid->mb.at(in) = Vector3d();
+        if (method.temp)
+          grid->T.at(in) = 0;
+      }
 
     // p2g 1
     for (Solid *solid: domain->solids)
@@ -66,7 +73,8 @@ void USF::run(Var condition){
                                    solid->neigh_p.at(i),
                                    solid->wf.at(i));
 
-    method.reduce_mass_ghost_nodes();
+    for (Grid *grid: method.grids())
+      grid->reduce_mass_ghost_nodes();
 
     for (Solid *solid: domain->solids)
       for (int i = 0; i < solid->neigh_n.size(); i++)
@@ -79,8 +87,9 @@ void USF::run(Var condition){
         if (update->temp)
           method.compute_temperature_nodes(*solid, in, ip, wf);
       }
-
-    method.reduce_ghost_nodes(true, false);
+    
+    for (Grid *grid: method.grids())
+      grid->reduce_ghost_nodes(true, false, method.temp);
 
     // grid update 1
     //modify->post_update_grid_state();
@@ -89,7 +98,18 @@ void USF::run(Var condition){
     method.update_deformation_gradient();
     method.update_stress(true);
 
-    method.reset_nodes(false, true);
+    for (Grid *grid: method.grids())
+      for (int in = 0; in < grid->nnodes_local + grid->nnodes_ghost; in++)
+      {
+        grid->mass.at(in) = 0;
+        grid->f.at(in) = Vector3d();
+        grid->mb.at(in) = Vector3d();
+        if (method.temp)
+        {
+          grid->Qint.at(in) = 0;
+          grid->Qext.at(in) = 0;
+        }
+      }
 
     // p2g 2
     for (Solid *solid: domain->solids)
@@ -104,15 +124,23 @@ void USF::run(Var condition){
         if (update->temp)
           method.compute_temperature_driving_force_nodes(*solid, in, ip, wf, wfd);
       }
-
-    method.reduce_ghost_nodes(false, true);
-
+    
     // grid update 2
-    //modify->post_particles_to_grid();
+    for (Grid *grid: method.grids())
+    {
+      grid->reduce_ghost_nodes(false, true, method.temp);
 
-    method.update_grid_state();
+      for (int in = 0; in < grid->nnodes_local + grid->nnodes_ghost; in++)
+      {
+        modify->post_particles_to_grid(*grid, in);
 
-    //modify->post_update_grid_state();
+        method.update_grid_velocities(*grid, in);
+        if (method.temp)
+          method.update_grid_temperature(*grid, in);
+
+        modify->post_update_grid_state(*grid, in);
+      }
+    }
 
     method.grid_to_points();
 

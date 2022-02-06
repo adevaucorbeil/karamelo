@@ -51,8 +51,20 @@ void USL::run(Var condition){
     
     // grid reset
     method.reset();
-    method.reset_mass_nodes();
-    method.reset_nodes();
+    for (Grid *grid: method.grids())
+      for (int in = 0; in < grid->nnodes_local + grid->nnodes_ghost; in++)
+      {
+        grid->mass.at(in) = 0;
+        grid->v.at(in) = Vector3d();
+        grid->f.at(in) = Vector3d();
+        grid->mb.at(in) = Vector3d();
+        if (method.temp)
+        {
+          grid->T.at(in) = 0;
+          grid->Qint.at(in) = 0;
+          grid->Qext.at(in) = 0;
+        }
+      }
 
     // p2g
     for (Solid *solid: domain->solids)
@@ -66,7 +78,8 @@ void USL::run(Var condition){
                                    solid->neigh_p.at(i),
                                    solid->wf.at(i));
 
-    method.reduce_mass_ghost_nodes();
+    for (Grid *grid: method.grids())
+      grid->reduce_mass_ghost_nodes();
 
     for (Solid *solid: domain->solids)
       for (int i = 0; i < solid->neigh_n.size(); i++)
@@ -85,14 +98,22 @@ void USL::run(Var condition){
         }
       }
 
-    method.reduce_ghost_nodes();
-
     // grid update
-    //modify->post_particles_to_grid();
+    for (Grid *grid: method.grids())
+    {
+      grid->reduce_ghost_nodes(true, true, method.temp);
 
-    method.update_grid_state();
+      for (int in = 0; in < grid->nnodes_local + grid->nnodes_ghost; in++)
+      {
+        modify->post_particles_to_grid(*grid, in);
 
-    //modify->post_update_grid_state();
+        method.update_grid_velocities(*grid, in);
+        if (method.temp)
+          method.update_grid_temperature(*grid, in);
+
+        modify->post_update_grid_state(*grid, in);
+      }
+    }
 
     method.compute_rate_deformation_gradient(false);
 

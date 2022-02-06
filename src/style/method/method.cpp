@@ -126,3 +126,20 @@ void Method::compute_temperature_driving_force_nodes(Solid &solid, int in, int i
 
   solid.grid->Qint.at(in) += wfd.dot(solid.q.at(ip));
 }
+
+void Method::update_grid_velocities(Grid &grid, int in)
+{
+  Vector3d &v_update = grid.v_update.at(in) = grid.v.at(in);
+
+  if (!grid.rigid.at(in))
+    if (double mass = grid.mass.at(in))
+      v_update += update->dt*(grid.f.at(in) + grid.mb.at(in))/mass;
+}
+
+void Method::update_grid_temperature(Grid &grid, int in)
+{
+  double T_update = grid.T_update.at(in) = grid.T.at(in);
+
+  if (double mass = grid.mass.at(in))
+     T_update += update->dt*(grid.Qint.at(in) + grid.Qext.at(in))/mass;
+}

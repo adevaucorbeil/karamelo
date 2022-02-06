@@ -328,41 +328,20 @@ void TLMPM::compute_grid_weight_functions_and_gradients()
   update_wf = false;
 }
 
-void TLMPM::reset_mass_nodes()
+vector<Grid *> TLMPM::grids()
 {
+  vector<Grid *> grids;
+  grids.reserve(domain->solids.size());
+
   for (Solid *solid: domain->solids)
-    solid->grid->reset_mass();
+    grids.push_back(solid->grid);
+
+  return grids;
 }
 
 bool TLMPM::should_compute_mass_nodes()
 {
   return update_mass_nodes;
-}
-
-void TLMPM::reduce_mass_ghost_nodes()
-{
-  for (Solid *solid: domain->solids)
-    solid->grid->reduce_mass_ghost_nodes();
-}
-
-void TLMPM::reset_nodes(bool velocities, bool forces)
-{
-  for (Solid *solid: domain->solids)
-  {
-    Grid &grid = *solid->grid;
-    
-    if (velocities)
-      grid.reset_velocity();
-    if (forces)
-      grid.reset_forces();
-    if (temp)
-    {
-      if (velocities)
-        grid.reset_temperatures();  
-      if (forces)
-        grid.reset_temperature_driving_forces();
-    }
-  }
 }
 
 void TLMPM::compute_internal_force_nodes(Solid &solid, int in, int ip, double wf, const Vector3d &wfd)
@@ -378,22 +357,6 @@ void TLMPM::compute_internal_force_nodes(Solid &solid, int in, int ip, double wf
 
   if (domain->axisymmetric)
     f[0] -= vol0PK1(2, 2)*wf/x0[0];
-}
-
-void TLMPM::reduce_ghost_nodes(bool velocities, bool forces)
-{
-  for (Solid *solid: domain->solids)
-    solid->grid->reduce_ghost_nodes(velocities, forces, temp);
-}
-
-void TLMPM::update_grid_state()
-{
-  for (int isolid=0; isolid<domain->solids.size(); isolid++) {
-    domain->solids[isolid]->grid->update_grid_velocities();
-    if (temp) {
-      domain->solids[isolid]->grid->update_grid_temperature();
-    }
-  }
 }
 
 void TLMPM::grid_to_points()

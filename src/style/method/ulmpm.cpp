@@ -301,34 +301,14 @@ void ULMPM::compute_grid_weight_functions_and_gradients()
   update_Di = 0;
 }
 
-void ULMPM::reset_mass_nodes()
+vector<Grid *> ULMPM::grids()
 {
-  domain->grid->reset_mass();
+  return vector<Grid *>{ domain->grid };
 }
 
 bool ULMPM::should_compute_mass_nodes()
 {
   return true;
-}
-
-void ULMPM::reduce_mass_ghost_nodes()
-{
-  domain->grid->reduce_mass_ghost_nodes();
-}
-
-void ULMPM::reset_nodes(bool velocities, bool forces)
-{
-  if (velocities)
-    domain->grid->reset_velocity();
-  if (forces)
-    domain->grid->reset_forces();
-  if (temp)
-  {
-    if (velocities)
-      domain->grid->reset_temperatures();
-    if (forces)
-      domain->grid->reset_temperature_driving_forces();
-  }
 }
 
 void ULMPM::compute_internal_force_nodes(Solid &solid, int in, int ip, double wf, const Vector3d &wfd)
@@ -344,17 +324,6 @@ void ULMPM::compute_internal_force_nodes(Solid &solid, int in, int ip, double wf
 
   if (domain->axisymmetric)
     f[0] -= vol_sigma(2, 2)*wf/x[0];
-}
-
-void ULMPM::reduce_ghost_nodes(bool velocities, bool forces)
-{
-  domain->grid->reduce_ghost_nodes(velocities, forces, temp);
-}
-
-void ULMPM::update_grid_state() {
-  domain->grid->update_grid_velocities();
-  if (temp)
-    domain->grid->update_grid_temperature();
 }
 
 void ULMPM::grid_to_points()
