@@ -262,9 +262,9 @@ void Modify::post_update_grid_state(Grid &grid, int in){
    after grid_to_point(), only for relevant fixes
 ------------------------------------------------------------------------- */
 
-void Modify::post_grid_to_point(){
+void Modify::post_grid_to_point(Solid &solid, int ip){
   for (int i = 0; i < list_post_grid_to_point.size(); i++)
-    fix[list_post_grid_to_point[i]]->post_grid_to_point();
+    fix[list_post_grid_to_point[i]]->post_grid_to_point(solid, ip);
 }
 
 /* ----------------------------------------------------------------------

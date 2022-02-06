@@ -39,8 +39,6 @@ public:
   bool should_compute_mass_nodes() override;
   void compute_internal_force_nodes(Solid &solid, int in, int ip, double wf, const Vector3d &wfd) override;
 
-  void grid_to_points();
-  void advance_particles();
   void update_grid_positions();
   void compute_rate_deformation_gradient(bool);
   void update_deformation_gradient();

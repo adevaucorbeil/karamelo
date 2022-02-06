@@ -326,36 +326,17 @@ void ULMPM::compute_internal_force_nodes(Solid &solid, int in, int ip, double wf
     f[0] -= vol_sigma(2, 2)*wf/x[0];
 }
 
-void ULMPM::grid_to_points()
+void ULMPM::check_particle_in_domain(const Vector3d &x, int ip)
 {
-  for (Solid *solid: domain->solids)
+  if (!domain->inside(x))
   {
-    solid->reset_velocity_acceleration();
-    
-    for (int i = 0; i < solid->neigh_n.size(); i++)
-    {
-      int in = solid->neigh_n.at(i);
-      int ip = solid->neigh_p.at(i);
-      double wf = solid->wf.at(i);
+    cout << "Error: Particle " << ip << " left the domain ("
+          << domain->boxlo[0] << "," << domain->boxhi[0] << ","
+          << domain->boxlo[1] << "," << domain->boxhi[1] << ","
+          << domain->boxlo[2] << "," << domain->boxhi[2] << "):\n"
+          << x << endl;
 
-      solid->compute_velocity_acceleration(in, ip, wf);
-      if (temp)
-        solid->compute_particle_temperature(in, ip, wf);
-    }
-
-    if (solid->mat->rigid || update->sub_method_type != Update::SubMethodType::ASFLIP)
-      solid->update_position();
-  }
-}
-
-void ULMPM::advance_particles()
-{
-  for (int isolid = 0; isolid < domain->solids.size(); isolid++)
-  {
-    if (update->sub_method_type != Update::SubMethodType::ASFLIP)
-      domain->solids[isolid]->update_particle(update->PIC_FLIP, false, true);
-    else
-      domain->solids[isolid]->update_particle(update->PIC_FLIP, true, true);      
+    error->one(FLERR, "");
   }
 }
 

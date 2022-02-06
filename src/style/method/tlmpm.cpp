@@ -359,34 +359,6 @@ void TLMPM::compute_internal_force_nodes(Solid &solid, int in, int ip, double wf
     f[0] -= vol0PK1(2, 2)*wf/x0[0];
 }
 
-void TLMPM::grid_to_points()
-{
-  for (Solid *solid: domain->solids)
-  {
-    solid->reset_velocity_acceleration();
-    
-    for (int i = 0; i < solid->neigh_n.size(); i++)
-    {
-      int in = solid->neigh_n.at(i);
-      int ip = solid->neigh_p.at(i);
-      double wf = solid->wf.at(i);
-
-      solid->compute_velocity_acceleration(in, ip, wf);
-      if (temp)
-        solid->compute_particle_temperature(in, ip, wf);
-    }
-
-    solid->update_position();
-  }
-}
-
-void TLMPM::advance_particles()
-{
-  for (int isolid=0; isolid<domain->solids.size(); isolid++) {
-    domain->solids[isolid]->update_particle(update->PIC_FLIP, false, true);
-  }
-}
-
 void TLMPM::update_grid_positions()
 {
   for (int isolid=0; isolid<domain->solids.size(); isolid++) {

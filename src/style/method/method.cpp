@@ -143,3 +143,35 @@ void Method::update_grid_temperature(Grid &grid, int in)
   if (double mass = grid.mass.at(in))
      T_update += update->dt*(grid.Qint.at(in) + grid.Qext.at(in))/mass;
 }
+
+void Method::compute_velocity_acceleration(Solid &solid, int in, int ip, double wf)
+{
+  solid.v_update.at(ip) += wf*solid.grid->v_update.at(in);
+
+  if (solid.mat->rigid)
+    return;
+
+  const Vector3d &delta_a = wf*(solid.grid->v_update.at(in) - solid.grid->v.at(in))/update->dt;
+  solid.a.at(ip) += delta_a;
+  solid.f.at(ip) += delta_a*solid.mass.at(ip);
+}
+
+void Method::compute_particle_temperature(Solid &solid, int in, int ip, double wf)
+{
+  solid.T.at(ip) += wf*solid.grid->T_update.at(in);
+}
+
+void Method::update_position(Solid &solid, int ip)
+{
+  check_particle_in_domain(solid.x.at(ip) += update->dt*solid.v_update.at(ip), ip);
+}
+
+void Method::advance_particles(Solid &solid, int ip)
+{
+  Vector3d &v = solid.v.at(ip);
+
+  if (update->sub_method_type == Update::SubMethodType::ASFLIP)
+    solid.x.at(ip) += update->dt*v;
+
+  v = (1 - update->PIC_FLIP)*solid.v_update.at(ip) + update->PIC_FLIP*(v + update->dt*solid.a.at(ip));
+}

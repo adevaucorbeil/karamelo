@@ -42,7 +42,7 @@ class Fix : protected Pointers {
   virtual void initial_integrate(Solid &solid, int ip) {}
   virtual void post_particles_to_grid(Grid &grid, int in) {}
   virtual void post_update_grid_state(Grid &grid, int in) {}
-  virtual void post_grid_to_point() {}
+  virtual void post_grid_to_point(Solid &solid, int ip) {}
   virtual void post_advance_particles(Solid &solid, int ip) {}
   virtual void post_velocities_to_grid(Grid &grid, int in) {}
   virtual void final_integrate(Solid &solid, int ip) {}

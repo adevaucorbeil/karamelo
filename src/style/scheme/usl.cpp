@@ -118,13 +118,38 @@ void USL::run(Var condition){
     method.compute_rate_deformation_gradient(false);
 
     // g2p
-    method.grid_to_points();
+    for (Solid *solid: domain->solids)
+      for (int ip = 0; ip < solid->np_local; ip++)
+      {
+        solid->v_update.at(ip) = Vector3d();
+        solid->a.at(ip) = Vector3d();
+        solid->f.at(ip) = Vector3d();
+      }
 
-    modify->post_grid_to_point();
+    for (Solid *solid: domain->solids)
+      for (int i = 0; i < solid->neigh_n.size(); i++)
+      {
+        int in = solid->neigh_n.at(i);
+        int ip = solid->neigh_p.at(i);
+        double wf = solid->wf.at(i);
 
-    method.advance_particles();
+        method.compute_velocity_acceleration(*solid, in, ip, wf);
+        if (method.temp)
+          method.compute_particle_temperature(*solid, in, ip, wf);
+      }
 
-    //modify->post_advance_particles();
+    for (Solid *solid: domain->solids)
+      for (int ip = 0; ip < solid->np_local; ip++)
+      {
+        if (solid->mat->rigid || update->sub_method_type != Update::SubMethodType::ASFLIP)
+          method.update_position(*solid, ip);
+
+        modify->post_grid_to_point(*solid, ip);
+
+        method.advance_particles(*solid, ip);
+
+        modify->post_advance_particles(*solid, ip);
+      }
     
     //method.velocities_to_grid();
 

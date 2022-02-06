@@ -311,23 +311,6 @@ void Solid::grow(int nparticles)
   }
 }
 
-void Solid::compute_velocity_acceleration(int in, int ip, double wf)
-{
-  v_update.at(ip) += wf*grid->v_update.at(in);
-
-  if (!mat->rigid)
-  {
-    const Vector3d &delta_a = wf*(grid->v_update.at(in) - grid->v.at(in))/update->dt;
-    a.at(ip) += delta_a;
-    f.at(ip) += mass.at(ip)*delta_a;
-  }
-}
-
-void Solid::compute_particle_temperature(int in, int ip, double wf)
-{
-  T.at(ip) += wf*grid->T_update.at(in);
-}
-
 void Solid::compute_heat_flux(int in, int ip, const Vector3d &wfd, bool doublemapping)
 {
   const vector<double> &Tn = doublemapping? grid->T: grid->T_update;
@@ -371,16 +354,6 @@ void Solid::compute_position_corners()
   }
 }
 
-void Solid::reset_velocity_acceleration()
-{
-  for (Vector3d &v_update: v_update)
-    v_update = Vector3d();
-  for (Vector3d &a: a)
-    a = Vector3d();
-  for (Vector3d &f: f)
-    f = Vector3d();
-}
-
 void Solid::reset_heat_flux()
 {
   for (Vector3d &q: q)
@@ -393,36 +366,6 @@ void Solid::reset_rate_deformation_gradient(bool TL)
 
   for (Matrix3d &gradient: gradients)
     gradient = Matrix3d();
-}
-
-void Solid::update_position()
-{
-  for (int ip = 0; ip < np_local; ip++)
-    x.at(ip) += update->dt*v_update.at(ip);
-
-  if (!is_TL)
-    for (int ip = 0; ip < np_local; ip++)
-      if (!domain->inside(x.at(ip)))
-      {
-        cout << "Error: Particle " << ip << " left the domain ("
-              << domain->boxlo[0] << "," << domain->boxhi[0] << ","
-              << domain->boxlo[1] << "," << domain->boxhi[1] << ","
-              << domain->boxlo[2] << "," << domain->boxhi[2] << "):\n"
-              << x.at(ip) << endl;
-
-        error->one(FLERR, "");
-      }
-}
-
-void Solid::update_particle(double alpha, bool positions, bool velocities)
-{
-  for (int ip = 0; ip < np_local; ip++)
-  {
-    if (positions)
-      x.at(ip) += update->dt*v.at(ip);
-    if (velocities)
-      v.at(ip) = (1 - alpha)*v_update.at(ip) + alpha*(v.at(ip) + update->dt*a.at(ip));
-  }
 }
 
 void Solid::update_deformation_gradient()
