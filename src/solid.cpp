@@ -2324,7 +2324,7 @@ void Solid::populate(vector<string> args)
     eff_plastic_strain_rate[i] = 0;
     damage[i]                  = 0;
     damage_init[i]             = 0;
-    if (update->method->temp) {
+    if (mat->cp != 0) {
       T[i]                     = T0;
       T_old[i]                 = T0;
       gamma[i]                 = 0;
