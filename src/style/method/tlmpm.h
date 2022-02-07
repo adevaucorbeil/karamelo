@@ -27,7 +27,6 @@ MethodStyle(tlmpm,TLMPM)
 class TLMPM : public Method {
 public:
   TLMPM(class MPM *);
-  ~TLMPM();
 
   void setup(vector<string>);
 
@@ -38,8 +37,8 @@ public:
   vector<Grid *> grids() override;
   bool should_compute_mass_nodes() override;
   void compute_internal_force_nodes(Solid &solid, int in, int ip, double wf, const Vector3d &wfd) override;
+  void update_grid_positions(Grid &grid, int in) override;
 
-  void update_grid_positions();
   void compute_rate_deformation_gradient(bool);
   void update_deformation_gradient();
   void update_stress(bool);

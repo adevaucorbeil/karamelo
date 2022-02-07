@@ -44,10 +44,6 @@ TLMPM::TLMPM(MPM *mpm) : Method(mpm) {
   derivative_basis_function = &BasisFunction::derivative_linear;
 }
 
-TLMPM::~TLMPM()
-{
-}
-
 void TLMPM::setup(vector<string> args)
 {
 
@@ -359,11 +355,9 @@ void TLMPM::compute_internal_force_nodes(Solid &solid, int in, int ip, double wf
     f[0] -= vol0PK1(2, 2)*wf/x0[0];
 }
 
-void TLMPM::update_grid_positions()
+void TLMPM::update_grid_positions(Grid &grid, int in)
 {
-  for (int isolid=0; isolid<domain->solids.size(); isolid++) {
-    domain->solids[isolid]->grid->update_grid_positions();
-  }
+  grid.x.at(in) += update->dt*grid.v.at(in);
 }
 
 void TLMPM::compute_rate_deformation_gradient(bool doublemapping)

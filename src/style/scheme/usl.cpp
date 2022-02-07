@@ -153,9 +153,18 @@ void USL::run(Var condition){
     
     //method.velocities_to_grid();
 
-    //modify->post_velocities_to_grid();
+   // grid update
+    for (Grid *grid: method.grids())
+    {
+      grid->reduce_ghost_nodes(true, false, update->temp);
+      
+      for (int in = 0; in < grid->nnodes_local + grid->nnodes_ghost; in++)
+      {
+        modify->post_velocities_to_grid(*grid, in);
 
-    method.update_grid_positions();
+        method.update_grid_positions(*grid, in);
+      }
+    }
 
     method.update_deformation_gradient();
     method.update_stress(false);
@@ -165,7 +174,9 @@ void USL::run(Var condition){
     update->update_time();
     method.adjust_dt();
 
-    //modify->final_integrate();
+    for (Solid *solid: domain->solids)
+      for (int ip = 0; ip < solid->np_local; ip++)
+        modify->final_integrate(*solid, ip);
 
     if ((update->maxtime != -1) && (update->atime > update->maxtime)) {
       update->nsteps = ntimestep;

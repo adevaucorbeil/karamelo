@@ -445,14 +445,6 @@ void Grid::grow(int nn){
   Qint.resize(nn);
 }
 
-void Grid::update_grid_positions()
-{
-  // Update all particles (even the ghost to not have to communicate the result)
-  for (int i=0; i<nnodes_local + nnodes_ghost; i++){
-    x[i] += update->dt*v[i];
-  }
-}
-
 
 void Grid::reduce_mass_ghost_nodes() {
   vector<vector<double>> tmp_mass_vect(universe->nprocs);

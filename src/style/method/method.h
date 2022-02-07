@@ -53,8 +53,8 @@ class Method : protected Pointers {
   virtual void check_particle_in_domain(const Vector3d &x, int ip) {}
   void update_position(Solid &solid, int ip);
   void advance_particles(Solid &solid, int ip);
+  virtual void update_grid_positions(Grid &grid, int in) {}
 
-  virtual void update_grid_positions() = 0;
   virtual void compute_rate_deformation_gradient(bool) = 0;
   virtual void update_deformation_gradient() = 0;
   virtual void update_stress(bool) = 0;

@@ -170,12 +170,18 @@ void MUSL::run(Var condition)
           method.compute_temperature_nodes(*solid, in, ip, wf);
       }
 
+    // grid update
     for (Grid *grid: method.grids())
+    {
       grid->reduce_ghost_nodes(true, false, update->temp);
+      
+      for (int in = 0; in < grid->nnodes_local + grid->nnodes_ghost; in++)
+      {
+        modify->post_velocities_to_grid(*grid, in);
 
-    //modify->post_velocities_to_grid();
-
-    method.update_grid_positions();
+        method.update_grid_positions(*grid, in);
+      }
+    }
 
     method.compute_rate_deformation_gradient(true);
     method.update_deformation_gradient();
@@ -186,7 +192,9 @@ void MUSL::run(Var condition)
     update->update_time();
     method.adjust_dt();
 
-    //modify->final_integrate();
+    for (Solid *solid: domain->solids)
+      for (int ip = 0; ip < solid->np_local; ip++)
+        modify->final_integrate(*solid, ip);
 
     if ((update->maxtime != -1) && (update->atime > update->maxtime)) {
       update->nsteps = ntimestep;

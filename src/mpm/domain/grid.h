@@ -108,7 +108,6 @@ class Grid : public Pointers {
   void reduce_rigid_ghost_nodes();                 ///< Reduce the rigid bool of all the ghost nodes from that computed on each CPU.
   void reduce_ghost_nodes(bool reduce_v, bool reduce_forces, bool temp = false);    ///< Reduce the force and velocities of all the ghost nodes from that computed on each CPU.
   void reduce_ghost_nodes_old(bool only_v = false, bool temp = false);    ///< Deprecated
-  void update_grid_positions();                    ///< Determine the new position of the grid nodes.
 };
 
 #endif
