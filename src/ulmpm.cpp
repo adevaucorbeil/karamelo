@@ -457,7 +457,7 @@ void ULMPM::grid_to_points()
     }
 
     if (temp) {
-      domain->solids[isolid]->update_particle_temperature(update->PIC_FLIP);
+      domain->solids[isolid]->update_particle_temperature(1);
     }
   }
 }

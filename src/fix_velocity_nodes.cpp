@@ -131,30 +131,6 @@ void FixVelocityNodes::post_update_grid_state() {
   // cout << "In FixVelocityNodes::post_update_grid_state()" << endl;
 
   // Go through all the nodes in the group and set v_update to the right value:
-  double vx, vy, vz;
-  double vx_old, vy_old, vz_old;
-
-  if (xset) {
-    vx = xvalue.result(mpm);
-    vx_old = xprevvalue.result(mpm);
-    // cout << "Set v_update[0] to " << xvalue.eq() << "=" << vx << endl;
-    // cout << "Set v[0] to " << vx_old << endl;
-  }
-
-  if (yset) {
-    vy = yvalue.result(mpm);
-    vy_old = yprevvalue.result(mpm);
-    // cout << "Set v_update[1] to " << "=" <<  vy << endl;
-    // cout << "Set v[1] to " << "=" <<  vy_old << endl;
-  }
-
-  if (zset) {
-    vz = zvalue.result(mpm);
-    vz_old = zprevvalue.result(mpm);
-    // cout << "Set v_update[2] to " << "=" <<  vz << endl;
-    // cout << "Set v[2] to " << "=" <<  vz_old << endl;
-  }
-
   int solid = group->solid[igroup];
   Grid *g;
 
@@ -168,21 +144,31 @@ void FixVelocityNodes::post_update_grid_state() {
 
       for (int ip = 0; ip < g->nnodes_local + g->nnodes_ghost; ip++) {
 	if (g->mask[ip] & groupbit) {
+	  (*input->vars)["x"] = Var("x", g->x[ip][0]);
+	  (*input->vars)["y"] = Var("y", g->x[ip][1]);
+	  (*input->vars)["z"] = Var("z", g->x[ip][2]);
+	  (*input->vars)["x0"] = Var("x0", g->x0[ip][0]);
+	  (*input->vars)["y0"] = Var("y0", g->x0[ip][1]);
+	  (*input->vars)["z0"] = Var("z0", g->x0[ip][2]);
+
 	  Dv.setZero();
 	  if (xset) {
+	    double vx = xvalue.result(mpm);
 	    Dv[0] = vx - g->v_update[ip][0];
 	    g->v_update[ip][0] = vx;
-	    g->v[ip][0] = vx_old;
+	    g->v[ip][0] = xprevvalue.result(mpm);
 	  }
 	  if (yset) {
+	    double vy = yvalue.result(mpm);
 	    Dv[1] = vy - g->v_update[ip][1];
 	    g->v_update[ip][1] = vy;
-	    g->v[ip][1] = vy_old;
+	    g->v[ip][1] = yprevvalue.result(mpm);
 	  }
 	  if (zset) {
+	    double vz = zvalue.result(mpm);
 	    Dv[2] = vz - g->v_update[ip][2];
 	    g->v_update[ip][2] = vz;
-	    g->v[ip][2] = vz_old;
+	    g->v[ip][2] = zprevvalue.result(mpm);
 	  }
           ftot += (inv_dt * g->mass[ip]) * Dv;
 	}
@@ -194,21 +180,31 @@ void FixVelocityNodes::post_update_grid_state() {
 
     for (int ip = 0; ip < g->nnodes_local + g->nnodes_ghost; ip++) {
       if (g->mask[ip] & groupbit) {
+	(*input->vars)["x"] = Var("x", g->x[ip][0]);
+	(*input->vars)["y"] = Var("y", g->x[ip][1]);
+	(*input->vars)["z"] = Var("z", g->x[ip][2]);
+	(*input->vars)["x0"] = Var("x0", g->x0[ip][0]);
+	(*input->vars)["y0"] = Var("y0", g->x0[ip][1]);
+	(*input->vars)["z0"] = Var("z0", g->x0[ip][2]);
+
 	Dv.setZero();
 	if (xset) {
+	  double vx = xvalue.result(mpm);
 	  Dv[0] = vx - g->v_update[ip][0];
 	  g->v_update[ip][0] = vx;
-	  g->v[ip][0] = vx_old;
+	  g->v[ip][0] = xprevvalue.result(mpm);
 	}
 	if (yset) {
+	  double vy = yvalue.result(mpm);
 	  Dv[1] = vy - g->v_update[ip][1];
 	  g->v_update[ip][1] = vy;
-	  g->v[ip][1] = vy_old;
+	  g->v[ip][1] = yprevvalue.result(mpm);
 	}
 	if (zset) {
+	  double vz = zvalue.result(mpm);
 	  Dv[2] = vz - g->v_update[ip][2];
 	  g->v_update[ip][2] = vz;
-	  g->v[ip][2] = vz_old;
+	  g->v[ip][2] = zprevvalue.result(mpm);
 	}
 	ftot += (inv_dt * g->mass[ip]) * Dv;
       }
@@ -251,9 +247,16 @@ void FixVelocityNodes::post_velocities_to_grid() {
 
       for (int ip = 0; ip < g->nnodes_local + g->nnodes_ghost; ip++) {
 	if (g->mask[ip] & groupbit) {
-	  if (xset) g->v[ip][0] = vx;
-	  if (yset) g->v[ip][1] = vy;
-	  if (zset) g->v[ip][2] = vz;
+	  (*input->vars)["x"] = Var("x", g->x[ip][0]);
+	  (*input->vars)["y"] = Var("y", g->x[ip][1]);
+	  (*input->vars)["z"] = Var("z", g->x[ip][2]);
+	  (*input->vars)["x0"] = Var("x0", g->x0[ip][0]);
+	  (*input->vars)["y0"] = Var("y0", g->x0[ip][1]);
+	  (*input->vars)["z0"] = Var("z0", g->x0[ip][2]);
+
+	  if (xset) g->v[ip][0] = xvalue.result(mpm);
+	  if (yset) g->v[ip][1] = yvalue.result(mpm);
+	  if (zset) g->v[ip][2] = zvalue.result(mpm);
 	}
       }
     }
@@ -262,9 +265,16 @@ void FixVelocityNodes::post_velocities_to_grid() {
 
     for (int ip = 0; ip < g->nnodes_local + g->nnodes_ghost; ip++) {
       if (g->mask[ip] & groupbit) {
-	if (xset) g->v[ip][0] = vx;
-	if (yset) g->v[ip][1] = vy;
-	if (zset) g->v[ip][2] = vz;
+	(*input->vars)["x"] = Var("x", g->x[ip][0]);
+	(*input->vars)["y"] = Var("y", g->x[ip][1]);
+	(*input->vars)["z"] = Var("z", g->x[ip][2]);
+	(*input->vars)["x0"] = Var("x0", g->x0[ip][0]);
+	(*input->vars)["y0"] = Var("y0", g->x0[ip][1]);
+	(*input->vars)["z0"] = Var("z0", g->x0[ip][2]);
+
+	if (xset) g->v[ip][0] = xvalue.result(mpm);
+	if (yset) g->v[ip][1] = yvalue.result(mpm);
+	if (zset) g->v[ip][2] = zvalue.result(mpm);
       }
     }
   }
