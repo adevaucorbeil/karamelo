@@ -38,13 +38,7 @@ public:
   bool should_compute_mass_nodes() override;
   void compute_internal_force_nodes(Solid &solid, int in, int ip, double wf, const Vector3d &wfd) override;
   void update_grid_positions(Grid &grid, int in) override;
-
-  void compute_rate_deformation_gradient(bool);
-  void update_deformation_gradient();
-  void update_stress(bool);
-  void adjust_dt();
-  void reset();
-  void exchange_particles(){};
+  vector<Matrix3d> &get_gradients(Solid &solid) override;
 
 private:
   bool update_wf, update_mass_nodes;

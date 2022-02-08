@@ -340,93 +340,9 @@ void ULMPM::check_particle_in_domain(const Vector3d &x, int ip)
   }
 }
 
-void ULMPM::compute_rate_deformation_gradient(bool doublemapping)
+vector<Matrix3d> &ULMPM::get_gradients(Solid &solid)
 {
-  for (Solid *solid: domain->solids)
-    if (!solid->mat->rigid)
-    {
-      solid->reset_rate_deformation_gradient(false);
-      
-      for (int i = 0; i < solid->neigh_n.size(); i++)
-      {
-        int in = solid->neigh_n.at(i);
-        int ip = solid->neigh_p.at(i);
-        double wf = solid->wf.at(i);
-        const Vector3d &wfd = solid->wfd.at(i);
-
-        solid->compute_rate_deformation_gradient(in, ip, wf, wfd, doublemapping, false,
-          update->sub_method_type == Update::SubMethodType::APIC);
-      }
-    }
-}
-
-void ULMPM::update_deformation_gradient()
-{
-  for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
-    domain->solids[isolid]->update_deformation_gradient();
-  }
-}
-
-void ULMPM::update_stress(bool doublemapping)
-{
-  for (Solid *solid: domain->solids)
-  {
-    solid->update_stress();
-
-    if (temp)
-    {
-      solid->reset_heat_flux();
-
-      for (int i = 0; i < solid->neigh_n.size(); i++)
-      {
-        int in = solid->neigh_n.at(i);
-        int ip = solid->neigh_p.at(i);
-        const Vector3d &wfd = solid->wfd.at(i);
-
-        solid->compute_heat_flux(in, ip, wfd, doublemapping);
-      }
-    }
-  }
-}
-
-void ULMPM::adjust_dt()
-{
-  if (update->dt_constant) return; // dt is set as a constant, do not update
-
-  double dtCFL = 1.0e22;
-  double dtCFL_reduced = 1.0e22;
-
-  for (int isolid = 0; isolid < domain->solids.size(); isolid++)
-  {
-    dtCFL = MIN(dtCFL, domain->solids[isolid]->dtCFL);
-    if (dtCFL == 0)
-    {
-      cout << "Error: dtCFL == 0\n";
-      cout << "domain->solids[" << isolid << "]->dtCFL == 0\n";
-      error->one(FLERR, "");
-    } else if (std::isnan(dtCFL)) {
-      cout << "Error: dtCFL = " << dtCFL << "\n";
-      cout << "domain->solids[" << isolid << "]->dtCFL == " << domain->solids[isolid]->dtCFL << "\n";
-      error->one(FLERR, "");
-    }
-  }
-
-  MPI_Allreduce(&dtCFL, &dtCFL_reduced, 1, MPI_DOUBLE, MPI_MIN, universe->uworld);
-
-  update->dt = dtCFL_reduced * update->dt_factor;
-  (*input->vars)["dt"] = Var("dt", update->dt);
-}
-
-void ULMPM::reset()
-{
-  int np_local;
-
-  for (int isolid = 0; isolid < domain->solids.size(); isolid++)
-  {
-    domain->solids[isolid]->dtCFL = 1.0e22;
-    np_local = domain->solids[isolid]->np_local;
-    for (int ip = 0; ip < np_local; ip++) domain->solids[isolid]->mbp[ip] = Vector3d();
-  }
+  return solid.L;
 }
 
 void ULMPM::exchange_particles() {

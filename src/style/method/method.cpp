@@ -17,6 +17,9 @@
 #include <update.h>
 #include <domain.h>
 #include <error.h>
+#include <universe.h>
+#include <input.h>
+#include <mpm_math.h>
 
 using namespace std;
 
@@ -174,4 +177,169 @@ void Method::advance_particles(Solid &solid, int ip)
     solid.x.at(ip) += update->dt*v;
 
   v = (1 - update->PIC_FLIP)*solid.v_update.at(ip) + update->PIC_FLIP*(v + update->dt*solid.a.at(ip));
+}
+
+      //solid.reset_rate_deformation_gradient(false);
+void Method::compute_rate_deformation_gradient(bool doublemapping, Solid &solid, int in, int ip, double wf, const Vector3d &wfd)
+{
+  if (solid.mat->rigid)
+    return;
+        
+  vector<Matrix3d> &gradients = get_gradients(solid);
+  const vector<Vector3d> &vn = doublemapping? solid.grid->v: solid.grid->v_update;
+
+  if (update->sub_method_type == Update::SubMethodType::APIC)
+  {
+    const Vector3d &dx = solid.grid->x.at(in) - solid.grid->x0.at(in);
+
+    for (int j = 0; j < domain->dimension; j++)
+      for (int k = 0; k < domain->dimension; k++)
+        gradients.at(ip)(j, k) += vn.at(in)[j]*dx[k]*wf;
+  }
+  else
+    for (int j = 0; j < domain->dimension; j++)
+      for (int k = 0; k < domain->dimension; k++)
+        gradients.at(ip)(j, k) += vn.at(in)[j]*wfd[k];
+
+  if (domain->dimension == 2 && domain->axisymmetric)
+    gradients.at(ip)(2, 2) += vn.at(in)[0]*wf/solid.x0.at(ip)[0];
+}
+
+void Method::update_deformation_gradient()
+{
+  for (int isolid = 0; isolid < domain->solids.size(); isolid++)
+  {
+    Solid &solid = *domain->solids.at(isolid);
+  if (solid.mat->rigid)
+    return;
+
+  for (int ip = 0; ip < solid.np_local; ip++)
+  {
+    if ((method_type == "tlcpdi" || method_type == "ulcpdi") && (update->method->style == 1))
+      solid.F.at(ip) += update->dt*solid.Fdot.at(ip);
+    else
+      solid.F.at(ip) = (Matrix3d::identity() + update->dt*solid.L.at(ip))*solid.F.at(ip);
+
+    solid.Finv.at(ip) = inverse(solid.F.at(ip));
+
+    if ((method_type == "tlcpdi" || method_type == "ulcpdi") && (update->method->style == 1))
+    {
+      solid.vol.at(ip) = 0.5*(solid.xpc[solid.nc*ip + 0][0]*solid.xpc[solid.nc*ip + 1][1] -
+                              solid.xpc[solid.nc*ip + 1][0]*solid.xpc[solid.nc*ip + 0][1] +
+                              solid.xpc[solid.nc*ip + 1][0]*solid.xpc[solid.nc*ip + 2][1] -
+                              solid.xpc[solid.nc*ip + 2][0]*solid.xpc[solid.nc*ip + 1][1] +
+                              solid.xpc[solid.nc*ip + 2][0]*solid.xpc[solid.nc*ip + 3][1] -
+                              solid.xpc[solid.nc*ip + 3][0]*solid.xpc[solid.nc*ip + 2][1] +
+                              solid.xpc[solid.nc*ip + 3][0]*solid.xpc[solid.nc*ip + 0][1] -
+                              solid.xpc[solid.nc*ip + 0][0]*solid.xpc[solid.nc*ip + 3][1]);
+      // rho.at(ip) = rho0.at(ip);
+      solid.J.at(ip) = solid.vol.at(ip)/solid.vol0.at(ip);
+    }
+    else
+    {
+      solid.J.at(ip) = determinant(solid.F.at(ip));
+      solid.vol.at(ip) = solid.J.at(ip)*solid.vol0.at(ip);
+    }
+
+
+    if (solid.J.at(ip) <= 0.0 && solid.damage.at(ip) < 1.0)
+    {
+      cout << "Error: J[" << solid.ptag.at(ip) << "]<=0.0 == " << solid.J.at(ip) << endl;
+      cout << "F[" << solid.ptag.at(ip) << "]:" << endl << solid.F.at(ip) << endl;
+      cout << "Fdot[" << solid.ptag.at(ip) << "]:" << endl << solid.Fdot.at(ip) << endl;
+      cout << "damage[" << solid.ptag.at(ip) << "]:" << endl << solid.damage.at(ip) << endl;
+      error->one(FLERR, "");
+    }
+    solid.rho.at(ip) = solid.rho0.at(ip)/solid.J.at(ip);
+
+    if (solid.mat->type != material->constitutive_model::NEO_HOOKEAN)
+    {
+// Only done if not Neo-Hookean:
+      if (is_TL)
+      {
+        bool status = MPM_Math::PolDec(solid.F.at(ip), solid.R.at(ip)); // polar decomposition of the deformation
+                                       // gradient, F = R*U
+
+        // In TLMPM. L is computed from Fdot:
+        solid.L.at(ip) = solid.Fdot.at(ip)*solid.Finv.at(ip);
+        solid.D.at(ip) = 0.5*(solid.R.at(ip).transpose()*(solid.L.at(ip) + solid.L.at(ip).transpose())*solid.R.at(ip));
+
+        if (!status)
+        {
+          cout << "Polar decomposition of deformation gradient failed for "
+            "particle "
+            << ip << ".\n";
+          cout << "F:" << endl << solid.F.at(ip) << endl;
+          cout << "timestep" << endl << update->ntimestep << endl;
+          error->one(FLERR, "");
+        }
+
+      }
+      else
+        solid.D.at(ip) = 0.5*(solid.L.at(ip) + solid.L.at(ip).transpose());
+    }
+  }
+  }
+}
+
+void Method::update_stress(bool doublemapping)
+{
+  for (Solid *solid: domain->solids)
+  {
+    solid->update_stress();
+
+    if (temp)
+    {
+      solid->reset_heat_flux();
+
+      for (int i = 0; i < solid->neigh_n.size(); i++)
+      {
+        int in = solid->neigh_n.at(i);
+        int ip = solid->neigh_p.at(i);
+        const Vector3d &wfd = solid->wfd.at(i);
+
+        solid->compute_heat_flux(in, ip, wfd, doublemapping);
+      }
+    }
+  }
+}
+
+void Method::adjust_dt()
+{
+  if (update->dt_constant) return; // dt is set as a constant, do not update
+
+  double dtCFL = 1.0e22;
+  double dtCFL_reduced = 1.0e22;
+
+  for (int isolid = 0; isolid < domain->solids.size(); isolid++)
+  {
+    dtCFL = MIN(dtCFL, domain->solids[isolid]->dtCFL);
+    if (dtCFL == 0)
+    {
+      cout << "Error: dtCFL == 0\n";
+      cout << "domain->solids[" << isolid << "]->dtCFL == 0\n";
+      error->one(FLERR, "");
+    } else if (std::isnan(dtCFL)) {
+      cout << "Error: dtCFL = " << dtCFL << "\n";
+      cout << "domain->solids[" << isolid << "]->dtCFL == " << domain->solids[isolid]->dtCFL << "\n";
+      error->one(FLERR, "");
+    }
+  }
+
+  MPI_Allreduce(&dtCFL, &dtCFL_reduced, 1, MPI_DOUBLE, MPI_MIN, universe->uworld);
+
+  update->dt = dtCFL_reduced * update->dt_factor;
+  (*input->vars)["dt"] = Var("dt", update->dt);
+}
+
+void Method::reset()
+{
+  int np_local;
+
+  for (int isolid = 0; isolid < domain->solids.size(); isolid++)
+  {
+    domain->solids[isolid]->dtCFL = 1.0e22;
+    np_local = domain->solids[isolid]->np_local;
+    for (int ip = 0; ip < np_local; ip++) domain->solids[isolid]->mbp[ip] = Vector3d();
+  }
 }

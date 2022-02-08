@@ -54,13 +54,14 @@ class Method : protected Pointers {
   void update_position(Solid &solid, int ip);
   void advance_particles(Solid &solid, int ip);
   virtual void update_grid_positions(Grid &grid, int in) {}
+  virtual vector<Matrix3d> &get_gradients(Solid &solid) = 0;
+  void compute_rate_deformation_gradient(bool doublemapping, Solid &solid, int in, int ip, double wf, const Vector3d &wfd);
 
-  virtual void compute_rate_deformation_gradient(bool) = 0;
-  virtual void update_deformation_gradient() = 0;
-  virtual void update_stress(bool) = 0;
-  virtual void adjust_dt() = 0;
-  virtual void reset() = 0;
-  virtual void exchange_particles() = 0;
+  void update_deformation_gradient();
+  void update_stress(bool);
+  void adjust_dt();
+  void reset();
+  virtual void exchange_particles() {};
 
   bool is_TL;         ///< true: the method is total Lagrangian; false: it is updated Lagrangian
   bool is_CPDI;       ///< true if the method is a CPDI-like

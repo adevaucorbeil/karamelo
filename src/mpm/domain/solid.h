@@ -120,14 +120,10 @@ class Solid : public Pointers {
   void grow(int);                           ///< Allocate memory for the vectors used for particles or resize them.
   
   void compute_heat_flux(int in, int ip, const Vector3d &wfd, bool doublemapping);                      ///< Update the particles' heat source and fluxes
-  void compute_rate_deformation_gradient(int in, int ip, double wf, const Vector3d &wfd,
-                                         bool doublemapping, bool TL, bool APIC);      ///< Compute the time derivative of the deformation matrix for TLMPM, when APIC is not used.
   void compute_position_corners();
   
   void reset_heat_flux();
-  void reset_rate_deformation_gradient(bool TL);
   
-  void update_deformation_gradient();               ///< Update the deformation gradient, volume, density, and the necessary strain matrices
   void update_stress();                             ///< Calculate the stress, damage and temperature at each particle, and determine the maximum allowed time step.
   void compute_inertia_tensor();                    ///< Compute the inertia tensor necessary for the Affice PIC.
   void update_particle_domain();                    ///< Update the particle domain. Used with CPDI

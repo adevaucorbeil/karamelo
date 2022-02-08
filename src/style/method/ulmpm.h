@@ -41,13 +41,8 @@ class ULMPM : public Method {
   bool should_compute_mass_nodes() override;
   void compute_internal_force_nodes(Solid &solid, int in, int ip, double wf, const Vector3d &wfd) override;
   void check_particle_in_domain(const Vector3d &x, int ip) override;
-
-  void compute_rate_deformation_gradient(bool);
-  void update_deformation_gradient();
-  void update_stress(bool);
-  void adjust_dt();
-  void reset();
-  void exchange_particles();
+  vector<Matrix3d> &get_gradients(Solid &solid) override;
+  void exchange_particles() override;
 
 private:
   int update_Di;

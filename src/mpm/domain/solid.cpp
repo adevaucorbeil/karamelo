@@ -318,29 +318,6 @@ void Solid::compute_heat_flux(int in, int ip, const Vector3d &wfd, bool doublema
   q.at(ip) -= wfd*Tn.at(in)*(is_TL? vol0: vol).at(ip)*mat->invcp*mat->kappa;
 }
 
-void Solid::compute_rate_deformation_gradient(int in, int ip, double wf, const Vector3d &wfd,
-                                              bool doublemapping, bool TL, bool APIC)
-{
-  vector<Matrix3d> &gradients = TL? Fdot: L;
-  const vector<Vector3d> &vn = doublemapping? grid->v: grid->v_update;
-
-  if (APIC)
-  {
-    const Vector3d &dx = grid->x.at(in) - grid->x0.at(in);
-
-    for (int j = 0; j < domain->dimension; j++)
-      for (int k = 0; k < domain->dimension; k++)
-        gradients.at(ip)(j, k) += vn.at(in)[j]*dx[k]*wf;
-  }
-  else
-    for (int j = 0; j < domain->dimension; j++)
-      for (int k = 0; k < domain->dimension; k++)
-        gradients.at(ip)(j, k) += vn.at(in)[j]*wfd[k];
-
-  if (domain->dimension == 2 && domain->axisymmetric)
-    gradients.at(ip)(2, 2) += vn.at(in)[0]*wf/x0.at(ip)[0];
-}
-
 void Solid::compute_position_corners()
 {
   for (int i = 0; i < neigh_n.size(); i++)
@@ -358,108 +335,6 @@ void Solid::reset_heat_flux()
 {
   for (Vector3d &q: q)
     q = Vector3d();
-}
-
-void Solid::reset_rate_deformation_gradient(bool TL)
-{
-  vector<Matrix3d> &gradients = TL? Fdot: L;
-
-  for (Matrix3d &gradient: gradients)
-    gradient = Matrix3d();
-}
-
-void Solid::update_deformation_gradient()
-{
-  if (mat->rigid)
-    return;
-
-  bool status, nh, vol_cpdi;
-  Matrix3d eye = Matrix3d::identity();
-
-  if (mat->type == material->constitutive_model::NEO_HOOKEAN)
-    nh = true;
-  else
-    nh = false;
-
-  if ((method_type == "tlcpdi" ||
-      method_type == "ulcpdi") &&
-      (update->method->style == 1))
-  {
-    vol_cpdi = true;
-  }
-  else
-    vol_cpdi = false;
-
-  for (int ip = 0; ip < np_local; ip++)
-  {
-
-    if (is_TL)
-      F.at(ip) += update->dt*Fdot.at(ip);
-    else
-      F.at(ip) = (eye + update->dt*L.at(ip))*F.at(ip);
-
-    Finv.at(ip) = inverse(F.at(ip));
-
-    if (vol_cpdi)
-    {
-      vol.at(ip) = 0.5*(xpc[nc*ip + 0][0]*xpc[nc*ip + 1][1] -
-                       xpc[nc*ip + 1][0]*xpc[nc*ip + 0][1] +
-                       xpc[nc*ip + 1][0]*xpc[nc*ip + 2][1] -
-                       xpc[nc*ip + 2][0]*xpc[nc*ip + 1][1] +
-                       xpc[nc*ip + 2][0]*xpc[nc*ip + 3][1] -
-                       xpc[nc*ip + 3][0]*xpc[nc*ip + 2][1] +
-                       xpc[nc*ip + 3][0]*xpc[nc*ip + 0][1] -
-                       xpc[nc*ip + 0][0]*xpc[nc*ip + 3][1]);
-      // rho.at(ip) = rho0.at(ip);
-      J.at(ip) = vol.at(ip)/vol0.at(ip);
-    }
-    else
-    {
-      J.at(ip) = determinant(F.at(ip));
-      vol.at(ip) = J.at(ip)*vol0.at(ip);
-    }
-
-
-    if (J.at(ip) <= 0.0 && damage.at(ip) < 1.0)
-    {
-      cout << "Error: J[" << ptag.at(ip) << "]<=0.0 == " << J.at(ip) << endl;
-      cout << "F[" << ptag.at(ip) << "]:" << endl << F.at(ip) << endl;
-      cout << "Fdot[" << ptag.at(ip) << "]:" << endl << Fdot.at(ip) << endl;
-      cout << "damage[" << ptag.at(ip) << "]:" << endl << damage.at(ip) << endl;
-      error->one(FLERR, "");
-    }
-    rho.at(ip) = rho0.at(ip)/J.at(ip);
-
-    if (!nh)
-    {
-// Only done if not Neo-Hookean:
-
-      if (is_TL)
-      {
-        status = PolDec(F.at(ip), R.at(ip)); // polar decomposition of the deformation
-                                       // gradient, F = R*U
-
-        // In TLMPM. L is computed from Fdot:
-        L.at(ip) = Fdot.at(ip)*Finv.at(ip);
-        D.at(ip) = 0.5*(R.at(ip).transpose()*(L.at(ip) + L.at(ip).transpose())*R.at(ip));
-
-        if (!status)
-        {
-          cout << "Polar decomposition of deformation gradient failed for "
-            "particle "
-            << ip << ".\n";
-          cout << "F:" << endl << F.at(ip) << endl;
-          cout << "timestep" << endl << update->ntimestep << endl;
-          error->one(FLERR, "");
-        }
-
-      }
-      else
-        D.at(ip) = 0.5*(L.at(ip) + L.at(ip).transpose());
-    }
-
-    // strain_increment.at(ip) = update->dt*D.at(ip);
-  }
 }
 
 void Solid::update_stress()

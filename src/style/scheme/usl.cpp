@@ -114,8 +114,25 @@ void USL::run(Var condition){
         modify->post_update_grid_state(*grid, in);
       }
     }
+    
 
-    method.compute_rate_deformation_gradient(false);
+    for (Solid *solid: domain->solids)
+    {
+      vector<Matrix3d> &gradients = method.get_gradients(*solid);
+
+      for (Matrix3d &gradient: gradients)
+        gradient = Matrix3d();
+
+      for (int i = 0; i < solid->neigh_n.size(); i++)
+      {
+        int in = solid->neigh_n.at(i);
+        int ip = solid->neigh_p.at(i);
+        double wf = solid->wf.at(i);
+        const Vector3d &wfd = solid->wfd.at(i);
+
+        method.compute_rate_deformation_gradient(false, *solid, in, ip, wf, wfd);
+      }
+    }
 
     // g2p
     for (Solid *solid: domain->solids)
