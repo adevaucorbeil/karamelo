@@ -28,6 +28,7 @@
 #include <math.h>
 #include <string>
 #include <vector>
+#include <mpm_math.h>
 
 using namespace std;
 
@@ -363,4 +364,20 @@ void TLMPM::update_grid_positions(Grid &grid, int in)
 vector<Matrix3d> &TLMPM::get_gradients(Solid &solid)
 {
   return solid.Fdot;
+}
+
+void TLMPM::update_velocity_gradient_matrix(Solid &solid, int ip)
+{
+  // polar decomposition of the deformation gradient, F = R*U
+  if (!MPM_Math::PolDec(solid.F.at(ip), solid.R.at(ip)))
+  {
+    cout << "Polar decomposition of deformation gradient failed for particle " << ip << ".\n";
+    cout << "F:" << endl << solid.F.at(ip) << endl;
+    cout << "timestep:" << endl << update->ntimestep << endl;
+    error->one(FLERR, "");
+  }
+
+  // In TLMPM. L is computed from Fdot:
+  solid.L.at(ip) = solid.Fdot.at(ip)*solid.Finv.at(ip);
+  solid.D.at(ip) = 0.5*(solid.R.at(ip).transpose()*(solid.L.at(ip) + solid.L.at(ip).transpose())*solid.R.at(ip));
 }

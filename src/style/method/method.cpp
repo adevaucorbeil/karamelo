@@ -19,7 +19,7 @@
 #include <error.h>
 #include <universe.h>
 #include <input.h>
-#include <mpm_math.h>
+#include <inverse.h>
 
 using namespace std;
 
@@ -205,81 +205,62 @@ void Method::compute_rate_deformation_gradient(bool doublemapping, Solid &solid,
     gradients.at(ip)(2, 2) += vn.at(in)[0]*wf/solid.x0.at(ip)[0];
 }
 
-void Method::update_deformation_gradient()
+void Method::update_deformation_gradient_matrix(Solid &solid, int ip)
 {
-  for (int isolid = 0; isolid < domain->solids.size(); isolid++)
-  {
-    Solid &solid = *domain->solids.at(isolid);
+  // FOR CPDI:
+  //if (update->method->style == 1)
+  //  solid.F.at(ip) += update->dt*solid.Fdot.at(ip);
+  //else
+
+  solid.F.at(ip) = (Matrix3d::identity() + update->dt*solid.L.at(ip))*solid.F.at(ip);
+}
+
+void Method::update_deformation_gradient_determinant(Solid &solid, int ip)
+{
+  // FOR CPDI:
+  //if (update->method->style == 1)
+  //{
+  //  solid.vol.at(ip) = 0.5*(solid.xpc[solid.nc*ip + 0][0]*solid.xpc[solid.nc*ip + 1][1] -
+  //                          solid.xpc[solid.nc*ip + 1][0]*solid.xpc[solid.nc*ip + 0][1] +
+  //                          solid.xpc[solid.nc*ip + 1][0]*solid.xpc[solid.nc*ip + 2][1] -
+  //                          solid.xpc[solid.nc*ip + 2][0]*solid.xpc[solid.nc*ip + 1][1] +
+  //                          solid.xpc[solid.nc*ip + 2][0]*solid.xpc[solid.nc*ip + 3][1] -
+  //                          solid.xpc[solid.nc*ip + 3][0]*solid.xpc[solid.nc*ip + 2][1] +
+  //                          solid.xpc[solid.nc*ip + 3][0]*solid.xpc[solid.nc*ip + 0][1] -
+  //                          solid.xpc[solid.nc*ip + 0][0]*solid.xpc[solid.nc*ip + 3][1]);
+  //  solid.J.at(ip) = solid.vol.at(ip)/solid.vol0.at(ip);
+  //}
+  //else
+  //{
+
+  solid.J.at(ip) = determinant(solid.F.at(ip));
+  solid.vol.at(ip) = solid.J.at(ip)*solid.vol0.at(ip);
+}
+
+void Method::update_deformation_gradient(Solid &solid, int ip)
+{
   if (solid.mat->rigid)
     return;
 
-  for (int ip = 0; ip < solid.np_local; ip++)
+  update_deformation_gradient_matrix(solid, ip);
+
+  solid.Finv.at(ip) = inverse(solid.F.at(ip));
+
+  update_deformation_gradient_determinant(solid, ip);
+
+  if (solid.J.at(ip) <= 0.0 && solid.damage.at(ip) < 1.0)
   {
-    if ((method_type == "tlcpdi" || method_type == "ulcpdi") && (update->method->style == 1))
-      solid.F.at(ip) += update->dt*solid.Fdot.at(ip);
-    else
-      solid.F.at(ip) = (Matrix3d::identity() + update->dt*solid.L.at(ip))*solid.F.at(ip);
-
-    solid.Finv.at(ip) = inverse(solid.F.at(ip));
-
-    if ((method_type == "tlcpdi" || method_type == "ulcpdi") && (update->method->style == 1))
-    {
-      solid.vol.at(ip) = 0.5*(solid.xpc[solid.nc*ip + 0][0]*solid.xpc[solid.nc*ip + 1][1] -
-                              solid.xpc[solid.nc*ip + 1][0]*solid.xpc[solid.nc*ip + 0][1] +
-                              solid.xpc[solid.nc*ip + 1][0]*solid.xpc[solid.nc*ip + 2][1] -
-                              solid.xpc[solid.nc*ip + 2][0]*solid.xpc[solid.nc*ip + 1][1] +
-                              solid.xpc[solid.nc*ip + 2][0]*solid.xpc[solid.nc*ip + 3][1] -
-                              solid.xpc[solid.nc*ip + 3][0]*solid.xpc[solid.nc*ip + 2][1] +
-                              solid.xpc[solid.nc*ip + 3][0]*solid.xpc[solid.nc*ip + 0][1] -
-                              solid.xpc[solid.nc*ip + 0][0]*solid.xpc[solid.nc*ip + 3][1]);
-      // rho.at(ip) = rho0.at(ip);
-      solid.J.at(ip) = solid.vol.at(ip)/solid.vol0.at(ip);
-    }
-    else
-    {
-      solid.J.at(ip) = determinant(solid.F.at(ip));
-      solid.vol.at(ip) = solid.J.at(ip)*solid.vol0.at(ip);
-    }
-
-
-    if (solid.J.at(ip) <= 0.0 && solid.damage.at(ip) < 1.0)
-    {
-      cout << "Error: J[" << solid.ptag.at(ip) << "]<=0.0 == " << solid.J.at(ip) << endl;
-      cout << "F[" << solid.ptag.at(ip) << "]:" << endl << solid.F.at(ip) << endl;
-      cout << "Fdot[" << solid.ptag.at(ip) << "]:" << endl << solid.Fdot.at(ip) << endl;
-      cout << "damage[" << solid.ptag.at(ip) << "]:" << endl << solid.damage.at(ip) << endl;
-      error->one(FLERR, "");
-    }
-    solid.rho.at(ip) = solid.rho0.at(ip)/solid.J.at(ip);
-
-    if (solid.mat->type != material->constitutive_model::NEO_HOOKEAN)
-    {
-// Only done if not Neo-Hookean:
-      if (is_TL)
-      {
-        bool status = MPM_Math::PolDec(solid.F.at(ip), solid.R.at(ip)); // polar decomposition of the deformation
-                                       // gradient, F = R*U
-
-        // In TLMPM. L is computed from Fdot:
-        solid.L.at(ip) = solid.Fdot.at(ip)*solid.Finv.at(ip);
-        solid.D.at(ip) = 0.5*(solid.R.at(ip).transpose()*(solid.L.at(ip) + solid.L.at(ip).transpose())*solid.R.at(ip));
-
-        if (!status)
-        {
-          cout << "Polar decomposition of deformation gradient failed for "
-            "particle "
-            << ip << ".\n";
-          cout << "F:" << endl << solid.F.at(ip) << endl;
-          cout << "timestep" << endl << update->ntimestep << endl;
-          error->one(FLERR, "");
-        }
-
-      }
-      else
-        solid.D.at(ip) = 0.5*(solid.L.at(ip) + solid.L.at(ip).transpose());
-    }
+    cout << "Error: J[" << solid.ptag.at(ip) << "]<=0.0 == " << solid.J.at(ip) << endl;
+    cout << "F[" << solid.ptag.at(ip) << "]:" << endl << solid.F.at(ip) << endl;
+    cout << "Fdot[" << solid.ptag.at(ip) << "]:" << endl << solid.Fdot.at(ip) << endl;
+    cout << "damage[" << solid.ptag.at(ip) << "]:" << endl << solid.damage.at(ip) << endl;
+    error->one(FLERR, "");
   }
-  }
+
+  solid.rho.at(ip) = solid.rho0.at(ip)/solid.J.at(ip);
+
+  if (solid.mat->type != material->constitutive_model::NEO_HOOKEAN)
+    update_velocity_gradient_matrix(solid, ip);
 }
 
 void Method::update_stress(bool doublemapping)

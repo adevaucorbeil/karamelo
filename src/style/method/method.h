@@ -56,8 +56,11 @@ class Method : protected Pointers {
   virtual void update_grid_positions(Grid &grid, int in) {}
   virtual vector<Matrix3d> &get_gradients(Solid &solid) = 0;
   void compute_rate_deformation_gradient(bool doublemapping, Solid &solid, int in, int ip, double wf, const Vector3d &wfd);
+  virtual void update_deformation_gradient_matrix(Solid &solid, int ip);
+  virtual void update_deformation_gradient_determinant(Solid &solid, int ip);
+  virtual void update_velocity_gradient_matrix(Solid &solid, int ip) = 0;
+  void update_deformation_gradient(Solid &solid, int ip);
 
-  void update_deformation_gradient();
   void update_stress(bool);
   void adjust_dt();
   void reset();

@@ -345,6 +345,11 @@ vector<Matrix3d> &ULMPM::get_gradients(Solid &solid)
   return solid.L;
 }
 
+void ULMPM::update_velocity_gradient_matrix(Solid &solid, int ip)
+{
+  solid.D.at(ip) = 0.5*(solid.L.at(ip) + solid.L.at(ip).transpose());
+}
+
 void ULMPM::exchange_particles() {
   int ip, np_local_old;
   vector<Vector3d> *xp;

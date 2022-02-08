@@ -199,9 +199,13 @@ void MUSL::run(Var condition)
 
         method.compute_rate_deformation_gradient(true, *solid, in, ip, wf, wfd);
       }
+
+      for (int ip = 0; ip < solid->np_local; ip++)
+      {
+        method.update_deformation_gradient(*solid, ip);
+      }
     }
 
-    method.update_deformation_gradient();
     method.update_stress(true);
 
     method.exchange_particles();
