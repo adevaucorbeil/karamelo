@@ -73,7 +73,7 @@ MPM::MPM(int narg, char **arg, MPI_Comm communicator)
 
   if (universe->me == 0) {
     cout << "Karamelo -- Parallel Material Point Methods Simulator Build SHA1:"
-         << Version::GIT_SHA1 << endl;
+         << GIT_SHA1 << endl;
     cout << "Running on " << universe->nprocs << " procs\n";
 
     if (inflag != 0)
@@ -133,6 +133,6 @@ void MPM::init() {
 void MPM::help() {
   // general help message about command line and flags
   cout << "Karamelo -- Parallel Material Point Methods Simulator Build SHA1:"
-       << Version::GIT_SHA1 << endl
+       << GIT_SHA1 << endl
        << "Usage: karamelo -i input_file\n";
 }

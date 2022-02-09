@@ -35,7 +35,7 @@ protected:
   template<typename ...T>
   KOKKOS_INLINE_FUNCTION
   ExpressionBase(const ExpressionBase &child, T &&...children):
-    ExpressionBase(children)
+    ExpressionBase(children...)
   {
     constant                  &= child.constant;
     constant_if_constant_time &= child.constant_if_constant_time;

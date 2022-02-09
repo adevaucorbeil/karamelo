@@ -91,7 +91,7 @@ void WriteRestart::write() {
  */
 void WriteRestart::header() {
   // Karamelo version:
-  write_string(VERSION, Version::GIT_SHA1);
+  write_string(VERSION, GIT_SHA1);
   write_variable(DIMENSION, domain->dimension);
   write_variable(NPROCS, universe->nprocs);
 
