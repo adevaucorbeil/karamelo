@@ -84,8 +84,6 @@ void USF::run(Var condition){
         double wf = solid->wf.at(i);
 
         method.compute_velocity_nodes(*solid, in, ip, wf);
-        if (update->temp)
-          method.compute_temperature_nodes(*solid, in, ip, wf);
       }
     
     // grid update 1
@@ -118,10 +116,9 @@ void USF::run(Var condition){
       for (int ip = 0; ip < solid->np_local; ip++)
       {
         method.update_deformation_gradient(*solid, ip);
+        method.update_stress(true, *solid, ip);
       }
     }
-
-    method.update_stress(true);
 
     for (Grid *grid: method.grids())
       for (int in = 0; in < grid->nnodes_local + grid->nnodes_ghost; in++)
@@ -146,8 +143,6 @@ void USF::run(Var condition){
         const Vector3d &wfd = solid->wfd.at(i);
 
         method.compute_force_nodes(*solid, in, ip, wf, wfd);
-        if (update->temp)
-          method.compute_temperature_driving_force_nodes(*solid, in, ip, wf, wfd);
       }
     
     // grid update 2

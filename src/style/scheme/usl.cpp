@@ -91,11 +91,6 @@ void USL::run(Var condition){
 
         method.compute_velocity_nodes(*solid, in, ip, wf);
         method.compute_force_nodes(*solid, in, ip, wf, wfd);
-        if (update->temp)
-        {
-          method.compute_temperature_nodes(*solid, in, ip, wf);
-          method.compute_temperature_driving_force_nodes(*solid, in, ip, wf, wfd);
-        }
       }
 
     // grid update
@@ -187,8 +182,8 @@ void USL::run(Var condition){
       for (int ip = 0; ip < solid->np_local; ip++)
       {
         method.update_deformation_gradient(*solid, ip);
+        method.update_stress(true, *solid, ip);
       }
-    method.update_stress(false);
 
     method.exchange_particles();
 

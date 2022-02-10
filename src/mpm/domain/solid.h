@@ -120,12 +120,8 @@ class Solid : public Pointers {
   void options(vector<string> *, vector<string>::iterator); ///< Determines the material and temperature schemes used.
   void grow(int);                           ///< Allocate memory for the vectors used for particles or resize them.
   
-  void compute_heat_flux(int in, int ip, const Vector3d &wfd, bool doublemapping);                      ///< Update the particles' heat source and fluxes
   void compute_position_corners();
   
-  void reset_heat_flux();
-  
-  void update_stress();                             ///< Calculate the stress, damage and temperature at each particle, and determine the maximum allowed time step.
   void compute_inertia_tensor();                    ///< Compute the inertia tensor necessary for the Affice PIC.
   void update_particle_domain();                    ///< Update the particle domain. Used with CPDI
 
@@ -153,7 +149,8 @@ private:
 	     {"mesh",   6},
              {"file",   6}
            };
-  
+
+public:
   double T0;                     ///< Initial temperature
   bool is_TL, apic;              ///< Boolean variables that are true if using total Lagrangian MPM, and APIC, respectively
 };

@@ -90,11 +90,6 @@ void MUSL::run(Var condition)
 
         method.compute_velocity_nodes(*solid, in, ip, wf);
         method.compute_force_nodes(*solid, in, ip, wf, wfd);
-        if (method.temp)
-        {
-          method.compute_temperature_nodes(*solid, in, ip, wf);
-          method.compute_temperature_driving_force_nodes(*solid, in, ip, wf, wfd);
-        }
       }
 
     // grid update
@@ -166,8 +161,6 @@ void MUSL::run(Var condition)
         double wf = solid->wf.at(i);
 
         method.compute_velocity_nodes(*solid, in, ip, wf);
-        if (method.temp)
-          method.compute_temperature_nodes(*solid, in, ip, wf);
       }
 
     // grid update
@@ -203,10 +196,25 @@ void MUSL::run(Var condition)
       for (int ip = 0; ip < solid->np_local; ip++)
       {
         method.update_deformation_gradient(*solid, ip);
+        method.update_stress(true, *solid, ip);
       }
     }
+    
+    if (method.temp)
+      for (Solid *solid: domain->solids)
+      {
+        for (int ip = 0; ip < solid->np_local; ip++)
+          solid->q.at(ip) = Vector3d();
+        
+        for (int i = 0; i < solid->neigh_n.size(); i++)
+        {
+          int in = solid->neigh_n.at(i);
+          int ip = solid->neigh_p.at(i);
+          const Vector3d &wfd = solid->wfd.at(i);
 
-    method.update_stress(true);
+          method.compute_heat_flux(true, *solid, in, ip, wfd);
+        }
+      }
 
     method.exchange_particles();
 

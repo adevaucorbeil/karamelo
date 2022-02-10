@@ -20,6 +20,7 @@
 #include <universe.h>
 #include <input.h>
 #include <inverse.h>
+#include <eigendecompose.h>
 
 using namespace std;
 
@@ -82,52 +83,31 @@ void Method::compute_velocity_nodes(Solid &solid, int in, int ip, double wf)
 
     if (solid.grid->rigid.at(in))
       solid.grid->mb.at(in) += wf_mass*solid.v_update.at(ip)/node_mass;
+
+    if (temp)
+      solid.grid->T.at(in) += wf*solid.mass.at(ip)*solid.T.at(ip)/node_mass;
   }
 }
 
 void Method::compute_force_nodes(Solid &solid, int in, int ip, double wf, const Vector3d &wfd)
 {
   compute_internal_force_nodes(solid, in, ip, wf, wfd);
-  //if (TL)
-  //{
-  //  grid->f.at(in) -= vol0PK1.at(ip)*wfd;
-
-  //  if (domain->axisymmetric)
-  //    grid->f.at(in)[0] -= vol0PK1.at(ip)(2, 2)*wf/x0.at(ip)[0];
-  //}
-  //else
-  //{
-  //  if (MLS)
-  //    grid->f.at(in) -= vol.at(ip)*wf*sigma.at(ip)*Di*
-  //                      (grid->x0.at(in) - (is_TL? x0: x).at(ip));
-  //  else
-  //    grid->f.at(in) -= vol.at(ip)*sigma.at(ip)*wfd;
-
-  //  if (domain->axisymmetric)
-  //    grid->f.at(in)[0] -= vol.at(ip)*sigma.at(ip)(2, 2)*wf/x.at(ip)[0];
-  //}
 
   if (!solid.grid->rigid.at(in))
     solid.grid->mb.at(in) += wf*solid.mbp.at(ip);
-}
 
-void Method::compute_temperature_nodes(Solid &solid, int in, int ip, double wf)
-{
-  if (double node_mass = solid.grid->mass.at(in))
-    solid.grid->T.at(in) += wf*solid.mass.at(ip)*solid.T.at(ip)/node_mass;
-}
-
-void Method::compute_temperature_driving_force_nodes(Solid &solid, int in, int ip, double wf, const Vector3d &wfd)
-{
-  if (solid.domain->axisymmetric)
+  if (temp)
   {
-    error->one(FLERR, "Temperature and axisymmetric not yet supported.\n");
+    if (solid.domain->axisymmetric)
+    {
+      error->one(FLERR, "Temperature and axisymmetric not yet supported.\n");
+    }
+
+    if (solid.grid->mass.at(in))
+      solid.grid->Qext.at(in) += wf*solid.gamma.at(ip);
+
+    solid.grid->Qint.at(in) += wfd.dot(solid.q.at(ip));
   }
-
-  if (solid.grid->mass.at(in))
-    solid.grid->Qext.at(in) += wf*solid.gamma.at(ip);
-
-  solid.grid->Qint.at(in) += wfd.dot(solid.q.at(ip));
 }
 
 void Method::update_grid_velocities(Grid &grid, int in)
@@ -263,26 +243,164 @@ void Method::update_deformation_gradient(Solid &solid, int ip)
     update_velocity_gradient_matrix(solid, ip);
 }
 
-void Method::update_stress(bool doublemapping)
+// EB: remove this
+#define SQRT_3_OVER_2 1.224744871 // sqrt(3.0/2.0)
+#define FOUR_THIRD 1.333333333333333333333333333333333333333
+
+void Method::update_stress(bool doublemapping, Solid &solid, int ip)
 {
-  for (Solid *solid: domain->solids)
+  if (solid.mat->rigid)
+    return;
+
+  if (solid.mat->type == material->constitutive_model::LINEAR)
   {
-    solid->update_stress();
+    const Matrix3d &strain_increment = update->dt*solid.D.at(ip);
+    solid.strain_el.at(ip) += strain_increment;
+    solid.sigma.at(ip) += 2*solid.mat->G*strain_increment +
+      solid.mat->lambda*strain_increment.trace()*Matrix3d::identity();
 
-    if (temp)
-    {
-      solid->reset_heat_flux();
-
-      for (int i = 0; i < solid->neigh_n.size(); i++)
-      {
-        int in = solid->neigh_n.at(i);
-        int ip = solid->neigh_p.at(i);
-        const Vector3d &wfd = solid->wfd.at(i);
-
-        solid->compute_heat_flux(in, ip, wfd, doublemapping);
-      }
-    }
+    if (is_TL)
+      solid.vol0PK1.at(ip) = solid.vol0.at(ip)*solid.J.at(ip)*solid.R.at(ip)*solid.sigma.at(ip)*
+                            solid.R.at(ip).transpose()*solid.Finv.at(ip).transpose();
+    solid.gamma.at(ip) = 0;
   }
+  else if (solid.mat->type == material->constitutive_model::NEO_HOOKEAN)
+  {
+    // Neo-Hookean material:
+    const Matrix3d &FinvT = solid.Finv.at(ip).transpose();
+    const Matrix3d &PK1 = solid.mat->G*(solid.F.at(ip) - FinvT) + solid.mat->lambda*log(solid.J.at(ip))*FinvT;
+    solid.vol0PK1.at(ip) = solid.vol0.at(ip)*PK1;
+    solid.sigma.at(ip) = 1/solid.J.at(ip)*solid.F.at(ip)*PK1.transpose();
+
+    solid.strain_el.at(ip) = 0.5*(solid.F.at(ip).transpose()*solid.F.at(ip) - Matrix3d::identity());
+    solid.gamma.at(ip) = 0;
+  }
+  else
+  {
+    double pH = 0;
+    double plastic_strain_increment = 0;
+    Matrix3d sigma_dev;
+
+    double T = solid.mat->cp? solid.T.at(ip): 0;
+
+    solid.mat->eos->compute_pressure(pH, solid.ienergy.at(ip), solid.J.at(ip), solid.rho.at(ip),
+                                      solid.damage.at(ip), solid.D.at(ip), solid.grid->cellsize, T);
+
+    if (solid.mat->cp)
+      pH += solid.mat->alpha*(solid.T.at(ip) - solid.T0);
+
+    sigma_dev = solid.mat->strength->update_deviatoric_stress(
+      solid.sigma.at(ip), solid.D.at(ip), plastic_strain_increment,
+      solid.eff_plastic_strain.at(ip), solid.eff_plastic_strain_rate.at(ip), solid.damage.at(ip),
+      T);
+
+    solid.eff_plastic_strain.at(ip) += plastic_strain_increment;
+
+    // compute a characteristic time over which to average the plastic strain
+    solid.eff_plastic_strain_rate.at(ip) += (plastic_strain_increment - solid.eff_plastic_strain_rate.at(ip)*update->dt)/
+                                            1000/solid.grid->cellsize*solid.mat->signal_velocity;
+    solid.eff_plastic_strain_rate.at(ip) = MAX(0.0, solid.eff_plastic_strain_rate.at(ip));
+
+    if (solid.mat->damage)
+        solid.mat->damage->compute_damage(solid.damage_init.at(ip), solid.damage.at(ip), pH,
+                                          sigma_dev, solid.eff_plastic_strain_rate.at(ip),
+                                          plastic_strain_increment, T);
+
+    if (solid.mat->temp)
+    {
+      solid.mat->temp->compute_heat_source(solid.T.at(ip), solid.gamma.at(ip), SQRT_3_OVER_2*sigma_dev.norm(),
+                                           solid.eff_plastic_strain_rate.at(ip));
+      if (is_TL)
+        solid.gamma.at(ip) *= solid.vol0.at(ip)*solid.mat->invcp;
+      else
+        solid.gamma.at(ip) *= solid.vol.at(ip)*solid.mat->invcp;
+    }
+    else
+	  solid.gamma.at(ip) = 0;
+
+    solid.sigma.at(ip) = -pH*(1 - (pH < 0? solid.damage.at(ip): 0))*Matrix3d::identity() + sigma_dev;
+
+      solid.strain_el.at(ip) =
+        (update->dt*solid.D.at(ip).trace() + solid.strain_el.at(ip).trace())/3*Matrix3d::identity() +
+        sigma_dev/solid.mat->G/(1 - (solid.damage.at(ip) > 1e-10? solid.damage.at(ip): 0));
+
+    if (is_TL)
+      solid.vol0PK1.at(ip) = solid.vol0.at(ip)*solid.J.at(ip)*
+        solid.R.at(ip)*solid.sigma.at(ip)*solid.R.at(ip).transpose()*
+        solid.Finv.at(ip).transpose();
+  }
+
+  //double min_h_ratio = 1.0;
+
+  //double max_p_wave_speed = 0;
+
+  //for (int ip = 0; ip < solid.np_local; ip++)
+  //{
+  //  if (solid.damage.at(ip) >= 1.0)
+  //    continue;
+
+  //  max_p_wave_speed =
+  //    MAX(max_p_wave_speed,
+  //        sqrt((solid.mat->K + FOUR_THIRD*solid.mat->G)/solid.rho.at(ip)) +
+  //        MAX(MAX(fabs(solid.v.at(ip)(0)), fabs(solid.v.at(ip)(1))), fabs(solid.v.at(ip)(2))));
+
+  //  if (std::isnan(max_p_wave_speed))
+  //  {
+  //    cout << "Error: max_p_wave_speed is nan with ip=" << ip
+  //      << ", ptag.at(ip)=" << solid.ptag.at(ip) << ", rho0.at(ip)=" << solid.rho0.at(ip)<< ", rho.at(ip)=" << solid.rho.at(ip)
+  //      << ", K=" << solid.mat->K << ", G=" << solid.mat->G << ", J.at(ip)=" << solid.J.at(ip)
+  //      << endl;
+  //    error->one(FLERR, "");
+  //  }
+  //  else if (max_p_wave_speed < 0.0)
+  //  {
+  //    cout << "Error: max_p_wave_speed= " << max_p_wave_speed
+  //      << " with ip=" << ip << ", rho.at(ip)=" << solid.rho.at(ip) << ", K=" << solid.mat->K
+  //      << ", G=" << solid.mat->G << endl;
+  //    error->one(FLERR, "");
+  //  }
+
+  //  if (is_TL)
+  //  {
+  //    Matrix3d eigenvalues = solid.F.at(ip);
+  //    eigendecompose(eigenvalues);
+  //    if (/*esF.info()!= Success*/false)
+  //    { // EB: revisit
+  //      min_h_ratio = MIN(min_h_ratio, 1.0);
+  //    }
+  //    else
+  //    {
+  //      min_h_ratio = MIN(min_h_ratio, fabs(eigenvalues(0, 0)));
+  //      min_h_ratio = MIN(min_h_ratio, fabs(eigenvalues(1, 1)));
+  //      min_h_ratio = MIN(min_h_ratio, fabs(eigenvalues(2, 2)));
+  //    }
+
+  //    if (min_h_ratio == 0)
+  //    {
+  //      cout << "min_h_ratio == 0 with ip=" << ip
+  //        << "F=\n" <<  solid.F.at(ip) << endl
+  //        << "eigenvalues of F:" << eigenvalues(0, 0) << "\t" << eigenvalues(1, 1) << "\t" << eigenvalues(2, 2) << endl;
+  //      //cout << "esF.info()=" << esF.info() << endl;
+  //      error->one(FLERR, "");
+  //    }
+  //  }
+  //}
+
+  //solid.dtCFL = MIN(solid.dtCFL, solid.grid->cellsize*min_h_ratio/max_p_wave_speed);
+
+  //if (std::isnan(solid.dtCFL))
+  //{
+  //  cout << "Error: dtCFL = " << solid.dtCFL << "\n";
+  //  cout << "max_p_wave_speed = " << max_p_wave_speed
+  //    << ", grid->cellsize=" << solid.grid->cellsize << endl;
+  //  error->one(FLERR, "");
+  //}
+}
+
+void Method::compute_heat_flux(bool doublemapping, Solid &solid, int in, int ip, const Vector3d &wfd)
+{
+  solid.q.at(ip) -= wfd*(doublemapping? solid.grid->T: solid.grid->T_update).at(in)
+                    *(is_TL? solid.vol0: solid.vol).at(ip)*solid.mat->invcp*solid.mat->kappa;
 }
 
 void Method::adjust_dt()

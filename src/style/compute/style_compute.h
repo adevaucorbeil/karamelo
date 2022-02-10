@@ -1,3 +1,4 @@
+#include <compute_average_stress.h>
 #include <compute_average_temperature.h>
 #include <compute_average_velocity.h>
 #include <compute_kinetic_energy.h>

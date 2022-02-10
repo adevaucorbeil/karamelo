@@ -44,8 +44,6 @@ class Method : protected Pointers {
   void compute_velocity_nodes(Solid &solid, int in, int ip, double wf);
   virtual void compute_internal_force_nodes(Solid &solid, int in, int ip, double wf, const Vector3d &wfd) = 0;
   void compute_force_nodes(Solid &solid, int in, int ip, double wf, const Vector3d &wfd);
-  void compute_temperature_nodes(Solid &solid, int in, int ip, double wf);
-  void compute_temperature_driving_force_nodes(Solid &solid, int in, int ip, double wf, const Vector3d &wfd);
   void update_grid_velocities(Grid &grid, int in);
   void update_grid_temperature(Grid &grid, int in);
   void compute_velocity_acceleration(Solid &solid, int in, int ip, double wf);
@@ -60,8 +58,9 @@ class Method : protected Pointers {
   virtual void update_deformation_gradient_determinant(Solid &solid, int ip);
   virtual void update_velocity_gradient_matrix(Solid &solid, int ip) = 0;
   void update_deformation_gradient(Solid &solid, int ip);
+  void update_stress(bool doublemapping, Solid &solid, int ip);
+  void compute_heat_flux(bool doublemapping, Solid &solid, int in, int ip, const Vector3d &wfd);
 
-  void update_stress(bool);
   void adjust_dt();
   void reset();
   virtual void exchange_particles() {};
