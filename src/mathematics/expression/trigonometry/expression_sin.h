@@ -2,7 +2,7 @@
 
 #include <expression.h>
 
-template<typename T>
+/*template<typename T>
 class ExpressionSin: public Expression<T>
 {
   Expression<T> angle;
@@ -11,6 +11,12 @@ class ExpressionSin: public Expression<T>
   updateValueCache(const Solid *solid, int ip, const Grid *grid, int in)
   {
     return sin(angle.getValue(solid, ip, grid, in));
+  }
+
+  KOKKOS_INLINE_FUNCTION void
+  print(std::ostream &stream)
+  {
+    stream << "sin(" << angle << ")";
   }
 
 public:
@@ -24,4 +30,4 @@ public:
   {
     return ExpressionCos(angle);
   }
-};
+};*/

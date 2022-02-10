@@ -14,6 +14,12 @@ class ExpressionProduct: public Expression<T>
     return first.getValue(solid, ip, grid, in)*second.getValue(solid, ip, grid, in);
   }
 
+  KOKKOS_INLINE_FUNCTION void
+  print(std::ostream &stream)
+  {
+    stream << first << "/" << second;
+  }
+
 public:
   ExpressionProduct(const Expression<T> &first, const Expression<T> &second):
     Expression(first, second),

@@ -14,6 +14,12 @@ class ExpressionQuotient: public Expression<T>
     return numerator.getValue(solid, ip, grid, in)/denominator.getValue(solid, ip, grid, in);
   }
 
+  KOKKOS_INLINE_FUNCTION void
+  print(std::ostream &stream)
+  {
+    stream << first << "*" << second;
+  }
+
 public:
   ExpressionQuotient(const Expression<T> &numerator, const Expression<T> &denominator):
     Expression(numerator, denominator),
