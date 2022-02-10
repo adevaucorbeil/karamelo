@@ -94,6 +94,7 @@ class Solid : public Pointers {
   vector<int> mask;                         ///< Particles' group mask
 
   vector<double> T;                         ///< Particles' current temperature
+  vector<double> T_old;                     ///< Particles' temperature at previous step
   vector<double> gamma;                     ///< Particles' heat source
   vector<Vector3d> q;                ///< Particles' heat flux
 
