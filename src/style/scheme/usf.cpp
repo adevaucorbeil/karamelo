@@ -100,8 +100,10 @@ void USF::run(Var condition){
     {
       vector<Matrix3d> &gradients = method.get_gradients(*solid);
 
-      for (Matrix3d &gradient: gradients)
-        gradient = Matrix3d();
+      for (int ip = 0; ip < solid->np_local; ip++)
+      {
+        gradients.at(ip) = Matrix3d();
+      }
 
       for (int i = 0; i < solid->neigh_n.size(); i++)
       {
@@ -155,8 +157,6 @@ void USF::run(Var condition){
         modify->post_particles_to_grid(*grid, in);
 
         method.update_grid_velocities(*grid, in);
-        if (method.temp)
-          method.update_grid_temperature(*grid, in);
 
         modify->post_update_grid_state(*grid, in);
       }
@@ -178,8 +178,6 @@ void USF::run(Var condition){
         double wf = solid->wf.at(i);
 
         method.compute_velocity_acceleration(*solid, in, ip, wf);
-        if (method.temp)
-          method.compute_particle_temperature(*solid, in, ip, wf);
       }
 
     for (Solid *solid: domain->solids)

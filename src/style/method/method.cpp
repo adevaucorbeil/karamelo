@@ -112,19 +112,20 @@ void Method::compute_force_nodes(Solid &solid, int in, int ip, double wf, const 
 
 void Method::update_grid_velocities(Grid &grid, int in)
 {
+  double T_update;
+
   Vector3d &v_update = grid.v_update.at(in) = grid.v.at(in);
-
-  if (!grid.rigid.at(in))
-    if (double mass = grid.mass.at(in))
-      v_update += update->dt*(grid.f.at(in) + grid.mb.at(in))/mass;
-}
-
-void Method::update_grid_temperature(Grid &grid, int in)
-{
-  double T_update = grid.T_update.at(in) = grid.T.at(in);
+  if (temp)
+    T_update = grid.T_update.at(in) = grid.T.at(in);
 
   if (double mass = grid.mass.at(in))
-     T_update += update->dt*(grid.Qint.at(in) + grid.Qext.at(in))/mass;
+  {
+    if (!grid.rigid.at(in))
+      v_update += update->dt*(grid.f.at(in) + grid.mb.at(in))/mass;
+
+    if (temp)
+      T_update += update->dt*(grid.Qint.at(in) + grid.Qext.at(in))/mass;
+  }
 }
 
 void Method::compute_velocity_acceleration(Solid &solid, int in, int ip, double wf)
@@ -137,11 +138,9 @@ void Method::compute_velocity_acceleration(Solid &solid, int in, int ip, double 
   const Vector3d &delta_a = wf*(solid.grid->v_update.at(in) - solid.grid->v.at(in))/update->dt;
   solid.a.at(ip) += delta_a;
   solid.f.at(ip) += delta_a*solid.mass.at(ip);
-}
 
-void Method::compute_particle_temperature(Solid &solid, int in, int ip, double wf)
-{
-  solid.T.at(ip) += wf*solid.grid->T_update.at(in);
+  if (temp)
+    solid.T.at(ip) += wf*solid.grid->T_update.at(in);
 }
 
 void Method::update_position(Solid &solid, int ip)
@@ -183,6 +182,10 @@ void Method::compute_rate_deformation_gradient(bool doublemapping, Solid &solid,
 
   if (domain->dimension == 2 && domain->axisymmetric)
     gradients.at(ip)(2, 2) += vn.at(in)[0]*wf/solid.x0.at(ip)[0];
+
+  if (temp)
+    solid.q.at(ip) -= wfd*(doublemapping? solid.grid->T: solid.grid->T_update).at(in)
+                      *(is_TL? solid.vol0: solid.vol).at(ip)*solid.mat->invcp*solid.mat->kappa;
 }
 
 void Method::update_deformation_gradient_matrix(Solid &solid, int ip)
@@ -395,12 +398,6 @@ void Method::update_stress(bool doublemapping, Solid &solid, int ip)
   //    << ", grid->cellsize=" << solid.grid->cellsize << endl;
   //  error->one(FLERR, "");
   //}
-}
-
-void Method::compute_heat_flux(bool doublemapping, Solid &solid, int in, int ip, const Vector3d &wfd)
-{
-  solid.q.at(ip) -= wfd*(doublemapping? solid.grid->T: solid.grid->T_update).at(in)
-                    *(is_TL? solid.vol0: solid.vol).at(ip)*solid.mat->invcp*solid.mat->kappa;
 }
 
 void Method::adjust_dt()
