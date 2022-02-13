@@ -58,6 +58,14 @@ void Method::compute_mass_nodes(Solid &solid, int in, int ip, double wf)
     solid.grid->mass.at(in) += wf*solid.mass.at(ip);
 }
 
+void Method::reset_velocity_nodes(Grid &grid, int in)
+{
+  grid.v.at(in) = Vector3d();
+  grid.mb.at(in) = Vector3d();
+  if (temp)
+    grid.T.at(in) = 0;
+}
+
 void Method::compute_velocity_nodes(Solid &solid, int in, int ip, double wf)
 {
   if (solid.grid->rigid.at(in) && !solid.mat->rigid)
@@ -85,6 +93,17 @@ void Method::compute_velocity_nodes(Solid &solid, int in, int ip, double wf)
 
     if (temp)
       solid.grid->T.at(in) += normalized_wf*solid.T.at(ip);
+  }
+}
+
+void Method::reset_force_nodes(Grid &grid, int in)
+{
+  grid.f.at(in) = Vector3d();
+  grid.mb.at(in) = Vector3d();
+  if (temp)
+  {
+    grid.Qint.at(in) = 0;
+    grid.Qext.at(in) = 0;
   }
 }
 
@@ -127,6 +146,13 @@ void Method::update_grid_velocities(Grid &grid, int in)
   }
 }
 
+void Method::reset_velocity_acceleration(Solid &solid, int ip)
+{
+  solid.v_update.at(ip) = Vector3d();
+  solid.a.at(ip) = Vector3d();
+  solid.f.at(ip) = Vector3d();
+}
+
 void Method::compute_velocity_acceleration(Solid &solid, int in, int ip, double wf)
 {
   solid.v_update.at(ip) += wf*solid.grid->v_update.at(in);
@@ -157,7 +183,13 @@ void Method::advance_particles(Solid &solid, int ip)
   v = (1 - update->PIC_FLIP)*solid.v_update.at(ip) + update->PIC_FLIP*(v + update->dt*solid.a.at(ip));
 }
 
-      //solid.reset_rate_deformation_gradient(false);
+void Method::reset_rate_deformation_gradient(Solid &solid, int ip)
+{
+  get_gradients(solid).at(ip) = Matrix3d();
+  if (temp)
+    solid.q.at(ip) = Vector3d();
+}
+
 void Method::compute_rate_deformation_gradient(bool doublemapping, Solid &solid, int in, int ip, double wf, const Vector3d &wfd)
 {
   if (solid.mat->rigid)
@@ -213,7 +245,11 @@ void Method::update_deformation_gradient_determinant(Solid &solid, int ip)
   solid.vol.at(ip) = solid.J.at(ip)*solid.vol0.at(ip);
 }
 
-void Method::update_deformation_gradient(Solid &solid, int ip)
+// EB: remove this
+#define SQRT_3_OVER_2 1.224744871 // sqrt(3.0/2.0)
+#define FOUR_THIRD 1.333333333333333333333333333333333333333
+
+void Method::update_deformation_gradient_stress(bool doublemapping, Solid &solid, int ip)
 {
   if (solid.mat->rigid)
     return;
@@ -235,21 +271,10 @@ void Method::update_deformation_gradient(Solid &solid, int ip)
 
   solid.rho.at(ip) = solid.rho0.at(ip)/solid.J.at(ip);
 
-  if (solid.mat->type != material->constitutive_model::NEO_HOOKEAN)
-    update_velocity_gradient_matrix(solid, ip);
-}
-
-// EB: remove this
-#define SQRT_3_OVER_2 1.224744871 // sqrt(3.0/2.0)
-#define FOUR_THIRD 1.333333333333333333333333333333333333333
-
-void Method::update_stress(bool doublemapping, Solid &solid, int ip)
-{
-  if (solid.mat->rigid)
-    return;
-
   if (solid.mat->type == material->constitutive_model::LINEAR)
   {
+    update_velocity_gradient_matrix(solid, ip);
+
     const Matrix3d &strain_increment = update->dt*solid.D.at(ip);
     solid.strain_el.at(ip) += strain_increment;
     solid.sigma.at(ip) += 2*solid.mat->G*strain_increment +
@@ -262,7 +287,6 @@ void Method::update_stress(bool doublemapping, Solid &solid, int ip)
   }
   else if (solid.mat->type == material->constitutive_model::NEO_HOOKEAN)
   {
-    // Neo-Hookean material:
     const Matrix3d &FinvT = solid.Finv.at(ip).transpose();
     const Matrix3d &PK1 = solid.mat->G*(solid.F.at(ip) - FinvT) + solid.mat->lambda*log(solid.J.at(ip))*FinvT;
     solid.vol0PK1.at(ip) = solid.vol0.at(ip)*PK1;
@@ -273,6 +297,8 @@ void Method::update_stress(bool doublemapping, Solid &solid, int ip)
   }
   else
   {
+    update_velocity_gradient_matrix(solid, ip);
+
     double pH = 0;
     double plastic_strain_increment = 0;
     Matrix3d sigma_dev;

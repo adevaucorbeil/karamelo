@@ -43,22 +43,32 @@ class Method : protected Pointers {
   void reset_mass_nodes(Grid &grid, int in);
   void compute_mass_nodes(Solid &solid, int in, int ip, double wf);
 
+  void reset_velocity_nodes(Grid &grid, int in);
   void compute_velocity_nodes(Solid &solid, int in, int ip, double wf);
+
+  void reset_force_nodes(Grid &grid, int in);
   virtual void compute_internal_force_nodes(Solid &solid, int in, int ip, double wf, const Vector3d &wfd) = 0;
   void compute_force_nodes(Solid &solid, int in, int ip, double wf, const Vector3d &wfd);
+
   void update_grid_velocities(Grid &grid, int in);
+
+  void reset_velocity_acceleration(Solid &solid, int ip);
   void compute_velocity_acceleration(Solid &solid, int in, int ip, double wf);
+
   virtual void check_particle_in_domain(const Vector3d &x, int ip) {}
   void update_position(Solid &solid, int ip);
   void advance_particles(Solid &solid, int ip);
+
   virtual void update_grid_positions(Grid &grid, int in) {}
+
   virtual vector<Matrix3d> &get_gradients(Solid &solid) = 0;
+  void reset_rate_deformation_gradient(Solid &solid, int ip);
   void compute_rate_deformation_gradient(bool doublemapping, Solid &solid, int in, int ip, double wf, const Vector3d &wfd);
+
   virtual void update_deformation_gradient_matrix(Solid &solid, int ip) = 0;
   virtual void update_deformation_gradient_determinant(Solid &solid, int ip);
   virtual void update_velocity_gradient_matrix(Solid &solid, int ip) = 0;
-  void update_deformation_gradient(Solid &solid, int ip);
-  void update_stress(bool doublemapping, Solid &solid, int ip);
+  void update_deformation_gradient_stress(bool doublemapping, Solid &solid, int ip);
   
   void adjust_dt();
   void reset();

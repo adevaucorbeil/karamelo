@@ -55,23 +55,21 @@ void USF::run(Var condition){
       for (int in = 0; in < grid->nnodes_local + grid->nnodes_ghost; in++)
       {
         method.reset_mass_nodes(*grid, in);
-        grid->v.at(in) = Vector3d();
-        grid->mb.at(in) = Vector3d();
-        if (method.temp)
-          grid->T.at(in) = 0;
+        method.reset_velocity_nodes(*grid, in);
       }
 
     // p2g 1
     for (Solid *solid: domain->solids)
+    {
       for (int ip = 0; ip < solid->np_local; ip++)
         modify->initial_integrate(*solid, ip);
 
-    for (Solid *solid: domain->solids)
       for (int i = 0; i < solid->neigh_n.size(); i++)
         method.compute_mass_nodes(*solid,
                                    solid->neigh_n.at(i),
                                    solid->neigh_p.at(i),
                                    solid->wf.at(i));
+    }
 
     for (Grid *grid: method.grids())
       grid->reduce_mass_ghost_nodes();
@@ -98,12 +96,8 @@ void USF::run(Var condition){
 
     for (Solid *solid: domain->solids)
     {
-      vector<Matrix3d> &gradients = method.get_gradients(*solid);
-
       for (int ip = 0; ip < solid->np_local; ip++)
-      {
-        gradients.at(ip) = Matrix3d();
-      }
+        method.reset_rate_deformation_gradient(*solid, ip);
 
       for (int i = 0; i < solid->neigh_n.size(); i++)
       {
@@ -116,24 +110,12 @@ void USF::run(Var condition){
       }
 
       for (int ip = 0; ip < solid->np_local; ip++)
-      {
-        method.update_deformation_gradient(*solid, ip);
-        method.update_stress(true, *solid, ip);
-      }
+        method.update_deformation_gradient_stress(true, *solid, ip);
     }
 
     for (Grid *grid: method.grids())
       for (int in = 0; in < grid->nnodes_local + grid->nnodes_ghost; in++)
-      {
-        grid->mass.at(in) = 0;
-        grid->f.at(in) = Vector3d();
-        grid->mb.at(in) = Vector3d();
-        if (method.temp)
-        {
-          grid->Qint.at(in) = 0;
-          grid->Qext.at(in) = 0;
-        }
-      }
+        method.reset_force_nodes(*grid, in);
 
     // p2g 2
     for (Solid *solid: domain->solids)
@@ -163,14 +145,10 @@ void USF::run(Var condition){
     }
 
     for (Solid *solid: domain->solids)
+    {
       for (int ip = 0; ip < solid->np_local; ip++)
-      {
-        solid->v_update.at(ip) = Vector3d();
-        solid->a.at(ip) = Vector3d();
-        solid->f.at(ip) = Vector3d();
-      }
+        method.reset_velocity_acceleration(*solid, ip);
 
-    for (Solid *solid: domain->solids)
       for (int i = 0; i < solid->neigh_n.size(); i++)
       {
         int in = solid->neigh_n.at(i);
@@ -180,7 +158,6 @@ void USF::run(Var condition){
         method.compute_velocity_acceleration(*solid, in, ip, wf);
       }
 
-    for (Solid *solid: domain->solids)
       for (int ip = 0; ip < solid->np_local; ip++)
       {
         if (solid->mat->rigid || update->sub_method_type != Update::SubMethodType::ASFLIP)
@@ -192,6 +169,7 @@ void USF::run(Var condition){
 
         modify->post_advance_particles(*solid, ip);
       }
+    }
 
     // grid update
     for (Grid *grid: method.grids())
