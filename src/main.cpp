@@ -20,14 +20,11 @@
 
 int main(int argc, char **argv) {
   Kokkos::initialize();
-  MPI_Init(&argc,&argv);                        /// Initialized MPI
+  MPI_Init(&argc, &argv);                         /// Initialized MPI
 
-  MPM *mpm = new MPM(argc,argv,MPI_COMM_WORLD); /// Create the MPM entity
-  mpm->input->file();                           /// Read input file and execute commands
-
-  delete mpm;
+  MPM(argc, argv, MPI_COMM_WORLD).input->file(); /// Create the MPM entity, read input file and execute commands
 
   MPI_Barrier(MPI_COMM_WORLD);
-  MPI_Finalize();                               /// Finalize MPI
+  MPI_Finalize();                                 /// Finalize MPI
   Kokkos::finalize();
 }
