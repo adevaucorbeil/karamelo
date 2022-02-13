@@ -333,71 +333,68 @@ void Method::update_stress(bool doublemapping, Solid &solid, int ip)
         solid.Finv.at(ip).transpose();
   }
 
-  //double min_h_ratio = 1.0;
+  if (solid.damage.at(ip) >= 1.0)
+    return;
 
-  //double max_p_wave_speed = 0;
+  double p_wave_speed = sqrt((solid.mat->K + FOUR_THIRD*solid.mat->G)/solid.rho.at(ip)) +
+                        MAX(MAX(fabs(solid.v.at(ip)(0)), fabs(solid.v.at(ip)(1))), fabs(solid.v.at(ip)(2)));
 
-  //for (int ip = 0; ip < solid.np_local; ip++)
-  //{
-  //  if (solid.damage.at(ip) >= 1.0)
-  //    continue;
+  if (std::isnan(p_wave_speed))
+  {
+    cout << "Error: max_p_wave_speed is nan with ip=" << ip
+      << ", ptag.at(ip)=" << solid.ptag.at(ip) << ", rho0.at(ip)=" << solid.rho0.at(ip)<< ", rho.at(ip)=" << solid.rho.at(ip)
+      << ", K=" << solid.mat->K << ", G=" << solid.mat->G << ", J.at(ip)=" << solid.J.at(ip)
+      << endl;
+    error->one(FLERR, "");
+  }
+  else if (p_wave_speed < 0.0)
+  {
+    cout << "Error: p_wave_speed= " << p_wave_speed
+      << " with ip=" << ip << ", rho.at(ip)=" << solid.rho.at(ip) << ", K=" << solid.mat->K
+      << ", G=" << solid.mat->G << endl;
+    error->one(FLERR, "");
+  }
+  
+  double h_ratio;
 
-  //  max_p_wave_speed =
-  //    MAX(max_p_wave_speed,
-  //        sqrt((solid.mat->K + FOUR_THIRD*solid.mat->G)/solid.rho.at(ip)) +
-  //        MAX(MAX(fabs(solid.v.at(ip)(0)), fabs(solid.v.at(ip)(1))), fabs(solid.v.at(ip)(2))));
+  if (is_TL)
+  {
+    Matrix3d eigenvalues = solid.F.at(ip);
+    eigendecompose(eigenvalues);
+    if (/*esF.info()!= Success*/false)
+    { // EB: revisit
+      h_ratio = 1;
+    }
+    else
+    {
+      h_ratio = MIN(h_ratio, fabs(eigenvalues(0, 0)));
+      h_ratio = MIN(h_ratio, fabs(eigenvalues(1, 1)));
+      h_ratio = MIN(h_ratio, fabs(eigenvalues(2, 2)));
+    }
 
-  //  if (std::isnan(max_p_wave_speed))
-  //  {
-  //    cout << "Error: max_p_wave_speed is nan with ip=" << ip
-  //      << ", ptag.at(ip)=" << solid.ptag.at(ip) << ", rho0.at(ip)=" << solid.rho0.at(ip)<< ", rho.at(ip)=" << solid.rho.at(ip)
-  //      << ", K=" << solid.mat->K << ", G=" << solid.mat->G << ", J.at(ip)=" << solid.J.at(ip)
-  //      << endl;
-  //    error->one(FLERR, "");
-  //  }
-  //  else if (max_p_wave_speed < 0.0)
-  //  {
-  //    cout << "Error: max_p_wave_speed= " << max_p_wave_speed
-  //      << " with ip=" << ip << ", rho.at(ip)=" << solid.rho.at(ip) << ", K=" << solid.mat->K
-  //      << ", G=" << solid.mat->G << endl;
-  //    error->one(FLERR, "");
-  //  }
+    if (h_ratio == 0)
+    {
+      cout << "min_h_ratio == 0 with ip=" << ip
+        << "F=\n" <<  solid.F.at(ip) << endl
+        << "eigenvalues of F:" << eigenvalues(0, 0) << "\t" << eigenvalues(1, 1) << "\t" << eigenvalues(2, 2) << endl;
+      //cout << "esF.info()=" << esF.info() << endl;
+      error->one(FLERR, "");
+    }
+  }
+  else
+  {
+    h_ratio = 1;
+  }
 
-  //  if (is_TL)
-  //  {
-  //    Matrix3d eigenvalues = solid.F.at(ip);
-  //    eigendecompose(eigenvalues);
-  //    if (/*esF.info()!= Success*/false)
-  //    { // EB: revisit
-  //      min_h_ratio = MIN(min_h_ratio, 1.0);
-  //    }
-  //    else
-  //    {
-  //      min_h_ratio = MIN(min_h_ratio, fabs(eigenvalues(0, 0)));
-  //      min_h_ratio = MIN(min_h_ratio, fabs(eigenvalues(1, 1)));
-  //      min_h_ratio = MIN(min_h_ratio, fabs(eigenvalues(2, 2)));
-  //    }
+  solid.dtCFL.at(ip) = solid.grid->cellsize*h_ratio/p_wave_speed;
 
-  //    if (min_h_ratio == 0)
-  //    {
-  //      cout << "min_h_ratio == 0 with ip=" << ip
-  //        << "F=\n" <<  solid.F.at(ip) << endl
-  //        << "eigenvalues of F:" << eigenvalues(0, 0) << "\t" << eigenvalues(1, 1) << "\t" << eigenvalues(2, 2) << endl;
-  //      //cout << "esF.info()=" << esF.info() << endl;
-  //      error->one(FLERR, "");
-  //    }
-  //  }
-  //}
-
-  //solid.dtCFL = MIN(solid.dtCFL, solid.grid->cellsize*min_h_ratio/max_p_wave_speed);
-
-  //if (std::isnan(solid.dtCFL))
-  //{
-  //  cout << "Error: dtCFL = " << solid.dtCFL << "\n";
-  //  cout << "max_p_wave_speed = " << max_p_wave_speed
-  //    << ", grid->cellsize=" << solid.grid->cellsize << endl;
-  //  error->one(FLERR, "");
-  //}
+  if (std::isnan(solid.dtCFL.at(ip)))
+  {
+    cout << "Error: dtCFL = " << solid.dtCFL.at(ip) << "\n";
+    cout << "p_wave_speed = " << p_wave_speed
+      << ", grid->cellsize=" << solid.grid->cellsize << endl;
+    error->one(FLERR, "");
+  }
 }
 
 void Method::adjust_dt()
@@ -408,19 +405,22 @@ void Method::adjust_dt()
   double dtCFL_reduced = 1.0e22;
 
   for (int isolid = 0; isolid < domain->solids.size(); isolid++)
-  {
-    dtCFL = MIN(dtCFL, domain->solids[isolid]->dtCFL);
-    if (dtCFL == 0)
+    for (int ip = 0; ip < domain->solids.at(isolid)->np_local; ip++)
     {
-      cout << "Error: dtCFL == 0\n";
-      cout << "domain->solids[" << isolid << "]->dtCFL == 0\n";
-      error->one(FLERR, "");
-    } else if (std::isnan(dtCFL)) {
-      cout << "Error: dtCFL = " << dtCFL << "\n";
-      cout << "domain->solids[" << isolid << "]->dtCFL == " << domain->solids[isolid]->dtCFL << "\n";
-      error->one(FLERR, "");
+      dtCFL = MIN(dtCFL, domain->solids[isolid]->dtCFL.at(ip));
+      if (!dtCFL)
+      {
+        cout << "Error: dtCFL == 0\n";
+        cout << "domain->solids[" << isolid << "]->dtCFL == 0\n";
+        error->one(FLERR, "");
+      }
+      else if (std::isnan(dtCFL))
+      {
+        cout << "Error: dtCFL = " << dtCFL << "\n";
+        cout << "domain->solids[" << isolid << "]->dtCFL == " << domain->solids[isolid]->dtCFL.at(ip) << "\n";
+        error->one(FLERR, "");
+      }
     }
-  }
 
   MPI_Allreduce(&dtCFL, &dtCFL_reduced, 1, MPI_DOUBLE, MPI_MIN, universe->uworld);
 
@@ -434,8 +434,7 @@ void Method::reset()
 
   for (int isolid = 0; isolid < domain->solids.size(); isolid++)
   {
-    domain->solids[isolid]->dtCFL = 1.0e22;
-    np_local = domain->solids[isolid]->np_local;
-    for (int ip = 0; ip < np_local; ip++) domain->solids[isolid]->mbp[ip] = Vector3d();
+    for (int ip = 0; ip < domain->solids[isolid]->np_local; ip++)
+      domain->solids[isolid]->mbp[ip] = Vector3d();
   }
 }

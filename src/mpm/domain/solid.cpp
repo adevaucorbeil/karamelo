@@ -106,8 +106,6 @@ Solid::Solid(MPM *mpm, vector<string> args): Pointers(mpm)
     apic = false;
   }
 
-  dtCFL = 1.0e22;
-  max_p_wave_speed = 0;
   vtot = 0;
   mtot = 0;
   comm_n = 50; // Number of double to pack for particle exchange between CPUs.
@@ -296,7 +294,7 @@ void Solid::grow(int nparticles)
   ienergy.resize(nparticles);
   mask.resize(nparticles);
   J.resize(nparticles);
-
+  dtCFL.resize(nparticles);
   gamma.resize(nparticles);
   if (mat->cp != 0)
   {
@@ -484,6 +482,7 @@ void Solid::copy_particle(int i, int j)
   R[j] = R[i];
   D[j] = D[i];
   Finv[j] = Finv[i];
+  dtCFL[j] = dtCFL[i];
   Fdot[j] = Fdot[i];
   J[j] = J[i];
   // if (method_type == "tlcpdi" || method_type == "ulcpdi")

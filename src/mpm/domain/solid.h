@@ -96,10 +96,9 @@ class Solid : public Pointers {
   vector<double> T;                         ///< Particles' current temperature
   vector<double> T_old;                     ///< Particles' temperature at previous step
   vector<double> gamma;                     ///< Particles' heat source
-  vector<Vector3d> q;                ///< Particles' heat flux
-
-  double max_p_wave_speed;                  ///< Maximum of the particle wave speed
-  double dtCFL;
+  vector<Vector3d> q;                       ///< Particles' heat flux
+  
+  vector<double> dtCFL;
 
   deque<int> neigh_p;             ///< List of particle indices for neighbour pairs
   deque<int> neigh_n;             ///< List of node indices for neighbour pairs

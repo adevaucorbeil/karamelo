@@ -177,6 +177,7 @@ Var PopulateCylindricalCoordinates::command(vector<string> args) {
           s->Fdot[l] = Matrix3d();
           s->J[l] = 1;
           s->mask[l] = 1;
+          s->dtCFL[l] = 0;
           l++;
         }
         if (j == 0)

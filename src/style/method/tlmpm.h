@@ -42,7 +42,7 @@ public:
   void update_velocity_gradient_matrix(Solid &solid, int ip) override;
 
 private:
-  bool update_wf, update_mass_nodes;
+  bool update_wf;
 };
 
 // double linear_basis_function(double, int);

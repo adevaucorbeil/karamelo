@@ -32,11 +32,12 @@
 
 using namespace std;
 
-TLMPM::TLMPM(MPM *mpm) : Method(mpm) {
+TLMPM::TLMPM(MPM *mpm):
+  Method(mpm)
+{
   // cout << "In TLMPM::TLMPM()" << endl;
 
   update_wf = true;
-  update_mass_nodes = true;
   update->PIC_FLIP = 0.99;
   is_TL = true;
 
@@ -337,8 +338,8 @@ vector<Grid *> TLMPM::grids()
 }
 
 bool TLMPM::should_compute_mass_nodes()
-{
-  return update_mass_nodes;
+{ 
+  return !update->ntimestep;
 }
 
 void TLMPM::compute_internal_force_nodes(Solid &solid, int in, int ip, double wf, const Vector3d &wfd)
