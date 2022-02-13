@@ -345,6 +345,11 @@ vector<Matrix3d> &ULMPM::get_gradients(Solid &solid)
   return solid.L;
 }
 
+void ULMPM::update_deformation_gradient_matrix(Solid &solid, int ip)
+{
+  solid.F.at(ip) = (Matrix3d::identity() + update->dt*solid.L.at(ip))*solid.F.at(ip);
+}
+
 void ULMPM::update_velocity_gradient_matrix(Solid &solid, int ip)
 {
   solid.D.at(ip) = 0.5*(solid.L.at(ip) + solid.L.at(ip).transpose());

@@ -54,7 +54,7 @@ void USL::run(Var condition){
     for (Grid *grid: method.grids())
       for (int in = 0; in < grid->nnodes_local + grid->nnodes_ghost; in++)
       {
-        grid->mass.at(in) = 0;
+        method.reset_mass_nodes(*grid, in);
         grid->v.at(in) = Vector3d();
         grid->f.at(in) = Vector3d();
         grid->mb.at(in) = Vector3d();

@@ -339,7 +339,7 @@ vector<Grid *> TLMPM::grids()
 
 bool TLMPM::should_compute_mass_nodes()
 { 
-  return !update->ntimestep;
+  return !update->atimestep;
 }
 
 void TLMPM::compute_internal_force_nodes(Solid &solid, int in, int ip, double wf, const Vector3d &wfd)
@@ -365,6 +365,11 @@ void TLMPM::update_grid_positions(Grid &grid, int in)
 vector<Matrix3d> &TLMPM::get_gradients(Solid &solid)
 {
   return solid.Fdot;
+}
+
+void TLMPM::update_deformation_gradient_matrix(Solid &solid, int ip)
+{
+  solid.F.at(ip) += update->dt*solid.Fdot.at(ip);
 }
 
 void TLMPM::update_velocity_gradient_matrix(Solid &solid, int ip)

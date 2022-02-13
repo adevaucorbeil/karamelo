@@ -38,9 +38,11 @@ class Method : protected Pointers {
 
   bool apic();
   virtual vector<Grid *> grids() = 0;
-
+  
   virtual bool should_compute_mass_nodes() = 0;
+  void reset_mass_nodes(Grid &grid, int in);
   void compute_mass_nodes(Solid &solid, int in, int ip, double wf);
+
   void compute_velocity_nodes(Solid &solid, int in, int ip, double wf);
   virtual void compute_internal_force_nodes(Solid &solid, int in, int ip, double wf, const Vector3d &wfd) = 0;
   void compute_force_nodes(Solid &solid, int in, int ip, double wf, const Vector3d &wfd);
@@ -52,7 +54,7 @@ class Method : protected Pointers {
   virtual void update_grid_positions(Grid &grid, int in) {}
   virtual vector<Matrix3d> &get_gradients(Solid &solid) = 0;
   void compute_rate_deformation_gradient(bool doublemapping, Solid &solid, int in, int ip, double wf, const Vector3d &wfd);
-  virtual void update_deformation_gradient_matrix(Solid &solid, int ip);
+  virtual void update_deformation_gradient_matrix(Solid &solid, int ip) = 0;
   virtual void update_deformation_gradient_determinant(Solid &solid, int ip);
   virtual void update_velocity_gradient_matrix(Solid &solid, int ip) = 0;
   void update_deformation_gradient(Solid &solid, int ip);

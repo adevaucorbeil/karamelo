@@ -92,11 +92,7 @@ static inline bool PolDec(Matrix3d M, Matrix3d &R, Matrix3d &T, bool scaleF) {
 		T = V * S * V.transpose();
 	}
 
-	if (determinant(R) > 0.0) {
-		return true;
-	} else {
-		return false;
-	}
+	return determinant(R) > 0.0;
 }
 
 static inline bool PolDec(Matrix3d M, Matrix3d &R) {

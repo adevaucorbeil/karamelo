@@ -46,6 +46,12 @@ bool Method::apic()
   return false;
 }
 
+void Method::reset_mass_nodes(Grid &grid, int in)
+{
+  if (should_compute_mass_nodes())
+    grid.mass.at(in) = 0;
+}
+
 void Method::compute_mass_nodes(Solid &solid, int in, int ip, double wf)
 {
   if (should_compute_mass_nodes() && !solid.grid->rigid.at(in) || solid.mat->rigid)
@@ -59,33 +65,26 @@ void Method::compute_velocity_nodes(Solid &solid, int in, int ip, double wf)
 
   if (double node_mass = solid.grid->mass.at(in))
   {
-    double wf_mass = wf*solid.mass.at(ip);
+    double normalized_wf = wf*solid.mass.at(ip)/node_mass;
     const Vector3d &dx = solid.grid->x0.at(in) - solid.x.at(ip);
     
     Vector3d vtemp = solid.v.at(ip);
 
-    if (apic())
+    if (apic() || update->method->ge)
     {
       if (is_TL)
         vtemp += solid.Fdot.at(ip)*(solid.grid->x0.at(in) - solid.x0.at(ip));
       else
-        vtemp += solid.L.at(ip)*dx;
-
-      solid.grid->v.at(in) += vtemp/node_mass;
+        vtemp += solid.L.at(ip)*(solid.grid->x0.at(in) - solid.x.at(ip));
     }
-    else
-    {
-      if (update->method->ge)
-        vtemp += solid.L.at(ip)*dx;
 
-      solid.grid->v.at(in) += wf_mass*vtemp/node_mass;
-    }
+    solid.grid->v.at(in) += normalized_wf*vtemp;
 
     if (solid.grid->rigid.at(in))
-      solid.grid->mb.at(in) += wf_mass*solid.v_update.at(ip)/node_mass;
+      solid.grid->mb.at(in) += normalized_wf*solid.v_update.at(ip);
 
     if (temp)
-      solid.grid->T.at(in) += wf*solid.mass.at(ip)*solid.T.at(ip)/node_mass;
+      solid.grid->T.at(in) += normalized_wf*solid.T.at(ip);
   }
 }
 
@@ -169,11 +168,15 @@ void Method::compute_rate_deformation_gradient(bool doublemapping, Solid &solid,
 
   if (update->sub_method_type == Update::SubMethodType::APIC)
   {
-    const Vector3d &dx = solid.grid->x.at(in) - solid.grid->x0.at(in);
+    const Vector3d &dx = is_TL? solid.grid->x0.at(in) - solid.x0.at(ip):
+                                solid.grid->x.at(in) - solid.grid->x0.at(in);
 
+    Matrix3d gradient;
     for (int j = 0; j < domain->dimension; j++)
       for (int k = 0; k < domain->dimension; k++)
-        gradients.at(ip)(j, k) += vn.at(in)[j]*dx[k]*wf;
+        gradient(j, k) += vn.at(in)[j]*dx[k]*wf;
+
+    gradients.at(ip) += gradient*solid.Di;
   }
   else
     for (int j = 0; j < domain->dimension; j++)
@@ -186,16 +189,6 @@ void Method::compute_rate_deformation_gradient(bool doublemapping, Solid &solid,
   if (temp)
     solid.q.at(ip) -= wfd*(doublemapping? solid.grid->T: solid.grid->T_update).at(in)
                       *(is_TL? solid.vol0: solid.vol).at(ip)*solid.mat->invcp*solid.mat->kappa;
-}
-
-void Method::update_deformation_gradient_matrix(Solid &solid, int ip)
-{
-  // FOR CPDI:
-  //if (update->method->style == 1)
-  //  solid.F.at(ip) += update->dt*solid.Fdot.at(ip);
-  //else
-
-  solid.F.at(ip) = (Matrix3d::identity() + update->dt*solid.L.at(ip))*solid.F.at(ip);
 }
 
 void Method::update_deformation_gradient_determinant(Solid &solid, int ip)
@@ -355,17 +348,14 @@ void Method::update_stress(bool doublemapping, Solid &solid, int ip)
     error->one(FLERR, "");
   }
   
-  double h_ratio;
+  double h_ratio = 1;
 
   if (is_TL)
   {
     Matrix3d eigenvalues = solid.F.at(ip);
     eigendecompose(eigenvalues);
-    if (/*esF.info()!= Success*/false)
-    { // EB: revisit
-      h_ratio = 1;
-    }
-    else
+    // EB: revisit
+    if (/*esF.info()== Success*/false)
     {
       h_ratio = MIN(h_ratio, fabs(eigenvalues(0, 0)));
       h_ratio = MIN(h_ratio, fabs(eigenvalues(1, 1)));

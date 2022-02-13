@@ -20,7 +20,10 @@ eigendecompose(Matrix<T, N, N> &matrix)
     const T &b = matrix(k - 1, k    );
     const T &c = matrix(k    , k    );
     const V &d = (a - c)/2;
-    const Matrix<V, N, N> &shift = (c - sign(d)*b*b/(std::abs(d) + std::hypot(d, b)))*Matrix<V, N, N>::identity();
+    Matrix<V, N, N> shift;
+    double denominator = std::abs(d) + std::hypot(d, b);
+    if (abs(denominator) > 1e-10)
+     shift = (c - sign(d)*b*b/denominator)*Matrix<V, N, N>::identity();
 
     Matrix<V, N, N> r = matrix - shift;
     const Matrix<V, N, N> &q = qr_decompose(r);
