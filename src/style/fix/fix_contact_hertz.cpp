@@ -20,12 +20,8 @@
 #include <universe.h>
 #include <update.h>
 
-
 using namespace std;
 using namespace FixConst;
-
-
-#define four_thirds 1.333333333
 
 FixContactHertz::FixContactHertz(MPM *mpm, vector<string> args)
     : Fix(mpm, args, INITIAL_INTEGRATE) {
@@ -42,22 +38,11 @@ FixContactHertz::FixContactHertz(MPM *mpm, vector<string> args)
     }
     groupbit = group->bitmask[igroup];
 
-    solid1 = solid2 = -1;
     return;
   }
 
   if (args.size() < Nargs) {
     error->all(FLERR, "Error: not enough arguments.\n" + usage);
-  }
-
-  solid1 = domain->find_solid(args[2]);
-  if (solid1 < 0) {
-    error->all(FLERR, "Error: solid " + args[2] + " unknown.\n");
-  }
-
-  solid2 = domain->find_solid(args[3]);
-  if (solid1 < 0) {
-    error->all(FLERR, "Error: solid " + args[3] + " unknown.\n");
   }
 
   if (universe->me == 0) {
@@ -85,241 +70,76 @@ void FixContactHertz::reduce()
   (*input->vars)[id + "_z"] = Var(id + "_z", ftot_reduced[2]);
 }
 
-void FixContactHertz::initial_integrate() {
+void FixContactHertz::initial_integrate(Solid &solid, int ip)
+{
   // cout << "In FixContactHertz::initial_integrate()\n";
 
   // Go through all the particles in the group and set b to the right value:
-  Vector3d f, dx;
+  for (Solid *solid1: domain->solids)
+  {
+    if (solid1 <= &solid)
+      continue;
 
-  Solid *s1, *s2;
-  Vector3d vtemp1, vtemp2;
+    double Estar = 1/((1 - solid.  mat->nu*solid.  mat->nu)/solid.  mat->E +
+                      (1 - solid1->mat->nu*solid1->mat->nu)/solid1->mat->E);
 
-  double Rp, Rp1, Rp2, r, p, fmag, Estar, max_cellsize;
+    double max_cellsize = MAX(solid.grid->cellsize, solid1->grid->cellsize);
 
-  s1 = domain->solids[solid1];
-  s2 = domain->solids[solid2];
+    for (int ip1 = 0; ip1 < solid1->np_local; ip1++)
+    {
+      const Vector3d &dx = solid1->x.at(ip1) - solid.x.at(ip);
+      
+      // Extremely gross screening:
+      bool outside = false;
 
-  Estar = 1.0 / ((1 - s1->mat->nu * s1->mat->nu) / s1->mat->E +
-                 (1 - s2->mat->nu * s2->mat->nu) / s2->mat->E);
+      for (int i = 0; i < domain->dimension; i++)
+        if (outside = abs(dx[i]) > max_cellsize)
+          break;
 
-  max_cellsize = MAX(s1->grid->cellsize, s2->grid->cellsize);
+      if (outside)
+        continue;
 
-  if (domain->dimension == 2) {
-    for (int ip1 = 0; ip1 < s1->np_local; ip1++) {
-      for (int ip2 = 0; ip2 < s2->np_local; ip2++) {
-        dx = s2->x[ip2] - s1->x[ip1];
-
-    // Extremely gross screening:
-    if ((dx[0] < max_cellsize) && (dx[1] < max_cellsize) &&
-        (dx[2] < max_cellsize) && (dx[0] > -max_cellsize) &&
-            (dx[1] > -max_cellsize) && (dx[2] > -max_cellsize)) {
-      Rp1 = 0.5 * sqrt(s1->vol[ip1]);
-      Rp2 = 0.5 * sqrt(s2->vol[ip2]);
-      Rp = Rp1 + Rp2;
-
-      // Gross screening:
-      if ((dx[0] < Rp) && (dx[1] < Rp) && (dx[2] < Rp) && (dx[0] > -Rp) &&
-          (dx[1] > -Rp) && (dx[2] > -Rp)) {
-
-        r = dx.norm();
-
-        // Finer screening:
-        if (r < Rp) {
-
-              p = Rp - r; // penetration
-
-              fmag = 0.25 * M_PI * Estar *
-                     sqrt(Rp1 * Rp2 / (Rp1 + Rp2) * p * p * p);
-
-              f = fmag * dx / r;
-              ftot += f;
-          s1->mbp[ip1] -= f;
-          s2->mbp[ip2] += f;
-              // vtemp1 = -update->dt * f / s1->mass[ip1];
-              // s1->v[ip1] += vtemp1;
-              // s1->x[ip1] += update->dt * vtemp1;
-
-              // vtemp2 = update->dt * f / s2->mass[ip2];
-              // s2->v[ip2] += vtemp2;
-              // s2->x[ip2] += update->dt * vtemp2;
-            }
-          }
+      double Rp0, Rp1;
+      if (domain->dimension == 2)
+      {
+        if (domain->axisymmetric)
+        {
+          Rp0 = sqrt(solid.  vol.at(ip )/solid.  x.at(ip )[0])/2;
+          Rp1 = sqrt(solid1->vol.at(ip1)/solid1->x.at(ip1)[0])/2;
+        }
+        else
+        {
+          Rp0 = sqrt(solid.  vol.at(ip ))/2;
+          Rp1 = sqrt(solid1->vol.at(ip1))/2;
         }
       }
-    }
-  }
-  else if (domain->dimension == 3) {
-    for (int ip1 = 0; ip1 < s1->np_local; ip1++) {
-      for (int ip2 = 0; ip2 < s2->np_local; ip2++) {
-        dx = s2->x[ip2] - s1->x[ip1];
-
-    // Extremely gross screening:
-    if ((dx[0] < max_cellsize) && (dx[1] < max_cellsize) &&
-        (dx[2] < max_cellsize) && (dx[0] > -max_cellsize) &&
-            (dx[1] > -max_cellsize) && (dx[2] > -max_cellsize)) {
-      Rp1 = 0.5 * pow(s1->vol[ip1], 0.333333333);
-      Rp2 = 0.5 * pow(s2->vol[ip2], 0.333333333);
-      Rp = Rp1 + Rp2;
-
-
-      // Gross screening:
-      if ((dx[0] < Rp) && (dx[1] < Rp) && (dx[2] < Rp) && (dx[0] > -Rp) &&
-          (dx[1] > -Rp) && (dx[2] > -Rp)) {
-
-        r = dx.norm();
-
-        // Finer screening:
-        if (r < Rp) {
-              p = Rp - r; // penetration
-
-              fmag = four_thirds * Estar *
-                     sqrt(Rp1 * Rp2 / (Rp1 + Rp2) * p * p * p);
-
-              f = fmag * dx / r;
-          s1->mbp[ip1] -= f;
-          s2->mbp[ip2] += f;
-              ftot += f;
-              // vtemp1 = -update->dt * f / s1->mass[ip1];
-              // s1->v[ip1] += vtemp1;
-              // s1->x[ip1] += update->dt * vtemp1;
-
-              // vtemp2 = update->dt * f / s2->mass[ip2];
-              // s2->v[ip2] += vtemp2;
-              // s2->x[ip2] += update->dt * vtemp2;
-            }
-          }
-        }
+      else
+      {
+        Rp0 = cbrt(solid.  vol.at(ip ))/2;
+        Rp1 = cbrt(solid1->vol.at(ip1))/2;
       }
+      double Rp = Rp0 + Rp1;
+      
+      // Gross screening:
+      for (int i = 0; i < domain->dimension; i++)
+        if (outside = abs(dx[i]) > Rp)
+          break;
+
+      if (outside)
+        continue;
+      
+      double r = dx.norm();
+
+      // Finer screening:
+      if (r >= Rp)
+        continue;
+
+      double p = Rp - r;
+
+      const Vector3d &f = Estar*sqrt(Rp0*Rp1/(Rp0 + Rp1)*p)*p*4/3*dx/r;
+      solid.  mbp.at(ip ) -= f;
+      solid1->mbp.at(ip1) += f;
+      ftot += f;
     }
   }
-}
-
-// void FixContactHertz::post_advance_particles() {
-//   // cout << "In FixContactHertz::initial_integrate()\n";
-
-//   // Go through all the particles in the group and set b to the right value:
-//   Vector3d f, dx;
-
-//   Solid *s1, *s2;
-//   Vector3d ftot, ftot_reduced, vtemp1, vtemp2;
-
-//   double Rp, Rp1, Rp2, r, p, fmag, Estar, max_cellsize;
-
-//   ftot = Vector3d();
-
-//   s1 = domain->solids[solid1];
-//   s2 = domain->solids[solid2];
-
-//   Estar = 1.0 / ((1 - s1->mat->nu * s1->mat->nu) / s1->mat->E +
-//                  (1 - s2->mat->nu * s2->mat->nu) / s2->mat->E);
-
-//   max_cellsize = MAX(s1->grid->cellsize, s2->grid->cellsize);
-
-//   if (domain->dimension == 2) {
-//     for (int ip1 = 0; ip1 < s1->np_local; ip1++) {
-//       for (int ip2 = 0; ip2 < s2->np_local; ip2++) {
-//         dx = s2->x[ip2] - s1->x[ip1];
-
-//     // Extremely gross screening:
-//     if ((dx[0] < max_cellsize) && (dx[1] < max_cellsize) &&
-//         (dx[2] < max_cellsize) && (dx[0] > -max_cellsize) &&
-//             (dx[1] > -max_cellsize) && (dx[2] > -max_cellsize)) {
-//       Rp1 = 0.5 * pow(s1->vol[ip1], 0.333333333);
-//       Rp2 = 0.5 * pow(s2->vol[ip2], 0.333333333);
-//       Rp = Rp1 + Rp2;
-
-
-//       // Gross screening:
-//       if ((dx[0] < Rp) && (dx[1] < Rp) && (dx[2] < Rp) && (dx[0] > -Rp) &&
-//           (dx[1] > -Rp) && (dx[2] > -Rp)) {
-
-//         r = dx.norm();
-
-//         // Finer screening:
-//         if (r < Rp) {
-
-//               p = Rp - r; // penetration
-
-//               fmag = 0.25 * M_PI * Estar *
-//                      sqrt(Rp1 * Rp2 / (Rp1 + Rp2) * p * p * p);
-
-//               f = fmag * dx / r;
-//               ftot += f;
-//           //s1->mbp[ip1] -= f;
-//           //s2->mbp[ip2] += f;
-//               vtemp1 = -update->dt * f / s1->mass[ip1];
-//               s1->v[ip1] += vtemp1;
-//               s1->x[ip1] += update->dt * vtemp1;
-
-//               vtemp2 = update->dt * f / s2->mass[ip2];
-//               s2->v[ip2] += vtemp2;
-//               s2->x[ip2] += update->dt * vtemp2;
-//             }
-//           }
-//         }
-//       }
-//     }
-//   }
-//   else if (domain->dimension == 3) {
-//     for (int ip1 = 0; ip1 < s1->np_local; ip1++) {
-//       for (int ip2 = 0; ip2 < s2->np_local; ip2++) {
-//         dx = s2->x[ip2] - s1->x[ip1];
-
-//     // Extremely gross screening:
-//     if ((dx[0] < max_cellsize) && (dx[1] < max_cellsize) &&
-//         (dx[2] < max_cellsize) && (dx[0] > -max_cellsize) &&
-//             (dx[1] > -max_cellsize) && (dx[2] > -max_cellsize)) {
-//       Rp1 = 0.5 * pow(s1->vol[ip1], 0.333333333);
-//       Rp2 = 0.5 * pow(s2->vol[ip2], 0.333333333);
-//       Rp = Rp1 + Rp2;
-
-
-//       // Gross screening:
-//       if ((dx[0] < Rp) && (dx[1] < Rp) && (dx[2] < Rp) && (dx[0] > -Rp) &&
-//           (dx[1] > -Rp) && (dx[2] > -Rp)) {
-
-//         r = dx.norm();
-
-//         // Finer screening:
-//         if (r < Rp) {
-//               p = Rp - r; // penetration
-
-//               fmag = four_thirds * Estar *
-//                      sqrt(Rp1 * Rp2 / (Rp1 + Rp2) * p * p * p);
-
-//               f = fmag * dx / r;
-//           s1->mbp[ip1] -= f;
-//           s2->mbp[ip2] += f;
-//               ftot += f;
-//               // vtemp1 = -update->dt * f / s1->mass[ip1];
-//               // s1->v[ip1] += vtemp1;
-//               // s1->x[ip1] += update->dt * vtemp1;
-
-//               // vtemp2 = update->dt * f / s2->mass[ip2];
-//               // s2->v[ip2] += vtemp2;
-//               // s2->x[ip2] += update->dt * vtemp2;
-//             }
-//           }
-//         }
-//       }
-//     }
-//   }
-
-//   // Reduce ftot:
-//   MPI_Allreduce(ftot.elements, ftot_reduced.elements, 3, MPI_DOUBLE, MPI_SUM,
-//                 universe->uworld);
-
-//   (*input->vars)[id + "_x"] = Var(id + "_x", ftot_reduced[0]);
-//   (*input->vars)[id + "_y"] = Var(id + "_y", ftot_reduced[1]);
-//   (*input->vars)[id + "_z"] = Var(id + "_z", ftot_reduced[2]);
-// }
-
-void FixContactHertz::write_restart(ofstream *of) {
-  of->write(reinterpret_cast<const char *>(&solid1), sizeof(int));
-  of->write(reinterpret_cast<const char *>(&solid2), sizeof(int));
-}
-
-void FixContactHertz::read_restart(ifstream *ifr) {
-  ifr->read(reinterpret_cast<char *>(&solid1), sizeof(int));
-  ifr->read(reinterpret_cast<char *>(&solid2), sizeof(int));
 }

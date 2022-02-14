@@ -20,12 +20,8 @@
 #include <universe.h>
 #include <update.h>
 
-
 using namespace std;
 using namespace FixConst;
-
-
-#define four_thirds 1.333333333
 
 FixContactMinPenetrationPlane::FixContactMinPenetrationPlane(MPM *mpm, vector<string> args)
     : Fix(mpm, args, INITIAL_INTEGRATE) {
@@ -42,7 +38,6 @@ FixContactMinPenetrationPlane::FixContactMinPenetrationPlane(MPM *mpm, vector<st
     }
     groupbit = group->bitmask[igroup];
 
-    solid = -1;
     D = 0;
     xq = Vector3d();
     n = Vector3d();
@@ -52,11 +47,6 @@ FixContactMinPenetrationPlane::FixContactMinPenetrationPlane(MPM *mpm, vector<st
 
   if (args.size() < Nargs) {
     error->all(FLERR, "Error: not enough arguments.\n" + usage);
-  }
-
-  solid = domain->find_solid(args[2]);
-  if (solid < 0) {
-    error->all(FLERR, "Error: solid " + args[2] + " unknown.\n");
   }
 
   if (universe->me == 0) {
@@ -99,88 +89,62 @@ void FixContactMinPenetrationPlane::reduce()
   (*input->vars)[id + "_z"] = Var(id + "_z", ftot_reduced[2]);
 }
 
-void FixContactMinPenetrationPlane::initial_integrate() {
+void FixContactMinPenetrationPlane::initial_integrate(Solid &solid, int ip)
+{
   // cout << "In FixContactMinPenetrationPlane::initial_integrate()\n";
 
   // Go through all the particles in the group and set b to the right value:
-  Vector3d f;
 
-  Solid *s;
-  Vector3d ftot, ftot_reduced, vt;
+  // Extremely gross screening:
+  double d = n.dot(solid.x.at(ip) - xq);
 
-  double Rp, p, d, fnorm, vtnorm;
+  if (d >= solid.grid->cellsize)
+    return;
 
-  ftot = Vector3d();
+  double Rp;
+  if (domain->dimension == 2)
+  {
+    Rp = sqrt(solid.vol.at(ip));
+  }
+  else
+  {
+    Rp = cbrt(solid.vol.at(ip));
+  }
+  
+  // Fine screening:
+  double p = Rp/2 - d;
 
-  s = domain->solids[solid];
+  if (p < 0)
+    return;
 
-  if (domain->dimension == 2) {
-    for (int ip = 0; ip < s->np_local; ip++) {
-      d = n.dot(s->x[ip] - xq);
+  double fnorm = solid.mass.at(ip)*p/update->dt/update->dt;
+  Vector3d f = fnorm*n;
 
-      // Extremely gross screening:
-      if (d < s->grid->cellsize) {
-    Rp = 0.5 * sqrt(s->vol[ip]);
-
-    p = Rp - d;
-    // Fine screening:
-    if (p >= 0) {
-      fnorm = s->mass[ip] * p / (update->dt * update->dt);
-      f = fnorm * n;
-
-      if (mu != 0) {
-        vt = s->v[ip] - n.dot(s->v[ip]) * n;
-        vtnorm = vt.norm();
-        if (vtnorm != 0) {
-          vt /= vtnorm;
-          f -= mu * fnorm * vt;
-        }
-      }
-      s->mbp[ip] += f;
-      ftot += f;
-    }
-      }
-    }
-  } else if (domain->dimension == 3) {
-    for (int ip = 0; ip < s->np_local; ip++) {
-      d = n.dot(s->x[ip] - xq);
-
-      // Extremely gross screening:
-      if (d < s->grid->cellsize) {
-    Rp = 0.5 * cbrt(s->vol[ip]);
-
-    p = Rp - d;
-    // Fine screening:
-    if (p >= 0) {
-      fnorm = s->mass[ip] * p / (update->dt * update->dt);
-      f = fnorm * n;
-
-      if (mu != 0) {
-        vt = s->v[ip] - n.dot(s->v[ip]) * n;
-        vtnorm = vt.norm();
-        if (vtnorm != 0) {
-          vt /= vtnorm;
-          f -= mu * fnorm * vt;
-        }
-      }
-      s->mbp[ip] += f;
-      ftot += f;
-    }
-      }
+  if (mu)
+  {
+    Vector3d vt = solid.v.at(ip) - n.dot(solid.v.at(ip))*n;
+    double vtnorm = vt.norm();
+    if (vtnorm)
+    {
+      vt /= vtnorm;
+      f -= mu*fnorm*vt;
     }
   }
+
+  solid.mbp.at(ip) += f;
+  ftot += f;
 }
 
-void FixContactMinPenetrationPlane::write_restart(ofstream *of) {
-  of->write(reinterpret_cast<const char *>(&solid), sizeof(int));
+void FixContactMinPenetrationPlane::write_restart(ofstream *of)
+{
   of->write(reinterpret_cast<const char *>(&D), sizeof(double));
   of->write(reinterpret_cast<const char *>(&mu), sizeof(double));
   of->write(reinterpret_cast<const char *>(&xq), sizeof(Vector3d));
   of->write(reinterpret_cast<const char *>(&n), sizeof(Vector3d));
 }
 
-void FixContactMinPenetrationPlane::read_restart(ifstream *ifr) {
-  ifr->read(reinterpret_cast<char *>(&solid), sizeof(int));
+void FixContactMinPenetrationPlane::read_restart(ifstream *ifr)
+{
   ifr->read(reinterpret_cast<char *>(&D), sizeof(double));
   ifr->read(reinterpret_cast<char *>(&mu), sizeof(double));
   ifr->read(reinterpret_cast<char *>(&xq), sizeof(Vector3d));

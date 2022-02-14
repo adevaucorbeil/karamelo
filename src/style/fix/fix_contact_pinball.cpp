@@ -20,12 +20,8 @@
 #include <universe.h>
 #include <update.h>
 
-
 using namespace std;
 using namespace FixConst;
-
-
-#define four_thirds 1.333333333
 
 FixContactPinball::FixContactPinball(MPM *mpm, vector<string> args)
     : Fix(mpm, args, INITIAL_INTEGRATE) {
@@ -42,23 +38,12 @@ FixContactPinball::FixContactPinball(MPM *mpm, vector<string> args)
     }
     groupbit = group->bitmask[igroup];
 
-    solid1 = solid2 = -1;
     K = 0;
     return;
   }
 
   if (args.size() < Nargs) {
     error->all(FLERR, "Error: not enough arguments.\n" + usage);
-  }
-
-  solid1 = domain->find_solid(args[2]);
-  if (solid1 < 0) {
-    error->all(FLERR, "Error: solid " + args[2] + " unknown.\n");
-  }
-
-  solid2 = domain->find_solid(args[3]);
-  if (solid1 < 0) {
-    error->all(FLERR, "Error: solid " + args[3] + " unknown.\n");
   }
 
   if (universe->me == 0) {
@@ -88,123 +73,97 @@ void FixContactPinball::reduce()
   (*input->vars)[id + "_z"] = Var(id + "_z", ftot_reduced[2]);
 }
 
-void FixContactPinball::initial_integrate() {
+void FixContactPinball::initial_integrate(Solid &solid, int ip)
+{
   // cout << "In FixContactPinball::initial_integrate()\n";
 
   // Go through all the particles in the group and set b to the right value:
-  Vector3d f, dx, dv;
+  for (Solid *solid1: domain->solids)
+  {
+    if (solid1 <= &solid)
+      continue;
+    
+    double Gstar = 1/((1 - solid.  mat->nu*solid.  mat->nu)/solid.  mat->G +
+                      (1 - solid1->mat->nu*solid1->mat->nu)/solid1->mat->G);
 
-  Solid *s1, *s2;
+    double max_cellsize = MAX(solid.grid->cellsize, solid1->grid->cellsize);
 
-  double Rp, Rp1, Rp2, r, p, pdot, fmag1, fmag2, Gstar, max_cellsize;
+    for (int ip1 = 0; ip1 < solid1->np_local; ip1++)
+    {
+      const Vector3d &dx = solid1->x.at(ip1) - solid.x.at(ip);
+      
+      // Extremely gross screening:
+      bool outside = false;
 
-  s1 = domain->solids[solid1];
-  s2 = domain->solids[solid2];
+      for (int i = 0; i < domain->dimension; i++)
+        if (outside = abs(dx[i]) > max_cellsize)
+          break;
 
-  Gstar = 1.0 / ((1 - s1->mat->nu * s1->mat->nu) / s1->mat->G +
-                 (1 - s2->mat->nu * s2->mat->nu) / s2->mat->G);
+      if (outside)
+        continue;
 
-  max_cellsize = MAX(s1->grid->cellsize, s2->grid->cellsize);
-
-  if (domain->dimension == 3) {
-    for (int ip1 = 0; ip1 < s1->np_local; ip1++) {
-      for (int ip2 = 0; ip2 < s2->np_local; ip2++) {
-        dx = s2->x[ip2] - s1->x[ip1];
-
-        // Extremely gross screening:
-        if ((dx[0] < max_cellsize) && (dx[1] < max_cellsize) &&
-            (dx[0] > -max_cellsize) && (dx[1] > -max_cellsize)) {
-          Rp1 = 0.5 * sqrt(s1->vol[ip1]);
-          Rp2 = 0.5 * sqrt(s2->vol[ip2]);
-          Rp = Rp1 + Rp2;
-
-          // Gross screening:
-          if ((dx[0] < Rp) && (dx[1] < Rp) && (dx[0] > -Rp) && (dx[1] > -Rp)) {
-
-            r = dx.norm();
-
-        // Finer screening:
-        if (r < Rp) {
-
-          p = Rp - r; // penetration
-
-          dv = s2->v[ip2] - s1->v[ip1];
-          pdot = -dx.dot(dv) / r; // penetration speed
-
-          if (pdot > 0) {
-        fmag1 = s1->rho[ip1] * s2->rho[ip2] * Rp1 * Rp1 * Rp1 * Rp2 *
-          Rp2 * Rp2 * pdot /
-          ((s1->rho[ip1] * Rp1 * Rp1 * Rp1 +
-            s2->rho[ip2] * Rp2 * Rp2 * Rp2) *
-           update->dt);
-        fmag2 = Gstar * sqrt(Rp1 * Rp2 / (Rp1 + Rp2) * p * p * p);
-
-        f = MIN(fmag1, fmag2) * dx / r;
-        ftot += f;
-        s1->mbp[ip1] -= f;
-        s2->mbp[ip2] += f;
-          }
+      double Rp0, Rp1;
+      if (domain->dimension == 2)
+      {
+        if (domain->axisymmetric)
+        {
+          Rp0 = sqrt(solid.  vol.at(ip )/solid.  x.at(ip )[0])/2;
+          Rp1 = sqrt(solid1->vol.at(ip1)/solid1->x.at(ip1)[0])/2;
         }
-          }
+        else
+        {
+          Rp0 = sqrt(solid.  vol.at(ip ))/2;
+          Rp1 = sqrt(solid1->vol.at(ip1))/2;
         }
       }
-    }
-  } else if (domain->dimension == 3) {
-    for (int ip1 = 0; ip1 < s1->np_local; ip1++) {
-      for (int ip2 = 0; ip2 < s2->np_local; ip2++) {
-    dx = s2->x[ip2] - s1->x[ip1];
-
-    // Extremely gross screening:
-    if ((dx[0] < max_cellsize) && (dx[1] < max_cellsize) &&
-        (dx[2] < max_cellsize) && (dx[0] > -max_cellsize) &&
-        (dx[1] > -max_cellsize) && (dx[2] > -max_cellsize)) {
-      Rp1 = 0.5 * cbrt(s1->vol[ip1]);
-      Rp2 = 0.5 * cbrt(s2->vol[ip2]);
-      Rp = Rp1 + Rp2;
-
+      else
+      {
+        Rp0 = cbrt(solid.  vol.at(ip ))/2;
+        Rp1 = cbrt(solid1->vol.at(ip1))/2;
+      }
+      double Rp = Rp0 + Rp1;
+      
       // Gross screening:
-      if ((dx[0] < Rp) && (dx[1] < Rp) && (dx[2] < Rp) && (dx[0] > -Rp) &&
-          (dx[1] > -Rp) && (dx[2] > -Rp)) {
+      for (int i = 0; i < domain->dimension; i++)
+        if (outside = abs(dx[i]) > Rp)
+          break;
 
-        r = dx.norm();
+      if (outside)
+        continue;
+      
+      double r = dx.norm();
 
-        // Finer screening:
-        if (r < Rp) {
+      // Finer screening:
+      if (r >= Rp)
+        continue;
 
-          p = Rp - r; // penetration
+      double p = Rp - r; // penetration
 
-          dv = s2->v[ip2] - s1->v[ip1];
-          pdot = -dx.dot(dv) / r; // penetration speed
+      const Vector3d &dv = solid1->v.at(ip1) - solid.v.at(ip);
+      double pdot = -dx.dot(dv)/r; // penetration speed
 
-          if (pdot > 0) {
-        fmag1 = s1->rho[ip1] * s2->rho[ip2] * Rp1 * Rp1 * Rp1 * Rp2 *
-          Rp2 * Rp2 * pdot /
-          ((s1->rho[ip1] * Rp1 * Rp1 * Rp1 +
-            s2->rho[ip2] * Rp2 * Rp2 * Rp2) *
-           update->dt);
-        fmag2 = Gstar * sqrt(Rp1 * Rp2 / (Rp1 + Rp2) * p * p * p);
+      if (pdot < 0)
+        continue;
 
-        f = MIN(fmag1, fmag2) * dx / r;
-        ftot += f;
-        s1->mbp[ip1] -= f;
-        s2->mbp[ip2] += f;
-          }
-        }
-      }
-    }
-      }
+      double Rp03 = Rp0*Rp0*Rp0;
+      double Rp13 = Rp1*Rp1*Rp1;
+
+      const Vector3d &f = MIN(solid.rho.at(ip)*Rp03 * solid1->rho.at(ip1)*Rp13*pdot/
+                             (solid.rho.at(ip)*Rp03 + solid1->rho.at(ip1)*Rp13)/update->dt,
+                              Gstar*sqrt(Rp0*Rp1/(Rp0 + Rp1)*p)*p)*dx/r;
+      ftot += f;
+      solid.  mbp.at(ip ) -= f;
+      solid1->mbp.at(ip1) += f;
     }
   }
 }
 
-void FixContactPinball::write_restart(ofstream *of) {
-  of->write(reinterpret_cast<const char *>(&solid1), sizeof(int));
-  of->write(reinterpret_cast<const char *>(&solid2), sizeof(int));
+void FixContactPinball::write_restart(ofstream *of)
+{
   of->write(reinterpret_cast<const char *>(&K), sizeof(double));
 }
 
-void FixContactPinball::read_restart(ifstream *ifr) {
-  ifr->read(reinterpret_cast<char *>(&solid1), sizeof(int));
-  ifr->read(reinterpret_cast<char *>(&solid2), sizeof(int));
+void FixContactPinball::read_restart(ifstream *ifr)
+{
   ifr->read(reinterpret_cast<char *>(&K), sizeof(double));
 }

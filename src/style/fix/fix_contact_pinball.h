@@ -30,7 +30,7 @@ public:
   void prepare();
   void reduce();
 
-  void initial_integrate();
+  void initial_integrate(Solid &solid, int ip) override;
 
   void write_restart(ofstream *);
   void read_restart(ifstream *);
@@ -38,7 +38,6 @@ public:
 private:
   string usage = "Usage: fix(fix-ID, contact/pinball, solid1, solid2, K)\n";
   int Nargs = 5;
-  int solid1, solid2;
   double K;
   Vector3d ftot;
 };
