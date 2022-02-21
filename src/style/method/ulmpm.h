@@ -31,24 +31,14 @@ class ULMPM : public Method {
   
   ULMPM(class MPM *);
 
-  void setup(vector<string>);
-
-  void compute_grid_weight_functions_and_gradients();
-  double (*basis_function)(double, int);
-  double (*derivative_basis_function)(double, int, double);
-
+  void setup(vector<string> args) override;
   vector<Grid *> grids() override;
-  bool should_compute_mass_nodes() override;
-  void compute_internal_force_nodes(Solid &solid, int in, int ip, double wf, const Vector3d &wfd) override;
+  void compute_internal_force_nodes(Solid &solid, int ip) override;
   void check_particle_in_domain(const Vector3d &x, int ip) override;
   vector<Matrix3d> &get_gradients(Solid &solid) override;
   virtual void update_deformation_gradient_matrix(Solid &solid, int ip) override;
   void update_velocity_gradient_matrix(Solid &solid, int ip) override;
   void exchange_particles() override;
-
-private:
-  int update_Di;
-  int rigid_solids;
 };
 
 // double linear_basis_function(double, int);

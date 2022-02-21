@@ -78,252 +78,31 @@ void ULMPM::setup(vector<string> args)
     update->PIC_FLIP = 0;
 }
 
-void ULMPM::compute_grid_weight_functions_and_gradients()
-{
-  for (Solid *solid: domain->solids)
-  {
-    if (update->ntimestep == 0 && solid->mat->rigid)
-      rigid_solids = 1;
-
-    bigint nnodes = solid->grid->nnodes;
-    bigint nnodes_local = solid->grid->nnodes_local;
-    bigint nnodes_ghost = solid->grid->nnodes_ghost;
-
-    deque<int> &neigh_p = solid->neigh_p; neigh_p.clear();
-    deque<int> &neigh_n = solid->neigh_n; neigh_n.clear();
-    deque<double> &wfs = solid->wf; wfs.clear();
-    deque<Vector3d> &wfds = solid->wfd; wfds.clear();
-
-    Vector3d r;
-    double s[3], sd[3];
-    vector<Vector3d> &xp = solid->x;
-    vector<Vector3d> &xn = solid->grid->x0;
-    double inv_cellsize = 1.0 / solid->grid->cellsize;
-    double wf;
-    Vector3d wfd;
-
-    vector<array<int, 3>> &ntype = solid->grid->ntype;
-
-    vector<tagint> &map_ntag = solid->grid->map_ntag;
-
-    vector<int> n_neigh;
-    
-    int ny = solid->grid->ny_global;
-    int nz = solid->grid->nz_global;
-
-    if (nnodes_local + nnodes_ghost)
-    {
-      for (int ip = 0; ip < solid->np_local; ip++)
-      {
-        // Calculate what nodes particle ip will interact with:
-        n_neigh.clear();
-
-        if (update->shape_function == Update::ShapeFunctions::LINEAR)
-        {
-          int i0 = (xp.at(ip)[0] - domain->boxlo[0])*inv_cellsize;
-          int j0 = (xp.at(ip)[1] - domain->boxlo[1])*inv_cellsize;
-          int k0 = (xp.at(ip)[2] - domain->boxlo[2])*inv_cellsize;
-
-          for (int i = i0; i < i0 + 2; i++)
-          {
-            if (ny > 1)
-            {
-              for (int j = j0; j < j0 + 2; j++)
-              {
-                if (nz > 1)
-                {
-                  for (int k = k0; k < k0 + 2; k++)
-                  {
-                    int tag = nz*ny*i + nz*j + k;
-
-                    if (tag < nnodes)
-                    {
-                      tagint inn = map_ntag.at(tag);
-
-                      if (inn != -1)
-                        n_neigh.push_back(inn);
-                    }
-                  }
-                }
-                else
-                {
-                  int tag = ny*i + j;
-
-                  if (tag < nnodes)
-                  {
-                    tagint inn = map_ntag.at(tag);
-
-                    if (inn != -1)
-                      n_neigh.push_back(inn);
-                  }
-                }
-              }
-            }
-            else
-            {
-              if (i < nnodes_local + nnodes_ghost)
-                n_neigh.push_back(i);
-            }
-          }
-        }
-        else
-        {
-          // cubic and quadratic B-splines
-          int i0 = (xp.at(ip)[0] - domain->boxlo[0])*inv_cellsize - 1;
-          int j0 = (xp.at(ip)[1] - domain->boxlo[1])*inv_cellsize - 1;
-          int k0 = (xp.at(ip)[2] - domain->boxlo[2])*inv_cellsize - 1;
-
-          for (int i = i0; i < i0 + 4; i++)
-          {
-            if (ny > 1)
-            {
-              for (int j = j0; j < j0 + 4; j++)
-              {
-                if (nz > 1)
-                {
-                  for (int k = k0; k < k0 + 4; k++)
-                  {
-                    int tag = nz*ny*i + nz*j + k;
-
-                    if (tag < nnodes)
-                    {
-                      tagint inn = map_ntag.at(tag);
-
-                      if (inn != -1)
-                        n_neigh.push_back(inn);
-                    }
-                  }
-                }
-                else
-                {
-                  int tag = ny*i + j;
-
-                  if (tag < nnodes)
-                  {
-                    tagint inn = map_ntag.at(tag);
-
-                    if (inn != -1)
-                      n_neigh.push_back(inn);
-                  }
-                }
-              }
-            }
-            else
-            {
-              if (i < nnodes_local + nnodes_ghost)
-                n_neigh.push_back(i);
-            }
-          }
-        }
-
-        for (int in: n_neigh)
-        {
-          // Calculate the distance between each pair of particle/node:
-          r = (xp.at(ip) - xn.at(in))*inv_cellsize;
-
-          s[0] = basis_function(r[0], ntype.at(in)[0]);
-          wf = s[0];
-          if (wf != 0)
-          {
-            if (domain->dimension >= 2)
-            {
-              s[1] = basis_function(r[1], ntype.at(in)[1]);
-              wf *= s[1];
-            }
-            else
-              s[1] = 1;
-            if (domain->dimension == 3 && wf != 0)
-            {
-              s[2] = basis_function(r[2], ntype.at(in)[2]);
-              wf *= s[2];
-            }
-            else
-              s[2] = 1;
-          }
-
-          if (wf != 0)
-          {
-            if (solid->mat->rigid)
-              solid->grid->rigid.at(in) = true;
-
-            sd[0] = derivative_basis_function(r[0], ntype.at(in)[0], inv_cellsize);
-            if (domain->dimension >= 2)
-              sd[1] = derivative_basis_function(r[1], ntype.at(in)[1], inv_cellsize);
-            if (domain->dimension == 3)
-              sd[2] = derivative_basis_function(r[2], ntype.at(in)[2], inv_cellsize);
-
-            neigh_p.push_back(ip);
-            neigh_n.push_back(in);
-            wfs.push_back(wf);
-
-            if (domain->dimension == 3)
-            {
-              wfd[0] = sd[0] * s[1] * s[2];
-              wfd[1] = s[0] * sd[1] * s[2];
-              wfd[2] = s[0] * s[1] * sd[2];
-            }
-            else if (domain->dimension == 2)
-            {
-              wfd[0] = sd[0] * s[1];
-              wfd[1] = s[0] * sd[1];
-              wfd[2] = 0;
-            }
-            else
-            {
-              wfd[0] = sd[0];
-              wfd[1] = 0;
-              wfd[2] = 0;
-            }
-            wfds.push_back(wfd);
-          }
-        }
-      }
-    }
-
-    if (update_Di && apic)
-      solid->compute_inertia_tensor();
-  }
-
-  if (update->ntimestep == 0)
-  {
-    // Reduce rigid_solids
-    int rigid_solids_reduced = 0;
-
-    MPI_Allreduce(&rigid_solids, &rigid_solids_reduced, 1, MPI_INT, MPI_LOR,
-                  universe->uworld);
-
-    rigid_solids = rigid_solids_reduced;
-  }
-
-  if (rigid_solids)
-    domain->grid->reduce_rigid_ghost_nodes();
-
-  update_Di = 0;
-}
-
 vector<Grid *> ULMPM::grids()
 {
   return vector<Grid *>{ domain->grid };
 }
 
-bool ULMPM::should_compute_mass_nodes()
+void ULMPM::compute_internal_force_nodes(Solid &solid, int ip)
 {
-  return true;
-}
+  for (int i = 0; i < solid.neigh_n.at(ip).size(); i++)
+  {
+    int in = solid.neigh_n.at(ip).at(i);
+    double wf = solid.wf.at(ip).at(i);
+    const Vector3d &wfd = solid.wfd.at(ip).at(i);
 
-void ULMPM::compute_internal_force_nodes(Solid &solid, int in, int ip, double wf, const Vector3d &wfd)
-{
-  Vector3d &f = solid.grid->f.at(in);
-  const Matrix3d &vol_sigma = solid.vol.at(ip)*solid.sigma.at(ip);
-  const Vector3d &x = solid.x.at(ip);
+    Vector3d &f = solid.grid->f.at(in);
+    const Matrix3d &vol_sigma = solid.vol.at(ip)*solid.sigma.at(ip);
+    const Vector3d &x = solid.x.at(ip);
 
-  if (update->sub_method_type == Update::SubMethodType::MLS)
-    f -= vol_sigma*wf*solid.Di*(solid.grid->x0.at(in) - x);
-  else
-    f -= vol_sigma*wfd;
+    if (update->sub_method_type == Update::SubMethodType::MLS)
+      f -= vol_sigma*wf*solid.Di*(solid.grid->x0.at(in) - x);
+    else
+      f -= vol_sigma*wfd;
 
-  if (domain->axisymmetric)
-    f[0] -= vol_sigma(2, 2)*wf/x[0];
+    if (domain->axisymmetric)
+      f[0] -= vol_sigma(2, 2)*wf/x[0];
+  }
 }
 
 void ULMPM::check_particle_in_domain(const Vector3d &x, int ip)

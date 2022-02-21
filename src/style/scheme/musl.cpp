@@ -44,7 +44,9 @@ void MUSL::run(Var condition)
   {
     // prepare
     int ntimestep = update->update_timestep();
-    method.compute_grid_weight_functions_and_gradients();
+    for (Solid *solid: domain->solids)
+      for (int ip = 0; ip < solid->np_local; ip++)
+        method.compute_grid_weight_functions_and_gradients(*solid, ip);
     modify->prepare();
 
     // grid reset
@@ -60,30 +62,20 @@ void MUSL::run(Var condition)
 
     // p2g
     for (Solid *solid: domain->solids)
-    {
       for (int ip = 0; ip < solid->np_local; ip++)
+      {
         modify->initial_integrate(*solid, ip);
-
-      for (int i = 0; i < solid->neigh_n.size(); i++)
-        method.compute_mass_nodes(*solid,
-                                   solid->neigh_n.at(i),
-                                   solid->neigh_p.at(i),
-                                   solid->wf.at(i));
-    }
+        method.compute_mass_nodes(*solid, ip);
+      }
     
     for (Grid *grid: method.grids())
       grid->reduce_mass_ghost_nodes();
-
+    
     for (Solid *solid: domain->solids)
-      for (int i = 0; i < solid->neigh_n.size(); i++)
+      for (int ip = 0; ip < solid->np_local; ip++)
       {
-        int in = solid->neigh_n.at(i);
-        int ip = solid->neigh_p.at(i);
-        double wf = solid->wf.at(i);
-        const Vector3d &wfd = solid->wfd.at(i);
-
-        method.compute_velocity_nodes(*solid, in, ip, wf);
-        method.compute_force_nodes(*solid, in, ip, wf, wfd);
+        method.compute_velocity_nodes(*solid, ip);
+        method.compute_force_nodes(*solid, ip);
       }
 
     // grid update
@@ -94,9 +86,7 @@ void MUSL::run(Var condition)
       for (int in = 0; in < grid->nnodes_local + grid->nnodes_ghost; in++)
       {
         modify->post_particles_to_grid(*grid, in);
-
         method.update_grid_velocities(*grid, in);
-
         modify->post_update_grid_state(*grid, in);
       }
     }
@@ -105,26 +95,12 @@ void MUSL::run(Var condition)
     for (Solid *solid: domain->solids)
     {
       for (int ip = 0; ip < solid->np_local; ip++)
-        method.reset_velocity_acceleration(*solid, ip);
-
-      for (int i = 0; i < solid->neigh_n.size(); i++)
       {
-        int in = solid->neigh_n.at(i);
-        int ip = solid->neigh_p.at(i);
-        double wf = solid->wf.at(i);
-
-        method.compute_velocity_acceleration(*solid, in, ip, wf);
-      }
-
-      for (int ip = 0; ip < solid->np_local; ip++)
-      {
+        method.compute_velocity_acceleration(*solid, ip);
         if (solid->mat->rigid || update->sub_method_type != Update::SubMethodType::ASFLIP)
           method.update_position(*solid, ip);
-
         modify->post_grid_to_point(*solid, ip);
-
         method.advance_particles(*solid, ip);
-
         modify->post_advance_particles(*solid, ip);
       }
     }
@@ -135,14 +111,8 @@ void MUSL::run(Var condition)
         method.reset_velocity_nodes(*grid, in);
 
     for (Solid *solid: domain->solids)
-      for (int i = 0; i < solid->neigh_n.size(); i++)
-      {
-        int in = solid->neigh_n.at(i);
-        int ip = solid->neigh_p.at(i);
-        double wf = solid->wf.at(i);
-
-        method.compute_velocity_nodes(*solid, in, ip, wf);
-      }
+      for (int ip = 0; ip < solid->np_local; ip++)
+        method.compute_velocity_nodes(*solid, ip);
 
     // grid update
     for (Grid *grid: method.grids())
@@ -152,32 +122,18 @@ void MUSL::run(Var condition)
       for (int in = 0; in < grid->nnodes_local + grid->nnodes_ghost; in++)
       {
         modify->post_velocities_to_grid(*grid, in);
-
         method.update_grid_positions(*grid, in);
       }
     }
 
     for (Solid *solid: domain->solids)
-    {
       for (int ip = 0; ip < solid->np_local; ip++)
-        method.reset_rate_deformation_gradient(*solid, ip);
-
-      for (int i = 0; i < solid->neigh_n.size(); i++)
       {
-        int in = solid->neigh_n.at(i);
-        int ip = solid->neigh_p.at(i);
-        double wf = solid->wf.at(i);
-        const Vector3d &wfd = solid->wfd.at(i);
-
-        method.compute_rate_deformation_gradient(true, *solid, in, ip, wf, wfd);
+        method.compute_rate_deformation_gradient(true, *solid, ip);
+        method.update_deformation_gradient_stress(true, *solid, ip);
       }
 
-      for (int ip = 0; ip < solid->np_local; ip++)
-        method.update_deformation_gradient_stress(true, *solid, ip);
-    }
-
     method.exchange_particles();
-
     update->update_time();
     method.adjust_dt();
 

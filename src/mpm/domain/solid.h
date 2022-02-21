@@ -100,11 +100,10 @@ class Solid : public Pointers {
   
   vector<double> dtCFL;
 
-  deque<int> neigh_p;             ///< List of particle indices for neighbour pairs
-  deque<int> neigh_n;             ///< List of node indices for neighbour pairs
-  deque<double> wf;               ///< List of the weight functions \f$\Phi\f$ for neighbour pairs
-  deque<double> wf_corners;               ///< List of the weight functions \f$\Phi\f$ for neighbour pairs evaluated at the corners of the particle's domain (used in CPDI)
-  deque<Vector3d> wfd;               ///< List ofthe derivative of the weight functions \f$\partial \Phi/ \partial x\f$ for neighbour pairs
+  vector<vector<int>> neigh_n;              ///< Particles' node neighbors
+  vector<vector<double>> wf;                ///< Particles' node neighbors' weight functions \f$\Phi\f$
+  vector<vector<vector<double>>> wf_corners;///< Particles' node neighbors' weight functions \f$\Phi\f$ evaluated at the corners of the particle's domain (used in CPDI)
+  vector<vector<Vector3d>> wfd;             ///< Particles' node neighbors' weight function derivatives \f$\partial \Phi/ \partial x\f$
 
   class Mat *mat;                          ///< Pointer to the material
 

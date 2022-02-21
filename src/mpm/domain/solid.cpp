@@ -301,19 +301,41 @@ void Solid::grow(int nparticles)
     T.resize(nparticles);
     q.resize(nparticles);
   }
+
+  int neighbor_nodes_per_particle = 16;
+
+  neigh_n.resize(nparticles);
+  for (vector<int> &neigh_n_p: neigh_n)
+    neigh_n_p.resize(neighbor_nodes_per_particle);
+
+  wf.resize(nparticles);
+  for (vector<double> &wf_p: wf)
+    wf_p.resize(neighbor_nodes_per_particle);
+
+  wf_corners.resize(nparticles);
+  for (vector<vector<double>> &wf_corners_p: wf_corners)
+  {
+    wf_corners_p.resize(neighbor_nodes_per_particle);
+    for (vector<double> &wf_corner_p: wf_corners_p)
+      wf_corner_p.resize(8);
+  }
+
+  wfd.resize(nparticles);
+  for (vector<Vector3d> &wfd_p: wfd)
+  wfd_p.resize(neighbor_nodes_per_particle);
 }
 
 void Solid::compute_position_corners()
 {
-  for (int i = 0; i < neigh_n.size(); i++)
-  {
-    int in = neigh_n.at(i);
-    int ip = neigh_p.at(i);
-    
-    if (update->method->style == 1)
-      for (int ic = 0; ic < nc; ic++)
-        xpc.at(nc*ip + ic) += update->dt*wf.at(nc*i + ic)*grid->v_update.at(in);
-  }
+  //for (int i = 0; i < neigh_n.size(); i++)
+  //{
+  //  int in = neigh_n.at(i);
+  //  int ip = neigh_p.at(i);
+  //  
+  //  if (update->method->style == 1)
+  //    for (int ic = 0; ic < nc; ic++)
+  //      xpc.at(nc*ip + ic) += update->dt*wf.at(nc*i + ic)*grid->v_update.at(in);
+  //}
 }
 
 void Solid::compute_inertia_tensor()

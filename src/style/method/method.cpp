@@ -21,6 +21,7 @@
 #include <input.h>
 #include <inverse.h>
 #include <eigendecompose.h>
+#include <basis_functions.h>
 
 using namespace std;
 
@@ -30,6 +31,170 @@ Method::Method(MPM *mpm) : Pointers(mpm)
   is_CPDI = false;
   ge = false;
   temp = false;
+}
+
+void Method::compute_grid_weight_functions_and_gradients(Solid &solid, int ip)
+{
+  if (update->ntimestep == 0 && solid.mat->rigid)
+    rigid_solids = 1;
+
+  bigint nnodes = solid.grid->nnodes;
+  bigint nnodes_local = solid.grid->nnodes_local;
+  bigint nnodes_ghost = solid.grid->nnodes_ghost;
+
+  Vector3d r;
+  double s[3], sd[3];
+  vector<Vector3d> &xp = solid.x;
+  vector<Vector3d> &xn = solid.grid->x0;
+  double inv_cellsize = 1/solid.grid->cellsize;
+  double wf;
+  Vector3d wfd;
+
+  vector<array<int, 3>> &ntype = solid.grid->ntype;
+
+  vector<tagint> &map_ntag = solid.grid->map_ntag;
+
+  vector<int> n_neigh;
+    
+  int ny = solid.grid->ny_global;
+  int nz = solid.grid->nz_global;
+
+  if (nnodes_local + nnodes_ghost)
+  {
+    // Calculate what nodes particle ip will interact with:
+    n_neigh.clear();
+
+    int half_support = update->shape_function == Update::ShapeFunctions::LINEAR? 1: 2;
+
+    
+    int i0 = (xp.at(ip)[0] - domain->boxlo[0])*inv_cellsize + 1 - half_support;
+    for (int i = i0; i < i0 + 2*half_support; i++)
+    {
+      if (ny > 1)
+      {
+        int j0 = (xp.at(ip)[1] - domain->boxlo[1])*inv_cellsize + 1 - half_support;
+        for (int j = j0; j < j0 + 2*half_support; j++)
+        {
+          if (nz > 1)
+          {
+            int k0 = (xp.at(ip)[2] - domain->boxlo[2])*inv_cellsize + 1 - half_support;
+            for (int k = k0; k < k0 + 2*half_support; k++)
+            {
+              int tag = nz*ny*i + nz*j + k;
+
+              if (tag < nnodes)
+              {
+                tagint inn = map_ntag.at(tag);
+
+                if (inn != -1)
+                  n_neigh.push_back(inn);
+              }
+            }
+          }
+          else
+          {
+            int tag = ny*i + j;
+
+            if (tag < nnodes)
+            {
+              tagint in = map_ntag.at(tag);
+
+              if (in != -1)
+                n_neigh.push_back(in);
+            }
+          }
+        }
+      }
+      else
+      {
+        if (i < nnodes_local + nnodes_ghost)
+          n_neigh.push_back(i);
+      }
+    }
+
+    for (int i = 0; i < n_neigh.size(); i++)
+    {
+      int in = n_neigh.at(i);
+
+      // Calculate the distance between each pair of particle/node:
+      r = (xp.at(ip) - xn.at(in))*inv_cellsize;
+
+      s[0] = basis_function(r[0], ntype.at(in)[0]);
+      wf = s[0];
+      if (wf != 0)
+      {
+        if (domain->dimension >= 2)
+        {
+          s[1] = basis_function(r[1], ntype.at(in)[1]);
+          wf *= s[1];
+        }
+        else
+          s[1] = 1;
+        if (domain->dimension == 3 && wf != 0)
+        {
+          s[2] = basis_function(r[2], ntype.at(in)[2]);
+          wf *= s[2];
+        }
+        else
+          s[2] = 1;
+      }
+
+      if (wf != 0)
+      {
+        if (solid.mat->rigid)
+          solid.grid->rigid.at(in) = true;
+
+        sd[0] = derivative_basis_function(r[0], ntype.at(in)[0], inv_cellsize);
+        if (domain->dimension >= 2)
+          sd[1] = derivative_basis_function(r[1], ntype.at(in)[1], inv_cellsize);
+        if (domain->dimension == 3)
+          sd[2] = derivative_basis_function(r[2], ntype.at(in)[2], inv_cellsize);
+
+        solid.neigh_n.at(ip).at(i) = in;
+        solid.wf     .at(ip).at(i) = wf;
+
+        if (domain->dimension == 3)
+        {
+          wfd[0] = sd[0] * s[1] * s[2];
+          wfd[1] = s[0] * sd[1] * s[2];
+          wfd[2] = s[0] * s[1] * sd[2];
+        }
+        else if (domain->dimension == 2)
+        {
+          wfd[0] = sd[0] * s[1];
+          wfd[1] = s[0] * sd[1];
+          wfd[2] = 0;
+        }
+        else
+        {
+          wfd[0] = sd[0];
+          wfd[1] = 0;
+          wfd[2] = 0;
+        }
+
+        solid.wfd.at(ip).at(i) = wfd;
+      }
+    }
+  }
+
+  if (update_Di && apic())
+    solid.compute_inertia_tensor();
+
+  //if (update->ntimestep == 0)
+  //{
+  //  // Reduce rigid_solids
+  //  int rigid_solids_reduced = 0;
+
+  //  MPI_Allreduce(&rigid_solids, &rigid_solids_reduced, 1, MPI_INT, MPI_LOR,
+  //                universe->uworld);
+
+  //  rigid_solids = rigid_solids_reduced;
+  //}
+
+  //if (rigid_solids)
+  //  domain->grid->reduce_rigid_ghost_nodes();
+
+  //update_Di = 0;
 }
 
 bool Method::apic()
@@ -48,14 +213,19 @@ bool Method::apic()
 
 void Method::reset_mass_nodes(Grid &grid, int in)
 {
-  if (should_compute_mass_nodes())
-    grid.mass.at(in) = 0;
+  grid.mass.at(in) = 0;
 }
 
-void Method::compute_mass_nodes(Solid &solid, int in, int ip, double wf)
+void Method::compute_mass_nodes(Solid &solid, int ip)
 {
-  if (should_compute_mass_nodes() && !solid.grid->rigid.at(in) || solid.mat->rigid)
-    solid.grid->mass.at(in) += wf*solid.mass.at(ip);
+  for (int i = 0; i < solid.neigh_n.at(ip).size(); i++)
+  {
+    int in = solid.neigh_n.at(ip).at(i);
+    double wf = solid.wf.at(ip).at(i);
+
+    if (!solid.grid->rigid.at(in) || solid.mat->rigid)
+      solid.grid->mass.at(in) += wf*solid.mass.at(ip);
+  }
 }
 
 void Method::reset_velocity_nodes(Grid &grid, int in)
@@ -66,33 +236,39 @@ void Method::reset_velocity_nodes(Grid &grid, int in)
     grid.T.at(in) = 0;
 }
 
-void Method::compute_velocity_nodes(Solid &solid, int in, int ip, double wf)
+void Method::compute_velocity_nodes(Solid &solid, int ip)
 {
-  if (solid.grid->rigid.at(in) && !solid.mat->rigid)
-    return;
-
-  if (double node_mass = solid.grid->mass.at(in))
+  for (int i = 0; i < solid.neigh_n.at(ip).size(); i++)
   {
-    double normalized_wf = wf*solid.mass.at(ip)/node_mass;
-    const Vector3d &dx = solid.grid->x0.at(in) - solid.x.at(ip);
-    
-    Vector3d vtemp = solid.v.at(ip);
+    int in = solid.neigh_n.at(ip).at(i);
+    double wf = solid.wf.at(ip).at(i);
 
-    if (apic() || update->method->ge)
+    if (solid.grid->rigid.at(in) && !solid.mat->rigid)
+      return;
+
+    if (double node_mass = solid.grid->mass.at(in))
     {
-      if (is_TL)
-        vtemp += solid.Fdot.at(ip)*(solid.grid->x0.at(in) - solid.x0.at(ip));
-      else
-        vtemp += solid.L.at(ip)*(solid.grid->x0.at(in) - solid.x.at(ip));
+      double normalized_wf = wf*solid.mass.at(ip)/node_mass;
+      const Vector3d &dx = solid.grid->x0.at(in) - solid.x.at(ip);
+    
+      Vector3d vtemp = solid.v.at(ip);
+
+      if (apic() || update->method->ge)
+      {
+        if (is_TL)
+          vtemp += solid.Fdot.at(ip)*(solid.grid->x0.at(in) - solid.x0.at(ip));
+        else
+          vtemp += solid.L.at(ip)*(solid.grid->x0.at(in) - solid.x.at(ip));
+      }
+
+      solid.grid->v.at(in) += normalized_wf*vtemp;
+
+      if (solid.grid->rigid.at(in))
+        solid.grid->mb.at(in) += normalized_wf*solid.v_update.at(ip);
+
+      if (temp)
+        solid.grid->T.at(in) += normalized_wf*solid.T.at(ip);
     }
-
-    solid.grid->v.at(in) += normalized_wf*vtemp;
-
-    if (solid.grid->rigid.at(in))
-      solid.grid->mb.at(in) += normalized_wf*solid.v_update.at(ip);
-
-    if (temp)
-      solid.grid->T.at(in) += normalized_wf*solid.T.at(ip);
   }
 }
 
@@ -107,24 +283,31 @@ void Method::reset_force_nodes(Grid &grid, int in)
   }
 }
 
-void Method::compute_force_nodes(Solid &solid, int in, int ip, double wf, const Vector3d &wfd)
+void Method::compute_force_nodes(Solid &solid, int ip)
 {
-  compute_internal_force_nodes(solid, in, ip, wf, wfd);
-
-  if (!solid.grid->rigid.at(in))
-    solid.grid->mb.at(in) += wf*solid.mbp.at(ip);
-
-  if (temp)
+  compute_internal_force_nodes(solid, ip);
+  
+  for (int i = 0; i < solid.neigh_n.at(ip).size(); i++)
   {
-    if (solid.domain->axisymmetric)
+    int in = solid.neigh_n.at(ip).at(i);
+    double wf = solid.wf.at(ip).at(i);
+    const Vector3d &wfd = solid.wfd.at(ip).at(i);
+
+    if (!solid.grid->rigid.at(in))
+      solid.grid->mb.at(in) += wf*solid.mbp.at(ip);
+
+    if (temp)
     {
-      error->one(FLERR, "Temperature and axisymmetric not yet supported.\n");
+      if (solid.domain->axisymmetric)
+      {
+        error->one(FLERR, "Temperature and axisymmetric not yet supported.\n");
+      }
+
+      if (solid.grid->mass.at(in))
+        solid.grid->Qext.at(in) += wf*solid.gamma.at(ip);
+
+      solid.grid->Qint.at(in) += wfd.dot(solid.q.at(ip));
     }
-
-    if (solid.grid->mass.at(in))
-      solid.grid->Qext.at(in) += wf*solid.gamma.at(ip);
-
-    solid.grid->Qint.at(in) += wfd.dot(solid.q.at(ip));
   }
 }
 
@@ -146,26 +329,29 @@ void Method::update_grid_velocities(Grid &grid, int in)
   }
 }
 
-void Method::reset_velocity_acceleration(Solid &solid, int ip)
+void Method::compute_velocity_acceleration(Solid &solid, int ip)
 {
   solid.v_update.at(ip) = Vector3d();
   solid.a.at(ip) = Vector3d();
   solid.f.at(ip) = Vector3d();
-}
 
-void Method::compute_velocity_acceleration(Solid &solid, int in, int ip, double wf)
-{
-  solid.v_update.at(ip) += wf*solid.grid->v_update.at(in);
+  for (int i = 0; i < solid.neigh_n.at(ip).size(); i++)
+  {
+    int in = solid.neigh_n.at(ip).at(i);
+    double wf = solid.wf.at(ip).at(i);
 
-  if (solid.mat->rigid)
-    return;
+    solid.v_update.at(ip) += wf*solid.grid->v_update.at(in);
 
-  const Vector3d &delta_a = wf*(solid.grid->v_update.at(in) - solid.grid->v.at(in))/update->dt;
-  solid.a.at(ip) += delta_a;
-  solid.f.at(ip) += delta_a*solid.mass.at(ip);
+    if (solid.mat->rigid)
+      continue;
 
-  if (temp)
-    solid.T.at(ip) += wf*solid.grid->T_update.at(in);
+    const Vector3d &delta_a = wf*(solid.grid->v_update.at(in) - solid.grid->v.at(in))/update->dt;
+    solid.a.at(ip) += delta_a;
+    solid.f.at(ip) += delta_a*solid.mass.at(ip);
+
+    if (temp)
+      solid.T.at(ip) += wf*solid.grid->T_update.at(in);
+  }
 }
 
 void Method::update_position(Solid &solid, int ip)
@@ -183,44 +369,48 @@ void Method::advance_particles(Solid &solid, int ip)
   v = (1 - update->PIC_FLIP)*solid.v_update.at(ip) + update->PIC_FLIP*(v + update->dt*solid.a.at(ip));
 }
 
-void Method::reset_rate_deformation_gradient(Solid &solid, int ip)
-{
-  get_gradients(solid).at(ip) = Matrix3d();
-  if (temp)
-    solid.q.at(ip) = Vector3d();
-}
-
-void Method::compute_rate_deformation_gradient(bool doublemapping, Solid &solid, int in, int ip, double wf, const Vector3d &wfd)
+void Method::compute_rate_deformation_gradient(bool doublemapping, Solid &solid, int ip)
 {
   if (solid.mat->rigid)
     return;
+
+  get_gradients(solid).at(ip) = Matrix3d();
+  if (temp)
+    solid.q.at(ip) = Vector3d();
         
   vector<Matrix3d> &gradients = get_gradients(solid);
   const vector<Vector3d> &vn = doublemapping? solid.grid->v: solid.grid->v_update;
-
-  if (update->sub_method_type == Update::SubMethodType::APIC)
+  
+  for (int i = 0; i < solid.neigh_n.at(ip).size(); i++)
   {
-    const Vector3d &dx = is_TL? solid.grid->x0.at(in) - solid.x0.at(ip):
-                                solid.grid->x.at(in) - solid.grid->x0.at(in);
+    int in = solid.neigh_n.at(ip).at(i);
+    double wf = solid.wf.at(ip).at(i);
+    const Vector3d &wfd = solid.wfd.at(ip).at(i);
 
-    Matrix3d gradient;
-    for (int j = 0; j < domain->dimension; j++)
-      for (int k = 0; k < domain->dimension; k++)
-        gradient(j, k) += vn.at(in)[j]*dx[k]*wf;
+    if (update->sub_method_type == Update::SubMethodType::APIC)
+    {
+      const Vector3d &dx = is_TL? solid.grid->x0.at(in) - solid.x0.at(ip):
+                                  solid.grid->x.at(in) - solid.grid->x0.at(in);
 
-    gradients.at(ip) += gradient*solid.Di;
+      Matrix3d gradient;
+      for (int j = 0; j < domain->dimension; j++)
+        for (int k = 0; k < domain->dimension; k++)
+          gradient(j, k) += vn.at(in)[j]*dx[k]*wf;
+
+      gradients.at(ip) += gradient*solid.Di;
+    }
+    else
+      for (int j = 0; j < domain->dimension; j++)
+        for (int k = 0; k < domain->dimension; k++)
+          gradients.at(ip)(j, k) += vn.at(in)[j]*wfd[k];
+
+    if (domain->dimension == 2 && domain->axisymmetric)
+      gradients.at(ip)(2, 2) += vn.at(in)[0]*wf/solid.x0.at(ip)[0];
+
+    if (temp)
+      solid.q.at(ip) -= wfd*(doublemapping? solid.grid->T: solid.grid->T_update).at(in)
+                        *(is_TL? solid.vol0: solid.vol).at(ip)*solid.mat->invcp*solid.mat->kappa;
   }
-  else
-    for (int j = 0; j < domain->dimension; j++)
-      for (int k = 0; k < domain->dimension; k++)
-        gradients.at(ip)(j, k) += vn.at(in)[j]*wfd[k];
-
-  if (domain->dimension == 2 && domain->axisymmetric)
-    gradients.at(ip)(2, 2) += vn.at(in)[0]*wf/solid.x0.at(ip)[0];
-
-  if (temp)
-    solid.q.at(ip) -= wfd*(doublemapping? solid.grid->T: solid.grid->T_update).at(in)
-                      *(is_TL? solid.vol0: solid.vol).at(ip)*solid.mat->invcp*solid.mat->kappa;
 }
 
 void Method::update_deformation_gradient_determinant(Solid &solid, int ip)
