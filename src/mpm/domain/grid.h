@@ -22,6 +22,7 @@
 #include <unordered_map>
 #include <map>
 #include <array>
+#include <Kokkos_Core.hpp>
 
 
 
@@ -78,7 +79,7 @@ class Grid : public Pointers {
 
   double cellsize;       ///< size of the square cells forming the grid
 
-  vector<Vector3d> x;            ///< nodes' current position
+  Kokkos::View<Vector3d*> x;            ///< nodes' current position
   vector<Vector3d> x0;           ///< nodes' position in the reference coordinate system
   vector<Vector3d> v;            ///< nodes' velocity at time t
   vector<Vector3d> v_update;     ///< nodes' velocity at time t+dt

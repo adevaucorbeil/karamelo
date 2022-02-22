@@ -197,8 +197,8 @@ void FixCuttingTool::initial_integrate(Solid &solid, int ip) {
   // cout << "line 1: " << line1[0] << "x + " << line1[1] << "y + " << line1[2] << endl;
   // cout << "line 2: " << line2[0] << "x + " << line2[1] << "y + " << line2[2] << endl;
 
-  double c1p = line1[0]*solid.x.at(ip)[0] + line1[1]*solid.x.at(ip)[1] + line1[1];
-  double c2p = line2[0]*solid.x.at(ip)[0] + line2[1]*solid.x.at(ip)[1] + line2[1];
+  double c1p = line1[0]*solid.x[ip][0] + line1[1]*solid.x[ip][1] + line1[1];
+  double c2p = line2[0]*solid.x[ip][0] + line2[1]*solid.x[ip][1] + line2[1];
 
   if (c1p < 0 || c2p < 0)
     return;

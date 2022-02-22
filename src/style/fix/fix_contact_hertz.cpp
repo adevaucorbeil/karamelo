@@ -87,7 +87,7 @@ void FixContactHertz::initial_integrate(Solid &solid, int ip)
 
     for (int ip1 = 0; ip1 < solid1->np_local; ip1++)
     {
-      const Vector3d &dx = solid1->x.at(ip1) - solid.x.at(ip);
+      const Vector3d &dx = solid.x[ip1] - solid.x[ip];
       
       // Extremely gross screening:
       bool outside = false;
@@ -104,8 +104,8 @@ void FixContactHertz::initial_integrate(Solid &solid, int ip)
       {
         if (domain->axisymmetric)
         {
-          Rp0 = sqrt(solid.  vol.at(ip )/solid.  x.at(ip )[0])/2;
-          Rp1 = sqrt(solid1->vol.at(ip1)/solid1->x.at(ip1)[0])/2;
+          Rp0 = sqrt(solid.  vol.at(ip )/solid.x[ip ][0])/2;
+          Rp1 = sqrt(solid1->vol.at(ip1)/solid.x[ip1][0])/2;
         }
         else
         {

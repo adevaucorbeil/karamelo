@@ -44,8 +44,8 @@ void Method::compute_grid_weight_functions_and_gradients(Solid &solid, int ip)
 
   Vector3d r;
   double s[3], sd[3];
-  vector<Vector3d> &xp = solid.x;
-  vector<Vector3d> &xn = solid.grid->x0;
+  const Vector3d &xp = solid.x[ip];
+  vector<Vector3d> &x0 = solid.grid->x0;
   double inv_cellsize = 1/solid.grid->cellsize;
   double wf;
   Vector3d wfd;
@@ -66,18 +66,17 @@ void Method::compute_grid_weight_functions_and_gradients(Solid &solid, int ip)
 
     int half_support = update->shape_function == Update::ShapeFunctions::LINEAR? 1: 2;
 
-    
-    int i0 = (xp.at(ip)[0] - domain->boxlo[0])*inv_cellsize + 1 - half_support;
+    int i0 = (xp[0] - domain->boxlo[0])*inv_cellsize + 1 - half_support;
     for (int i = i0; i < i0 + 2*half_support; i++)
     {
       if (ny > 1)
       {
-        int j0 = (xp.at(ip)[1] - domain->boxlo[1])*inv_cellsize + 1 - half_support;
+        int j0 = (xp[1] - domain->boxlo[1])*inv_cellsize + 1 - half_support;
         for (int j = j0; j < j0 + 2*half_support; j++)
         {
           if (nz > 1)
           {
-            int k0 = (xp.at(ip)[2] - domain->boxlo[2])*inv_cellsize + 1 - half_support;
+            int k0 = (xp[2] - domain->boxlo[2])*inv_cellsize + 1 - half_support;
             for (int k = k0; k < k0 + 2*half_support; k++)
             {
               int tag = nz*ny*i + nz*j + k;
@@ -117,7 +116,7 @@ void Method::compute_grid_weight_functions_and_gradients(Solid &solid, int ip)
       int in = n_neigh.at(i);
 
       // Calculate the distance between each pair of particle/node:
-      r = (xp.at(ip) - xn.at(in))*inv_cellsize;
+      r = (xp - x0.at(in))*inv_cellsize;
 
       s[0] = basis_function(r[0], ntype.at(in)[0]);
       wf = s[0];
@@ -249,7 +248,7 @@ void Method::compute_velocity_nodes(Solid &solid, int ip)
     if (double node_mass = solid.grid->mass.at(in))
     {
       double normalized_wf = wf*solid.mass.at(ip)/node_mass;
-      const Vector3d &dx = solid.grid->x0.at(in) - solid.x.at(ip);
+      const Vector3d &dx = solid.grid->x0.at(in) - solid.x[ip];
     
       Vector3d vtemp = solid.v.at(ip);
 
@@ -258,7 +257,7 @@ void Method::compute_velocity_nodes(Solid &solid, int ip)
         if (is_TL)
           vtemp += solid.Fdot.at(ip)*(solid.grid->x0.at(in) - solid.x0.at(ip));
         else
-          vtemp += solid.L.at(ip)*(solid.grid->x0.at(in) - solid.x.at(ip));
+          vtemp += solid.L.at(ip)*(solid.grid->x0.at(in) - solid.x[ip]);
       }
 
       solid.grid->v.at(in) += normalized_wf*vtemp;
@@ -356,7 +355,7 @@ void Method::compute_velocity_acceleration(Solid &solid, int ip)
 
 void Method::update_position(Solid &solid, int ip)
 {
-  check_particle_in_domain(solid.x.at(ip) += update->dt*solid.v_update.at(ip), ip);
+  check_particle_in_domain(solid.x[ip] += update->dt*solid.v_update.at(ip), ip);
 }
 
 void Method::advance_particles(Solid &solid, int ip)
@@ -364,7 +363,7 @@ void Method::advance_particles(Solid &solid, int ip)
   Vector3d &v = solid.v.at(ip);
 
   if (update->sub_method_type == Update::SubMethodType::ASFLIP)
-    solid.x.at(ip) += update->dt*v;
+    solid.x[ip] += update->dt*v;
 
   v = (1 - update->PIC_FLIP)*solid.v_update.at(ip) + update->PIC_FLIP*(v + update->dt*solid.a.at(ip));
 }
@@ -390,7 +389,7 @@ void Method::compute_rate_deformation_gradient(bool doublemapping, Solid &solid,
     if (update->sub_method_type == Update::SubMethodType::APIC)
     {
       const Vector3d &dx = is_TL? solid.grid->x0.at(in) - solid.x0.at(ip):
-                                  solid.grid->x.at(in) - solid.grid->x0.at(in);
+                                  solid.grid->x[ip] - solid.grid->x0.at(in);
 
       Matrix3d gradient;
       for (int j = 0; j < domain->dimension; j++)

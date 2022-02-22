@@ -134,7 +134,7 @@ void TLMPM::compute_internal_force_nodes(Solid &solid, int ip)
 
 void TLMPM::update_grid_positions(Grid &grid, int in)
 {
-  grid.x.at(in) += update->dt*grid.v.at(in);
+  grid.x[in] += update->dt*grid.v.at(in);
 }
 
 vector<Matrix3d> &TLMPM::get_gradients(Solid &solid)

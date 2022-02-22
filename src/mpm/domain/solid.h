@@ -20,6 +20,7 @@
 #include <vector>
 #include <deque>
 #include <matrix.h>
+#include <Kokkos_Core.hpp>
 
 
 
@@ -50,7 +51,7 @@ class Solid : public Pointers {
 
   vector<tagint> ptag;                      ///< Unique identifier for particles in the system
 
-  vector<Vector3d> x;                ///< Particles' current position
+  Kokkos::View<Vector3d*> x;                ///< Particles' current position
   vector<Vector3d> x0;               ///< Particles' reference position
 
   

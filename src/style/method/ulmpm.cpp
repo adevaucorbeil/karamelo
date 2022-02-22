@@ -93,7 +93,7 @@ void ULMPM::compute_internal_force_nodes(Solid &solid, int ip)
 
     Vector3d &f = solid.grid->f.at(in);
     const Matrix3d &vol_sigma = solid.vol.at(ip)*solid.sigma.at(ip);
-    const Vector3d &x = solid.x.at(ip);
+    const Vector3d &x = solid.x[ip];
 
     if (update->sub_method_type == Update::SubMethodType::MLS)
       f -= vol_sigma*wf*solid.Di*(solid.grid->x0.at(in) - x);
@@ -136,7 +136,7 @@ void ULMPM::update_velocity_gradient_matrix(Solid &solid, int ip)
 
 void ULMPM::exchange_particles() {
   int ip, np_local_old;
-  vector<Vector3d> *xp;
+  Kokkos::View<Vector3d*> *xp;
   // vector<int> np_send;
   vector<vector<double>> buf_send_vect(universe->nprocs);
   vector<vector<double>> buf_recv_vect(universe->nprocs);

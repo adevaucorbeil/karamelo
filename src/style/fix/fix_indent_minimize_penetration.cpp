@@ -134,7 +134,7 @@ void FixIndentMinimizePenetration::initial_integrate(Solid &solid, int ip)
               vzvalue.result(mpm, true));
   
   // Gross screening:
-  Vector3d xsp = solid.x.at(ip) - xs;
+  Vector3d xsp = solid.x[ip] - xs;
 
   double Rs = 0;
   if (domain->dimension == 2)

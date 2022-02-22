@@ -152,7 +152,7 @@ void FixMeldTool::initial_integrate(Solid &solid, int ip)
     xprime = Vector3d(c1_, c2_, lo);
   }
 
-  xprime = solid.x.at(ip) - xprime;
+  xprime = solid.x[ip] - xprime;
   // if (update->ntimestep > 89835 && (solid.ptag.at(ip)==12 || solid.ptag.at(ip)==21)) {
   //   cout << "Check Particle " << solid.ptag.at(ip) << "\txprime=[" << xprime[0] << "," << xprime[1] << "," << xprime[2] << "]\n";
   //   cout << "R=\n" << R << endl;
@@ -222,7 +222,7 @@ void FixMeldTool::initial_integrate(Solid &solid, int ip)
   f = K*solid.mat->G*(1 - solid.damage.at(ip))*R.transpose()*f;
   solid.mbp.at(ip) += f;
   // if (solid.ptag.at(ip)==12 || solid.ptag.at(ip)==21) {
-  //     Vector3d dx = solid.x.at(ip) - c;
+  //     Vector3d dx = solid.x[ip] - c;
   //     cout << "Particle " << solid.ptag.at(ip) << " f=[" << f[0] << "," << f[1] << "," << f[2] << "]\tw=" << w << " p0=" << p0 << " p1=" << p1 << " p2=" << p2 << "\txprime=[" << xprime[0] << "," << xprime[1] << "," << xprime[2] << "]\tdx=[" << dx(0) << "," << dx(1) << "," << dx(2) << "]\n";
   //     cout << "R=\n" << R << endl;
   // }

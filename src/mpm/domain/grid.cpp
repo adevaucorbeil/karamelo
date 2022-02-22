@@ -212,58 +212,6 @@ void Grid::init(double *solidlo, double *solidhi) {
 	       "Bad domain decomposition, some CPUs do not have any grid "
 	       "attached to.\n");
   }
-  grow(nnodes_local);
-
-
-  int l=0;
-  for (int i=0; i<nx; i++){
-    for (int j=0; j<ny; j++){
-      for (int k=0; k<nz; k++){
-	x0[l][0] = boundlo[0] + (noffsetlo[0] + i)*h;//h*(i-1);
-	if (domain->dimension >= 2) x0[l][1] = boundlo[1] + (noffsetlo[1] + j)*h;
-	else x0[l][1] = 0;
-	if (domain->dimension == 3) x0[l][2] = boundlo[2] + (noffsetlo[2] + k)*h;
-	else x0[l][2] = 0;
-
-	if (linear) {
-	  ntype[l][0] = 0;
-	  ntype[l][1] = 0;
-	  ntype[l][2] = 0;
-	} else if (bernstein) {
-	  ntype[l][0] = (i+noffsetlo[0]) % 2;
-	  ntype[l][1] = (j+noffsetlo[1]) % 2;
-	  ntype[l][2] = (k+noffsetlo[2]) % 2;
-	} else if (cubic || quadratic) {
-	  ntype[l][0] = min(2,i+noffsetlo[0])-min(nx_global-1-i-noffsetlo[0],2);
-	  ntype[l][1] = min(2,j+noffsetlo[1])-min(ny_global-1-j-noffsetlo[1],2);
-	  ntype[l][2] = min(2,k+noffsetlo[2])-min(nz_global-1-k-noffsetlo[2],2);
-	}
-
-	x[l] = x0[l];
-	v[l] = Vector3d();
-	v_update[l] = Vector3d();
-	f[l] = Vector3d();
-	mb[l] = Vector3d();
-	mass[l] = 0;
-	rigid[l] = false;
-	// R[l].setIdentity();
-
-	ntag[l] = nz_global*ny_global*(i+noffsetlo[0]) + nz_global*(j+noffsetlo[1]) + k+noffsetlo[2];
-	// cout << "ntag = " << ntag[l] << endl;
-
-	// Check if ntag[l] already exists:
-	if(map_ntag[ntag[l]] != -1 ) {
-	  error->all(FLERR, "node " + to_string(ntag[l]) + " already exists.");
-	}
-	map_ntag[ntag[l]] = l;
-	nowner[l] = universe->me;
-
-	l++;
-      }
-    }
-  }
-
-  nnodes_local = l;
 
   // Give to neighbouring procs ghost nodes:
   vector<Point> ns;
@@ -372,10 +320,57 @@ void Grid::init(double *solidlo, double *solidhi) {
     }
   }
 
-
   nnodes_ghost = gnodes.size();
 
   grow(nnodes_local + nnodes_ghost);
+
+  int l=0;
+  for (int i=0; i<nx; i++){
+    for (int j=0; j<ny; j++){
+      for (int k=0; k<nz; k++){
+	x0[l][0] = boundlo[0] + (noffsetlo[0] + i)*h;//h*(i-1);
+	if (domain->dimension >= 2) x0[l][1] = boundlo[1] + (noffsetlo[1] + j)*h;
+	else x0[l][1] = 0;
+	if (domain->dimension == 3) x0[l][2] = boundlo[2] + (noffsetlo[2] + k)*h;
+	else x0[l][2] = 0;
+
+	if (linear) {
+	  ntype[l][0] = 0;
+	  ntype[l][1] = 0;
+	  ntype[l][2] = 0;
+	} else if (bernstein) {
+	  ntype[l][0] = (i+noffsetlo[0]) % 2;
+	  ntype[l][1] = (j+noffsetlo[1]) % 2;
+	  ntype[l][2] = (k+noffsetlo[2]) % 2;
+	} else if (cubic || quadratic) {
+	  ntype[l][0] = min(2,i+noffsetlo[0])-min(nx_global-1-i-noffsetlo[0],2);
+	  ntype[l][1] = min(2,j+noffsetlo[1])-min(ny_global-1-j-noffsetlo[1],2);
+	  ntype[l][2] = min(2,k+noffsetlo[2])-min(nz_global-1-k-noffsetlo[2],2);
+	}
+
+	x[l] = x0[l];
+	v[l] = Vector3d();
+	v_update[l] = Vector3d();
+	f[l] = Vector3d();
+	mb[l] = Vector3d();
+	mass[l] = 0;
+	rigid[l] = false;
+	// R[l].setIdentity();
+
+	ntag[l] = nz_global*ny_global*(i+noffsetlo[0]) + nz_global*(j+noffsetlo[1]) + k+noffsetlo[2];
+	// cout << "ntag = " << ntag[l] << endl;
+
+	// Check if ntag[l] already exists:
+	if(map_ntag[ntag[l]] != -1 ) {
+	  error->all(FLERR, "node " + to_string(ntag[l]) + " already exists.");
+	}
+	map_ntag[ntag[l]] = l;
+	nowner[l] = universe->me;
+
+	l++;
+      }
+    }
+  }
 
   // Copy ghost nodes at the end of the local nodes:
   for (int in=0; in<nnodes_ghost; in++) {
@@ -426,7 +421,7 @@ void Grid::grow(int nn){
   nowner.resize(nn);
 
   x0.resize(nn);
-  x.resize(nn);
+  x = Kokkos::View<Vector3d*>("x", nn);
   v.resize(nn);
   v_update.resize(nn);
   mb.resize(nn);

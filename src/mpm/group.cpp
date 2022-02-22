@@ -262,7 +262,7 @@ int Group::find_unused()
 
 double Group::xcm(int igroup, int dir)
 {
-  vector<Vector3d> *x;
+  Kokkos::View<Vector3d*> *x;
   vector<double> *mass;
   int nmax;
   vector<int> *mask;

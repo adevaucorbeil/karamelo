@@ -116,7 +116,7 @@ void FixImpenetrableSurface::initial_integrate(Solid &solid, int ip) {
   if (!solid.mass.at(ip) || !(solid.mask.at(ip) & groupbit))
     return;
 
-  double p = n.dot(solid.x.at(ip) - xs);
+  double p = n.dot(solid.x[ip] - xs);
   // if (s->ptag[ip] == 1) {
   //   cout << id << "- Particle " << s->ptag[ip] << "\t";
   //   cout << "p = " << p << "\t";

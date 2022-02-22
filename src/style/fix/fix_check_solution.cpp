@@ -136,19 +136,19 @@ void FixChecksolution::final_integrate(Solid &solid, int ip)
   if (xset)
   {
     double ux = xvalue.result(mpm, true);
-    error_vec[0] += solid.vol0.at(ip)*square(ux - (solid.x.at(ip)[0] - solid.x0.at(ip)[0]));
+    error_vec[0] += solid.vol0.at(ip)*square(ux - (solid.x[ip][0] - solid.x0.at(ip)[0]));
     u_th[0] += solid.vol0.at(ip)*ux*ux;                  
   }                                                
   if (yset)
   {                                      
     double uy = yvalue.result(mpm, true);                       
-    error_vec[1] += solid.vol0.at(ip)*square(uy - (solid.x.at(ip)[1] - solid.x0.at(ip)[1]));
+    error_vec[1] += solid.vol0.at(ip)*square(uy - (solid.x[ip][1] - solid.x0.at(ip)[1]));
     u_th[1] += solid.vol0.at(ip)*uy*uy;                  
   }                                                
   if (zset)
   {                                      
     double uz = zvalue.result(mpm, true);                       
-    error_vec[2] += solid.vol0.at(ip)*square(uz - (solid.x.at(ip)[2] - solid.x0.at(ip)[2]));
+    error_vec[2] += solid.vol0.at(ip)*square(uz - (solid.x[ip][2] - solid.x0.at(ip)[2]));
     u_th[2] += solid.vol0.at(ip)*uz*uz;
   }
 }

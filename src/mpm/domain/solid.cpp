@@ -243,7 +243,7 @@ void Solid::grow(int nparticles)
 {
   ptag.resize(nparticles);
   x0.resize(nparticles);
-  x.resize(nparticles);
+  x = Kokkos::View<Vector3d*>("x", nparticles);
 
   if (method_type == "tlcpdi"
       || method_type == "ulcpdi")
@@ -943,14 +943,11 @@ void Solid::populate(vector<string> args)
 //   cout << "proc " << universe->me << "\tLsub=[" << Lsubx << "," << Lsuby << "," << Lsubz << "]\t nsub=["<< nsubx << "," << nsuby << "," << nsubz << "]\n";
 // #endif
 
-  np_local = nsubx*nsuby*nsubz;
-
   // Create particles:
 
   if (universe->me == 0)
     cout << "delta = " << delta << endl;
 
-  int l = 0;
   double vol_;
 
   if (domain->dimension == 1)
@@ -1078,15 +1075,8 @@ void Solid::populate(vector<string> args)
     }
   }
 
-  np_local *= nip;
-// #ifdef DEBUG
-//   cout << "proc " << universe->me << "\tnp_local=" << np_local << endl;
-// #endif
   mass_ /= (double)nip;
   vol_ /= (double)nip;
-
-  // Allocate the space in the vectors for np particles:
-  grow(np_local);
 
   int dim = domain->dimension;
   bool r4 = false;
@@ -1104,6 +1094,9 @@ void Solid::populate(vector<string> args)
     }
   }
 
+  np_local = 0;
+  deque<Vector3d> x_temp, rp_temp, xpc_temp; 
+
   for (int i = 0; i < nsubx; i++)
   {
     for (int j = 0; j < nsuby; j++)
@@ -1112,104 +1105,77 @@ void Solid::populate(vector<string> args)
       {
         for (int ip = 0; ip < nip; ip++)
         {
-
-          if (l >= np_local)
-          {
-            cout << "Error in Solid::populate(), exceeding the allocated number of particles.\n";
-            cout << "l = " << l << endl;
-            cout << "np_local = " << np_local << endl;
-            error->all(FLERR, "");
-          }
-
-          x0[l][0] = x[l][0] =
-            boundlo[0] + delta*(noffsetlo[0] + i + 0.5 + intpoints[3*ip+0]);
-          x0[l][1] = x[l][1] =
-            boundlo[1] + delta*(noffsetlo[1] + j + 0.5 + intpoints[3*ip+1]);
-          if (dim == 3)
-            x0[l][2] = x[l][2] =
-            boundlo[2] + delta*(noffsetlo[2] + k + 0.5 + intpoints[3*ip+2]);
-          else
-            x0[l][2] = x[l][2] = 0;
+          double x =             boundlo[0] + delta*(noffsetlo[0] + i + 0.5 + intpoints[3*ip + 0]);
+          double y =             boundlo[1] + delta*(noffsetlo[1] + j + 0.5 + intpoints[3*ip + 1]);
+          double z = dim < 3? 0: boundlo[2] + delta*(noffsetlo[2] + k + 0.5 + intpoints[3*ip + 2]);
 
           // Check if the particle is inside the region:
-          if (domain->inside_subdomain(x0[l][0], x0[l][1], x0[l][2]) && domain->regions[iregion]->inside(x0[l][0], x0[l][1], x0[l][2]) == 1)
+          if (domain->inside_subdomain(x, y, z) && domain->regions[iregion]->inside(x, y, z) == 1)
           {
             // cout << "Inside\n";
+            x_temp.emplace_back(x, y, z);
 
             if (r4)
             { // CPDI-R4
-              rp0[dim*l][0] = rp[dim*l][0] = lp;
-              rp0[dim*l][1] = rp[dim*l][1] = 0;
-              rp0[dim*l][2] = rp[dim*l][2] = 0;
+              rp_temp.emplace_back(lp, 0, 0);
 
               if (dim >= 2)
               {
-                rp0[dim*l + 1][0] = rp[dim*l + 1][0] = 0;
-                rp0[dim*l + 1][1] = rp[dim*l + 1][1] = lp;
-                rp0[dim*l + 1][2] = rp[dim*l + 1][2] = 0;
+                rp_temp.emplace_back(0, lp, 0);
 
                 if (dim == 3)
-                {
-                  rp0[dim*l + 2][0] = rp[dim*l + 1][0] = 0;
-                  rp0[dim*l + 2][1] = rp[dim*l + 1][1] = 0;
-                  rp0[dim*l + 2][0] = rp[dim*l + 1][0] = lp;
-                }
+                  rp_temp.emplace_back(0, 0, lp);
               }
             }
             if (q4)
             { // CPDI-Q4
-              xpc0[nc*l][0] = xpc[nc*l][0] = x0[l][0] - lp;
-
-              xpc0[nc*l + 1][0] = xpc[nc*l + 1][0] = x0[l][0] + lp;
+              xpc_temp.emplace_back(x_temp[np_local][0] - lp, 0, 0);
+              xpc_temp.emplace_back(x_temp[np_local][0] + lp, 0, 0);
 
               if (dim >= 2)
               {
-                xpc0[nc*l][1] = xpc[nc*l][1] = x0[l][1] - lp;
-                xpc0[nc*l + 1][1] = xpc[nc*l + 1][1] = x0[l][1] - lp;
+                xpc_temp[nc*np_local    ][1] = xpc[nc*np_local    ][1] = x_temp[np_local][1] - lp;
+                xpc_temp[nc*np_local + 1][1] = xpc[nc*np_local + 1][1] = x_temp[np_local][1] - lp;
 
-                xpc0[nc*l + 2][0] = xpc[nc*l + 2][0] = x0[l][0] + lp;
-                xpc0[nc*l + 2][1] = xpc[nc*l + 2][1] = x0[l][1] + lp;
-
-                xpc0[nc*l + 3][0] = xpc[nc*l + 3][0] = x0[l][0] - lp;
-                xpc0[nc*l + 3][1] = xpc[nc*l + 3][1] = x0[l][1] + lp;
+                xpc_temp.emplace_back(x_temp[np_local][0] + lp, x_temp[np_local][1] + lp, 0);
+                xpc_temp.emplace_back(x_temp[np_local][0] - lp, x_temp[np_local][1] + lp, 0);
               }
 
               if (dim == 3)
               {
-                xpc0[nc*l][2] = xpc[nc*l][2] = x0[l][2] - lp;
-                xpc0[nc*l + 1][2] = xpc[nc*l + 1][2] = x0[l][2] - lp;
-                xpc0[nc*l + 2][2] = xpc[nc*l + 2][2] = x0[l][2] - lp;
-                xpc0[nc*l + 3][2] = xpc[nc*l + 3][2] = x0[l][2] - lp;
+                xpc_temp[nc*np_local    ][2] = xpc[nc*np_local    ][2] = x_temp[np_local][2] - lp;
+                xpc_temp[nc*np_local + 1][2] = xpc[nc*np_local + 1][2] = x_temp[np_local][2] - lp;
+                xpc_temp[nc*np_local + 2][2] = xpc[nc*np_local + 2][2] = x_temp[np_local][2] - lp;
+                xpc_temp[nc*np_local + 3][2] = xpc[nc*np_local + 3][2] = x_temp[np_local][2] - lp;
 
-                xpc0[nc*l + 4][0] = xpc[nc*l + 4][0] = x0[l][0] - lp;
-                xpc0[nc*l + 4][1] = xpc[nc*l + 4][1] = x0[l][1] - lp;
-                xpc0[nc*l + 4][2] = xpc[nc*l + 4][2] = x0[l][2] + lp;
-
-                xpc0[nc*l + 5][0] = xpc[nc*l + 5][0] = x0[l][0] + lp;
-                xpc0[nc*l + 5][1] = xpc[nc*l + 5][1] = x0[l][1] - lp;
-                xpc0[nc*l + 5][2] = xpc[nc*l + 5][2] = x0[l][2] + lp;
-
-                xpc0[nc*l + 6][0] = xpc[nc*l + 6][0] = x0[l][0] + lp;
-                xpc0[nc*l + 6][1] = xpc[nc*l + 6][1] = x0[l][1] + lp;
-                xpc0[nc*l + 6][2] = xpc[nc*l + 6][2] = x0[l][2] + lp;
-
-                xpc0[nc*l + 7][0] = xpc[nc*l + 7][0] = x0[l][0] - lp;
-                xpc0[nc*l + 7][1] = xpc[nc*l + 7][1] = x0[l][1] + lp;
-                xpc0[nc*l + 7][2] = xpc[nc*l + 7][2] = x0[l][2] + lp;
+                xpc_temp.emplace_back(xpc[nc*np_local + 4][0] = x_temp[np_local][0] - lp,
+                                      xpc[nc*np_local + 4][1] = x_temp[np_local][1] - lp,
+                                      xpc[nc*np_local + 4][2] = x_temp[np_local][2] + lp);
+                xpc_temp.emplace_back(xpc[nc*np_local + 5][0] = x_temp[np_local][0] + lp,
+                                      xpc[nc*np_local + 5][1] = x_temp[np_local][1] - lp,
+                                      xpc[nc*np_local + 5][2] = x_temp[np_local][2] + lp);
+                xpc_temp.emplace_back(xpc[nc*np_local + 6][0] = x_temp[np_local][0] + lp,
+                                      xpc[nc*np_local + 6][1] = x_temp[np_local][1] + lp,
+                                      xpc[nc*np_local + 6][2] = x_temp[np_local][2] + lp);
+                xpc_temp.emplace_back(xpc[nc*np_local + 7][0] = x_temp[np_local][0] - lp,
+                                      xpc[nc*np_local + 7][1] = x_temp[np_local][1] + lp,
+                                      xpc[nc*np_local + 7][2] = x_temp[np_local][2] + lp);
               }
             }
-            l++;
+            np_local++;
           }
         }
       }
     }
   }
 
-  if (np_local > l)
-  {
-    grow(l);
-  }
-  np_local = l; // Adjust np_local to account for the particles outside the domain
+  grow(np_local);
+  for (int i = 0; i < x_temp.size(); i++)
+    x0[i] = x[i] = x_temp[i];
+  for (int i = 0; i < rp_temp.size(); i++)
+    rp0[i] = rp[i] = rp_temp[i];
+  for (int i = 0; i < xpc_temp.size(); i++)
+    xpc0[i] = xpc[i] = xpc_temp[i];
 
   tagint ptag0 = 0;
 
@@ -1233,7 +1199,6 @@ void Solid::populate(vector<string> args)
 // #ifdef DEBUG
 //   cout << "proc " << universe->me << "\tptag0 = " << ptag0 << endl;
 // #endif
-  np_local = l; // Adjust np to account for the particles outside the domain
   cout << "np_local=" << np_local << endl;
 
   for (int i = 0; i < np_local; i++)
@@ -1280,12 +1245,6 @@ void Solid::populate(vector<string> args)
     mask[i] = 1;
 
     ptag[i] = ptag0 + i + 1 + domain->np_total;
-  }
-
-  if (l != np_local)
-  {
-    cout << "Error l=" << l << " != np_local=" << np_local << endl;
-    error->one(FLERR, "");
   }
 
   int np_local_reduced;
@@ -1684,7 +1643,7 @@ void Solid::write_restart(ofstream *of)
   {
     of->write(reinterpret_cast<const char *>(&ptag.at(ip)), sizeof(tagint));
     of->write(reinterpret_cast<const char *>(&x0.at(ip)), sizeof(Vector3d));
-    of->write(reinterpret_cast<const char *>(&x.at(ip)), sizeof(Vector3d));
+    of->write(reinterpret_cast<const char *>(&x[ip]), sizeof(Vector3d));
     of->write(reinterpret_cast<const char *>(&v.at(ip)), sizeof(Vector3d));
     of->write(reinterpret_cast<const char *>(&sigma.at(ip)), sizeof(Matrix3d));
     of->write(reinterpret_cast<const char *>(&strain_el.at(ip)), sizeof(Matrix3d));
@@ -1743,7 +1702,7 @@ void Solid::read_restart(ifstream *ifr)
   {
     ifr->read(reinterpret_cast<char *>(&ptag.at(ip)), sizeof(tagint));
     ifr->read(reinterpret_cast<char *>(&x0.at(ip)), sizeof(Vector3d));
-    ifr->read(reinterpret_cast<char *>(&x.at(ip)), sizeof(Vector3d));
+    ifr->read(reinterpret_cast<char *>(&x[ip]), sizeof(Vector3d));
     ifr->read(reinterpret_cast<char *>(&v.at(ip)), sizeof(Vector3d));
     v_update.at(ip) = Vector3d();
     a.at(ip) = Vector3d();

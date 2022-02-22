@@ -96,9 +96,9 @@ void FixHeatFluxParticles::initial_integrate(Solid &solid, int ip)
   if (!(solid.mask.at(ip) & groupbit))
     return;
 
-  (*input->vars)["x" ] = Var("x",  solid.x .at(ip)[0]);
-  (*input->vars)["y" ] = Var("y",  solid.x .at(ip)[1]);
-  (*input->vars)["z" ] = Var("z",  solid.x .at(ip)[2]);
+  (*input->vars)["x" ] = Var("x",  solid.x[ip][0]);
+  (*input->vars)["y" ] = Var("y",  solid.x[ip][1]);
+  (*input->vars)["z" ] = Var("z",  solid.x[ip][2]);
   (*input->vars)["x0"] = Var("x0", solid.x0.at(ip)[0]);
   (*input->vars)["y0"] = Var("y0", solid.x0.at(ip)[1]);
   (*input->vars)["z0"] = Var("z0", solid.x0.at(ip)[2]);

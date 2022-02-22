@@ -96,7 +96,7 @@ void FixContactMinPenetrationPlane::initial_integrate(Solid &solid, int ip)
   // Go through all the particles in the group and set b to the right value:
 
   // Extremely gross screening:
-  double d = n.dot(solid.x.at(ip) - xq);
+  double d = n.dot(solid.x[ip] - xq);
 
   if (d >= solid.grid->cellsize)
     return;
