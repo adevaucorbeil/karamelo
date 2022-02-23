@@ -303,25 +303,10 @@ void Solid::grow(int nparticles)
 
   int neighbor_nodes_per_particle = 16;
 
-  neigh_n.resize(nparticles);
-  for (vector<int> &neigh_n_p: neigh_n)
-    neigh_n_p.resize(neighbor_nodes_per_particle);
-
-  wf.resize(nparticles);
-  for (vector<double> &wf_p: wf)
-    wf_p.resize(neighbor_nodes_per_particle);
-
-  wf_corners.resize(nparticles);
-  for (vector<vector<double>> &wf_corners_p: wf_corners)
-  {
-    wf_corners_p.resize(neighbor_nodes_per_particle);
-    for (vector<double> &wf_corner_p: wf_corners_p)
-      wf_corner_p.resize(8);
-  }
-
-  wfd.resize(nparticles);
-  for (vector<Vector3d> &wfd_p: wfd)
-  wfd_p.resize(neighbor_nodes_per_particle);
+  neigh_n    = Kokkos::View<int**>     ("neigh_n",   nparticles, neighbor_nodes_per_particle);
+  wf         = Kokkos::View<double**>  ("wf",        nparticles, neighbor_nodes_per_particle);
+  wf_corners = Kokkos::View<double***> ("wfcorners", nparticles, neighbor_nodes_per_particle, nc);
+  wfd        = Kokkos::View<Vector3d**>("wfd",       nparticles, neighbor_nodes_per_particle);
 }
 
 void Solid::compute_position_corners()

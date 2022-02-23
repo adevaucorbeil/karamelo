@@ -432,8 +432,8 @@ void Grid::grow(int nn){
 
   for (int i=0; i<nn; i++) mask[i] = 1;
 
-  ntype.resize(nn);
-  rigid = Kokkos::View<bool*>   ("rigid", nn);
+  ntype = Kokkos::View<Vector3i*>("ntype", nn);
+  rigid = Kokkos::View<bool*>    ("rigid", nn);
 
   T        = Kokkos::View<double*>("T",        nn);
   T_update = Kokkos::View<double*>("T_update", nn);

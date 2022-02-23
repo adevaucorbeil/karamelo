@@ -101,10 +101,10 @@ class Solid : public Pointers {
   
   Kokkos::View<double*> dtCFL;
 
-  vector<vector<int>> neigh_n;              ///< Particles' node neighbors
-  vector<vector<double>> wf;                ///< Particles' node neighbors' weight functions \f$\Phi\f$
-  vector<vector<vector<double>>> wf_corners;///< Particles' node neighbors' weight functions \f$\Phi\f$ evaluated at the corners of the particle's domain (used in CPDI)
-  vector<vector<Vector3d>> wfd;             ///< Particles' node neighbors' weight function derivatives \f$\partial \Phi/ \partial x\f$
+  Kokkos::View<int**> neigh_n;              ///< Particles' node neighbors
+  Kokkos::View<double**> wf;                ///< Particles' node neighbors' weight functions \f$\Phi\f$
+  Kokkos::View<double***> wf_corners;       ///< Particles' node neighbors' weight functions \f$\Phi\f$ evaluated at the corners of the particle's domain (used in CPDI)
+  Kokkos::View<Vector3d**> wfd;             ///< Particles' node neighbors' weight function derivatives \f$\partial \Phi/ \partial x\f$
 
   class Mat *mat;                          ///< Pointer to the material
 

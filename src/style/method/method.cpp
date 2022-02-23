@@ -50,7 +50,7 @@ void Method::compute_grid_weight_functions_and_gradients(Solid &solid, int ip)
   double wf;
   Vector3d wfd;
 
-  vector<array<int, 3>> &ntype = solid.grid->ntype;
+  Kokkos::View<Vector3i*> &ntype = solid.grid->ntype;
 
   vector<tagint> &map_ntag = solid.grid->map_ntag;
 
@@ -149,8 +149,8 @@ void Method::compute_grid_weight_functions_and_gradients(Solid &solid, int ip)
         if (domain->dimension == 3)
           sd[2] = derivative_basis_function(r[2], ntype[in][2], inv_cellsize);
 
-        solid.neigh_n[ip][i] = in;
-        solid.wf     [ip][i] = wf;
+        solid.neigh_n(ip, i) = in;
+        solid.wf     (ip, i) = wf;
 
         if (domain->dimension == 3)
         {
@@ -171,7 +171,7 @@ void Method::compute_grid_weight_functions_and_gradients(Solid &solid, int ip)
           wfd[2] = 0;
         }
 
-        solid.wfd[ip][i] = wfd;
+        solid.wfd(ip, i) = wfd;
       }
     }
   }
@@ -217,10 +217,10 @@ void Method::reset_mass_nodes(Grid &grid, int in)
 
 void Method::compute_mass_nodes(Solid &solid, int ip)
 {
-  for (int i = 0; i < solid.neigh_n[ip].size(); i++)
+  for (int i = 0; i < solid.neigh_n.extent(1); i++)
   {
-    int in = solid.neigh_n[ip][i];
-    double wf = solid.wf[ip][i];
+    int in = solid.neigh_n(ip, i);
+    double wf = solid.wf(ip, i);
 
     if (!solid.grid->rigid[in] || solid.mat->rigid)
       solid.grid->mass[in] += wf*solid.mass[ip];
@@ -237,10 +237,10 @@ void Method::reset_velocity_nodes(Grid &grid, int in)
 
 void Method::compute_velocity_nodes(Solid &solid, int ip)
 {
-  for (int i = 0; i < solid.neigh_n[ip].size(); i++)
+  for (int i = 0; i < solid.neigh_n.extent(1); i++)
   {
-    int in = solid.neigh_n[ip][i];
-    double wf = solid.wf[ip][i];
+    int in = solid.neigh_n(ip, i);
+    double wf = solid.wf(ip, i);
 
     if (solid.grid->rigid[in] && !solid.mat->rigid)
       return;
@@ -286,11 +286,11 @@ void Method::compute_force_nodes(Solid &solid, int ip)
 {
   compute_internal_force_nodes(solid, ip);
   
-  for (int i = 0; i < solid.neigh_n[ip].size(); i++)
+  for (int i = 0; i < solid.neigh_n.extent(1); i++)
   {
-    int in = solid.neigh_n[ip][i];
-    double wf = solid.wf[ip][i];
-    const Vector3d &wfd = solid.wfd[ip][i];
+    int in = solid.neigh_n(ip, i);
+    double wf = solid.wf(ip, i);
+    const Vector3d &wfd = solid.wfd(ip, i);
 
     if (!solid.grid->rigid[in])
       solid.grid->mb[in] += wf*solid.mbp[ip];
@@ -334,10 +334,10 @@ void Method::compute_velocity_acceleration(Solid &solid, int ip)
   solid.a[ip] = Vector3d();
   solid.f[ip] = Vector3d();
 
-  for (int i = 0; i < solid.neigh_n[ip].size(); i++)
+  for (int i = 0; i < solid.neigh_n.extent(1); i++)
   {
-    int in = solid.neigh_n[ip][i];
-    double wf = solid.wf[ip][i];
+    int in = solid.neigh_n(ip, i);
+    double wf = solid.wf(ip, i);
 
     solid.v_update[ip] += wf*solid.grid->v_update[in];
 
@@ -380,11 +380,11 @@ void Method::compute_rate_deformation_gradient(bool doublemapping, Solid &solid,
   Kokkos::View<Matrix3d*> &gradients = get_gradients(solid);
   const Kokkos::View<Vector3d*> &vn = doublemapping? solid.grid->v: solid.grid->v_update;
   
-  for (int i = 0; i < solid.neigh_n[ip].size(); i++)
+  for (int i = 0; i < solid.neigh_n.extent(1); i++)
   {
-    int in = solid.neigh_n[ip][i];
-    double wf = solid.wf[ip][i];
-    const Vector3d &wfd = solid.wfd[ip][i];
+    int in = solid.neigh_n(ip, i);
+    double wf = solid.wf(ip, i);
+    const Vector3d &wfd = solid.wfd(ip, i);
 
     if (update->sub_method_type == Update::SubMethodType::APIC)
     {

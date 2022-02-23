@@ -454,3 +454,5 @@ using Vector4d = Vector<double, 4>;
 using Matrix2d = Matrix<double, 2, 2>;
 using Matrix3d = Matrix<double, 3, 3>;
 using Matrix4d = Matrix<double, 4, 4>;
+
+using Vector3i = Vector<int, 3>;

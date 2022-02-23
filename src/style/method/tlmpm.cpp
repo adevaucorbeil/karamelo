@@ -112,11 +112,11 @@ void TLMPM::compute_mass_nodes(Solid &solid, int ip)
 
 void TLMPM::compute_internal_force_nodes(Solid &solid, int ip)
 {
-  for (int i = 0; i < solid.neigh_n.at(ip).size(); i++)
+  for (int i = 0; i < solid.neigh_n.extent(1); i++)
   {
-    int in = solid.neigh_n.at(ip).at(i);
-    double wf = solid.wf.at(ip).at(i);
-    const Vector3d &wfd = solid.wfd.at(ip).at(i);
+    int in = solid.neigh_n(ip, i);
+    double wf = solid.wf(ip, i);
+    const Vector3d &wfd = solid.wfd(ip, i);
 
     Vector3d &f = solid.grid->f[in];
     const Matrix3d &vol0PK1 = solid.vol0PK1[ip];
