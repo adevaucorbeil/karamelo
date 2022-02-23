@@ -118,12 +118,12 @@ void TLMPM::compute_internal_force_nodes(Solid &solid, int ip)
     double wf = solid.wf.at(ip).at(i);
     const Vector3d &wfd = solid.wfd.at(ip).at(i);
 
-    Vector3d &f = solid.grid->f.at(in);
+    Vector3d &f = solid.grid->f[in];
     const Matrix3d &vol0PK1 = solid.vol0PK1.at(ip);
-    const Vector3d &x0 = solid.x0.at(ip);
+    const Vector3d &x0 = solid.x0[ip];
 
     if (update->sub_method_type == Update::SubMethodType::MLS)
-      f -= vol0PK1*wf*solid.Di*(solid.grid->x0.at(in) - x0);
+      f -= vol0PK1*wf*solid.Di*(solid.grid->x0[in] - x0);
     else
       f -= vol0PK1*wfd;
 
@@ -134,7 +134,7 @@ void TLMPM::compute_internal_force_nodes(Solid &solid, int ip)
 
 void TLMPM::update_grid_positions(Grid &grid, int in)
 {
-  grid.x[in] += update->dt*grid.v.at(in);
+  grid.x[in] += update->dt*grid.v[in];
 }
 
 vector<Matrix3d> &TLMPM::get_gradients(Solid &solid)

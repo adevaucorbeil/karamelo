@@ -420,12 +420,12 @@ void Grid::grow(int nn){
   ntag.resize(nn);
   nowner.resize(nn);
 
-  x0.resize(nn);
+  x0 = Kokkos::View<Vector3d*>("x0", nn);
   x = Kokkos::View<Vector3d*>("x", nn);
-  v.resize(nn);
-  v_update.resize(nn);
-  mb.resize(nn);
-  f.resize(nn);
+  v = Kokkos::View<Vector3d*>("v", nn);
+  v_update = Kokkos::View<Vector3d*>("v_update", nn);
+  mb = Kokkos::View<Vector3d*>("mb", nn);
+  f = Kokkos::View<Vector3d*>("f", nn);
   mass.resize(nn);
   mask.resize(nn);
 

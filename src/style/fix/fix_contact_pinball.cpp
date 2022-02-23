@@ -107,19 +107,19 @@ void FixContactPinball::initial_integrate(Solid &solid, int ip)
       {
         if (domain->axisymmetric)
         {
-          Rp0 = sqrt(solid.  vol.at(ip )/solid.x[ip ][0])/2;
-          Rp1 = sqrt(solid1->vol.at(ip1)/solid.x[ip1][0])/2;
+          Rp0 = sqrt(solid.  vol[ip ]/solid.x[ip ][0])/2;
+          Rp1 = sqrt(solid1->vol[ip1]/solid.x[ip1][0])/2;
         }
         else
         {
-          Rp0 = sqrt(solid.  vol.at(ip ))/2;
-          Rp1 = sqrt(solid1->vol.at(ip1))/2;
+          Rp0 = sqrt(solid.  vol[ip ])/2;
+          Rp1 = sqrt(solid1->vol[ip1])/2;
         }
       }
       else
       {
-        Rp0 = cbrt(solid.  vol.at(ip ))/2;
-        Rp1 = cbrt(solid1->vol.at(ip1))/2;
+        Rp0 = cbrt(solid.  vol[ip ])/2;
+        Rp1 = cbrt(solid1->vol[ip1])/2;
       }
       double Rp = Rp0 + Rp1;
       
@@ -139,7 +139,7 @@ void FixContactPinball::initial_integrate(Solid &solid, int ip)
 
       double p = Rp - r; // penetration
 
-      const Vector3d &dv = solid1->v.at(ip1) - solid.v.at(ip);
+      const Vector3d &dv = solid1->v[ip1] - solid.v[ip];
       double pdot = -dx.dot(dv)/r; // penetration speed
 
       if (pdot < 0)
@@ -148,12 +148,12 @@ void FixContactPinball::initial_integrate(Solid &solid, int ip)
       double Rp03 = Rp0*Rp0*Rp0;
       double Rp13 = Rp1*Rp1*Rp1;
 
-      const Vector3d &f = MIN(solid.rho.at(ip)*Rp03 * solid1->rho.at(ip1)*Rp13*pdot/
-                             (solid.rho.at(ip)*Rp03 + solid1->rho.at(ip1)*Rp13)/update->dt,
+      const Vector3d &f = MIN(solid.rho[ip]*Rp03 * solid1->rho[ip1]*Rp13*pdot/
+                             (solid.rho[ip]*Rp03 + solid1->rho[ip1]*Rp13)/update->dt,
                               Gstar*sqrt(Rp0*Rp1/(Rp0 + Rp1)*p)*p)*dx/r;
       ftot += f;
-      solid.  mbp.at(ip ) -= f;
-      solid1->mbp.at(ip1) += f;
+      solid.  mbp[ip ] -= f;
+      solid1->mbp[ip1] += f;
     }
   }
 }

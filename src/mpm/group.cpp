@@ -121,7 +121,7 @@ void Group::assign(vector<string> args)
 	for (int isolid = 0; isolid < domain->solids.size(); isolid++)
 	  {
 
-	    vector<Vector3d> *x;
+	    Kokkos::View<Vector3d*> *x;
 	    int nmax;
 	    vector<int> *mask;
 
@@ -179,7 +179,7 @@ void Group::assign(vector<string> args)
 	      error->all(FLERR, "Error: cannot find solid with ID " + args[i] + ".\n");
 	    }
 
-	    vector<Vector3d> *x;
+	    Kokkos::View<Vector3d*> *x;
 	    int nmax;
 	    vector<int> *mask;
 
@@ -342,7 +342,7 @@ double Group::xcm(int igroup, int dir)
 double Group::internal_force(int igroup, int dir)
 {
   
-  vector<Vector3d> *f;
+  Kokkos::View<Vector3d*> *f;
   int nmax;
   vector<int> *mask;
   double resulting_force = 0;
@@ -417,7 +417,7 @@ double Group::external_force(int igroup, int dir)
 		 + names[igroup] + ".\n");
     }
   
-  vector<Vector3d> *f;
+  Kokkos::View<Vector3d*> *f;
   int nmax;
   vector<int> *mask;
   double resulting_force = 0;
@@ -545,7 +545,7 @@ void Group::read_restart(ifstream *ifr) {
       // Consider all solids
       for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
 
-        vector<Vector3d> *x;
+        Kokkos::View<Vector3d*> *x;
         int nmax;
         vector<int> *mask;
 
@@ -587,7 +587,7 @@ void Group::read_restart(ifstream *ifr) {
 	}
       }
     } else {
-      vector<Vector3d> *x;
+      Kokkos::View<Vector3d*> *x;
       int nmax;
       vector<int> *mask;
 

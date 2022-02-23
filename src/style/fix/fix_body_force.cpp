@@ -105,7 +105,7 @@ void FixBodyforce::reduce()
 
 void FixBodyforce::post_particles_to_grid(Grid &grid, int in)
 {
-  if (!grid.mass.at(in) || !(grid.mask.at(in) & groupbit))
+  if (!grid.mass[in] || !(grid.mask[in] & groupbit))
     return;
 
   (*input->vars)["x0"] = Var("x0", grid.x0[in][0]);
@@ -117,7 +117,7 @@ void FixBodyforce::post_particles_to_grid(Grid &grid, int in)
   if (yset) f[1] = yvalue.result(mpm, true);
   if (zset) f[2] = zvalue.result(mpm, true);
 
-  grid.mb.at(in) += grid.mass.at(in)*f;
+  grid.mb[in] += grid.mass[in]*f;
 
   if (in < grid.nnodes_local)
       ftot += f;

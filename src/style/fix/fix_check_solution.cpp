@@ -113,7 +113,7 @@ void FixChecksolution::reduce()
     for (const Solid *solid: domain->solids)
       vtot += solid->vtot;
   else
-    vtot += domain->solids.at(solid)->vtot;
+    vtot += domain->solids[solid]->vtot;
 
   (*input->vars)[id + "_s"] = Var(id + "_s", sqrt((error_reduced[0] + error_reduced[1] + error_reduced[2])/vtot));
   (*input->vars)[id + "_x"] = Var(id + "_x", (*input->vars)[id + "_x"].result() + update->dt*(error_reduced[0] + error_reduced[1] + error_reduced[2]));
@@ -126,30 +126,30 @@ void FixChecksolution::reduce()
 void FixChecksolution::final_integrate(Solid &solid, int ip)
 {
   if ((update->ntimestep != output->next && update->ntimestep != update->nsteps) ||
-      !(solid.mask.at(ip) & groupbit))
+      !(solid.mask[ip] & groupbit))
     return;
 
-  (*input->vars)["x0"] = Var("x0", solid.x0.at(ip)[0]);
-  (*input->vars)["y0"] = Var("y0", solid.x0.at(ip)[1]);
-  (*input->vars)["z0"] = Var("z0", solid.x0.at(ip)[2]);
+  (*input->vars)["x0"] = Var("x0", solid.x0[ip][0]);
+  (*input->vars)["y0"] = Var("y0", solid.x0[ip][1]);
+  (*input->vars)["z0"] = Var("z0", solid.x0[ip][2]);
 
   if (xset)
   {
     double ux = xvalue.result(mpm, true);
-    error_vec[0] += solid.vol0.at(ip)*square(ux - (solid.x[ip][0] - solid.x0.at(ip)[0]));
-    u_th[0] += solid.vol0.at(ip)*ux*ux;                  
+    error_vec[0] += solid.vol0[ip]*square(ux - (solid.x[ip][0] - solid.x0[ip][0]));
+    u_th[0] += solid.vol0[ip]*ux*ux;                  
   }                                                
   if (yset)
   {                                      
     double uy = yvalue.result(mpm, true);                       
-    error_vec[1] += solid.vol0.at(ip)*square(uy - (solid.x[ip][1] - solid.x0.at(ip)[1]));
-    u_th[1] += solid.vol0.at(ip)*uy*uy;                  
+    error_vec[1] += solid.vol0[ip]*square(uy - (solid.x[ip][1] - solid.x0[ip][1]));
+    u_th[1] += solid.vol0[ip]*uy*uy;                  
   }                                                
   if (zset)
   {                                      
     double uz = zvalue.result(mpm, true);                       
-    error_vec[2] += solid.vol0.at(ip)*square(uz - (solid.x[ip][2] - solid.x0.at(ip)[2]));
-    u_th[2] += solid.vol0.at(ip)*uz*uz;
+    error_vec[2] += solid.vol0[ip]*square(uz - (solid.x[ip][2] - solid.x0[ip][2]));
+    u_th[2] += solid.vol0[ip]*uz*uz;
   }
 }
 

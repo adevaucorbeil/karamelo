@@ -113,7 +113,7 @@ void FixImpenetrableSurface::initial_integrate(Solid &solid, int ip) {
   // << endl; cout << "line 2: " << line2[0] << "x + " << line2[1] << "y + " <<
   // line2[2] << endl;
 
-  if (!solid.mass.at(ip) || !(solid.mask.at(ip) & groupbit))
+  if (!solid.mass[ip] || !(solid.mask[ip] & groupbit))
     return;
 
   double p = n.dot(solid.x[ip] - xs);
@@ -133,8 +133,8 @@ void FixImpenetrableSurface::initial_integrate(Solid &solid, int ip) {
 
     // cout << "Particle " << s->ptag[ip] << " is inside\n";
 
-  const Vector3d &f = K*solid.mat->G*p*(1 - solid.damage.at(ip))*n;
-  solid.mbp.at(ip) += f;
+  const Vector3d &f = K*solid.mat->G*p*(1 - solid.damage[ip])*n;
+  solid.mbp[ip] += f;
   ftot += f;
 }
 

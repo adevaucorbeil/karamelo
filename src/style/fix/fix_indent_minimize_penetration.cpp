@@ -98,7 +98,7 @@ void FixIndentMinimizePenetration::prepare()
     for (const Solid *solid: domain->solids)
       cellsizeSq += solid->grid->cellsize*solid->grid->cellsize;
   else
-    cellsizeSq += domain->solids.at(solid)->grid->cellsize*domain->solids.at(solid)->grid->cellsize;
+    cellsizeSq += domain->solids[solid]->grid->cellsize*domain->solids[solid]->grid->cellsize;
 
   A = 0;
   ftot = Vector3d();
@@ -123,7 +123,7 @@ void FixIndentMinimizePenetration::reduce()
 void FixIndentMinimizePenetration::initial_integrate(Solid &solid, int ip)
 {
   // Go through all the particles in the group and set b to the right value:
-  if (!solid.mass.at(ip) || !(solid.mask.at(ip) & groupbit))
+  if (!solid.mass[ip] || !(solid.mask[ip] & groupbit))
     return;
 
   Vector3d xs(xvalue .result(mpm, true),
@@ -140,9 +140,9 @@ void FixIndentMinimizePenetration::initial_integrate(Solid &solid, int ip)
   if (domain->dimension == 2)
   {
     if (domain->axisymmetric)
-      Rs = 0.5*sqrt(solid.vol0.at(ip)/solid.x0.at(ip)[0]);
+      Rs = 0.5*sqrt(solid.vol0[ip]/solid.x0[ip][0]);
     else
-      Rs = 0.5*sqrt(solid.vol0.at(ip));
+      Rs = 0.5*sqrt(solid.vol0[ip]);
     Rs += R;
 
     if (xsp[0] >=  Rs || xsp[1] >=  Rs ||
@@ -151,7 +151,7 @@ void FixIndentMinimizePenetration::initial_integrate(Solid &solid, int ip)
   }
   else if (domain->dimension == 3)
   {
-    Rs = R + 0.5*cbrt(solid.vol0.at(ip));
+    Rs = R + 0.5*cbrt(solid.vol0[ip]);
 
     if (xsp[0] >=  Rs || xsp[1] >=  Rs || xsp[2] >=  Rs ||
         xsp[0] <= -Rs || xsp[1] <= -Rs || xsp[2] <= -Rs)
@@ -171,24 +171,24 @@ void FixIndentMinimizePenetration::initial_integrate(Solid &solid, int ip)
     return;
 
   xsp /= r;
-  double fmag = solid.mass.at(ip)*p/update->dt/update->dt;
+  double fmag = solid.mass[ip]*p/update->dt/update->dt;
   Vector3d f = fmag*xsp;
 
   if (mu)
   {
-    const Vector3d &vps = vs - solid.v.at(ip);
+    const Vector3d &vps = vs - solid.v[ip];
     Vector3d vt = vps - vps.dot(xsp)*xsp;
     double vtnorm = vt.norm();
 
     if (vtnorm)
     {
       vt /= vtnorm;
-      f += MIN(solid.mass.at(ip)*vtnorm/update->dt, mu*fmag)*vt;
+      f += MIN(solid.mass[ip]*vtnorm/update->dt, mu*fmag)*vt;
     }
   }
 
-  A += cellsizeSq*solid.F.at(ip)(0, 0)*solid.F.at(ip)(2, 2);
-  solid.mbp.at(ip) += f;
+  A += cellsizeSq*solid.F[ip](0, 0)*solid.F[ip](2, 2);
+  solid.mbp[ip] += f;
   ftot += f;
 }
 

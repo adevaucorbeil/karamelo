@@ -52,22 +52,22 @@ class Solid : public Pointers {
   vector<tagint> ptag;                      ///< Unique identifier for particles in the system
 
   Kokkos::View<Vector3d*> x;                ///< Particles' current position
-  vector<Vector3d> x0;               ///< Particles' reference position
+  Kokkos::View<Vector3d*> x0;               ///< Particles' reference position
 
   
-  vector<Vector3d> rp;               ///< Current domain vector (CPDI1)
-  vector<Vector3d> rp0;              ///< Reference domain vector (CPDI1)
-  vector<Vector3d> xpc;              ///< Current position of the corners of the particles' domain (CPDI2o)
-  vector<Vector3d> xpc0;             ///< Reference position of the corners of the particles' domain (CPDI2)
+  Kokkos::View<Vector3d*> rp;               ///< Current domain vector (CPDI1)
+  Kokkos::View<Vector3d*> rp0;              ///< Reference domain vector (CPDI1)
+  Kokkos::View<Vector3d*> xpc;              ///< Current position of the corners of the particles' domain (CPDI2o)
+  Kokkos::View<Vector3d*> xpc0;             ///< Reference position of the corners of the particles' domain (CPDI2)
   int nc;                                   ///< Number of corners per particles: \f$2^{dimension}\f$
   
-  vector<Vector3d> v;                ///< Particles' current velocity
-  vector<Vector3d> v_update;         ///< Particles' velocity at time t+dt
+  Kokkos::View<Vector3d*> v;                ///< Particles' current velocity
+  Kokkos::View<Vector3d*> v_update;         ///< Particles' velocity at time t+dt
 
-  vector<Vector3d> a;                ///< Particles' acceleration
+  Kokkos::View<Vector3d*> a;                ///< Particles' acceleration
 
-  vector<Vector3d> mbp;              ///< Particles' external forces times mass
-  vector<Vector3d> f;                ///< Particles' internal forces
+  Kokkos::View<Vector3d*> mbp;              ///< Particles' external forces times mass
+  Kokkos::View<Vector3d*> f;                ///< Particles' internal forces
 
   vector<Matrix3d> sigma;            ///< Stress matrix
   vector<Matrix3d> strain_el;        ///< Elastic strain matrix
@@ -97,7 +97,7 @@ class Solid : public Pointers {
   vector<double> T;                         ///< Particles' current temperature
   vector<double> T_old;                     ///< Particles' temperature at previous step
   vector<double> gamma;                     ///< Particles' heat source
-  vector<Vector3d> q;                       ///< Particles' heat flux
+  Kokkos::View<Vector3d*> q;                       ///< Particles' heat flux
   
   vector<double> dtCFL;
 

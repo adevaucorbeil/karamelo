@@ -136,7 +136,7 @@ void FixVelocityNodes::post_update_grid_state(Grid &grid, int in)
   // cout << "In FixVelocityNodes::post_update_grid_state()" << endl;
 
   // Go through all the nodes in the group and set v_update to the right value:
-  if (!(grid.mask.at(in) & groupbit))
+  if (!(grid.mask[in] & groupbit))
     return;
 
   Vector3d Dv;
@@ -146,9 +146,9 @@ void FixVelocityNodes::post_update_grid_state(Grid &grid, int in)
     double vx_old = xprevvalue.result(mpm, true);
     // cout << "Set v_update[0] to " << xvalue.eq() << "=" << vx << endl;
     // cout << "Set v[0] to " << vx_old << endl;
-    Dv[0] = vx - grid.v_update.at(in)[0];
-    grid.v_update.at(in)[0] = vx;
-    grid.v.at(in)[0] = vx_old;
+    Dv[0] = vx - grid.v_update[in][0];
+    grid.v_update[in][0] = vx;
+    grid.v[in][0] = vx_old;
   }
   if (yset)
   {
@@ -156,9 +156,9 @@ void FixVelocityNodes::post_update_grid_state(Grid &grid, int in)
     double vy_old = yprevvalue.result(mpm, true);
     // cout << "Set v_update[1] to " << "=" <<  vy << endl;
     // cout << "Set v[1] to " << "=" <<  vy_old << endl;
-    Dv[1] = vy - grid.v_update.at(in)[1];
-    grid.v_update.at(in)[1] = vy;
-    grid.v.at(in)[1] = vy_old;
+    Dv[1] = vy - grid.v_update[in][1];
+    grid.v_update[in][1] = vy;
+    grid.v[in][1] = vy_old;
   }
   if (zset)
   {
@@ -166,23 +166,23 @@ void FixVelocityNodes::post_update_grid_state(Grid &grid, int in)
     double vz_old = zprevvalue.result(mpm, true);
     // cout << "Set v_update[2] to " << "=" <<  vz << endl;
     // cout << "Set v[2] to " << "=" <<  vz_old << endl;
-    Dv[2] = vz - grid.v_update.at(in)[2];
-    grid.v_update.at(in)[2] = vz;
-    grid.v.at(in)[2] = vz_old;
+    Dv[2] = vz - grid.v_update[in][2];
+    grid.v_update[in][2] = vz;
+    grid.v[in][2] = vz_old;
   }
-  ftot += grid.mass.at(in)*Dv/update->dt;
+  ftot += grid.mass[in]*Dv/update->dt;
 }
 
 void FixVelocityNodes::post_velocities_to_grid(Grid &grid, int in) {
   // cout << "In FixVelocityNodes::post_velocities_to_grid()" << endl;
 
   // Go through all the particles in the group and set v to the right value:
-  if (!(grid.mask.at(in) & groupbit))
+  if (!(grid.mask[in] & groupbit))
     return;
 
-  if (xset) grid.v.at(in)[0] = xvalue.result(mpm, true);
-  if (yset) grid.v.at(in)[1] = yvalue.result(mpm, true);
-  if (zset) grid.v.at(in)[2] = zvalue.result(mpm, true);
+  if (xset) grid.v[in][0] = xvalue.result(mpm, true);
+  if (yset) grid.v[in][1] = yvalue.result(mpm, true);
+  if (zset) grid.v[in][2] = zvalue.result(mpm, true);
 }
 
 void FixVelocityNodes::write_restart(ofstream *of) {

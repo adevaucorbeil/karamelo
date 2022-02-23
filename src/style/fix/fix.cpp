@@ -22,10 +22,10 @@ using namespace std;
 
 Fix::Fix(MPM *mpm, const vector<string> &args, int mask):
   Pointers(mpm),
-  id(args.at(0)),
-  style(args.at(1)),
+  id(args[0]),
+  style(args[1]),
   mask(mask),
-  igroup(group->find(args.at(2)))
+  igroup(group->find(args[2]))
 {
   if (!universe->me)
   {

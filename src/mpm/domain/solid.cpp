@@ -242,7 +242,7 @@ void Solid::options(vector<string> *args, vector<string>::iterator it)
 void Solid::grow(int nparticles)
 {
   ptag.resize(nparticles);
-  x0.resize(nparticles);
+  x0 = Kokkos::View<Vector3d*>("x0", nparticles);
   x = Kokkos::View<Vector3d*>("x", nparticles);
 
   if (method_type == "tlcpdi"
@@ -251,28 +251,28 @@ void Solid::grow(int nparticles)
 
     if (update->method->style == 0)
     { // CPDI-R4
-      rp0.resize(domain->dimension*nparticles);
-      rp.resize(domain->dimension*nparticles);
+      rp0 = Kokkos::View<Vector3d*>("rp0", domain->dimension*nparticles);
+      rp = Kokkos::View<Vector3d*>("rp", domain->dimension*nparticles);
     }
     if (update->method->style == 1)
     { // CPDI-Q4
-      xpc0.resize(nc*nparticles);
-      xpc.resize(nc*nparticles);
+      xpc0 = Kokkos::View<Vector3d*>("xpc0", nc*nparticles);
+      xpc = Kokkos::View<Vector3d*>("xpc", nc*nparticles);
     }
   }
 
   if (method_type == "tlcpdi2"
       || method_type == "ulcpdi2")
   {
-    xpc0.resize(nparticles);
-    xpc.resize(nparticles);
+    xpc0 = Kokkos::View<Vector3d*>("xpc0", nparticles);
+    xpc = Kokkos::View<Vector3d*>("xpc", nparticles);
   }
 
-  v.resize(nparticles);
-  v_update.resize(nparticles);
-  a.resize(nparticles);
-  mbp.resize(nparticles);
-  f.resize(nparticles);
+  v = Kokkos::View<Vector3d*>("v", nparticles);
+  v_update = Kokkos::View<Vector3d*>("v_update", nparticles);
+  a = Kokkos::View<Vector3d*>("a", nparticles);
+  mbp = Kokkos::View<Vector3d*>("mbp", nparticles);
+  f = Kokkos::View<Vector3d*>("f", nparticles);
   sigma.resize(nparticles);
   strain_el.resize(nparticles);
   vol0PK1.resize(nparticles);
@@ -299,7 +299,7 @@ void Solid::grow(int nparticles)
   if (mat->cp != 0)
   {
     T.resize(nparticles);
-    q.resize(nparticles);
+    q = Kokkos::View<Vector3d*>("q", nparticles);
   }
 
   int neighbor_nodes_per_particle = 16;
@@ -342,15 +342,12 @@ void Solid::compute_inertia_tensor()
 {
   Vector3d dx;
 
-  vector<Vector3d> *pos;
   Matrix3d eye = Matrix3d::identity(), Dtemp;
   double cellsizeSqInv = 1.0/(grid->cellsize*grid->cellsize);
 
   if (update->shape_function == Update::ShapeFunctions::LINEAR)
   {
-    if (is_TL)
-      pos = &x0;
-    else
+    if (!is_TL)
     {
       error->all(FLERR, "Shape function not supported for APIC and ULMPM.\n");
     }
@@ -1642,9 +1639,9 @@ void Solid::write_restart(ofstream *of)
   for (int ip = 0; ip < np_local; ip++)
   {
     of->write(reinterpret_cast<const char *>(&ptag.at(ip)), sizeof(tagint));
-    of->write(reinterpret_cast<const char *>(&x0.at(ip)), sizeof(Vector3d));
+    of->write(reinterpret_cast<const char *>(&x0[ip]), sizeof(Vector3d));
     of->write(reinterpret_cast<const char *>(&x[ip]), sizeof(Vector3d));
-    of->write(reinterpret_cast<const char *>(&v.at(ip)), sizeof(Vector3d));
+    of->write(reinterpret_cast<const char *>(&v[ip]), sizeof(Vector3d));
     of->write(reinterpret_cast<const char *>(&sigma.at(ip)), sizeof(Matrix3d));
     of->write(reinterpret_cast<const char *>(&strain_el.at(ip)), sizeof(Matrix3d));
     if (is_TL)
@@ -1701,13 +1698,13 @@ void Solid::read_restart(ifstream *ifr)
   for (int ip = 0; ip < np_local; ip++)
   {
     ifr->read(reinterpret_cast<char *>(&ptag.at(ip)), sizeof(tagint));
-    ifr->read(reinterpret_cast<char *>(&x0.at(ip)), sizeof(Vector3d));
+    ifr->read(reinterpret_cast<char *>(&x0[ip]), sizeof(Vector3d));
     ifr->read(reinterpret_cast<char *>(&x[ip]), sizeof(Vector3d));
-    ifr->read(reinterpret_cast<char *>(&v.at(ip)), sizeof(Vector3d));
-    v_update.at(ip) = Vector3d();
-    a.at(ip) = Vector3d();
-    mbp.at(ip) = Vector3d();
-    f.at(ip) = Vector3d();
+    ifr->read(reinterpret_cast<char *>(&v[ip]), sizeof(Vector3d));
+    v_update[ip] = Vector3d();
+    a[ip] = Vector3d();
+    mbp[ip] = Vector3d();
+    f[ip] = Vector3d();
     ifr->read(reinterpret_cast<char *>(&sigma.at(ip)), sizeof(Matrix3d));
     ifr->read(reinterpret_cast<char *>(&strain_el.at(ip)), sizeof(Matrix3d));
     if (is_TL)

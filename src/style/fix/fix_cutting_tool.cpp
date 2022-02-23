@@ -136,7 +136,7 @@ void FixCuttingTool::initial_integrate(Solid &solid, int ip) {
   if (domain->dimension == 3)
     error->one(FLERR, "fix_cuttingtool not supported in 3D\n");
 
-  if (domain->dimension != 2 || !solid.mass.at(ip) || !(solid.mask.at(ip) & groupbit))
+  if (domain->dimension != 2 || !solid.mass[ip] || !(solid.mask[ip] & groupbit))
     return;
 
   // Go through all the particles in the group and set b to the right value:
@@ -221,8 +221,8 @@ void FixCuttingTool::initial_integrate(Solid &solid, int ip) {
     n = n2;
   }
 
-  const Vector3d &f = K*solid.mat->G*p*(1.0 - solid.damage.at(ip))*n;
-  solid.mbp.at(ip) += f;
+  const Vector3d &f = K*solid.mat->G*p*(1.0 - solid.damage[ip])*n;
+  solid.mbp[ip] += f;
   ftot += f;
 }
 

@@ -80,11 +80,11 @@ class Grid : public Pointers {
   double cellsize;       ///< size of the square cells forming the grid
 
   Kokkos::View<Vector3d*> x;            ///< nodes' current position
-  vector<Vector3d> x0;           ///< nodes' position in the reference coordinate system
-  vector<Vector3d> v;            ///< nodes' velocity at time t
-  vector<Vector3d> v_update;     ///< nodes' velocity at time t+dt
-  vector<Vector3d> mb;           ///< nodes' external forces times the mass
-  vector<Vector3d> f;            ///< nodes' internal forces
+  Kokkos::View<Vector3d*> x0;           ///< nodes' position in the reference coordinate system
+  Kokkos::View<Vector3d*> v;            ///< nodes' velocity at time t
+  Kokkos::View<Vector3d*> v_update;     ///< nodes' velocity at time t+dt
+  Kokkos::View<Vector3d*> mb;           ///< nodes' external forces times the mass
+  Kokkos::View<Vector3d*> f;            ///< nodes' internal forces
 
   vector<double> mass;              ///< nodes' current mass
   vector<int> mask;                 ///< nodes' group mask

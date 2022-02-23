@@ -104,19 +104,19 @@ void FixContactHertz::initial_integrate(Solid &solid, int ip)
       {
         if (domain->axisymmetric)
         {
-          Rp0 = sqrt(solid.  vol.at(ip )/solid.x[ip ][0])/2;
-          Rp1 = sqrt(solid1->vol.at(ip1)/solid.x[ip1][0])/2;
+          Rp0 = sqrt(solid.  vol[ip ]/solid.x[ip ][0])/2;
+          Rp1 = sqrt(solid1->vol[ip1]/solid.x[ip1][0])/2;
         }
         else
         {
-          Rp0 = sqrt(solid.  vol.at(ip ))/2;
-          Rp1 = sqrt(solid1->vol.at(ip1))/2;
+          Rp0 = sqrt(solid.  vol[ip ])/2;
+          Rp1 = sqrt(solid1->vol[ip1])/2;
         }
       }
       else
       {
-        Rp0 = cbrt(solid.  vol.at(ip ))/2;
-        Rp1 = cbrt(solid1->vol.at(ip1))/2;
+        Rp0 = cbrt(solid.  vol[ip ])/2;
+        Rp1 = cbrt(solid1->vol[ip1])/2;
       }
       double Rp = Rp0 + Rp1;
       
@@ -137,8 +137,8 @@ void FixContactHertz::initial_integrate(Solid &solid, int ip)
       double p = Rp - r;
 
       const Vector3d &f = Estar*sqrt(Rp0*Rp1/(Rp0 + Rp1)*p)*p*4/3*dx/r;
-      solid.  mbp.at(ip ) -= f;
-      solid1->mbp.at(ip1) += f;
+      solid.  mbp[ip ] -= f;
+      solid1->mbp[ip1] += f;
       ftot += f;
     }
   }

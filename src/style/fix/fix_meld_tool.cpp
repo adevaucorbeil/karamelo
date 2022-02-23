@@ -114,7 +114,7 @@ void FixMeldTool::initial_integrate(Solid &solid, int ip)
   // cout << "In FixMeldTool::initial_integrate()\n";
 
   // Go through all the particles in the group and set b to the right value:
-  if (!solid.mass.at(ip) || !(solid.mask.at(ip) & groupbit))
+  if (!solid.mass[ip] || !(solid.mask[ip] & groupbit))
     return;
 
   double theta_ = theta.result(mpm, true);
@@ -153,8 +153,8 @@ void FixMeldTool::initial_integrate(Solid &solid, int ip)
   }
 
   xprime = solid.x[ip] - xprime;
-  // if (update->ntimestep > 89835 && (solid.ptag.at(ip)==12 || solid.ptag.at(ip)==21)) {
-  //   cout << "Check Particle " << solid.ptag.at(ip) << "\txprime=[" << xprime[0] << "," << xprime[1] << "," << xprime[2] << "]\n";
+  // if (update->ntimestep > 89835 && (solid.ptag[ip]==12 || solid.ptag[ip]==21)) {
+  //   cout << "Check Particle " << solid.ptag[ip] << "\txprime=[" << xprime[0] << "," << xprime[1] << "," << xprime[2] << "]\n";
   //   cout << "R=\n" << R << endl;
   // }
   if (xprime(dim)   < 0    || xprime(dim)   > hi - lo ||
@@ -162,8 +162,8 @@ void FixMeldTool::initial_integrate(Solid &solid, int ip)
       xprime(axis1) > Rmax || xprime(axis1) < -Rmax)
     return;
 
-  // if (solid.ptag.at(ip)==12 || solid.ptag.at(ip)==21) {
-  //   cout << "Particle " << solid.ptag.at(ip) << " in 1\n";
+  // if (solid.ptag[ip]==12 || solid.ptag[ip]==21) {
+  //   cout << "Particle " << solid.ptag[ip] << " in 1\n";
   // }
 
   double rSq = xprime(axis0) * xprime(axis0) + xprime(axis1) * xprime(axis1);
@@ -171,8 +171,8 @@ void FixMeldTool::initial_integrate(Solid &solid, int ip)
   if (rSq > RmaxSq)
     return;
 
-  // if (solid.ptag.at(ip)==12 || solid.ptag.at(ip)==21) {
-  //     cout << "Particle " << solid.ptag.at(ip) << " in 2\n";
+  // if (solid.ptag[ip]==12 || solid.ptag[ip]==21) {
+  //     cout << "Particle " << solid.ptag[ip] << " in 2\n";
   // }
   xprime = R*xprime;
   double p0 = xprime[axis0];
@@ -219,16 +219,16 @@ void FixMeldTool::initial_integrate(Solid &solid, int ip)
     f[dim] = -p2;
   }
 
-  f = K*solid.mat->G*(1 - solid.damage.at(ip))*R.transpose()*f;
-  solid.mbp.at(ip) += f;
-  // if (solid.ptag.at(ip)==12 || solid.ptag.at(ip)==21) {
+  f = K*solid.mat->G*(1 - solid.damage[ip])*R.transpose()*f;
+  solid.mbp[ip] += f;
+  // if (solid.ptag[ip]==12 || solid.ptag[ip]==21) {
   //     Vector3d dx = solid.x[ip] - c;
-  //     cout << "Particle " << solid.ptag.at(ip) << " f=[" << f[0] << "," << f[1] << "," << f[2] << "]\tw=" << w << " p0=" << p0 << " p1=" << p1 << " p2=" << p2 << "\txprime=[" << xprime[0] << "," << xprime[1] << "," << xprime[2] << "]\tdx=[" << dx(0) << "," << dx(1) << "," << dx(2) << "]\n";
+  //     cout << "Particle " << solid.ptag[ip] << " f=[" << f[0] << "," << f[1] << "," << f[2] << "]\tw=" << w << " p0=" << p0 << " p1=" << p1 << " p2=" << p2 << "\txprime=[" << xprime[0] << "," << xprime[1] << "," << xprime[2] << "]\tdx=[" << dx(0) << "," << dx(1) << "," << dx(2) << "]\n";
   //     cout << "R=\n" << R << endl;
   // }
   ftot += f;
   // if (f[dim] != 0) {
-  //     cout << "particle " << solid.ptag.at(ip) << " force:" << f[0] << ", " << f[1] << ", " << f[2] << endl;
+  //     cout << "particle " << solid.ptag[ip] << " force:" << f[0] << ", " << f[1] << ", " << f[2] << endl;
   // }
 }
 

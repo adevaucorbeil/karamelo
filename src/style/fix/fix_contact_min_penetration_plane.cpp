@@ -104,11 +104,11 @@ void FixContactMinPenetrationPlane::initial_integrate(Solid &solid, int ip)
   double Rp;
   if (domain->dimension == 2)
   {
-    Rp = sqrt(solid.vol.at(ip));
+    Rp = sqrt(solid.vol[ip]);
   }
   else
   {
-    Rp = cbrt(solid.vol.at(ip));
+    Rp = cbrt(solid.vol[ip]);
   }
   
   // Fine screening:
@@ -117,12 +117,12 @@ void FixContactMinPenetrationPlane::initial_integrate(Solid &solid, int ip)
   if (p < 0)
     return;
 
-  double fnorm = solid.mass.at(ip)*p/update->dt/update->dt;
+  double fnorm = solid.mass[ip]*p/update->dt/update->dt;
   Vector3d f = fnorm*n;
 
   if (mu)
   {
-    Vector3d vt = solid.v.at(ip) - n.dot(solid.v.at(ip))*n;
+    Vector3d vt = solid.v[ip] - n.dot(solid.v[ip])*n;
     double vtnorm = vt.norm();
     if (vtnorm)
     {
@@ -131,7 +131,7 @@ void FixContactMinPenetrationPlane::initial_integrate(Solid &solid, int ip)
     }
   }
 
-  solid.mbp.at(ip) += f;
+  solid.mbp[ip] += f;
   ftot += f;
 }
 

@@ -108,13 +108,13 @@ void FixContactMinPenetration::initial_integrate(Solid &solid, int ip)
       if (domain->dimension == 2)
       {
         if (domain->axisymmetric)
-          Rp = (sqrt(solid.  vol.at(ip )/solid.x[ip ][0]) +
-                sqrt(solid1->vol.at(ip1)/solid.x[ip1][0]))/2;
+          Rp = (sqrt(solid.  vol[ip ]/solid.x[ip ][0]) +
+                sqrt(solid1->vol[ip1]/solid.x[ip1][0]))/2;
         else
-          Rp = (sqrt(solid.vol.at(ip)) + sqrt(solid1->vol.at(ip1)))/2;
+          Rp = (sqrt(solid.vol[ip]) + sqrt(solid1->vol[ip1]))/2;
       }
       else
-        Rp = (cbrt(solid.vol.at(ip)) + cbrt(solid1->vol.at(ip1)))/2;
+        Rp = (cbrt(solid.vol[ip]) + cbrt(solid1->vol[ip1]))/2;
       
       // Gross screening:
       for (int i = 0; i < domain->dimension; i++)
@@ -130,14 +130,14 @@ void FixContactMinPenetration::initial_integrate(Solid &solid, int ip)
       if (r >= Rp)
         continue;
 
-      double fmag = solid.mass.at(ip) * solid1->mass.at(ip1)/
-                  ((solid.mass.at(ip) + solid1->mass.at(ip1))*
+      double fmag = solid.mass[ip] * solid1->mass[ip1]/
+                  ((solid.mass[ip] + solid1->mass[ip1])*
                    update->dt*update->dt)*(1 - Rp/r);
       Vector3d f = fmag*dx;
 
       if (mu)
       {
-        const Vector3d &dv = solid1->v.at(ip1) - solid.v.at(ip);
+        const Vector3d &dv = solid1->v[ip1] - solid.v[ip];
         Vector3d vt = dv - dv.dot(dx)/r/r*dx;
         double vtnorm = vt.norm();
         if (vtnorm != 0)
@@ -149,14 +149,14 @@ void FixContactMinPenetration::initial_integrate(Solid &solid, int ip)
           if (update->method->temp)
           {
             double gamma = ffric*vtnorm*update->dt;
-            solid.gamma.at(ip) += alpha*solid.vol0.at(ip)*solid.mat->invcp*gamma;
-            solid1->gamma.at(ip1) += (1 - alpha)*solid1->vol0.at(ip1)*solid1->mat->invcp*gamma;
+            solid.gamma[ip] += alpha*solid.vol0[ip]*solid.mat->invcp*gamma;
+            solid1->gamma[ip1] += (1 - alpha)*solid1->vol0[ip1]*solid1->mat->invcp*gamma;
           }
         }
       }
 
-      solid.  mbp.at(ip ) += f;
-      solid1->mbp.at(ip1) -= f;
+      solid.  mbp[ip ] += f;
+      solid1->mbp[ip1] -= f;
       ftot += f;
     }
   }

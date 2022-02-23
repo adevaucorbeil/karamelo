@@ -81,23 +81,23 @@ void FixInitialStress::initial_integrate(Solid &solid, int ip)
   // cout << "In FixInitialStress::initial_integrate()" << endl;
 
   // Go through all the particles in the group and set v to the right value:
-  if (update->ntimestep != 1 || !(solid.mask.at(ip) & groupbit))
+  if (update->ntimestep != 1 || !(solid.mask[ip] & groupbit))
     return;
 
-  (*input->vars)["x0"] = Var("x0", solid.x0.at(ip)[0]);
-  (*input->vars)["y0"] = Var("y0", solid.x0.at(ip)[1]);
-  (*input->vars)["z0"] = Var("z0", solid.x0.at(ip)[2]);
+  (*input->vars)["x0"] = Var("x0", solid.x0[ip][0]);
+  (*input->vars)["y0"] = Var("y0", solid.x0[ip][1]);
+  (*input->vars)["z0"] = Var("z0", solid.x0[ip][2]);
   (*input->vars)["x" ] = Var("x",  solid.x[ip][0]);
   (*input->vars)["y" ] = Var("y",  solid.x[ip][1]);
   (*input->vars)["z" ] = Var("z",  solid.x[ip][2]);
       
-  if (s_set[0]) solid.sigma.at(ip)(0,0) = s_value[0].result(mpm, true);
-  if (s_set[1]) solid.sigma.at(ip)(1,1) = s_value[1].result(mpm, true);
-  if (s_set[2]) solid.sigma.at(ip)(2,2) = s_value[2].result(mpm, true);
-  if (s_set[3]) solid.sigma.at(ip)(1,2) = solid.sigma.at(ip)(2,1) = s_value[3].result(mpm, true);
-  if (s_set[4]) solid.sigma.at(ip)(0,2) = solid.sigma.at(ip)(2,0) = s_value[4].result(mpm, true);
-  if (s_set[5]) solid.sigma.at(ip)(0,1) = solid.sigma.at(ip)(1,0) = s_value[5].result(mpm, true);
+  if (s_set[0]) solid.sigma[ip](0,0) = s_value[0].result(mpm, true);
+  if (s_set[1]) solid.sigma[ip](1,1) = s_value[1].result(mpm, true);
+  if (s_set[2]) solid.sigma[ip](2,2) = s_value[2].result(mpm, true);
+  if (s_set[3]) solid.sigma[ip](1,2) = solid.sigma[ip](2,1) = s_value[3].result(mpm, true);
+  if (s_set[4]) solid.sigma[ip](0,2) = solid.sigma[ip](2,0) = s_value[4].result(mpm, true);
+  if (s_set[5]) solid.sigma[ip](0,1) = solid.sigma[ip](1,0) = s_value[5].result(mpm, true);
 
   if (update->method_type == "tlmpm" || update->method_type == "tlcpdi")
-    solid.vol0PK1.at(ip) = solid.vol0.at(ip)*solid.sigma.at(ip);
+    solid.vol0PK1[ip] = solid.vol0[ip]*solid.sigma[ip];
 }

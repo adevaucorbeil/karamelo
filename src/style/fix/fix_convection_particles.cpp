@@ -88,26 +88,26 @@ void FixConvectionParticles::reduce()
 
 void FixConvectionParticles::initial_integrate(Solid &solid, int ip) {
   // Go through all the particles in the group and set v_update to the right value:
-  if (!(solid.mask.at(ip) & groupbit))
+  if (!(solid.mask[ip] & groupbit))
     return;
 
   (*input->vars)["x" ] = Var("x",  solid.x[ip][0]);
   (*input->vars)["y" ] = Var("y",  solid.x[ip][1]);
   (*input->vars)["z" ] = Var("z",  solid.x[ip][2]);
-  (*input->vars)["x0"] = Var("x0", solid.x0.at(ip)[0]);
-  (*input->vars)["y0"] = Var("y0", solid.x0.at(ip)[1]);
-  (*input->vars)["z0"] = Var("z0", solid.x0.at(ip)[2]);
+  (*input->vars)["x0"] = Var("x0", solid.x0[ip][0]);
+  (*input->vars)["y0"] = Var("y0", solid.x0[ip][1]);
+  (*input->vars)["z0"] = Var("z0", solid.x0[ip][2]);
 
   double Ap;
   if (domain->dimension == 1)
     Ap = 1;
   else if (domain->dimension == 2)
-    Ap = sqrt(solid.vol.at(ip));
+    Ap = sqrt(solid.vol[ip]);
   else         
-    Ap = pow(solid.vol.at(ip), 2/3);
+    Ap = pow(solid.vol[ip], 2/3);
 
-  double qtemp = h*(Tinf.result(mpm, true) - solid.T.at(ip));
-  solid.gamma.at(ip) += Ap*qtemp*solid.mat->invcp;
+  double qtemp = h*(Tinf.result(mpm, true) - solid.T[ip]);
+  solid.gamma[ip] += Ap*qtemp*solid.mat->invcp;
   qtot += qtemp;
 }
 

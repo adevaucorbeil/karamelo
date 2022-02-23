@@ -75,11 +75,11 @@ void FixTemperatureNodes::post_update_grid_state(Grid &grid, int in)
   // cout << "In FixTemperatureNodes::post_update_grid_state()" << endl;
 
   // Go through all the nodes in the group and set v_update to the right value:
-  if (!(grid.mask.at(in) & groupbit))
+  if (!(grid.mask[in] & groupbit))
     return;
 
-  grid.T_update.at(in) = Tvalue    .result(mpm, true);
-  grid.T       .at(in) = Tprevvalue.result(mpm, true);
+  grid.T_update[in] = Tvalue    .result(mpm, true);
+  grid.T       [in] = Tprevvalue.result(mpm, true);
 }
 
 void FixTemperatureNodes::post_velocities_to_grid(Grid &grid, int in)
@@ -87,8 +87,8 @@ void FixTemperatureNodes::post_velocities_to_grid(Grid &grid, int in)
   // cout << "In FixTemperatureNodes::post_velocities_to_grid()" << endl;
 
   // Go through all the particles in the group and set v to the right value:
-  if (grid.mask.at(in) & groupbit)
-    grid.T.at(in) = input->parsev(Targ).result(mpm);
+  if (grid.mask[in] & groupbit)
+    grid.T[in] = input->parsev(Targ).result(mpm);
 }
 
 void FixTemperatureNodes::write_restart(ofstream *of) {
