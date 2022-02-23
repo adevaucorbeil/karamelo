@@ -92,7 +92,7 @@ void ULMPM::compute_internal_force_nodes(Solid &solid, int ip)
     const Vector3d &wfd = solid.wfd.at(ip).at(i);
 
     Vector3d &f = solid.grid->f[in];
-    const Matrix3d &vol_sigma = solid.vol.at(ip)*solid.sigma.at(ip);
+    const Matrix3d &vol_sigma = solid.vol.at(ip)*solid.sigma[ip];
     const Vector3d &x = solid.x[ip];
 
     if (update->sub_method_type == Update::SubMethodType::MLS)
@@ -119,19 +119,19 @@ void ULMPM::check_particle_in_domain(const Vector3d &x, int ip)
   }
 }
 
-vector<Matrix3d> &ULMPM::get_gradients(Solid &solid)
+Kokkos::View<Matrix3d*> &ULMPM::get_gradients(Solid &solid)
 {
   return solid.L;
 }
 
 void ULMPM::update_deformation_gradient_matrix(Solid &solid, int ip)
 {
-  solid.F.at(ip) = (Matrix3d::identity() + update->dt*solid.L.at(ip))*solid.F.at(ip);
+  solid.F[ip] = (Matrix3d::identity() + update->dt*solid.L[ip])*solid.F[ip];
 }
 
 void ULMPM::update_velocity_gradient_matrix(Solid &solid, int ip)
 {
-  solid.D.at(ip) = 0.5*(solid.L.at(ip) + solid.L.at(ip).transpose());
+  solid.D[ip] = 0.5*(solid.L[ip] + solid.L[ip].transpose());
 }
 
 void ULMPM::exchange_particles() {

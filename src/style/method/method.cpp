@@ -83,7 +83,7 @@ void Method::compute_grid_weight_functions_and_gradients(Solid &solid, int ip)
 
               if (tag < nnodes)
               {
-                tagint inn = map_ntag.at(tag);
+                tagint inn = map_ntag[tag];
 
                 if (inn != -1)
                   n_neigh.push_back(inn);
@@ -96,7 +96,7 @@ void Method::compute_grid_weight_functions_and_gradients(Solid &solid, int ip)
 
             if (tag < nnodes)
             {
-              tagint in = map_ntag.at(tag);
+              tagint in = map_ntag[tag];
 
               if (in != -1)
                 n_neigh.push_back(in);
@@ -113,25 +113,25 @@ void Method::compute_grid_weight_functions_and_gradients(Solid &solid, int ip)
 
     for (int i = 0; i < n_neigh.size(); i++)
     {
-      int in = n_neigh.at(i);
+      int in = n_neigh[i];
 
       // Calculate the distance between each pair of particle/node:
       r = (xp - x0[in])*inv_cellsize;
 
-      s[0] = basis_function(r[0], ntype.at(in)[0]);
+      s[0] = basis_function(r[0], ntype[in][0]);
       wf = s[0];
       if (wf != 0)
       {
         if (domain->dimension >= 2)
         {
-          s[1] = basis_function(r[1], ntype.at(in)[1]);
+          s[1] = basis_function(r[1], ntype[in][1]);
           wf *= s[1];
         }
         else
           s[1] = 1;
         if (domain->dimension == 3 && wf != 0)
         {
-          s[2] = basis_function(r[2], ntype.at(in)[2]);
+          s[2] = basis_function(r[2], ntype[in][2]);
           wf *= s[2];
         }
         else
@@ -141,16 +141,16 @@ void Method::compute_grid_weight_functions_and_gradients(Solid &solid, int ip)
       if (wf != 0)
       {
         if (solid.mat->rigid)
-          solid.grid->rigid.at(in) = true;
+          solid.grid->rigid[in] = true;
 
-        sd[0] = derivative_basis_function(r[0], ntype.at(in)[0], inv_cellsize);
+        sd[0] = derivative_basis_function(r[0], ntype[in][0], inv_cellsize);
         if (domain->dimension >= 2)
-          sd[1] = derivative_basis_function(r[1], ntype.at(in)[1], inv_cellsize);
+          sd[1] = derivative_basis_function(r[1], ntype[in][1], inv_cellsize);
         if (domain->dimension == 3)
-          sd[2] = derivative_basis_function(r[2], ntype.at(in)[2], inv_cellsize);
+          sd[2] = derivative_basis_function(r[2], ntype[in][2], inv_cellsize);
 
-        solid.neigh_n.at(ip).at(i) = in;
-        solid.wf     .at(ip).at(i) = wf;
+        solid.neigh_n[ip][i] = in;
+        solid.wf     [ip][i] = wf;
 
         if (domain->dimension == 3)
         {
@@ -171,7 +171,7 @@ void Method::compute_grid_weight_functions_and_gradients(Solid &solid, int ip)
           wfd[2] = 0;
         }
 
-        solid.wfd.at(ip).at(i) = wfd;
+        solid.wfd[ip][i] = wfd;
       }
     }
   }
@@ -212,18 +212,18 @@ bool Method::apic()
 
 void Method::reset_mass_nodes(Grid &grid, int in)
 {
-  grid.mass.at(in) = 0;
+  grid.mass[in] = 0;
 }
 
 void Method::compute_mass_nodes(Solid &solid, int ip)
 {
-  for (int i = 0; i < solid.neigh_n.at(ip).size(); i++)
+  for (int i = 0; i < solid.neigh_n[ip].size(); i++)
   {
-    int in = solid.neigh_n.at(ip).at(i);
-    double wf = solid.wf.at(ip).at(i);
+    int in = solid.neigh_n[ip][i];
+    double wf = solid.wf[ip][i];
 
-    if (!solid.grid->rigid.at(in) || solid.mat->rigid)
-      solid.grid->mass.at(in) += wf*solid.mass.at(ip);
+    if (!solid.grid->rigid[in] || solid.mat->rigid)
+      solid.grid->mass[in] += wf*solid.mass[ip];
   }
 }
 
@@ -232,22 +232,22 @@ void Method::reset_velocity_nodes(Grid &grid, int in)
   grid.v[in] = Vector3d();
   grid.mb[in] = Vector3d();
   if (temp)
-    grid.T.at(in) = 0;
+    grid.T[in] = 0;
 }
 
 void Method::compute_velocity_nodes(Solid &solid, int ip)
 {
-  for (int i = 0; i < solid.neigh_n.at(ip).size(); i++)
+  for (int i = 0; i < solid.neigh_n[ip].size(); i++)
   {
-    int in = solid.neigh_n.at(ip).at(i);
-    double wf = solid.wf.at(ip).at(i);
+    int in = solid.neigh_n[ip][i];
+    double wf = solid.wf[ip][i];
 
-    if (solid.grid->rigid.at(in) && !solid.mat->rigid)
+    if (solid.grid->rigid[in] && !solid.mat->rigid)
       return;
 
-    if (double node_mass = solid.grid->mass.at(in))
+    if (double node_mass = solid.grid->mass[in])
     {
-      double normalized_wf = wf*solid.mass.at(ip)/node_mass;
+      double normalized_wf = wf*solid.mass[ip]/node_mass;
       const Vector3d &dx = solid.grid->x0[in] - solid.x[ip];
     
       Vector3d vtemp = solid.v[ip];
@@ -255,18 +255,18 @@ void Method::compute_velocity_nodes(Solid &solid, int ip)
       if (apic() || update->method->ge)
       {
         if (is_TL)
-          vtemp += solid.Fdot.at(ip)*(solid.grid->x0[in] - solid.v[ip]);
+          vtemp += solid.Fdot[ip]*(solid.grid->x0[in] - solid.v[ip]);
         else
-          vtemp += solid.L.at(ip)*(solid.grid->x0[in] - solid.x[ip]);
+          vtemp += solid.L[ip]*(solid.grid->x0[in] - solid.x[ip]);
       }
 
       solid.grid->v[in] += normalized_wf*vtemp;
 
-      if (solid.grid->rigid.at(in))
+      if (solid.grid->rigid[in])
         solid.grid->mb[in] += normalized_wf*solid.v_update[ip];
 
       if (temp)
-        solid.grid->T.at(in) += normalized_wf*solid.T.at(ip);
+        solid.grid->T[in] += normalized_wf*solid.T[ip];
     }
   }
 }
@@ -277,8 +277,8 @@ void Method::reset_force_nodes(Grid &grid, int in)
   grid.mb[in] = Vector3d();
   if (temp)
   {
-    grid.Qint.at(in) = 0;
-    grid.Qext.at(in) = 0;
+    grid.Qint[in] = 0;
+    grid.Qext[in] = 0;
   }
 }
 
@@ -286,13 +286,13 @@ void Method::compute_force_nodes(Solid &solid, int ip)
 {
   compute_internal_force_nodes(solid, ip);
   
-  for (int i = 0; i < solid.neigh_n.at(ip).size(); i++)
+  for (int i = 0; i < solid.neigh_n[ip].size(); i++)
   {
-    int in = solid.neigh_n.at(ip).at(i);
-    double wf = solid.wf.at(ip).at(i);
-    const Vector3d &wfd = solid.wfd.at(ip).at(i);
+    int in = solid.neigh_n[ip][i];
+    double wf = solid.wf[ip][i];
+    const Vector3d &wfd = solid.wfd[ip][i];
 
-    if (!solid.grid->rigid.at(in))
+    if (!solid.grid->rigid[in])
       solid.grid->mb[in] += wf*solid.mbp[ip];
 
     if (temp)
@@ -302,10 +302,10 @@ void Method::compute_force_nodes(Solid &solid, int ip)
         error->one(FLERR, "Temperature and axisymmetric not yet supported.\n");
       }
 
-      if (solid.grid->mass.at(in))
-        solid.grid->Qext.at(in) += wf*solid.gamma.at(ip);
+      if (solid.grid->mass[in])
+        solid.grid->Qext[in] += wf*solid.gamma[ip];
 
-      solid.grid->Qint.at(in) += wfd.dot(solid.q[ip]);
+      solid.grid->Qint[in] += wfd.dot(solid.q[ip]);
     }
   }
 }
@@ -316,15 +316,15 @@ void Method::update_grid_velocities(Grid &grid, int in)
 
   Vector3d &v_update = grid.v_update[in] = grid.v[in];
   if (temp)
-    T_update = grid.T_update.at(in) = grid.T.at(in);
+    T_update = grid.T_update[in] = grid.T[in];
 
-  if (double mass = grid.mass.at(in))
+  if (double mass = grid.mass[in])
   {
-    if (!grid.rigid.at(in))
+    if (!grid.rigid[in])
       v_update += update->dt*(grid.f[in] + grid.mb[in])/mass;
 
     if (temp)
-      T_update += update->dt*(grid.Qint.at(in) + grid.Qext.at(in))/mass;
+      T_update += update->dt*(grid.Qint[in] + grid.Qext[in])/mass;
   }
 }
 
@@ -334,10 +334,10 @@ void Method::compute_velocity_acceleration(Solid &solid, int ip)
   solid.a[ip] = Vector3d();
   solid.f[ip] = Vector3d();
 
-  for (int i = 0; i < solid.neigh_n.at(ip).size(); i++)
+  for (int i = 0; i < solid.neigh_n[ip].size(); i++)
   {
-    int in = solid.neigh_n.at(ip).at(i);
-    double wf = solid.wf.at(ip).at(i);
+    int in = solid.neigh_n[ip][i];
+    double wf = solid.wf[ip][i];
 
     solid.v_update[ip] += wf*solid.grid->v_update[in];
 
@@ -346,10 +346,10 @@ void Method::compute_velocity_acceleration(Solid &solid, int ip)
 
     const Vector3d &delta_a = wf*(solid.grid->v_update[in] - solid.grid->v[in])/update->dt;
     solid.a[ip] += delta_a;
-    solid.f[ip] += delta_a*solid.mass.at(ip);
+    solid.f[ip] += delta_a*solid.mass[ip];
 
     if (temp)
-      solid.T.at(ip) += wf*solid.grid->T_update.at(in);
+      solid.T[ip] += wf*solid.grid->T_update[in];
   }
 }
 
@@ -373,18 +373,18 @@ void Method::compute_rate_deformation_gradient(bool doublemapping, Solid &solid,
   if (solid.mat->rigid)
     return;
 
-  get_gradients(solid).at(ip) = Matrix3d();
+  get_gradients(solid)[ip] = Matrix3d();
   if (temp)
     solid.q[ip] = Vector3d();
         
-  vector<Matrix3d> &gradients = get_gradients(solid);
+  Kokkos::View<Matrix3d*> &gradients = get_gradients(solid);
   const Kokkos::View<Vector3d*> &vn = doublemapping? solid.grid->v: solid.grid->v_update;
   
-  for (int i = 0; i < solid.neigh_n.at(ip).size(); i++)
+  for (int i = 0; i < solid.neigh_n[ip].size(); i++)
   {
-    int in = solid.neigh_n.at(ip).at(i);
-    double wf = solid.wf.at(ip).at(i);
-    const Vector3d &wfd = solid.wfd.at(ip).at(i);
+    int in = solid.neigh_n[ip][i];
+    double wf = solid.wf[ip][i];
+    const Vector3d &wfd = solid.wfd[ip][i];
 
     if (update->sub_method_type == Update::SubMethodType::APIC)
     {
@@ -396,19 +396,19 @@ void Method::compute_rate_deformation_gradient(bool doublemapping, Solid &solid,
         for (int k = 0; k < domain->dimension; k++)
           gradient(j, k) += vn[in][j]*dx[k]*wf;
 
-      gradients.at(ip) += gradient*solid.Di;
+      gradients[ip] += gradient*solid.Di;
     }
     else
       for (int j = 0; j < domain->dimension; j++)
         for (int k = 0; k < domain->dimension; k++)
-          gradients.at(ip)(j, k) += vn[in][j]*wfd[k];
+          gradients[ip](j, k) += vn[in][j]*wfd[k];
 
     if (domain->dimension == 2 && domain->axisymmetric)
-      gradients.at(ip)(2, 2) += vn[in][0]*wf/solid.v[ip][0];
+      gradients[ip](2, 2) += vn[in][0]*wf/solid.v[ip][0];
 
     if (temp)
-      solid.q[ip] -= wfd*(doublemapping? solid.grid->T: solid.grid->T_update).at(in)
-                        *(is_TL? solid.vol0: solid.vol).at(ip)*solid.mat->invcp*solid.mat->kappa;
+      solid.q[ip] -= wfd*(doublemapping? solid.grid->T: solid.grid->T_update)[in]
+                        *(is_TL? solid.vol0: solid.vol)[ip]*solid.mat->invcp*solid.mat->kappa;
   }
 }
 
@@ -417,7 +417,7 @@ void Method::update_deformation_gradient_determinant(Solid &solid, int ip)
   // FOR CPDI:
   //if (update->method->style == 1)
   //{
-  //  solid.vol.at(ip) = 0.5*(solid.xpc[solid.nc*ip + 0][0]*solid.xpc[solid.nc*ip + 1][1] -
+  //  solid.vol[ip] = 0.5*(solid.xpc[solid.nc*ip + 0][0]*solid.xpc[solid.nc*ip + 1][1] -
   //                          solid.xpc[solid.nc*ip + 1][0]*solid.xpc[solid.nc*ip + 0][1] +
   //                          solid.xpc[solid.nc*ip + 1][0]*solid.xpc[solid.nc*ip + 2][1] -
   //                          solid.xpc[solid.nc*ip + 2][0]*solid.xpc[solid.nc*ip + 1][1] +
@@ -425,13 +425,13 @@ void Method::update_deformation_gradient_determinant(Solid &solid, int ip)
   //                          solid.xpc[solid.nc*ip + 3][0]*solid.xpc[solid.nc*ip + 2][1] +
   //                          solid.xpc[solid.nc*ip + 3][0]*solid.xpc[solid.nc*ip + 0][1] -
   //                          solid.xpc[solid.nc*ip + 0][0]*solid.xpc[solid.nc*ip + 3][1]);
-  //  solid.J.at(ip) = solid.vol.at(ip)/solid.vol0.at(ip);
+  //  solid.J[ip] = solid.vol[ip]/solid.vol0[ip];
   //}
   //else
   //{
 
-  solid.J.at(ip) = determinant(solid.F.at(ip));
-  solid.vol.at(ip) = solid.J.at(ip)*solid.vol0.at(ip);
+  solid.J[ip] = determinant(solid.F[ip]);
+  solid.vol[ip] = solid.J[ip]*solid.vol0[ip];
 }
 
 // EB: remove this
@@ -445,44 +445,44 @@ void Method::update_deformation_gradient_stress(bool doublemapping, Solid &solid
 
   update_deformation_gradient_matrix(solid, ip);
 
-  solid.Finv[ip] = inverse(solid.F.at(ip));
+  solid.Finv[ip] = inverse(solid.F[ip]);
 
   update_deformation_gradient_determinant(solid, ip);
 
-  if (solid.J.at(ip) <= 0.0 && solid.damage.at(ip) < 1.0)
+  if (solid.J[ip] <= 0.0 && solid.damage[ip] < 1.0)
   {
-    cout << "Error: J[" << solid.ptag.at(ip) << "]<=0.0 == " << solid.J.at(ip) << endl;
-    cout << "F[" << solid.ptag.at(ip) << "]:" << endl << solid.F.at(ip) << endl;
-    cout << "Fdot[" << solid.ptag.at(ip) << "]:" << endl << solid.Fdot.at(ip) << endl;
-    cout << "damage[" << solid.ptag.at(ip) << "]:" << endl << solid.damage.at(ip) << endl;
+    cout << "Error: J[" << solid.ptag[ip] << "]<=0.0 == " << solid.J[ip] << endl;
+    cout << "F[" << solid.ptag[ip] << "]:" << endl << solid.F[ip] << endl;
+    cout << "Fdot[" << solid.ptag[ip] << "]:" << endl << solid.Fdot[ip] << endl;
+    cout << "damage[" << solid.ptag[ip] << "]:" << endl << solid.damage[ip] << endl;
     error->one(FLERR, "");
   }
 
-  solid.rho.at(ip) = solid.rho0.at(ip)/solid.J.at(ip);
+  solid.rho[ip] = solid.rho0[ip]/solid.J[ip];
 
   if (solid.mat->type == material->constitutive_model::LINEAR)
   {
     update_velocity_gradient_matrix(solid, ip);
 
-    const Matrix3d &strain_increment = update->dt*solid.D.at(ip);
-    solid.strain_el.at(ip) += strain_increment;
-    solid.sigma.at(ip) += 2*solid.mat->G*strain_increment +
+    const Matrix3d &strain_increment = update->dt*solid.D[ip];
+    solid.strain_el[ip] += strain_increment;
+    solid.sigma[ip] += 2*solid.mat->G*strain_increment +
       solid.mat->lambda*strain_increment.trace()*Matrix3d::identity();
 
     if (is_TL)
-      solid.vol0PK1.at(ip) = solid.vol0.at(ip)*solid.J.at(ip)*solid.R.at(ip)*solid.sigma.at(ip)*
-                            solid.R.at(ip).transpose()*solid.Finv[ip].transpose();
-    solid.gamma.at(ip) = 0;
+      solid.vol0PK1[ip] = solid.vol0[ip]*solid.J[ip]*solid.R[ip]*solid.sigma[ip]*
+                            solid.R[ip].transpose()*solid.Finv[ip].transpose();
+    solid.gamma[ip] = 0;
   }
   else if (solid.mat->type == material->constitutive_model::NEO_HOOKEAN)
   {
     const Matrix3d &FinvT = solid.Finv[ip].transpose();
-    const Matrix3d &PK1 = solid.mat->G*(solid.F.at(ip) - FinvT) + solid.mat->lambda*log(solid.J.at(ip))*FinvT;
-    solid.vol0PK1.at(ip) = solid.vol0.at(ip)*PK1;
-    solid.sigma.at(ip) = 1/solid.J.at(ip)*solid.F.at(ip)*PK1.transpose();
+    const Matrix3d &PK1 = solid.mat->G*(solid.F[ip] - FinvT) + solid.mat->lambda*log(solid.J[ip])*FinvT;
+    solid.vol0PK1[ip] = solid.vol0[ip]*PK1;
+    solid.sigma[ip] = 1/solid.J[ip]*solid.F[ip]*PK1.transpose();
 
-    solid.strain_el.at(ip) = 0.5*(solid.F.at(ip).transpose()*solid.F.at(ip) - Matrix3d::identity());
-    solid.gamma.at(ip) = 0;
+    solid.strain_el[ip] = 0.5*(solid.F[ip].transpose()*solid.F[ip] - Matrix3d::identity());
+    solid.gamma[ip] = 0;
   }
   else
   {
@@ -492,73 +492,73 @@ void Method::update_deformation_gradient_stress(bool doublemapping, Solid &solid
     double plastic_strain_increment = 0;
     Matrix3d sigma_dev;
 
-    double T = solid.mat->cp? solid.T.at(ip): 0;
+    double T = solid.mat->cp? solid.T[ip]: 0;
 
-    solid.mat->eos->compute_pressure(pH, solid.ienergy.at(ip), solid.J.at(ip), solid.rho.at(ip),
-                                      solid.damage.at(ip), solid.D.at(ip), solid.grid->cellsize, T);
+    solid.mat->eos->compute_pressure(pH, solid.ienergy[ip], solid.J[ip], solid.rho[ip],
+                                      solid.damage[ip], solid.D[ip], solid.grid->cellsize, T);
 
     if (solid.mat->cp)
-      pH += solid.mat->alpha*(solid.T.at(ip) - solid.T0);
+      pH += solid.mat->alpha*(solid.T[ip] - solid.T0);
 
     sigma_dev = solid.mat->strength->update_deviatoric_stress(
-      solid.sigma.at(ip), solid.D.at(ip), plastic_strain_increment,
-      solid.eff_plastic_strain.at(ip), solid.eff_plastic_strain_rate.at(ip), solid.damage.at(ip),
+      solid.sigma[ip], solid.D[ip], plastic_strain_increment,
+      solid.eff_plastic_strain[ip], solid.eff_plastic_strain_rate[ip], solid.damage[ip],
       T);
 
-    solid.eff_plastic_strain.at(ip) += plastic_strain_increment;
+    solid.eff_plastic_strain[ip] += plastic_strain_increment;
 
     // compute a characteristic time over which to average the plastic strain
-    solid.eff_plastic_strain_rate.at(ip) += (plastic_strain_increment - solid.eff_plastic_strain_rate.at(ip)*update->dt)/
+    solid.eff_plastic_strain_rate[ip] += (plastic_strain_increment - solid.eff_plastic_strain_rate[ip]*update->dt)/
                                             1000/solid.grid->cellsize*solid.mat->signal_velocity;
-    solid.eff_plastic_strain_rate.at(ip) = MAX(0.0, solid.eff_plastic_strain_rate.at(ip));
+    solid.eff_plastic_strain_rate[ip] = MAX(0.0, solid.eff_plastic_strain_rate[ip]);
 
     if (solid.mat->damage)
-        solid.mat->damage->compute_damage(solid.damage_init.at(ip), solid.damage.at(ip), pH,
-                                          sigma_dev, solid.eff_plastic_strain_rate.at(ip),
+        solid.mat->damage->compute_damage(solid.damage_init[ip], solid.damage[ip], pH,
+                                          sigma_dev, solid.eff_plastic_strain_rate[ip],
                                           plastic_strain_increment, T);
 
     if (solid.mat->temp)
     {
-      solid.mat->temp->compute_heat_source(solid.T.at(ip), solid.gamma.at(ip), SQRT_3_OVER_2*sigma_dev.norm(),
-                                           solid.eff_plastic_strain_rate.at(ip));
+      solid.mat->temp->compute_heat_source(solid.T[ip], solid.gamma[ip], SQRT_3_OVER_2*sigma_dev.norm(),
+                                           solid.eff_plastic_strain_rate[ip]);
       if (is_TL)
-        solid.gamma.at(ip) *= solid.vol0.at(ip)*solid.mat->invcp;
+        solid.gamma[ip] *= solid.vol0[ip]*solid.mat->invcp;
       else
-        solid.gamma.at(ip) *= solid.vol.at(ip)*solid.mat->invcp;
+        solid.gamma[ip] *= solid.vol[ip]*solid.mat->invcp;
     }
     else
-	  solid.gamma.at(ip) = 0;
+	  solid.gamma[ip] = 0;
 
-    solid.sigma.at(ip) = -pH*(1 - (pH < 0? solid.damage.at(ip): 0))*Matrix3d::identity() + sigma_dev;
+    solid.sigma[ip] = -pH*(1 - (pH < 0? solid.damage[ip]: 0))*Matrix3d::identity() + sigma_dev;
 
-      solid.strain_el.at(ip) =
-        (update->dt*solid.D.at(ip).trace() + solid.strain_el.at(ip).trace())/3*Matrix3d::identity() +
-        sigma_dev/solid.mat->G/(1 - (solid.damage.at(ip) > 1e-10? solid.damage.at(ip): 0));
+      solid.strain_el[ip] =
+        (update->dt*solid.D[ip].trace() + solid.strain_el[ip].trace())/3*Matrix3d::identity() +
+        sigma_dev/solid.mat->G/(1 - (solid.damage[ip] > 1e-10? solid.damage[ip]: 0));
 
     if (is_TL)
-      solid.vol0PK1.at(ip) = solid.vol0.at(ip)*solid.J.at(ip)*
-        solid.R.at(ip)*solid.sigma.at(ip)*solid.R.at(ip).transpose()*
+      solid.vol0PK1[ip] = solid.vol0[ip]*solid.J[ip]*
+        solid.R[ip]*solid.sigma[ip]*solid.R[ip].transpose()*
         solid.Finv[ip].transpose();
   }
 
-  if (solid.damage.at(ip) >= 1.0)
+  if (solid.damage[ip] >= 1.0)
     return;
 
-  double p_wave_speed = sqrt((solid.mat->K + FOUR_THIRD*solid.mat->G)/solid.rho.at(ip)) +
+  double p_wave_speed = sqrt((solid.mat->K + FOUR_THIRD*solid.mat->G)/solid.rho[ip]) +
                         MAX(MAX(fabs(solid.v[ip](0)), fabs(solid.v[ip](1))), fabs(solid.v[ip](2)));
 
   if (std::isnan(p_wave_speed))
   {
     cout << "Error: max_p_wave_speed is nan with ip=" << ip
-      << ", ptag.at(ip)=" << solid.ptag.at(ip) << ", rho0.at(ip)=" << solid.rho0.at(ip)<< ", rho.at(ip)=" << solid.rho.at(ip)
-      << ", K=" << solid.mat->K << ", G=" << solid.mat->G << ", J.at(ip)=" << solid.J.at(ip)
+      << ", ptag[ip]=" << solid.ptag[ip] << ", rho0[ip]=" << solid.rho0[ip]<< ", rho[ip]=" << solid.rho[ip]
+      << ", K=" << solid.mat->K << ", G=" << solid.mat->G << ", J[ip]=" << solid.J[ip]
       << endl;
     error->one(FLERR, "");
   }
   else if (p_wave_speed < 0.0)
   {
     cout << "Error: p_wave_speed= " << p_wave_speed
-      << " with ip=" << ip << ", rho.at(ip)=" << solid.rho.at(ip) << ", K=" << solid.mat->K
+      << " with ip=" << ip << ", rho[ip]=" << solid.rho[ip] << ", K=" << solid.mat->K
       << ", G=" << solid.mat->G << endl;
     error->one(FLERR, "");
   }
@@ -567,7 +567,7 @@ void Method::update_deformation_gradient_stress(bool doublemapping, Solid &solid
 
   if (is_TL)
   {
-    Matrix3d eigenvalues = solid.F.at(ip);
+    Matrix3d eigenvalues = solid.F[ip];
     eigendecompose(eigenvalues);
     // EB: revisit
     if (/*esF.info()== Success*/false)
@@ -580,7 +580,7 @@ void Method::update_deformation_gradient_stress(bool doublemapping, Solid &solid
     if (h_ratio == 0)
     {
       cout << "min_h_ratio == 0 with ip=" << ip
-        << "F=\n" <<  solid.F.at(ip) << endl
+        << "F=\n" <<  solid.F[ip] << endl
         << "eigenvalues of F:" << eigenvalues(0, 0) << "\t" << eigenvalues(1, 1) << "\t" << eigenvalues(2, 2) << endl;
       //cout << "esF.info()=" << esF.info() << endl;
       error->one(FLERR, "");
@@ -591,11 +591,11 @@ void Method::update_deformation_gradient_stress(bool doublemapping, Solid &solid
     h_ratio = 1;
   }
 
-  solid.dtCFL.at(ip) = solid.grid->cellsize*h_ratio/p_wave_speed;
+  solid.dtCFL[ip] = solid.grid->cellsize*h_ratio/p_wave_speed;
 
-  if (std::isnan(solid.dtCFL.at(ip)))
+  if (std::isnan(solid.dtCFL[ip]))
   {
-    cout << "Error: dtCFL = " << solid.dtCFL.at(ip) << "\n";
+    cout << "Error: dtCFL = " << solid.dtCFL[ip] << "\n";
     cout << "p_wave_speed = " << p_wave_speed
       << ", grid->cellsize=" << solid.grid->cellsize << endl;
     error->one(FLERR, "");
@@ -610,9 +610,9 @@ void Method::adjust_dt()
   double dtCFL_reduced = 1.0e22;
 
   for (int isolid = 0; isolid < domain->solids.size(); isolid++)
-    for (int ip = 0; ip < domain->solids.at(isolid)->np_local; ip++)
+    for (int ip = 0; ip < domain->solids[isolid]->np_local; ip++)
     {
-      dtCFL = MIN(dtCFL, domain->solids[isolid]->dtCFL.at(ip));
+      dtCFL = MIN(dtCFL, domain->solids[isolid]->dtCFL[ip]);
       if (!dtCFL)
       {
         cout << "Error: dtCFL == 0\n";
@@ -622,7 +622,7 @@ void Method::adjust_dt()
       else if (std::isnan(dtCFL))
       {
         cout << "Error: dtCFL = " << dtCFL << "\n";
-        cout << "domain->solids[" << isolid << "]->dtCFL == " << domain->solids[isolid]->dtCFL.at(ip) << "\n";
+        cout << "domain->solids[" << isolid << "]->dtCFL == " << domain->solids[isolid]->dtCFL[ip] << "\n";
         error->one(FLERR, "");
       }
     }
@@ -635,8 +635,6 @@ void Method::adjust_dt()
 
 void Method::reset()
 {
-  int np_local;
-
   for (int isolid = 0; isolid < domain->solids.size(); isolid++)
   {
     for (int ip = 0; ip < domain->solids[isolid]->np_local; ip++)

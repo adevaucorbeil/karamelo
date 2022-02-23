@@ -119,7 +119,7 @@ void TLMPM::compute_internal_force_nodes(Solid &solid, int ip)
     const Vector3d &wfd = solid.wfd.at(ip).at(i);
 
     Vector3d &f = solid.grid->f[in];
-    const Matrix3d &vol0PK1 = solid.vol0PK1.at(ip);
+    const Matrix3d &vol0PK1 = solid.vol0PK1[ip];
     const Vector3d &x0 = solid.x0[ip];
 
     if (update->sub_method_type == Update::SubMethodType::MLS)
@@ -137,28 +137,28 @@ void TLMPM::update_grid_positions(Grid &grid, int in)
   grid.x[in] += update->dt*grid.v[in];
 }
 
-vector<Matrix3d> &TLMPM::get_gradients(Solid &solid)
+Kokkos::View<Matrix3d*> &TLMPM::get_gradients(Solid &solid)
 {
   return solid.Fdot;
 }
 
 void TLMPM::update_deformation_gradient_matrix(Solid &solid, int ip)
 {
-  solid.F.at(ip) += update->dt*solid.Fdot.at(ip);
+  solid.F[ip] += update->dt*solid.Fdot[ip];
 }
 
 void TLMPM::update_velocity_gradient_matrix(Solid &solid, int ip)
 {
   // polar decomposition of the deformation gradient, F = R*U
-  if (!MPM_Math::PolDec(solid.F.at(ip), solid.R.at(ip)))
+  if (!MPM_Math::PolDec(solid.F[ip], solid.R[ip]))
   {
     cout << "Polar decomposition of deformation gradient failed for particle " << ip << ".\n";
-    cout << "F:" << endl << solid.F.at(ip) << endl;
+    cout << "F:" << endl << solid.F[ip] << endl;
     cout << "timestep:" << endl << update->ntimestep << endl;
     error->one(FLERR, "");
   }
 
   // In TLMPM. L is computed from Fdot:
-  solid.L.at(ip) = solid.Fdot.at(ip)*solid.Finv.at(ip);
-  solid.D.at(ip) = 0.5*(solid.R.at(ip).transpose()*(solid.L.at(ip) + solid.L.at(ip).transpose())*solid.R.at(ip));
+  solid.L[ip] = solid.Fdot[ip]*solid.Finv[ip];
+  solid.D[ip] = 0.5*(solid.R[ip].transpose()*(solid.L[ip] + solid.L[ip].transpose())*solid.R[ip]);
 }

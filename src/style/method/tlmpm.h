@@ -35,7 +35,7 @@ public:
   void compute_mass_nodes(Solid &solid, int ip) override;
   void compute_internal_force_nodes(Solid &solid, int ip) override;
   void update_grid_positions(Grid &grid, int in) override;
-  vector<Matrix3d> &get_gradients(Solid &solid) override;
+  Kokkos::View<Matrix3d*> &get_gradients(Solid &solid) override;
   virtual void update_deformation_gradient_matrix(Solid &solid, int ip) override;
   void update_velocity_gradient_matrix(Solid &solid, int ip) override;
 };

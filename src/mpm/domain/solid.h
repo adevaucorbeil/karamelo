@@ -69,15 +69,15 @@ class Solid : public Pointers {
   Kokkos::View<Vector3d*> mbp;              ///< Particles' external forces times mass
   Kokkos::View<Vector3d*> f;                ///< Particles' internal forces
 
-  vector<Matrix3d> sigma;            ///< Stress matrix
-  vector<Matrix3d> strain_el;        ///< Elastic strain matrix
-  vector<Matrix3d> vol0PK1;          ///< Transpose of the 1st Piola-Kirchhoff matrix times vol0
-  vector<Matrix3d> L;                ///< Velocity gradient matrix
-  vector<Matrix3d> F;                ///< Deformation gradient matrix
-  vector<Matrix3d> R;                ///< Rotation matrix
-  vector<Matrix3d> D;                ///< Symmetric part of L
-  vector<Matrix3d> Finv;             ///< Inverse of the deformation gradient matrix
-  vector<Matrix3d> Fdot;             ///< Rate of deformation gradient matrix
+  Kokkos::View<Matrix3d*> sigma;            ///< Stress matrix
+  Kokkos::View<Matrix3d*> strain_el;        ///< Elastic strain matrix
+  Kokkos::View<Matrix3d*> vol0PK1;          ///< Transpose of the 1st Piola-Kirchhoff matrix times vol0
+  Kokkos::View<Matrix3d*> L;                ///< Velocity gradient matrix
+  Kokkos::View<Matrix3d*> F;                ///< Deformation gradient matrix
+  Kokkos::View<Matrix3d*> R;                ///< Rotation matrix
+  Kokkos::View<Matrix3d*> D;                ///< Symmetric part of L
+  Kokkos::View<Matrix3d*> Finv;             ///< Inverse of the deformation gradient matrix
+  Kokkos::View<Matrix3d*> Fdot;             ///< Rate of deformation gradient matrix
   Matrix3d Di;                       ///< Inertia tensor
   // vector<Matrix3d> BDinv;            ///< APIC B*Dinv tensor
 

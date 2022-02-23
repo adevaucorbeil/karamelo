@@ -243,45 +243,43 @@ void Solid::grow(int nparticles)
 {
   ptag.resize(nparticles);
   x0 = Kokkos::View<Vector3d*>("x0", nparticles);
-  x = Kokkos::View<Vector3d*>("x", nparticles);
+  x  = Kokkos::View<Vector3d*>("x",  nparticles);
 
-  if (method_type == "tlcpdi"
-      || method_type == "ulcpdi")
+  if (method_type == "tlcpdi" || method_type == "ulcpdi")
   {
-
     if (update->method->style == 0)
     { // CPDI-R4
       rp0 = Kokkos::View<Vector3d*>("rp0", domain->dimension*nparticles);
-      rp = Kokkos::View<Vector3d*>("rp", domain->dimension*nparticles);
+      rp  = Kokkos::View<Vector3d*>("rp",  domain->dimension*nparticles);
     }
-    if (update->method->style == 1)
+    else if (update->method->style == 1)
     { // CPDI-Q4
       xpc0 = Kokkos::View<Vector3d*>("xpc0", nc*nparticles);
-      xpc = Kokkos::View<Vector3d*>("xpc", nc*nparticles);
+      xpc  = Kokkos::View<Vector3d*>("xpc",  nc*nparticles);
     }
   }
-
-  if (method_type == "tlcpdi2"
-      || method_type == "ulcpdi2")
+  else if (method_type == "tlcpdi2" || method_type == "ulcpdi2")
   {
     xpc0 = Kokkos::View<Vector3d*>("xpc0", nparticles);
-    xpc = Kokkos::View<Vector3d*>("xpc", nparticles);
+    xpc  = Kokkos::View<Vector3d*>("xpc",  nparticles);
   }
 
-  v = Kokkos::View<Vector3d*>("v", nparticles);
+  v        = Kokkos::View<Vector3d*>("v",        nparticles);
   v_update = Kokkos::View<Vector3d*>("v_update", nparticles);
-  a = Kokkos::View<Vector3d*>("a", nparticles);
-  mbp = Kokkos::View<Vector3d*>("mbp", nparticles);
-  f = Kokkos::View<Vector3d*>("f", nparticles);
-  sigma.resize(nparticles);
-  strain_el.resize(nparticles);
-  vol0PK1.resize(nparticles);
-  L.resize(nparticles);
-  F.resize(nparticles);
-  R.resize(nparticles);
-  D.resize(nparticles);
-  Finv.resize(nparticles);
-  Fdot.resize(nparticles);
+  a        = Kokkos::View<Vector3d*>("a",        nparticles);
+  mbp      = Kokkos::View<Vector3d*>("mbp",      nparticles);
+  f        = Kokkos::View<Vector3d*>("f",        nparticles);
+
+  sigma     = Kokkos::View<Matrix3d*>("sigma     ", nparticles);
+  strain_el = Kokkos::View<Matrix3d*>("strain_el ", nparticles);
+  vol0PK1   = Kokkos::View<Matrix3d*>("vol0PK1   ", nparticles);
+  L         = Kokkos::View<Matrix3d*>("L         ", nparticles);
+  F         = Kokkos::View<Matrix3d*>("F         ", nparticles);
+  R         = Kokkos::View<Matrix3d*>("R         ", nparticles);
+  D         = Kokkos::View<Matrix3d*>("D         ", nparticles);
+  Finv      = Kokkos::View<Matrix3d*>("Finv      ", nparticles);
+  Fdot      = Kokkos::View<Matrix3d*>("Fdot      ", nparticles);
+
   vol0.resize(nparticles);
   vol.resize(nparticles);
   rho0.resize(nparticles);
@@ -1259,11 +1257,11 @@ void Solid::update_particle_domain()
   { // CPDI-R4
     for (int ip = 0; ip < np_local; ip++)
     {
-      rp[dim*ip] = F.at(ip)*rp0[dim*ip];
+      rp[dim*ip] = F[ip]*rp0[dim*ip];
       if (dim >= 2)
-        rp[dim*ip + 1] = F.at(ip)*rp0[dim*ip + 1];
+        rp[dim*ip + 1] = F[ip]*rp0[dim*ip + 1];
       if (dim == 3)
-        rp[dim*ip + 2] = F.at(ip)*rp0[dim*ip + 2];
+        rp[dim*ip + 2] = F[ip]*rp0[dim*ip + 2];
     }
   }
   // if (update->method->style == 1) { // CPDI-Q4
@@ -1642,13 +1640,13 @@ void Solid::write_restart(ofstream *of)
     of->write(reinterpret_cast<const char *>(&x0[ip]), sizeof(Vector3d));
     of->write(reinterpret_cast<const char *>(&x[ip]), sizeof(Vector3d));
     of->write(reinterpret_cast<const char *>(&v[ip]), sizeof(Vector3d));
-    of->write(reinterpret_cast<const char *>(&sigma.at(ip)), sizeof(Matrix3d));
-    of->write(reinterpret_cast<const char *>(&strain_el.at(ip)), sizeof(Matrix3d));
+    of->write(reinterpret_cast<const char *>(&sigma[ip]), sizeof(Matrix3d));
+    of->write(reinterpret_cast<const char *>(&strain_el[ip]), sizeof(Matrix3d));
     if (is_TL)
     {
-      of->write(reinterpret_cast<const char *>(&vol0PK1.at(ip)), sizeof(Matrix3d));
+      of->write(reinterpret_cast<const char *>(&vol0PK1[ip]), sizeof(Matrix3d));
     }
-    of->write(reinterpret_cast<const char *>(&F.at(ip)), sizeof(Matrix3d));
+    of->write(reinterpret_cast<const char *>(&F[ip]), sizeof(Matrix3d));
     of->write(reinterpret_cast<const char *>(&J.at(ip)), sizeof(double));
     of->write(reinterpret_cast<const char *>(&vol0.at(ip)), sizeof(double));
     of->write(reinterpret_cast<const char *>(&rho0.at(ip)), sizeof(double));
@@ -1705,18 +1703,18 @@ void Solid::read_restart(ifstream *ifr)
     a[ip] = Vector3d();
     mbp[ip] = Vector3d();
     f[ip] = Vector3d();
-    ifr->read(reinterpret_cast<char *>(&sigma.at(ip)), sizeof(Matrix3d));
-    ifr->read(reinterpret_cast<char *>(&strain_el.at(ip)), sizeof(Matrix3d));
+    ifr->read(reinterpret_cast<char *>(&sigma[ip]), sizeof(Matrix3d));
+    ifr->read(reinterpret_cast<char *>(&strain_el[ip]), sizeof(Matrix3d));
     if (is_TL)
     {
-      ifr->read(reinterpret_cast<char *>(&vol0PK1.at(ip)), sizeof(Matrix3d));
+      ifr->read(reinterpret_cast<char *>(&vol0PK1[ip]), sizeof(Matrix3d));
     }
-    L.at(ip) = Matrix3d();
-    ifr->read(reinterpret_cast<char *>(&F.at(ip)), sizeof(Matrix3d));
-    R.at(ip) = Matrix3d();
-    D.at(ip) = Matrix3d();
-    Finv.at(ip) = Matrix3d();
-    Fdot.at(ip) = Matrix3d();
+    L[ip] = Matrix3d();
+    ifr->read(reinterpret_cast<char *>(&F[ip]), sizeof(Matrix3d));
+    R[ip] = Matrix3d();
+    D[ip] = Matrix3d();
+    Finv[ip] = Matrix3d();
+    Fdot[ip] = Matrix3d();
     ifr->read(reinterpret_cast<char *>(&J.at(ip)), sizeof(double));
     ifr->read(reinterpret_cast<char *>(&vol0.at(ip)), sizeof(double));
     vol.at(ip) = J.at(ip)*vol0.at(ip);

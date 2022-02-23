@@ -17,6 +17,7 @@
 #include <pointers.h>
 #include <matrix.h>
 #include <vector>
+#include <Kokkos_Core.hpp>
 
 class Solid;
 class Grid;
@@ -59,7 +60,7 @@ class Method : protected Pointers {
 
   virtual void update_grid_positions(Grid &grid, int in) {}
 
-  virtual vector<Matrix3d> &get_gradients(Solid &solid) = 0;
+  virtual Kokkos::View<Matrix3d*> &get_gradients(Solid &solid) = 0;
   void compute_rate_deformation_gradient(bool doublemapping, Solid &solid, int ip);
 
   virtual void update_deformation_gradient_matrix(Solid &solid, int ip) = 0;
