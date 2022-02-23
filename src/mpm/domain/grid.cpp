@@ -417,27 +417,28 @@ void Grid::setup(string cs){
 void Grid::grow(int nn){
   //nnodes_local = nn;
 
-  ntag.resize(nn);
-  nowner.resize(nn);
+  ntag   = Kokkos::View<tagint*>("ntag",   nn);
+  nowner = Kokkos::View<int*>   ("nowner", nn);
 
-  x0 = Kokkos::View<Vector3d*>("x0", nn);
-  x = Kokkos::View<Vector3d*>("x", nn);
-  v = Kokkos::View<Vector3d*>("v", nn);
+  x0       = Kokkos::View<Vector3d*>("x0",       nn);
+  x        = Kokkos::View<Vector3d*>("x",        nn);
+  v        = Kokkos::View<Vector3d*>("v",        nn);
   v_update = Kokkos::View<Vector3d*>("v_update", nn);
-  mb = Kokkos::View<Vector3d*>("mb", nn);
-  f = Kokkos::View<Vector3d*>("f", nn);
-  mass.resize(nn);
-  mask.resize(nn);
+  mb       = Kokkos::View<Vector3d*>("mb",       nn);
+  f        = Kokkos::View<Vector3d*>("f",        nn);
+
+  mass = Kokkos::View<double*>("mass", nn);
+  mask = Kokkos::View<int*>   ("mask", nn);
 
   for (int i=0; i<nn; i++) mask[i] = 1;
 
   ntype.resize(nn);
-  rigid.resize(nn);
+  rigid = Kokkos::View<bool*>   ("rigid", nn);
 
-  T.resize(nn);
-  T_update.resize(nn);
-  Qext.resize(nn);
-  Qint.resize(nn);
+  T        = Kokkos::View<double*>("T",        nn);
+  T_update = Kokkos::View<double*>("T_update", nn);
+  Qext     = Kokkos::View<double*>("Qext",     nn);
+  Qint     = Kokkos::View<double*>("Qint",     nn);
 }
 
 

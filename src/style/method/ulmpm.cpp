@@ -92,7 +92,7 @@ void ULMPM::compute_internal_force_nodes(Solid &solid, int ip)
     const Vector3d &wfd = solid.wfd.at(ip).at(i);
 
     Vector3d &f = solid.grid->f[in];
-    const Matrix3d &vol_sigma = solid.vol.at(ip)*solid.sigma[ip];
+    const Matrix3d &vol_sigma = solid.vol[ip]*solid.sigma[ip];
     const Vector3d &x = solid.x[ip];
 
     if (update->sub_method_type == Update::SubMethodType::MLS)

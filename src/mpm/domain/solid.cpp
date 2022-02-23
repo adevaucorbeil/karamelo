@@ -181,8 +181,8 @@ void Solid::init()
   double mtot_local = 0;
   for (int ip = 0; ip<np_local; ip++)
   {
-    vtot_local += vol.at(ip);
-    mtot_local += mass.at(ip);
+    vtot_local += vol[ip];
+    mtot_local += mass[ip];
   }
 
   MPI_Allreduce(&vtot_local, &vtot, 1, MPI_DOUBLE, MPI_SUM, universe->uworld);
@@ -241,9 +241,9 @@ void Solid::options(vector<string> *args, vector<string>::iterator it)
 
 void Solid::grow(int nparticles)
 {
-  ptag.resize(nparticles);
-  x0 = Kokkos::View<Vector3d*>("x0", nparticles);
-  x  = Kokkos::View<Vector3d*>("x",  nparticles);
+  ptag = Kokkos::View<tagint*>  ("ptag", nparticles);
+  x0   = Kokkos::View<Vector3d*>("x0",   nparticles);
+  x    = Kokkos::View<Vector3d*>("x",    nparticles);
 
   if (method_type == "tlcpdi" || method_type == "ulcpdi")
   {
@@ -270,33 +270,34 @@ void Solid::grow(int nparticles)
   mbp      = Kokkos::View<Vector3d*>("mbp",      nparticles);
   f        = Kokkos::View<Vector3d*>("f",        nparticles);
 
-  sigma     = Kokkos::View<Matrix3d*>("sigma     ", nparticles);
-  strain_el = Kokkos::View<Matrix3d*>("strain_el ", nparticles);
-  vol0PK1   = Kokkos::View<Matrix3d*>("vol0PK1   ", nparticles);
-  L         = Kokkos::View<Matrix3d*>("L         ", nparticles);
-  F         = Kokkos::View<Matrix3d*>("F         ", nparticles);
-  R         = Kokkos::View<Matrix3d*>("R         ", nparticles);
-  D         = Kokkos::View<Matrix3d*>("D         ", nparticles);
-  Finv      = Kokkos::View<Matrix3d*>("Finv      ", nparticles);
-  Fdot      = Kokkos::View<Matrix3d*>("Fdot      ", nparticles);
+  sigma     = Kokkos::View<Matrix3d*>("sigma",      nparticles);
+  strain_el = Kokkos::View<Matrix3d*>("strain_el",  nparticles);
+  vol0PK1   = Kokkos::View<Matrix3d*>("vol0PK1",    nparticles);
+  L         = Kokkos::View<Matrix3d*>("L",          nparticles);
+  F         = Kokkos::View<Matrix3d*>("F",          nparticles);
+  R         = Kokkos::View<Matrix3d*>("R",          nparticles);
+  D         = Kokkos::View<Matrix3d*>("D",          nparticles);
+  Finv      = Kokkos::View<Matrix3d*>("Finv",       nparticles);
+  Fdot      = Kokkos::View<Matrix3d*>("Fdot",       nparticles);
 
-  vol0.resize(nparticles);
-  vol.resize(nparticles);
-  rho0.resize(nparticles);
-  rho.resize(nparticles);
-  mass.resize(nparticles);
-  eff_plastic_strain.resize(nparticles);
-  eff_plastic_strain_rate.resize(nparticles);
-  damage.resize(nparticles);
-  damage_init.resize(nparticles);
-  ienergy.resize(nparticles);
-  mask.resize(nparticles);
-  J.resize(nparticles);
-  dtCFL.resize(nparticles);
-  gamma.resize(nparticles);
+  vol0                    = Kokkos::View<double*>("vol0",                    nparticles);
+  vol                     = Kokkos::View<double*>("vol",                     nparticles);
+  rho0                    = Kokkos::View<double*>("rho0",                    nparticles);
+  rho                     = Kokkos::View<double*>("rho",                     nparticles);
+  mass                    = Kokkos::View<double*>("mass",                    nparticles);
+  eff_plastic_strain      = Kokkos::View<double*>("eff_plastic_strain",      nparticles);
+  eff_plastic_strain_rate = Kokkos::View<double*>("eff_plastic_strain_rate", nparticles);
+  damage                  = Kokkos::View<double*>("damage",                  nparticles);
+  damage_init             = Kokkos::View<double*>("damage_init",             nparticles);
+  ienergy                 = Kokkos::View<double*>("ienergy",                 nparticles);
+  J                       = Kokkos::View<double*>("J",                       nparticles);
+  dtCFL                   = Kokkos::View<double*>("dtCFL",                   nparticles);
+  gamma                   = Kokkos::View<double*>("gamma",                   nparticles);
+
+  mask = Kokkos::View<int*>("mask", nparticles);
   if (mat->cp != 0)
   {
-    T.resize(nparticles);
+    T = Kokkos::View<double*>  ("T", nparticles);
     q = Kokkos::View<Vector3d*>("q", nparticles);
   }
 
@@ -1636,35 +1637,35 @@ void Solid::write_restart(ofstream *of)
   // cout << x[0](0) << ", " << x[0](1) << ", " << x[0](2) << endl;
   for (int ip = 0; ip < np_local; ip++)
   {
-    of->write(reinterpret_cast<const char *>(&ptag.at(ip)), sizeof(tagint));
-    of->write(reinterpret_cast<const char *>(&x0[ip]), sizeof(Vector3d));
-    of->write(reinterpret_cast<const char *>(&x[ip]), sizeof(Vector3d));
-    of->write(reinterpret_cast<const char *>(&v[ip]), sizeof(Vector3d));
-    of->write(reinterpret_cast<const char *>(&sigma[ip]), sizeof(Matrix3d));
+    of->write(reinterpret_cast<const char *>(&ptag     [ip]), sizeof(tagint));
+    of->write(reinterpret_cast<const char *>(&x0       [ip]), sizeof(Vector3d));
+    of->write(reinterpret_cast<const char *>(&x        [ip]), sizeof(Vector3d));
+    of->write(reinterpret_cast<const char *>(&v        [ip]), sizeof(Vector3d));
+    of->write(reinterpret_cast<const char *>(&sigma    [ip]), sizeof(Matrix3d));
     of->write(reinterpret_cast<const char *>(&strain_el[ip]), sizeof(Matrix3d));
     if (is_TL)
     {
       of->write(reinterpret_cast<const char *>(&vol0PK1[ip]), sizeof(Matrix3d));
     }
-    of->write(reinterpret_cast<const char *>(&F[ip]), sizeof(Matrix3d));
-    of->write(reinterpret_cast<const char *>(&J.at(ip)), sizeof(double));
-    of->write(reinterpret_cast<const char *>(&vol0.at(ip)), sizeof(double));
-    of->write(reinterpret_cast<const char *>(&rho0.at(ip)), sizeof(double));
-    of->write(reinterpret_cast<const char *>(&eff_plastic_strain.at(ip)), sizeof(double));
-    of->write(reinterpret_cast<const char *>(&eff_plastic_strain_rate.at(ip)), sizeof(double));
-    of->write(reinterpret_cast<const char *>(&damage.at(ip)), sizeof(double));
-    of->write(reinterpret_cast<const char *>(&damage_init.at(ip)), sizeof(double));
-    of->write(reinterpret_cast<const char *>(&T.at(ip)), sizeof(double));
-    of->write(reinterpret_cast<const char *>(&ienergy.at(ip)), sizeof(double));
-    of->write(reinterpret_cast<const char *>(&mask.at(ip)), sizeof(int));
+    of->write(reinterpret_cast<const char *>(&F                      [ip]), sizeof(Matrix3d));
+    of->write(reinterpret_cast<const char *>(&J                      [ip]), sizeof(double));
+    of->write(reinterpret_cast<const char *>(&vol0                   [ip]), sizeof(double));
+    of->write(reinterpret_cast<const char *>(&rho0                   [ip]), sizeof(double));
+    of->write(reinterpret_cast<const char *>(&eff_plastic_strain     [ip]), sizeof(double));
+    of->write(reinterpret_cast<const char *>(&eff_plastic_strain_rate[ip]), sizeof(double));
+    of->write(reinterpret_cast<const char *>(&damage                 [ip]), sizeof(double));
+    of->write(reinterpret_cast<const char *>(&damage_init            [ip]), sizeof(double));
+    of->write(reinterpret_cast<const char *>(&T                      [ip]), sizeof(double));
+    of->write(reinterpret_cast<const char *>(&ienergy                [ip]), sizeof(double));
+    of->write(reinterpret_cast<const char *>(&mask                   [ip]), sizeof(int));
   }
 }
 
 void Solid::read_restart(ifstream *ifr)
 {
 // Read solid bounds:
-  ifr->read(reinterpret_cast<char *>(&solidlo[0]), 3*sizeof(double));
-  ifr->read(reinterpret_cast<char *>(&solidhi[0]), 3*sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&solidlo   [0]), 3*sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&solidhi   [0]), 3*sizeof(double));
   ifr->read(reinterpret_cast<char *>(&solidsublo[0]), 3*sizeof(double));
   ifr->read(reinterpret_cast<char *>(&solidsubhi[0]), 3*sizeof(double));
   // cout << "solidlo=[" << solidlo[0] << "," << solidlo[1] << "," << solidlo[2] << endl;
@@ -1674,9 +1675,9 @@ void Solid::read_restart(ifstream *ifr)
 
   //init();
   // Read number of particles:
-  ifr->read(reinterpret_cast<char *>(&np), sizeof(bigint));
+  ifr->read(reinterpret_cast<char *>(&np),       sizeof(bigint));
   ifr->read(reinterpret_cast<char *>(&np_local), sizeof(int));
-  ifr->read(reinterpret_cast<char *>(&nc), sizeof(int));
+  ifr->read(reinterpret_cast<char *>(&nc),       sizeof(int));
 
   // Read material's info:
   int iMat = -1;
@@ -1695,15 +1696,15 @@ void Solid::read_restart(ifstream *ifr)
 
   for (int ip = 0; ip < np_local; ip++)
   {
-    ifr->read(reinterpret_cast<char *>(&ptag.at(ip)), sizeof(tagint));
-    ifr->read(reinterpret_cast<char *>(&x0[ip]), sizeof(Vector3d));
-    ifr->read(reinterpret_cast<char *>(&x[ip]), sizeof(Vector3d));
-    ifr->read(reinterpret_cast<char *>(&v[ip]), sizeof(Vector3d));
+    ifr->read(reinterpret_cast<char *>(&ptag[ip]), sizeof(tagint));
+    ifr->read(reinterpret_cast<char *>(&x0  [ip]), sizeof(Vector3d));
+    ifr->read(reinterpret_cast<char *>(&x   [ip]), sizeof(Vector3d));
+    ifr->read(reinterpret_cast<char *>(&v   [ip]), sizeof(Vector3d));
     v_update[ip] = Vector3d();
-    a[ip] = Vector3d();
-    mbp[ip] = Vector3d();
-    f[ip] = Vector3d();
-    ifr->read(reinterpret_cast<char *>(&sigma[ip]), sizeof(Matrix3d));
+    a       [ip] = Vector3d();
+    mbp     [ip] = Vector3d();
+    f       [ip] = Vector3d();
+    ifr->read(reinterpret_cast<char *>(&sigma    [ip]), sizeof(Matrix3d));
     ifr->read(reinterpret_cast<char *>(&strain_el[ip]), sizeof(Matrix3d));
     if (is_TL)
     {
@@ -1711,23 +1712,23 @@ void Solid::read_restart(ifstream *ifr)
     }
     L[ip] = Matrix3d();
     ifr->read(reinterpret_cast<char *>(&F[ip]), sizeof(Matrix3d));
-    R[ip] = Matrix3d();
-    D[ip] = Matrix3d();
+    R   [ip] = Matrix3d();
+    D   [ip] = Matrix3d();
     Finv[ip] = Matrix3d();
     Fdot[ip] = Matrix3d();
-    ifr->read(reinterpret_cast<char *>(&J.at(ip)), sizeof(double));
-    ifr->read(reinterpret_cast<char *>(&vol0.at(ip)), sizeof(double));
-    vol.at(ip) = J.at(ip)*vol0.at(ip);
-    ifr->read(reinterpret_cast<char *>(&rho0.at(ip)), sizeof(double));
-    rho.at(ip) = rho0.at(ip)/J.at(ip);
-    mass.at(ip) = rho0.at(ip)*vol0.at(ip);
-    ifr->read(reinterpret_cast<char *>(&eff_plastic_strain.at(ip)), sizeof(double));
-    ifr->read(reinterpret_cast<char *>(&eff_plastic_strain_rate.at(ip)), sizeof(double));
-    ifr->read(reinterpret_cast<char *>(&damage.at(ip)), sizeof(double));
-    ifr->read(reinterpret_cast<char *>(&damage_init.at(ip)), sizeof(double));
-    ifr->read(reinterpret_cast<char *>(&T.at(ip)), sizeof(double));
-    ifr->read(reinterpret_cast<char *>(&ienergy.at(ip)), sizeof(double));
-    ifr->read(reinterpret_cast<char *>(&mask.at(ip)), sizeof(int));
+    ifr->read(reinterpret_cast<char *>(&J   [ip]), sizeof(double));
+    ifr->read(reinterpret_cast<char *>(&vol0[ip]), sizeof(double));
+    vol[ip] = J[ip]*vol0[ip];
+    ifr->read(reinterpret_cast<char *>(&rho0[ip]), sizeof(double));
+    rho [ip] = rho0[ip]/J   [ip];
+    mass[ip] = rho0[ip]*vol0[ip];
+    ifr->read(reinterpret_cast<char *>(&eff_plastic_strain     [ip]), sizeof(double));
+    ifr->read(reinterpret_cast<char *>(&eff_plastic_strain_rate[ip]), sizeof(double));
+    ifr->read(reinterpret_cast<char *>(&damage                 [ip]), sizeof(double));
+    ifr->read(reinterpret_cast<char *>(&damage_init            [ip]), sizeof(double));
+    ifr->read(reinterpret_cast<char *>(&T                      [ip]), sizeof(double));
+    ifr->read(reinterpret_cast<char *>(&ienergy                [ip]), sizeof(double));
+    ifr->read(reinterpret_cast<char *>(&mask                   [ip]), sizeof(int));
   }
   // cout << x[0](0) << ", " << x[0](1) << ", " << x[0](2) << endl;
 }

@@ -49,7 +49,7 @@ class Solid : public Pointers {
   double vtot;                              ///< Total volume
   double mtot;                              ///< Total mass
 
-  vector<tagint> ptag;                      ///< Unique identifier for particles in the system
+  Kokkos::View<tagint*> ptag;               ///< Unique identifier for particles in the system
 
   Kokkos::View<Vector3d*> x;                ///< Particles' current position
   Kokkos::View<Vector3d*> x0;               ///< Particles' reference position
@@ -81,25 +81,25 @@ class Solid : public Pointers {
   Matrix3d Di;                       ///< Inertia tensor
   // vector<Matrix3d> BDinv;            ///< APIC B*Dinv tensor
 
-  vector<double> J;                         ///< Determinant of the deformation matrix
-  vector<double> vol0;                      ///< Particles' reference volume
-  vector<double> vol;                       ///< Particles' current volume
-  vector<double> rho0;                      ///< Particles' reference density
-  vector<double> rho;                       ///< Particles' current density
-  vector<double> mass;                      ///< Particles' current mass
-  vector<double> eff_plastic_strain;        ///< Particles' effective plastic strain
-  vector<double> eff_plastic_strain_rate;   ///< Particles' effective plastic strain rate
-  vector<double> damage;                    ///< Particles' damage variable
-  vector<double> damage_init;               ///< Particles' damage initiation variable
-  vector<double> ienergy;                   ///< Particles' internal energy
-  vector<int> mask;                         ///< Particles' group mask
+  Kokkos::View<double*> J;                         ///< Determinant of the deformation matrix
+  Kokkos::View<double*> vol0;                      ///< Particles' reference volume
+  Kokkos::View<double*> vol;                       ///< Particles' current volume
+  Kokkos::View<double*> rho0;                      ///< Particles' reference density
+  Kokkos::View<double*> rho;                       ///< Particles' current density
+  Kokkos::View<double*> mass;                      ///< Particles' current mass
+  Kokkos::View<double*> eff_plastic_strain;        ///< Particles' effective plastic strain
+  Kokkos::View<double*> eff_plastic_strain_rate;   ///< Particles' effective plastic strain rate
+  Kokkos::View<double*> damage;                    ///< Particles' damage variable
+  Kokkos::View<double*> damage_init;               ///< Particles' damage initiation variable
+  Kokkos::View<double*> ienergy;                   ///< Particles' internal energy
+  Kokkos::View<int*> mask;                         ///< Particles' group mask
 
-  vector<double> T;                         ///< Particles' current temperature
-  vector<double> T_old;                     ///< Particles' temperature at previous step
-  vector<double> gamma;                     ///< Particles' heat source
+  Kokkos::View<double*> T;                         ///< Particles' current temperature
+  Kokkos::View<double*> T_old;                     ///< Particles' temperature at previous step
+  Kokkos::View<double*> gamma;                     ///< Particles' heat source
   Kokkos::View<Vector3d*> q;                       ///< Particles' heat flux
   
-  vector<double> dtCFL;
+  Kokkos::View<double*> dtCFL;
 
   vector<vector<int>> neigh_n;              ///< Particles' node neighbors
   vector<vector<double>> wf;                ///< Particles' node neighbors' weight functions \f$\Phi\f$

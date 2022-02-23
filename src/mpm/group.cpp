@@ -123,7 +123,7 @@ void Group::assign(vector<string> args)
 
 	    Kokkos::View<Vector3d*> *x;
 	    int nmax;
-	    vector<int> *mask;
+	    Kokkos::View<int*> *mask;
 
 	    if (pon[igroup] == "particles")
 	      {
@@ -181,7 +181,7 @@ void Group::assign(vector<string> args)
 
 	    Kokkos::View<Vector3d*> *x;
 	    int nmax;
-	    vector<int> *mask;
+	    Kokkos::View<int*> *mask;
 
 	    if (pon[igroup] == "particles")
 	      {
@@ -263,9 +263,9 @@ int Group::find_unused()
 double Group::xcm(int igroup, int dir)
 {
   Kokkos::View<Vector3d*> *x;
-  vector<double> *mass;
+  Kokkos::View<double*> *mass;
   int nmax;
-  vector<int> *mask;
+  Kokkos::View<int*> *mask;
   double com = 0;
   double mass_tot = 0;
   int groupbit    = group->bitmask[igroup];
@@ -344,7 +344,7 @@ double Group::internal_force(int igroup, int dir)
   
   Kokkos::View<Vector3d*> *f;
   int nmax;
-  vector<int> *mask;
+  Kokkos::View<int*> *mask;
   double resulting_force = 0;
   int groupbit           = group->bitmask[igroup];
 
@@ -419,7 +419,7 @@ double Group::external_force(int igroup, int dir)
   
   Kokkos::View<Vector3d*> *f;
   int nmax;
-  vector<int> *mask;
+  Kokkos::View<int*> *mask;
   double resulting_force = 0;
   int groupbit           = group->bitmask[igroup];
 
@@ -547,7 +547,7 @@ void Group::read_restart(ifstream *ifr) {
 
         Kokkos::View<Vector3d*> *x;
         int nmax;
-        vector<int> *mask;
+        Kokkos::View<int*> *mask;
 
         if (pon[igroup] == "particles") {
           x = &domain->solids[isolid]->x0;
@@ -589,7 +589,7 @@ void Group::read_restart(ifstream *ifr) {
     } else {
       Kokkos::View<Vector3d*> *x;
       int nmax;
-      vector<int> *mask;
+      Kokkos::View<int*> *mask;
 
       if (pon[igroup] == "particles") {
         x = &domain->solids[solid[igroup]]->x0;
