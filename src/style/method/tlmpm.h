@@ -27,17 +27,6 @@ MethodStyle(tlmpm,TLMPM)
 class TLMPM : public Method {
 public:
   TLMPM(class MPM *);
-
-  void setup(vector<string>);
-  void compute_grid_weight_functions_and_gradients(Solid &solid, int ip) override;
-  vector<Grid *> grids() override;
-  void reset_mass_nodes(Grid &grid, int in) override;
-  void compute_mass_nodes(Solid &solid, int ip) override;
-  void compute_internal_force_nodes(Solid &solid, int ip) override;
-  void update_grid_positions(Grid &grid, int in) override;
-  Kokkos::View<Matrix3d*> &get_gradients(Solid &solid) override;
-  virtual void update_deformation_gradient_matrix(Solid &solid, int ip) override;
-  void update_velocity_gradient_matrix(Solid &solid, int ip) override;
 };
 
 // double linear_basis_function(double, int);

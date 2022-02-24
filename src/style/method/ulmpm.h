@@ -27,18 +27,7 @@ MethodStyle(ulmpm,ULMPM)
 
 class ULMPM : public Method {
  public:
-  bool apic;
-  
   ULMPM(class MPM *);
-
-  void setup(vector<string> args) override;
-  vector<Grid *> grids() override;
-  void compute_internal_force_nodes(Solid &solid, int ip) override;
-  void check_particle_in_domain(const Vector3d &x, int ip) override;
-  Kokkos::View<Matrix3d*> &get_gradients(Solid &solid) override;
-  virtual void update_deformation_gradient_matrix(Solid &solid, int ip) override;
-  void update_velocity_gradient_matrix(Solid &solid, int ip) override;
-  void exchange_particles() override;
 };
 
 // double linear_basis_function(double, int);

@@ -34,43 +34,38 @@ class Method : protected Pointers {
 
   Method(class MPM *);
 
-  virtual void setup(vector<string>) = 0;
-  virtual void compute_grid_weight_functions_and_gradients(Solid &solid, int ip);
+  void setup(vector<string> args);
+  void compute_grid_weight_functions_and_gradients(Solid &solid, int ip);
 
   bool apic();
-  virtual vector<Grid *> grids() = 0;
+  vector<Grid *> grids();
   
-  virtual void reset_mass_nodes(Grid &grid, int in);
-  virtual void compute_mass_nodes(Solid &solid, int ip);
+  void reset_mass_nodes(Grid &grid, int in);
+  void compute_mass_nodes(Solid &solid, int ip);
 
   void reset_velocity_nodes(Grid &grid, int in);
   void compute_velocity_nodes(Solid &solid, int ip);
 
   void reset_force_nodes(Grid &grid, int in);
-  virtual void compute_internal_force_nodes(Solid &solid, int ip) = 0;
   void compute_force_nodes(Solid &solid, int ip);
 
   void update_grid_velocities(Grid &grid, int in);
 
   void compute_velocity_acceleration(Solid &solid, int ip);
 
-  virtual void check_particle_in_domain(const Vector3d &x, int ip) {}
   void update_position(Solid &solid, int ip);
   void advance_particles(Solid &solid, int ip);
 
-  virtual void update_grid_positions(Grid &grid, int in) {}
+  void update_grid_positions(Grid &grid, int in);
 
-  virtual Kokkos::View<Matrix3d*> &get_gradients(Solid &solid) = 0;
   void compute_rate_deformation_gradient(bool doublemapping, Solid &solid, int ip);
 
-  virtual void update_deformation_gradient_matrix(Solid &solid, int ip) = 0;
-  virtual void update_deformation_gradient_determinant(Solid &solid, int ip);
-  virtual void update_velocity_gradient_matrix(Solid &solid, int ip) = 0;
+  void update_deformation_gradient_determinant(Solid &solid, int ip);
   void update_deformation_gradient_stress(bool doublemapping, Solid &solid, int ip);
   
   void adjust_dt();
   void reset();
-  virtual void exchange_particles() {};
+  void exchange_particles();
 
   bool is_TL;         ///< true: the method is total Lagrangian; false: it is updated Lagrangian
   bool is_CPDI;       ///< true if the method is a CPDI-like
