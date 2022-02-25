@@ -121,9 +121,9 @@ void Group::assign(vector<string> args)
 	for (int isolid = 0; isolid < domain->solids.size(); isolid++)
 	  {
 
-	    Kokkos::View<Vector3d*> *x;
+	    Kokkos::View<Vector3d*, MemorySpace> *x;
 	    int nmax;
-	    Kokkos::View<int*> *mask;
+	    Kokkos::View<int*, MemorySpace> *mask;
 
 	    if (pon[igroup] == "particles")
 	      {
@@ -179,9 +179,9 @@ void Group::assign(vector<string> args)
 	      error->all(FLERR, "Error: cannot find solid with ID " + args[i] + ".\n");
 	    }
 
-	    Kokkos::View<Vector3d*> *x;
+	    Kokkos::View<Vector3d*, MemorySpace> *x;
 	    int nmax;
-	    Kokkos::View<int*> *mask;
+	    Kokkos::View<int*, MemorySpace> *mask;
 
 	    if (pon[igroup] == "particles")
 	      {
@@ -262,10 +262,10 @@ int Group::find_unused()
 
 double Group::xcm(int igroup, int dir)
 {
-  Kokkos::View<Vector3d*> *x;
-  Kokkos::View<double*> *mass;
+  Kokkos::View<Vector3d*, MemorySpace> *x;
+  Kokkos::View<double*, MemorySpace> *mass;
   int nmax;
-  Kokkos::View<int*> *mask;
+  Kokkos::View<int*, MemorySpace> *mask;
   double com = 0;
   double mass_tot = 0;
   int groupbit    = group->bitmask[igroup];
@@ -342,9 +342,9 @@ double Group::xcm(int igroup, int dir)
 double Group::internal_force(int igroup, int dir)
 {
   
-  Kokkos::View<Vector3d*> *f;
+  Kokkos::View<Vector3d*, MemorySpace> *f;
   int nmax;
-  Kokkos::View<int*> *mask;
+  Kokkos::View<int*, MemorySpace> *mask;
   double resulting_force = 0;
   int groupbit           = group->bitmask[igroup];
 
@@ -417,9 +417,9 @@ double Group::external_force(int igroup, int dir)
 		 + names[igroup] + ".\n");
     }
   
-  Kokkos::View<Vector3d*> *f;
+  Kokkos::View<Vector3d*, MemorySpace> *f;
   int nmax;
-  Kokkos::View<int*> *mask;
+  Kokkos::View<int*, MemorySpace> *mask;
   double resulting_force = 0;
   int groupbit           = group->bitmask[igroup];
 
@@ -545,9 +545,9 @@ void Group::read_restart(ifstream *ifr) {
       // Consider all solids
       for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
 
-        Kokkos::View<Vector3d*> *x;
+        Kokkos::View<Vector3d*, MemorySpace> *x;
         int nmax;
-        Kokkos::View<int*> *mask;
+        Kokkos::View<int*, MemorySpace> *mask;
 
         if (pon[igroup] == "particles") {
           x = &domain->solids[isolid]->x0;
@@ -587,9 +587,9 @@ void Group::read_restart(ifstream *ifr) {
 	}
       }
     } else {
-      Kokkos::View<Vector3d*> *x;
+      Kokkos::View<Vector3d*, MemorySpace> *x;
       int nmax;
-      Kokkos::View<int*> *mask;
+      Kokkos::View<int*, MemorySpace> *mask;
 
       if (pon[igroup] == "particles") {
         x = &domain->solids[solid[igroup]]->x0;

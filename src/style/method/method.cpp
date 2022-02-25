@@ -49,12 +49,12 @@ void Method::compute_grid_weight_functions_and_gradients(Solid &solid, int ip)
   Vector3d r;
   double s[3], sd[3];
   const Vector3d &xp = solid.x[ip];
-  Kokkos::View<Vector3d*> &x0 = solid.grid->x0;
+  Kokkos::View<Vector3d*, MemorySpace> &x0 = solid.grid->x0;
   double inv_cellsize = 1/solid.grid->cellsize;
   double wf;
   Vector3d wfd;
 
-  Kokkos::View<Vector3i*> &ntype = solid.grid->ntype;
+  Kokkos::View<Vector3i*, MemorySpace> &ntype = solid.grid->ntype;
 
   vector<tagint> &map_ntag = solid.grid->map_ntag;
 
@@ -265,12 +265,6 @@ vector<Grid *> Method::grids()
   return grids;
 }
 
-void Method::reset_mass_nodes(Grid &grid, int in)
-{
-  if (!is_TL || !update->atimestep)
-    grid.mass[in] = 0;
-}
-
 void Method::compute_mass_nodes(Solid &solid, int ip)
 {
   if (!is_TL || !update->atimestep)
@@ -282,14 +276,6 @@ void Method::compute_mass_nodes(Solid &solid, int ip)
       if (!solid.grid->rigid[in] || solid.mat->rigid)
         solid.grid->mass[in] += wf*solid.mass[ip];
     }
-}
-
-void Method::reset_velocity_nodes(Grid &grid, int in)
-{
-  grid.v[in] = Vector3d();
-  grid.mb[in] = Vector3d();
-  if (temp)
-    grid.T[in] = 0;
 }
 
 void Method::compute_velocity_nodes(Solid &solid, int ip)
@@ -325,17 +311,6 @@ void Method::compute_velocity_nodes(Solid &solid, int ip)
       if (temp)
         solid.grid->T[in] += normalized_wf*solid.T[ip];
     }
-  }
-}
-
-void Method::reset_force_nodes(Grid &grid, int in)
-{
-  grid.f[in] = Vector3d();
-  grid.mb[in] = Vector3d();
-  if (temp)
-  {
-    grid.Qint[in] = 0;
-    grid.Qext[in] = 0;
   }
 }
 
@@ -481,8 +456,8 @@ void Method::compute_rate_deformation_gradient(bool doublemapping, Solid &solid,
   if (solid.mat->rigid)
     return;
 
-  Kokkos::View<Matrix3d*> &gradients = is_TL? solid.Fdot: solid.L;
-  const Kokkos::View<Vector3d*> &vn = doublemapping? solid.grid->v: solid.grid->v_update;
+  Kokkos::View<Matrix3d*, MemorySpace> &gradients = is_TL? solid.Fdot: solid.L;
+  const Kokkos::View<Vector3d*, MemorySpace> &vn = doublemapping? solid.grid->v: solid.grid->v_update;
 
   gradients[ip] = Matrix3d();
   if (temp)
@@ -776,7 +751,7 @@ void Method::exchange_particles()
     return;
   
   int ip, np_local_old;
-  Kokkos::View<Vector3d*> *xp;
+  Kokkos::View<Vector3d*, MemorySpace> *xp;
   // vector<int> np_send;
   vector<vector<double>> buf_send_vect(universe->nprocs);
   vector<vector<double>> buf_recv_vect(universe->nprocs);

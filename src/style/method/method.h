@@ -40,13 +40,13 @@ class Method : protected Pointers {
   bool apic();
   vector<Grid *> grids();
   
-  void reset_mass_nodes(Grid &grid, int in);
+  KOKKOS_INLINE_FUNCTION void reset_mass_nodes(Grid &grid, int in) const;
   void compute_mass_nodes(Solid &solid, int ip);
 
-  void reset_velocity_nodes(Grid &grid, int in);
+  KOKKOS_INLINE_FUNCTION void reset_velocity_nodes(Grid &grid, int in) const;
   void compute_velocity_nodes(Solid &solid, int ip);
 
-  void reset_force_nodes(Grid &grid, int in);
+  KOKKOS_INLINE_FUNCTION void reset_force_nodes(Grid &grid, int in) const;
   void compute_force_nodes(Solid &solid, int ip);
 
   void update_grid_velocities(Grid &grid, int in);
@@ -76,6 +76,8 @@ class Method : protected Pointers {
   double (*basis_function)(double, int);
   double (*derivative_basis_function)(double, int, double);
 };
+
+#include <method.inl>
 
 #endif
 
