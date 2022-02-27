@@ -5,7 +5,7 @@
 // returns q and sets matrix to r
 template<typename T, std::size_t N,
   typename V = decltype(std::declval<T>()/std::declval<T>())>
-KOKKOS_INLINE_FUNCTION Matrix<V, N, N>
+Matrix<V, N, N>
 qr_decompose(Matrix<T, N, N> &matrix)
 {
   Matrix<V, N, N> q = Matrix<V, N, N>::identity();

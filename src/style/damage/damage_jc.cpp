@@ -38,7 +38,7 @@ DamageJohnsonCook::DamageJohnsonCook(MPM *mpm, vector<string> args)
   if (args[2].compare("restart") ==
       0) { // If the keyword restart, we are expecting to have read_restart()
            // launched right after.
-    d1, d2, d3, d4, d5, epsdot0,Tr, Tm, Tmr = 0;
+    d1 = d2 = d3 = d4 = d5 = epsdot0 = Tr = Tm = Tmr = 0;
     return;
   }
 

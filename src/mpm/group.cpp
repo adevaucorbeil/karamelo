@@ -303,8 +303,6 @@ double Group::xcm(int igroup, int dir)
   }
   else
     {
-      int isolid = solid[igroup];
-
 	  if (pon[igroup] == "particles")
 	    {
 	      x    = &domain->solids[solid[igroup]]->x;
@@ -378,8 +376,6 @@ double Group::internal_force(int igroup, int dir)
   }
   else
   {
-    int isolid = solid[igroup];
-
     if (pon[igroup] == "particles")
       {
 	f =    &domain->solids[solid[igroup]]->f;
@@ -444,8 +440,6 @@ double Group::external_force(int igroup, int dir)
   }
   else
   {
-    int isolid = solid[igroup];
-
     f =    &domain->solids[solid[igroup]]->f;
     nmax = domain->solids[solid[igroup]]->np_local;
     mask = &domain->solids[solid[igroup]]->mask;

@@ -35,8 +35,6 @@ void Error::all(const char *file, int line, const string str)
   MPI_Barrier(universe->uworld);
 
   int me;
-  const char *lastcmd = (const char*)"(unknown)";
-
   MPI_Comm_rank(universe->uworld, &me);
 
   if (universe->me == 0) {
@@ -56,8 +54,6 @@ void Error::all(const char *file, int line, const string str)
 void Error::one(const char *file, int line, const string str)
 {
   int me;
-  const char *lastcmd = (const char*)"(unknown)";
-
   MPI_Comm_rank(universe->uworld, &me);
 
   cout << "Error at line " << input->line_number << ": " << str

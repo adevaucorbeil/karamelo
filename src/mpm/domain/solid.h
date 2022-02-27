@@ -47,7 +47,7 @@ class Solid : public Pointers {
   double vtot;                              ///< Total volume
   double mtot;                              ///< Total mass
 
-  Kokkos::View<tagint*> ptag;               ///< Unique identifier for particles in the system
+  Kokkos::View<tagint*, MemorySpace> ptag;               ///< Unique identifier for particles in the system
 
   Kokkos::View<Vector3d*, MemorySpace> x;                ///< Particles' current position
   Kokkos::View<Vector3d*, MemorySpace> x0;               ///< Particles' reference position

@@ -241,72 +241,72 @@ void Solid::options(vector<string> *args, vector<string>::iterator it)
 
 void Solid::grow(int nparticles)
 {
-  ptag = Kokkos::View<tagint*>  ("ptag", nparticles);
-  x0   = Kokkos::View<Vector3d*>("x0",   nparticles);
-  x    = Kokkos::View<Vector3d*>("x",    nparticles);
+  ptag = Kokkos::View<tagint*, MemorySpace>  ("ptag", nparticles);
+  x0   = Kokkos::View<Vector3d*, MemorySpace>("x0",   nparticles);
+  x    = Kokkos::View<Vector3d*, MemorySpace>("x",    nparticles);
 
   if (method_type == "tlcpdi" || method_type == "ulcpdi")
   {
     if (update->method->style == 0)
     { // CPDI-R4
-      rp0 = Kokkos::View<Vector3d*>("rp0", domain->dimension*nparticles);
-      rp  = Kokkos::View<Vector3d*>("rp",  domain->dimension*nparticles);
+      rp0 = Kokkos::View<Vector3d*, MemorySpace>("rp0", domain->dimension*nparticles);
+      rp  = Kokkos::View<Vector3d*, MemorySpace>("rp",  domain->dimension*nparticles);
     }
     else if (update->method->style == 1)
     { // CPDI-Q4
-      xpc0 = Kokkos::View<Vector3d*>("xpc0", nc*nparticles);
-      xpc  = Kokkos::View<Vector3d*>("xpc",  nc*nparticles);
+      xpc0 = Kokkos::View<Vector3d*, MemorySpace>("xpc0", nc*nparticles);
+      xpc  = Kokkos::View<Vector3d*, MemorySpace>("xpc",  nc*nparticles);
     }
   }
   else if (method_type == "tlcpdi2" || method_type == "ulcpdi2")
   {
-    xpc0 = Kokkos::View<Vector3d*>("xpc0", nparticles);
-    xpc  = Kokkos::View<Vector3d*>("xpc",  nparticles);
+    xpc0 = Kokkos::View<Vector3d*, MemorySpace>("xpc0", nparticles);
+    xpc  = Kokkos::View<Vector3d*, MemorySpace>("xpc",  nparticles);
   }
 
-  v        = Kokkos::View<Vector3d*>("v",        nparticles);
-  v_update = Kokkos::View<Vector3d*>("v_update", nparticles);
-  a        = Kokkos::View<Vector3d*>("a",        nparticles);
-  mbp      = Kokkos::View<Vector3d*>("mbp",      nparticles);
-  f        = Kokkos::View<Vector3d*>("f",        nparticles);
+  v        = Kokkos::View<Vector3d*, MemorySpace>("v",        nparticles);
+  v_update = Kokkos::View<Vector3d*, MemorySpace>("v_update", nparticles);
+  a        = Kokkos::View<Vector3d*, MemorySpace>("a",        nparticles);
+  mbp      = Kokkos::View<Vector3d*, MemorySpace>("mbp",      nparticles);
+  f        = Kokkos::View<Vector3d*, MemorySpace>("f",        nparticles);
 
-  sigma     = Kokkos::View<Matrix3d*>("sigma",      nparticles);
-  strain_el = Kokkos::View<Matrix3d*>("strain_el",  nparticles);
-  vol0PK1   = Kokkos::View<Matrix3d*>("vol0PK1",    nparticles);
-  L         = Kokkos::View<Matrix3d*>("L",          nparticles);
-  F         = Kokkos::View<Matrix3d*>("F",          nparticles);
-  R         = Kokkos::View<Matrix3d*>("R",          nparticles);
-  D         = Kokkos::View<Matrix3d*>("D",          nparticles);
-  Finv      = Kokkos::View<Matrix3d*>("Finv",       nparticles);
-  Fdot      = Kokkos::View<Matrix3d*>("Fdot",       nparticles);
+  sigma     = Kokkos::View<Matrix3d*, MemorySpace>("sigma",      nparticles);
+  strain_el = Kokkos::View<Matrix3d*, MemorySpace>("strain_el",  nparticles);
+  vol0PK1   = Kokkos::View<Matrix3d*, MemorySpace>("vol0PK1",    nparticles);
+  L         = Kokkos::View<Matrix3d*, MemorySpace>("L",          nparticles);
+  F         = Kokkos::View<Matrix3d*, MemorySpace>("F",          nparticles);
+  R         = Kokkos::View<Matrix3d*, MemorySpace>("R",          nparticles);
+  D         = Kokkos::View<Matrix3d*, MemorySpace>("D",          nparticles);
+  Finv      = Kokkos::View<Matrix3d*, MemorySpace>("Finv",       nparticles);
+  Fdot      = Kokkos::View<Matrix3d*, MemorySpace>("Fdot",       nparticles);
 
-  vol0                    = Kokkos::View<double*>("vol0",                    nparticles);
-  vol                     = Kokkos::View<double*>("vol",                     nparticles);
-  rho0                    = Kokkos::View<double*>("rho0",                    nparticles);
-  rho                     = Kokkos::View<double*>("rho",                     nparticles);
-  mass                    = Kokkos::View<double*>("mass",                    nparticles);
-  eff_plastic_strain      = Kokkos::View<double*>("eff_plastic_strain",      nparticles);
-  eff_plastic_strain_rate = Kokkos::View<double*>("eff_plastic_strain_rate", nparticles);
-  damage                  = Kokkos::View<double*>("damage",                  nparticles);
-  damage_init             = Kokkos::View<double*>("damage_init",             nparticles);
-  ienergy                 = Kokkos::View<double*>("ienergy",                 nparticles);
-  J                       = Kokkos::View<double*>("J",                       nparticles);
-  dtCFL                   = Kokkos::View<double*>("dtCFL",                   nparticles);
-  gamma                   = Kokkos::View<double*>("gamma",                   nparticles);
+  vol0                    = Kokkos::View<double*, MemorySpace>("vol0",                    nparticles);
+  vol                     = Kokkos::View<double*, MemorySpace>("vol",                     nparticles);
+  rho0                    = Kokkos::View<double*, MemorySpace>("rho0",                    nparticles);
+  rho                     = Kokkos::View<double*, MemorySpace>("rho",                     nparticles);
+  mass                    = Kokkos::View<double*, MemorySpace>("mass",                    nparticles);
+  eff_plastic_strain      = Kokkos::View<double*, MemorySpace>("eff_plastic_strain",      nparticles);
+  eff_plastic_strain_rate = Kokkos::View<double*, MemorySpace>("eff_plastic_strain_rate", nparticles);
+  damage                  = Kokkos::View<double*, MemorySpace>("damage",                  nparticles);
+  damage_init             = Kokkos::View<double*, MemorySpace>("damage_init",             nparticles);
+  ienergy                 = Kokkos::View<double*, MemorySpace>("ienergy",                 nparticles);
+  J                       = Kokkos::View<double*, MemorySpace>("J",                       nparticles);
+  dtCFL                   = Kokkos::View<double*, MemorySpace>("dtCFL",                   nparticles);
+  gamma                   = Kokkos::View<double*, MemorySpace>("gamma",                   nparticles);
 
-  mask = Kokkos::View<int*>("mask", nparticles);
+  mask = Kokkos::View<int*, MemorySpace>("mask", nparticles);
   if (mat->cp != 0)
   {
-    T = Kokkos::View<double*>  ("T", nparticles);
-    q = Kokkos::View<Vector3d*>("q", nparticles);
+    T = Kokkos::View<double*, MemorySpace>  ("T", nparticles);
+    q = Kokkos::View<Vector3d*, MemorySpace>("q", nparticles);
   }
 
   int neighbor_nodes_per_particle = 16;
 
-  neigh_n    = Kokkos::View<int**>     ("neigh_n",   nparticles, neighbor_nodes_per_particle);
-  wf         = Kokkos::View<double**>  ("wf",        nparticles, neighbor_nodes_per_particle);
-  wf_corners = Kokkos::View<double***> ("wfcorners", nparticles, neighbor_nodes_per_particle, nc);
-  wfd        = Kokkos::View<Vector3d**>("wfd",       nparticles, neighbor_nodes_per_particle);
+  neigh_n    = Kokkos::View<int**, MemorySpace>     ("neigh_n",   nparticles, neighbor_nodes_per_particle);
+  wf         = Kokkos::View<double**, MemorySpace>  ("wf",        nparticles, neighbor_nodes_per_particle);
+  wf_corners = Kokkos::View<double***, MemorySpace> ("wfcorners", nparticles, neighbor_nodes_per_particle, nc);
+  wfd        = Kokkos::View<Vector3d**, MemorySpace>("wfd",       nparticles, neighbor_nodes_per_particle);
 }
 
 void Solid::compute_position_corners()
@@ -1269,7 +1269,6 @@ void Solid::read_mesh(string fileName)
   string line;
 
   int id;
-  int length;
   int elemType;
   vector<string> splitLine;
   array<double, 3> xn;
@@ -1396,8 +1395,6 @@ void Solid::read_mesh(string fileName)
         getline(file, line);
 
         splitLine = split(line, "\t ");
-
-        length = splitLine.size();
 
         elemType = stoi(splitLine[1]);
         // elemType == 1: 2-node   line element

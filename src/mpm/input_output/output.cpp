@@ -126,9 +126,6 @@ void Output::setup(){
 }
 
 void Output::write(bigint ntimestep){
-
-  bigint nsteps = update->nsteps;
-
   // cout << "In Output::write\n";
   // cout << "restart_flag = " << restart_flag << endl;
   // cout << "next_restart = " << next_restart << endl;

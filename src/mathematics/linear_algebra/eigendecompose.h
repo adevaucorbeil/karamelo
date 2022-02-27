@@ -5,7 +5,7 @@
 // diagonalizes matrix and returns matrix of eigenvectors
 template<typename T, std::size_t N,
   typename V = decltype(std::declval<T>()/std::declval<T>())>
-KOKKOS_INLINE_FUNCTION Matrix<V, N, N>
+Matrix<V, N, N>
 eigendecompose(Matrix<T, N, N> &matrix)
 {
   Matrix<V, N, N> eigenvectors = Matrix<V, N, N>::identity();

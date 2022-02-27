@@ -36,9 +36,9 @@ Cylinder::Cylinder(MPM *mpm, vector<string> args) : Region(mpm, args)
   if (args[2].compare("restart") ==
       0) { // If the keyword restart, we are expecting to have read_restart()
            // launched right after.
-    c1, c2, R, RSq, lo, hi = 0;
+    c1 = c2 = R = RSq = lo = hi = 0;
     axis = 'x';
-    xlo, xhi, ylo, yhi, zlo, zhi = 0;
+    xlo = xhi = ylo = yhi = zlo = zhi = 0;
     return;
   }
 

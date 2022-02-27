@@ -417,28 +417,28 @@ void Grid::setup(string cs){
 void Grid::grow(int nn){
   //nnodes_local = nn;
 
-  ntag   = Kokkos::View<tagint*>("ntag",   nn);
-  nowner = Kokkos::View<int*>   ("nowner", nn);
+  ntag   = Kokkos::View<tagint*, MemorySpace>("ntag",   nn);
+  nowner = Kokkos::View<int*, MemorySpace>   ("nowner", nn);
 
-  x0       = Kokkos::View<Vector3d*>("x0",       nn);
-  x        = Kokkos::View<Vector3d*>("x",        nn);
-  v        = Kokkos::View<Vector3d*>("v",        nn);
-  v_update = Kokkos::View<Vector3d*>("v_update", nn);
-  mb       = Kokkos::View<Vector3d*>("mb",       nn);
-  f        = Kokkos::View<Vector3d*>("f",        nn);
+  x0       = Kokkos::View<Vector3d*, MemorySpace>("x0",       nn);
+  x        = Kokkos::View<Vector3d*, MemorySpace>("x",        nn);
+  v        = Kokkos::View<Vector3d*, MemorySpace>("v",        nn);
+  v_update = Kokkos::View<Vector3d*, MemorySpace>("v_update", nn);
+  mb       = Kokkos::View<Vector3d*, MemorySpace>("mb",       nn);
+  f        = Kokkos::View<Vector3d*, MemorySpace>("f",        nn);
 
-  mass = Kokkos::View<double*>("mass", nn);
-  mask = Kokkos::View<int*>   ("mask", nn);
+  mass = Kokkos::View<double*, MemorySpace>("mass", nn);
+  mask = Kokkos::View<int*, MemorySpace>   ("mask", nn);
 
   for (int i=0; i<nn; i++) mask[i] = 1;
 
-  ntype = Kokkos::View<Vector3i*>("ntype", nn);
-  rigid = Kokkos::View<bool*>    ("rigid", nn);
+  ntype = Kokkos::View<Vector3i*, MemorySpace>("ntype", nn);
+  rigid = Kokkos::View<bool*, MemorySpace>    ("rigid", nn);
 
-  T        = Kokkos::View<double*>("T",        nn);
-  T_update = Kokkos::View<double*>("T_update", nn);
-  Qext     = Kokkos::View<double*>("Qext",     nn);
-  Qint     = Kokkos::View<double*>("Qint",     nn);
+  T        = Kokkos::View<double*, MemorySpace>("T",        nn);
+  T_update = Kokkos::View<double*, MemorySpace>("T_update", nn);
+  Qext     = Kokkos::View<double*, MemorySpace>("Qext",     nn);
+  Qint     = Kokkos::View<double*, MemorySpace>("Qint",     nn);
 }
 
 

@@ -41,7 +41,7 @@ EOSShock::EOSShock(MPM *mpm, vector<string> args) : EOS(mpm, args)
   if (args[2].compare("restart") ==
       0) { // If the keyword restart, we are expecting to have read_restart()
            // launched right after.
-    rho0_, K_, e0, c0, S, Gamma, Tr, cv, alpha, Q1, Q2 = 0;
+    rho0_ = K_ = e0 = c0 = S = Gamma = Tr = cv = alpha = Q1 = Q2 = 0;
     artificial_viscosity = false;
     return;
   }

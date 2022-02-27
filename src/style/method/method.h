@@ -30,9 +30,8 @@ class Grid;
 class Method : protected Pointers {
  public:
   int style = 0;
-  string method_type;
 
-  Method(class MPM *);
+  KOKKOS_INLINE_FUNCTION Method(class MPM *);
 
   void setup(vector<string> args);
   void compute_grid_weight_functions_and_gradients(Solid &solid, int ip);

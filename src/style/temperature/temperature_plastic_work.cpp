@@ -26,7 +26,7 @@ TemperaturePlasticWork::TemperaturePlasticWork(MPM *mpm, vector<string> args) : 
   if (args[2].compare("restart") ==
       0) { // If the keyword restart, we are expecting to have read_restart()
            // launched right after.
-    chi, cp_, kappa_, alpha_, T0, Tm = 0;
+    chi = cp_ = kappa_ = alpha_ = T0 = Tm = 0;
     return;
   }
 

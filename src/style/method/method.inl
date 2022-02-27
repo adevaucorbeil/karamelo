@@ -1,6 +1,16 @@
 #include <grid.h>
 #include <update.h>
 
+KOKKOS_INLINE_FUNCTION
+Method::Method(MPM *mpm):
+  Pointers(mpm)
+{
+  is_TL = false;
+  is_CPDI = false;
+  ge = false;
+  temp = false;
+}
+
 KOKKOS_INLINE_FUNCTION void
 Method::reset_mass_nodes(Grid &grid, int in) const
 {

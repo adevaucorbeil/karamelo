@@ -26,14 +26,6 @@
 
 using namespace std;
 
-Method::Method(MPM *mpm) : Pointers(mpm)
-{
-  is_TL = false;
-  is_CPDI = false;
-  ge = false;
-  temp = false;
-}
-
 void Method::compute_grid_weight_functions_and_gradients(Solid &solid, int ip)
 {
   if (is_TL && update->atimestep)
@@ -750,7 +742,7 @@ void Method::exchange_particles()
   if (is_TL)
     return;
   
-  int ip, np_local_old;
+  int ip;
   Kokkos::View<Vector3d*, MemorySpace> *xp;
   // vector<int> np_send;
   vector<vector<double>> buf_send_vect(universe->nprocs);
@@ -766,8 +758,7 @@ void Method::exchange_particles()
       buf_send_vect[iproc].clear();
       buf_recv_vect[iproc].clear();
     }
-
-    np_local_old = domain->solids[isolid]->np_local;
+    
     xp = &domain->solids[isolid]->x;
 
     // np_send.assign(universe->nprocs, 0);

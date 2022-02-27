@@ -6,7 +6,7 @@
 // returns a givens rotation matrix that zeroes element i, j of the given matrix
 template<typename T, std::size_t M, std::size_t N,
   typename V = decltype(std::declval<T>()/std::declval<T>())>
-KOKKOS_INLINE_FUNCTION Matrix<V, M, M>
+Matrix<V, M, M>
 givens_rotation(const Matrix<T, M, N> &matrix, std::size_t i, std::size_t j)
 {
   const T &jj =  matrix(j, j);

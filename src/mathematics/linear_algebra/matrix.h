@@ -426,7 +426,7 @@ operator*(const S &scalar, const Matrix<T, M, N> &matrix)
 
 // printing
 template<typename T, std::size_t M, std::size_t N>
-KOKKOS_INLINE_FUNCTION std::ostream &
+std::ostream &
 operator<<(std::ostream &os, const Matrix<T, M, N> &matrix)
 {
     os << "{ ";

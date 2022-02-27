@@ -50,7 +50,7 @@ Var PopulateCylindricalCoordinates::command(vector<string> args) {
       error->all(FLERR, "Error: region " + args[1] + " unknown.\n");
     }
 
-  double c1, c2, R, RSq, lo, hi, T0;
+  double c1, c2, R, lo, hi, T0;
   int Ndx, Ndr, Ndtheta;
   char axis;
   int ii, jj, kk;
@@ -100,7 +100,6 @@ Var PopulateCylindricalCoordinates::command(vector<string> args) {
     kk = 2;
   }
 
-  RSq = R*R;
   if (universe->me == 0) {
     cout << "axis, c1, c2, R = " << axis << "\t" << c1 << "\t" << c2 << "\t"
          << R << endl;

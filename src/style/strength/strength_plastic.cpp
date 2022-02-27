@@ -40,7 +40,7 @@ StrengthPlastic::StrengthPlastic(MPM *mpm, vector<string> args) : Strength(mpm, 
   if (args[2].compare("restart") ==
       0) { // If the keyword restart, we are expecting to have read_restart()
            // launched right after.
-    G_, yieldStress = 0;
+    G_ = yieldStress = 0;
     return;
   }
 

@@ -34,7 +34,7 @@ Difference::Difference(MPM *mpm, vector<string> args) : Region(mpm, args) {
   if (args[2].compare("restart") ==
       0) { // If the keyword restart, we are expecting to have read_restart()
            // launched right after.
-    xlo, xhi, ylo, yhi, zlo, zhi = 0;
+    xlo = xhi = ylo = yhi = zlo = zhi = 0;
     return;
   }
 

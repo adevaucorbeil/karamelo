@@ -42,7 +42,7 @@ StrengthSwift::StrengthSwift(MPM *mpm, vector<string> args)
   if (args[2].compare("restart") ==
       0) { // If the keyword restart, we are expecting to have read_restart()
            // launched right after.
-    G_, A, B, C, n = 0;
+    G_ = A = B = C = n = 0;
     return;
   }
 

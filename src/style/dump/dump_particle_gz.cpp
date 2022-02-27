@@ -53,7 +53,7 @@ void DumpParticleGz::write() {
   size_t pos_asterisk = filename.find('*');
   string fdump;
 
-  if (pos_asterisk >= 0) {
+  if (pos_asterisk != string::npos) {
     // Replace the asterisk by proc-N.ntimestep:
     fdump = filename.substr(0, pos_asterisk);
     if (universe->nprocs > 1) {

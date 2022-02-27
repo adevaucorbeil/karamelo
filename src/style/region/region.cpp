@@ -41,7 +41,7 @@ void Region::options(vector<string> *args, vector<string>::iterator it)
   }
   if (args->end() > it)
   {
-    for (it; it != args->end(); ++it)
+    for (; it != args->end(); ++it)
     {
       if ((*it) == "exterior")
 	{

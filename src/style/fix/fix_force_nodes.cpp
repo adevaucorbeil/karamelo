@@ -94,7 +94,7 @@ void FixForceNodes::reduce()
   // cout << "ftot = [" << ftot[0] << ", " << ftot[1] << ", " << ftot[2] << "]\n"; 
 }
 
-void FixForceNodes::post_particles_to_grid() {
+/*void FixForceNodes::post_particles_to_grid() {
   // cout << "In FixForceNodes::post_particles_to_grid()\n";
 
   // Go through all the nodes in the group and set b to the right value:
@@ -184,7 +184,7 @@ void FixForceNodes::post_particles_to_grid() {
       }
     }
   }
-}
+}*/
 
 void FixForceNodes::write_restart(ofstream *of) {
   of->write(reinterpret_cast<const char *>(&xset), sizeof(bool));

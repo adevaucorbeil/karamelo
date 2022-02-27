@@ -94,8 +94,6 @@ public:
   }
 
   void intersections(const Vector3d &origin, const Vector3d &direction, unordered_set<const Facet *> &facets) const {
-    int intersections = 0;
-
     if (children_are_leaves) {
       for (const Facet *facet: leaves)
         if (facet->intersects(origin, direction))

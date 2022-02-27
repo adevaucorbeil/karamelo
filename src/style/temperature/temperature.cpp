@@ -33,7 +33,7 @@ void Temperature::options(vector<string> *args, vector<string>::iterator it)
   }
   if (args->end() > it && universe->me == 0) {
     cout << "Ignoring optional arguments: ";
-    for (it; it != args->end(); ++it){
+    for (; it != args->end(); ++it){
       cout << *it << "\t";
     }
     cout << endl;
