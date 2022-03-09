@@ -401,10 +401,6 @@ void Grid::init(double *solidlo, double *solidhi) {
     mb[i] = Vector3d();
     mass[i] = 0;
   }
-
-  // // Determine the total number of nodes:
-  // bigint nnodes_temp = nnodes_local;
-  // MPI_Allreduce(&nnodes_temp, &nnodes, 1, MPI_MPM_BIGINT, MPI_SUM, universe->uworld);
 }
 
 void Grid::setup(string cs){

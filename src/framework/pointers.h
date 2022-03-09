@@ -16,7 +16,6 @@
 #define MPM_POINTERS_H
 
 #include <mpm.h>
-#include <mpmtype.h>
 
 #define FLERR __FILE__,__LINE__
 

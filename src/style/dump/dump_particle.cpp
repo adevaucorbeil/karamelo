@@ -16,7 +16,6 @@
 #include <error.h>
 #include <method.h>
 #include <mpm_math.h>
-#include <mpmtype.h>
 #include <output.h>
 #include <solid.h>
 #include <universe.h>

@@ -15,7 +15,6 @@
 #include <error.h>
 #include <input.h>
 #include <modify.h>
-#include <mpmtype.h>
 #include <universe.h>
 #include <update.h>
 #include <var.h>

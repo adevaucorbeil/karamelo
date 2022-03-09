@@ -17,7 +17,6 @@
 #include <sstream>
 #include <stdexcept>
 #include <plot.h>
-#include <mpmtype.h>
 #include <update.h>
 #include <input.h>
 #include <var.h>

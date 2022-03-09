@@ -18,7 +18,6 @@
 #include <update.h>
 #include <domain.h>
 #include <solid.h>
-#include <mpmtype.h>
 #include <error.h>
 #include <universe.h>
 

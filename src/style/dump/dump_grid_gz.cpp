@@ -14,7 +14,6 @@
 #include <dump_grid_gz.h>
 #include <domain.h>
 #include <error.h>
-#include <mpmtype.h>
 #include <output.h>
 #include <solid.h>
 #include <universe.h>

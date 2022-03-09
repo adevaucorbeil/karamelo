@@ -14,13 +14,20 @@
 #ifndef MPM_MPM_H
 #define MPM_MPM_H
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstdint>
 #include <iostream>
 #include <string>
 #include <fstream>
 #include <map>
+
 #include <mpi.h>
+
+typedef int64_t bigint;
+typedef int64_t tagint;
+
+#define MPI_MPM_TAGINT MPI_INT64_T
 
 using namespace std;
 
