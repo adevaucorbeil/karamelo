@@ -109,127 +109,130 @@ void FixMeldTool::reduce()
   (*input->vars)[id + "_z"] = Var(id + "_z", ftot_reduced[2]);
 }
 
-void FixMeldTool::initial_integrate(Solid &solid, int ip)
+void FixMeldTool::initial_integrate(Solid &solid)
 {
   // cout << "In FixMeldTool::initial_integrate()\n";
 
   // Go through all the particles in the group and set b to the right value:
-  if (!solid.mass[ip] || !(solid.mask[ip] & groupbit))
-    return;
-
-  double theta_ = theta.result(mpm, true);
-  double c = cos(theta_);
-  double s = sin(theta_);
-
-  double c1_ = c1.result(mpm, true);
-  double c2_ = c2.result(mpm, true);
-
-  Vector3d xprime;
-  Matrix3d R;
-
-  if (dim == X)
+  for (int ip = 0; ip < solid.np_local; ip++)
   {
-    R = Matrix3d(1, 0, 0,
-                 0, c, s,
-                 0, -s, c);
+    if (!solid.mass[ip] || !(solid.mask[ip] & groupbit))
+      continue;
 
-    xprime = Vector3d(lo, c1_, c2_);
+    double theta_ = theta.result(mpm, true);
+    double c = cos(theta_);
+    double s = sin(theta_);
+
+    double c1_ = c1.result(mpm, true);
+    double c2_ = c2.result(mpm, true);
+
+    Vector3d xprime;
+    Matrix3d R;
+
+    if (dim == X)
+    {
+      R = Matrix3d(1, 0, 0,
+                   0, c, s,
+                   0, -s, c);
+
+      xprime = Vector3d(lo, c1_, c2_);
+    }
+    else if (dim == Y)
+    {
+      R = Matrix3d(c, 0, s,
+                   0, 1, 0,
+                   -s, 0, c);
+
+      xprime = Vector3d(c1_, lo, c2_);
+    }
+    else if (dim == Z)
+    {
+      R = Matrix3d(1, 0, 0,
+                   0, c, s,
+                   0, -s, c);
+
+      xprime = Vector3d(c1_, c2_, lo);
+    }
+
+    xprime = solid.x[ip] - xprime;
+    // if (update->ntimestep > 89835 && (solid.ptag[ip]==12 || solid.ptag[ip]==21)) {
+    //   cout << "Check Particle " << solid.ptag[ip] << "\txprime=[" << xprime[0] << "," << xprime[1] << "," << xprime[2] << "]\n";
+    //   cout << "R=\n" << R << endl;
+    // }
+    if (xprime(dim)   < 0    || xprime(dim)   > hi - lo ||
+        xprime(axis0) > Rmax || xprime(axis0) < -Rmax   ||
+        xprime(axis1) > Rmax || xprime(axis1) < -Rmax)
+      continue;
+
+    // if (solid.ptag[ip]==12 || solid.ptag[ip]==21) {
+    //   cout << "Particle " << solid.ptag[ip] << " in 1\n";
+    // }
+
+    double rSq = xprime(axis0) * xprime(axis0) + xprime(axis1) * xprime(axis1);
+
+    if (rSq > RmaxSq)
+      continue;
+
+    // if (solid.ptag[ip]==12 || solid.ptag[ip]==21) {
+    //     cout << "Particle " << solid.ptag[ip] << " in 2\n";
+    // }
+    xprime = R*xprime;
+    double p0 = xprime[axis0];
+    double p1 = xprime[axis1];
+    double p2 = xprime[dim];
+    double pext = Rmax - sqrt(p0*p0 + p1*p1);
+    double p;
+
+    Vector3d f;
+
+    if (p0 > w)
+    {
+      p = p0 - w;
+      f[axis0] = -p;
+    }
+    else if (p0 < -w)
+    {
+      p = -w - p0;
+      f[axis0] = p;
+    }
+
+    if (p1 > w)
+    {
+      p = p1 - w;
+      f[axis1] = -p;
+    }
+    else if (p1 < -w)
+    {
+      p = -p1 - w;
+      f[axis1] = p;
+    }
+
+    if (pext > 0 && pext < f.norm())
+    {
+      f = Vector3d();
+      double r = sqrt(rSq);
+      f[axis0] = pext*xprime[axis0]/r;
+      f[axis1] = pext*xprime[axis1]/r;
+    }
+
+    if (p2 > 0 || p2 < f.norm())
+    {
+      f = Vector3d();
+      f[dim] = -p2;
+    }
+
+    f = K*solid.mat->G*(1 - solid.damage[ip])*R.transpose()*f;
+    solid.mbp[ip] += f;
+    // if (solid.ptag[ip]==12 || solid.ptag[ip]==21) {
+    //     Vector3d dx = solid.x[ip] - c;
+    //     cout << "Particle " << solid.ptag[ip] << " f=[" << f[0] << "," << f[1] << "," << f[2] << "]\tw=" << w << " p0=" << p0 << " p1=" << p1 << " p2=" << p2 << "\txprime=[" << xprime[0] << "," << xprime[1] << "," << xprime[2] << "]\tdx=[" << dx(0) << "," << dx(1) << "," << dx(2) << "]\n";
+    //     cout << "R=\n" << R << endl;
+    // }
+    ftot += f;
+    // if (f[dim] != 0) {
+    //     cout << "particle " << solid.ptag[ip] << " force:" << f[0] << ", " << f[1] << ", " << f[2] << endl;
+    // }
   }
-  else if (dim == Y)
-  {
-    R = Matrix3d(c, 0, s,
-                 0, 1, 0,
-                 -s, 0, c);
-
-    xprime = Vector3d(c1_, lo, c2_);
-  }
-  else if (dim == Z)
-  {
-    R = Matrix3d(1, 0, 0,
-                 0, c, s,
-                 0, -s, c);
-
-    xprime = Vector3d(c1_, c2_, lo);
-  }
-
-  xprime = solid.x[ip] - xprime;
-  // if (update->ntimestep > 89835 && (solid.ptag[ip]==12 || solid.ptag[ip]==21)) {
-  //   cout << "Check Particle " << solid.ptag[ip] << "\txprime=[" << xprime[0] << "," << xprime[1] << "," << xprime[2] << "]\n";
-  //   cout << "R=\n" << R << endl;
-  // }
-  if (xprime(dim)   < 0    || xprime(dim)   > hi - lo ||
-      xprime(axis0) > Rmax || xprime(axis0) < -Rmax   ||
-      xprime(axis1) > Rmax || xprime(axis1) < -Rmax)
-    return;
-
-  // if (solid.ptag[ip]==12 || solid.ptag[ip]==21) {
-  //   cout << "Particle " << solid.ptag[ip] << " in 1\n";
-  // }
-
-  double rSq = xprime(axis0) * xprime(axis0) + xprime(axis1) * xprime(axis1);
-
-  if (rSq > RmaxSq)
-    return;
-
-  // if (solid.ptag[ip]==12 || solid.ptag[ip]==21) {
-  //     cout << "Particle " << solid.ptag[ip] << " in 2\n";
-  // }
-  xprime = R*xprime;
-  double p0 = xprime[axis0];
-  double p1 = xprime[axis1];
-  double p2 = xprime[dim];
-  double pext = Rmax - sqrt(p0*p0 + p1*p1);
-  double p;
-
-  Vector3d f;
-
-  if (p0 > w)
-  {
-    p = p0 - w;
-    f[axis0] = -p;
-  }
-  else if (p0 < -w)
-  {
-    p = -w - p0;
-    f[axis0] = p;
-  }
-
-  if (p1 > w)
-  {
-    p = p1 - w;
-    f[axis1] = -p;
-  }
-  else if (p1 < -w)
-  {
-    p = -p1 - w;
-    f[axis1] = p;
-  }
-
-  if (pext > 0 && pext < f.norm())
-  {
-    f = Vector3d();
-    double r = sqrt(rSq);
-    f[axis0] = pext*xprime[axis0]/r;
-    f[axis1] = pext*xprime[axis1]/r;
-  }
-
-  if (p2 > 0 || p2 < f.norm())
-  {
-    f = Vector3d();
-    f[dim] = -p2;
-  }
-
-  f = K*solid.mat->G*(1 - solid.damage[ip])*R.transpose()*f;
-  solid.mbp[ip] += f;
-  // if (solid.ptag[ip]==12 || solid.ptag[ip]==21) {
-  //     Vector3d dx = solid.x[ip] - c;
-  //     cout << "Particle " << solid.ptag[ip] << " f=[" << f[0] << "," << f[1] << "," << f[2] << "]\tw=" << w << " p0=" << p0 << " p1=" << p1 << " p2=" << p2 << "\txprime=[" << xprime[0] << "," << xprime[1] << "," << xprime[2] << "]\tdx=[" << dx(0) << "," << dx(1) << "," << dx(2) << "]\n";
-  //     cout << "R=\n" << R << endl;
-  // }
-  ftot += f;
-  // if (f[dim] != 0) {
-  //     cout << "particle " << solid.ptag[ip] << " force:" << f[0] << ", " << f[1] << ", " << f[2] << endl;
-  // }
 }
 
 

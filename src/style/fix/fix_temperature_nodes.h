@@ -31,8 +31,8 @@ class FixTemperatureNodes : public Fix {
   void prepare();
   void reduce();
   
-  void post_update_grid_state(Grid &grid, int in);
-  void post_velocities_to_grid(Grid &grid, int in);
+  void post_update_grid_state(Grid &grid);
+  void post_velocities_to_grid(Grid &grid);
 
   void write_restart(ofstream *);
   void read_restart(ifstream *);

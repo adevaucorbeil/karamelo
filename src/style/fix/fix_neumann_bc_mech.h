@@ -31,7 +31,7 @@ class FixNeumannBCMech : public Fix {
   void prepare();
   void reduce();
   
-  void initial_integrate(Solid &solid, int ip);
+  void initial_integrate(Solid &solid);
 
   void write_restart(ofstream *);
   void read_restart(ifstream *);

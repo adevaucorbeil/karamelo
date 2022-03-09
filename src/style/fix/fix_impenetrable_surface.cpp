@@ -97,7 +97,7 @@ void FixImpenetrableSurface::reduce()
   (*input->vars)[id + "_z"] = Var(id + "_z", ftot_reduced[2]);
 }
 
-void FixImpenetrableSurface::initial_integrate(Solid &solid, int ip) {
+void FixImpenetrableSurface::initial_integrate(Solid &solid) {
   // cout << "In FixImpenetrableSurface::initial_integrate()\n";
 
   // Go through all the particles in the group and set b to the right value:
@@ -113,29 +113,32 @@ void FixImpenetrableSurface::initial_integrate(Solid &solid, int ip) {
   // << endl; cout << "line 2: " << line2[0] << "x + " << line2[1] << "y + " <<
   // line2[2] << endl;
 
-  if (!solid.mass[ip] || !(solid.mask[ip] & groupbit))
-    return;
+  for (int ip = 0; ip < solid.np_local; ip++)
+  {
+    if (!solid.mass[ip] || !(solid.mask[ip] & groupbit))
+      continue;
 
-  double p = n.dot(solid.x[ip] - xs);
-  // if (s->ptag[ip] == 1) {
-  //   cout << id << "- Particle " << s->ptag[ip] << "\t";
-  //   cout << "p = " << p << "\t";
-  //   cout << "xp = [" << s->x[ip][0] << "," << s->x[ip][1] << ","
-  //        << s->x[ip][2] << "]\t" << endl;
-  //   cout << "xs = [" << xs[0] << "," << xs[1] << "," << xs[2] << "]\t"
-  //        << endl;
-  //   cout << "n = [" << n[0] << "," << n[1] << "," << n[2] << "]"
-  //        << endl;
-  // }
+    double p = n.dot(solid.x[ip] - xs);
+    // if (s->ptag[ip] == 1) {
+    //   cout << id << "- Particle " << s->ptag[ip] << "\t";
+    //   cout << "p = " << p << "\t";
+    //   cout << "xp = [" << s->x[ip][0] << "," << s->x[ip][1] << ","
+    //        << s->x[ip][2] << "]\t" << endl;
+    //   cout << "xs = [" << xs[0] << "," << xs[1] << "," << xs[2] << "]\t"
+    //        << endl;
+    //   cout << "n = [" << n[0] << "," << n[1] << "," << n[2] << "]"
+    //        << endl;
+    // }
 
-  if (p < 0)
-    return;
+    if (p < 0)
+      continue;
 
-    // cout << "Particle " << s->ptag[ip] << " is inside\n";
+      // cout << "Particle " << s->ptag[ip] << " is inside\n";
 
-  const Vector3d &f = K*solid.mat->G*p*(1 - solid.damage[ip])*n;
-  solid.mbp[ip] += f;
-  ftot += f;
+    const Vector3d &f = K*solid.mat->G*p*(1 - solid.damage[ip])*n;
+    solid.mbp[ip] += f;
+    ftot += f;
+  }
 }
 
 void FixImpenetrableSurface::write_restart(ofstream *of) {

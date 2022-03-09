@@ -103,24 +103,27 @@ void FixBodyforce::reduce()
   // cout << "ftot = [" << ftot[0] << ", " << ftot[1] << ", " << ftot[2] << "], mass = " << mtot << "\n"; 
 }
 
-void FixBodyforce::post_particles_to_grid(Grid &grid, int in)
+void FixBodyforce::post_particles_to_grid(Grid &grid)
 {
-  if (!grid.mass[in] || !(grid.mask[in] & groupbit))
-    return;
+  for (int in = 0; in < grid.nnodes_local + grid.nnodes_ghost; in++)
+  {
+    if (!grid.mass[in] || !(grid.mask[in] & groupbit))
+      continue;
 
-  (*input->vars)["x0"] = Var("x0", grid.x0[in][0]);
-  (*input->vars)["y0"] = Var("y0", grid.x0[in][1]);
-  (*input->vars)["z0"] = Var("z0", grid.x0[in][2]);
+    (*input->vars)["x0"] = Var("x0", grid.x0[in][0]);
+    (*input->vars)["y0"] = Var("y0", grid.x0[in][1]);
+    (*input->vars)["z0"] = Var("z0", grid.x0[in][2]);
 
-  Vector3d f;
-  if (xset) f[0] = xvalue.result(mpm, true);
-  if (yset) f[1] = yvalue.result(mpm, true);
-  if (zset) f[2] = zvalue.result(mpm, true);
+    Vector3d f;
+    if (xset) f[0] = xvalue.result(mpm, true);
+    if (yset) f[1] = yvalue.result(mpm, true);
+    if (zset) f[2] = zvalue.result(mpm, true);
 
-  grid.mb[in] += grid.mass[in]*f;
+    grid.mb[in] += grid.mass[in]*f;
 
-  if (in < grid.nnodes_local)
-      ftot += f;
+    if (in < grid.nnodes_local)
+        ftot += f;
+  }
 }
 
 void FixBodyforce::write_restart(ofstream *of) {

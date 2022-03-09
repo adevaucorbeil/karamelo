@@ -44,101 +44,87 @@ void MUSL::run(Var condition)
   {
     // prepare
     int ntimestep = update->update_timestep();
+
     for (Solid *solid: domain->solids)
-      for (int ip = 0; ip < solid->np_local; ip++)
-        method.compute_grid_weight_functions_and_gradients(*solid, ip);
+      method.compute_grid_weight_functions_and_gradients(*solid);
     modify->prepare();
 
     // grid reset
     method.reset();
 
     for (Grid *grid: method.grids())
-      for (int in = 0; in < grid->nnodes_local + grid->nnodes_ghost; in++)
-      {
-        method.reset_mass_nodes(*grid, in);
-        method.reset_velocity_nodes(*grid, in);
-        method.reset_force_nodes(*grid, in);
-      }
+    {
+      method.reset_mass_nodes(*grid);
+      method.reset_velocity_nodes(*grid);
+      method.reset_force_nodes(*grid);
+    }
 
     // p2g
     for (Solid *solid: domain->solids)
-      for (int ip = 0; ip < solid->np_local; ip++)
-      {
-        modify->initial_integrate(*solid, ip);
-        method.compute_mass_nodes(*solid, ip);
-      }
+    {
+      modify->initial_integrate(*solid);
+      method.compute_mass_nodes(*solid);
+    }
     
     for (Grid *grid: method.grids())
       grid->reduce_mass_ghost_nodes();
     
     for (Solid *solid: domain->solids)
-      for (int ip = 0; ip < solid->np_local; ip++)
-      {
-        method.compute_velocity_nodes(*solid, ip);
-        method.compute_force_nodes(*solid, ip);
-      }
+    {
+      method.compute_velocity_nodes(*solid);
+      method.compute_force_nodes(*solid);
+    }
 
     // grid update
     for (Grid *grid: method.grids())
     {
       grid->reduce_ghost_nodes(true, true, method.temp);
 
-      for (int in = 0; in < grid->nnodes_local + grid->nnodes_ghost; in++)
-      {
-        modify->post_particles_to_grid(*grid, in);
-        method.update_grid_velocities(*grid, in);
-        modify->post_update_grid_state(*grid, in);
-      }
+      modify->post_particles_to_grid(*grid);
+      method.update_grid_velocities(*grid);
+      modify->post_update_grid_state(*grid);
     }
 
     // g2p
     for (Solid *solid: domain->solids)
     {
-      for (int ip = 0; ip < solid->np_local; ip++)
       {
-        method.compute_velocity_acceleration(*solid, ip);
-        method.update_position(*solid, ip);
-        modify->post_grid_to_point(*solid, ip);
-        method.advance_particles(*solid, ip);
-        modify->post_advance_particles(*solid, ip);
+        method.compute_velocity_acceleration(*solid);
+        method.update_position(*solid);
+        modify->post_grid_to_point(*solid);
+        method.advance_particles(*solid);
+        modify->post_advance_particles(*solid);
       }
     }
 
     // velocities to grid
     for (Grid *grid: method.grids())
-      for (int in = 0; in < grid->nnodes_local + grid->nnodes_ghost; in++)
-        method.reset_velocity_nodes(*grid, in);
+      method.reset_velocity_nodes(*grid);
 
     for (Solid *solid: domain->solids)
-      for (int ip = 0; ip < solid->np_local; ip++)
-        method.compute_velocity_nodes(*solid, ip);
+      method.compute_velocity_nodes(*solid);
 
     // grid update
     for (Grid *grid: method.grids())
     {
       grid->reduce_ghost_nodes(true, false, update->temp);
       
-      for (int in = 0; in < grid->nnodes_local + grid->nnodes_ghost; in++)
-      {
-        modify->post_velocities_to_grid(*grid, in);
-        method.update_grid_positions(*grid, in);
-      }
+      modify->post_velocities_to_grid(*grid);
+      method.update_grid_positions(*grid);
     }
 
     for (Solid *solid: domain->solids)
-      for (int ip = 0; ip < solid->np_local; ip++)
-      {
-        method.compute_rate_deformation_gradient(true, *solid, ip);
-        method.update_deformation_gradient_stress(true, *solid, ip);
-      }
+    {
+      method.compute_rate_deformation_gradient(true, *solid);
+      method.update_deformation_gradient_stress(true, *solid);
+    }
 
     method.exchange_particles();
     update->update_time();
     method.adjust_dt();
 
     for (Solid *solid: domain->solids)
-      for (int ip = 0; ip < solid->np_local; ip++)
-        modify->final_integrate(*solid, ip);
+      modify->final_integrate(*solid);
 
     if ((update->maxtime != -1) && (update->atime > update->maxtime)) {
       update->nsteps = ntimestep;

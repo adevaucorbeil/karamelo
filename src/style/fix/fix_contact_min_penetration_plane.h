@@ -30,7 +30,7 @@ public:
   void prepare();
   void reduce();
 
-  void initial_integrate(Solid &solid, int ip) override;
+  void initial_integrate(Solid &solid) override;
 
   void write_restart(ofstream *);
   void read_restart(ifstream *);

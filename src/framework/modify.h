@@ -51,13 +51,13 @@ public:
   void delete_compute(int);
   int find_compute(string);
 
-  void initial_integrate(Solid &solid, int ip);
-  void post_particles_to_grid(Grid &grid, int in);
-  void post_update_grid_state(Grid &grid, int in);
-  void post_grid_to_point(Solid &solid, int ip);
-  void post_advance_particles(Solid &solid, int ip);
-  void post_velocities_to_grid(Grid &grid, int in);
-  void final_integrate(Solid &solid, int ip);
+  void initial_integrate(Solid &solid);
+  void post_particles_to_grid(Grid &grid);
+  void post_update_grid_state(Grid &grid);
+  void post_grid_to_point(Solid &solid);
+  void post_advance_particles(Solid &solid);
+  void post_velocities_to_grid(Grid &grid);
+  void final_integrate(Solid &solid);
   void prepare();
   void reduce();
 

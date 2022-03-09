@@ -70,25 +70,29 @@ void FixTemperatureNodes::reduce()
   // (*input->vars)[id + "_z"] = Var(id + "_z", ftot_reduced[2]);
 }
 
-void FixTemperatureNodes::post_update_grid_state(Grid &grid, int in)
+void FixTemperatureNodes::post_update_grid_state(Grid &grid)
 {
   // cout << "In FixTemperatureNodes::post_update_grid_state()" << endl;
 
   // Go through all the nodes in the group and set v_update to the right value:
-  if (!(grid.mask[in] & groupbit))
-    return;
+  for (int in = 0; in < grid.nnodes_local + grid.nnodes_ghost; in++)
+  {
+    if (!(grid.mask[in] & groupbit))
+      continue;
 
-  grid.T_update[in] = Tvalue    .result(mpm, true);
-  grid.T       [in] = Tprevvalue.result(mpm, true);
+    grid.T_update[in] = Tvalue    .result(mpm, true);
+    grid.T       [in] = Tprevvalue.result(mpm, true);
+  }
 }
 
-void FixTemperatureNodes::post_velocities_to_grid(Grid &grid, int in)
+void FixTemperatureNodes::post_velocities_to_grid(Grid &grid)
 {
   // cout << "In FixTemperatureNodes::post_velocities_to_grid()" << endl;
 
   // Go through all the particles in the group and set v to the right value:
-  if (grid.mask[in] & groupbit)
-    grid.T[in] = input->parsev(Targ).result(mpm);
+  for (int in = 0; in < grid.nnodes_local + grid.nnodes_ghost; in++)
+    if (grid.mask[in] & groupbit)
+      grid.T[in] = input->parsev(Targ).result(mpm);
 }
 
 void FixTemperatureNodes::write_restart(ofstream *of) {

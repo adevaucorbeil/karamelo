@@ -39,13 +39,13 @@ class Fix : protected Pointers {
   virtual void prepare() {}
   virtual void reduce() {}
 
-  virtual void initial_integrate(Solid &solid, int ip) {}
-  virtual void post_particles_to_grid(Grid &grid, int in) {}
-  virtual void post_update_grid_state(Grid &grid, int in) {}
-  virtual void post_grid_to_point(Solid &solid, int ip) {}
-  virtual void post_advance_particles(Solid &solid, int ip) {}
-  virtual void post_velocities_to_grid(Grid &grid, int in) {}
-  virtual void final_integrate(Solid &solid, int ip) {}
+  virtual void initial_integrate(Solid &solid) {}
+  virtual void post_particles_to_grid(Grid &grid) {}
+  virtual void post_update_grid_state(Grid &grid) {}
+  virtual void post_grid_to_point(Solid &solid) {}
+  virtual void post_advance_particles(Solid &solid) {}
+  virtual void post_velocities_to_grid(Grid &grid) {}
+  virtual void final_integrate(Solid &solid) {}
 
   virtual void write_restart(ofstream *of) = 0;
   virtual void read_restart(ifstream *ifr) = 0;

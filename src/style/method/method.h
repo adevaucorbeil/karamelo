@@ -34,33 +34,32 @@ class Method : protected Pointers {
   Method(class MPM *);
 
   void setup(vector<string> args);
-  void compute_grid_weight_functions_and_gradients(Solid &solid, int ip);
+  void compute_grid_weight_functions_and_gradients(Solid &solid);
 
   bool apic();
   vector<Grid *> grids();
   
-  void reset_mass_nodes(Grid &grid, int in);
-  void compute_mass_nodes(Solid &solid, int ip);
+  void reset_mass_nodes(Grid &grid);
+  void compute_mass_nodes(Solid &solid);
 
-  void reset_velocity_nodes(Grid &grid, int in);
-  void compute_velocity_nodes(Solid &solid, int ip);
+  void reset_velocity_nodes(Grid &grid);
+  void compute_velocity_nodes(Solid &solid);
 
-  void reset_force_nodes(Grid &grid, int in);
-  void compute_force_nodes(Solid &solid, int ip);
+  void reset_force_nodes(Grid &grid);
+  void compute_force_nodes(Solid &solid);
 
-  void update_grid_velocities(Grid &grid, int in);
+  void update_grid_velocities(Grid &grid);
 
-  void compute_velocity_acceleration(Solid &solid, int ip);
+  void compute_velocity_acceleration(Solid &solid);
 
-  void update_position(Solid &solid, int ip);
-  void advance_particles(Solid &solid, int ip);
+  void update_position(Solid &solid);
+  void advance_particles(Solid &solid);
 
-  void update_grid_positions(Grid &grid, int in);
+  void update_grid_positions(Grid &grid);
 
-  void compute_rate_deformation_gradient(bool doublemapping, Solid &solid, int ip);
+  void compute_rate_deformation_gradient(bool doublemapping, Solid &solid);
 
-  void update_deformation_gradient_determinant(Solid &solid, int ip);
-  void update_deformation_gradient_stress(bool doublemapping, Solid &solid, int ip);
+  void update_deformation_gradient_stress(bool doublemapping, Solid &solid);
   
   void adjust_dt();
   void reset();

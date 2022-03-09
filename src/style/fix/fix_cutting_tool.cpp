@@ -129,101 +129,105 @@ void FixCuttingTool::reduce()
   (*input->vars)[id + "_z"] = Var(id + "_z", ftot_reduced[2]);
 }
 
-void FixCuttingTool::initial_integrate(Solid &solid, int ip) {
+void FixCuttingTool::initial_integrate(Solid &solid) {
   // cout << "In FixCuttingTool::initial_integrate()\n";
   
   // Not supported
   if (domain->dimension == 3)
     error->one(FLERR, "fix_cuttingtool not supported in 3D\n");
 
-  if (domain->dimension != 2 || !solid.mass[ip] || !(solid.mask[ip] & groupbit))
-    return;
 
-  // Go through all the particles in the group and set b to the right value:
-  Vector3d xt(xtvalue .result(mpm, true),
-              ytvalue .result(mpm, true),
-              ztvalue .result(mpm, true));
-  Vector3d vt(vtxvalue.result(mpm, true),
-              vtyvalue.result(mpm, true),
-              vtzvalue.result(mpm, true));
-  Vector3d xA(xAvalue .result(mpm, true),
-              yAvalue .result(mpm, true),
-              xt.z());
-  Vector3d xB(xBvalue .result(mpm, true),
-              yBvalue .result(mpm, true),
-              xt.z());
-
-  // The equation of line 1 is: (yA - yt) * x - (xA - xt) * y + yt * xA - yA *
-  // xt = 0 The equation of line 2 is: (yB - yt) * x - (xB - xt) * y + yt * xB -
-  // yB * xt = 0
-
-  double line1[4], line2[4];
-  line1[0] = xA[1] - xt[1];
-  line1[1] = -xA[0] + xt[0];
-  line1[2] = xt[1]*xA[0] - xt[0]*xA[1];
-  line1[3] = 1/sqrt(line1[0]*line1[0] + line1[1]*line1[1]);
-
-  line2[0] = xB[1] - xt[1];
-  line2[1] = -xB[0] + xt[0];
-  line2[2] = xt[1]*xB[0] - xt[0]*xB[1];
-  line2[3] = 1/sqrt(line2[0]*line2[0] + line2[1]*line2[1]);
-
-  if (line1[0]*xB[0] + line1[1]*xB[1] + line1[2] < 0)
+  for (int ip = 0; ip < solid.np_local; ip++)
   {
-    line1[0] *= -1;
-    line1[1] *= -1;
-    line1[2] *= -1;
-  }
+    if (domain->dimension != 2 || !solid.mass[ip] || !(solid.mask[ip] & groupbit))
+      continue;
 
-  if (line2[0]*xA[0] + line2[1]*xA[1] + line2[2] < 0)
-  {
-    line2[0] *= -1;
-    line2[1] *= -1;
-    line2[2] *= -1;
-  }
+    // Go through all the particles in the group and set b to the right value:
+    Vector3d xt(xtvalue .result(mpm, true),
+                ytvalue .result(mpm, true),
+                ztvalue .result(mpm, true));
+    Vector3d vt(vtxvalue.result(mpm, true),
+                vtyvalue.result(mpm, true),
+                vtzvalue.result(mpm, true));
+    Vector3d xA(xAvalue .result(mpm, true),
+                yAvalue .result(mpm, true),
+                xt.z());
+    Vector3d xB(xBvalue .result(mpm, true),
+                yBvalue .result(mpm, true),
+                xt.z());
+
+    // The equation of line 1 is: (yA - yt) * x - (xA - xt) * y + yt * xA - yA *
+    // xt = 0 The equation of line 2 is: (yB - yt) * x - (xB - xt) * y + yt * xB -
+    // yB * xt = 0
+
+    double line1[4], line2[4];
+    line1[0] = xA[1] - xt[1];
+    line1[1] = -xA[0] + xt[0];
+    line1[2] = xt[1]*xA[0] - xt[0]*xA[1];
+    line1[3] = 1/sqrt(line1[0]*line1[0] + line1[1]*line1[1]);
+
+    line2[0] = xB[1] - xt[1];
+    line2[1] = -xB[0] + xt[0];
+    line2[2] = xt[1]*xB[0] - xt[0]*xB[1];
+    line2[3] = 1/sqrt(line2[0]*line2[0] + line2[1]*line2[1]);
+
+    if (line1[0]*xB[0] + line1[1]*xB[1] + line1[2] < 0)
+    {
+      line1[0] *= -1;
+      line1[1] *= -1;
+      line1[2] *= -1;
+    }
+
+    if (line2[0]*xA[0] + line2[1]*xA[1] + line2[2] < 0)
+    {
+      line2[0] *= -1;
+      line2[1] *= -1;
+      line2[2] *= -1;
+    }
   
-  Vector3d n1, n2;
+    Vector3d n1, n2;
 
-  n1[0] = line1[0];
-  n1[1] = line1[1];
-  n1[2] = 0;
-  n1 *= -line1[3];
+    n1[0] = line1[0];
+    n1[1] = line1[1];
+    n1[2] = 0;
+    n1 *= -line1[3];
 
-  n2[0] = line2[0];
-  n2[1] = line2[1];
-  n2[2] = 0;
-  n2 *= -line2[3];
+    n2[0] = line2[0];
+    n2[1] = line2[1];
+    n2[2] = 0;
+    n2 *= -line2[3];
 
-  // cout << "line 1: " << line1[0] << "x + " << line1[1] << "y + " << line1[2] << endl;
-  // cout << "line 2: " << line2[0] << "x + " << line2[1] << "y + " << line2[2] << endl;
+    // cout << "line 1: " << line1[0] << "x + " << line1[1] << "y + " << line1[2] << endl;
+    // cout << "line 2: " << line2[0] << "x + " << line2[1] << "y + " << line2[2] << endl;
 
-  double c1p = line1[0]*solid.x[ip][0] + line1[1]*solid.x[ip][1] + line1[1];
-  double c2p = line2[0]*solid.x[ip][0] + line2[1]*solid.x[ip][1] + line2[1];
+    double c1p = line1[0]*solid.x[ip][0] + line1[1]*solid.x[ip][1] + line1[1];
+    double c2p = line2[0]*solid.x[ip][0] + line2[1]*solid.x[ip][1] + line2[1];
 
-  if (c1p < 0 || c2p < 0)
-    return;
+    if (c1p < 0 || c2p < 0)
+      continue;
 
-  // The particle is inside the tool
-  double p1 = fabs(c1p*line1[3]);
-  double p2 = fabs(c2p*line2[3]);
+    // The particle is inside the tool
+    double p1 = fabs(c1p*line1[3]);
+    double p2 = fabs(c2p*line2[3]);
 
-  double p;
-  Vector3d n;
+    double p;
+    Vector3d n;
 
-  if (p1 < p2)
-  {
-    p = p1;
-    n = n1;
+    if (p1 < p2)
+    {
+      p = p1;
+      n = n1;
+    }
+    else
+    {
+      p = p2;
+      n = n2;
+    }
+
+    const Vector3d &f = K*solid.mat->G*p*(1.0 - solid.damage[ip])*n;
+    solid.mbp[ip] += f;
+    ftot += f;
   }
-  else
-  {
-    p = p2;
-    n = n2;
-  }
-
-  const Vector3d &f = K*solid.mat->G*p*(1.0 - solid.damage[ip])*n;
-  solid.mbp[ip] += f;
-  ftot += f;
 }
 
 void FixCuttingTool::write_restart(ofstream *of) {

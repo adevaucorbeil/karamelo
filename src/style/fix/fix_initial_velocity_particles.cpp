@@ -83,24 +83,27 @@ void FixInitialVelocityParticles::prepare()
   zvalue.result(mpm);
 }
 
-void FixInitialVelocityParticles::initial_integrate(Solid &solid, int ip) {
+void FixInitialVelocityParticles::initial_integrate(Solid &solid) {
   // cout << "In FixInitialVelocityParticles::initial_integrate()" << endl;
 
   // Go through all the particles in the group and set v to the right value:
-  if (update->ntimestep != 1 || !(solid.mask[ip] & groupbit))
-    return;
+  for (int ip = 0; ip < solid.np_local; ip++)
+  {
+    if (update->ntimestep != 1 || !(solid.mask[ip] & groupbit))
+      return;
 
-  (*input->vars)["x" ] = Var("x",  solid.x[ip][0]);
-  (*input->vars)["y" ] = Var("y",  solid.x[ip][1]);
-  (*input->vars)["z" ] = Var("z",  solid.x[ip][2]);
-  (*input->vars)["x0"] = Var("x0", solid.x0[ip][0]);
-  (*input->vars)["y0"] = Var("y0", solid.x0[ip][1]);
-  (*input->vars)["z0"] = Var("z0", solid.x0[ip][2]);
+    (*input->vars)["x" ] = Var("x",  solid.x[ip][0]);
+    (*input->vars)["y" ] = Var("y",  solid.x[ip][1]);
+    (*input->vars)["z" ] = Var("z",  solid.x[ip][2]);
+    (*input->vars)["x0"] = Var("x0", solid.x0[ip][0]);
+    (*input->vars)["y0"] = Var("y0", solid.x0[ip][1]);
+    (*input->vars)["z0"] = Var("z0", solid.x0[ip][2]);
 
-  if (xset)
-    solid.v[ip][0] = xvalue.result(mpm, true);
-  if (yset)
-    solid.v[ip][1] = yvalue.result(mpm, true);
-  if (zset)
-    solid.v[ip][2] = zvalue.result(mpm, true);
+    if (xset)
+      solid.v[ip][0] = xvalue.result(mpm, true);
+    if (yset)
+      solid.v[ip][1] = yvalue.result(mpm, true);
+    if (zset)
+      solid.v[ip][2] = zvalue.result(mpm, true);
+  }
 }

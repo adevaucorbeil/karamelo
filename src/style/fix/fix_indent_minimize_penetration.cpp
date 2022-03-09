@@ -120,76 +120,79 @@ void FixIndentMinimizePenetration::reduce()
   (*input->vars)[id + "_z"] = Var(id + "_z", ftot_reduced[2]);
 }
 
-void FixIndentMinimizePenetration::initial_integrate(Solid &solid, int ip)
+void FixIndentMinimizePenetration::initial_integrate(Solid &solid)
 {
   // Go through all the particles in the group and set b to the right value:
-  if (!solid.mass[ip] || !(solid.mask[ip] & groupbit))
-    return;
+  for (int ip = 0; ip < solid.np_local; ip++)
+  {
+    if (!solid.mass[ip] || !(solid.mask[ip] & groupbit))
+      continue;
 
-  Vector3d xs(xvalue .result(mpm, true),
-              yvalue .result(mpm, true),
-              zvalue .result(mpm, true));
-  Vector3d vs(vxvalue.result(mpm, true),
-              vyvalue.result(mpm, true),
-              vzvalue.result(mpm, true));
+    Vector3d xs(xvalue .result(mpm, true),
+                yvalue .result(mpm, true),
+                zvalue .result(mpm, true));
+    Vector3d vs(vxvalue.result(mpm, true),
+                vyvalue.result(mpm, true),
+                vzvalue.result(mpm, true));
   
-  // Gross screening:
-  Vector3d xsp = solid.x[ip] - xs;
+    // Gross screening:
+    Vector3d xsp = solid.x[ip] - xs;
 
-  double Rs = 0;
-  if (domain->dimension == 2)
-  {
-    if (domain->axisymmetric)
-      Rs = 0.5*sqrt(solid.vol0[ip]/solid.x0[ip][0]);
-    else
-      Rs = 0.5*sqrt(solid.vol0[ip]);
-    Rs += R;
-
-    if (xsp[0] >=  Rs || xsp[1] >=  Rs ||
-        xsp[0] <= -Rs || xsp[1] <= -Rs)
-      return;
-  }
-  else if (domain->dimension == 3)
-  {
-    Rs = R + 0.5*cbrt(solid.vol0[ip]);
-
-    if (xsp[0] >=  Rs || xsp[1] >=  Rs || xsp[2] >=  Rs ||
-        xsp[0] <= -Rs || xsp[1] <= -Rs || xsp[2] <= -Rs)
-      return;
-  }
-
-  // Finer screening:
-  double r = xsp.norm();
-
-  if (r >= Rs)
-    return;
-
-  // penetration
-  double p = Rs - r;
-
-  if (p <= 0)
-    return;
-
-  xsp /= r;
-  double fmag = solid.mass[ip]*p/update->dt/update->dt;
-  Vector3d f = fmag*xsp;
-
-  if (mu)
-  {
-    const Vector3d &vps = vs - solid.v[ip];
-    Vector3d vt = vps - vps.dot(xsp)*xsp;
-    double vtnorm = vt.norm();
-
-    if (vtnorm)
+    double Rs = 0;
+    if (domain->dimension == 2)
     {
-      vt /= vtnorm;
-      f += MIN(solid.mass[ip]*vtnorm/update->dt, mu*fmag)*vt;
-    }
-  }
+      if (domain->axisymmetric)
+        Rs = 0.5*sqrt(solid.vol0[ip]/solid.x0[ip][0]);
+      else
+        Rs = 0.5*sqrt(solid.vol0[ip]);
+      Rs += R;
 
-  A += cellsizeSq*solid.F[ip](0, 0)*solid.F[ip](2, 2);
-  solid.mbp[ip] += f;
-  ftot += f;
+      if (xsp[0] >=  Rs || xsp[1] >=  Rs ||
+          xsp[0] <= -Rs || xsp[1] <= -Rs)
+        continue;
+    }
+    else if (domain->dimension == 3)
+    {
+      Rs = R + 0.5*cbrt(solid.vol0[ip]);
+
+      if (xsp[0] >=  Rs || xsp[1] >=  Rs || xsp[2] >=  Rs ||
+          xsp[0] <= -Rs || xsp[1] <= -Rs || xsp[2] <= -Rs)
+        continue;
+    }
+
+    // Finer screening:
+    double r = xsp.norm();
+
+    if (r >= Rs)
+      continue;
+
+    // penetration
+    double p = Rs - r;
+
+    if (p <= 0)
+      continue;
+
+    xsp /= r;
+    double fmag = solid.mass[ip]*p/update->dt/update->dt;
+    Vector3d f = fmag*xsp;
+
+    if (mu)
+    {
+      const Vector3d &vps = vs - solid.v[ip];
+      Vector3d vt = vps - vps.dot(xsp)*xsp;
+      double vtnorm = vt.norm();
+
+      if (vtnorm)
+      {
+        vt /= vtnorm;
+        f += MIN(solid.mass[ip]*vtnorm/update->dt, mu*fmag)*vt;
+      }
+    }
+
+    A += cellsizeSq*solid.F[ip](0, 0)*solid.F[ip](2, 2);
+    solid.mbp[ip] += f;
+    ftot += f;
+  }
 }
 
 void FixIndentMinimizePenetration::write_restart(ofstream *of) {

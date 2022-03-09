@@ -89,50 +89,53 @@ void FixContactMinPenetrationPlane::reduce()
   (*input->vars)[id + "_z"] = Var(id + "_z", ftot_reduced[2]);
 }
 
-void FixContactMinPenetrationPlane::initial_integrate(Solid &solid, int ip)
+void FixContactMinPenetrationPlane::initial_integrate(Solid &solid)
 {
   // cout << "In FixContactMinPenetrationPlane::initial_integrate()\n";
 
   // Go through all the particles in the group and set b to the right value:
 
-  // Extremely gross screening:
-  double d = n.dot(solid.x[ip] - xq);
-
-  if (d >= solid.grid->cellsize)
-    return;
-
-  double Rp;
-  if (domain->dimension == 2)
+  for (int ip = 0; ip < solid.np_local; ip++)
   {
-    Rp = sqrt(solid.vol[ip]);
-  }
-  else
-  {
-    Rp = cbrt(solid.vol[ip]);
-  }
-  
-  // Fine screening:
-  double p = Rp/2 - d;
+    // Extremely gross screening:
+    double d = n.dot(solid.x[ip] - xq);
 
-  if (p < 0)
-    return;
+    if (d >= solid.grid->cellsize)
+      continue;
 
-  double fnorm = solid.mass[ip]*p/update->dt/update->dt;
-  Vector3d f = fnorm*n;
-
-  if (mu)
-  {
-    Vector3d vt = solid.v[ip] - n.dot(solid.v[ip])*n;
-    double vtnorm = vt.norm();
-    if (vtnorm)
+    double Rp;
+    if (domain->dimension == 2)
     {
-      vt /= vtnorm;
-      f -= mu*fnorm*vt;
+      Rp = sqrt(solid.vol[ip]);
     }
-  }
+    else
+    {
+      Rp = cbrt(solid.vol[ip]);
+    }
+  
+    // Fine screening:
+    double p = Rp/2 - d;
 
-  solid.mbp[ip] += f;
-  ftot += f;
+    if (p < 0)
+      continue;
+
+    double fnorm = solid.mass[ip]*p/update->dt/update->dt;
+    Vector3d f = fnorm*n;
+
+    if (mu)
+    {
+      Vector3d vt = solid.v[ip] - n.dot(solid.v[ip])*n;
+      double vtnorm = vt.norm();
+      if (vtnorm)
+      {
+        vt /= vtnorm;
+        f -= mu*fnorm*vt;
+      }
+    }
+
+    solid.mbp[ip] += f;
+    ftot += f;
+  }
 }
 
 void FixContactMinPenetrationPlane::write_restart(ofstream *of)

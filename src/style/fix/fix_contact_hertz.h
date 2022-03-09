@@ -27,7 +27,7 @@ class FixContactHertz : public Fix {
 public:
   FixContactHertz(MPM *, vector<string>);
 
-  void initial_integrate(Solid &solid, int ip) override;
+  void initial_integrate(Solid &solid) override;
 
   void prepare();
   void reduce();

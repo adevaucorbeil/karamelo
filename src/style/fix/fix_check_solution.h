@@ -85,7 +85,7 @@ class FixChecksolution : public Fix {
   void prepare();
   void reduce();
 
-  void final_integrate(Solid &solid, int ip);
+  void final_integrate(Solid &solid);
 
   void write_restart(ofstream *);
   void read_restart(ifstream *);

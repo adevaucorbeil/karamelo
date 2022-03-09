@@ -73,93 +73,94 @@ void FixContactMinPenetration::reduce()
   (*input->vars)[id + "_z"] = Var(id + "_z", ftot_reduced[2]);
 }
 
-void FixContactMinPenetration::initial_integrate(Solid &solid, int ip)
+void FixContactMinPenetration::initial_integrate(Solid &solid)
 {
   // cout << "In FixContactMinPenetration::initial_integrate()\n";
 
   // Go through all the particles in the group and set b to the right value:
-  for (Solid *solid1: domain->solids)
-  {
-    if (solid1 <= &solid)
-      continue;
-
-    double Estar = 1/((1 - solid.  mat->nu*solid.  mat->nu)/solid.  mat->E +
-                      (1 - solid1->mat->nu*solid1->mat->nu)/solid1->mat->E);
-
-    double alpha = solid.mat->kappa/(solid.mat->kappa + solid1->mat->kappa);
-
-    double max_cellsize = MAX(solid.grid->cellsize, solid1->grid->cellsize);
-    
-    for (int ip1 = 0; ip1 < solid1->np_local; ip1++)
+  for (int ip = 0; ip < solid.np_local; ip++)
+    for (Solid *solid1: domain->solids)
     {
-      const Vector3d &dx = solid.x[ip1] - solid.x[ip];
-      
-      // Extremely gross screening:
-      bool outside = false;
-
-      for (int i = 0; i < domain->dimension; i++)
-        if (outside = abs(dx[i]) > max_cellsize)
-          break;
-
-      if (outside)
+      if (solid1 <= &solid)
         continue;
 
-      double Rp;
-      if (domain->dimension == 2)
+      double Estar = 1/((1 - solid.  mat->nu*solid.  mat->nu)/solid.  mat->E +
+                        (1 - solid1->mat->nu*solid1->mat->nu)/solid1->mat->E);
+
+      double alpha = solid.mat->kappa/(solid.mat->kappa + solid1->mat->kappa);
+
+      double max_cellsize = MAX(solid.grid->cellsize, solid1->grid->cellsize);
+    
+      for (int ip1 = 0; ip1 < solid1->np_local; ip1++)
       {
-        if (domain->axisymmetric)
-          Rp = (sqrt(solid.  vol[ip ]/solid.x[ip ][0]) +
-                sqrt(solid1->vol[ip1]/solid.x[ip1][0]))/2;
-        else
-          Rp = (sqrt(solid.vol[ip]) + sqrt(solid1->vol[ip1]))/2;
-      }
-      else
-        Rp = (cbrt(solid.vol[ip]) + cbrt(solid1->vol[ip1]))/2;
+        const Vector3d &dx = solid.x[ip1] - solid.x[ip];
       
-      // Gross screening:
-      for (int i = 0; i < domain->dimension; i++)
-        if (outside = abs(dx[i]) > Rp)
-          break;
+        // Extremely gross screening:
+        bool outside = false;
 
-      if (outside)
-        continue;
-      
-      double r = dx.norm();
+        for (int i = 0; i < domain->dimension; i++)
+          if (outside = abs(dx[i]) > max_cellsize)
+            break;
 
-      // Finer screening:
-      if (r >= Rp)
-        continue;
+        if (outside)
+          continue;
 
-      double fmag = solid.mass[ip] * solid1->mass[ip1]/
-                  ((solid.mass[ip] + solid1->mass[ip1])*
-                   update->dt*update->dt)*(1 - Rp/r);
-      Vector3d f = fmag*dx;
-
-      if (mu)
-      {
-        const Vector3d &dv = solid1->v[ip1] - solid.v[ip];
-        Vector3d vt = dv - dv.dot(dx)/r/r*dx;
-        double vtnorm = vt.norm();
-        if (vtnorm != 0)
+        double Rp;
+        if (domain->dimension == 2)
         {
-          vt /= vtnorm;
-          double ffric = mu*fmag*r;
-          f -= ffric*vt;
+          if (domain->axisymmetric)
+            Rp = (sqrt(solid.  vol[ip ]/solid.x[ip ][0]) +
+                  sqrt(solid1->vol[ip1]/solid.x[ip1][0]))/2;
+          else
+            Rp = (sqrt(solid.vol[ip]) + sqrt(solid1->vol[ip1]))/2;
+        }
+        else
+          Rp = (cbrt(solid.vol[ip]) + cbrt(solid1->vol[ip1]))/2;
+      
+        // Gross screening:
+        for (int i = 0; i < domain->dimension; i++)
+          if (outside = abs(dx[i]) > Rp)
+            break;
 
-          if (update->method->temp)
+        if (outside)
+          continue;
+      
+        double r = dx.norm();
+
+        // Finer screening:
+        if (r >= Rp)
+          continue;
+
+        double fmag = solid.mass[ip] * solid1->mass[ip1]/
+                    ((solid.mass[ip] + solid1->mass[ip1])*
+                     update->dt*update->dt)*(1 - Rp/r);
+        Vector3d f = fmag*dx;
+
+        if (mu)
+        {
+          const Vector3d &dv = solid1->v[ip1] - solid.v[ip];
+          Vector3d vt = dv - dv.dot(dx)/r/r*dx;
+          double vtnorm = vt.norm();
+          if (vtnorm != 0)
           {
-            double gamma = ffric*vtnorm*update->dt;
-            solid.gamma[ip] += alpha*solid.vol0[ip]*solid.mat->invcp*gamma;
-            solid1->gamma[ip1] += (1 - alpha)*solid1->vol0[ip1]*solid1->mat->invcp*gamma;
+            vt /= vtnorm;
+            double ffric = mu*fmag*r;
+            f -= ffric*vt;
+
+            if (update->method->temp)
+            {
+              double gamma = ffric*vtnorm*update->dt;
+              solid.gamma[ip] += alpha*solid.vol0[ip]*solid.mat->invcp*gamma;
+              solid1->gamma[ip1] += (1 - alpha)*solid1->vol0[ip1]*solid1->mat->invcp*gamma;
+            }
           }
         }
-      }
 
-      solid.  mbp[ip ] += f;
-      solid1->mbp[ip1] -= f;
-      ftot += f;
+        solid.  mbp[ip ] += f;
+        solid1->mbp[ip1] -= f;
+        ftot += f;
+      }
     }
-  }
 }
 
 void FixContactMinPenetration::write_restart(ofstream *of)
