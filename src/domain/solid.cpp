@@ -95,9 +95,7 @@ Solid::Solid(MPM *mpm, vector<string> args): Pointers(mpm)
     grid = domain->grid;
   }
 
-  if (update->sub_method_type == Update::SubMethodType::APIC ||
-      update->sub_method_type == Update::SubMethodType::AFLIP ||
-      update->sub_method_type == Update::SubMethodType::ASFLIP)
+  if (update->sub_method_type == Update::SubMethodType::APIC)
   {
     apic = true;
   }

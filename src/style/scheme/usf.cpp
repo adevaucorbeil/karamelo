@@ -118,8 +118,7 @@ void USF::run(Var condition){
       for (int ip = 0; ip < solid->np_local; ip++)
       {
         method.compute_velocity_acceleration(*solid, ip);
-        if (solid->mat->rigid || update->sub_method_type != Update::SubMethodType::ASFLIP)
-          method.update_position(*solid, ip);
+        method.update_position(*solid, ip);
         modify->post_grid_to_point(*solid, ip);
         method.advance_particles(*solid, ip);
         modify->post_advance_particles(*solid, ip);

@@ -30,7 +30,6 @@ Method::Method(MPM *mpm) : Pointers(mpm)
 {
   is_TL = false;
   is_CPDI = false;
-  ge = false;
   temp = false;
 }
 
@@ -239,8 +238,6 @@ bool Method::apic()
   switch (update->sub_method_type)
   {
   case Update::SubMethodType::APIC:
-  case Update::SubMethodType::AFLIP:
-  case Update::SubMethodType::ASFLIP:
   case Update::SubMethodType::MLS:
     return true;
   }
@@ -309,7 +306,7 @@ void Method::compute_velocity_nodes(Solid &solid, int ip)
     
       Vector3d vtemp = solid.v[ip];
 
-      if (apic() || update->method->ge)
+      if (apic())
       {
         if (is_TL)
           vtemp += solid.Fdot[ip]*(solid.grid->x0[in] - solid.v[ip]);
@@ -463,9 +460,6 @@ void Method::update_position(Solid &solid, int ip)
 void Method::advance_particles(Solid &solid, int ip)
 {
   Vector3d &v = solid.v[ip];
-
-  if (update->sub_method_type == Update::SubMethodType::ASFLIP)
-    solid.x[ip] += update->dt*v;
 
   v = (1 - update->PIC_FLIP)*solid.v_update[ip] + update->PIC_FLIP*(v + update->dt*solid.a[ip]);
 }

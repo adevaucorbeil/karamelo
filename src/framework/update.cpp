@@ -134,9 +134,7 @@ void Update::create_method(vector<string> args){
     sub_method_type = map_sub_method_type.at(args[n]);
     if (sub_method_type == SubMethodType::PIC)
       PIC_FLIP = 0;
-    else if (sub_method_type == SubMethodType::FLIP ||
-             sub_method_type == SubMethodType::AFLIP ||
-             sub_method_type == SubMethodType::ASFLIP) {
+    else if (sub_method_type == SubMethodType::FLIP) {
       isFLIP = true;
       if (args.size() < 4) {
 	error->all(FLERR, "Illegal modify_method command: not enough arguments.\n");
@@ -180,16 +178,16 @@ void Update::create_method(vector<string> args){
   }
   n++;
 
-  if (args.size() >= n + 1) {
-    if (args[n] == "gradient-enhanced") {
-      method->ge = true;
-    } else {
-      error->all(FLERR,
-                 "Illegal modify_method command: keyword " + args[n] +
-                     " unknown. Expected \"gradient-enhanced\" or nothing.\n");
-    }
-  }
-  n++;
+  //if (args.size() >= n + 1) {
+  //  if (args[n] == "gradient-enhanced") {
+  //    method->ge = true;
+  //  } else {
+  //    error->all(FLERR,
+  //               "Illegal modify_method command: keyword " + args[n] +
+  //                   " unknown. Expected \"gradient-enhanced\" or nothing.\n");
+  //  }
+  //}
+  //n++;
 
   if (n < args.size()) {
     additional_args = vector<string>(args.begin() + n, args.end());

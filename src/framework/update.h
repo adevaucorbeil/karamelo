@@ -63,8 +63,6 @@ class Update : protected Pointers {
     PIC,
     FLIP,
     APIC,
-    AFLIP,
-    ASFLIP,
     MLS,
   };
   enum class ShapeFunctions {
@@ -78,8 +76,6 @@ private:
   const map<string, SubMethodType> map_sub_method_type{{"PIC", SubMethodType::PIC},
                                                        {"FLIP", SubMethodType::FLIP},
                                                        {"APIC", SubMethodType::APIC},
-                                                       {"AFLIP", SubMethodType::AFLIP},
-                                                       {"ASFLIP", SubMethodType::ASFLIP},
                                                        {"MLS", SubMethodType::MLS}};
   const map<string, ShapeFunctions> map_shape_functions{
       {"linear", ShapeFunctions::LINEAR},
