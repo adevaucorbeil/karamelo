@@ -270,8 +270,13 @@ vector<Grid *> Method::grids()
 void Method::reset_mass_nodes(Grid &grid)
 {
   if (!is_TL || !update->atimestep)
-    for (int in = 0; in < grid.nnodes_local + grid.nnodes_ghost; in++)
+  {
+    Kokkos::parallel_for("reset_mass_nodes", grid.nnodes_local + grid.nnodes_ghost,
+    KOKKOS_LAMBDA (const int &in)
+    {
       grid.mass[in] = 0;
+    });
+  }
 }
 
 void Method::compute_mass_nodes(Solid &solid)
@@ -290,13 +295,14 @@ void Method::compute_mass_nodes(Solid &solid)
 
 void Method::reset_velocity_nodes(Grid &grid)
 {
-  for (int in = 0; in < grid.nnodes_local + grid.nnodes_ghost; in++)
+  Kokkos::parallel_for("reset_velocity_nodes", grid.nnodes_local + grid.nnodes_ghost,
+  KOKKOS_LAMBDA (const int &in)
   {
     grid.v[in] = Vector3d();
     grid.mb[in] = Vector3d();
     if (temp)
       grid.T[in] = 0;
-  }
+  });
 }
 
 void Method::compute_velocity_nodes(Solid &solid)
@@ -338,7 +344,8 @@ void Method::compute_velocity_nodes(Solid &solid)
 
 void Method::reset_force_nodes(Grid &grid)
 {
-  for (int in = 0; in < grid.nnodes_local + grid.nnodes_ghost; in++)
+  Kokkos::parallel_for("reset_force_nodes", grid.nnodes_local + grid.nnodes_ghost,
+  KOKKOS_LAMBDA (const int &in)
   {
     grid.f[in] = Vector3d();
     grid.mb[in] = Vector3d();
@@ -347,7 +354,7 @@ void Method::reset_force_nodes(Grid &grid)
       grid.Qint[in] = 0;
       grid.Qext[in] = 0;
     }
-  }
+  });
 }
 
 void Method::compute_force_nodes(Solid &solid)
@@ -417,7 +424,8 @@ void Method::compute_force_nodes(Solid &solid)
 
 void Method::update_grid_velocities(Grid &grid)
 {
-  for (int in = 0; in < grid.nnodes_local + grid.nnodes_ghost; in++)
+  Kokkos::parallel_for("update_grid_velocities", grid.nnodes_local + grid.nnodes_ghost,
+  KOKKOS_LAMBDA (const int &in)
   {
     double T_update;
 
@@ -433,7 +441,7 @@ void Method::update_grid_velocities(Grid &grid)
       if (temp)
         T_update += update->dt*(grid.Qint[in] + grid.Qext[in])/mass;
     }
-  }
+  });
 }
 
 void Method::compute_velocity_acceleration(Solid &solid)
@@ -485,19 +493,23 @@ void Method::update_position(Solid &solid)
 
 void Method::advance_particles(Solid &solid)
 {
-  for (int ip = 0; ip < solid.np_local; ip++)
+  Kokkos::parallel_for("advance_particles", solid.np_local,
+  KOKKOS_LAMBDA (const int &ip)
   {
     Vector3d &v = solid.v[ip];
 
     v = (1 - update->PIC_FLIP)*solid.v_update[ip] + update->PIC_FLIP*(v + update->dt*solid.a[ip]);
-  }
+  });
 }
 
 void Method::update_grid_positions(Grid &grid)
 {
   if (is_TL)
-    for (int in = 0; in < grid.nnodes_local + grid.nnodes_ghost; in++)
+    Kokkos::parallel_for("update_grid_positions", grid.nnodes_local + grid.nnodes_ghost,
+    KOKKOS_LAMBDA (const int &in)
+    {
       grid.x[in] += update->dt*grid.v[in];
+    });
 }
 
 void Method::compute_rate_deformation_gradient(bool doublemapping, Solid &solid)

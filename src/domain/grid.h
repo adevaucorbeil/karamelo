@@ -98,10 +98,7 @@ class Grid : public Pointers {
   Kokkos::View<double*, MemorySpace> Qext;              ///< nodes' external thermal driving force
   Kokkos::View<double*, MemorySpace> Qint;              ///< nodes' internal thermal driving force
 
-  MPI_Datatype Pointtype;           ///< MPI type for struct Point
-
   Grid(class MPM *);
-  virtual ~Grid();
   void grow(int);              ///< Allocate memory for the vectors used for local nodes or resize them  
   void setup(string);
   void init(double*, double*); ///< Create the array of nodes. Give them their position, tag, and type

@@ -40,29 +40,6 @@ Grid::Grid(MPM *mpm) :
 
   cellsize = 0;
   nnodes = 0;
-
-  // Create MPI type for struct Point:
-  Point dummy;
-
-  MPI_Datatype type[4] = {MPI_INT, MPI_MPM_TAGINT, MPI_DOUBLE, MPI_INT};
-  int blocklen[4] = {1, 1, 3, 3};
-  MPI_Aint disp[4];
-  MPI_Get_address( &dummy.owner, &disp[0] );
-  MPI_Get_address( &dummy.tag, &disp[1] );
-  MPI_Get_address( &dummy.x, &disp[2] );
-  MPI_Get_address( &dummy.ntype, &disp[3] );
-  disp[3] = disp[3] - disp[0];
-  disp[2] = disp[2] - disp[0];
-  disp[1] = disp[1] - disp[0];
-  disp[0] = 0;
-  MPI_Type_create_struct(4, blocklen, disp, type, &Pointtype);
-  MPI_Type_commit(&Pointtype);
-
-}
-
-Grid::~Grid() {
-  // Destroy MPI type:
-  MPI_Type_free(&Pointtype);
 }
 
 void Grid::init(double *solidlo, double *solidhi) {
@@ -271,7 +248,7 @@ void Grid::init(double *solidlo, double *solidhi) {
       tmp_shared.resize(size_n);
     }
 
-    MPI_Bcast(tmp_shared.data(), size_n, Pointtype, sproc, universe->uworld);
+    MPI_Bcast(tmp_shared.data(), size_n, universe->Pointtype, sproc, universe->uworld);
 
 
     if (sproc == universe->me) {

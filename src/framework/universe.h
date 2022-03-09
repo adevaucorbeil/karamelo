@@ -37,6 +37,8 @@ class Universe : protected Pointers {
 
   vector<array<int, 3>> sendnrecv;  ///< stores the send and receive pattern to follow. The vector's length corresponds to the number of steps. For a given step, there is an array of two ints, the first int is either 0 (receive) or 1 (send), the second it the rank of the CPU to receive or send to.
 
+  MPI_Datatype Pointtype;           ///< MPI type for struct Point
+
   void set_proc_grid();             ///< setup 3d grid of procs
 };
 
