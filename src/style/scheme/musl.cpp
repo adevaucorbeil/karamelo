@@ -53,15 +53,12 @@ void MUSL::run(Var condition)
     method.reset();
 
     for (Grid *grid: method.grids())
-      Kokkos::parallel_for("grid reset", grid->nnodes_local + grid->nnodes_ghost,
-      KOKKOS_LAMBDA (const int &in)
+      for (int in = 0; in < grid->nnodes_local + grid->nnodes_ghost; in++)
       {
         method.reset_mass_nodes(*grid, in);
         method.reset_velocity_nodes(*grid, in);
         method.reset_force_nodes(*grid, in);
-      });
-
-
+      }
 
     // p2g
     for (Solid *solid: domain->solids)

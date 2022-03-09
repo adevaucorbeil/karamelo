@@ -21,7 +21,6 @@
 #include <deque>
 #include <matrix.h>
 #include <Kokkos_Core.hpp>
-#include <Kokkos_DualView.hpp>
 
 /*! This class represents a given solid.
  * 

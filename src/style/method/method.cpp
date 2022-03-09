@@ -26,6 +26,14 @@
 
 using namespace std;
 
+Method::Method(MPM *mpm) : Pointers(mpm)
+{
+  is_TL = false;
+  is_CPDI = false;
+  ge = false;
+  temp = false;
+}
+
 void Method::compute_grid_weight_functions_and_gradients(Solid &solid, int ip)
 {
   if (is_TL && update->atimestep)
@@ -257,6 +265,12 @@ vector<Grid *> Method::grids()
   return grids;
 }
 
+void Method::reset_mass_nodes(Grid &grid, int in)
+{
+  if (!is_TL || !update->atimestep)
+    grid.mass[in] = 0;
+}
+
 void Method::compute_mass_nodes(Solid &solid, int ip)
 {
   if (!is_TL || !update->atimestep)
@@ -268,6 +282,14 @@ void Method::compute_mass_nodes(Solid &solid, int ip)
       if (!solid.grid->rigid[in] || solid.mat->rigid)
         solid.grid->mass[in] += wf*solid.mass[ip];
     }
+}
+
+void Method::reset_velocity_nodes(Grid &grid, int in)
+{
+  grid.v[in] = Vector3d();
+  grid.mb[in] = Vector3d();
+  if (temp)
+    grid.T[in] = 0;
 }
 
 void Method::compute_velocity_nodes(Solid &solid, int ip)
@@ -303,6 +325,17 @@ void Method::compute_velocity_nodes(Solid &solid, int ip)
       if (temp)
         solid.grid->T[in] += normalized_wf*solid.T[ip];
     }
+  }
+}
+
+void Method::reset_force_nodes(Grid &grid, int in)
+{
+  grid.f[in] = Vector3d();
+  grid.mb[in] = Vector3d();
+  if (temp)
+  {
+    grid.Qint[in] = 0;
+    grid.Qext[in] = 0;
   }
 }
 
