@@ -299,12 +299,14 @@ void Solid::grow(int nparticles)
     q = Kokkos::View<Vector3d*, MemorySpace>("q", nparticles);
   }
 
-  int neighbor_nodes_per_particle = 16;
+  size_t neighbor_nodes_per_particle = 16;
 
   neigh_n    = Kokkos::View<int**, MemorySpace>     ("neigh_n",   nparticles, neighbor_nodes_per_particle);
   wf         = Kokkos::View<double**, MemorySpace>  ("wf",        nparticles, neighbor_nodes_per_particle);
   wf_corners = Kokkos::View<double***, MemorySpace> ("wfcorners", nparticles, neighbor_nodes_per_particle, nc);
   wfd        = Kokkos::View<Vector3d**, MemorySpace>("wfd",       nparticles, neighbor_nodes_per_particle);
+
+  neigh_policy = Kokkos::MDRangePolicy<Kokkos::Rank<2>>({ 0, 0 }, { (size_t)nparticles, neighbor_nodes_per_particle });
 }
 
 void Solid::compute_position_corners()

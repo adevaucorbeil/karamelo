@@ -103,6 +103,8 @@ class Solid : public Pointers {
   Kokkos::View<double***, MemorySpace> wf_corners;       ///< Particles' node neighbors' weight functions \f$\Phi\f$ evaluated at the corners of the particle's domain (used in CPDI)
   Kokkos::View<Vector3d**, MemorySpace> wfd;             ///< Particles' node neighbors' weight function derivatives \f$\partial \Phi/ \partial x\f$
 
+  Kokkos::MDRangePolicy<Kokkos::Rank<2>> neigh_policy;
+
   class Mat *mat;                          ///< Pointer to the material
 
   class Grid *grid;                         ///< Pointer to the background grid

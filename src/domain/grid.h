@@ -22,7 +22,7 @@
 #include <array>
 #include <Kokkos_Core.hpp>
 
-#ifdef KOKKOS_ENABLE_CUDA1
+#ifdef KOKKOS_ENABLE_CUDA
 using MemorySpace = Kokkos::CudaUVMSpace;
 #else
 using MemorySpace = Kokkos::HostSpace;
