@@ -288,11 +288,13 @@ void Method::compute_mass_nodes(Solid &solid)
     Kokkos::parallel_for("compute_mass_nodes", solid.neigh_policy,
     KOKKOS_LAMBDA (int ip, int i)
     {
-      int in = solid.neigh_n(ip, i);
-      double wf = solid.wf(ip, i);
+      if (double wf = solid.wf(ip, i))
+      {
+        int in = solid.neigh_n(ip, i);
 
-      if (!grid.rigid[in] || solid.mat->rigid)
-        Kokkos::atomic_add(&grid.mass[in], wf*solid.mass[ip]);
+        if (!grid.rigid[in] || solid.mat->rigid)
+          Kokkos::atomic_add(&grid.mass[in], wf*solid.mass[ip]);
+      }
     });
   
   Kokkos::fence();
@@ -324,34 +326,36 @@ void Method::compute_velocity_nodes(Solid &solid)
   Kokkos::parallel_for("compute_mass_nodes", solid.neigh_policy,
   KOKKOS_LAMBDA (int ip, int i)
   {
-    int in = solid.neigh_n(ip, i);
-    double wf = solid.wf(ip, i);
-
-    if (grid.rigid[in] && !solid.mat->rigid)
-      return;
-
-    if (double node_mass = grid.mass[in])
+    if (double wf = solid.wf(ip, i))
     {
-      double normalized_wf = wf*solid.mass[ip]/node_mass;
-      const Vector3d &dx = grid.x0[in] - solid.x[ip];
-  
-      Vector3d vtemp = solid.v[ip];
+      int in = solid.neigh_n(ip, i);
 
-      if (apic)
+      if (grid.rigid[in] && !solid.mat->rigid)
+        return;
+
+      if (double node_mass = grid.mass[in])
       {
-        if (is_TL)
-          vtemp += solid.Fdot[ip]*(grid.x0[in] - solid.v[ip]);
-        else
-          vtemp += solid.L[ip]*(grid.x0[in] - solid.x[ip]);
+        double normalized_wf = wf*solid.mass[ip]/node_mass;
+        const Vector3d &dx = grid.x0[in] - solid.x[ip];
+    
+        Vector3d vtemp = solid.v[ip];
+
+        if (apic)
+        {
+          if (is_TL)
+            vtemp += solid.Fdot[ip]*(grid.x0[in] - solid.v[ip]);
+          else
+            vtemp += solid.L[ip]*(grid.x0[in] - solid.x[ip]);
+        }
+
+        grid.v[in].atomic_add(normalized_wf*vtemp);
+
+        if (grid.rigid[in])
+          grid.mb[in].atomic_add(normalized_wf*solid.v_update[ip]);
+
+        if (temp)
+          Kokkos::atomic_add(&grid.T[in],  normalized_wf*solid.T[ip]);
       }
-
-      grid.v[in].atomic_add(normalized_wf*vtemp);
-
-      if (grid.rigid[in])
-        grid.mb[in].atomic_add(normalized_wf*solid.v_update[ip]);
-
-      if (temp)
-        Kokkos::atomic_add(&grid.T[in],  normalized_wf*solid.T[ip]);
     }
   });
 
@@ -388,37 +392,39 @@ void Method::compute_force_nodes(Solid &solid)
   Kokkos::parallel_for("compute_force_nodes0", solid.neigh_policy,
   KOKKOS_LAMBDA (int ip, int i)
   {
-    int in = solid.neigh_n(ip, i);
-    double wf = solid.wf(ip, i);
-    const Vector3d &wfd = solid.wfd(ip, i);
-  
-    Vector3d &f = grid.f[in];
-
-    if (is_TL)
+    if (double wf = solid.wf(ip, i))
     {
-      const Matrix3d &vol0PK1 = solid.vol0PK1[ip];
-      const Vector3d &x0 = solid.x0[ip];
+      int in = solid.neigh_n(ip, i);
+      const Vector3d &wfd = solid.wfd(ip, i);
+    
+      Vector3d &f = grid.f[in];
 
-      if (sub_method_type == Update::SubMethodType::MLS)
-        f.atomic_add(-vol0PK1*wf*solid.Di*(grid.x0[in] - x0));
+      if (is_TL)
+      {
+        const Matrix3d &vol0PK1 = solid.vol0PK1[ip];
+        const Vector3d &x0 = solid.x0[ip];
+
+        if (sub_method_type == Update::SubMethodType::MLS)
+          f.atomic_add(-vol0PK1*wf*solid.Di*(grid.x0[in] - x0));
+        else
+          f.atomic_add(-vol0PK1*wfd);
+
+        if (axisymmetric)
+          Kokkos::atomic_add(&f[0], -vol0PK1(2, 2)*wf/x0[0]);
+      }
       else
-        f.atomic_add(-vol0PK1*wfd);
+      {
+        const Matrix3d &vol_sigma = solid.vol[ip]*solid.sigma[ip];
+        const Vector3d &x = solid.x[ip];
 
-      if (axisymmetric)
-        Kokkos::atomic_add(&f[0], -vol0PK1(2, 2)*wf/x0[0]);
-    }
-    else
-    {
-      const Matrix3d &vol_sigma = solid.vol[ip]*solid.sigma[ip];
-      const Vector3d &x = solid.x[ip];
+        if (sub_method_type == Update::SubMethodType::MLS)
+          f.atomic_add(-vol_sigma*wf*solid.Di*(grid.x0[in] - x));
+        else
+          f.atomic_add(-vol_sigma*wfd);
 
-      if (sub_method_type == Update::SubMethodType::MLS)
-        f.atomic_add(-vol_sigma*wf*solid.Di*(grid.x0[in] - x));
-      else
-        f.atomic_add(-vol_sigma*wfd);
-
-      if (axisymmetric)
-        Kokkos::atomic_add(&f[0], -vol_sigma(2, 2)*wf/x[0]);
+        if (axisymmetric)
+          Kokkos::atomic_add(&f[0], -vol_sigma(2, 2)*wf/x[0]);
+      }
     }
   });
 
@@ -430,19 +436,21 @@ void Method::compute_force_nodes(Solid &solid)
   Kokkos::parallel_for("compute_force_nodes1", solid.neigh_policy,
   KOKKOS_LAMBDA (int ip, int i)
   {
-    int in = solid.neigh_n(ip, i);
-    double wf = solid.wf(ip, i);
-    const Vector3d &wfd = solid.wfd(ip, i);
-
-    if (!grid.rigid[in])
-      grid.mb[in].atomic_add(wf*solid.mbp[ip]);
-
-    if (temp)
+    if (double wf = solid.wf(ip, i))
     {
-      if (grid.mass[in])
-        Kokkos::atomic_add(&grid.Qext[in], wf*solid.gamma[ip]);
+      int in = solid.neigh_n(ip, i);
+      const Vector3d &wfd = solid.wfd(ip, i);
 
-      Kokkos::atomic_add(&grid.Qint[in], wfd.dot(solid.q[ip]));
+      if (!grid.rigid[in])
+        grid.mb[in].atomic_add(wf*solid.mbp[ip]);
+
+      if (temp)
+      {
+        if (grid.mass[in])
+          Kokkos::atomic_add(&grid.Qext[in], wf*solid.gamma[ip]);
+
+        Kokkos::atomic_add(&grid.Qint[in], wfd.dot(solid.q[ip]));
+      }
     }
   });
 
@@ -492,20 +500,22 @@ void Method::compute_velocity_acceleration(Solid &solid)
 
     for (int i = 0; i < solid.neigh_n.extent(1); i++)
     {
-      int in = solid.neigh_n(ip, i);
-      double wf = solid.wf(ip, i);
+      if (double wf = solid.wf(ip, i))
+      {
+        int in = solid.neigh_n(ip, i);
 
-      solid.v_update[ip] += wf*grid.v_update[in];
+        solid.v_update[ip] += wf*grid.v_update[in];
 
-      if (rigid)
-        return;
+        if (rigid)
+          return;
 
-      const Vector3d &delta_a = wf*(grid.v_update[in] - grid.v[in])/dt;
-      solid.a[ip] += delta_a;
-      solid.f[ip] += delta_a*solid.mass[ip];
+        const Vector3d &delta_a = wf*(grid.v_update[in] - grid.v[in])/dt;
+        solid.a[ip] += delta_a;
+        solid.f[ip] += delta_a*solid.mass[ip];
 
-      if (temp)
-        solid.T[ip] += wf*grid.T_update[in];
+        if (temp)
+          solid.T[ip] += wf*grid.T_update[in];
+      }
     }
   });
 
@@ -591,33 +601,35 @@ void Method::compute_rate_deformation_gradient(bool doublemapping, Solid &solid)
 
     for (int i = 0; i < solid.neigh_n.extent(1); i++)
     {
-      int in = solid.neigh_n(ip, i);
-      double wf = solid.wf(ip, i);
-      const Vector3d &wfd = solid.wfd(ip, i);
-
-      if (sub_method_type == Update::SubMethodType::APIC)
+      if (double wf = solid.wf(ip, i))
       {
-        const Vector3d &dx = is_TL? solid.grid->x0[in] - solid.v[ip]:
-                                    solid.grid->x[ip] - solid.grid->x0[in];
+        int in = solid.neigh_n(ip, i);
+        const Vector3d &wfd = solid.wfd(ip, i);
 
-        Matrix3d gradient;
-        for (int j = 0; j < dimension; j++)
-          for (int k = 0; k < dimension; k++)
-            gradient(j, k) += vn[in][j]*dx[k]*wf;
+        if (sub_method_type == Update::SubMethodType::APIC)
+        {
+          const Vector3d &dx = is_TL? solid.grid->x0[in] - solid.v[ip]:
+                                      solid.grid->x[ip] - solid.grid->x0[in];
 
-        gradients[ip] += gradient*solid.Di;
+          Matrix3d gradient;
+          for (int j = 0; j < dimension; j++)
+            for (int k = 0; k < dimension; k++)
+              gradient(j, k) += vn[in][j]*dx[k]*wf;
+
+          gradients[ip] += gradient*solid.Di;
+        }
+        else
+          for (int j = 0; j < dimension; j++)
+            for (int k = 0; k < dimension; k++)
+              gradients[ip](j, k) += vn[in][j]*wfd[k];
+
+        if (dimension == 2 && axisymmetric)
+          gradients[ip](2, 2) += vn[in][0]*wf/solid.v[ip][0];
+
+        if (temp)
+          solid.q[ip] -= wfd*(doublemapping? solid.grid->T: solid.grid->T_update)[in]*
+                        (is_TL? solid.vol0: solid.vol)[ip]*solid.mat->invcp*solid.mat->kappa;
       }
-      else
-        for (int j = 0; j < dimension; j++)
-          for (int k = 0; k < dimension; k++)
-            gradients[ip](j, k) += vn[in][j]*wfd[k];
-
-      if (dimension == 2 && axisymmetric)
-        gradients[ip](2, 2) += vn[in][0]*wf/solid.v[ip][0];
-
-      if (temp)
-        solid.q[ip] -= wfd*(doublemapping? solid.grid->T: solid.grid->T_update)[in]*
-                       (is_TL? solid.vol0: solid.vol)[ip]*solid.mat->invcp*solid.mat->kappa;
     }
   });
 
