@@ -6,7 +6,7 @@
 #include <cstddef>
 #include <cmath>
 
-#include <Kokkos_Macros.hpp>
+#include <Kokkos_Core.hpp>
 
 template<typename S>
 using enable_if_scalar_t = std::enable_if_t<std::is_arithmetic<
@@ -189,6 +189,17 @@ public:
     for (int i = 0; i < M; i++)
       for (int j = 0; j < N; j++)
         elements[i][j] += matrix(i, j);
+
+    return *this;
+  }
+
+  template<typename U>
+  KOKKOS_INLINE_FUNCTION Matrix<T, M, N> &
+  atomic_add(const Matrix<U, M, N> &matrix)
+  {
+    for (int i = 0; i < M; i++)
+      for (int j = 0; j < N; j++)
+        Kokkos::atomic_add(&elements[i][j], matrix(i, j));
 
     return *this;
   }
