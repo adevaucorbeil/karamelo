@@ -70,8 +70,6 @@ class Method : protected Pointers {
   bool temp;          ///< true for thermo-mechanical simulations
   int update_Di;
   int rigid_solids;
-  double (*basis_function)(double, int);
-  double (*derivative_basis_function)(double, int, double);
 };
 
 #endif

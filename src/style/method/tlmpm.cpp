@@ -38,8 +38,4 @@ TLMPM::TLMPM(MPM *mpm):
 
   update->PIC_FLIP = 0.99;
   is_TL = true;
-
-  // Default base function (linear):
-  basis_function = &BasisFunction::linear;
-  derivative_basis_function = &BasisFunction::derivative_linear;
 }

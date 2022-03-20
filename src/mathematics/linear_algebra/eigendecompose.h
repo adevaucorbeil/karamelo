@@ -5,7 +5,7 @@
 // diagonalizes matrix and returns matrix of eigenvectors
 template<typename T, std::size_t N,
   typename V = decltype(std::declval<T>()/std::declval<T>())>
-Matrix<V, N, N>
+KOKKOS_INLINE_FUNCTION Matrix<V, N, N>
 eigendecompose(Matrix<T, N, N> &matrix)
 {
   Matrix<V, N, N> eigenvectors = Matrix<V, N, N>::identity();
@@ -21,7 +21,7 @@ eigendecompose(Matrix<T, N, N> &matrix)
     const T &c = matrix(k    , k    );
     const V &d = (a - c)/2;
     Matrix<V, N, N> shift;
-    double denominator = std::abs(d) + std::hypot(d, b);
+    double denominator = Kokkos::Experimental::abs(d) + Kokkos::Experimental::hypot(d, b);
     if (abs(denominator) > 1e-10)
      shift = (c - sign(d)*b*b/denominator)*Matrix<V, N, N>::identity();
 

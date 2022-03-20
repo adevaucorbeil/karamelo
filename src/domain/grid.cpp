@@ -148,7 +148,14 @@ void Grid::init(double *solidlo, double *solidhi) {
 
   // Determine the total number of nodes:
   nnodes = nx_global * ny_global * nz_global;
-  map_ntag.assign(nnodes, -1);
+  
+  map_ntag = Kokkos::View<tagint*, MemorySpace>("map_ntag", nnodes);
+  Kokkos::View<tagint*, MemorySpace> map_ntag = this->map_ntag;
+  Kokkos::parallel_for("set map_ntag", nnodes,
+  KOKKOS_LAMBDA (const int &in)
+  {
+    map_ntag[in] = -1;
+  });
 
   nx = MAX(0, noffsethi_[0] - noffsetlo[0]);
   if (domain->dimension >= 2) {

@@ -54,10 +54,8 @@ static inline Matrix2d Deviator(const Matrix2d M) {
  */
 
 static inline bool PolDec(Matrix3d M, Matrix3d &R, Matrix3d &T, bool scaleF) {
-	Matrix3d S = M;
-	const std::pair<Matrix3d, Matrix3d> &uv = singular_value_decompose(S); // SVD(A) = U S V*
-	Matrix3d U = uv.first;
-	Matrix3d V = uv.second;
+	Matrix3d S = M, U, V;
+	singular_value_decompose(S, U, V); // SVD(A) = U S V*
 	Matrix3d eye = Matrix3d::identity();
 
 	// now do polar decomposition into M = R * T, where R is rotation
@@ -96,10 +94,8 @@ static inline bool PolDec(Matrix3d M, Matrix3d &R, Matrix3d &T, bool scaleF) {
 }
 
 static inline bool PolDec(Matrix3d M, Matrix3d &R) {
-	Matrix3d S = M;
-	const std::pair<Matrix3d, Matrix3d> &uv = singular_value_decompose(S); // SVD(A) = U S V*
-	Matrix3d U = uv.first;
-	Matrix3d V = uv.second;
+	Matrix3d S = M, U, V;
+	singular_value_decompose(S, U, V); // SVD(A) = U S V*
 	Matrix3d eye = Matrix3d::identity();
 
   // now do polar decomposition into M = R * T, where R is rotation

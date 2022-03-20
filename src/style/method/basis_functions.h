@@ -14,229 +14,170 @@
 #ifndef MPM_BASIS_FUNCTIONS_H
 #define MPM_BASIS_FUNCTIONS_H
 
+#include <Kokkos_Core.hpp>
 
-using namespace std;
-
-namespace BasisFunction { 
-  inline double linear(const double r_, const int ntype)
+namespace Kokkos::Experimental
+{
+  KOKKOS_INLINE_FUNCTION double
+  copysign(double mag, double sign)
   {
-    double r = fabs(r_);
-    if (r >= 1.0)
-      return 0.0;
-    else
-      return 1.0 - r;
+    return sign == 0? 0:
+           sign >  0?  Kokkos::Experimental::abs(mag):
+                      -Kokkos::Experimental::abs(mag);
+  }
+}
+
+namespace BasisFunction
+{ 
+  KOKKOS_INLINE_FUNCTION double
+  linear(double r)
+  {
+    return r >= 1 || r <= -1? 0: 1 - Kokkos::Experimental::abs(r);
   }
 
-  inline double derivative_linear(const double r, const int ntype, const double inv_cellsize)
+  KOKKOS_INLINE_FUNCTION double
+  derivative_linear(double r, double inv_cellsize)
   {
-    if (r >= 1.0 || r <= -1.0 || r == 0)
-      return 0.0;
-    else if (r > 0.0)
-      return -inv_cellsize;
-    else
-      return inv_cellsize;
+    return r >= 1 || r <= -1 || r == 0? 0: -Kokkos::Experimental::copysign(inv_cellsize, r);
   }
 
-  inline double cubic_spline(const double r, const int ntype)
+  KOKKOS_INLINE_FUNCTION double
+  cubic_spline(double r, int ntype)
   {
-    if (r >= 1 && r < 2) {
-      if (ntype==1) {
-	return 0;
-      } else {
-	return ((-1.0/6.0*r + 1)*r - 2)*r + 4.0/3.0;
-      }
-    } else if (r >=0 && r < 1) {
-      if (ntype==-2) {
-	return  (1.0/6.0*r*r - 1)*r + 1;
-      } else if (ntype==2) {
-	return 1;
-      } else if (ntype==1) {
-	return (1.0/3.0*r - 1)*r*r + 2.0/3.0;
-      } else {
-	return (0.5*r - 1)*r*r + 2.0/3.0;
-      }
-    } else if (r >= -1 && r < 0) {
-      if (ntype==2) {
-	return (-1.0/6.0*r*r + 1)*r + 1;
-      } else if (ntype==-1) {
-	return  (-1.0/3.0*r - 1)*r*r + 2.0/3.0;
-      } else {
-	return (-0.5*r - 1)*r*r + 2.0/3.0;
-      }
-    } else if (r >= -2 && r < -1) {
-      return ((1.0/6.0*r + 1)*r + 2)*r + 4.0/3.0;
-    } else {
+    if (r >= 1 && r < 2)
+      return ntype == 1? 0: ((-r/6 + 1)*r - 2)*r + 4.0/3;
+
+    if (r >= 0 && r < 1)
+      return ntype == -2? (r*r/6 - 1)*r + 1:
+             ntype ==  2? 1:
+             ntype ==  1? (r/3 - 1)*r*r + 2.0/3:
+                          (r/2 - 1)*r*r + 2.0/3;
+    
+    if (r >= -1 && r < 0)
+      return ntype ==  2? (-r*r/6 + 1)*r + 1:
+             ntype == -1? (-r/3 - 1)*r*r + 2.0/3:
+                          (-0.5*r - 1)*r*r + 2.0/3.0;
+    
+    if (r >= -2 && r < -1)
+      return ((r/6 + 1)*r + 2)*r + 4.0/3;
+
+    return 0;
+  }
+
+  KOKKOS_INLINE_FUNCTION double
+  derivative_cubic_spline(double r, int ntype, double inv_cellsize)
+  {
+    if (r >= 1 && r < 2)
+      return ntype == 1? -inv_cellsize: inv_cellsize*((-0.5*r + 2)*r - 2);
+    
+    if (r >=0 && r < 1)
+      return ntype == -2? inv_cellsize*(r*r/2 - 1):
+             ntype ==  2? inv_cellsize:
+             ntype ==  1? inv_cellsize*r*(r - 2):
+                          inv_cellsize*(r*3/2 - 2)*r;
+    
+    if (r >= -1 && r < 0)
+      return ntype ==  2? inv_cellsize*(-r*r/2 + 1):
+             ntype == -1? inv_cellsize*(-r - 2)*r:
+                          inv_cellsize*(-r*3/2 - 2)*r;
+    
+    if (r >= -2 && r < -1)
+      return inv_cellsize*((r/2 + 2)*r + 2);
+
+    return 0;
+  }
+
+  KOKKOS_INLINE_FUNCTION double
+  bernstein_quadratic(double r, int ntype)
+  {
+    if (r >= 1.0 || r <= -1.0)
       return 0;
-    }
+
+    if (ntype==1)
+      return r > 0.5 || r < -0.5? 0: 0.5 - 2*r*r;
+
+    r = Kokkos::Experimental::abs(r);
+    return (1 - r)*(1-r);
   }
 
-  inline double derivative_cubic_spline(const double r, const int ntype, const double icellsize)
+  KOKKOS_INLINE_FUNCTION double
+  derivative_bernstein_quadratic(double r, int ntype, double inv_cellsize)
   {
-    if (r >= 1 && r < 2) {
-      if (ntype==1) {
-	return -icellsize;// * (-1);
-      } else {
-	return icellsize * ((-0.5*r + 2)*r - 2);
-      }
-    } else if (r >=0 && r < 1) {
-      if (ntype==-2) {
-        return icellsize * (0.5 * r * r - 1);
-      } else if (ntype==2) {
-	return icellsize;// * (1);
-      } else if (ntype==1) {
-        return icellsize * r * (r - 2);
-      } else {
-        return icellsize * (3.0 / 2.0 * r - 2) * r;
-      }
-    } else if (r >= -1 && r < 0) {
-      if (ntype==2) {
-        return icellsize * (-0.5 * r * r + 1);
-      } else if (ntype==-1) {
-	return icellsize * (-r - 2)*r;
-      } else {
-	return icellsize * (-3.0/2.0*r - 2)*r;
-      }
-    } else if (r >= -2 && r < -1) {
-      return icellsize * ((0.5 * r + 2) * r + 2);
-    } else {
+    if (r >= 1 || r <= -1)
       return 0;
-    }
+
+    if (ntype == 1)
+      return r > 0.5 || r < -0.5? 0: -4*r*inv_cellsize;
+    
+	  return 2*(r - Kokkos::Experimental::copysign(1, r))*inv_cellsize;
   }
 
-  inline double bernstein_quadratic(const double r_, const int ntype)
+  KOKKOS_INLINE_FUNCTION double
+  quadratic_spline(double r, int ntype)
   {
-    double r = fabs(r_);
-    if (r >= 1.0) return 0;
+    switch (ntype)
+    {
+      case 0:
+        return r >= 0.5 && r < 1.5? (0.5 * r - 1.5) * r + 1.125:
+               r >= -0.5 && r < 0.5? -r * r + 0.75:
+               r >= -1.5 && r < 0.5? (0.5 * r + 1.5) * r + 1.125:
+                                     0;
+    
+      case -2:
+        return r >= 0. && r < 0.5? 1 - r:
+               r >= 0.5 && r < 1.5? (0.5 * r - 1.5) * r + 1.125:
+                                    0;
 
-    if (ntype==1) {
-      // Inside node:
-      if (r >= 0.5) return 0;
-      else return 0.5-2*r*r;
-    } else {
-      // Edge node:
-      return (1-r)*(1-r);
+      case -1:
+        return r >= -1 && r < -0.5? 1 + r:
+               r >= -0.5 && r < 0.5? -r * r + 0.75:
+               r >= 0.5 && r < 1.5? (0.5 * r - 1.5) * r + 1.125:
+                                    0;
+
+      case 1:
+        return r >= -1.5 && r < -0.5? (0.5 * r + 1.5) * r + 1.125:
+               r >= -0.5 && r < 0.5? -r * r + 0.75:
+               r >= 0.5 && r < 1? 1 - r:
+                                  0;
+
+      default:
+        return r >= -1.5 && r < -0.5? (0.5 * r + 1.5) * r + 1.125:
+               r >= -0.5 && r <= 0? 1 + r:
+                                    0;
     }
   }
 
-  inline double derivative_bernstein_quadratic(const double r_signed, const int ntype, const double icellsize)
+  KOKKOS_INLINE_FUNCTION double
+  derivative_quadratic_spline(double r, int ntype, double inv_cellsize)
   {
-    double r = fabs(r_signed);
-    if (r >= 1.0) return 0;
+    switch (ntype)
+    {
+      case 0:
+        return r >=  0.5 && r < 1.5? inv_cellsize*(r - 1.5):
+               r >= -0.5 && r < 0.5? -2*inv_cellsize*r:
+               r >= -1.5 && r < 0.5? inv_cellsize*(r + 1.5):
+                                     0;
+                                     
+      case -2:
+        return r >= 0 && r < 0.5? -inv_cellsize:
+               r >= 0.5 && r < 1.5? inv_cellsize*(r - 1.5):
+                                    0;
+      case -1:
+        return r >= -1 && r < -0.5? inv_cellsize:
+               r >= -0.5 && r < 0.5? -2 * inv_cellsize * r:
+               r >= 0.5 && r < 1.5? inv_cellsize*(r - 1.5):
+                                    0;
+    
+      case 1:
+        return r >= -1.5 && r < -0.5? inv_cellsize*(r + 1.5):
+               r >= -0.5 && r < 0.5? - 2 * inv_cellsize * r:
+               r >= 0.5 && r < 1? -inv_cellsize:
+                                  0;
 
-    if (ntype==1) {
-      // Inside node:
-      if (r > 0.5) return 0;
-      return -4*r_signed*icellsize;
-    } else {
-      // Edge node:
-      if (r_signed>0) {
-	return -2*(1-r_signed)*icellsize;
-      } else {
-	return 2*(1+r_signed)*icellsize;
-      }
-    }
-  }
-
-  inline double quadratic_spline(const double r, const int ntype) {
-    if (ntype == 0) {
-      if (r >= 0.5 && r < 1.5) {
-        return (0.5 * r - 1.5) * r + 1.125;
-      } else if (r >= -0.5 && r < 0.5) {
-        return -r * r + 0.75;
-      } else if (r >= -1.5 && r < 0.5) {
-        return (0.5 * r + 1.5) * r + 1.125;
-      } else {
-        return 0;
-      }
-    } else if (ntype == -2) {
-      if (r >= 0. && r < 0.5) {
-        return 1 - r;
-      } else if (r >= 0.5 && r < 1.5) {
-        return (0.5 * r - 1.5) * r + 1.125;
-      } else {
-        return 0;
-      }
-    } else if (ntype == -1) {
-      if (r >= -1. && r < -0.5) {
-        return 1 + r;
-      } else if (r >= -0.5 && r < 0.5) {
-        return -r * r + 0.75;
-      } else if (r >= 0.5 && r < 1.5) {
-        return (0.5 * r - 1.5) * r + 1.125;
-      } else {
-        return 0;
-      }
-    } else if (ntype == 1) {
-      if (r >= -1.5 && r < -0.5) {
-        return (0.5 * r + 1.5) * r + 1.125;
-      } else if (r >= -0.5 && r < 0.5) {
-        return -r * r + 0.75;
-      } else if (r >= 0.5 && r < 1.) {
-        return 1 - r;
-      } else {
-        return 0;
-      }
-    } else {
-      //ntype == 2
-      if (r >= -1.5 && r < -0.5) {
-        return (0.5 * r + 1.5) * r + 1.125;
-      } else if (r >= -0.5 && r <= 0.) {
-        return 1 + r;
-      } else {
-        return 0;
-      }
-    }
-  }
-
-  inline double derivative_quadratic_spline(const double r, const int ntype,
-                                            const double icellsize) {
-    if (ntype == 0) {
-      if (r >= 0.5 && r < 1.5) {
-        return icellsize*(r - 1.5);
-      } else if (r >= -0.5 && r < 0.5) {
-        return - 2 * icellsize * r;
-      } else if (r >= -1.5 && r < 0.5) {
-        return icellsize*(r + 1.5);
-      } else {
-        return 0;
-      }
-    } else if (ntype == -2) {
-      if (r >= 0. && r < 0.5) {
-        return -icellsize;
-      } else if (r >= 0.5 && r < 1.5) {
-        return icellsize*(r - 1.5);
-      } else {
-        return 0;
-      }
-    } else if (ntype == -1) {
-      if (r >= -1. && r < -0.5) {
-        return icellsize;
-      } else if (r >= -0.5 && r < 0.5) {
-        return -2 * icellsize * r;
-      } else if (r >= 0.5 && r < 1.5) {
-        return icellsize*(r - 1.5);
-      } else {
-        return 0;
-      }
-    } else if (ntype == 1) {
-      if (r >= -1.5 && r < -0.5) {
-        return icellsize*(r + 1.5);
-      } else if (r >= -0.5 && r < 0.5) {
-        return - 2 * icellsize * r;
-      } else if (r >= 0.5 && r < 1.) {
-        return -icellsize;
-      } else {
-        return 0;
-      }
-    } else {
-      // ntype == 2
-      if (r >= -1.5 && r < -0.5) {
-        return icellsize*(r + 1.5);
-      } else if (r >= -0.5 && r <= 0.) {
-        return icellsize;
-      } else {
-        return 0;
-      }
+      default:
+        return r >= -1.5 && r < -0.5? inv_cellsize*(r + 1.5):
+               r >= -0.5 && r <= 0? inv_cellsize:
+                                    0;
     }
   }
 }

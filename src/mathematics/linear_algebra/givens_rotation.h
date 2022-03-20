@@ -6,7 +6,7 @@
 // returns a givens rotation matrix that zeroes element i, j of the given matrix
 template<typename T, std::size_t M, std::size_t N,
   typename V = decltype(std::declval<T>()/std::declval<T>())>
-Matrix<V, M, M>
+KOKKOS_INLINE_FUNCTION Matrix<V, M, M>
 givens_rotation(const Matrix<T, M, N> &matrix, std::size_t i, std::size_t j)
 {
   const T &jj =  matrix(j, j);
@@ -24,16 +24,16 @@ givens_rotation(const Matrix<T, M, N> &matrix, std::size_t i, std::size_t j)
     c = 0;
     s = sign(ij);
   }
-  else if (std::abs(jj) > std::abs(ij))
+  else if (Kokkos::Experimental::abs(jj) > Kokkos::Experimental::abs(ij))
   {
     V t = ij/jj;
-    c = sign(jj)/std::sqrt(1 + t*t);
+    c = sign(jj)/Kokkos::Experimental::sqrt(1 + t*t);
     s = c*t;
   }
   else
   {
     V t = jj/ij;
-    s = sign(ij)/std::sqrt(1 + t*t);
+    s = sign(ij)/Kokkos::Experimental::sqrt(1 + t*t);
     c = s*t;
   }
 

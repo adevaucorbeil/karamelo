@@ -62,7 +62,7 @@ class Grid : public Pointers {
   bigint nnodes_local;   ///< number of nodes (in this CPU)
   bigint nnodes_ghost;   ///< number of ghost nodes (in this CPU)
   Kokkos::View<tagint*, MemorySpace> ntag;   ///< unique identifier for nodes in the system.
-  vector<tagint> map_ntag;  ///< map_ntag[ntag[i]] = i;
+  Kokkos::View<tagint*, MemorySpace> map_ntag;  ///< map_ntag[ntag[i]] = i;
 
   int nx;                ///< number of nodes along x on this CPU
   int ny;                ///< number of nodes along y on this CPU

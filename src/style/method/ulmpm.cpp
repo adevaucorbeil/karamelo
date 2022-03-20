@@ -29,16 +29,13 @@
 
 using namespace std;
 
-ULMPM::ULMPM(MPM *mpm) : Method(mpm)
+ULMPM::ULMPM(MPM *mpm):
+  Method(mpm)
 {
   // cout << "In ULMPM::ULMPM()" << endl;
 
   update_Di   = 1;
   update->PIC_FLIP = 0.99;
-
-  // Default base function (linear):
-  basis_function            = &BasisFunction::linear;
-  derivative_basis_function = &BasisFunction::derivative_linear;
 
   rigid_solids = 0;
 }
