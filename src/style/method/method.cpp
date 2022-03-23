@@ -151,7 +151,7 @@ void Method::compute_grid_weight_functions_and_gradients(Solid &solid)
           sd[j] = BasisFunction::derivative_bernstein_quadratic(r[j], ntype[in][j], inv_cellsize);
         }
       }
-
+      
       solid.wf (ip, i)    = s [0]*s [1]*s [2];
 
       solid.wfd(ip, i)[0] = sd[0]*s [1]*s [2];
@@ -804,16 +804,21 @@ void Method::update_deformation_gradient_stress(bool doublemapping, Solid &solid
 
 void Method::adjust_dt()
 {
-  if (update->dt_constant) return; // dt is set as a constant, do not update
+  if (update->dt_constant)
+    return; // dt is set as a constant, do not update
 
   double dtCFL = 1.0e22;
   double dtCFL_reduced = 1.0e22;
 
-  for (int isolid = 0; isolid < domain->solids.size(); isolid++)
-    for (int ip = 0; ip < domain->solids[isolid]->np_local; ip++)
+  for (Solid *solid: domain->solids)
+  {
+    Kokkos::View<double*, MemorySpace> solid_dtCFL = solid->dtCFL;
+
+    Kokkos::parallel_reduce("update_deformation_gradient_stress2", solid->np_local,
+    KOKKOS_LAMBDA (const int &ip, double &dtCFL)
     {
-      dtCFL = MIN(dtCFL, domain->solids[isolid]->dtCFL[ip]);
-      if (!dtCFL)
+      dtCFL = MIN(dtCFL, solid_dtCFL[ip]);
+      /*if (!dtCFL)
       {
         cout << "Error: dtCFL == 0\n";
         cout << "domain->solids[" << isolid << "]->dtCFL == 0\n";
@@ -824,21 +829,27 @@ void Method::adjust_dt()
         cout << "Error: dtCFL = " << dtCFL << "\n";
         cout << "domain->solids[" << isolid << "]->dtCFL == " << domain->solids[isolid]->dtCFL[ip] << "\n";
         error->one(FLERR, "");
-      }
-    }
+      }*/
+    }, dtCFL);
+  }
 
   MPI_Allreduce(&dtCFL, &dtCFL_reduced, 1, MPI_DOUBLE, MPI_MIN, universe->uworld);
 
-  update->dt = dtCFL_reduced * update->dt_factor;
+  update->dt = dtCFL_reduced*update->dt_factor;
   (*input->vars)["dt"] = Var("dt", update->dt);
 }
 
 void Method::reset()
 {
-  for (int isolid = 0; isolid < domain->solids.size(); isolid++)
+  for (Solid *solid: domain->solids)
   {
-    for (int ip = 0; ip < domain->solids[isolid]->np_local; ip++)
-      domain->solids[isolid]->mbp[ip] = Vector3d();
+    Kokkos::View<Vector3d*, MemorySpace> mbp = solid->mbp;
+    
+    Kokkos::parallel_for("reset", solid->np_local,
+    KOKKOS_LAMBDA (const int &ip)
+    {
+      mbp[ip] = Vector3d();
+    });
   }
 }
 
