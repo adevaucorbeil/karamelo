@@ -16,10 +16,20 @@
 #include <input.h>
 #include <Kokkos_Core.hpp>
 
+#include <expression.h>
+
 /*! Main program to drive MPM. */
 
 int main(int argc, char **argv) {
   Kokkos::initialize();
+  Expression::initialize();
+
+  Expression expression("inv_norm((i + 1)/21)");
+  expression.evaluate();
+  expression.print();
+
+  return 0;
+
   MPI_Init(&argc, &argv);                         /// Initialized MPI
 
   MPM(argc, argv, MPI_COMM_WORLD).input->file(); /// Create the MPM entity, read input file and execute commands

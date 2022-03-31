@@ -16,14 +16,17 @@
 
 #include <Kokkos_Core.hpp>
 
-namespace Kokkos::Experimental
+namespace Kokkos
 {
-  KOKKOS_INLINE_FUNCTION double
-  copysign(double mag, double sign)
+  namespace Experimental
   {
-    return sign == 0? 0:
-           sign >  0?  Kokkos::Experimental::abs(mag):
-                      -Kokkos::Experimental::abs(mag);
+    KOKKOS_INLINE_FUNCTION double
+    copysign(double mag, double sign)
+    {
+      return sign == 0? 0:
+             sign >  0?  Kokkos::Experimental::abs(mag):
+                        -Kokkos::Experimental::abs(mag);
+    }
   }
 }
 

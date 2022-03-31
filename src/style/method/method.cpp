@@ -269,7 +269,7 @@ void Method::compute_velocity_nodes(Solid &solid)
   bool is_TL = this->is_TL;
   Grid &grid = *solid.grid;
 
-  Kokkos::parallel_for("compute_mass_nodes", solid.neigh_policy,
+  Kokkos::parallel_for("compute_velocity_nodes", solid.neigh_policy,
   KOKKOS_LAMBDA (int ip, int i)
   {
     if (double wf = solid.wf(ip, i))
