@@ -54,15 +54,20 @@ class ExpressionOperation:
     return PRECEDENCE;
   }
 
+public:
   void
   apply() override
   {
     index = expression->index;
 
+    DERIVED derived(*static_cast<const DERIVED *>(this));
+    int index = this->index;
+    Kokkos::View<double**> registers = this->registers;
+
     Kokkos::parallel_for("", expression->registers.extent(1),
     KOKKOS_LAMBDA (int i)
     {
-      registers(index - ARITY, i) = static_cast<const DERIVED *>(this)->evaluate(i);
+      registers(index - ARITY, i) = derived.evaluate(i);
     });
 
     expression->index -= ARITY - 1;

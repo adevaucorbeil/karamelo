@@ -17,6 +17,7 @@
 #include <Kokkos_Core.hpp>
 
 #include <expression.h>
+#include <iostream>
 
 /*! Main program to drive MPM. */
 
@@ -24,9 +25,13 @@ int main(int argc, char **argv) {
   Kokkos::initialize();
   Expression::initialize();
 
-  Expression expression("inv_norm((i + 1)/21)");
-  expression.evaluate();
-  expression.print();
+  {
+    Expression expression("inv_norm((i + 1)/21)");
+    expression.evaluate();
+    expression.print();
+  }
+
+  Kokkos::finalize();
 
   return 0;
 

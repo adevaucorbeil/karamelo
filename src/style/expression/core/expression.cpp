@@ -138,8 +138,7 @@ Expression::Expression(const std::string &expression)
 }
 
 Expression::~Expression()
-{
-}
+{}
 
 void Expression::evaluate() const
 {
@@ -153,8 +152,10 @@ void Expression::evaluate() const
 
 void Expression::print() const
 {
+  Kokkos::View<double**>::HostMirror mirror = Kokkos::create_mirror(registers);
+  Kokkos::deep_copy(mirror, registers);
   for (int i = 0; i < registers.extent(1); i++)
   {
-    std::cout << i << ": " << registers(0, i) << std::endl;
+    std::cout << i << ": " << mirror(0, i) << std::endl;
   }
 }
