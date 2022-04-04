@@ -2,19 +2,14 @@
 
 #include <expression_operand.h>
 
+template <const double &CONSTANT>
 class ExpressionOperandConstant:
-  public ExpressionOperand<ExpressionOperandConstant>
+  public ExpressionOperand<ExpressionOperandConstant<CONSTANT>>
 {
-  double value;
-
 public:
-  ExpressionOperandConstant(double value):
-    value(value)
-  {}
-
   KOKKOS_INLINE_FUNCTION double
   evaluate(int i) const
   {
-    return value;
+    return CONSTANT;
   }
 };

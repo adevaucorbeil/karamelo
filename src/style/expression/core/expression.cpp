@@ -1,4 +1,5 @@
 #include <expression_operand_constant.h>
+#include <expression_operand_literal.h>
 #include <expression_operand_index.h>
 #include <expression_operators_arithmetic.h>
 #include <expression_function_parenthesis.h>
@@ -26,6 +27,11 @@ void Expression::initialize()
   operation_factory.register_class<ExpressionFunctionAcos>("acos(");
   operation_factory.register_class<ExpressionFunctionAtan>("atan(");
   operation_factory.register_class<ExpressionFunctionAtan2>("atan2(");
+
+  operation_factory.register_class<ExpressionOperandConstant<Kokkos::Experimental::    pi_v<double>>>("PI"    );
+  operation_factory.register_class<ExpressionOperandConstant<Kokkos::Experimental::     e_v<double>>>("E"     );
+  operation_factory.register_class<ExpressionOperandConstant<Kokkos::Experimental::egamma_v<double>>>("EGAMMA");
+  operation_factory.register_class<ExpressionOperandConstant<Kokkos::Experimental::   phi_v<double>>>("PHI"   );
 
 #define EXPRESSION_CLASS
 #define ExpressionStyle(key, Class) operation_factory.register_class<Class>(#key"(");
@@ -95,7 +101,7 @@ Expression::Expression(const std::string &expression)
       }
       else if (current_type != CharacterType::NONE)
       {
-        Operation *new_operation = current_type == CharacterType::NUMBER? new ExpressionOperandConstant(std::stod(current_token)):
+        Operation *new_operation = current_type == CharacterType::NUMBER? new ExpressionOperandLiteral(std::stod(current_token)):
                                                                           operation_factory.new_instance(current_token);
 
         if (new_operation->isOperand())

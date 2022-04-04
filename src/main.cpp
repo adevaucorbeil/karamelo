@@ -26,7 +26,7 @@ int main(int argc, char **argv) {
   Expression::initialize();
 
   {
-    Expression expression("inv_norm((i + 1)/21)");
+    Expression expression("sin(i*PI/2)");
     expression.evaluate();
     expression.print();
   }
