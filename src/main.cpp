@@ -26,11 +26,14 @@ int main(int argc, char **argv) {
   Expression::initialize();
 
   {
-    Expression expression("sin(i*PI/2)");
+    Expression::make_named_expression("i2", "i*i").evaluate();
+    Expression::make_named_expression("i3", "i2*i").evaluate();
+    Expression expression("(i3 - 10*i2) - 1");
     expression.evaluate();
     expression.print();
   }
 
+  Expression::finalize();
   Kokkos::finalize();
 
   return 0;

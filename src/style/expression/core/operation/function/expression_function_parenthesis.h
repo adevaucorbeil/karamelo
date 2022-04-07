@@ -9,12 +9,6 @@ public:
   KOKKOS_INLINE_FUNCTION double
   evaluate(int i) const
   {
-    return 0;
-  }
-
-  bool
-  isParenthesis() const override
-  {
-    return true;
+    return get_value(0, i);
   }
 };

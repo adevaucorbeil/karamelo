@@ -15,7 +15,6 @@ class Expression::Operation
 
   virtual bool isOperand() const = 0;
   virtual bool isFunction() const = 0;
-  virtual bool isParenthesis() const = 0;
   virtual int precedence() const = 0;
   virtual void apply() = 0;
 
@@ -40,12 +39,6 @@ class ExpressionOperation:
   isFunction() const override
   {
     return IS_FUNCTION;
-  }
-
-  bool
-  isParenthesis() const override
-  {
-    return false;
   }
 
   int

@@ -33,7 +33,7 @@ public:
   int narg;                    ///< Number of command args
   char **arg;                  ///< Parsed args for command
 
-  map<string, class Var> *vars; ///< List of global user variables.
+  map<string, Var> *vars;      ///< List of global user variables.
                                 ///< These variables are those created by the user through the input file.
 
   // functions
