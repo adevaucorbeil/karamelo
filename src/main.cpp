@@ -23,20 +23,20 @@
 
 int main(int argc, char **argv) {
   Kokkos::initialize();
-  Expression::initialize();
+  //Expression::initialize();
 
-  {
-    Expression::make_named_expression("i2", "i*i").evaluate();
-    Expression::make_named_expression("i3", "i2*i").evaluate();
-    Expression expression("(i3 - 10*i2) - 1");
-    expression.evaluate();
-    expression.print();
-  }
+  //{
+  //  Expression::make_named_expression("i2", "i*i").evaluate();
+  //  Expression::make_named_expression("i3", "i2*i").evaluate();
+  //  Expression expression("(i3 - 10*i2) - 1");
+  //  expression.evaluate();
+  //  expression.print();
+  //}
 
-  Expression::finalize();
-  Kokkos::finalize();
+  //Expression::finalize();
+  //Kokkos::finalize();
 
-  return 0;
+  //return 0;
 
   MPI_Init(&argc, &argv);                         /// Initialized MPI
 

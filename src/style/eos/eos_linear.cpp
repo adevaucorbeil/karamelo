@@ -68,9 +68,16 @@ double EOSLinear::K(){
   return K_;
 }
 
-void EOSLinear::compute_pressure(double &pFinal, double &e, const double J, const double rho, const double damage, const Matrix3d D, const double cellsize, const double T){
-  e = 0;
-  pFinal = K_*(1-J)*(1-damage);
+void EOSLinear::compute_pressure(Solid &solid, Kokkos::View<double*, MemorySpace> &pH) const
+{
+  double K_ = this->K_;
+
+  Kokkos::parallel_for("EOSLinear::compute_pressure", solid.np_local,
+  KOKKOS_LAMBDA (const int &ip)
+  {
+    solid.ienergy[ip] = 0;
+    pH[ip] = K_*(1 - solid.J[ip])*(1 - solid.damage[ip]);
+  });
 }
 
 

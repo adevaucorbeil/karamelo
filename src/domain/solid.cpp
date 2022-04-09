@@ -299,7 +299,7 @@ void Solid::grow(int nparticles)
     q = Kokkos::View<Vector3d*, MemorySpace>("q", nparticles);
   }
 
-  size_t neighbor_nodes_per_particle = 16;
+  size_t neighbor_nodes_per_particle = 64;
 
   neigh_n    = Kokkos::View<int**, MemorySpace>     ("neigh_n",   nparticles, neighbor_nodes_per_particle);
   wf         = Kokkos::View<double**, MemorySpace>  ("wf",        nparticles, neighbor_nodes_per_particle);

@@ -57,7 +57,7 @@ protected:
   string equation;             // formula
   double value;                // current value
   bool constant;               // is the variables constant?
-  bool position_independent;
+  bool position_independent = false;
 };
 
 

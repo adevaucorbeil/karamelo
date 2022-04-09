@@ -21,19 +21,23 @@
 #include <modify.h>
 #include <universe.h>
 #include <domain.h>
+#include <iomanip>
 
 using namespace std;
 
-USL::USL(MPM *mpm) : Scheme(mpm) {
+USL::USL(MPM *mpm):
+  Scheme(mpm)
+{
   // cout << "In USL::USL()" << endl;
 }
 
-void USL::setup(){
+void USL::setup()
+{
   output->setup();
 }
 
-void USL::run(Var condition){
-
+void USL::run(Var condition)
+{
   bigint ntimestep = update->ntimestep;
   
   // cout << "In USL::run" << endl;
@@ -93,10 +97,11 @@ void USL::run(Var condition){
       method.update_position(*solid);
       modify->post_grid_to_point(*solid);
       method.advance_particles(*solid);
+
       modify->post_advance_particles(*solid);
     }
 
-   // grid update
+    // grid update
     for (Grid *grid: method.grids())
     {
       grid->reduce_ghost_nodes(true, false, update->temp);
@@ -114,15 +119,16 @@ void USL::run(Var condition){
     for (Solid *solid: domain->solids)
       modify->final_integrate(*solid);
 
-    if ((update->maxtime != -1) && (update->atime > update->maxtime)) {
+    if (update->maxtime != -1 && update->atime > update->maxtime)
+    {
       update->nsteps = ntimestep;
       output->write(ntimestep);
+
       break;
     }
 
-    if (ntimestep == output->next || ntimestep == update->nsteps) {
+    if (ntimestep == output->next || ntimestep == update->nsteps)
       output->write(ntimestep);
-    }
   }
 }
 

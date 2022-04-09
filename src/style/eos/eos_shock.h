@@ -74,7 +74,7 @@ public:
   double rho0();
   double K();
   double G();
-  void compute_pressure(double &, double &, const double, const double, const double, const Matrix3d, const double, const double T = 0);
+  void compute_pressure(Solid &solid, Kokkos::View<double*, MemorySpace> &pH) const override;
   void write_restart(ofstream *);
   void read_restart(ifstream *);
 

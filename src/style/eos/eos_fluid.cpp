@@ -65,11 +65,20 @@ double EOSFluid::K(){
   return K_;
 }
 
-void EOSFluid::compute_pressure(double &pH, double &e, const double J, const double rho, const double damage, const Matrix3d D, const double cellsize, const double T){
-  double mu = rho / rho0_;
-  pH = K_ * (pow(mu, Gamma) - 1.0);
+void EOSFluid::compute_pressure(Solid &solid, Kokkos::View<double*, MemorySpace> &pH) const
+{
+  double rho_ = this->rho0_;
+  double K_ = this->K_;
+  double Gamma = this->Gamma;
 
-  e = 0;
+  Kokkos::parallel_for("EOSFluid::compute_pressure", solid.np_local,
+  KOKKOS_LAMBDA (const int &ip)
+  {
+    double mu = solid.rho[ip]/rho0_;
+    pH[ip] = K_*(pow(mu, Gamma) - 1);
+
+    solid.ienergy[ip] = 0;
+  });
 }
 
 

@@ -20,7 +20,6 @@
 #include <vector>
 #include <deque>
 #include <matrix.h>
-#include <Kokkos_Core.hpp>
 
 /*! This class represents a given solid.
  * 

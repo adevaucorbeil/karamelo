@@ -96,40 +96,62 @@ double EOSShock::K(){
   return K_;
 }
 
-void EOSShock::compute_pressure(double &pFinal, double &e, const double J, const double rho, const double damage, const Matrix3d D, const double cellsize, const double T){
-  double mu = rho / rho0_ - 1.0;
-  double pH = rho0_ * square(c0) * mu * (1.0 + mu) / square(1.0 - (S - 1.0) * mu);
+//pH, solid.ienergy[ip], solid.J[ip], solid.rho[ip], solid.damage[ip], solid.D[ip], solid.grid->cellsize, T
+//double &pFinal, double &e, const double J, const double rho, const double damage, const Matrix3d D, const double cellsize, const double T
 
-  if (T > Tr)
-    e = alpha * (T - Tr);
-  else
-    e = 0;
-  pFinal = pH + Gamma * (e - e0);
 
-  if ( damage > 0.0 ) {
-    if ( pFinal < 0.0 ) {
-      if ( damage >= 1.0) {
-	// pFinal = rho0_ * Gamma * (e - e0);
-	pFinal = 0;
-      } else {
-	// double mu_damaged = (1.0 - damage) * mu;
-	// double pH_damaged = rho0_ * (1.0 - damage) * square(c0) * mu_damaged * (1.0 + mu_damaged) / square(1.0 - (S - 1.0) * mu_damaged);
-	// pFinal = (pH_damaged + rho0_ * (1 + mu_damaged) * Gamma * (e - e0));;
-	pFinal *= 1.0 - damage;
+void EOSShock::compute_pressure(Solid &solid, Kokkos::View<double*, MemorySpace> &pH) const
+{
+  double rho0_ = this->rho0_;
+  double c0 = this->c0;
+  double S = this->S;
+  double Tr = this->Tr;
+  double alpha = this->alpha;
+  double Gamma = this->Gamma;
+  double e0 = this->e0;
+  bool artificial_viscosity = this->artificial_viscosity;
+  double Q1 = this->Q1;
+  double Q2 = this->Q2;
+
+  double cp = solid.mat->cp;
+  double cellsize = solid.grid->cellsize;
+
+  Kokkos::parallel_for("EOSShock::compute_pressure", solid.np_local,
+  KOKKOS_LAMBDA (const int &ip)
+  {
+    double mu = solid.rho[ip]/rho0_ - 1;
+    double pH0 = rho0_*c0*c0*mu*(1 + mu)/(1 - (S - 1)*mu)/(1 - (S - 1)*mu);
+
+    if (cp && solid.T[ip] > Tr)
+      solid.ienergy[ip] = alpha*(solid.T[ip] - Tr);
+    else
+       solid.ienergy[ip] = 0;
+    pH[ip] = pH0 + Gamma*(solid.ienergy[ip] - e0);
+
+    if (solid.damage[ip] > 0 && pH[ip] < 0)
+    {
+      if (solid.damage[ip] >= 1.0)
+      {
+	    // pFinal = rho0_ * Gamma * (e - e0);
+	    pH[ip] = 0;
+      }
+      else
+      {
+	    // double mu_damaged = (1.0 - damage) * mu;
+	    // double pH_damaged = rho0_ * (1.0 - damage) * square(c0) * mu_damaged * (1.0 + mu_damaged) / square(1.0 - (S - 1.0) * mu_damaged);
+	    // pFinal = (pH_damaged + rho0_ * (1 + mu_damaged) * Gamma * (e - e0));;
+	    pH[ip] *= 1 - solid.damage[ip];
       }
     }
-  }
 
-  if (artificial_viscosity) {
-    double tr_eps = D.trace();
+    if (artificial_viscosity)
+    {
+      double tr_eps = solid.D[ip].trace();
 
-    if (tr_eps < 0) {
-      double q = rho * cellsize *
-	(Q1 * cellsize * tr_eps * tr_eps - Q2 * c0 * sqrt(J) * tr_eps);
-
-      pFinal += q;
+      if (tr_eps < 0)
+        pH[ip] += solid.rho[ip]*cellsize*tr_eps*(Q1*cellsize*tr_eps - Q2*c0*Kokkos::Experimental::sqrt(solid.J[ip]));
     }
-  }
+  });
 }
 
 void EOSShock::write_restart(ofstream *of) {

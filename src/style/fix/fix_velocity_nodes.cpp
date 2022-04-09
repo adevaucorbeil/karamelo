@@ -141,6 +141,13 @@ void FixVelocityNodes::post_update_grid_state(Grid &grid)
     if (!(grid.mask[in] & groupbit))
       continue;
 
+	(*input->vars)["x"] = Var("x",   grid.x [in][0]);
+	(*input->vars)["y"] = Var("y",   grid.x [in][1]);
+	(*input->vars)["z"] = Var("z",   grid.x [in][2]);
+	(*input->vars)["x0"] = Var("x0", grid.x0[in][0]);
+	(*input->vars)["y0"] = Var("y0", grid.x0[in][1]);
+	(*input->vars)["z0"] = Var("z0", grid.x0[in][2]);
+
     Vector3d Dv;
     if (xset)
     {

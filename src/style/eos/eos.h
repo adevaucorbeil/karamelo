@@ -17,12 +17,16 @@
 #include <pointers.h>
 #include <vector>
 #include <matrix.h>
+#include <grid.h>
 
 /*! Parent class of all the different kinds of EOS (equations of state) that can be used.
  *
  * Stores the EOS id, the functions that returns the bulk modulus and the reference density
  * and the method to compute the pressure.
  */
+
+class Solid;
+
 class EOS : protected Pointers {
  public:
   string id;                        ///< EOS identification string
@@ -37,7 +41,7 @@ class EOS : protected Pointers {
   //virtual compute_pressure()
   virtual double rho0() = 0;
   virtual double K() = 0;
-  virtual void compute_pressure(double &, double &, const double, const double, const double, const Matrix3d, const double, const double T = 0) = 0;
+  virtual void compute_pressure(Solid &solid, Kokkos::View<double*, MemorySpace> &pH) const = 0;
 
   virtual void write_restart(ofstream*) = 0;
   virtual void read_restart(ifstream*) = 0;
