@@ -24,7 +24,7 @@ public:
 
     if (constructor == internal_map.cend())
     {
-      std::cout << "Error: key \"" << key << "\" does not exist." << std::endl;
+      //std::cout << "Error: key \"" << key << "\" does not exist." << std::endl;
       return nullptr;
     }
 

@@ -5,10 +5,10 @@
 class ExpressionOperandExpression:
   public ExpressionOperand<ExpressionOperandExpression>
 {
-  Expression &expression;
+  const Expression &expression;
 
 public:
-  ExpressionOperandExpression(Expression &expression):
+  ExpressionOperandExpression(const Expression &expression):
     expression(expression)
   {}
 

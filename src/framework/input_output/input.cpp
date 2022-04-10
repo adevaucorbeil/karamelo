@@ -32,7 +32,26 @@
 #include <math.h>
 #include <mpi.h>
 #include <stack>
-#include <string.h>
+#include <string>
+#include <regex>
+
+#include <expression_function_parenthesis.h>
+#include <expression_functions_basic.h>
+#include <expression_functions_error_gamma.h>
+#include <expression_functions_exponential.h>
+#include <expression_functions_hyperbolic.h>
+#include <expression_functions_nearest_integer.h>
+#include <expression_functions_power.h>
+#include <expression_functions_trigonometric.h>
+
+#include <expression_operand_constant.h>
+#include <expression_operand_expression.h>
+#include <expression_operand_literal.h>
+#include <expression_operand_index.h>
+#include <expression_operand_vector.h>
+
+#include <expression_operators_arithmetic.h>
+#include <style_expression.h>
 
 #define DELTALINE 256
 #define DELTA 4
@@ -84,6 +103,72 @@ Input::Input(MPM *mpm, int argc, char **argv) : Pointers(mpm)
   protected_vars.push_back(s);
   s = "dt";
   protected_vars.push_back(s);
+  
+  operation_factory.register_class<ExpressionFunctionParenthesis>("(");
+
+  operation_factory.register_class<ExpressionFunctionAbs>("abs(");
+  operation_factory.register_class<ExpressionFunctionRemainder>("remainder(");
+  operation_factory.register_class<ExpressionFunctionMax>("max(");
+  operation_factory.register_class<ExpressionFunctionMin>("min(");
+  
+  operation_factory.register_class<ExpressionFunctionErf>("erf(");
+  operation_factory.register_class<ExpressionFunctionErfc>("erfc(");
+  operation_factory.register_class<ExpressionFunctionTgamma>("tgamma(");
+  operation_factory.register_class<ExpressionFunctionLgamma>("lgamma(");
+  
+  operation_factory.register_class<ExpressionFunctionExp>("exp(");
+  operation_factory.register_class<ExpressionFunctionExp2>("exp2(");
+  operation_factory.register_class<ExpressionFunctionExpm1>("expm1(");
+  operation_factory.register_class<ExpressionFunctionLog>("log(");
+  operation_factory.register_class<ExpressionFunctionLog10>("log10(");
+  operation_factory.register_class<ExpressionFunctionLog2>("log2(");
+  operation_factory.register_class<ExpressionFunctionLog1p>("log1p(");
+
+  operation_factory.register_class<ExpressionFunctionSinh>("sinh(");
+  operation_factory.register_class<ExpressionFunctionCosh>("cosh(");
+  operation_factory.register_class<ExpressionFunctionTanh>("tanh(");
+  operation_factory.register_class<ExpressionFunctionAsinh>("asinh(");
+  operation_factory.register_class<ExpressionFunctionAcosh>("acosh(");
+  operation_factory.register_class<ExpressionFunctionAtanh>("atanh(");
+
+  operation_factory.register_class<ExpressionFunctionCeil>("ceil(");
+  operation_factory.register_class<ExpressionFunctionFloor>("floor(");
+  operation_factory.register_class<ExpressionFunctionTrunc>("trunc(");
+
+  operation_factory.register_class<ExpressionFunctionPow>("pow(");
+  operation_factory.register_class<ExpressionFunctionSqrt>("sqrt(");
+  operation_factory.register_class<ExpressionFunctionCbrt>("cbrt(");
+  operation_factory.register_class<ExpressionFunctionHypot>("hypot(");
+
+  operation_factory.register_class<ExpressionFunctionSin>("sin(");
+  operation_factory.register_class<ExpressionFunctionCos>("cos(");
+  operation_factory.register_class<ExpressionFunctionTan>("tan(");
+  operation_factory.register_class<ExpressionFunctionAsin>("asin(");
+  operation_factory.register_class<ExpressionFunctionAcos>("acos(");
+  operation_factory.register_class<ExpressionFunctionAtan>("atan(");
+  operation_factory.register_class<ExpressionFunctionAtan2>("atan2(");
+
+  operation_factory.register_class<ExpressionSum       >("+");
+  operation_factory.register_class<ExpressionDifference>("-");
+  operation_factory.register_class<ExpressionProduct   >("*");
+  operation_factory.register_class<ExpressionQuotient  >("/");
+
+  operation_factory.register_class<ExpressionOperandConstant<Kokkos::Experimental::    pi_v<double>>>("PI"    );
+  operation_factory.register_class<ExpressionOperandConstant<Kokkos::Experimental::     e_v<double>>>("E"     );
+  operation_factory.register_class<ExpressionOperandConstant<Kokkos::Experimental::egamma_v<double>>>("EGAMMA");
+  operation_factory.register_class<ExpressionOperandConstant<Kokkos::Experimental::   phi_v<double>>>("PHI"   );
+
+  operation_factory.register_class<ExpressionOperandIndex>("i");
+
+  operation_factory.register_class<ExpressionOperandVector<&Solid::x, &Grid::x, 0>>("x");
+  operation_factory.register_class<ExpressionOperandVector<&Solid::x, &Grid::x, 1>>("y");
+  operation_factory.register_class<ExpressionOperandVector<&Solid::x, &Grid::x, 2>>("z");
+
+#define EXPRESSION_CLASS
+#define ExpressionStyle(key, Class) operation_factory.register_class<Class>(#key"(");
+#include <style_expression.h>
+#undef ExpressionStyle
+#undef EXPRESSION_CLASS
 }
 
 
@@ -379,6 +464,154 @@ double Input::parse(string str){
  */
 Var Input::parsev(string str)
 {
+  /////////////////////////////////////////// EXPRESSIONS ///////////////////////////////////////////////////////////
+  if (!str.empty())
+  {
+    smatch match;
+    string name, expression_string;
+    if (regex_search(str, match, regex("\\s*=\\s*")))
+    {
+      name = match.prefix();
+      expression_string = match.suffix();
+    }
+    else
+    {
+      name = str;
+      expression_string = str;
+    }
+
+    const pair<map<string, Expression>::iterator, bool> it = expressions.emplace(piecewise_construct, forward_as_tuple(name), tuple<>());
+
+    if (it.second)
+    {
+      Expression &expression = it.first->second;
+
+      deque<unique_ptr<Expression::Operation>> operator_stack;
+  
+      string current_token;
+
+      enum class CharacterType: char
+      {
+        NUMBER,
+        LETTER,
+        OPEN_PARENTHESIS,
+        CLOSE_PARENTHESIS,
+        COMMA,
+        SYMBOL,
+        NONE
+      } current_type = CharacterType::NONE;
+
+      for (string::const_iterator it = expression_string.cbegin(), end = expression_string.cend();; it++)
+      {
+        char current_character = it == end? ' ': *it;
+
+        CharacterType next_type = current_character == ' '?   CharacterType::NONE:
+                                  current_character >= '0' &&
+                                  current_character <= '9' ||
+                                  current_character == '.'?   CharacterType::NUMBER:
+                                  current_character >= 'a' &&
+                                  current_character <= 'z' ||
+                                  current_character >= 'A' &&
+                                  current_character <= 'Z' ||
+                                  current_character == '_'?   CharacterType::LETTER:
+                                  current_character == '('?   CharacterType::OPEN_PARENTHESIS:
+                                  current_character == ')'?   CharacterType::CLOSE_PARENTHESIS:
+                                  current_character == ','?   CharacterType::COMMA:
+                                                              CharacterType::SYMBOL;
+
+        if (next_type == CharacterType::NUMBER && current_type == CharacterType::LETTER)
+          next_type = CharacterType::LETTER;
+
+        if (current_type == CharacterType::NUMBER && (current_character == 'e' ||
+            current_token.back() == 'e' && current_character == '-'))
+          next_type = CharacterType::NUMBER;
+
+        if ((current_type != next_type || next_type == CharacterType::OPEN_PARENTHESIS ) &&
+            (current_type != CharacterType::LETTER || next_type != CharacterType::OPEN_PARENTHESIS))
+        {
+          if (current_type == CharacterType::CLOSE_PARENTHESIS ||
+              current_type == CharacterType::COMMA)
+          {
+            while (!operator_stack.back()->isFunction())
+            {
+              expression.operations.push_back(move(operator_stack.back()));
+              operator_stack.pop_back();
+            }
+
+            if (current_type == CharacterType::CLOSE_PARENTHESIS)
+            {
+              expression.operations.push_back(move(operator_stack.back()));
+              operator_stack.pop_back();
+            }
+          }
+          else if (current_type != CharacterType::NONE)
+          {
+            Expression::Operation *new_operation = current_type == CharacterType::NUMBER? new ExpressionOperandLiteral(stod(current_token)): nullptr;
+            if (!new_operation)
+            {
+              const map<string,Expression>::iterator &it = expressions.find(current_token);
+
+              if (it == expressions.cend())
+                new_operation = operation_factory.new_instance(current_token);
+              else
+              {
+                expression.expression_dependencies.insert(&it->second);
+                new_operation = new ExpressionOperandExpression(it->second);
+              }
+            }
+
+            if (!new_operation)
+            {
+              //cout << expression_string << " does not appear to be an operation. Aborting." << endl;
+              expressions.erase(name);
+              goto end_of_expressions;
+            }
+
+            if (new_operation->isOperand())
+              expression.operations.emplace_back(new_operation);
+            else
+            {
+              while (!operator_stack.empty() && operator_stack.back()->precedence() < new_operation->precedence() &&
+                     !operator_stack.back()->isFunction())
+              {
+                expression.operations.push_back(move(operator_stack.back()));
+                operator_stack.pop_back();
+              }
+              operator_stack.emplace_back(new_operation);
+            }
+          }
+
+          current_token.clear();
+        }
+
+        if (it == end)
+          break;
+
+        current_token += current_character;
+        current_type = next_type;
+      }
+
+      while (!operator_stack.empty())
+      {
+        expression.operations.push_back(move(operator_stack.back()));
+        operator_stack.pop_back();
+      }
+
+      int current_index = 0, max_index = 0;
+
+      for (const unique_ptr<Expression::Operation> &operation: expression.operations)
+      {
+        max_index = max(max_index, current_index -= operation->arity() - 1);
+      }
+
+      expression.registers = Kokkos::View<double**>("expression", max_index, 1);
+    }
+  }
+
+  end_of_expressions:
+
+  /////////////////////////////////////////////// VARS //////////////////////////////////////////////////////////////
+
   // stack to store integer values.
   stack <Var> values;
 

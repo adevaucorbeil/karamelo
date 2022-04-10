@@ -4,8 +4,12 @@
 
 #include <deque>
 #include <memory>
+#include <unordered_set>
 
 #include <Kokkos_Core.hpp>
+
+class Solid;
+class Grid;
 
 class Expression
 {
@@ -14,29 +18,22 @@ class Expression
 
   class Operation;
   std::deque<std::unique_ptr<Operation>> operations;
-  static StyleFactory<Operation> operation_factory;
-
-  static std::map<std::string, std::unique_ptr<Expression>> named_expressions;
+  std::unordered_set<Expression *> expression_dependencies;
 
   template<typename, bool, bool, int, int>
   friend class ExpressionOperation;
+  friend class Input;
 
 public:
-  static void initialize();
-  static void finalize();
-
-  static Expression &make_named_expression(const std::string &name,
-                                           const std::string &expression);
-
-  Expression(const std::string &expression);
   ~Expression();
 
-  void evaluate() const;
-  void print() const;
+  void evaluate();
+  void evaluate(Solid &solid);
+  void evaluate(Grid &grid);
 
   KOKKOS_INLINE_FUNCTION double
-  operator[](int i)
+  operator[](int i) const
   {
-    return registers(0, i);
+    return registers(0, registers.extent(1) > 1? i: 0);
   }
 };

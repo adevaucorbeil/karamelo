@@ -20,6 +20,8 @@
 #include <error.h>
 #include <update.h>
 #include <universe.h>
+#include <expression_operation.h>
+
 using namespace std;
 using namespace FixConst;
 
@@ -61,7 +63,8 @@ FixVelocityNodes::FixVelocityNodes(MPM *mpm, vector<string> args):
 
   string time = "time";
 
-  if (args[3] != "NULL") {
+  if (args[3] != "NULL")
+  {
     // xvalue = input->parsev(args[3]);
     xset = true;
     xvalue = input->parsev(args[3]);
@@ -69,41 +72,54 @@ FixVelocityNodes::FixVelocityNodes(MPM *mpm, vector<string> args):
     string previous = args[3];
 
     // Replace "time" by "time - dt" in the x argument:
-    while(previous.find(time)!=std::string::npos) {
+    while(previous.find(time)!=std::string::npos)
       previous.replace(previous.find(time),time.length(),"time - dt");
-    }
+
     xprevvalue = input->parsev(previous);
+
+    v[0] = &input->expressions[args[3]];
+    v_prev[0] = &input->expressions[previous];
   }
+  else
+    v_prev[0] = v[0] = nullptr;
 
-  if (domain->dimension >= 2) {
-    if (args[4] != "NULL") {
-      yvalue = input->parsev(args[4]);
-      yset = true;
+  if (domain->dimension >= 2 && args[4] != "NULL")
+  {
+    yvalue = input->parsev(args[4]);
+    yset = true;
 
-      string previous = args[4];
+    string previous = args[4];
 
-      // Replace "time" by "time - dt" in the y argument:
-      while(previous.find(time)!=std::string::npos) {
-    previous.replace(previous.find(time),time.length(),"time - dt");
-      }
-      yprevvalue = input->parsev(previous);
-    }
+    // Replace "time" by "time - dt" in the y argument:
+    while(previous.find(time)!=std::string::npos)
+      previous.replace(previous.find(time),time.length(),"time - dt");
+
+    yprevvalue = input->parsev(previous);
+
+    v[1] = &input->expressions[args[4]];
+    v_prev[1] = &input->expressions[previous];
   }
+  else
+    v_prev[1] = v[1] = nullptr;
 
-  if (domain->dimension == 3) {
-    if (args[5] != "NULL") {
-      zvalue = input->parsev(args[5]);
-      zset = true;
+  if (domain->dimension == 3 && args[5] != "NULL")
+  {
+    zvalue = input->parsev(args[5]);
+    zset = true;
 
-      string previous = args[5];
+    string previous = args[5];
 
-      // Replace "time" by "time - dt" in the z argument:
-      while(previous.find(time)!=std::string::npos) {
-    previous.replace(previous.find(time),time.length(),"time - dt");
-      }
-      zprevvalue = input->parsev(previous);
-    }
+    // Replace "time" by "time - dt" in the z argument:
+    while(previous.find(time)!=std::string::npos)
+      previous.replace(previous.find(time),time.length(),"time - dt");
+
+    zprevvalue = input->parsev(previous);
+
+    v[2] = &input->expressions[args[5]];
+    v_prev[2] = &input->expressions[previous];
   }
+  else
+    v_prev[2] = v[2] = nullptr;
 }
 
 void FixVelocityNodes::prepare()
@@ -136,6 +152,11 @@ void FixVelocityNodes::post_update_grid_state(Grid &grid)
   // cout << "In FixVelocityNodes::post_update_grid_state()" << endl;
 
   // Go through all the nodes in the group and set v_update to the right value:
+
+  for (int i = 0; i < 3; i++)
+    if (v[i])
+      v[i]->evaluate(grid);
+
   for (int in = 0; in < grid.nnodes_local + grid.nnodes_ghost; in++)
   {
     if (!(grid.mask[in] & groupbit))
@@ -152,6 +173,10 @@ void FixVelocityNodes::post_update_grid_state(Grid &grid)
     if (xset)
     {
       double vx = xvalue.result(mpm, true);
+
+      if (vx)
+        cout << in << ": " << vx << " " << (*v[0])[in] << endl;
+
       double vx_old = xprevvalue.result(mpm, true);
       // cout << "Set v_update[0] to " << xvalue.eq() << "=" << vx << endl;
       // cout << "Set v[0] to " << vx_old << endl;

@@ -24,6 +24,8 @@ FixStyle(velocity_nodes,FixVelocityNodes)
 #include <var.h>
 #include <matrix.h>
 
+class Expression;
+
 class FixVelocityNodes : public Fix {
  public:
   FixVelocityNodes(MPM *, vector<string>);
@@ -48,6 +50,9 @@ private:
   Var xprevvalue, yprevvalue, zprevvalue;      //< Velocities in x, y, and z directions from previous time step.
   bool xset, yset, zset;                             //< Does the fix set the x, y, and z velocities of the group?
   Vector3d ftot;
+
+  Expression *v[3];
+  Expression *v_prev[3];
 };
 
 #endif

@@ -17,6 +17,7 @@
 
 #include <pointers.h>
 #include <var.h>
+#include <expression.h>
 #include <vector>
 #include <map>
 
@@ -35,6 +36,9 @@ public:
 
   map<string, Var> *vars;      ///< List of global user variables.
                                 ///< These variables are those created by the user through the input file.
+
+  map<string, Expression> expressions;
+  StyleFactory<Expression::Operation> operation_factory;
 
   // functions
   Input(class MPM *, int, char **);

@@ -13,21 +13,21 @@ class ExpressionOperandVector:
   Kokkos::View<Vector3d*, MemorySpace> vector;
 
 public:
-  KOKKOS_INLINE_FUNCTION double
-  evaluate(int i) const
-  {
-    return vector[i][N];
-  }
-
   void
-  prepare(Solid &solid)
+  set_solid(Solid &solid) override
   {
     vector = solid.*SOLID_TO_VECTOR;
   }
 
   void
-  prepare(Grid &solid)
+  set_grid(Grid &grid) override
   {
     vector = grid.*GRID_TO_VECTOR;
+  }
+
+  KOKKOS_INLINE_FUNCTION double
+  evaluate(int i) const
+  {
+    return vector[i][N];
   }
 };
