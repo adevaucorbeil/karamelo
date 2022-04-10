@@ -33,13 +33,10 @@ public:
   void write_restart(ofstream *);
   void read_restart(ifstream *);
 
-  void compute_damage(double &damage_init,
-			      double &damage,
-			      const double pH,
-			      const Matrix3d Sdev,
-			      const double epsdot,
-			      const double plastic_strain_increment,
-			      const double temperature = 0);
+  void compute_damage(Solid &solid,
+                      Kokkos::View<double*, MemorySpace> &pH,
+                      Kokkos::View<Matrix3d*, MemorySpace> &sigma_dev,
+                      Kokkos::View<double*, MemorySpace> &plastic_strain_increment) const override;
 
 protected:
   double d1, d2, d3, d4, d5, epsdot0, Tr, Tm, Tmr;

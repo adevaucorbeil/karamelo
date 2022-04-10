@@ -712,17 +712,14 @@ void Method::update_deformation_gradient_stress(bool doublemapping, Solid &solid
     });
 
     if (solid.mat->damage)
-      for (int ip = 0; ip < solid.np_local; ip++)
-        solid.mat->damage->compute_damage(solid.damage_init[ip], solid.damage[ip], pH[ip],
-                                          sigma_dev[ip], solid.eff_plastic_strain_rate[ip],
-                                          plastic_strain_increment[ip], solid.mat->cp? solid.T[ip]: 0);
+      solid.mat->damage->compute_damage(solid, pH, sigma_dev, plastic_strain_increment);
+
+
     double invcp = solid.mat->invcp;
 
     if (solid.mat->temp)
     {
-      for (int ip = 0; ip < solid.np_local; ip++)
-      solid.mat->temp->compute_heat_source(solid.T[ip], solid.gamma[ip], SQRT_3_OVER_2*sigma_dev[ip].norm(),
-                                            solid.eff_plastic_strain_rate[ip]);
+      solid.mat->temp->compute_heat_source(solid, sigma_dev);
       
       Kokkos::parallel_for("update_deformation_gradient_stress0", solid.np_local,
       KOKKOS_LAMBDA (const int &ip)

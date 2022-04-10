@@ -56,12 +56,22 @@ TemperaturePlasticWork::TemperaturePlasticWork(MPM *mpm, vector<string> args) : 
   }
 }
 
-void TemperaturePlasticWork::compute_heat_source(double T, double &gamma, const double &flow_stress, const double &eff_plastic_strain_rate)
+
+void
+TemperaturePlasticWork::compute_heat_source(Solid &solid,
+                                            Kokkos::View<Matrix3d*, MemorySpace> &sigma_dev) const
 {
-  if (T < Tm)
-    gamma = chi * flow_stress * eff_plastic_strain_rate;
-  else
-    gamma = 0;
+  double Tm = this->Tm;
+  double chi = this->chi;
+
+  Kokkos::parallel_for("TemperaturePlasticWork::compute_heat_source", solid.np_local,
+  KOKKOS_LAMBDA (const int &ip)
+  {
+    if (solid.T[ip] < Tm)
+      solid.gamma[ip] = chi*SQRT_3_OVER_2*sigma_dev[ip].norm()*solid.eff_plastic_strain_rate[ip];
+    else
+      solid.gamma[ip] = 0;
+  });
 }
 
 void TemperaturePlasticWork::write_restart(ofstream *of) {

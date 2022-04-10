@@ -6,6 +6,9 @@
 #include <pointers.h>
 #include <vector>
 #include <matrix.h>
+#include <grid.h>
+
+class Solid;
 
 class Temperature : protected Pointers {
  public:
@@ -24,7 +27,8 @@ class Temperature : protected Pointers {
   virtual double cp() = 0;
   virtual double kappa() = 0;
   virtual double alpha() = 0;
-  virtual void compute_heat_source(double, double &, const double &, const double &) = 0;
+  virtual void compute_heat_source(Solid &solid,
+                                   Kokkos::View<Matrix3d*, MemorySpace> &sigma_dev) const = 0;
 
 protected:
   double cp_, kappa_, alpha_ = 0;

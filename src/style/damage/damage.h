@@ -17,6 +17,9 @@
 #include <pointers.h>
 #include <vector>
 #include <matrix.h>
+#include <grid.h>
+
+class Solid;
 
 class Damage : protected Pointers {
  public:
@@ -32,13 +35,10 @@ class Damage : protected Pointers {
   virtual void read_restart(ifstream*) = 0;
 
   // implemented by each Damage
-  virtual void compute_damage(double &damage_init,
-			      double &damage,
-			      const double pH,
-			      const Matrix3d Sdev,
-			      const double epsdot,
-			      const double plastic_strain_increment,
-			      const double temperature = 0) = 0;
+  virtual void compute_damage(Solid &solid,
+                              Kokkos::View<double*, MemorySpace> &pH,
+                              Kokkos::View<Matrix3d*, MemorySpace> &sigma_dev,
+                              Kokkos::View<double*, MemorySpace> &plastic_strain_increment) const = 0;
 };
 
 #endif
