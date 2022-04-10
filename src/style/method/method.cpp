@@ -687,29 +687,36 @@ void Method::update_deformation_gradient_stress(bool doublemapping, Solid &solid
 
     solid.mat->eos->compute_pressure(solid, pH);
 
-    for (int ip = 0; ip < solid.np_local; ip++)
+    double alpha = solid.mat->alpha;
+
+    if (solid.mat->cp)
+      Kokkos::parallel_for("update_deformation_gradient_stress0", solid.np_local,
+      KOKKOS_LAMBDA (const int &ip)
+      {
+        pH[ip] += alpha*(solid.T[ip] - solid.T0);
+      });
+      
+    solid.mat->strength->update_deviatoric_stress(solid, plastic_strain_increment, sigma_dev);
+      
+    double signal_velocity = solid.mat->signal_velocity;
+
+    Kokkos::parallel_for("update_deformation_gradient_stress0", solid.np_local,
+    KOKKOS_LAMBDA (const int &ip)
     {
-      if (solid.mat->cp)
-        pH[ip] += solid.mat->alpha*(solid.T[ip] - solid.T0);
-
-      sigma_dev[ip] = solid.mat->strength->update_deviatoric_stress(
-        solid.sigma[ip], solid.D[ip], plastic_strain_increment[ip],
-        solid.eff_plastic_strain[ip], solid.eff_plastic_strain_rate[ip], solid.damage[ip],
-        solid.mat->cp? solid.T[ip]: 0);
-
       solid.eff_plastic_strain[ip] += plastic_strain_increment[ip];
 
       // compute a characteristic time over which to average the plastic strain
-      solid.eff_plastic_strain_rate[ip] += (plastic_strain_increment[ip] - solid.eff_plastic_strain_rate[ip]*update->dt)/
-                                              1000/solid.grid->cellsize*solid.mat->signal_velocity;
+      solid.eff_plastic_strain_rate[ip] += (plastic_strain_increment[ip] - solid.eff_plastic_strain_rate[ip]*dt)/
+                                              1000/grid.cellsize*signal_velocity;
       solid.eff_plastic_strain_rate[ip] = MAX(0.0, solid.eff_plastic_strain_rate[ip]);
-    }
+    });
 
     if (solid.mat->damage)
       for (int ip = 0; ip < solid.np_local; ip++)
         solid.mat->damage->compute_damage(solid.damage_init[ip], solid.damage[ip], pH[ip],
                                           sigma_dev[ip], solid.eff_plastic_strain_rate[ip],
                                           plastic_strain_increment[ip], solid.mat->cp? solid.T[ip]: 0);
+    double invcp = solid.mat->invcp;
 
     if (solid.mat->temp)
     {
@@ -717,31 +724,36 @@ void Method::update_deformation_gradient_stress(bool doublemapping, Solid &solid
       solid.mat->temp->compute_heat_source(solid.T[ip], solid.gamma[ip], SQRT_3_OVER_2*sigma_dev[ip].norm(),
                                             solid.eff_plastic_strain_rate[ip]);
       
-      for (int ip = 0; ip < solid.np_local; ip++)
+      Kokkos::parallel_for("update_deformation_gradient_stress0", solid.np_local,
+      KOKKOS_LAMBDA (const int &ip)
       {
         if (is_TL)
-          solid.gamma[ip] *= solid.vol0[ip]*solid.mat->invcp;
+          solid.gamma[ip] *= solid.vol0[ip]*invcp;
         else
-          solid.gamma[ip] *= solid.vol[ip]*solid.mat->invcp;
-      }
+          solid.gamma[ip] *= solid.vol[ip]*invcp;
+      });
     }
     else
-      for (int ip = 0; ip < solid.np_local; ip++)
+      Kokkos::parallel_for("update_deformation_gradient_stress0", solid.np_local,
+      KOKKOS_LAMBDA (const int &ip)
+      {
 	    solid.gamma[ip] = 0;
+      });
     
-    for (int ip = 0; ip < solid.np_local; ip++)
+    Kokkos::parallel_for("update_deformation_gradient_stress0", solid.np_local,
+    KOKKOS_LAMBDA (const int &ip)
     {
       solid.sigma[ip] = -pH[ip]*(1 - (pH[ip] < 0? solid.damage[ip]: 0))*Matrix3d::identity() + sigma_dev[ip];
 
         solid.strain_el[ip] =
-          (update->dt*solid.D[ip].trace() + solid.strain_el[ip].trace())/3*Matrix3d::identity() +
-          sigma_dev[ip]/solid.mat->G/(1 - (solid.damage[ip] > 1e-10? solid.damage[ip]: 0));
+          (dt*solid.D[ip].trace() + solid.strain_el[ip].trace())/3*Matrix3d::identity() +
+          sigma_dev[ip]/G/(1 - (solid.damage[ip] > 1e-10? solid.damage[ip]: 0));
 
       if (is_TL)
         solid.vol0PK1[ip] = solid.vol0[ip]*solid.J[ip]*
           solid.R[ip]*solid.sigma[ip]*solid.R[ip].transpose()*
           solid.Finv[ip].transpose();
-    }
+    });
   }
 
   double K = solid.mat->K;

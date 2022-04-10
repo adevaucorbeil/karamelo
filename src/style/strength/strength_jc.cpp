@@ -96,91 +96,108 @@ StrengthJohnsonCook::StrengthJohnsonCook(MPM *mpm, vector<string> args)
 }
 
 double StrengthJohnsonCook::G() { return G_; }
-
-Matrix3d StrengthJohnsonCook::update_deviatoric_stress(
-    const Matrix3d &sigma, const Matrix3d &D,
-    double &plastic_strain_increment, const double eff_plastic_strain,
-    const double epsdot, const double damage, const double T)
+  
+void
+StrengthJohnsonCook::update_deviatoric_stress(Solid &solid,
+                                              Kokkos::View<double*, MemorySpace> &plastic_strain_increment,
+                                              Kokkos::View<Matrix3d*, MemorySpace> &sigma_dev) const
 {
-  if (damage >= 1.0)
+  double epsdot0 = this->epsdot0;
+  double A = this->A;
+  double B = this->B;
+  double n = this->n;
+  double Tm = this->Tm;
+  double Tr = this->Tr;
+  double Tmr = this->Tmr;
+  double m = this->m;
+  double G_ = this->G_;
+
+  double dt = update->dt;
+
+  double cp = solid.mat->cp;
+
+  Kokkos::parallel_for("EOSLinear::compute_pressure", solid.np_local,
+  KOKKOS_LAMBDA (const int &ip)
   {
-    Matrix3d sigmaFinal_dev;
-    sigmaFinal_dev = Matrix3d();
-    return sigmaFinal_dev;
-  }
-
-  Matrix3d sigmaFinal_dev, sigmaTrial, sigmaTrial_dev;
-  double J2, Gd, yieldStress;
-
-  double epsdot_ratio = epsdot / epsdot0;
-  epsdot_ratio        = MAX(epsdot_ratio, 1.0);
-
-  if (eff_plastic_strain < 1.0e-10) {
-    yieldStress = A;
-  } else {
-    yieldStress = A + B * pow(eff_plastic_strain, n);
-  }
-  if (C != 0) {
-    yieldStress *= pow(1.0 + epsdot_ratio, C);
-  }
-
-  if (T < Tm) {
-    if (m != 0 && T >= Tr) {
-      yieldStress *= 1.0 - pow((T - Tr) / Tmr, m);
+    if (solid.damage[ip] >= 1)
+    {
+      sigma_dev[ip] = Matrix3d();
+      return;
     }
-  } else {
-    yieldStress = 0;
-  }
 
-  /*
-   * deviatoric rate of unrotated stress
-   */
-  Gd               = G_;
+    Matrix3d sigmaFinal_dev, sigmaTrial, sigmaTrial_dev;
+    double J2, Gd, yieldStress;
 
-  if (damage > 0)
-  {
-    Gd *= (1 - damage);
-    yieldStress *= (1 - damage);
-  }
+    double epsdot_ratio = solid.eff_plastic_strain_rate[ip]/epsdot0;
+    epsdot_ratio        = MAX(epsdot_ratio, 1.0);
 
-  // sigmaInitial_dev = Deviator(sigma);
+    if (solid.eff_plastic_strain[ip] < 1.0e-10)
+      yieldStress = A;
+    else
+      yieldStress = A + B * Kokkos::Experimental::pow(solid.eff_plastic_strain[ip], n);
 
-  /*
-   * perform a trial elastic update to the deviatoric stress
-   */
-  sigmaTrial = sigma + update->dt * 2.0 * Gd * D;
-  sigmaTrial_dev = Deviator(sigmaTrial); // increment stress deviator using deviatoric rate
+    if (C != 0) {
+      yieldStress *= Kokkos::Experimental::pow(1.0 + epsdot_ratio, C);
+    }
 
-  /*
-   * check yield condition
-   */
-  J2             = SQRT_3_OVER_2 * sigmaTrial_dev.norm();
-  sigmaFinal_dev = sigmaTrial_dev;
+    if (cp)
+    {
+      if (solid.T[ip] >= Tm)
+        yieldStress = 0;
+      else if (m != 0 && solid.T[ip] >= Tr)
+        yieldStress *= 1.0 - Kokkos::Experimental::pow((solid.T[ip] - Tr)/Tmr, m);
+    }
 
-  if (J2 < yieldStress)
-  {
     /*
-     * no yielding has occured.
-     * final deviatoric stress is trial deviatoric stress
+     * deviatoric rate of unrotated stress
      */
-    plastic_strain_increment = 0.0;
-  }
-  else
-  {
-    // printf("yiedl\n");
-    /*
-     * yielding has occured
-     */
+    Gd               = G_;
 
-    plastic_strain_increment = (J2 - yieldStress) / (3.0 * Gd);
-    /*
-     * new deviatoric stress:
-     * obtain by scaling the trial stress deviator
-     */
-    sigmaFinal_dev *= (yieldStress / J2);
-  }
+    if (solid.damage[ip] > 0)
+    {
+      Gd *= (1 - solid.damage[ip]);
+      yieldStress *= (1 - solid.damage[ip]);
+    }
 
-  return sigmaFinal_dev;
+    // sigmaInitial_dev = Deviator(sigma);
+
+    /*
+     * perform a trial elastic update to the deviatoric stress
+     */
+    sigmaTrial = solid.sigma[ip] + dt*2*Gd*solid.D[ip];
+    sigmaTrial_dev = Deviator(sigmaTrial); // increment stress deviator using deviatoric rate
+
+    /*
+     * check yield condition
+     */
+    J2             = SQRT_3_OVER_2 * sigmaTrial_dev.norm();
+    sigmaFinal_dev = sigmaTrial_dev;
+
+    if (J2 < yieldStress)
+    {
+      /*
+       * no yielding has occured.
+       * final deviatoric stress is trial deviatoric stress
+       */
+      plastic_strain_increment[ip] = 0.0;
+    }
+    else
+    {
+      // printf("yiedl\n");
+      /*
+       * yielding has occured
+       */
+
+      plastic_strain_increment[ip] = (J2 - yieldStress)/(3*Gd);
+      /*
+       * new deviatoric stress:
+       * obtain by scaling the trial stress deviator
+       */
+      sigmaFinal_dev *= (yieldStress / J2);
+    }
+
+    sigma_dev[ip] = sigmaFinal_dev;
+  });
 }
 
 void StrengthJohnsonCook::write_restart(ofstream *of) {

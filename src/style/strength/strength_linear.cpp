@@ -56,18 +56,19 @@ double StrengthLinear::G(){
   return G_;
 }
 
-Matrix3d StrengthLinear::update_deviatoric_stress(const Matrix3d& sigma,
-							const Matrix3d& D,
-							double &               plastic_strain_increment,
-							const double           eff_plastic_strain,
-							const double           epsdot,
-							const double           damage,
-							const double           temperature)
+void
+StrengthLinear::update_deviatoric_stress(Solid &solid,
+                                              Kokkos::View<double*, MemorySpace> &plastic_strain_increment,
+                                              Kokkos::View<Matrix3d*, MemorySpace> &sigma_dev) const
 {
-  Matrix3d dev_rate;
+  double G_ = this->G_;
+  double dt = update->dt;
 
-  dev_rate = 2.0 * G_* (1-damage) * Deviator(D);
-  return Deviator(sigma) + update->dt * dev_rate;
+  Kokkos::parallel_for("EOSLinear::compute_pressure", solid.np_local,
+  KOKKOS_LAMBDA (const int &ip)
+  {
+    sigma_dev[ip] = Deviator(solid.sigma[ip]) + dt*2*G_*(1 - solid.damage[ip])*Deviator(solid.D[ip]);
+  });
 }
 
 void StrengthLinear::write_restart(ofstream *of) {

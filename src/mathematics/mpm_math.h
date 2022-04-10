@@ -27,13 +27,13 @@ namespace MPM_Math {
   /*
  * deviator of a tensor
  */
-static inline Matrix3d Deviator(const Matrix3d M) {
+static KOKKOS_INLINE_FUNCTION Matrix3d Deviator(const Matrix3d M) {
 	Matrix3d eye = Matrix3d::identity();
 	eye *= M.trace() / 3.0;
 	return M - eye;
 }
 
-static inline Matrix2d Deviator(const Matrix2d M) {
+static KOKKOS_INLINE_FUNCTION Matrix2d Deviator(const Matrix2d M) {
 	Matrix2d eye = Matrix2d::identity();
 	eye *= 0.5 * M.trace();
 	return M - eye;

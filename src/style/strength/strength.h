@@ -17,6 +17,9 @@
 #include <pointers.h>
 #include <vector>
 #include <matrix.h>
+#include <grid.h>
+
+class Solid;
 
 class Strength : protected Pointers {
  public:
@@ -35,14 +38,9 @@ class Strength : protected Pointers {
   //virtual compute_pressure()
   virtual double G() = 0;
 
-  virtual Matrix3d  update_deviatoric_stress
-  ( const Matrix3d& sigma,
-    const Matrix3d& D,
-    double &               plastic_strain_increment,
-    const double           eff_plastic_strain,
-    const double           epsdot,
-    const double           damage,
-    const double           temperature = 0) = 0;
+  virtual void update_deviatoric_stress(Solid &solid,
+                                        Kokkos::View<double*, MemorySpace> &plastic_strain_increment,
+                                        Kokkos::View<Matrix3d*, MemorySpace> &sigma_dev) const = 0;
   //protected:
 };
 

@@ -43,18 +43,19 @@ double StrengthFluid::G(){
   return G_;
 }
 
-Matrix3d StrengthFluid::update_deviatoric_stress(const Matrix3d& sigma,
-						 const Matrix3d& D,
-						 double &plastic_strain_increment,
-						 const double eff_plastic_strain,
-						 const double epsdot,
-						 const double damage,
-						 const double temperature)
-{
-  Matrix3d dev_rate;
 
-  dev_rate = 2.0 * G_ * Deviator(D);
-  return dev_rate;
+void
+StrengthFluid::update_deviatoric_stress(Solid &solid,
+                                        Kokkos::View<double*, MemorySpace> &plastic_strain_increment,
+                                        Kokkos::View<Matrix3d*, MemorySpace> &sigma_dev) const
+{
+  double G_ = this->G_;
+
+  Kokkos::parallel_for("EOSLinear::compute_pressure", solid.np_local,
+  KOKKOS_LAMBDA (const int &ip)
+  {
+    sigma_dev[ip] = 2*G_*Deviator(solid.D[ip]);
+  });
 }
 
 void StrengthFluid::write_restart(ofstream *of) {

@@ -59,59 +59,63 @@ double StrengthPlastic::G(){
   return G_;
 }
 
-Matrix3d StrengthPlastic::update_deviatoric_stress(const Matrix3d& sigma,
-							const Matrix3d& D,
-							double &               plastic_strain_increment,
-							const double           eff_plastic_strain,
-							const double           epsdot,
-							const double           damage,
-							const double           temperature)
+void
+StrengthPlastic::update_deviatoric_stress(Solid &solid,
+                                          Kokkos::View<double*, MemorySpace> &plastic_strain_increment,
+                                          Kokkos::View<Matrix3d*, MemorySpace> &sigma_dev) const
 {
-  Matrix3d sigmaInitial_dev, sigmaFinal_dev, sigmaTrial_dev, dev_rate;
-  double J2, Gd, yieldStressD;
+  double G_ = this->G_;
+  double dt = update->dt;
 
-  /*
-   * deviatoric rate of unrotated stress
-   */
-  Gd = G_*(1-damage);
-  yieldStressD = yieldStress*(1-damage);
-  dev_rate = 2.0 * Gd * Deviator(D);
-  sigmaInitial_dev = Deviator(sigma);
+  Kokkos::parallel_for("EOSLinear::compute_pressure", solid.np_local,
+  KOKKOS_LAMBDA (const int &ip)
+  {
+    Matrix3d sigmaInitial_dev, sigmaFinal_dev, sigmaTrial_dev, dev_rate;
+    double J2, Gd, yieldStressD;
 
-  /*
-   * perform a trial elastic update to the deviatoric stress
-   */
-  sigmaTrial_dev = sigmaInitial_dev + update->dt * dev_rate; // increment stress deviator using deviatoric rate
-
-  /*
-   * check yield condition
-   */
-  J2 = sqrt(3. / 2.) * sigmaTrial_dev.norm();
-  sigmaFinal_dev = sigmaTrial_dev;
-
-  if (J2 < yieldStressD) {
     /*
-     * no yielding has occured.
-     * final deviatoric stress is trial deviatoric stress
+     * deviatoric rate of unrotated stress
      */
-    plastic_strain_increment = 0.0;
+    Gd = G_*(1 - solid.damage[ip]);
+    yieldStressD = yieldStress*(1 - solid.damage[ip]);
+    dev_rate = 2*Gd*Deviator(solid.D[ip]);
+    sigmaInitial_dev = Deviator(solid.sigma[ip]);
 
-  } else {
-    //printf("yiedl\n");
     /*
-     * yielding has occured
+     * perform a trial elastic update to the deviatoric stress
      */
+    sigmaTrial_dev = sigmaInitial_dev + dt*dev_rate; // increment stress deviator using deviatoric rate
 
-    plastic_strain_increment = (J2 - yieldStressD) / (3.0 * Gd);
     /*
-     * new deviatoric stress:
-     * obtain by scaling the trial stress deviator
+     * check yield condition
      */
-    sigmaFinal_dev *= (yieldStressD / J2);
+    J2 = Kokkos::Experimental::sqrt(1.5)*sigmaTrial_dev.norm();
+    sigmaFinal_dev = sigmaTrial_dev;
 
-  }
+    if (J2 < yieldStressD) {
+      /*
+       * no yielding has occured.
+       * final deviatoric stress is trial deviatoric stress
+       */
+      plastic_strain_increment[ip] = 0;
 
-  return sigmaFinal_dev;
+    } else {
+      //printf("yiedl\n");
+      /*
+       * yielding has occured
+       */
+
+      plastic_strain_increment[ip] = (J2 - yieldStressD)/(3*Gd);
+      /*
+       * new deviatoric stress:
+       * obtain by scaling the trial stress deviator
+       */
+      sigmaFinal_dev *= yieldStressD/J2;
+
+    }
+
+    sigma_dev[ip] = sigmaFinal_dev;
+  });
 }
 
 void StrengthPlastic::write_restart(ofstream *of) {

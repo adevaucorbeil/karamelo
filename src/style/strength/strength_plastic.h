@@ -35,14 +35,9 @@ public:
   void write_restart(ofstream *);
   void read_restart(ifstream *);
 
-  Matrix3d  update_deviatoric_stress
-  ( const Matrix3d& sigma,
-    const Matrix3d& D,
-    double &               plastic_strain_increment,
-    const double           eff_plastic_strain,
-    const double           epsdot,
-    const double           damage,
-    const double           temperature = 0);
+  void update_deviatoric_stress(Solid &solid,
+                                Kokkos::View<double*, MemorySpace> &plastic_strain_increment,
+                                Kokkos::View<Matrix3d*, MemorySpace> &sigma_dev) const override;
 
 protected:
   double G_, yieldStress;
