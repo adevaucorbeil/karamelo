@@ -13,6 +13,7 @@ class Grid;
 
 class Expression
 {
+public:
   Kokkos::View<double**> registers;
   int index = 0;
 

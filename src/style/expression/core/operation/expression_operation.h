@@ -23,7 +23,7 @@ class ExpressionOperation:
   public Expression::Operation
 {
   int index;
-  Kokkos::View<double**> registers;
+  Kokkos::View<double **> registers;
 
   bool
   isOperand() const override
@@ -53,9 +53,9 @@ public:
   void
   apply(Expression *expression) override
   {
-    DERIVED derived(*static_cast<const DERIVED *>(this));
     int index = this->index = expression->index;
-    Kokkos::View<double**> registers = this->registers = expression->registers;
+    Kokkos::View<double **> registers = this->registers = expression->registers;
+    DERIVED derived(*static_cast<const DERIVED *>(this));
 
     Kokkos::parallel_for("", expression->registers.extent(1),
     KOKKOS_LAMBDA (int i)

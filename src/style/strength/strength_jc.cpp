@@ -116,7 +116,7 @@ StrengthJohnsonCook::update_deviatoric_stress(Solid &solid,
 
   double cp = solid.mat->cp;
 
-  Kokkos::parallel_for("EOSLinear::compute_pressure", solid.np_local,
+  Kokkos::parallel_for("StrengthJohnsonCook::update_deviatoric_stress", solid.np_local,
   KOKKOS_LAMBDA (const int &ip)
   {
     if (solid.damage[ip] >= 1)

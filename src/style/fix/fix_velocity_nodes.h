@@ -21,7 +21,6 @@ FixStyle(velocity_nodes,FixVelocityNodes)
 #define MPM_FIX_VELOCITY_NODES_H
 
 #include <fix.h>
-#include <var.h>
 #include <matrix.h>
 
 class Expression;
@@ -46,8 +45,6 @@ private:
       {3, "Usage: fix(fix-ID, velocity_nodes, group, vx, vy, vz)\n"}};
   const map<int, int> Nargs = {{1, 4}, {2, 5}, {3, 6}};
 
-  Var xvalue, yvalue, zvalue;                  //< Velocities in x, y, and z directions.
-  Var xprevvalue, yprevvalue, zprevvalue;      //< Velocities in x, y, and z directions from previous time step.
   bool xset, yset, zset;                             //< Does the fix set the x, y, and z velocities of the group?
   Vector3d ftot;
 

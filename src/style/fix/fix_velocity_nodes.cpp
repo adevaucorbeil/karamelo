@@ -67,7 +67,7 @@ FixVelocityNodes::FixVelocityNodes(MPM *mpm, vector<string> args):
   {
     // xvalue = input->parsev(args[3]);
     xset = true;
-    xvalue = input->parsev(args[3]);
+    input->parsev(args[3]);
 
     string previous = args[3];
 
@@ -75,7 +75,7 @@ FixVelocityNodes::FixVelocityNodes(MPM *mpm, vector<string> args):
     while(previous.find(time)!=std::string::npos)
       previous.replace(previous.find(time),time.length(),"time - dt");
 
-    xprevvalue = input->parsev(previous);
+    input->parsev(previous);
 
     v[0] = &input->expressions[args[3]];
     v_prev[0] = &input->expressions[previous];
@@ -85,7 +85,7 @@ FixVelocityNodes::FixVelocityNodes(MPM *mpm, vector<string> args):
 
   if (domain->dimension >= 2 && args[4] != "NULL")
   {
-    yvalue = input->parsev(args[4]);
+    input->parsev(args[4]);
     yset = true;
 
     string previous = args[4];
@@ -94,7 +94,7 @@ FixVelocityNodes::FixVelocityNodes(MPM *mpm, vector<string> args):
     while(previous.find(time)!=std::string::npos)
       previous.replace(previous.find(time),time.length(),"time - dt");
 
-    yprevvalue = input->parsev(previous);
+    input->parsev(previous);
 
     v[1] = &input->expressions[args[4]];
     v_prev[1] = &input->expressions[previous];
@@ -104,7 +104,7 @@ FixVelocityNodes::FixVelocityNodes(MPM *mpm, vector<string> args):
 
   if (domain->dimension == 3 && args[5] != "NULL")
   {
-    zvalue = input->parsev(args[5]);
+    input->parsev(args[5]);
     zset = true;
 
     string previous = args[5];
@@ -113,7 +113,7 @@ FixVelocityNodes::FixVelocityNodes(MPM *mpm, vector<string> args):
     while(previous.find(time)!=std::string::npos)
       previous.replace(previous.find(time),time.length(),"time - dt");
 
-    zprevvalue = input->parsev(previous);
+    input->parsev(previous);
 
     v[2] = &input->expressions[args[5]];
     v_prev[2] = &input->expressions[previous];
@@ -124,13 +124,6 @@ FixVelocityNodes::FixVelocityNodes(MPM *mpm, vector<string> args):
 
 void FixVelocityNodes::prepare()
 {
-  xvalue.result(mpm);
-  yvalue.result(mpm);
-  zvalue.result(mpm);
-  xprevvalue.result(mpm);
-  yprevvalue.result(mpm);
-  zprevvalue.result(mpm);
-
   ftot = Vector3d();
 }
 
@@ -142,9 +135,9 @@ void FixVelocityNodes::reduce()
   MPI_Allreduce(ftot.elements, ftot_reduced.elements, 3, MPI_DOUBLE, MPI_SUM,
                 universe->uworld);
 
-  (*input->vars)[id + "_x"] = Var(id + "_x", ftot_reduced[0]);
-  (*input->vars)[id + "_y"] = Var(id + "_y", ftot_reduced[1]);
-  (*input->vars)[id + "_z"] = Var(id + "_z", ftot_reduced[2]);
+  //(*input->vars)[id + "_x"] = Var(id + "_x", ftot_reduced[0]);
+  //(*input->vars)[id + "_y"] = Var(id + "_y", ftot_reduced[1]);
+  //(*input->vars)[id + "_z"] = Var(id + "_z", ftot_reduced[2]);
 }
 
 void FixVelocityNodes::post_update_grid_state(Grid &grid)
@@ -157,55 +150,23 @@ void FixVelocityNodes::post_update_grid_state(Grid &grid)
     if (v[i])
       v[i]->evaluate(grid);
 
-  for (int in = 0; in < grid.nnodes_local + grid.nnodes_ghost; in++)
-  {
-    if (!(grid.mask[in] & groupbit))
-      continue;
-
-	(*input->vars)["x"] = Var("x",   grid.x [in][0]);
-	(*input->vars)["y"] = Var("y",   grid.x [in][1]);
-	(*input->vars)["z"] = Var("z",   grid.x [in][2]);
-	(*input->vars)["x0"] = Var("x0", grid.x0[in][0]);
-	(*input->vars)["y0"] = Var("y0", grid.x0[in][1]);
-	(*input->vars)["z0"] = Var("z0", grid.x0[in][2]);
-
-    Vector3d Dv;
-    if (xset)
+  for (int i = 0; i < 3; i++)
+    if (v[i])
     {
-      double vx = xvalue.result(mpm, true);
+      Kokkos::View<double **> v_i = v[i]->registers;
+      Kokkos::View<double **> v_prev_i = v_prev[i]->registers;
 
-      if (vx)
-        cout << in << ": " << vx << " " << (*v[0])[in] << endl;
+      Kokkos::parallel_reduce("FixVelocityNodes::post_update_grid_state", grid.nnodes_local + grid.nnodes_ghost,
+                              KOKKOS_LAMBDA(const int &in, double &ftot_i)
+      {
+        if (!(grid.mask[in] & groupbit))
+          return;
 
-      double vx_old = xprevvalue.result(mpm, true);
-      // cout << "Set v_update[0] to " << xvalue.eq() << "=" << vx << endl;
-      // cout << "Set v[0] to " << vx_old << endl;
-      Dv[0] = vx - grid.v_update[in][0];
-      grid.v_update[in][0] = vx;
-      grid.v[in][0] = vx_old;
+        grid.v[in][i] = v_prev_i(0, in);
+
+        ftot_i += grid.mass[in]*((grid.v_update[in][i] = v_i(0, in)) - grid.v_update[in][i])/update->dt;
+      }, ftot[i]);
     }
-    if (yset)
-    {
-      double vy = yvalue.result(mpm, true);
-      double vy_old = yprevvalue.result(mpm, true);
-      // cout << "Set v_update[1] to " << "=" <<  vy << endl;
-      // cout << "Set v[1] to " << "=" <<  vy_old << endl;
-      Dv[1] = vy - grid.v_update[in][1];
-      grid.v_update[in][1] = vy;
-      grid.v[in][1] = vy_old;
-    }
-    if (zset)
-    {
-      double vz = zvalue.result(mpm, true);
-      double vz_old = zprevvalue.result(mpm, true);
-      // cout << "Set v_update[2] to " << "=" <<  vz << endl;
-      // cout << "Set v[2] to " << "=" <<  vz_old << endl;
-      Dv[2] = vz - grid.v_update[in][2];
-      grid.v_update[in][2] = vz;
-      grid.v[in][2] = vz_old;
-    }
-    ftot += grid.mass[in]*Dv/update->dt;
-  }
 }
 
 void FixVelocityNodes::post_velocities_to_grid(Grid &grid) {
@@ -217,9 +178,9 @@ void FixVelocityNodes::post_velocities_to_grid(Grid &grid) {
     if (!(grid.mask[in] & groupbit))
       continue;
 
-    if (xset) grid.v[in][0] = xvalue.result(mpm, true);
-    if (yset) grid.v[in][1] = yvalue.result(mpm, true);
-    if (zset) grid.v[in][2] = zvalue.result(mpm, true);
+    if (xset) grid.v[in][0] = (*v[0])[in];
+    if (yset) grid.v[in][1] = (*v[1])[in];
+    if (zset) grid.v[in][2] = (*v[2])[in];
   }
 }
 
@@ -228,18 +189,18 @@ void FixVelocityNodes::write_restart(ofstream *of) {
   of->write(reinterpret_cast<const char *>(&yset), sizeof(bool));
   of->write(reinterpret_cast<const char *>(&zset), sizeof(bool));
 
-  if (xset) {
-    xvalue.write_to_restart(of);
-    xprevvalue.write_to_restart(of);
-  }
-  if (yset) {
-    yvalue.write_to_restart(of);
-    yprevvalue.write_to_restart(of);
-  }
-  if (zset) {
-    zvalue.write_to_restart(of);
-    zprevvalue.write_to_restart(of);
-  }
+  //if (xset) {
+  //  xvalue.write_to_restart(of);
+  //  xprevvalue.write_to_restart(of);
+  //}
+  //if (yset) {
+  //  yvalue.write_to_restart(of);
+  //  yprevvalue.write_to_restart(of);
+  //}
+  //if (zset) {
+  //  zvalue.write_to_restart(of);
+  //  zprevvalue.write_to_restart(of);
+  //}
 }
 
 void FixVelocityNodes::read_restart(ifstream *ifr) {
@@ -247,16 +208,16 @@ void FixVelocityNodes::read_restart(ifstream *ifr) {
    ifr->read(reinterpret_cast<char *>(&yset), sizeof(bool));
   ifr->read(reinterpret_cast<char *>(&zset), sizeof(bool));
 
-  if (xset) {
-    xvalue.read_from_restart(ifr);
-    xprevvalue.read_from_restart(ifr);
-  }
-  if (yset) {
-    yvalue.read_from_restart(ifr);
-    yprevvalue.read_from_restart(ifr);
-  }
-  if (zset) {
-    zvalue.read_from_restart(ifr);
-    zprevvalue.read_from_restart(ifr);
-  }
+  //if (xset) {
+  //  xvalue.read_from_restart(ifr);
+  //  xprevvalue.read_from_restart(ifr);
+  //}
+  //if (yset) {
+  //  yvalue.read_from_restart(ifr);
+  //  yprevvalue.read_from_restart(ifr);
+  //}
+  //if (zset) {
+  //  zvalue.read_from_restart(ifr);
+  //  zprevvalue.read_from_restart(ifr);
+  //}
 }

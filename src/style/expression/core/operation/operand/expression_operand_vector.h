@@ -14,13 +14,13 @@ class ExpressionOperandVector:
 
 public:
   void
-  set_solid(Solid &solid) override
+  set_solid(const Solid &solid) override
   {
     vector = solid.*SOLID_TO_VECTOR;
   }
 
   void
-  set_grid(Grid &grid) override
+  set_grid(const Grid &grid) override
   {
     vector = grid.*GRID_TO_VECTOR;
   }
