@@ -106,6 +106,7 @@ StrengthJohnsonCook::update_deviatoric_stress(Solid &solid,
   double A = this->A;
   double B = this->B;
   double n = this->n;
+  double C = this->C;
   double Tm = this->Tm;
   double Tr = this->Tr;
   double Tmr = this->Tmr;

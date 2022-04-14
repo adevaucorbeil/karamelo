@@ -150,6 +150,9 @@ void FixVelocityNodes::post_update_grid_state(Grid &grid)
     if (v[i])
       v[i]->evaluate(grid);
 
+  int groupbit = this->groupbit;
+  double dt = update->dt;
+
   for (int i = 0; i < 3; i++)
     if (v[i])
     {
@@ -164,7 +167,7 @@ void FixVelocityNodes::post_update_grid_state(Grid &grid)
 
         grid.v[in][i] = v_prev_i(0, in);
 
-        ftot_i += grid.mass[in]*((grid.v_update[in][i] = v_i(0, in)) - grid.v_update[in][i])/update->dt;
+        ftot_i += grid.mass[in]*((grid.v_update[in][i] = v_i(0, in)) - grid.v_update[in][i])/dt;
       }, ftot[i]);
     }
 }

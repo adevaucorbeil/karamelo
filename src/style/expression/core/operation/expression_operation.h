@@ -57,7 +57,7 @@ public:
     Kokkos::View<double **> registers = this->registers = expression->registers;
     DERIVED derived(*static_cast<const DERIVED *>(this));
 
-    Kokkos::parallel_for("", expression->registers.extent(1),
+    Kokkos::parallel_for(__PRETTY_FUNCTION__, expression->registers.extent(1),
     KOKKOS_LAMBDA (int i)
     {
       registers(index - ARITY, i) = derived.evaluate(i);

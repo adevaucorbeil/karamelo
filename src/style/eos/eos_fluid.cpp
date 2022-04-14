@@ -67,7 +67,7 @@ double EOSFluid::K(){
 
 void EOSFluid::compute_pressure(Solid &solid, Kokkos::View<double*, MemorySpace> &pH) const
 {
-  double rho_ = this->rho0_;
+  double rho0_ = this->rho0_;
   double K_ = this->K_;
   double Gamma = this->Gamma;
 

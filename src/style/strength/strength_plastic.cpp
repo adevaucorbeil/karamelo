@@ -65,6 +65,8 @@ StrengthPlastic::update_deviatoric_stress(Solid &solid,
                                           Kokkos::View<Matrix3d*, MemorySpace> &sigma_dev) const
 {
   double G_ = this->G_;
+  double yieldStress = this->yieldStress;
+  
   double dt = update->dt;
 
   Kokkos::parallel_for("EOSLinear::compute_pressure", solid.np_local,
