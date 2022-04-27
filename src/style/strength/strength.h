@@ -39,8 +39,8 @@ class Strength : protected Pointers {
   virtual double G() = 0;
 
   virtual void update_deviatoric_stress(Solid &solid,
-                                        Kokkos::View<double*, MemorySpace> &plastic_strain_increment,
-                                        Kokkos::View<Matrix3d*, MemorySpace> &sigma_dev) const = 0;
+                                        Kokkos::View<double*> &plastic_strain_increment,
+                                        Kokkos::View<Matrix3d*> &sigma_dev) const = 0;
   //protected:
 };
 

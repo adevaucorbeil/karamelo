@@ -39,6 +39,47 @@ DumpGridGz::DumpGridGz(MPM *mpm, vector<string> args) : Dump(mpm, args) {
       error->all(FLERR, "");
     }
   }
+
+  bool xyz = true;
+  bool vxyz = true;
+  bool bxyz = true;
+  bool ntypexyz = true;
+
+  const Grid &g = *domain->grid;
+
+  ntag = create_mirror(g.ntag);
+
+  for (const string &v: output_var)
+  {
+    if ((v == "x" || v == "y" || v == "z") && xyz)
+    {
+      x = create_mirror(g.x);
+      xyz = false;
+    }
+    else if ((v == "vx" || v == "vy" || v == "vz") && vxyz)
+    {
+      this->v = create_mirror(g.v);
+      vxyz = false;
+    }
+    else if ((v == "bx" || v == "by" || v == "bz") && bxyz)
+    {
+      mb = create_mirror(g.mb);
+      bxyz = false;
+    }
+    else if (v == "mass")
+      mass = create_mirror(g.mass);
+    else if (v.compare("mask")==0)
+      mask = create_mirror(g.mask);
+    else if ((v == "ntypex" || v == "ntypey" || v == "ntypez") && ntypexyz)
+    {
+      ntype = create_mirror(g.ntype);
+      ntypexyz = false;
+    }
+    else if (v == "T")
+      T = create_mirror(g.T);
+    else if (v == "rigid")
+      rigid = create_mirror(g.rigid);
+  }
 }
 
 DumpGridGz::~DumpGridGz() {}
@@ -102,42 +143,81 @@ void DumpGridGz::write() {
   dumpstream << endl;
 
   int igrid = 0;
-  for (auto g : grids) {
+  for (auto g: grids) {
+    bool xyz = false;
+    bool vxyz = false;
+    bool bxyz = false;
+    bool ntypexyz = false;
+
+    deep_copy(ntag, g->ntag);
+
+    for (const string &v: output_var)
+    {
+      if ((v == "x" || v == "y" || v == "z") && xyz)
+      {
+        deep_copy(x, g->x);
+        xyz = false;
+      }
+      else if ((v == "vx" || v == "vy" || v == "vz") && vxyz)
+      {
+        deep_copy(this->v, g->v);
+        vxyz = false;
+      }
+      else if ((v == "bx" || v == "by" || v == "bz") && bxyz)
+      {
+        deep_copy(mb, g->mb);
+        bxyz = false;
+      }
+      else if (v == "mass")
+        deep_copy(mass, g->mass);
+      else if (v.compare("mask")==0)
+        deep_copy(mask, g->mask);
+      else if ((v == "ntypex" || v == "ntypey" || v == "ntypez") && ntypexyz)
+      {
+        deep_copy(ntype, g->ntype);
+        ntypexyz = false;
+      }
+      else if (v == "T")
+        deep_copy(T, g->T);
+      else if (v == "rigid")
+        deep_copy(rigid, g->rigid);
+    }
+
     for (bigint i = 0; i < g->nnodes_local; i++) {
-      dumpstream << g->ntag[i] << " " << igrid + 1 << " ";
+      dumpstream << ntag[i] << " " << igrid + 1 << " ";
       for (auto v : output_var) {
         if (v == "x")
-          dumpstream << g->x[i][0] << " ";
+          dumpstream << x[i][0] << " ";
         else if (v == "y")
-          dumpstream << g->x[i][1] << " ";
+          dumpstream << x[i][1] << " ";
         else if (v == "z")
-          dumpstream << g->x[i][2] << " ";
+          dumpstream << x[i][2] << " ";
         else if (v == "vx")
-          dumpstream << g->v[i][0] << " ";
+          dumpstream << this->v[i][0] << " ";
         else if (v == "vy")
-          dumpstream << g->v[i][1] << " ";
+          dumpstream << this->v[i][1] << " ";
         else if (v == "vz")
-          dumpstream << g->v[i][2] << " ";
+          dumpstream << this->v[i][2] << " ";
         else if (v == "bx")
-          dumpstream << g->mb[i][0] << " ";
+          dumpstream << mb[i][0] << " ";
         else if (v == "by")
-          dumpstream << g->mb[i][1] << " ";
+          dumpstream << mb[i][1] << " ";
         else if (v == "bz")
-          dumpstream << g->mb[i][2] << " ";
+          dumpstream << mb[i][2] << " ";
         else if (v == "mass")
-          dumpstream << g->mass[i] << " ";
-	else if (v.compare("mask")==0)
-	  dumpstream << g->mask[i] << " ";
+          dumpstream << mass[i] << " ";
+	      else if (v.compare("mask")==0)
+	        dumpstream << mask[i] << " ";
         else if (v == "ntypex")
-          dumpstream << g->ntype[i][0] << " ";
+          dumpstream << ntype[i][0] << " ";
         else if (v == "ntypey")
-          dumpstream << g->ntype[i][1] << " ";
+          dumpstream << ntype[i][1] << " ";
         else if (v == "ntypez")
-          dumpstream << g->ntype[i][2] << " ";
+          dumpstream << ntype[i][2] << " ";
         else if (v == "T")
-          dumpstream << g->T[i] << " ";
+          dumpstream << T[i] << " ";
         else if (v == "rigid")
-          dumpstream << g->rigid[i] << " ";
+          dumpstream << rigid[i] << " ";
       }
       dumpstream << endl;
     }

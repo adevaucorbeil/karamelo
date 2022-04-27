@@ -23,7 +23,7 @@ public:
   inline double kappa() { return kappa_; }
   inline double alpha() { return alpha_; }
   void compute_heat_source(Solid &solid,
-                           Kokkos::View<Matrix3d*, MemorySpace> &sigma_dev) const override;
+                           Kokkos::View<Matrix3d*> &sigma_dev) const override;
 
   void write_restart(ofstream *);
   void read_restart(ifstream *);

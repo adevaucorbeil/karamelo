@@ -66,9 +66,8 @@ Group::~Group()
 
 void Group::assign(vector<string> args)
 {
-  if (args.size() < 4) {
+  if (args.size() < 4)
     error->all(FLERR,"Error: too few arguments for group: requires at least 4 arguments. " + to_string(args.size()) + " received.\n");
-  }
 
   // find group in existing list
   // add a new group if igroup = -1
@@ -77,9 +76,9 @@ void Group::assign(vector<string> args)
 
   if (igroup == -1)
   {
-    if (ngroup == MAX_GROUP) {
+    if (ngroup == MAX_GROUP)
       error->all(FLERR, "Too many groups.\n");
-    }
+
     igroup        = find_unused();
     names[igroup] = args[0];
     ngroup++;
@@ -89,150 +88,129 @@ void Group::assign(vector<string> args)
 
   // Operates on particles or nodes:
   if (args[1] == "particles")
-  {
     pon[igroup] = "particles";
-  }
   else if (args[1] == "nodes")
-  {
     pon[igroup] = "nodes";
-  } else {
+  else
     error->all(FLERR,"Error: do not understand keyword " + args[1] + ", \"particles\" or \"nodes\" expected.\n");
-  }
 
   // style = region
   // add to group if atom is in region
 
-  if (args[2] == "region")
+  if (args[2] != "region")
+    error->all(FLERR, "Error: unknown keyword in group command: " + args[2] + ".\n");
+
+  // Look for the region ID (if exists):
+  region[igroup] = domain->find_region(args[3]);
+  if (region[igroup] == -1)
+    error->all(FLERR, "Error: could not find region " + args[3] + ".\n");
+
+  if (args[4] == "all")
   {
-    // Look for the region ID (if exists):
-    region[igroup] = domain->find_region(args[3]);
-    if (region[igroup] == -1)
+    /* For all particles of all solids, check if they are in the region.
+    If so asign them the right mask */
+    solid[igroup] = -1; // Consider all solids
+
+    for (int isolid = 0; isolid < domain->solids.size(); isolid++)
+    {
+      Kokkos::View<Vector3d*> *x;
+      int nmax;
+      Kokkos::View<int*> *mask;
+
+      if (pon[igroup] == "particles")
       {
-      error->all(FLERR, "Error: could not find region " + args[3] + ".\n");
+        x    = &domain->solids[isolid]->x0;
+        nmax = domain->solids[isolid]->np_local;
+        mask = &domain->solids[isolid]->mask;
+      }
+      else
+      {
+        x    = &domain->solids[isolid]->grid->x0;
+        nmax = domain->solids[isolid]->grid->nnodes_local + domain->solids[isolid]->grid->nnodes_ghost;
+        mask = &domain->solids[isolid]->grid->mask;
       }
 
-    if (args[4] == "all")
+      int n = 0;
+
+      Kokkos::View<Vector3d*>::HostMirror x_mirror = create_mirror(*x);
+      deep_copy(x_mirror, *x);
+
+      Kokkos::View<int*>::HostMirror mask_mirror = create_mirror(*mask);
+      deep_copy(mask_mirror, *mask);
+
+      for (int ip = 0; ip < nmax; ip++)
       {
-
-	/* For all particles of all solids, check if they are in the region.
-	   If so asign them the right mask */
-	solid[igroup] = -1; // Consider all solids
-
-	for (int isolid = 0; isolid < domain->solids.size(); isolid++)
-	  {
-
-	    Kokkos::View<Vector3d*, MemorySpace> *x;
-	    int nmax;
-	    Kokkos::View<int*, MemorySpace> *mask;
-
-	    if (pon[igroup] == "particles")
-	      {
-		x    = &domain->solids[isolid]->x0;
-		nmax = domain->solids[isolid]->np_local;
-		mask = &domain->solids[isolid]->mask;
-
-                // if (universe->me == 0) {
-                //   cout << "Solid has " << domain->solids[isolid]->np
-                //        << " particles" << endl;
-                // }
-              }
-	    else
-	      {
-		x    = &domain->solids[isolid]->grid->x0;
-		nmax = domain->solids[isolid]->grid->nnodes_local
-		  + domain->solids[isolid]->grid->nnodes_ghost;
-		mask = &domain->solids[isolid]->grid->mask;
-
-                // if (universe->me == 0) {
-                //   cout << "Grid has " << domain->solids[isolid]->grid->nnodes
-                //        << " nodes" << endl;
-                // }
-              }
-
-	    int n = 0;
-
-	    for (int ip = 0; ip < nmax; ip++)
-	      {
-		if (domain->regions[region[igroup]]->match((*x)[ip][0],(*x)[ip][1],(*x)[ip][2]))
-		  {
-		    (*mask)[ip] |= bit;
-		    n++;
-		  }
-	      }
-
-	    n_tot_[igroup] = 0;
-	    MPI_Allreduce(&n,&n_tot_[igroup],1,MPI_INT,MPI_SUM,universe->uworld);
-
-            if (universe->me == 0) {
-              cout << n_tot_[igroup] << " " << pon[igroup] << " from solid "
-                   << domain->solids[isolid]->id << " found" << endl;
-            }
-          }
+        if (domain->regions[region[igroup]]->match(x_mirror[ip][0],x_mirror[ip][1],x_mirror[ip][2]))
+        {
+          mask_mirror[ip] |= bit;
+          n++;
+        }
       }
-    else if (args[4] == "solid")
-      {
 
-	for (int i=5; i<args.size(); i++)
-	  {
-	    solid[igroup] = domain->find_solid(args[i]);
-	    if (solid[igroup] == -1) {
-	      error->all(FLERR, "Error: cannot find solid with ID " + args[i] + ".\n");
-	    }
+      deep_copy(*mask, mask_mirror);
 
-	    Kokkos::View<Vector3d*, MemorySpace> *x;
-	    int nmax;
-	    Kokkos::View<int*, MemorySpace> *mask;
+      n_tot_[igroup] = 0;
+      MPI_Allreduce(&n,&n_tot_[igroup],1,MPI_INT,MPI_SUM,universe->uworld);
 
-	    if (pon[igroup] == "particles")
-	      {
-		x    = &domain->solids[solid[igroup]]->x0;
-		nmax = domain->solids[solid[igroup]]->np_local;
-		mask = &domain->solids[solid[igroup]]->mask;
-		// if (universe->me == 0) {
-		//   cout << "Solid has " << domain->solids[solid[igroup]]->np
-		//        << " particles" << endl;
-		// }
-	      }
-	    else
-	      {
-		x    = &domain->solids[solid[igroup]]->grid->x0;
-		nmax = domain->solids[solid[igroup]]->grid->nnodes_local
-		  + domain->solids[solid[igroup]]->grid->nnodes_ghost;
-		mask = &domain->solids[solid[igroup]]->grid->mask;
-		// if (universe->me == 0) {
-		//   cout << "Grid has " << domain->solids[solid[igroup]]->grid->nnodes
-		//        << " nodes" << endl;
-		// }
-	      }
-
-	    int n = 0;
-
-	    for (int ip = 0; ip < nmax; ip++)
-	      {
-		if (domain->regions[region[igroup]]->match((*x)[ip][0],(*x)[ip][1],(*x)[ip][2])) {
-		  (*mask)[ip] |= bit;
-		  n++;
-		}
-	      }
-
-	    n_tot_[igroup] = 0;
-	    MPI_Allreduce(&n,&n_tot_[igroup],1,MPI_INT,MPI_SUM,universe->uworld);
-
-            if (universe->me == 0) {
-              cout << n_tot_[igroup] << " " << pon[igroup] << " from solid "
-                   << domain->solids[solid[igroup]]->id << " found" << endl;
-            }
-          }
-
-      }
-    else
-      {
-	error->all(FLERR, "Error: unknown keyword in group command: " + args[3] + ".\n");
-      }
-  } else {
-    error->all(FLERR,
-               "Error: unknown keyword in group command: " + args[2] + ".\n");
+      if (universe->me == 0)
+        cout << n_tot_[igroup] << " " << pon[igroup] << " from solid "
+             << domain->solids[isolid]->id << " found" << endl;
+    }
   }
+  else if (args[4] == "solid")
+  {
+    for (int i=5; i<args.size(); i++)
+    {
+      solid[igroup] = domain->find_solid(args[i]);
+      if (solid[igroup] == -1)
+        error->all(FLERR, "Error: cannot find solid with ID " + args[i] + ".\n");
+
+      Kokkos::View<Vector3d*> *x;
+      int nmax;
+      Kokkos::View<int*> *mask;
+
+      if (pon[igroup] == "particles")
+      {
+        x    = &domain->solids[solid[igroup]]->x0;
+        nmax = domain->solids[solid[igroup]]->np_local;
+        mask = &domain->solids[solid[igroup]]->mask;
+      }
+      else
+      {
+        x    = &domain->solids[solid[igroup]]->grid->x0;
+        nmax = domain->solids[solid[igroup]]->grid->nnodes_local + domain->solids[solid[igroup]]->grid->nnodes_ghost;
+        mask = &domain->solids[solid[igroup]]->grid->mask;
+      }
+
+      int n = 0;
+
+      Kokkos::View<Vector3d*>::HostMirror x_mirror = create_mirror(*x);
+      deep_copy(x_mirror, *x);
+
+      Kokkos::View<int*>::HostMirror mask_mirror = create_mirror(*mask);
+      deep_copy(mask_mirror, *mask);
+
+      for (int ip = 0; ip < nmax; ip++)
+      {
+        if (domain->regions[region[igroup]]->match(x_mirror[ip][0],x_mirror[ip][1],x_mirror[ip][2]))
+        {
+          mask_mirror[ip] |= bit;
+          n++;
+        }
+      }
+
+      deep_copy(*mask, mask_mirror);
+
+      n_tot_[igroup] = 0;
+      MPI_Allreduce(&n,&n_tot_[igroup],1,MPI_INT,MPI_SUM,universe->uworld);
+
+      if (universe->me == 0)
+        cout << n_tot_[igroup] << " " << pon[igroup] << " from solid "
+             << domain->solids[solid[igroup]]->id << " found" << endl;
+    }
+  }
+  else
+    error->all(FLERR, "Error: unknown keyword in group command: " + args[3] + ".\n");
 }
 
 /* ----------------------------------------------------------------------
@@ -262,10 +240,10 @@ int Group::find_unused()
 
 double Group::xcm(int igroup, int dir)
 {
-  Kokkos::View<Vector3d*, MemorySpace> *x;
-  Kokkos::View<double*, MemorySpace> *mass;
+  Kokkos::View<Vector3d*> *x;
+  Kokkos::View<double*> *mass;
   int nmax;
-  Kokkos::View<int*, MemorySpace> *mask;
+  Kokkos::View<int*> *mask;
   double com = 0;
   double mass_tot = 0;
   int groupbit    = group->bitmask[igroup];
@@ -340,9 +318,9 @@ double Group::xcm(int igroup, int dir)
 double Group::internal_force(int igroup, int dir)
 {
   
-  Kokkos::View<Vector3d*, MemorySpace> *f;
+  Kokkos::View<Vector3d*> *f;
   int nmax;
-  Kokkos::View<int*, MemorySpace> *mask;
+  Kokkos::View<int*> *mask;
   double resulting_force = 0;
   int groupbit           = group->bitmask[igroup];
 
@@ -413,9 +391,9 @@ double Group::external_force(int igroup, int dir)
 		 + names[igroup] + ".\n");
     }
   
-  Kokkos::View<Vector3d*, MemorySpace> *f;
+  Kokkos::View<Vector3d*> *f;
   int nmax;
-  Kokkos::View<int*, MemorySpace> *mask;
+  Kokkos::View<int*> *mask;
   double resulting_force = 0;
   int groupbit           = group->bitmask[igroup];
 
@@ -539,9 +517,9 @@ void Group::read_restart(ifstream *ifr) {
       // Consider all solids
       for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
 
-        Kokkos::View<Vector3d*, MemorySpace> *x;
+        Kokkos::View<Vector3d*> *x;
         int nmax;
-        Kokkos::View<int*, MemorySpace> *mask;
+        Kokkos::View<int*> *mask;
 
         if (pon[igroup] == "particles") {
           x = &domain->solids[isolid]->x0;
@@ -581,9 +559,9 @@ void Group::read_restart(ifstream *ifr) {
 	}
       }
     } else {
-      Kokkos::View<Vector3d*, MemorySpace> *x;
+      Kokkos::View<Vector3d*> *x;
       int nmax;
-      Kokkos::View<int*, MemorySpace> *mask;
+      Kokkos::View<int*> *mask;
 
       if (pon[igroup] == "particles") {
         x = &domain->solids[solid[igroup]]->x0;

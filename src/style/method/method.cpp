@@ -46,10 +46,10 @@ void Method::compute_grid_weight_functions_and_gradients(Solid &solid)
   if (update->ntimestep == 0 && rigid)
     rigid_solids = 1;
 
-  Kokkos::View<Vector3d*, MemorySpace> &x0 = solid.grid->x0;
-  Kokkos::View<Vector3i*, MemorySpace> &ntype = solid.grid->ntype;
-  Kokkos::View<tagint*, MemorySpace> &map_ntag = solid.grid->map_ntag;
-  Kokkos::View<bool*, MemorySpace> grid_rigid = solid.grid->rigid;
+  Kokkos::View<Vector3d*> &x0 = solid.grid->x0;
+  Kokkos::View<Vector3i*> &ntype = solid.grid->ntype;
+  Kokkos::View<tagint*> &map_ntag = solid.grid->map_ntag;
+  Kokkos::View<bool*> grid_rigid = solid.grid->rigid;
 
   double inv_cellsize = 1/solid.grid->cellsize;
     
@@ -513,8 +513,8 @@ void Method::compute_rate_deformation_gradient(bool doublemapping, Solid &solid)
   if (solid.mat->rigid)
     return;
 
-  Kokkos::View<Matrix3d*, MemorySpace> &gradients = is_TL? solid.Fdot: solid.L;
-  const Kokkos::View<Vector3d*, MemorySpace> &vn = doublemapping? solid.grid->v: solid.grid->v_update;
+  Kokkos::View<Matrix3d*> &gradients = is_TL? solid.Fdot: solid.L;
+  const Kokkos::View<Vector3d*> &vn = doublemapping? solid.grid->v: solid.grid->v_update;
 
   bool temp = this->temp;
   Update::SubMethodType sub_method_type = update->sub_method_type;
@@ -681,9 +681,9 @@ void Method::update_deformation_gradient_stress(bool doublemapping, Solid &solid
   }
   else
   {
-    Kokkos::View<double*, MemorySpace> pH("pH", solid.np_local);
-    Kokkos::View<double*, MemorySpace> plastic_strain_increment("plastic_strain_increment", solid.np_local);
-    Kokkos::View<Matrix3d*, MemorySpace> sigma_dev("sigma_dev", solid.np_local);
+    Kokkos::View<double*> pH("pH", solid.np_local);
+    Kokkos::View<double*> plastic_strain_increment("plastic_strain_increment", solid.np_local);
+    Kokkos::View<Matrix3d*> sigma_dev("sigma_dev", solid.np_local);
 
     solid.mat->eos->compute_pressure(solid, pH);
 
@@ -832,7 +832,7 @@ void Method::adjust_dt()
 
   for (Solid *solid: domain->solids)
   {
-    Kokkos::View<double*, MemorySpace> solid_dtCFL = solid->dtCFL;
+    Kokkos::View<double*> solid_dtCFL = solid->dtCFL;
 
     Kokkos::parallel_reduce("update_deformation_gradient_stress2", solid->np_local,
     KOKKOS_LAMBDA (const int &ip, double &dtCFL1)
@@ -863,7 +863,7 @@ void Method::reset()
 {
   for (Solid *solid: domain->solids)
   {
-    Kokkos::View<Vector3d*, MemorySpace> mbp = solid->mbp;
+    Kokkos::View<Vector3d*> mbp = solid->mbp;
     
     Kokkos::parallel_for("reset", solid->np_local,
     KOKKOS_LAMBDA (const int &ip)
@@ -879,7 +879,6 @@ void Method::exchange_particles()
     return;
   
   int ip;
-  Kokkos::View<Vector3d*, MemorySpace> *xp;
   // vector<int> np_send;
   vector<vector<double>> buf_send_vect(universe->nprocs);
   vector<vector<double>> buf_recv_vect(universe->nprocs);
@@ -895,13 +894,14 @@ void Method::exchange_particles()
       buf_recv_vect[iproc].clear();
     }
     
-    xp = &domain->solids[isolid]->x;
+    Kokkos::View<Vector3d*>::HostMirror xp = create_mirror(domain->solids[isolid]->x);
+    deep_copy(xp, domain->solids[isolid]->x);
 
     // np_send.assign(universe->nprocs, 0);
 
     ip = 0;
     while (ip < domain->solids[isolid]->np_local) {
-      owner = domain->which_CPU_owns_me((*xp)[ip][0], (*xp)[ip][1], (*xp)[ip][2]);
+      owner = domain->which_CPU_owns_me(xp[ip][0], xp[ip][1], xp[ip][2]);
       if (owner != universe->me) {
         // The particle is not located in the subdomain anymore:
         // transfer it to the buffer

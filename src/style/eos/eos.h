@@ -41,7 +41,7 @@ class EOS : protected Pointers {
   //virtual compute_pressure()
   virtual double rho0() = 0;
   virtual double K() = 0;
-  virtual void compute_pressure(Solid &solid, Kokkos::View<double*, MemorySpace> &pH) const = 0;
+  virtual void compute_pressure(Solid &solid, Kokkos::View<double*> &pH) const = 0;
 
   virtual void write_restart(ofstream*) = 0;
   virtual void read_restart(ifstream*) = 0;

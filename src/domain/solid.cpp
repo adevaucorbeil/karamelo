@@ -175,13 +175,17 @@ void Solid::init()
   }
 
   // Calculate total volume:
+  Kokkos::View<double*> vol = this->vol;
+  Kokkos::View<double*> mass = this->mass;
+
   double vtot_local = 0;
   double mtot_local = 0;
-  for (int ip = 0; ip<np_local; ip++)
+  Kokkos::parallel_reduce(__PRETTY_FUNCTION__, np_local,
+  KOKKOS_LAMBDA (int ip, double &vtot_local, double &mtot_local)
   {
     vtot_local += vol[ip];
     mtot_local += mass[ip];
-  }
+  }, vtot_local, mtot_local);
 
   MPI_Allreduce(&vtot_local, &vtot, 1, MPI_DOUBLE, MPI_SUM, universe->uworld);
   MPI_Allreduce(&mtot_local, &mtot, 1, MPI_DOUBLE, MPI_SUM, universe->uworld);
@@ -239,72 +243,72 @@ void Solid::options(vector<string> *args, vector<string>::iterator it)
 
 void Solid::grow(int nparticles)
 {
-  ptag = Kokkos::View<tagint*, MemorySpace>  ("ptag", nparticles);
-  x0   = Kokkos::View<Vector3d*, MemorySpace>("x0",   nparticles);
-  x    = Kokkos::View<Vector3d*, MemorySpace>("x",    nparticles);
+  ptag = Kokkos::View<tagint*>  ("ptag", nparticles);
+  x0   = Kokkos::View<Vector3d*>("x0",   nparticles);
+  x    = Kokkos::View<Vector3d*>("x",    nparticles);
 
   if (method_type == "tlcpdi" || method_type == "ulcpdi")
   {
     if (update->method->style == 0)
     { // CPDI-R4
-      rp0 = Kokkos::View<Vector3d*, MemorySpace>("rp0", domain->dimension*nparticles);
-      rp  = Kokkos::View<Vector3d*, MemorySpace>("rp",  domain->dimension*nparticles);
+      rp0 = Kokkos::View<Vector3d*>("rp0", domain->dimension*nparticles);
+      rp  = Kokkos::View<Vector3d*>("rp",  domain->dimension*nparticles);
     }
     else if (update->method->style == 1)
     { // CPDI-Q4
-      xpc0 = Kokkos::View<Vector3d*, MemorySpace>("xpc0", nc*nparticles);
-      xpc  = Kokkos::View<Vector3d*, MemorySpace>("xpc",  nc*nparticles);
+      xpc0 = Kokkos::View<Vector3d*>("xpc0", nc*nparticles);
+      xpc  = Kokkos::View<Vector3d*>("xpc",  nc*nparticles);
     }
   }
   else if (method_type == "tlcpdi2" || method_type == "ulcpdi2")
   {
-    xpc0 = Kokkos::View<Vector3d*, MemorySpace>("xpc0", nparticles);
-    xpc  = Kokkos::View<Vector3d*, MemorySpace>("xpc",  nparticles);
+    xpc0 = Kokkos::View<Vector3d*>("xpc0", nparticles);
+    xpc  = Kokkos::View<Vector3d*>("xpc",  nparticles);
   }
 
-  v        = Kokkos::View<Vector3d*, MemorySpace>("v",        nparticles);
-  v_update = Kokkos::View<Vector3d*, MemorySpace>("v_update", nparticles);
-  a        = Kokkos::View<Vector3d*, MemorySpace>("a",        nparticles);
-  mbp      = Kokkos::View<Vector3d*, MemorySpace>("mbp",      nparticles);
-  f        = Kokkos::View<Vector3d*, MemorySpace>("f",        nparticles);
+  v        = Kokkos::View<Vector3d*>("v",        nparticles);
+  v_update = Kokkos::View<Vector3d*>("v_update", nparticles);
+  a        = Kokkos::View<Vector3d*>("a",        nparticles);
+  mbp      = Kokkos::View<Vector3d*>("mbp",      nparticles);
+  f        = Kokkos::View<Vector3d*>("f",        nparticles);
 
-  sigma     = Kokkos::View<Matrix3d*, MemorySpace>("sigma",      nparticles);
-  strain_el = Kokkos::View<Matrix3d*, MemorySpace>("strain_el",  nparticles);
-  vol0PK1   = Kokkos::View<Matrix3d*, MemorySpace>("vol0PK1",    nparticles);
-  L         = Kokkos::View<Matrix3d*, MemorySpace>("L",          nparticles);
-  F         = Kokkos::View<Matrix3d*, MemorySpace>("F",          nparticles);
-  R         = Kokkos::View<Matrix3d*, MemorySpace>("R",          nparticles);
-  D         = Kokkos::View<Matrix3d*, MemorySpace>("D",          nparticles);
-  Finv      = Kokkos::View<Matrix3d*, MemorySpace>("Finv",       nparticles);
-  Fdot      = Kokkos::View<Matrix3d*, MemorySpace>("Fdot",       nparticles);
+  sigma     = Kokkos::View<Matrix3d*>("sigma",      nparticles);
+  strain_el = Kokkos::View<Matrix3d*>("strain_el",  nparticles);
+  vol0PK1   = Kokkos::View<Matrix3d*>("vol0PK1",    nparticles);
+  L         = Kokkos::View<Matrix3d*>("L",          nparticles);
+  F         = Kokkos::View<Matrix3d*>("F",          nparticles);
+  R         = Kokkos::View<Matrix3d*>("R",          nparticles);
+  D         = Kokkos::View<Matrix3d*>("D",          nparticles);
+  Finv      = Kokkos::View<Matrix3d*>("Finv",       nparticles);
+  Fdot      = Kokkos::View<Matrix3d*>("Fdot",       nparticles);
 
-  vol0                    = Kokkos::View<double*, MemorySpace>("vol0",                    nparticles);
-  vol                     = Kokkos::View<double*, MemorySpace>("vol",                     nparticles);
-  rho0                    = Kokkos::View<double*, MemorySpace>("rho0",                    nparticles);
-  rho                     = Kokkos::View<double*, MemorySpace>("rho",                     nparticles);
-  mass                    = Kokkos::View<double*, MemorySpace>("mass",                    nparticles);
-  eff_plastic_strain      = Kokkos::View<double*, MemorySpace>("eff_plastic_strain",      nparticles);
-  eff_plastic_strain_rate = Kokkos::View<double*, MemorySpace>("eff_plastic_strain_rate", nparticles);
-  damage                  = Kokkos::View<double*, MemorySpace>("damage",                  nparticles);
-  damage_init             = Kokkos::View<double*, MemorySpace>("damage_init",             nparticles);
-  ienergy                 = Kokkos::View<double*, MemorySpace>("ienergy",                 nparticles);
-  J                       = Kokkos::View<double*, MemorySpace>("J",                       nparticles);
-  dtCFL                   = Kokkos::View<double*, MemorySpace>("dtCFL",                   nparticles);
-  gamma                   = Kokkos::View<double*, MemorySpace>("gamma",                   nparticles);
+  vol0                    = Kokkos::View<double*>("vol0",                    nparticles);
+  vol                     = Kokkos::View<double*>("vol",                     nparticles);
+  rho0                    = Kokkos::View<double*>("rho0",                    nparticles);
+  rho                     = Kokkos::View<double*>("rho",                     nparticles);
+  mass                    = Kokkos::View<double*>("mass",                    nparticles);
+  eff_plastic_strain      = Kokkos::View<double*>("eff_plastic_strain",      nparticles);
+  eff_plastic_strain_rate = Kokkos::View<double*>("eff_plastic_strain_rate", nparticles);
+  damage                  = Kokkos::View<double*>("damage",                  nparticles);
+  damage_init             = Kokkos::View<double*>("damage_init",             nparticles);
+  ienergy                 = Kokkos::View<double*>("ienergy",                 nparticles);
+  J                       = Kokkos::View<double*>("J",                       nparticles);
+  dtCFL                   = Kokkos::View<double*>("dtCFL",                   nparticles);
+  gamma                   = Kokkos::View<double*>("gamma",                   nparticles);
 
-  mask = Kokkos::View<int*, MemorySpace>("mask", nparticles);
+  mask = Kokkos::View<int*>("mask", nparticles);
   if (mat->cp != 0)
   {
-    T = Kokkos::View<double*, MemorySpace>  ("T", nparticles);
-    q = Kokkos::View<Vector3d*, MemorySpace>("q", nparticles);
+    T = Kokkos::View<double*>  ("T", nparticles);
+    q = Kokkos::View<Vector3d*>("q", nparticles);
   }
 
   size_t neighbor_nodes_per_particle = 64;
 
-  neigh_n    = Kokkos::View<int**, MemorySpace>     ("neigh_n",   nparticles, neighbor_nodes_per_particle);
-  wf         = Kokkos::View<double**, MemorySpace>  ("wf",        nparticles, neighbor_nodes_per_particle);
-  wf_corners = Kokkos::View<double***, MemorySpace> ("wfcorners", nparticles, neighbor_nodes_per_particle, nc);
-  wfd        = Kokkos::View<Vector3d**, MemorySpace>("wfd",       nparticles, neighbor_nodes_per_particle);
+  neigh_n    = Kokkos::View<int**>     ("neigh_n",   nparticles, neighbor_nodes_per_particle);
+  wf         = Kokkos::View<double**>  ("wf",        nparticles, neighbor_nodes_per_particle);
+  wf_corners = Kokkos::View<double***> ("wfcorners", nparticles, neighbor_nodes_per_particle, nc);
+  wfd        = Kokkos::View<Vector3d**>("wfd",       nparticles, neighbor_nodes_per_particle);
 
   neigh_policy = Kokkos::MDRangePolicy<Kokkos::Rank<2>>({ 0, 0 }, { (size_t)nparticles, neighbor_nodes_per_particle });
 }
@@ -1151,12 +1155,24 @@ void Solid::populate(vector<string> args)
   }
 
   grow(np_local);
+
+  Kokkos::View<Vector3d*>::HostMirror   x_mirror = create_mirror(x);
+  Kokkos::View<Vector3d*>::HostMirror  rp_mirror = create_mirror(rp);
+  Kokkos::View<Vector3d*>::HostMirror xpc_mirror = create_mirror(xpc);
+
   for (int i = 0; i < x_temp.size(); i++)
-    x0[i] = x[i] = x_temp[i];
+    x_mirror[i] = x_temp[i];
   for (int i = 0; i < rp_temp.size(); i++)
-    rp0[i] = rp[i] = rp_temp[i];
+    rp_mirror[i] = rp_temp[i];
   for (int i = 0; i < xpc_temp.size(); i++)
-    xpc0[i] = xpc[i] = xpc_temp[i];
+    xpc_mirror[i] = xpc_temp[i];
+
+  deep_copy(x,    x_mirror);
+  deep_copy(x0,   x_mirror);
+  deep_copy(rp,   rp_mirror);
+  deep_copy(rp0,  rp_mirror);
+  deep_copy(xpc,  xpc_mirror);
+  deep_copy(xpc0, xpc_mirror);
 
   tagint ptag0 = 0;
 
@@ -1182,16 +1198,61 @@ void Solid::populate(vector<string> args)
 // #endif
   cout << "np_local=" << np_local << endl;
 
-  for (int i = 0; i < np_local; i++)
+  double rho0_ = mat->rho0;
+  bool axisymmetric = domain->axisymmetric;
+  bool temp = update->method->temp;
+  int np_total = domain->np_total;
+  double T0 = this->T0;
+
+  Kokkos::View<tagint*> ptag = this->ptag;
+
+  Kokkos::View<Vector3d*> x = this->x;
+  Kokkos::View<Vector3d*> x0 = this->x;
+  Kokkos::View<Vector3d*> v = this->v;
+  Kokkos::View<Vector3d*> v_update = this->v_update;
+  Kokkos::View<Vector3d*> a = this->a;
+
+  Kokkos::View<Vector3d*> mbp = this->mbp;
+  Kokkos::View<Vector3d*> f = this->f;
+
+  Kokkos::View<Matrix3d*> sigma = this->sigma;
+  Kokkos::View<Matrix3d*> strain_el = this->strain_el;
+  Kokkos::View<Matrix3d*> vol0PK1 = this->vol0PK1;
+  Kokkos::View<Matrix3d*> L = this->L;
+  Kokkos::View<Matrix3d*> F = this->F;
+  Kokkos::View<Matrix3d*> R = this->R;
+  Kokkos::View<Matrix3d*> D = this->D;
+  Kokkos::View<Matrix3d*> Finv = this->Finv;
+  Kokkos::View<Matrix3d*> Fdot = this->Fdot;
+  
+  Kokkos::View<double*> J = this->J;
+  Kokkos::View<double*> vol = this->vol;
+  Kokkos::View<double*> vol0 = this->vol0;
+  Kokkos::View<double*> rho = this->rho;
+  Kokkos::View<double*> rho0 = this->rho0;
+  Kokkos::View<double*> mass = this->mass;
+  Kokkos::View<double*> eff_plastic_strain = this->eff_plastic_strain;
+  Kokkos::View<double*> eff_plastic_strain_rate = this->eff_plastic_strain_rate;
+  Kokkos::View<double*> damage = this->damage;
+  Kokkos::View<double*> damage_init = this->damage_init;
+  Kokkos::View<double*> ienergy = this->ienergy;
+  Kokkos::View<int*> mask = this->mask;
+
+  Kokkos::View<double*> T = this->T;
+  Kokkos::View<double*> gamma = this->gamma;
+  Kokkos::View<Vector3d*> q = this->q;
+
+  Kokkos::parallel_for(__PRETTY_FUNCTION__, np_local,
+  KOKKOS_LAMBDA (int i)
   {
     a[i] = Vector3d();
     v[i] = Vector3d();
     f[i] = Vector3d();
     mbp[i] = Vector3d();
     v_update[i] = Vector3d();
-    rho0[i] = rho[i] = mat->rho0;
+    rho0[i] = rho[i] = rho0_;
 
-    if (domain->axisymmetric == true)
+    if (axisymmetric == true)
     {
       mass[i] = mass_*x0[i][0];
       vol0[i] = vol[i] = mass[i]/rho0[i];
@@ -1206,7 +1267,7 @@ void Solid::populate(vector<string> args)
     eff_plastic_strain_rate[i] = 0;
     damage[i] = 0;
     damage_init[i] = 0;
-    if (update->method->temp)
+    if (temp)
     {
       T[i] = T0;
       gamma[i] = 0;
@@ -1225,8 +1286,8 @@ void Solid::populate(vector<string> args)
     J[i] = 1;
     mask[i] = 1;
 
-    ptag[i] = ptag0 + i + 1 + domain->np_total;
-  }
+    ptag[i] = ptag0 + i + 1 + np_total;
+  });
 
   int np_local_reduced;
   MPI_Allreduce(&np_local, &np_local_reduced, 1, MPI_INT, MPI_SUM, universe->uworld);

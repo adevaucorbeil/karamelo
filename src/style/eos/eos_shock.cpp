@@ -100,7 +100,7 @@ double EOSShock::K(){
 //double &pFinal, double &e, const double J, const double rho, const double damage, const Matrix3d D, const double cellsize, const double T
 
 
-void EOSShock::compute_pressure(Solid &solid, Kokkos::View<double*, MemorySpace> &pH) const
+void EOSShock::compute_pressure(Solid &solid, Kokkos::View<double*> &pH) const
 {
   double rho0_ = this->rho0_;
   double c0 = this->c0;

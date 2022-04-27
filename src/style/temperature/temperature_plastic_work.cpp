@@ -59,7 +59,7 @@ TemperaturePlasticWork::TemperaturePlasticWork(MPM *mpm, vector<string> args) : 
 
 void
 TemperaturePlasticWork::compute_heat_source(Solid &solid,
-                                            Kokkos::View<Matrix3d*, MemorySpace> &sigma_dev) const
+                                            Kokkos::View<Matrix3d*> &sigma_dev) const
 {
   double Tm = this->Tm;
   double chi = this->chi;

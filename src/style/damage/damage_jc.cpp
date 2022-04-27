@@ -98,9 +98,9 @@ DamageJohnsonCook::DamageJohnsonCook(MPM *mpm, vector<string> args)
 
 void
 DamageJohnsonCook::compute_damage(Solid &solid,
-                                  Kokkos::View<double*, MemorySpace> &pH,
-                                  Kokkos::View<Matrix3d*, MemorySpace> &sigma_dev,
-                                  Kokkos::View<double*, MemorySpace> &plastic_strain_increment) const
+                                  Kokkos::View<double*> &pH,
+                                  Kokkos::View<Matrix3d*> &sigma_dev,
+                                  Kokkos::View<double*> &plastic_strain_increment) const
 {
   double d1 = this->d1;
   double d2 = this->d2;

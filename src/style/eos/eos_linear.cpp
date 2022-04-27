@@ -68,7 +68,7 @@ double EOSLinear::K(){
   return K_;
 }
 
-void EOSLinear::compute_pressure(Solid &solid, Kokkos::View<double*, MemorySpace> &pH) const
+void EOSLinear::compute_pressure(Solid &solid, Kokkos::View<double*> &pH) const
 {
   double K_ = this->K_;
 

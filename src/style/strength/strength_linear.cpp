@@ -58,8 +58,8 @@ double StrengthLinear::G(){
 
 void
 StrengthLinear::update_deviatoric_stress(Solid &solid,
-                                              Kokkos::View<double*, MemorySpace> &plastic_strain_increment,
-                                              Kokkos::View<Matrix3d*, MemorySpace> &sigma_dev) const
+                                              Kokkos::View<double*> &plastic_strain_increment,
+                                              Kokkos::View<Matrix3d*> &sigma_dev) const
 {
   double G_ = this->G_;
   double dt = update->dt;

@@ -22,12 +22,6 @@
 #include <array>
 #include <Kokkos_Core.hpp>
 
-#ifdef KOKKOS_ENABLE_CUDA
-using MemorySpace = Kokkos::CudaUVMSpace;
-#else
-using MemorySpace = Kokkos::HostSpace;
-#endif
-
 /*! This structure is used to duplicate a grid point to another CPU.
  *  
  * Each CPU create the series of grid points that lie in their respective domains.
@@ -61,8 +55,8 @@ class Grid : public Pointers {
   bigint nnodes;         ///< total number of nodes in the domain
   bigint nnodes_local;   ///< number of nodes (in this CPU)
   bigint nnodes_ghost;   ///< number of ghost nodes (in this CPU)
-  Kokkos::View<tagint*, MemorySpace> ntag;   ///< unique identifier for nodes in the system.
-  Kokkos::View<tagint*, MemorySpace> map_ntag;  ///< map_ntag[ntag[i]] = i;
+  Kokkos::View<tagint*> ntag;   ///< unique identifier for nodes in the system.
+  Kokkos::View<tagint*> map_ntag;  ///< map_ntag[ntag[i]] = i;
 
   int nx;                ///< number of nodes along x on this CPU
   int ny;                ///< number of nodes along y on this CPU
@@ -77,26 +71,26 @@ class Grid : public Pointers {
   map<int, vector<tagint>> dest_nshared;   ///< for each CPU, list the tags of shared nodes
   map<int, vector<tagint>> origin_nshared; ///< for each CPU, list the tags of ghost nodes
 
-  Kokkos::View<int*, MemorySpace> nowner;    ///< which CPU owns each node (universe->me for local nodes, other CPU for ghost nodes
+  Kokkos::View<int*> nowner;    ///< which CPU owns each node (universe->me for local nodes, other CPU for ghost nodes
 
   double cellsize;       ///< size of the square cells forming the grid
 
-  Kokkos::View<Vector3d*, MemorySpace> x;            ///< nodes' current position
-  Kokkos::View<Vector3d*, MemorySpace> x0;           ///< nodes' position in the reference coordinate system
-  Kokkos::View<Vector3d*, MemorySpace> v;            ///< nodes' velocity at time t
-  Kokkos::View<Vector3d*, MemorySpace> v_update;     ///< nodes' velocity at time t+dt
-  Kokkos::View<Vector3d*, MemorySpace> mb;           ///< nodes' external forces times the mass
-  Kokkos::View<Vector3d*, MemorySpace> f;            ///< nodes' internal forces
+  Kokkos::View<Vector3d*> x;            ///< nodes' current position
+  Kokkos::View<Vector3d*> x0;           ///< nodes' position in the reference coordinate system
+  Kokkos::View<Vector3d*> v;            ///< nodes' velocity at time t
+  Kokkos::View<Vector3d*> v_update;     ///< nodes' velocity at time t+dt
+  Kokkos::View<Vector3d*> mb;           ///< nodes' external forces times the mass
+  Kokkos::View<Vector3d*> f;            ///< nodes' internal forces
 
-  Kokkos::View<double*, MemorySpace> mass;              ///< nodes' current mass
-  Kokkos::View<int*, MemorySpace> mask;                 ///< nodes' group mask
-  Kokkos::View<bool*, MemorySpace> rigid;               ///< are the nodes in the area of influence of a rigid body?
-  Kokkos::View<Vector3i*, MemorySpace> ntype;      ///< node type in x, y, and z directions (False for an edge, True otherwise)
+  Kokkos::View<double*> mass;              ///< nodes' current mass
+  Kokkos::View<int*> mask;                 ///< nodes' group mask
+  Kokkos::View<bool*> rigid;               ///< are the nodes in the area of influence of a rigid body?
+  Kokkos::View<Vector3i*> ntype;      ///< node type in x, y, and z directions (False for an edge, True otherwise)
 
-  Kokkos::View<double*, MemorySpace> T;                 ///< nodes' temperature at time t
-  Kokkos::View<double*, MemorySpace> T_update;          ///< nodes' temperature at time t+dt
-  Kokkos::View<double*, MemorySpace> Qext;              ///< nodes' external thermal driving force
-  Kokkos::View<double*, MemorySpace> Qint;              ///< nodes' internal thermal driving force
+  Kokkos::View<double*> T;                 ///< nodes' temperature at time t
+  Kokkos::View<double*> T_update;          ///< nodes' temperature at time t+dt
+  Kokkos::View<double*> Qext;              ///< nodes' external thermal driving force
+  Kokkos::View<double*> Qint;              ///< nodes' internal thermal driving force
 
   Grid(class MPM *);
   void grow(int);              ///< Allocate memory for the vectors used for local nodes or resize them  

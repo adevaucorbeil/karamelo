@@ -149,8 +149,8 @@ void Grid::init(double *solidlo, double *solidhi) {
   // Determine the total number of nodes:
   nnodes = nx_global * ny_global * nz_global;
   
-  map_ntag = Kokkos::View<tagint*, MemorySpace>("map_ntag", nnodes);
-  Kokkos::View<tagint*, MemorySpace> map_ntag = this->map_ntag;
+  map_ntag = Kokkos::View<tagint*>("map_ntag", nnodes);
+  Kokkos::View<tagint*> map_ntag = this->map_ntag;
   Kokkos::parallel_for("set map_ntag", nnodes,
   KOKKOS_LAMBDA (const int &in)
   {
@@ -221,16 +221,26 @@ void Grid::init(double *solidlo, double *solidhi) {
   if (abs(subhi[2] - boundhi[2]) < 1.0e-12) isnt_subhi_boundhi[2] = false;
 
   // For each node, check if it needs to be sent to another proc:
+  Kokkos::View<tagint*>::HostMirror ntag_mirror = create_mirror(ntag);
+  Kokkos::deep_copy(ntag_mirror, ntag);
+
+  Kokkos::View<Vector3d*>::HostMirror x0_mirror = create_mirror(x0);
+  Kokkos::deep_copy(x0_mirror, x0);
+
+  Kokkos::View<Vector3i*>::HostMirror ntype_mirror = create_mirror(ntype);
+  Kokkos::deep_copy(ntype_mirror, ntype);
+
   for (int in=0; in<nnodes_local; in++){
-    if (isnt_sublo_boundlo[0] && (x0[in][0] - sublo[0] < delta) ||
-	(domain->dimension >= 2) && isnt_sublo_boundlo[1] && (x0[in][1] - sublo[1] < delta) ||
-	(domain->dimension == 3) && isnt_sublo_boundlo[2] && (x0[in][2] - sublo[2] < delta) ||
-	isnt_subhi_boundhi[0] && (subhi[0] - x0[in][0] < delta) ||
-	(domain->dimension >= 2) && isnt_subhi_boundhi[1] && (subhi[1] - x0[in][1] < delta) ||
-	(domain->dimension == 3) && isnt_subhi_boundhi[2] && (subhi[2] - x0[in][2] < delta)) {
-      Point p = {universe->me, ntag[in], {x0[in][0], x0[in][1], x0[in][2]}, {ntype[in][0], ntype[in][1], ntype[in][2]}};
+    if (isnt_sublo_boundlo[0] && (x0_mirror[in][0] - sublo[0] < delta) ||
+	(domain->dimension >= 2) && isnt_sublo_boundlo[1] && (x0_mirror[in][1] - sublo[1] < delta) ||
+	(domain->dimension == 3) && isnt_sublo_boundlo[2] && (x0_mirror[in][2] - sublo[2] < delta) ||
+	isnt_subhi_boundhi[0] && (subhi[0] - x0_mirror[in][0] < delta) ||
+	(domain->dimension >= 2) && isnt_subhi_boundhi[1] && (subhi[1] - x0_mirror[in][1] < delta) ||
+	(domain->dimension == 3) && isnt_subhi_boundhi[2] && (subhi[2] - x0_mirror[in][2] < delta)) {
+      Point p = {universe->me, ntag_mirror[in], {x0_mirror[in][0], x0_mirror[in][1], x0_mirror[in][2]},
+      {ntype_mirror[in][0], ntype_mirror[in][1], ntype_mirror[in][2]}};
       ns.push_back(p);
-      shared.push_back(ntag[in]);
+      shared.push_back(ntag_mirror[in]);
     }
   }
 
@@ -308,53 +318,72 @@ void Grid::init(double *solidlo, double *solidhi) {
 
   grow(nnodes_local + nnodes_ghost);
 
-  int l=0;
-  for (int i=0; i<nx; i++){
-    for (int j=0; j<ny; j++){
-      for (int k=0; k<nz; k++){
-	x0[l][0] = boundlo[0] + (noffsetlo[0] + i)*h;//h*(i-1);
-	if (domain->dimension >= 2) x0[l][1] = boundlo[1] + (noffsetlo[1] + j)*h;
-	else x0[l][1] = 0;
-	if (domain->dimension == 3) x0[l][2] = boundlo[2] + (noffsetlo[2] + k)*h;
-	else x0[l][2] = 0;
+  int me = universe->me;
+  double boundlo_0   = boundlo[0],   boundlo_1   = boundlo[1],   boundlo_2   = boundlo[2];
+  int noffsetlo_0 = noffsetlo[0], noffsetlo_1 = noffsetlo[1], noffsetlo_2 = noffsetlo[2];
+  int dimension = domain->dimension;
+  int nx = this->nx, ny = this->ny;
+  int nx_global = this->nx_global, ny_global = this->ny_global, nz_global = this->nz_global;
 
-	if (linear) {
-	  ntype[l][0] = 0;
-	  ntype[l][1] = 0;
-	  ntype[l][2] = 0;
-	} else if (bernstein) {
-	  ntype[l][0] = (i+noffsetlo[0]) % 2;
-	  ntype[l][1] = (j+noffsetlo[1]) % 2;
-	  ntype[l][2] = (k+noffsetlo[2]) % 2;
-	} else if (cubic || quadratic) {
-	  ntype[l][0] = min(2,i+noffsetlo[0])-min(nx_global-1-i-noffsetlo[0],2);
-	  ntype[l][1] = min(2,j+noffsetlo[1])-min(ny_global-1-j-noffsetlo[1],2);
-	  ntype[l][2] = min(2,k+noffsetlo[2])-min(nz_global-1-k-noffsetlo[2],2);
-	}
+  Kokkos::View<tagint*> ntag = this->ntag;
+  Kokkos::View<int*> nowner = this->nowner;
 
-	x[l] = x0[l];
-	v[l] = Vector3d();
-	v_update[l] = Vector3d();
-	f[l] = Vector3d();
-	mb[l] = Vector3d();
-	mass[l] = 0;
-	rigid[l] = false;
-	// R[l].setIdentity();
+  Kokkos::View<Vector3d*> x = this->x;
+  Kokkos::View<Vector3d*> x0 = this->x0;
+  Kokkos::View<Vector3d*> v = this->v;
+  Kokkos::View<Vector3d*> v_update = this->v_update;
+  Kokkos::View<Vector3d*> mb = this->mb;
+  Kokkos::View<Vector3d*> f = this->f;
 
-	ntag[l] = nz_global*ny_global*(i+noffsetlo[0]) + nz_global*(j+noffsetlo[1]) + k+noffsetlo[2];
-	// cout << "ntag = " << ntag[l] << endl;
+  Kokkos::View<double*> mass = this->mass;
+  Kokkos::View<bool*> rigid = this->rigid;
+  Kokkos::View<Vector3i*> ntype = this->ntype;
 
-	// Check if ntag[l] already exists:
-	if(map_ntag[ntag[l]] != -1 ) {
-	  error->all(FLERR, "node " + to_string(ntag[l]) + " already exists.");
-	}
-	map_ntag[ntag[l]] = l;
-	nowner[l] = universe->me;
+  Kokkos::parallel_for(__PRETTY_FUNCTION__, Kokkos::MDRangePolicy<Kokkos::Rank<3>>(
+    { 0, 0, 0 }, { (size_t)nx, (size_t)ny, (size_t)nz }),
+  KOKKOS_LAMBDA (int i, int j, int k)
+  {
+    int l = (i*nx + j)*ny + k;
 
-	l++;
-      }
+    x0[l][0] = boundlo_0 + (noffsetlo_0 + i)*h;//h*(i-1);
+    if (dimension >= 2) x0[l][1] = boundlo_1 + (noffsetlo_1 + j)*h;
+    else x0[l][1] = 0;
+    if (dimension == 3) x0[l][2] = boundlo_2 + (noffsetlo_2 + k)*h;
+    else x0[l][2] = 0;
+
+    if (linear) {
+      ntype[l][0] = 0;
+      ntype[l][1] = 0;
+      ntype[l][2] = 0;
+    } else if (bernstein) {
+      ntype[l][0] = (i+noffsetlo_0)%2;
+      ntype[l][1] = (j+noffsetlo_1)%2;
+      ntype[l][2] = (k+noffsetlo_2)%2;
+    } else if (cubic || quadratic) {
+      ntype[l][0] = MIN(2,i+noffsetlo_0)-MIN(nx_global-1-i-noffsetlo_0,2);
+      ntype[l][1] = MIN(2,j+noffsetlo_1)-MIN(ny_global-1-j-noffsetlo_1,2);
+      ntype[l][2] = MIN(2,k+noffsetlo_2)-MIN(nz_global-1-k-noffsetlo_2,2);
     }
-  }
+
+    x[l] = x0[l];
+    v[l] = Vector3d();
+    v_update[l] = Vector3d();
+    f[l] = Vector3d();
+    mb[l] = Vector3d();
+    mass[l] = 0;
+    rigid[l] = false;
+    // R[l].setIdentity();
+
+    ntag[l] = nz_global*ny_global*(i+noffsetlo_0) + nz_global*(j+noffsetlo_1) + k+noffsetlo_2;
+    // cout << "ntag = " << ntag[l] << endl;
+
+    // Check if ntag[l] already exists:
+    // if(map_ntag[ntag[l]] != -1 ) {
+    //   error->all(FLERR, "node " + to_string(ntag[l]) + " already exists.");
+    // }
+    map_ntag[ntag[l]] = l;
+    nowner[l] = me;
+  });
 
   // Copy ghost nodes at the end of the local nodes:
   for (int in=0; in<nnodes_ghost; in++) {
@@ -397,28 +426,34 @@ void Grid::setup(string cs){
 void Grid::grow(int nn){
   //nnodes_local = nn;
 
-  ntag   = Kokkos::View<tagint*, MemorySpace>("ntag",   nn);
-  nowner = Kokkos::View<int*, MemorySpace>   ("nowner", nn);
+  ntag   = Kokkos::View<tagint*>("ntag",   nn);
+  nowner = Kokkos::View<int*>   ("nowner", nn);
 
-  x0       = Kokkos::View<Vector3d*, MemorySpace>("x0",       nn);
-  x        = Kokkos::View<Vector3d*, MemorySpace>("x",        nn);
-  v        = Kokkos::View<Vector3d*, MemorySpace>("v",        nn);
-  v_update = Kokkos::View<Vector3d*, MemorySpace>("v_update", nn);
-  mb       = Kokkos::View<Vector3d*, MemorySpace>("mb",       nn);
-  f        = Kokkos::View<Vector3d*, MemorySpace>("f",        nn);
+  x0       = Kokkos::View<Vector3d*>("x0",       nn);
+  x        = Kokkos::View<Vector3d*>("x",        nn);
+  v        = Kokkos::View<Vector3d*>("v",        nn);
+  v_update = Kokkos::View<Vector3d*>("v_update", nn);
+  mb       = Kokkos::View<Vector3d*>("mb",       nn);
+  f        = Kokkos::View<Vector3d*>("f",        nn);
 
-  mass = Kokkos::View<double*, MemorySpace>("mass", nn);
-  mask = Kokkos::View<int*, MemorySpace>   ("mask", nn);
+  mass = Kokkos::View<double*>("mass", nn);
+  mask = Kokkos::View<int*>   ("mask", nn);
 
-  for (int i=0; i<nn; i++) mask[i] = 1;
+  Kokkos::View<int*> mask = this->mask;
 
-  ntype = Kokkos::View<Vector3i*, MemorySpace>("ntype", nn);
-  rigid = Kokkos::View<bool*, MemorySpace>    ("rigid", nn);
+  Kokkos::parallel_for(__PRETTY_FUNCTION__, nn,
+  KOKKOS_LAMBDA(int i)
+  {
+    mask[i] = 1;
+  });
 
-  T        = Kokkos::View<double*, MemorySpace>("T",        nn);
-  T_update = Kokkos::View<double*, MemorySpace>("T_update", nn);
-  Qext     = Kokkos::View<double*, MemorySpace>("Qext",     nn);
-  Qint     = Kokkos::View<double*, MemorySpace>("Qint",     nn);
+  ntype = Kokkos::View<Vector3i*>("ntype", nn);
+  rigid = Kokkos::View<bool*>    ("rigid", nn);
+
+  T        = Kokkos::View<double*>("T",        nn);
+  T_update = Kokkos::View<double*>("T_update", nn);
+  Qext     = Kokkos::View<double*>("Qext",     nn);
+  Qint     = Kokkos::View<double*>("Qint",     nn);
 }
 
 
