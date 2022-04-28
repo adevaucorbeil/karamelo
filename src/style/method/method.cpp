@@ -432,9 +432,10 @@ void Method::compute_velocity_acceleration(Solid &solid)
   Kokkos::parallel_for("compute_velocity_acceleration", solid.np_local,
   KOKKOS_LAMBDA (const int &ip)
   {
-    solid.v_update[ip] = Vector3d();
-    solid.a[ip] = Vector3d();
-    solid.f[ip] = Vector3d();
+    Vector3d v_update;
+    Vector3d a;
+    Vector3d f;
+    double T = solid.T[ip];
 
     for (int i = 0; i < solid.neigh_n.extent(1); i++)
     {
@@ -442,19 +443,24 @@ void Method::compute_velocity_acceleration(Solid &solid)
       {
         int in = solid.neigh_n(ip, i);
 
-        solid.v_update[ip] += wf*grid.v_update[in];
+        v_update += wf*grid.v_update[in];
 
         if (rigid)
           continue;
 
         const Vector3d &delta_a = wf*(grid.v_update[in] - grid.v[in])/dt;
-        solid.a[ip] += delta_a;
-        solid.f[ip] += delta_a*solid.mass[ip];
+        a += delta_a;
+        f += delta_a*solid.mass[ip];
 
         if (temp)
-          solid.T[ip] += wf*grid.T_update[in];
+          T += wf*grid.T_update[in];
       }
     }
+
+    solid.v_update[ip] = v_update;
+    solid.a[ip] = a;
+    solid.f[ip] = f;
+    solid.T[ip] += T;
   });
 }
 
@@ -528,9 +534,8 @@ void Method::compute_rate_deformation_gradient(bool doublemapping, Solid &solid)
   Kokkos::parallel_for("compute_rate_deformation_gradient0", solid.np_local,
   KOKKOS_LAMBDA (const int &ip)
   {
-    gradients[ip] = Matrix3d();
-    if (temp)
-      solid.q[ip] = Vector3d();
+    Matrix3d gradient;
+    Vector3d q;
 
     for (int i = 0; i < solid.neigh_n.extent(1); i++)
     {
@@ -544,26 +549,30 @@ void Method::compute_rate_deformation_gradient(bool doublemapping, Solid &solid)
           const Vector3d &dx = is_TL? grid.x0[in] - solid.x0[ip]:
                                       grid.x0[in] - solid.x [ip];
 
-          Matrix3d gradient;
+          Matrix3d dgradient;
           for (int j = 0; j < dimension; j++)
             for (int k = 0; k < dimension; k++)
-              gradient(j, k) += vn[in][j]*dx[k]*wf;
+              dgradient(j, k) += vn[in][j]*dx[k]*wf;
 
-          gradients[ip] += gradient*solid.Di;
+          gradient += dgradient*solid.Di;
         }
         else
           for (int j = 0; j < dimension; j++)
             for (int k = 0; k < dimension; k++)
-              gradients[ip](j, k) += vn[in][j]*wfd[k];
+              gradient(j, k) += vn[in][j]*wfd[k];
 
         if (dimension == 2 && axisymmetric)
-          gradients[ip](2, 2) += vn[in][0]*wf/solid.v[ip][0];
+          gradient(2, 2) += vn[in][0]*wf/solid.v[ip][0];
 
         if (temp)
-          solid.q[ip] -= wfd*(doublemapping? grid.T: grid.T_update)[in]*
-                        (is_TL? solid.vol0: solid.vol)[ip]*invcp*kappa;
+          q -= wfd*(doublemapping? grid.T: grid.T_update)[in]*
+               (is_TL? solid.vol0: solid.vol)[ip]*invcp*kappa;
       }
     }
+
+    gradients[ip] = gradient;
+    if (temp)
+      solid.q[ip] = q;
   });
 }
 
@@ -875,7 +884,7 @@ void Method::reset()
 
 void Method::exchange_particles()
 {
-  if (is_TL)
+  if (is_TL || universe->nprocs < 2)
     return;
   
   int ip;
