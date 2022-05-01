@@ -138,6 +138,8 @@ void Group::assign(vector<string> args)
       Kokkos::View<int*>::HostMirror mask_mirror = create_mirror(*mask);
       deep_copy(mask_mirror, *mask);
 
+      // not parallelized on gpu for legacy reasons
+      // to parallelize, remove deep copies and move for loop into region
       for (int ip = 0; ip < nmax; ip++)
       {
         if (domain->regions[region[igroup]]->match(x_mirror[ip][0],x_mirror[ip][1],x_mirror[ip][2]))

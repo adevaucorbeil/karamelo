@@ -887,6 +887,26 @@ void Method::exchange_particles()
   if (is_TL || universe->nprocs < 2)
     return;
   
+  /*
+    HOW TO PARALLELIZE THIS:
+    kokkos view not_in_domain_indexes
+
+    parallel_scan i in all_particles:
+      if (not_in_domain)
+        cumulative_not_in_domain++;
+      if (fimal)
+        not_in_domain_indexes[cumulative_not_in_domain] = i
+
+    parallel_for i in not_in_domain_indexes
+      index0 = not_in_domain_indexes[i]
+      index1 = length(all_particles) - (length(not_in_domain_indexes) - i - 1)
+
+      if indexes not equal
+        swap particles at index0 and index1
+
+    pack and send last length(not_in_domain_indexes) particles, and shorten all_particles
+  */
+
   int ip;
   // vector<int> np_send;
   vector<vector<double>> buf_send_vect(universe->nprocs);
