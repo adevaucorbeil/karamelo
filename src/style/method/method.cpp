@@ -435,7 +435,9 @@ void Method::compute_velocity_acceleration(Solid &solid)
     Vector3d v_update;
     Vector3d a;
     Vector3d f;
-    double T = solid.T[ip];
+    double T;
+    if (temp)
+      T = solid.T[ip];
 
     for (int i = 0; i < solid.neigh_n.extent(1); i++)
     {
@@ -460,7 +462,8 @@ void Method::compute_velocity_acceleration(Solid &solid)
     solid.v_update[ip] = v_update;
     solid.a[ip] = a;
     solid.f[ip] = f;
-    solid.T[ip] += T;
+    if (temp)
+      solid.T[ip] += T;
   });
 }
 
@@ -680,7 +683,7 @@ void Method::update_deformation_gradient_stress(bool doublemapping, Solid &solid
     KOKKOS_LAMBDA (const int &ip)
     {
       const Matrix3d &FinvT = solid.Finv[ip].transpose();
-      const Matrix3d &PK1 = solid.mat->G*(solid.F[ip] - FinvT) + solid.mat->lambda*Kokkos::Experimental::log(solid.J[ip])*FinvT;
+      const Matrix3d &PK1 = G*(solid.F[ip] - FinvT) + lambda*Kokkos::Experimental::log(solid.J[ip])*FinvT;
       solid.vol0PK1[ip] = solid.vol0[ip]*PK1;
       solid.sigma[ip] = 1/solid.J[ip]*solid.F[ip]*PK1.transpose();
 
