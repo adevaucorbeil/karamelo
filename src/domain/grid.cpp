@@ -322,7 +322,7 @@ void Grid::init(double *solidlo, double *solidhi) {
   double boundlo_0   = boundlo[0],   boundlo_1   = boundlo[1],   boundlo_2   = boundlo[2];
   int noffsetlo_0 = noffsetlo[0], noffsetlo_1 = noffsetlo[1], noffsetlo_2 = noffsetlo[2];
   int dimension = domain->dimension;
-  int nx = this->nx, ny = this->ny;
+  int nx = this->nx, ny = this->ny, nz = this->nz;
   int nx_global = this->nx_global, ny_global = this->ny_global, nz_global = this->nz_global;
 
   Kokkos::View<tagint*> ntag = this->ntag;
@@ -343,7 +343,7 @@ void Grid::init(double *solidlo, double *solidhi) {
     { 0, 0, 0 }, { (size_t)nx, (size_t)ny, (size_t)nz }),
   KOKKOS_LAMBDA (int i, int j, int k)
   {
-    int l = (i*nx + j)*ny + k;
+    int l = i + nx*(j + ny*k);
 
     x0[l][0] = boundlo_0 + (noffsetlo_0 + i)*h;//h*(i-1);
     if (dimension >= 2) x0[l][1] = boundlo_1 + (noffsetlo_1 + j)*h;
