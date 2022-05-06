@@ -19,6 +19,7 @@
 #include <special_functions.h>
 #include <universe.h>
 #include <update.h>
+#include <expression_operation.h>
 
 using namespace std;
 using namespace FixConst;
@@ -65,13 +66,14 @@ FixConvectionParticles::FixConvectionParticles(MPM *mpm, vector<string> args):
   id = args[0];
 
   h = input->parsev(args[3]);
-  Tinf = input->parsev(args[4]);
+
+  input->parsev(args[4]);
+  Tinf = &input->expressions[args[4]];
 }
 
 void FixConvectionParticles::prepare()
 {
-  Tinf.result(mpm);
-
+  Tinf->evaluate();
   qtot = 0;
 }
 
@@ -88,38 +90,41 @@ void FixConvectionParticles::reduce()
 
 void FixConvectionParticles::initial_integrate(Solid &solid) {
   // Go through all the particles in the group and set v_update to the right value:
-  for (int ip = 0; ip < solid.np_local; ip++)
-  {
-    if (!(solid.mask[ip] & groupbit))
-      continue;
 
-    (*input->vars)["x" ] = Var("x",  solid.x[ip][0]);
-    (*input->vars)["y" ] = Var("y",  solid.x[ip][1]);
-    (*input->vars)["z" ] = Var("z",  solid.x[ip][2]);
-    (*input->vars)["x0"] = Var("x0", solid.x0[ip][0]);
-    (*input->vars)["y0"] = Var("y0", solid.x0[ip][1]);
-    (*input->vars)["z0"] = Var("z0", solid.x0[ip][2]);
 
-    double Ap;
-    if (domain->dimension == 1)
-      Ap = 1;
-    else if (domain->dimension == 2)
-      Ap = sqrt(solid.vol[ip]);
-    else         
-      Ap = pow(solid.vol[ip], 2/3);
+  int groupbit = this->groupbit, dimension = domain->dimension;
+  Kokkos::View<int*> mask = solid.mask;
+  Kokkos::View<double*> T = solid.T, vol = solid.vol, gamma = solid.gamma;
+  double invcp = solid.mat->invcp;
 
-    double qtemp = h*(Tinf.result(mpm, true) - solid.T[ip]);
-    solid.gamma[ip] += Ap*qtemp*solid.mat->invcp;
-    qtot += qtemp;
-  }
+  Kokkos::View<double**> Tinf_ = Tinf->registers;
+
+  Kokkos::parallel_reduce("FixVelocityNodes::post_update_grid_state", solid.np_local,
+			  KOKKOS_LAMBDA(const int &ip, double &lqtot)
+      {
+        if (!(mask[ip] & groupbit))
+          return;
+
+	double Ap;
+	if (dimension == 1)
+	  Ap = 1;
+	else if (dimension == 2)
+	  Ap = Kokkos::Experimental::sqrt(vol[ip]);
+	else         
+	  Ap = Kokkos::Experimental::pow(vol[ip], 2/3);
+	
+	double qtemp = h*(Tinf_(0, ip) - T[ip]);
+	gamma[ip] += Ap * qtemp * invcp;
+	lqtot += qtemp;
+      }, qtot);
 }
 
 void FixConvectionParticles::write_restart(ofstream *of) {
   of->write(reinterpret_cast<const char *>(&h), sizeof(double));
-  Tinf.write_to_restart(of);
+  // Tinf.write_to_restart(of);
 }
 
 void FixConvectionParticles::read_restart(ifstream *ifr) {
   ifr->read(reinterpret_cast<char *>(&h), sizeof(double));
-  Tinf.read_from_restart(ifr);
+  // Tinf.read_from_restart(ifr);
 }

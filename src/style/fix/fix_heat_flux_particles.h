@@ -21,7 +21,8 @@ FixStyle(heat_flux_particles,FixHeatFluxParticles)
 #define MPM_FIX_HEAT_FLUX_PARTICLES_H
 
 #include <fix.h>
-#include <var.h>
+
+class Expression;
 
 class FixHeatFluxParticles : public Fix {
  public:
@@ -39,7 +40,7 @@ private:
   string usage = "Usage: fix(fix-ID, heat_flux_particles, group, q)\n";
   const int Nargs = 4;
 
-  Var q;                  //< Flux
+  Expression *q;                  //< Flux
   double qtot;
 };
 

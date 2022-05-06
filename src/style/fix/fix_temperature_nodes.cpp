@@ -20,6 +20,7 @@
 #include <special_functions.h>
 #include <universe.h>
 #include <update.h>
+#include <expression_operation.h>
 
 
 using namespace std;
@@ -42,65 +43,69 @@ FixTemperatureNodes::FixTemperatureNodes(MPM *mpm, vector<string> args):
   id = args[0];
 
   string time = "time";
-
-  Targ = args[3];
-  Tvalue = input->parsev(args[3]);
-
   string previous = args[3];
+
+  input->parsev(args[3]);
+  Tvalue = &input->expressions[args[3]];
+
 
   // Replace "time" by "time - dt" in the x argument:
   previous = SpecialFunc::replace_all(input->parsev(previous).str(), "time", "(time - dt)");
-  Tprevvalue = input->parsev(previous);
-}
-
-void FixTemperatureNodes::prepare()
-{
-  Tvalue    .result(mpm);
-  Tprevvalue.result(mpm);
-}
-
-void FixTemperatureNodes::reduce()
-{
-  // // Reduce ftot:
-  // MPI_Allreduce(ftot.elements, ftot_reduced.elements, 3, MPI_DOUBLE, MPI_SUM,
-  //               universe->uworld);
-
-  // (*input->vars)[id + "_x"] = Var(id + "_x", ftot_reduced[0]);
-  // (*input->vars)[id + "_y"] = Var(id + "_y", ftot_reduced[1]);
-  // (*input->vars)[id + "_z"] = Var(id + "_z", ftot_reduced[2]);
+  input->parsev(previous);
+  Tprevvalue = &input->expressions[previous];
 }
 
 void FixTemperatureNodes::post_update_grid_state(Grid &grid)
 {
-  // cout << "In FixTemperatureNodes::post_update_grid_state()" << endl;
+  // Update the temperatures:
+  Tvalue->evaluate(grid);
+  Tprevvalue->evaluate(grid);
 
-  // Go through all the nodes in the group and set v_update to the right value:
-  for (int in = 0; in < grid.nnodes_local + grid.nnodes_ghost; in++)
-  {
-    if (!(grid.mask[in] & groupbit))
-      continue;
+  int groupbit = this->groupbit;
+  Kokkos::View<int*> mask = grid.mask;
+  Kokkos::View<double*> T = grid.T, T_update = grid.T_update;
 
-    grid.T_update[in] = Tvalue    .result(mpm, true);
-    grid.T       [in] = Tprevvalue.result(mpm, true);
-  }
+  Kokkos::View<double **> Tv = Tvalue->registers;
+  Kokkos::View<double **> Tpv = Tprevvalue->registers;
+
+  Kokkos::parallel_for("FixTemperatureNodes::post_update_grid_state", grid.nnodes_local + grid.nnodes_ghost,
+		       KOKKOS_LAMBDA(const int &in)
+      {
+        if (!(mask[in] & groupbit))
+          return;
+
+        T_update[in] = Tv(0, in);
+        T[in]        = Tpv(0, in);
+      });
 }
 
 void FixTemperatureNodes::post_velocities_to_grid(Grid &grid)
 {
-  // cout << "In FixTemperatureNodes::post_velocities_to_grid()" << endl;
+  // Update the temperatures:
+  Tvalue->evaluate(grid);
 
-  // Go through all the particles in the group and set v to the right value:
-  for (int in = 0; in < grid.nnodes_local + grid.nnodes_ghost; in++)
-    if (grid.mask[in] & groupbit)
-      grid.T[in] = input->parsev(Targ).result(mpm);
+  int groupbit = this->groupbit;
+  Kokkos::View<int*> mask = grid.mask;
+  Kokkos::View<double*> T = grid.T;
+
+  Kokkos::View<double **> Tv = Tvalue->registers;
+
+  Kokkos::parallel_for("FixTemperatureNodes::post_velocities_to_grid", grid.nnodes_local + grid.nnodes_ghost,
+		       KOKKOS_LAMBDA(const int &in)
+      {
+        if (!(mask[in] & groupbit))
+          return;
+
+        T[in] = Tv(0, in);
+      });
 }
 
 void FixTemperatureNodes::write_restart(ofstream *of) {
-  Tvalue.write_to_restart(of);
-  Tprevvalue.write_to_restart(of);
+  // Tvalue.write_to_restart(of);
+  // Tprevvalue.write_to_restart(of);
 }
 
 void FixTemperatureNodes::read_restart(ifstream *ifr) {
-  Tvalue.read_from_restart(ifr);
-  Tprevvalue.read_from_restart(ifr);
+  // Tvalue.read_from_restart(ifr);
+  // Tprevvalue.read_from_restart(ifr);
 }

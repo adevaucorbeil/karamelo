@@ -19,6 +19,7 @@
 #include <special_functions.h>
 #include <universe.h>
 #include <update.h>
+#include <expression_operation.h>
 
 
 using namespace std;
@@ -60,84 +61,67 @@ FixTemperatureParticles::FixTemperatureParticles(MPM *mpm, vector<string> args):
   }
   id = args[0];
 
-
   string time = "time";
-
-
-  Tvalue = input->parsev(args[3]);
-
   string previous = args[3];
+
+  input->parsev(args[3]);
+  Tvalue = &input->expressions[args[3]];
+
 
   // Replace "time" by "time - dt" in the x argument:
   previous = SpecialFunc::replace_all(input->parsev(previous).str(), "time", "(time - dt)");
-  Tprevvalue = input->parsev(previous);
-}
-
-void FixTemperatureParticles::prepare()
-{
-  Tprevvalue.result(mpm);
-  Tvalue    .result(mpm);
-}
-
-void FixTemperatureParticles::reduce()
-{
-  // Reduce ftot:
-  //MPI_Allreduce(ftot.elements, ftot_reduced.elements, 3, MPI_DOUBLE, MPI_SUM,
-  //              universe->uworld);
-
-  // (*input->vars)[id + "_x"] = Var(id + "_x", ftot_reduced[0]);
-  // (*input->vars)[id + "_y"] = Var(id + "_y", ftot_reduced[1]);
-  // (*input->vars)[id + "_z"] = Var(id + "_z", ftot_reduced[2]);
+  input->parsev(previous);
+  Tprevvalue = &input->expressions[previous];
 }
 
 void FixTemperatureParticles::initial_integrate(Solid &solid)
 {
-  // Go through all the particles in the group and set v_update to the right value:
-  for (int ip = 0; ip < solid.np_local; ip++)
-  {
-    if (!(solid.mask[ip] & groupbit))
-      continue;
+  // Update the temperatures:
+  Tprevvalue->evaluate(solid);
 
-    (*input->vars)["x" ] = Var("x",  solid.x[ip][0]);
-    (*input->vars)["y" ] = Var("y",  solid.x[ip][1]);
-    (*input->vars)["z" ] = Var("z",  solid.x[ip][2]);
-    (*input->vars)["x0"] = Var("x0", solid.x0[ip][0]);
-    (*input->vars)["y0"] = Var("y0", solid.x0[ip][1]);
-    (*input->vars)["z0"] = Var("z0", solid.x0[ip][2]);
+  int groupbit = this->groupbit;
+  Kokkos::View<int*> mask = solid.mask;
+  Kokkos::View<double*> T = solid.T;
 
-    //solid.T_update[ip] = Tvalue.result(mpm);
-    solid.T[ip] = Tprevvalue.result(mpm, true);
-    // cout << "v_update for " << n << " particles from solid " << domain->solids[solid]->id << " set." << endl;
-  }
+  Kokkos::View<double **> Tpv = Tprevvalue->registers;
+
+  Kokkos::parallel_for("FixTemperatureParticles::initial_integrate", solid.np_local,
+		       KOKKOS_LAMBDA(const int &ip)
+      {
+        if (!(mask[ip] & groupbit))
+          return;
+
+        T[ip]        = Tpv(0, ip);
+      });
 }
 
 void FixTemperatureParticles::post_advance_particles(Solid &solid)
 {
-  // Go through all the particles in the group and set v to the right value:
-  for (int ip = 0; ip < solid.np_local; ip++)
-  {
-    if (!(solid.mask[ip] & groupbit))
-      continue;
+  // Update the temperatures:
+  Tvalue->evaluate(solid);
 
-    (*input->vars)["x" ] = Var("x",  solid.x[ip][0]);
-    (*input->vars)["y" ] = Var("y",  solid.x[ip][1]);
-    (*input->vars)["z" ] = Var("z",  solid.x[ip][2]);
-    (*input->vars)["x0"] = Var("x0", solid.x0[ip][0]);
-    (*input->vars)["y0"] = Var("y0", solid.x0[ip][1]);
-    (*input->vars)["z0"] = Var("z0", solid.x0[ip][2]);
+  int groupbit = this->groupbit;
+  Kokkos::View<int*> mask = solid.mask;
+  Kokkos::View<double*> T = solid.T;
 
-    solid.T[ip] = Tvalue.result(mpm, true);
-    // cout << "v for " << n << " particles from solid " <<
-    // domain->solids[solid]->id << " set." << endl;
-    }
+  Kokkos::View<double **> Tv = Tvalue->registers;
+
+  Kokkos::parallel_for("FixTemperatureParticles::post_advance_particles", solid.np_local,
+		       KOKKOS_LAMBDA(const int &ip)
+      {
+        if (!(mask[ip] & groupbit))
+          return;
+
+        T[ip]        = Tv(0, ip);
+      });
 }
 
 void FixTemperatureParticles::write_restart(ofstream *of) {
-  Tvalue.write_to_restart(of);
-  Tprevvalue.write_to_restart(of);
+  // Tvalue.write_to_restart(of);
+  // Tprevvalue.write_to_restart(of);
 }
 
 void FixTemperatureParticles::read_restart(ifstream *ifr) {
-  Tvalue.read_from_restart(ifr);
-  Tprevvalue.read_from_restart(ifr);
+  // Tvalue.read_from_restart(ifr);
+  // Tprevvalue.read_from_restart(ifr);
 }

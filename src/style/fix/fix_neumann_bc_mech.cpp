@@ -19,6 +19,7 @@
 #include <special_functions.h>
 #include <universe.h>
 #include <update.h>
+#include <expression_operation.h>
 
 using namespace std;
 using namespace FixConst;
@@ -59,21 +60,21 @@ FixNeumannBCMech::FixNeumannBCMech(MPM *mpm, vector<string> args):
 
   id = args[0];
 
-  t[0] = input->parsev(args[3]);
+  input->parsev(args[3]);
+  t[0] = &input->expressions[args[3]];
 
   if (domain->dimension >= 2) {
-    t[1] = input->parsev(args[4]);
+    input->parsev(args[4]);
+    t[1] = &input->expressions[args[4]];
   }
   if (domain->dimension >= 3) {
-    t[2] = input->parsev(args[5]);
+    input->parsev(args[5]);
+    t[2] = &input->expressions[args[5]];
   }
 }
 
 void FixNeumannBCMech::prepare()
 {
-  for (int i = 0; i < domain->dimension; i++)
-    t[i].result(mpm);
-
   ftot = Vector3d();
 }
 
@@ -93,41 +94,48 @@ void FixNeumannBCMech::reduce()
 void FixNeumannBCMech::initial_integrate(Solid &solid)
 {
   // Go through all the particles in the group and set v_update to the right value:
-  for (int ip = 0; ip < solid.np_local; ip++)
-  {
-  if (!(solid.mask[ip] & groupbit))
-    continue;
+  for (int i = 0; i < domain->dimension; i++)
+    t[i]->evaluate(solid);
 
-    (*input->vars)["x" ] = Var("x",  solid.x[ip][0]);
-    (*input->vars)["y" ] = Var("y",  solid.x[ip][1]);
-    (*input->vars)["z" ] = Var("z",  solid.x[ip][2]);
-    (*input->vars)["x0"] = Var("x0", solid.x0[ip][0]);
-    (*input->vars)["y0"] = Var("y0", solid.x0[ip][1]);
-    (*input->vars)["z0"] = Var("z0", solid.x0[ip][2]);
+  int groupbit = this->groupbit;
+  int dimension = domain->dimension;
+  Kokkos::View<int*> mask = solid.mask;
+  Kokkos::View<Vector3d*> mbp = solid.mbp;
+  Kokkos::View<double*> vol = solid.vol;
 
-    double Ap;
-    if (domain->dimension == 1)
-      Ap = 1;
-    else if (domain->dimension == 2)
-      Ap = sqrt(solid.vol[ip]);
-    else         
-      Ap = pow(solid.vol[ip], 2/3);
+  for (int i = 0; i < domain->dimension; i++)
+    if (t[i])
+      {
+	Kokkos::View<double **> t_i = t[i]->registers;
+	Kokkos::parallel_reduce("FixNeumannBCMech::initial_integrate", solid.np_local,
+			     KOKKOS_LAMBDA(const int &ip, double &ftot_i)
+			     {
+			       if (!(mask[ip] & groupbit))
+				 return;
 
-    Vector3d f;
-    for (int i = 0; i < domain->dimension; i++)
-      f[i] = Ap*t[i].result(mpm, true);
+			       double Ap;
+			       if (dimension == 1)
+				 Ap = 1;
+			       else if (dimension == 2)
+				 Ap = Kokkos::Experimental::sqrt(vol[ip]);
+			       else         
+				 Ap = Kokkos::Experimental::pow(vol[ip], 2/3);
 
-    solid.mbp[ip] += f;
-    ftot += f;
-  }
+			       const double &f = Ap*t_i(0, ip);
+
+			       mbp[ip][i] += f;
+			       ftot_i += f;
+
+			     },ftot[i]);
+      }
 }
 
 void FixNeumannBCMech::write_restart(ofstream *of) {
-  for (int i = 0; i < domain->dimension; i++)
-    t[i].write_to_restart(of);
+  // for (int i = 0; i < domain->dimension; i++)
+  //   t[i].write_to_restart(of);
 }
 
 void FixNeumannBCMech::read_restart(ifstream *ifr) {
-  for (int i = 0; i < domain->dimension; i++)
-    t[i].read_from_restart(ifr);
+  // for (int i = 0; i < domain->dimension; i++)
+  //   t[i].read_from_restart(ifr);
 }

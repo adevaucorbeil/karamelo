@@ -21,15 +21,16 @@ FixStyle(temperature_nodes,FixTemperatureNodes)
 #define MPM_FIX_TEMPERATURE_NODES_H
 
 #include <fix.h>
-#include <var.h>
 #include <matrix.h>
+
+class Expression;
 
 class FixTemperatureNodes : public Fix {
  public:
   FixTemperatureNodes(MPM *, vector<string>);
 
-  void prepare();
-  void reduce();
+  void prepare() {};
+  void reduce() {};
   
   void post_update_grid_state(Grid &grid);
   void post_velocities_to_grid(Grid &grid);
@@ -40,10 +41,9 @@ class FixTemperatureNodes : public Fix {
 private:  
   string usage = "Usage: fix(fix-ID, temperature_nodes, group-ID, T)\n";
   int Nargs = 4;
-  string Targ;
 
-  Var Tvalue;                      //< Temperature variable.
-  Var Tprevvalue;                  //< Temperature variable from previous time step.
+  Expression *Tvalue;                      //< Temperature variable.
+  Expression *Tprevvalue;                  //< Temperature variable from previous time step.
 };
 
 #endif

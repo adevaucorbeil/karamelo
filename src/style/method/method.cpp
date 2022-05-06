@@ -51,6 +51,11 @@ void Method::compute_grid_weight_functions_and_gradients(Solid &solid)
   Kokkos::View<tagint*> &map_ntag = solid.grid->map_ntag;
   Kokkos::View<bool*> grid_rigid = solid.grid->rigid;
 
+  Kokkos::View<Vector3d*> x = solid.x;
+  Kokkos::View<int**> neigh_n = solid.neigh_n;
+  Kokkos::View<double**> wf = solid.wf;
+  Kokkos::View<Vector3d**> wfd = solid.wfd;
+
   double inv_cellsize = 1/solid.grid->cellsize;
     
   int ny = solid.grid->ny_global;
@@ -70,7 +75,7 @@ void Method::compute_grid_weight_functions_and_gradients(Solid &solid)
     
     int count = 0;
 
-    const Vector3d &xp = solid.x[ip];
+    const Vector3d &xp = x[ip];
     int i0 = (xp[0] - boxlo[0])*inv_cellsize + 1 - half_support;
 
     for (int i = i0; i < i0 + 2*half_support; i++)
@@ -92,7 +97,7 @@ void Method::compute_grid_weight_functions_and_gradients(Solid &solid)
                 tagint in = map_ntag[tag];
 
                 if (in != -1)
-                  solid.neigh_n(ip, count++) = in;
+                  neigh_n(ip, count++) = in;
               }
             }
           }
@@ -105,18 +110,18 @@ void Method::compute_grid_weight_functions_and_gradients(Solid &solid)
               tagint in = map_ntag[tag];
 
               if (in != -1)
-                solid.neigh_n(ip, count++) = in;
+                neigh_n(ip, count++) = in;
             }
           }
         }
       }
       else if (i < nnodes)
-        solid.neigh_n(ip, count++) = i;
+        neigh_n(ip, count++) = i;
     }
 
     for (int i = 0; i < count; i++)
     {
-      int in = solid.neigh_n(ip, i);
+      int in = neigh_n(ip, i);
 
       // Calculate the distance between each pair of particle/node:
       const Vector3d &r = (xp - x0[in])*inv_cellsize;
@@ -152,11 +157,11 @@ void Method::compute_grid_weight_functions_and_gradients(Solid &solid)
         }
       }
       
-      solid.wf (ip, i)    = s [0]*s [1]*s [2];
+      wf (ip, i)    = s [0]*s [1]*s [2];
 
-      solid.wfd(ip, i)[0] = sd[0]*s [1]*s [2];
-      solid.wfd(ip, i)[1] = s [0]*sd[1]*s [2];
-      solid.wfd(ip, i)[2] = s [0]*s [1]*sd[2];
+      wfd(ip, i)[0] = sd[0]*s [1]*s [2];
+      wfd(ip, i)[1] = s [0]*sd[1]*s [2];
+      wfd(ip, i)[2] = s [0]*s [1]*sd[2];
 
       grid_rigid[in] = rigid;
     }

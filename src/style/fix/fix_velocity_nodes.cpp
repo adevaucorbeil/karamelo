@@ -152,6 +152,9 @@ void FixVelocityNodes::post_update_grid_state(Grid &grid)
 
   int groupbit = this->groupbit;
   double dt = update->dt;
+  Kokkos::View<double*> mass = grid.mass;
+  Kokkos::View<int*> mask = grid.mask;
+  Kokkos::View<Vector3d*> gv = grid.v, v_update = grid.v_update;
 
   for (int i = 0; i < 3; i++)
     if (v[i])
@@ -162,12 +165,12 @@ void FixVelocityNodes::post_update_grid_state(Grid &grid)
       Kokkos::parallel_reduce("FixVelocityNodes::post_update_grid_state", grid.nnodes_local + grid.nnodes_ghost,
                               KOKKOS_LAMBDA(const int &in, double &ftot_i)
       {
-        if (!(grid.mask[in] & groupbit))
+        if (!(mask[in] & groupbit))
           return;
 
-        grid.v[in][i] = v_prev_i(0, in);
+        gv[in][i] = v_prev_i(0, in);
 
-        ftot_i += grid.mass[in]*((grid.v_update[in][i] = v_i(0, in)) - grid.v_update[in][i])/dt;
+        ftot_i += mass[in]*((v_update[in][i] = v_i(0, in)) - v_update[in][i])/dt;
       }, ftot[i]);
     }
 }

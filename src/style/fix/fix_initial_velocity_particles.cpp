@@ -19,6 +19,7 @@
 #include <solid.h>
 #include <universe.h>
 #include <update.h>
+#include <expression_operation.h>
 
 
 using namespace std;
@@ -44,16 +45,17 @@ FixInitialVelocityParticles::FixInitialVelocityParticles(MPM *mpm, vector<string
     return;
   }
 
-  if (args.size() < Nargs) {
-    error->all(FLERR, "Error: not enough arguments.\n" + usage);
-  }
-
-  if (args.size() > Nargs) {
-    error->all(FLERR, "Error: too many arguments.\n" + usage);
+  if (args.size() < Nargs.find(domain->dimension)->second) {
+    error->all(FLERR, "Error: too few arguments for fix_velocity_nodes.\n" +
+                          usage.find(domain->dimension)->second);
   }
 
   if (group->pon[igroup].compare("particles") !=0 && group->pon[igroup].compare("all") !=0) {
     error->all(FLERR, "fix_initial_velocity_particles needs to be given a group of particles" + group->pon[igroup] + ", " + args[2] + " is a group of " + group->pon[igroup] + ".\n");
+  }
+
+  if (universe->me == 0) {
+    cout << "Creating new fix FixInitialVelocityParticles with ID: " << args[0] << endl;
   }
 
   id = args[0];
@@ -61,49 +63,57 @@ FixInitialVelocityParticles::FixInitialVelocityParticles(MPM *mpm, vector<string
   xset = yset = zset = false;
 
   if (args[3] != "NULL") {
-    xvalue = input->parsev(args[3]);
+    input->parsev(args[3]);
     xset = true;
+    v[0] = &input->expressions[args[3]];
   }
+  else
+    v[0] = nullptr;
 
-  if (args[4] != "NULL") {
-    yvalue = input->parsev(args[4]);
+  if (domain->dimension >= 2 && args[4] != "NULL") {
+    input->parsev(args[4]);
     yset = true;
+    v[1] = &input->expressions[args[4]];
   }
+  else
+    v[1] = nullptr;
 
-  if (args[5] != "NULL") {
-    zvalue = input->parsev(args[5]);
+  if (domain->dimension == 3 && args[5] != "NULL") {
+    input->parsev(args[5]);
     zset = true;
-  }
-}
-
-void FixInitialVelocityParticles::prepare()
-{
-  xvalue.result(mpm);
-  yvalue.result(mpm);
-  zvalue.result(mpm);
+    v[2] = &input->expressions[args[5]];    
+  } else
+    v[2] = nullptr;
 }
 
 void FixInitialVelocityParticles::initial_integrate(Solid &solid) {
   // cout << "In FixInitialVelocityParticles::initial_integrate()" << endl;
 
-  // Go through all the particles in the group and set v to the right value:
-  for (int ip = 0; ip < solid.np_local; ip++)
-  {
-    if (update->ntimestep != 1 || !(solid.mask[ip] & groupbit))
-      return;
+  // Go through all the nodes in the group and set v to the right value:
 
-    (*input->vars)["x" ] = Var("x",  solid.x[ip][0]);
-    (*input->vars)["y" ] = Var("y",  solid.x[ip][1]);
-    (*input->vars)["z" ] = Var("z",  solid.x[ip][2]);
-    (*input->vars)["x0"] = Var("x0", solid.x0[ip][0]);
-    (*input->vars)["y0"] = Var("y0", solid.x0[ip][1]);
-    (*input->vars)["z0"] = Var("z0", solid.x0[ip][2]);
+  for (int i = 0; i < 3; i++)
+    if (v[i])
+      v[i]->evaluate(solid);
 
-    if (xset)
-      solid.v[ip][0] = xvalue.result(mpm, true);
-    if (yset)
-      solid.v[ip][1] = yvalue.result(mpm, true);
-    if (zset)
-      solid.v[ip][2] = zvalue.result(mpm, true);
-  }
+
+  int groupbit = this->groupbit;
+  double ntimestep = update->ntimestep;
+  Kokkos::View<int*> mask = solid.mask;
+  Kokkos::View<Vector3d*> sv = solid.v;
+
+
+  for (int i = 0; i < 3; i++)
+    if (v[i])
+    {
+      Kokkos::View<double **> v_i = v[i]->registers;
+
+      Kokkos::parallel_for("FixInitialVelocityParticles::initial_integrate", solid.np_local,
+                              KOKKOS_LAMBDA(const int &ip)
+      {
+	if (ntimestep != 1 || !(mask[ip] & groupbit))
+          return;
+
+        sv[ip][i] = v_i(0, ip);
+      });
+    }
 }

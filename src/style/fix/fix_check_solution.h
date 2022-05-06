@@ -13,7 +13,7 @@
 
 #ifdef FIX_CLASS
 
-FixStyle(check_solution,FixChecksolution)
+FixStyle(check_solution,FixCheckSolution)
 
 #else
 
@@ -21,8 +21,9 @@ FixStyle(check_solution,FixChecksolution)
 #define MPM_FIX_CHECK_SOLUTION_H
 
 #include <fix.h>
-#include <var.h>
 #include <matrix.h>
+
+class Expression;
 
 /*! \ingroup fix fixchecksolution fix_check_solution
 
@@ -78,9 +79,9 @@ This command determine the error in displacement of the particles from the group
 
 \section Class Class description
 */
-class FixChecksolution : public Fix {
+class FixCheckSolution : public Fix {
  public:
-  FixChecksolution(MPM *, vector<string>);
+  FixCheckSolution(MPM *, vector<string>);
 
   void prepare();
   void reduce();
@@ -91,9 +92,15 @@ class FixChecksolution : public Fix {
   void read_restart(ifstream *);
 
 private:
-  Var xvalue, yvalue, zvalue;    // Set force in x, y, and z directions.
+  const map<int, string> usage = {
+      {1, "Usage: fix(fix-ID, check_solution, group, ux)\n"},
+      {2, "Usage: fix(fix-ID, check_solution, group, ux, uy)\n"},
+      {3, "Usage: fix(fix-ID, check_solution, group, ux, uy, uz)\n"}};
+  const map<int, int> Nargs = {{1, 4}, {2, 5}, {3, 6}};
+
   bool xset, yset, zset;               // Does the fix set the x, y, and z forces of the group?
   Vector3d error_vec, u_th;
+  Expression *u[3];
 };
 
 #endif

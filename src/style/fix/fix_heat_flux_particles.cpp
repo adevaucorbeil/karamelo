@@ -19,6 +19,7 @@
 #include <special_functions.h>
 #include <universe.h>
 #include <update.h>
+#include <expression_operation.h>
 
 using namespace std;
 using namespace FixConst;
@@ -66,16 +67,14 @@ FixHeatFluxParticles::FixHeatFluxParticles(MPM *mpm, vector<string> args):
   }
 
   id = args[0];
-
-  if (args[3] != "NULL") {
-    q = input->parsev(args[3]);
-  }
+  
+  input->parsev(args[3]);
+  q = &input->expressions[args[3]];
 }
 
 void FixHeatFluxParticles::prepare()
 {
-  q.result(mpm);
-
+  q->evaluate();
   qtot = 0;
 }
 
@@ -93,36 +92,37 @@ void FixHeatFluxParticles::reduce()
 void FixHeatFluxParticles::initial_integrate(Solid &solid)
 {
   // Go through all the particles in the group and set v_update to the right value:
-  for (int ip = 0; ip < solid.np_local; ip++)
-  {
-    if (!(solid.mask[ip] & groupbit))
-      continue;
 
-    (*input->vars)["x" ] = Var("x",  solid.x[ip][0]);
-    (*input->vars)["y" ] = Var("y",  solid.x[ip][1]);
-    (*input->vars)["z" ] = Var("z",  solid.x[ip][2]);
-    (*input->vars)["x0"] = Var("x0", solid.x0[ip][0]);
-    (*input->vars)["y0"] = Var("y0", solid.x0[ip][1]);
-    (*input->vars)["z0"] = Var("z0", solid.x0[ip][2]);
+  int groupbit = this->groupbit, dimension = domain->dimension;
+  Kokkos::View<int*> mask = solid.mask;
+  Kokkos::View<double*> T = solid.T, vol = solid.vol, gamma = solid.gamma;
+  double invcp = solid.mat->invcp;
 
-    double Ap;
-    if (domain->dimension == 1)
-      Ap = 1;
-    else if (domain->dimension == 2)
-      Ap = sqrt(solid.vol[ip]);
-    else
-      Ap = pow(solid.vol[ip], 2/3);
+  Kokkos::View<double**> q_ = q->registers;
 
-    double qtemp = q.result(mpm, true);
-    solid.gamma[ip] += Ap*qtemp*solid.mat->invcp;
-    qtot += qtemp;
-  }
+  Kokkos::parallel_reduce("FixVelocityNodes::post_update_grid_state", solid.np_local,
+			  KOKKOS_LAMBDA(const int &ip, double &lqtot)
+      {
+        if (!(mask[ip] & groupbit))
+          return;
+
+	double Ap;
+	if (dimension == 1)
+	  Ap = 1;
+	else if (dimension == 2)
+	  Ap = Kokkos::Experimental::sqrt(vol[ip]);
+	else         
+	  Ap = Kokkos::Experimental::pow(vol[ip], 2/3);
+
+	gamma[ip] += Ap * q_(0,ip) * invcp;
+	lqtot += q_(0,ip);
+      }, qtot);
 }
 
 void FixHeatFluxParticles::write_restart(ofstream *of) {
-  q.write_to_restart(of);
+  // q.write_to_restart(of);
 }
 
 void FixHeatFluxParticles::read_restart(ifstream *ifr) {
-  q.read_from_restart(ifr);
+  // q.read_from_restart(ifr);
 }

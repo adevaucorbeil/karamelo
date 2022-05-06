@@ -21,8 +21,9 @@ FixStyle(neumann_bc_mech,FixNeumannBCMech)
 #define MPM_FIX_NEUMANN_BC_MECH_H
 
 #include <fix.h>
-#include <var.h>
 #include <matrix.h>
+
+class Expression;
 
 class FixNeumannBCMech : public Fix {
  public:
@@ -43,7 +44,7 @@ private:
       {3, "Usage: fix(fix-ID, neumann_bc_mech, group, tx, ty, tz)\n"}};
   const map<int, int> Nargs = {{1, 4}, {2, 5}, {3, 6}};
 
-  Var t[3];                     //< Surface traction/compression pressure
+  Expression *t[3];                     //< Surface traction/compression pressure
   Vector3d ftot;
 };
 

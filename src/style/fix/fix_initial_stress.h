@@ -21,8 +21,9 @@ FixStyle(initial_stress,FixInitialStress)
 #define MPM_FIX_INITIAL_STRESS_H
 
 #include <fix.h>
-#include <var.h>
 #include <matrix.h>
+
+class Expression;
 
 class FixInitialStress : public Fix {
  public:
@@ -39,7 +40,7 @@ private:
   string usage = "Usage: fix(fix-ID, initial_stress, group-ID, sigma_xx, sigma_yy, sigma_zz, sigma_yz, sigma_xz, sigma_xy)\n";
   int Nargs = 9;
 
-  Var s_value[6];
+  Expression *s_value[6];
   bool s_set[6];
 };
 

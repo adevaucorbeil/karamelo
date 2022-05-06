@@ -19,6 +19,7 @@
 #include <solid.h>
 #include <universe.h>
 #include <update.h>
+#include <expression_operation.h>
 
 
 using namespace std;
@@ -62,45 +63,61 @@ FixInitialStress::FixInitialStress(MPM *mpm, vector<string> args):
 
   for (int i = 0; i < 6; i++) {
     if (args[i + 3] != "NULL") {
-      s_value[i] = input->parsev(args[i + 3]);
-      s_set[i] = true;
+      input->parsev(args[i + 3]);
+      s_value[i] = &input->expressions[args[i + 3]];
     } else {
-      s_set[i] = false;
+      s_value[i] = nullptr;
     }
   }
 }
 
 void FixInitialStress::prepare()
 {
-  for (Var &s_value: s_value)
-    s_value.result(mpm);
+  // for (Var &s_value: s_value)
+  //   s_value.result(mpm);
 }
 
 void FixInitialStress::initial_integrate(Solid &solid)
 {
   // cout << "In FixInitialStress::initial_integrate()" << endl;
+  // Go through all the nodes in the group and set v to the right value:
 
-  // Go through all the particles in the group and set v to the right value:
-  for (int ip = 0; ip < solid.np_local; ip++)
-  {
-    if (update->ntimestep != 1 || !(solid.mask[ip] & groupbit))
-      return;
+  for (int i = 0; i < 6; i++)
+    if (s_value[i])
+      s_value[i]->evaluate(solid);
 
-    (*input->vars)["x0"] = Var("x0", solid.x0[ip][0]);
-    (*input->vars)["y0"] = Var("y0", solid.x0[ip][1]);
-    (*input->vars)["z0"] = Var("z0", solid.x0[ip][2]);
-    (*input->vars)["x" ] = Var("x",  solid.x[ip][0]);
-    (*input->vars)["y" ] = Var("y",  solid.x[ip][1]);
-    (*input->vars)["z" ] = Var("z",  solid.x[ip][2]);
-      
-    if (s_set[0]) solid.sigma[ip](0,0) = s_value[0].result(mpm, true);
-    if (s_set[1]) solid.sigma[ip](1,1) = s_value[1].result(mpm, true);
-    if (s_set[2]) solid.sigma[ip](2,2) = s_value[2].result(mpm, true);
-    if (s_set[3]) solid.sigma[ip](1,2) = solid.sigma[ip](2,1) = s_value[3].result(mpm, true);
-    if (s_set[4]) solid.sigma[ip](0,2) = solid.sigma[ip](2,0) = s_value[4].result(mpm, true);
-    if (s_set[5]) solid.sigma[ip](0,1) = solid.sigma[ip](1,0) = s_value[5].result(mpm, true);
 
-    if (update->method_type == "tlmpm" || update->method_type == "tlcpdi")
-      solid.vol0PK1[ip] = solid.vol0[ip]*solid.sigma[ip];
+  int groupbit = this->groupbit;
+  double ntimestep = update->ntimestep;
+  Kokkos::View<int*> mask = solid.mask;
+  Kokkos::View<Matrix3d*> sigma = solid.sigma;
+
+  for (int i = 0; i < 6; i++)
+    if (s_value[i])
+      {
+	Kokkos::View<double **> s_value_i = s_value[i]->registers;
+	Kokkos::parallel_for("FixInitialStress::initial_integrate", solid.np_local,
+			     KOKKOS_LAMBDA(const int &ip)
+			     {
+			       if (ntimestep != 1 || !(mask[ip] & groupbit))
+				 return;
+
+			       if      (i<=2) sigma[ip](i,i) = s_value_i(0, ip);
+			       else if (i==3) sigma[ip](1,2) = sigma[ip](2,1) = s_value_i(0, ip);
+			       else if (i==4) sigma[ip](0,2) = sigma[ip](2,0) = s_value_i(0, ip);
+			       else if (i==5) sigma[ip](0,1) = sigma[ip](1,0) = s_value_i(0, ip);
+			     });
+      }
+
+  
+  if (update->method_type == "tlmpm" || update->method_type == "tlcpdi") {
+    Kokkos::View<double*> vol0 = solid.vol0;
+    Kokkos::View<Matrix3d*> vol0PK1 = solid.vol0PK1;
+
+    Kokkos::parallel_for("FixInitialStress::initial_integrate_tlmpm", solid.np_local,
+			 KOKKOS_LAMBDA(const int &ip)
+			 {
+			   solid.vol0PK1[ip] = vol0[ip]*sigma[ip];
+			 });
   }
 }

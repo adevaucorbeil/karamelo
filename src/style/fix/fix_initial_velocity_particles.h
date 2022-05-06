@@ -21,14 +21,15 @@ FixStyle(initial_velocity_particles,FixInitialVelocityParticles)
 #define MPM_FIX_INITIAL_VELOCITY_PARTICLES_H
 
 #include <fix.h>
-#include <var.h>
 #include <matrix.h>
+
+class Expression;
 
 class FixInitialVelocityParticles : public Fix {
  public:
   FixInitialVelocityParticles(MPM *, vector<string>);
 
-  void prepare();
+  void prepare() {};
 
   void initial_integrate(Solid &solidp);
 
@@ -36,10 +37,15 @@ class FixInitialVelocityParticles : public Fix {
   void read_restart(ifstream *) {};
 
 private:
-  string usage = "Usage: fix(fix-ID, initial_velocity_particles, group-ID, vx, vy, vz)\n";
-  int Nargs = 6;
-  Var xvalue, yvalue, zvalue;    // Set velocities in x, y, and z directions.
-  bool xset, yset, zset;               // Does the fix set the x, y, and z velocities of the group?
+  const map<int, string> usage = {
+      {1, "Usage: fix(fix-ID, initial_velocity_particles, group, vx)\n"},
+      {2, "Usage: fix(fix-ID, initial_velocity_particles, group, vx, vy)\n"},
+      {3, "Usage: fix(fix-ID, initial_velocity_particles, group, vx, vy, vz)\n"}};
+  const map<int, int> Nargs = {{1, 4}, {2, 5}, {3, 6}};
+  
+    bool xset, yset, zset;                             //< Does the fix set the x, y, and z velocities of the group?
+
+  Expression *v[3];
 };
 
 #endif

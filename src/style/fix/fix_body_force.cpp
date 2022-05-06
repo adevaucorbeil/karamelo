@@ -109,6 +109,9 @@ void FixBodyForce::post_particles_to_grid(Grid &grid)
       fb[i]->evaluate(grid);
 
   int groupbit = this->groupbit;
+  Kokkos::View<double*> mass = grid.mass;
+  Kokkos::View<int*> mask = grid.mask;
+  Kokkos::View<Vector3d*> mb = grid.mb;
 
   for (int i = 0; i < 3; i++)
     if (fb[i])
@@ -118,10 +121,10 @@ void FixBodyForce::post_particles_to_grid(Grid &grid)
       Kokkos::parallel_reduce("FixBodyForce::post_particles_to_grid", grid.nnodes_local + grid.nnodes_ghost,
                               KOKKOS_LAMBDA(const int &in, double &ftot_i)
       {
-	if (!grid.mass[in] || !(grid.mask[in] & groupbit))
+	if (!mass[in] || !(mask[in] & groupbit))
           return;
 
-	grid.mb[in][i] += grid.mass[in]*fb_i(0, in);
+	mb[in][i] += mass[in]*fb_i(0, in);
 
         ftot_i += fb_i(0, in);
       }, ftot[i]);

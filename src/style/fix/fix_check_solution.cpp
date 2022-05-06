@@ -23,13 +23,15 @@
 #include <universe.h>
 #include <solid.h>
 #include <error.h>
+#include <var.h>
+#include <expression_operation.h>
 
 using namespace std;
 using namespace FixConst;
 using namespace MathSpecial;
 
 
-FixChecksolution::FixChecksolution(MPM *mpm, vector<string> args):
+FixCheckSolution::FixCheckSolution(MPM *mpm, vector<string> args):
   Fix(mpm, args, FINAL_INTEGRATE)
 {
   if (args.size() < 3) {
@@ -49,55 +51,52 @@ FixChecksolution::FixChecksolution(MPM *mpm, vector<string> args):
     return;
   }
 
-  if (domain->dimension == 3 && args.size()<6) {
-    error->all(FLERR,"Error: too few arguments for fix_check_solution: requires at least 6 arguments. " + to_string(args.size()) + " received.\n");
-  } else if (domain->dimension == 2 && args.size()<5) {
-    error->all(FLERR,"Error: too few arguments for fix_check_solution: requires at least 5 arguments. " + to_string(args.size()) + " received.\n");
-  } else if (domain->dimension == 1 && args.size()<4) {
-    error->all(FLERR,"Error: too few arguments for fix_check_solution: requires at least 4 arguments. " + to_string(args.size()) + " received.\n");
+  if (args.size() < Nargs.find(domain->dimension)->second) {
+    error->all(FLERR, "Error: too few arguments for fix_velocity_nodes.\n" +
+                          usage.find(domain->dimension)->second);
   }
 
   if (group->pon[igroup].compare("nodes") !=0 && group->pon[igroup].compare("all") !=0) {
     error->all(FLERR,"_check_solution needs to be given a group of nodes" + group->pon[igroup] + ", " + args[2] + " is a group of " + group->pon[igroup] + ".\n");
   }
   if (universe->me == 0) {
-    cout << "Creating new fix FixChecksolution with ID: " << args[0] << endl;
+    cout << "Creating new fix FixCheckSolution with ID: " << args[0] << endl;
   }
   id = args[0];
 
   xset = yset = zset = false;
 
   if (args[3] != "NULL") {
-    xvalue = input->parsev(args[3]);
+    input->parsev(args[3]);
     xset = true;
+    u[0] = &input->expressions[args[3]];
   }
+  else
+    u[0] = nullptr;
 
-  if (domain->dimension >= 2) {
-    if (args[4] != "NULL") {
-      yvalue = input->parsev(args[4]);
-      yset = true;
-    }
+  if (domain->dimension >= 2 && args[4] != "NULL") {
+    input->parsev(args[4]);
+    yset = true;
+    u[1] = &input->expressions[args[4]];
   }
+  else
+    u[1] = nullptr;
 
-  if (domain->dimension == 3) {
-    if (args[5] != "NULL") {
-      zvalue = input->parsev(args[5]);
-      zset = true;
-    }
-  }
+  if (domain->dimension == 3 && args[5] != "NULL") {
+    input->parsev(args[5]);
+    zset = true;
+    u[2] = &input->expressions[args[5]];    
+  } else
+    u[2] = nullptr;
 }
 
-void FixChecksolution::prepare()
+void FixCheckSolution::prepare()
 {
-  xvalue.result(mpm);
-  yvalue.result(mpm);
-  zvalue.result(mpm);
-
   error_vec = Vector3d();
   u_th = Vector3d();
 }
 
-void FixChecksolution::reduce()
+void FixCheckSolution::reduce()
 {
   Vector3d error_reduced, u_th_reduced;
 
@@ -123,126 +122,132 @@ void FixChecksolution::reduce()
   // cout << "ftot = [" << ftot[0] << ", " << ftot[1] << ", " << ftot[2] << "]\n"; 
 }
 
-void FixChecksolution::final_integrate(Solid &solid)
+void FixCheckSolution::final_integrate(Solid &solid)
 {
-  for (int ip = 0; ip < solid.np_local; ip++)
-  {
-    if ((update->ntimestep != output->next && update->ntimestep != update->nsteps) ||
-        !(solid.mask[ip] & groupbit))
-      continue;
+  // Go through all the nodes in the group and set v to the right value:
 
-    (*input->vars)["x0"] = Var("x0", solid.x0[ip][0]);
-    (*input->vars)["y0"] = Var("y0", solid.x0[ip][1]);
-    (*input->vars)["z0"] = Var("z0", solid.x0[ip][2]);
+  for (int i = 0; i < 3; i++)
+    if (u[i])
+      u[i]->evaluate(solid);
 
-    if (xset)
+  int groupbit = this->groupbit;
+  double ntimestep = update->ntimestep;
+  int nsteps = update->nsteps;
+  bigint next = output->next;
+  Kokkos::View<int*> mask = solid.mask;
+  Kokkos::View<double*> vol0 = solid.vol0;
+  Kokkos::View<Vector3d*> x = solid.x;
+  Kokkos::View<Vector3d*> x0 = solid.x0;
+
+  for (int i = 0; i < 3; i++)
+    if (u[i])
     {
-      double ux = xvalue.result(mpm, true);
-      error_vec[0] += solid.vol0[ip]*square(ux - (solid.x[ip][0] - solid.x0[ip][0]));
-      u_th[0] += solid.vol0[ip]*ux*ux;                  
-    }                                                
-    if (yset)
-    {                                      
-      double uy = yvalue.result(mpm, true);                       
-      error_vec[1] += solid.vol0[ip]*square(uy - (solid.x[ip][1] - solid.x0[ip][1]));
-      u_th[1] += solid.vol0[ip]*uy*uy;                  
-    }                                                
-    if (zset)
-    {                                      
-      double uz = zvalue.result(mpm, true);                       
-      error_vec[2] += solid.vol0[ip]*square(uz - (solid.x[ip][2] - solid.x0[ip][2]));
-      u_th[2] += solid.vol0[ip]*uz*uz;
+      Kokkos::View<double **> u_i = u[i]->registers;
+
+      Kokkos::parallel_reduce(
+          "FixCheckSolution::final_integrate", solid.np_local,
+          KOKKOS_LAMBDA(const int &ip, double &error_vec_i, double &u_th_i) {
+            if ((ntimestep != next && ntimestep != nsteps) ||
+                !(mask[ip] & groupbit))
+              return;
+
+            error_vec_i += vol0[ip] *
+	      Kokkos::Experimental::pow(u_i(0, ip) - (x[ip][i] - x0[ip][i]), 2);
+
+            u_th_i += vol0[ip] * u_i(0, ip) * u_i(0, ip);
+          }, error_vec[i], u_th[i]);
     }
-  }
 }
 
 
-void FixChecksolution::write_restart(ofstream *of) {
-  of->write(reinterpret_cast<const char *>(&xset), sizeof(bool));
-  of->write(reinterpret_cast<const char *>(&yset), sizeof(bool));
-  of->write(reinterpret_cast<const char *>(&zset), sizeof(bool));
+void FixCheckSolution::write_restart(ofstream *of) {
+  error->all(FLERR, "Error: Restart broken.\n");
+  // of->write(reinterpret_cast<const char *>(&xset), sizeof(bool));
+  // of->write(reinterpret_cast<const char *>(&yset), sizeof(bool));
+  // of->write(reinterpret_cast<const char *>(&zset), sizeof(bool));
 
-  if (xset) {
-    string eq = xvalue.eq();
-    size_t N = eq.size();
-    double value = xvalue.result();
-    bool cst = xvalue.is_constant();
-    of->write(reinterpret_cast<const char *>(&N), sizeof(size_t));
-    of->write(reinterpret_cast<const char *>(eq.c_str()), N);
-    of->write(reinterpret_cast<const char *>(&value), sizeof(double));
-    of->write(reinterpret_cast<const char *>(&cst), sizeof(bool));
-  }
+  // if (xset) {
+  //   string eq = xvalue.eq();
+  //   size_t N = eq.size();
+  //   double value = xvalue.result();
+  //   bool cst = xvalue.is_constant();
+  //   of->write(reinterpret_cast<const char *>(&N), sizeof(size_t));
+  //   of->write(reinterpret_cast<const char *>(eq.c_str()), N);
+  //   of->write(reinterpret_cast<const char *>(&value), sizeof(double));
+  //   of->write(reinterpret_cast<const char *>(&cst), sizeof(bool));
+  // }
 
-  if (yset) {
-    string eq = yvalue.eq();
-    size_t N = eq.size();
-    double value = yvalue.result();
-    bool cst = yvalue.is_constant();
-    of->write(reinterpret_cast<const char *>(&N), sizeof(size_t));
-    of->write(reinterpret_cast<const char *>(eq.c_str()), N);
-    of->write(reinterpret_cast<const char *>(&value), sizeof(double));
-    of->write(reinterpret_cast<const char *>(&cst), sizeof(bool));
-  }
+  // if (yset) {
+  //   string eq = yvalue.eq();
+  //   size_t N = eq.size();
+  //   double value = yvalue.result();
+  //   bool cst = yvalue.is_constant();
+  //   of->write(reinterpret_cast<const char *>(&N), sizeof(size_t));
+  //   of->write(reinterpret_cast<const char *>(eq.c_str()), N);
+  //   of->write(reinterpret_cast<const char *>(&value), sizeof(double));
+  //   of->write(reinterpret_cast<const char *>(&cst), sizeof(bool));
+  // }
 
-  if (zset) {
-    string eq = zvalue.eq();
-    size_t N = eq.size();
-    double value = zvalue.result();
-    bool cst = zvalue.is_constant();
-    of->write(reinterpret_cast<const char *>(&N), sizeof(size_t));
-    of->write(reinterpret_cast<const char *>(eq.c_str()), N);
-    of->write(reinterpret_cast<const char *>(&value), sizeof(double));
-    of->write(reinterpret_cast<const char *>(&cst), sizeof(bool));
-  }
+  // if (zset) {
+  //   string eq = zvalue.eq();
+  //   size_t N = eq.size();
+  //   double value = zvalue.result();
+  //   bool cst = zvalue.is_constant();
+  //   of->write(reinterpret_cast<const char *>(&N), sizeof(size_t));
+  //   of->write(reinterpret_cast<const char *>(eq.c_str()), N);
+  //   of->write(reinterpret_cast<const char *>(&value), sizeof(double));
+  //   of->write(reinterpret_cast<const char *>(&cst), sizeof(bool));
+  // }
 }
 
-void FixChecksolution::read_restart(ifstream *ifr) {
-  ifr->read(reinterpret_cast<char *>(&xset), sizeof(bool));
-  ifr->read(reinterpret_cast<char *>(&yset), sizeof(bool));
-  ifr->read(reinterpret_cast<char *>(&zset), sizeof(bool));
+void FixCheckSolution::read_restart(ifstream *ifr) {
+  error->all(FLERR, "Error: Restart broken.\n");
+  // ifr->read(reinterpret_cast<char *>(&xset), sizeof(bool));
+  // ifr->read(reinterpret_cast<char *>(&yset), sizeof(bool));
+  // ifr->read(reinterpret_cast<char *>(&zset), sizeof(bool));
 
-  if (xset) {
-    string eq = "";
-    size_t N = 0;
-    double value = 0;
-    bool cst = false;
+  // if (xset) {
+  //   string eq = "";
+  //   size_t N = 0;
+  //   double value = 0;
+  //   bool cst = false;
 
-    ifr->read(reinterpret_cast<char *>(&N), sizeof(size_t));
-    eq.resize(N);
+  //   ifr->read(reinterpret_cast<char *>(&N), sizeof(size_t));
+  //   eq.resize(N);
 
-    ifr->read(reinterpret_cast<char *>(&eq[0]), N);
-    ifr->read(reinterpret_cast<char *>(&value), sizeof(double));
-    ifr->read(reinterpret_cast<char *>(&cst), sizeof(bool));
-    xvalue = Var(eq, value, cst);
-  }
+  //   ifr->read(reinterpret_cast<char *>(&eq[0]), N);
+  //   ifr->read(reinterpret_cast<char *>(&value), sizeof(double));
+  //   ifr->read(reinterpret_cast<char *>(&cst), sizeof(bool));
+  //   xvalue = Var(eq, value, cst);
+  // }
 
-  if (yset) {
-    string eq = "";
-    size_t N = 0;
-    double value = 0;
-    bool cst = false;
+  // if (yset) {
+  //   string eq = "";
+  //   size_t N = 0;
+  //   double value = 0;
+  //   bool cst = false;
 
-    ifr->read(reinterpret_cast<char *>(&N), sizeof(size_t));
-    eq.resize(N);
+  //   ifr->read(reinterpret_cast<char *>(&N), sizeof(size_t));
+  //   eq.resize(N);
 
-    ifr->read(reinterpret_cast<char *>(&eq[0]), N);
-    ifr->read(reinterpret_cast<char *>(&value), sizeof(double));
-    ifr->read(reinterpret_cast<char *>(&cst), sizeof(bool));
-    yvalue = Var(eq, value, cst);
-  }
+  //   ifr->read(reinterpret_cast<char *>(&eq[0]), N);
+  //   ifr->read(reinterpret_cast<char *>(&value), sizeof(double));
+  //   ifr->read(reinterpret_cast<char *>(&cst), sizeof(bool));
+  //   yvalue = Var(eq, value, cst);
+  // }
 
-  if (zset) {
-    string eq = "";
-    size_t N = 0;
-    double value = 0;
-    bool cst = false;
+  // if (zset) {
+  //   string eq = "";
+  //   size_t N = 0;
+  //   double value = 0;
+  //   bool cst = false;
 
-    ifr->read(reinterpret_cast<char *>(&N), sizeof(size_t));
-    eq.resize(N);
+  //   ifr->read(reinterpret_cast<char *>(&N), sizeof(size_t));
+  //   eq.resize(N);
 
-    ifr->read(reinterpret_cast<char *>(&eq[0]), N);
-    ifr->read(reinterpret_cast<char *>(&value), sizeof(double));
-    ifr->read(reinterpret_cast<char *>(&cst), sizeof(bool));
-    zvalue = Var(eq, value, cst);
-  }
+  //   ifr->read(reinterpret_cast<char *>(&eq[0]), N);
+  //   ifr->read(reinterpret_cast<char *>(&value), sizeof(double));
+  //   ifr->read(reinterpret_cast<char *>(&cst), sizeof(bool));
+  //   zvalue = Var(eq, value, cst);
+  // }
 }

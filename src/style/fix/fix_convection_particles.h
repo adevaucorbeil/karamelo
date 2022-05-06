@@ -21,7 +21,8 @@ FixStyle(convection_particles,FixConvectionParticles)
 #define MPM_FIX_CONVECTION_PARTICLES_H
 
 #include <fix.h>
-#include <var.h>
+
+class Expression;
 
 class FixConvectionParticles : public Fix {
  public:
@@ -39,9 +40,9 @@ private:
   string usage = "Usage: fix(fix-ID, convection_particles, group, h, Tinf)\n";
   const int Nargs = 5;
 
-  Var Tinf;                  //< Ambiant temperature.
   double h;                        //< Heat transfer coefficient.
   double qtot;
+  Expression *Tinf;                //< Ambiant temperature.
 };
 
 #endif
