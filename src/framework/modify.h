@@ -38,7 +38,6 @@ public:
   Modify(class MPM *);
   virtual ~Modify();
   virtual void init();
-  virtual void setup();
 
   void add_fix(vector<string>);
   void delete_fix(string);
@@ -61,7 +60,7 @@ public:
   void prepare();
   void reduce();
 
-  void run_computes();
+  void run_computes(Solid &solid);
 
   void write_restart(ofstream*);      ///< Write fixes and computes to restart file
   void read_restart(ifstream*);       ///< Read fixes and computes from restart file

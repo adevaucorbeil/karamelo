@@ -16,12 +16,13 @@
 #include <error.h>
 #include <group.h>
 #include <input.h>
+#include <iostream>
 #include <math_special.h>
 #include <output.h>
+#include <solid.h>
+#include <string>
 #include <universe.h>
 #include <update.h>
-#include <iostream>
-#include <string>
 #include <vector>
 
 using namespace std;
@@ -58,56 +59,40 @@ ComputeAverageStress::ComputeAverageStress(MPM *mpm, vector<string> args)
 
 ComputeAverageStress::~ComputeAverageStress() {}
 
-void ComputeAverageStress::init() {}
+void ComputeAverageStress::compute_value(Solid &solid) {
 
-void ComputeAverageStress::setup() {}
+  double s0, s1, s2, s3, s4, s5;
 
-void ComputeAverageStress::compute_value() {
-  if (update->ntimestep != output->next && update->ntimestep != update->nsteps)
-    return;
-  // cout << "In ComputeAverageStress::post_particles_to_grid()\n";
+  Kokkos::View<Matrix3d*> sigma = solid.sigma;
+  Kokkos::View<int*> mask = solid.mask;
 
-  // Go through all the nodes in the group and set b to the right value:
+  int groupbit = this->groupbit;
+  int nsteps = update->nsteps;
+  bigint next = output->next;
+  double ntimestep = update->ntimestep;
 
-  int solid = group->solid[igroup];
+  Kokkos::parallel_reduce("ComputeAverageStress::compute_value", solid.np_local,
+			  KOKKOS_LAMBDA(const int &ip,
+					double &ls0, double &ls1, double &ls2,
+					double &ls3, double &ls4, double &ls5) {
+			 if ((ntimestep != next &&
+			      ntimestep != nsteps) ||
+			     !(mask[ip] & groupbit))
+			   return;
 
-  Solid *s;
-
-  double sigma[6] = {0, 0, 0, 0, 0, 0};
-  double sigma_reduced[6] = {0, 0, 0, 0, 0, 0};
-
-  if (solid == -1) {
-    for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
-      s = domain->solids[isolid];
-
-      for (int ip = 0; ip < s->np_local; ip++) {
-        if (s->mask[ip] & groupbit) {
-          sigma[0] += s->sigma[ip](0, 0);
-          sigma[1] += s->sigma[ip](1, 1);
-          sigma[2] += s->sigma[ip](2, 2);
-          sigma[3] += s->sigma[ip](1, 2);
-          sigma[4] += s->sigma[ip](0, 2);
-          sigma[5] += s->sigma[ip](0, 1);
-        }
-      }
-    }
-  } else {
-    s = domain->solids[solid];
-
-    for (int ip = 0; ip < s->np_local; ip++) {
-      if (s->mask[ip] & groupbit) {
-	sigma[0] += s->sigma[ip](0, 0);
-	sigma[1] += s->sigma[ip](1, 1);
-	sigma[2] += s->sigma[ip](2, 2);
-	sigma[3] += s->sigma[ip](1, 2);
-	sigma[4] += s->sigma[ip](0, 2);
-	sigma[5] += s->sigma[ip](0, 1);
-      }
-    }
-  }
+			 ls0 += sigma[ip](0, 0);
+			 ls1 += sigma[ip](1, 1);
+			 ls2 += sigma[ip](2, 2);
+			 ls3 += sigma[ip](1, 2);
+			 ls4 += sigma[ip](0, 2);
+			 ls5 += sigma[ip](0, 1);
+			  },s0, s1, s2, s3, s4, s5);
 
   // Reduce Stress:
-  MPI_Allreduce(sigma, sigma_reduced, 6, MPI_DOUBLE, MPI_SUM, universe->uworld);
+
+  double s[6] = {s0, s1, s2, s3, s4, s5};
+  double sigma_reduced[6] = {0, 0, 0, 0, 0, 0};
+  MPI_Allreduce(s, sigma_reduced, 6, MPI_DOUBLE, MPI_SUM, universe->uworld);
 
   (*input->vars)[id + "_11"]=Var(id + "_11", sigma_reduced[0]/group->n_tot(igroup));
   (*input->vars)[id + "_22"]=Var(id + "_22", sigma_reduced[1]/group->n_tot(igroup));

@@ -58,56 +58,39 @@ ComputeAverageVelocity::ComputeAverageVelocity(MPM *mpm, vector<string> args)
 
 ComputeAverageVelocity::~ComputeAverageVelocity() {}
 
-void ComputeAverageVelocity::init() {}
-
-void ComputeAverageVelocity::setup() {}
-
-void ComputeAverageVelocity::compute_value() {
-  if (update->ntimestep != output->next && update->ntimestep != update->nsteps)
-    return;
-  // cout << "In ComputeAverageVelocity::post_particles_to_grid()\n";
-
-  // Go through all the nodes in the group and set b to the right value:
-
-  int solid = group->solid[igroup];
-
-  Solid *s;
-
-  double vx, vy, vz, vx_reduced, vy_reduced, vz_reduced;
+void ComputeAverageVelocity::compute_value(Solid &solid) {
+  double vx, vy, vz;
 
   vx = vy = vz = 0;
-  vx_reduced = vz_reduced = vy_reduced = 0;
 
-  if (solid == -1) {
-    for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
-      s = domain->solids[isolid];
+  Kokkos::View<Vector3d*> sv = solid.v;
+  Kokkos::View<int*> mask = solid.mask;
 
-      for (int in = 0; in < s->np_local; in++) {
-        if (s->mask[in] & groupbit) {
-          vx += s->v[in](0);
-          vy += s->v[in](1);
-          vz += s->v[in](2);
-        }
-      }
-    }
-  } else {
-    s = domain->solids[solid];
+  int groupbit = this->groupbit;
+  int nsteps = update->nsteps;
+  bigint next = output->next;
+  double ntimestep = update->ntimestep;
 
-    for (int in = 0; in < s->np_local; in++) {
-      if (s->mask[in] & groupbit) {
-	vx += s->v[in](0);
-	vy += s->v[in](1);
-	vz += s->v[in](2);
-      }
-    }
-  }
+  Kokkos::parallel_reduce("ComputeAverageStress::compute_value", solid.np_local,
+			  KOKKOS_LAMBDA(const int &ip,
+					double &lvx, double &lvy, double &lvz) {
+			 if ((ntimestep != next &&
+			      ntimestep != nsteps) ||
+			     !(mask[ip] & groupbit))
+			   return;
 
-  // Reduce Ek:
-  MPI_Allreduce(&vx, &vx_reduced, 1, MPI_DOUBLE, MPI_SUM, universe->uworld);
-  MPI_Allreduce(&vy, &vy_reduced, 1, MPI_DOUBLE, MPI_SUM, universe->uworld);
-  MPI_Allreduce(&vz, &vz_reduced, 1, MPI_DOUBLE, MPI_SUM, universe->uworld);
+			 lvx = sv[ip](0);
+			 lvy = sv[ip](1);
+			 lvz = sv[ip](2);
+			  },vx, vy, vz);
 
-  (*input->vars)[id + "_x"]=Var(id + "_x", vx_reduced/group->n_tot(igroup));
-  (*input->vars)[id + "_y"]=Var(id + "_y", vy_reduced/group->n_tot(igroup));
-  (*input->vars)[id + "_z"]=Var(id + "_z", vz_reduced/group->n_tot(igroup));
+
+  // Reduce velocity:
+  double v[6] = {vx, vy, vz};
+  double v_reduced[3] = {0, 0, 0};
+  MPI_Allreduce(v, v_reduced, 3, MPI_DOUBLE, MPI_SUM, universe->uworld);
+
+  (*input->vars)[id + "_x"]=Var(id + "_x", v_reduced[0]/group->n_tot(igroup));
+  (*input->vars)[id + "_y"]=Var(id + "_y", v_reduced[1]/group->n_tot(igroup));
+  (*input->vars)[id + "_z"]=Var(id + "_z", v_reduced[2]/group->n_tot(igroup));
 }

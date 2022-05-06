@@ -56,45 +56,30 @@ ComputeKineticEnergy::ComputeKineticEnergy(MPM *mpm, vector<string> args)
 
 ComputeKineticEnergy::~ComputeKineticEnergy() {}
 
-void ComputeKineticEnergy::init() {}
-
-void ComputeKineticEnergy::setup() {}
-
-void ComputeKineticEnergy::compute_value() {
-  if (update->ntimestep != output->next && update->ntimestep != update->nsteps)
-    return;
-  // cout << "In ComputeKineticEnergy::post_particles_to_grid()\n";
-
-  // Go through all the nodes in the group and set b to the right value:
-
-  int solid = group->solid[igroup];
-
-  Solid *s;
-
+void ComputeKineticEnergy::compute_value(Solid &solid) {
   double Ek, Ek_reduced;
 
   Ek = 0;
   Ek_reduced = 0;
 
-  if (solid == -1) {
-    for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
-      s = domain->solids[isolid];
+  Kokkos::View<Vector3d*> v = solid.v;
+  Kokkos::View<double*> mass = solid.mass;
+  Kokkos::View<int*> mask = solid.mask;
 
-      for (int in = 0; in < s->np_local; in++) {
-        if (s->mask[in] & groupbit) {
-          Ek += 0.5 * s->mass[in] * square(s->v[in].norm());
-        }
-      }
-    }
-  } else {
-    s = domain->solids[solid];
+  int groupbit = this->groupbit;
+  int nsteps = update->nsteps;
+  bigint next = output->next;
+  double ntimestep = update->ntimestep;
 
-    for (int in = 0; in < s->np_local; in++) {
-      if (s->mask[in] & groupbit) {
-        Ek += 0.5 * s->mass[in] * square(s->v[in].norm());
-      }
-    }
-  }
+  Kokkos::parallel_reduce("ComputeAverageStress::compute_value", solid.np_local,
+			  KOKKOS_LAMBDA(const int &ip, double &lEk) {
+			 if ((ntimestep != next &&
+			      ntimestep != nsteps) ||
+			     !(mask[ip] & groupbit))
+			   return;
+
+			 lEk += 0.5 * mass[ip] * square(v[ip].norm());
+			  },Ek);
 
   // Reduce Ek:
   MPI_Allreduce(&Ek, &Ek_reduced, 1, MPI_DOUBLE, MPI_SUM, universe->uworld);

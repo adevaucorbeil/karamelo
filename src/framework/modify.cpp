@@ -78,8 +78,6 @@ Modify::~Modify()
 
 void Modify::init()
 {
-  for (int i = 0; i < compute.size(); i++) compute[i]->init();
-
   list_init(INITIAL_INTEGRATE, list_initial_integrate);
   list_init(POST_PARTICLES_TO_GRID, list_post_particles_to_grid);
   list_init(POST_UPDATE_GRID_STATE, list_post_update_grid_state);
@@ -87,16 +85,6 @@ void Modify::init()
   list_init(POST_ADVANCE_PARTICLES, list_post_advance_particles);
   list_init(POST_VELOCITIES_TO_GRID, list_post_velocities_to_grid);
   list_init(FINAL_INTEGRATE, list_final_integrate);
-}
-
-/* ----------------------------------------------------------------------
-   setup for run, calls setup() of all fixes and computes
-   called from scheme
-------------------------------------------------------------------------- */
-
-void Modify::setup()
-{
-  for (int i = 0; i < compute.size(); i++) compute[i]->setup();
 }
 
 /* ----------------------------------------------------------------------
@@ -177,7 +165,6 @@ void Modify::add_compute(vector<string> args){
   if (compute_map->find(args[1]) != compute_map->end()) {
     ComputeCreator compute_creator = (*compute_map)[args[1]];
     compute.push_back(compute_creator(mpm, args));
-    compute.back()->init();
   }
   else {
     error->all(FLERR, "Unknown compute style " + args[1] + ".\n");
@@ -305,9 +292,9 @@ void Modify::reduce(){
 }
 
 
-void Modify::run_computes(){
+void Modify::run_computes(Solid &solid){
   for (int i = 0; i < compute.size(); i++)
-    compute[i]->compute_value();
+    compute[i]->compute_value(solid);
 }
 
 /*! Write fixes and computes to restart file

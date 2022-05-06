@@ -54,47 +54,29 @@ ComputeMaxPlasticStrain::ComputeMaxPlasticStrain(MPM *mpm, vector<string> args)
   (*input->vars)[id + "_Tmax"] = Var(id + "_Tmax", 0);
 }
 
-ComputeMaxPlasticStrain::~ComputeMaxPlasticStrain() {}
-
-void ComputeMaxPlasticStrain::init() {}
-
-void ComputeMaxPlasticStrain::setup() {}
-
-void ComputeMaxPlasticStrain::compute_value() {
-  if (update->ntimestep != output->next && update->ntimestep != update->nsteps)
-    return;
-  // cout << "In ComputeMaxPlasticStrain::post_particles_to_grid()\n";
-
-  // Go through all the nodes in the group and set b to the right value:
-
-  int solid = group->solid[igroup];
-
-  Solid *s;
+void ComputeMaxPlasticStrain::compute_value(Solid &solid) {
 
   double Epmax(0.), Epmax_reduced(0.), Tmax(0.), Tmax_reduced(0.);
 
-  if (solid == -1) {
-    for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
-      s = domain->solids[isolid];
+  Kokkos::View<double*> T = solid.T;
+  Kokkos::View<double*> eff_plastic_strain = solid.eff_plastic_strain;
+  Kokkos::View<int*> mask = solid.mask;
 
-      for (int in = 0; in < s->np_local; in++) {
-        if (s->mask[in] & groupbit) {
-          Epmax = max(Epmax, s->eff_plastic_strain[in]);
-          Tmax = max(Tmax, s->T[in]);
-        }
-      }
-    }
-  } else {
-    s = domain->solids[solid];
+  int groupbit = this->groupbit;
+  int nsteps = update->nsteps;
+  bigint next = output->next;
+  double ntimestep = update->ntimestep;
 
-    for (int in = 0; in < s->np_local; in++) {
-      if (s->mask[in] & groupbit) {
-	Epmax = max(Epmax, s->eff_plastic_strain[in]);
-	Tmax = max(Tmax, s->T[in]);
-      }
-    }
+  Kokkos::parallel_reduce("ComputeAverageStress::compute_value", solid.np_local,
+			  KOKKOS_LAMBDA(const int &ip, double &lTmax, double &lEpmax) {
+			 if ((ntimestep != next &&
+			      ntimestep != nsteps) ||
+			     !(mask[ip] & groupbit))
+			   return;
 
-  }
+			 lTmax = lTmax > T[ip] ? lTmax : T[ip];
+			 lEpmax = lEpmax > eff_plastic_strain[ip] ? lEpmax : eff_plastic_strain[ip];
+			  },Tmax, Epmax);
 
   // Reduce Epmax:
   MPI_Allreduce(&Epmax, &Epmax_reduced, 1, MPI_DOUBLE, MPI_MAX, universe->uworld);

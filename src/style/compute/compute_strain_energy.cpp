@@ -49,67 +49,40 @@ ComputeStrainEnergy::ComputeStrainEnergy(MPM *mpm, vector<string> args) : Comput
   (*input->vars)[id]=Var(id, 0);
 }
 
-ComputeStrainEnergy::~ComputeStrainEnergy()
-{
-}
-
-void ComputeStrainEnergy::init()
-{
-}
-
-void ComputeStrainEnergy::setup()
-{
-}
-
-void ComputeStrainEnergy::compute_value() {
-  if (update->ntimestep != output->next && update->ntimestep != update->nsteps) return;
-  // cout << "In ComputeStrainEnergy::post_particles_to_grid()\n";
-
-  // Go through all the nodes in the group and set b to the right value:
-    
-  int solid = group->solid[igroup];
+void ComputeStrainEnergy::compute_value(Solid &solid) {
 
   double Es, Es_reduced;
-  Solid *s;
 
   Es = 0;
   Es_reduced = 0;
 
-  if (solid == -1) {
-    for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
-      s = domain->solids[isolid];
+  Kokkos::View<Matrix3d*> sigma = solid.sigma;
+  Kokkos::View<Matrix3d*> strain_el = solid.strain_el;
+  Kokkos::View<double*> vol = solid.vol;
+  Kokkos::View<int*> mask = solid.mask;
 
-      for (int in = 0; in < s->np_local; in++) {
-	if (s->mask[in] & groupbit) {
-	  Es += 0.5*s->vol[in]*(s->sigma[in](0,0)*s->strain_el[in](0,0)
-				+ s->sigma[in](0,1)*s->strain_el[in](0,1)
-				+ s->sigma[in](0,2)*s->strain_el[in](0,2)
-				+ s->sigma[in](1,0)*s->strain_el[in](1,0)
-				+ s->sigma[in](1,1)*s->strain_el[in](1,1)
-				+ s->sigma[in](1,2)*s->strain_el[in](1,2)
-				+ s->sigma[in](2,0)*s->strain_el[in](2,0)
-				+ s->sigma[in](2,1)*s->strain_el[in](2,1)
-				+ s->sigma[in](2,2)*s->strain_el[in](2,2));
-	}
-      }
-    }
-  } else {
-    s = domain->solids[solid];
+  int groupbit = this->groupbit;
+  int nsteps = update->nsteps;
+  bigint next = output->next;
+  double ntimestep = update->ntimestep;
 
-    for (int in = 0; in < s->np_local; in++) {
-      if (s->mask[in] & groupbit) {
-	Es += 0.5*s->vol[in]*(s->sigma[in](0,0)*s->strain_el[in](0,0)
-			      + s->sigma[in](0,1)*s->strain_el[in](0,1)
-			      + s->sigma[in](0,2)*s->strain_el[in](0,2)
-			      + s->sigma[in](1,0)*s->strain_el[in](1,0)
-			      + s->sigma[in](1,1)*s->strain_el[in](1,1)
-			      + s->sigma[in](1,2)*s->strain_el[in](1,2)
-			      + s->sigma[in](2,0)*s->strain_el[in](2,0)
-			      + s->sigma[in](2,1)*s->strain_el[in](2,1)
-			      + s->sigma[in](2,2)*s->strain_el[in](2,2));
-      }
-    }
-  }
+  Kokkos::parallel_reduce("ComputeAverageStress::compute_value", solid.np_local,
+			  KOKKOS_LAMBDA(const int &ip, double &lEs) {
+			 if ((ntimestep != next &&
+			      ntimestep != nsteps) ||
+			     !(mask[ip] & groupbit))
+			   return;
+			 lEs += 0.5*vol[ip]*(sigma[ip](0,0)*strain_el[ip](0,0)
+				+ sigma[ip](0,1)*strain_el[ip](0,1)
+				+ sigma[ip](0,2)*strain_el[ip](0,2)
+				+ sigma[ip](1,0)*strain_el[ip](1,0)
+				+ sigma[ip](1,1)*strain_el[ip](1,1)
+				+ sigma[ip](1,2)*strain_el[ip](1,2)
+				+ sigma[ip](2,0)*strain_el[ip](2,0)
+				+ sigma[ip](2,1)*strain_el[ip](2,1)
+				+ sigma[ip](2,2)*strain_el[ip](2,2));
+			  },Es);
+
 
   // Reduce Es:
   MPI_Allreduce(&Es,&Es_reduced,1,MPI_DOUBLE,MPI_SUM,universe->uworld);

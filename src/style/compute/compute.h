@@ -17,17 +17,16 @@
 #include <pointers.h>
 #include <vector>
 
+class Solid;
+
 class Compute : protected Pointers {
  public:
   string id;
   int igroup, groupbit;
 
   Compute(class MPM *, vector<string>);
-  virtual ~Compute() {};
-  virtual void init() = 0;
-  virtual void setup() = 0;
   
-  virtual void compute_value() = 0;
+  virtual void compute_value(Solid &solid) = 0;
 };
 
 #endif

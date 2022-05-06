@@ -21,25 +21,15 @@ ComputeStyle(average_stress,ComputeAverageStress)
 #define MPM_COMPUTE_AVERAGE_STRESS_H
 
 #include <compute.h>
-#include <var.h>
 #include <vector>
-
-//namespace KARAMELO_NS {
 
 class ComputeAverageStress : public Compute {
  public:
   ComputeAverageStress(class MPM *, vector<string>);
   ~ComputeAverageStress();
-  void init();
-  void setup();
 
-  void compute_value();
-
-private:
-  // class Var xvalue, yvalue, zvalue;    // Set force in x, y, and z directions.
-  // bool xset, yset, zset;               // Does the compute set the x, y, and z forces of the group?
+  void compute_value(Solid &solid);
 };
-//}
 #endif
 #endif
 

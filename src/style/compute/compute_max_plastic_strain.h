@@ -21,22 +21,14 @@ ComputeStyle(max_plastic_strain, ComputeMaxPlasticStrain)
 #define MPM_COMPUTE_MAX_PLASTIC_STRAIN_H
 
 #include <compute.h>
-#include <var.h>
 #include <vector>
 
 class ComputeMaxPlasticStrain : public Compute {
 public:
   ComputeMaxPlasticStrain(class MPM *, vector<string>);
-  ~ComputeMaxPlasticStrain();
-  void init();
-  void setup();
 
-  void compute_value();
+  void compute_value(Solid &solid);
 
-private:
-  // class Var xvalue, yvalue, zvalue;    // Set force in x, y, and z
-  // directions. bool xset, yset, zset;               // Does the compute set the x,
-  // y, and z forces of the group?
 };
 
 #endif

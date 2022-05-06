@@ -54,44 +54,28 @@ ComputeAverageTemperature::ComputeAverageTemperature(MPM *mpm, vector<string> ar
 
 ComputeAverageTemperature::~ComputeAverageTemperature() {}
 
-void ComputeAverageTemperature::init() {}
-
-void ComputeAverageTemperature::setup() {}
-
-void ComputeAverageTemperature::compute_value() {
-  if (update->ntimestep != output->next && update->ntimestep != update->nsteps)
-    return;
-
-  // Go through all the nodes in the group and set b to the right value:
-
-  int solid = group->solid[igroup];
-
-  Solid *s;
+void ComputeAverageTemperature::compute_value(Solid &solid) {
 
   double T, T_reduced;
 
-  T = 0;
-  T_reduced = 0;
+  Kokkos::View<double*> sT = solid.T;
+  Kokkos::View<int*> mask = solid.mask;
 
-  if (solid == -1) {
-    for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
-      s = domain->solids[isolid];
+  int groupbit = this->groupbit;
+  int nsteps = update->nsteps;
+  bigint next = output->next;
+  double ntimestep = update->ntimestep;
 
-      for (int ip = 0; ip < s->np_local; ip++) {
-        if (s->mask[ip] & groupbit) {
-          T += s->T[ip];
-        }
-      }
-    }
-  } else {
-    s = domain->solids[solid];
+  Kokkos::parallel_reduce("ComputeAverageStress::compute_value", solid.np_local,
+    			  KOKKOS_LAMBDA(const int &ip, double &lT) {
+   			  if ((ntimestep != next &&
+   			       ntimestep != nsteps) ||
+   			      !(mask[ip] & groupbit))
+   			    return;
 
-    for (int ip = 0; ip < s->np_local; ip++) {
-      if (s->mask[ip] & groupbit) {
-        T += s->T[ip];
-      }
-    }
-  }
+   			  lT += sT[ip];
+			  },T);
+
 
   // Reduce T:
   MPI_Allreduce(&T, &T_reduced, 1, MPI_DOUBLE, MPI_SUM, universe->uworld);
