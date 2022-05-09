@@ -73,7 +73,6 @@ FixConvectionParticles::FixConvectionParticles(MPM *mpm, vector<string> args):
 
 void FixConvectionParticles::prepare()
 {
-  Tinf->evaluate();
   qtot = 0;
 }
 
@@ -92,6 +91,8 @@ void FixConvectionParticles::initial_integrate(Solid &solid) {
   // Go through all the particles in the group and set v_update to the right value:
 
 
+  Tinf->evaluate();
+  double h = this->h;
   int groupbit = this->groupbit, dimension = domain->dimension;
   Kokkos::View<int*> mask = solid.mask;
   Kokkos::View<double*> T = solid.T, vol = solid.vol, gamma = solid.gamma;
@@ -113,7 +114,7 @@ void FixConvectionParticles::initial_integrate(Solid &solid) {
 	else         
 	  Ap = Kokkos::Experimental::pow(vol[ip], 2/3);
 	
-	double qtemp = h*(Tinf_(0, ip) - T[ip]);
+	double qtemp = h*(Tinf_(0, 0) - T[ip]);
 	gamma[ip] += Ap * qtemp * invcp;
 	lqtot += qtemp;
       }, qtot);
