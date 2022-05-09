@@ -60,7 +60,7 @@ ComputeAverageStress::ComputeAverageStress(MPM *mpm, vector<string> args)
 ComputeAverageStress::~ComputeAverageStress() {}
 
 void ComputeAverageStress::compute_value(Solid &solid) {
-
+#if 1
   double s0, s1, s2, s3, s4, s5;
 
   Kokkos::View<Matrix3d*> sigma = solid.sigma;
@@ -100,4 +100,33 @@ void ComputeAverageStress::compute_value(Solid &solid) {
   (*input->vars)[id + "_12"]=Var(id + "_12", sigma_reduced[3]/group->n_tot(igroup));
   (*input->vars)[id + "_02"]=Var(id + "_02", sigma_reduced[4]/group->n_tot(igroup));
   (*input->vars)[id + "_01"]=Var(id + "_01", sigma_reduced[5]/group->n_tot(igroup));
+
+#else
+  Matrix3d sigma_reduced_local, sigma_reduced;
+
+  Kokkos::View<Matrix3d*> sigma = solid.sigma;
+  Kokkos::View<int*> mask = solid.mask;
+
+  int groupbit = this->groupbit;
+
+  if (update->ntimestep == output->next ||
+		  update->ntimestep == update->nsteps)
+    Kokkos::parallel_reduce("ComputeAverageStress::compute_value", solid.np_local,
+		KOKKOS_LAMBDA(const int &ip,
+					        Matrix3d &sigma_reduced)
+    {
+			if (mask[ip] & groupbit)
+		    sigma_reduced += sigma[ip];
+		}, sigma_reduced_local);
+
+  // Reduce Stress:
+  MPI_Allreduce(sigma_reduced_local.elements, sigma_reduced.elements, 9, MPI_DOUBLE, MPI_SUM, universe->uworld);
+
+  /*(*input->vars)[id + "_11"]=Var(id + "_11", sigma_reduced[0]/group->n_tot(igroup));
+  (*input->vars)[id + "_22"]=Var(id + "_22", sigma_reduced[1]/group->n_tot(igroup));
+  (*input->vars)[id + "_33"]=Var(id + "_33", sigma_reduced[2]/group->n_tot(igroup));
+  (*input->vars)[id + "_12"]=Var(id + "_12", sigma_reduced[3]/group->n_tot(igroup));
+  (*input->vars)[id + "_02"]=Var(id + "_02", sigma_reduced[4]/group->n_tot(igroup));
+  (*input->vars)[id + "_01"]=Var(id + "_01", sigma_reduced[5]/group->n_tot(igroup));*/
+  #endif
 }
