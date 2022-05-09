@@ -49,6 +49,7 @@
 #include <expression_operand_literal.h>
 #include <expression_operand_index.h>
 #include <expression_operand_vector.h>
+#include <expression_operand_time.h>
 
 #include <expression_operators_arithmetic.h>
 #include <style_expression.h>
@@ -163,6 +164,8 @@ Input::Input(MPM *mpm, int argc, char **argv) : Pointers(mpm)
   operation_factory.register_class<ExpressionOperandVector<&Solid::x, &Grid::x, 0>>("x");
   operation_factory.register_class<ExpressionOperandVector<&Solid::x, &Grid::x, 1>>("y");
   operation_factory.register_class<ExpressionOperandVector<&Solid::x, &Grid::x, 2>>("z");
+
+  operation_factory.register_class<ExpressionOperandTime>("time");
 
 #define EXPRESSION_CLASS
 #define ExpressionStyle(key, Class) operation_factory.register_class<Class>(#key"(");

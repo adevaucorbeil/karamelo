@@ -11,7 +11,7 @@ void Expression::evaluate()
     expression_dependency->evaluate();
 
   index = 0;
-  registers = Kokkos::View<double**>("expression", 1);
+  registers = Kokkos::View<double**>("expression", registers.extent(0), 1);
 
   for (const std::unique_ptr<Operation> &operation: operations)
     operation->apply(this);
