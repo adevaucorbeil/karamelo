@@ -41,10 +41,11 @@ public:
   StyleFactory<Expression::Operation> operation_factory;
 
   // functions
-  Input(class MPM *, int, char **);
+  Input(MPM *, int, char **);
   ~Input();
   void file();                 ///< Reads the input file line by line and pass it to parsev().
-  class Var parsev(string);    ///< Parse an input text line.
+  Var parsev(string);          ///< Parse an input text line.
+  Expression &parsev(const string &, double);
   double parse(string);        ///< Deprecated function
 
 

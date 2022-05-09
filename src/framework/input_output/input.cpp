@@ -459,6 +459,33 @@ double Input::parse(string str){
   return nan("");
 }
 
+Expression &
+Input::parsev(const string &name, double value)
+{
+    const pair<map<string, Expression>::iterator, bool> it = expressions.emplace(piecewise_construct, forward_as_tuple(name), tuple<>());
+    
+    Expression &expression = it.first->second;
+
+    if (it.second)
+      expression.operations.emplace_back(new ExpressionOperandLiteral(value));
+    else
+    {
+      ExpressionOperandLiteral *literal;
+
+      if (expression.operations.size() == 1)
+        literal = dynamic_cast<ExpressionOperandLiteral *>(expression.operations.front().get());
+      else
+        literal = nullptr;
+    
+      if (literal)
+        literal->value = value;
+      else
+        error->all(FLERR, name + " was not a literal expression.\n");
+    }
+
+    return expression;
+}
+
 /*! This function translates the input file syntax, either mathematical expressions or functions, 
  * to C++ and evaluate or execute them.
  */

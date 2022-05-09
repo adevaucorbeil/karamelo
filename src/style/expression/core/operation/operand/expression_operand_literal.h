@@ -7,6 +7,8 @@ class ExpressionOperandLiteral:
 {
   double value;
 
+  friend class Input;
+
 public:
   ExpressionOperandLiteral(double value):
     value(value)
