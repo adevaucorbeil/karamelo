@@ -19,6 +19,7 @@
 #include <solid.h>
 #include <universe.h>
 #include <update.h>
+#include <expression_operation.h>
 
 
 using namespace std;
@@ -83,7 +84,9 @@ FixCuttingTool::FixCuttingTool(MPM *mpm, vector<string> args)
     cout << "Creating new fix FixCuttingTool with ID: " << args[0] << endl;
   }
   id = args[0];
-  K = input->parsev(args[3]).result(mpm);
+  
+  input->parsev(args[3]);
+  input->expressions[args[3]];
 
   xtvalue = input->parsev(args[4]);
   ytvalue = input->parsev(args[5]);
@@ -124,9 +127,9 @@ void FixCuttingTool::reduce()
   MPI_Allreduce(ftot.elements, ftot_reduced.elements, 3, MPI_DOUBLE, MPI_SUM,
                 universe->uworld);
 
-  (*input->vars)[id + "_x"] = Var(id + "_x", ftot_reduced[0]);
-  (*input->vars)[id + "_y"] = Var(id + "_y", ftot_reduced[1]);
-  (*input->vars)[id + "_z"] = Var(id + "_z", ftot_reduced[2]);
+  input->parsev(id + "_x", ftot_reduced[0]);
+  input->parsev(id + "_y", ftot_reduced[1]);
+  input->parsev(id + "_z", ftot_reduced[2]);
 }
 
 void FixCuttingTool::initial_integrate(Solid &solid) {

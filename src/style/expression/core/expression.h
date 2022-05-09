@@ -32,9 +32,13 @@ public:
   void evaluate(Solid &solid);
   void evaluate(Grid &grid);
 
-  KOKKOS_INLINE_FUNCTION double
-  operator[](int i) const
+  double
+  getConstant()
   {
-    return registers(0, registers.extent(1) > 1? i: 0);
+    evaluate();
+    auto element_device = Kokkos::subview(registers, 0, 0);
+    double element_host;
+    Kokkos::deep_copy(element_host, element_device);
+    return element_host;
   }
 };

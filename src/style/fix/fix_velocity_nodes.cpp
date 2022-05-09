@@ -179,7 +179,7 @@ void FixVelocityNodes::post_velocities_to_grid(Grid &grid) {
   // cout << "In FixVelocityNodes::post_velocities_to_grid()" << endl;
 
   // Go through all the particles in the group and set v to the right value:
-  for (int in = 0; in < grid.nnodes_local + grid.nnodes_ghost; in++)
+  /*for (int in = 0; in < grid.nnodes_local + grid.nnodes_ghost; in++)
   {
     if (!(grid.mask[in] & groupbit))
       continue;
@@ -187,7 +187,8 @@ void FixVelocityNodes::post_velocities_to_grid(Grid &grid) {
     if (xset) grid.v[in][0] = (*v[0])[in];
     if (yset) grid.v[in][1] = (*v[1])[in];
     if (zset) grid.v[in][2] = (*v[2])[in];
-  }
+  }*/
+  error->all(FLERR, "FixVelocityNodes::post_velocities_to_grid not parallelized");
 }
 
 void FixVelocityNodes::write_restart(ofstream *of) {

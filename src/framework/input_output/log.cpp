@@ -22,6 +22,7 @@
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
+#include <expression_operation.h>
 
 using namespace std;
 
@@ -79,11 +80,8 @@ void Log::parse_keywords(vector<string> keyword)
     else if (keyword[i].compare("dt")==0)   addfield("dt", &Log::compute_dt, FLOAT);
     else if (keyword[i].compare("time")==0) addfield("Time", &Log::compute_time, FLOAT);
     else {
-      // Check if the variable exists:
-      map<string, Var>::iterator it;
-      
-      it = input->vars->find(keyword[i]);
-      if (it != input->vars->end()){
+      // Check if the variable exists:   
+      if (input->vars->count(keyword[i]) || input->expressions.count(keyword[i]) ){
 	addfield(keyword[i], &Log::compute_var, FLOAT);
       } else {
 	error->all(FLERR,"Error: unknown log keyword " + keyword[i] + ".\n");
@@ -147,7 +145,11 @@ void Log::compute_time(string name)
 
 void Log::compute_var(string name)
 {
-  dvalue = (*input->vars)[name].result(mpm);
+  const map<string, Var>::iterator &it = input->vars->find(name);
+  if (it != input->vars->end())
+    dvalue = it->second.result(mpm);
+  else
+    dvalue = input->expressions[name].getConstant();
 }
 
 void Log::modify(vector<string> args)
