@@ -114,10 +114,10 @@ void FixCheckSolution::reduce()
   else
     vtot += domain->solids[solid]->vtot;
 
-  (*input->vars)[id + "_s"] = Var(id + "_s", sqrt((error_reduced[0] + error_reduced[1] + error_reduced[2])/vtot));
-  (*input->vars)[id + "_x"] = Var(id + "_x", (*input->vars)[id + "_x"].result() + update->dt*(error_reduced[0] + error_reduced[1] + error_reduced[2]));
-  (*input->vars)[id + "_y"] = Var(id + "_y", (*input->vars)[id + "_y"].result() + update->dt*(u_th_reduced[0] + u_th_reduced[1] + u_th_reduced[2]));
-  (*input->vars)[id + "_z"] = Var(id + "_z", sqrt((*input->vars)[id + "_x"].result()/(*input->vars)[id + "_y"].result()));
+  input->parsev(id + "_s", sqrt((error_reduced[0] + error_reduced[1] + error_reduced[2])/vtot));
+  input->parsev(id + "_x", (*input->vars)[id + "_x"].result() + update->dt*(error_reduced[0] + error_reduced[1] + error_reduced[2]));
+  input->parsev(id + "_y", (*input->vars)[id + "_y"].result() + update->dt*(u_th_reduced[0] + u_th_reduced[1] + u_th_reduced[2]));
+  input->parsev(id + "_z", sqrt((*input->vars)[id + "_x"].result()/(*input->vars)[id + "_y"].result()));
     // cout << "f for " << n << " nodes from solid " << domain->solids[solid]->id << " set." << endl;
   // cout << "ftot = [" << ftot[0] << ", " << ftot[1] << ", " << ftot[2] << "]\n"; 
 }

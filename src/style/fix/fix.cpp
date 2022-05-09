@@ -41,4 +41,9 @@ Fix::Fix(MPM *mpm, const vector<string> &args, int mask):
   (*input->vars)[id + "_y"] = Var(id + "_y", 0);
   (*input->vars)[id + "_z"] = Var(id + "_z", 0);
   (*input->vars)[id + "_s"] = Var(id + "_s", 0);
+
+  input->parsev(id + "_x", 0);
+  input->parsev(id + "_y", 0);
+  input->parsev(id + "_z", 0);
+  input->parsev(id + "_s", 0);
 }
