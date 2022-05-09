@@ -486,6 +486,8 @@ Input::parsev(const string &name, double value)
         error->all(FLERR, name + " was not a literal expression.\n");
     }
 
+    expression.registers = Kokkos::View<double**>("expression", 1, 1);
+
     return expression;
 }
 
@@ -586,7 +588,7 @@ Var Input::parsev(string str)
               else
               {
                 expression.expression_dependencies.insert(&it->second);
-                new_operation = new ExpressionOperandExpression(it->second);
+                new_operation = new ExpressionOperandExpression(current_token);
               }
             }
 
@@ -634,6 +636,9 @@ Var Input::parsev(string str)
         max_index = max(max_index, current_index -= operation->arity() - 1);
       }
 
+      if (!max_index)
+        cout << "MAX INDEX CANNOT BE ZERO" << endl;
+        
       expression.registers = Kokkos::View<double**>("expression", max_index, 1);
     }
   }
