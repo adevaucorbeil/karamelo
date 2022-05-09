@@ -24,6 +24,7 @@
 #include <universe.h>
 #include <update.h>
 #include <vector>
+#include <expression_operation.h>
 
 using namespace std;
 using namespace MathSpecial;
@@ -49,12 +50,12 @@ ComputeAverageStress::ComputeAverageStress(MPM *mpm, vector<string> args)
     cout << "Creating new compute ComputeAverageStress with ID: " << args[0] << endl;
   id = args[0];
 
-  (*input->vars)[id + "_11"]=Var(id + "_11", 0);
-  (*input->vars)[id + "_22"]=Var(id + "_22", 0);
-  (*input->vars)[id + "_33"]=Var(id + "_33", 0);
-  (*input->vars)[id + "_12"]=Var(id + "_12", 0);
-  (*input->vars)[id + "_13"]=Var(id + "_13", 0);
-  (*input->vars)[id + "_23"]=Var(id + "_23", 0);
+  input->parsev(id + "_11", 0);
+  input->parsev(id + "_22", 0);
+  input->parsev(id + "_33", 0);
+  input->parsev(id + "_12", 0);
+  input->parsev(id + "_13", 0);
+  input->parsev(id + "_23", 0);
 }
 
 ComputeAverageStress::~ComputeAverageStress() {}
@@ -94,12 +95,12 @@ void ComputeAverageStress::compute_value(Solid &solid) {
   double sigma_reduced[6] = {0, 0, 0, 0, 0, 0};
   MPI_Allreduce(s, sigma_reduced, 6, MPI_DOUBLE, MPI_SUM, universe->uworld);
 
-  (*input->vars)[id + "_11"]=Var(id + "_11", sigma_reduced[0]/group->n_tot(igroup));
-  (*input->vars)[id + "_22"]=Var(id + "_22", sigma_reduced[1]/group->n_tot(igroup));
-  (*input->vars)[id + "_33"]=Var(id + "_33", sigma_reduced[2]/group->n_tot(igroup));
-  (*input->vars)[id + "_12"]=Var(id + "_12", sigma_reduced[3]/group->n_tot(igroup));
-  (*input->vars)[id + "_02"]=Var(id + "_02", sigma_reduced[4]/group->n_tot(igroup));
-  (*input->vars)[id + "_01"]=Var(id + "_01", sigma_reduced[5]/group->n_tot(igroup));
+  input->parsev(id + "_11", sigma_reduced[0]/group->n_tot(igroup));
+  input->parsev(id + "_22", sigma_reduced[1]/group->n_tot(igroup));
+  input->parsev(id + "_33", sigma_reduced[2]/group->n_tot(igroup));
+  input->parsev(id + "_12", sigma_reduced[3]/group->n_tot(igroup));
+  input->parsev(id + "_13", sigma_reduced[4]/group->n_tot(igroup));
+  input->parsev(id + "_23", sigma_reduced[5]/group->n_tot(igroup));
 
 #else
   Matrix3d sigma_reduced_local, sigma_reduced;
@@ -122,11 +123,11 @@ void ComputeAverageStress::compute_value(Solid &solid) {
   // Reduce Stress:
   MPI_Allreduce(sigma_reduced_local.elements, sigma_reduced.elements, 9, MPI_DOUBLE, MPI_SUM, universe->uworld);
 
-  /*(*input->vars)[id + "_11"]=Var(id + "_11", sigma_reduced[0]/group->n_tot(igroup));
-  (*input->vars)[id + "_22"]=Var(id + "_22", sigma_reduced[1]/group->n_tot(igroup));
-  (*input->vars)[id + "_33"]=Var(id + "_33", sigma_reduced[2]/group->n_tot(igroup));
-  (*input->vars)[id + "_12"]=Var(id + "_12", sigma_reduced[3]/group->n_tot(igroup));
-  (*input->vars)[id + "_02"]=Var(id + "_02", sigma_reduced[4]/group->n_tot(igroup));
-  (*input->vars)[id + "_01"]=Var(id + "_01", sigma_reduced[5]/group->n_tot(igroup));*/
+  input->parsev(id + "_11", sigma_reduced(0,0)/group->n_tot(igroup));
+  input->parsev(id + "_22", sigma_reduced(1,1)/group->n_tot(igroup));
+  input->parsev(id + "_33", sigma_reduced(2,2)/group->n_tot(igroup));
+  input->parsev(id + "_12", sigma_reduced(0,1)/group->n_tot(igroup));
+  input->parsev(id + "_13", sigma_reduced(0,2)/group->n_tot(igroup));
+  input->parsev(id + "_23", sigma_reduced(1,2)/group->n_tot(igroup));
   #endif
 }

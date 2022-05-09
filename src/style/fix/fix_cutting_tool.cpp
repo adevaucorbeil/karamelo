@@ -86,7 +86,7 @@ FixCuttingTool::FixCuttingTool(MPM *mpm, vector<string> args)
   id = args[0];
   
   input->parsev(args[3]);
-  input->expressions[args[3]];
+  K = input->expressions[args[3]].getConstant();
 
   xtvalue = input->parsev(args[4]);
   ytvalue = input->parsev(args[5]);
