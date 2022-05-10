@@ -62,26 +62,23 @@ void ComputeStrainEnergy::compute_value(Solid &solid) {
   Kokkos::View<int*> mask = solid.mask;
 
   int groupbit = this->groupbit;
-  int nsteps = update->nsteps;
-  bigint next = output->next;
-  double ntimestep = update->ntimestep;
 
-  Kokkos::parallel_reduce("ComputeAverageStress::compute_value", solid.np_local,
-			  KOKKOS_LAMBDA(const int &ip, double &lEs) {
-			 if ((ntimestep != next &&
-			      ntimestep != nsteps) ||
-			     !(mask[ip] & groupbit))
-			   return;
-			 lEs += 0.5*vol[ip]*(sigma[ip](0,0)*strain_el[ip](0,0)
-				+ sigma[ip](0,1)*strain_el[ip](0,1)
-				+ sigma[ip](0,2)*strain_el[ip](0,2)
-				+ sigma[ip](1,0)*strain_el[ip](1,0)
-				+ sigma[ip](1,1)*strain_el[ip](1,1)
-				+ sigma[ip](1,2)*strain_el[ip](1,2)
-				+ sigma[ip](2,0)*strain_el[ip](2,0)
-				+ sigma[ip](2,1)*strain_el[ip](2,1)
-				+ sigma[ip](2,2)*strain_el[ip](2,2));
-			  },Es);
+  if (update->ntimestep == output->next ||
+      update->ntimestep == update->nsteps)
+
+    Kokkos::parallel_reduce("ComputeStrainEnergy::compute_value", solid.np_local,
+			    KOKKOS_LAMBDA(const int &ip, double &lEs) {
+			      if (mask[ip] & groupbit)
+				lEs += 0.5*vol[ip]*(sigma[ip](0,0)*strain_el[ip](0,0)
+						    + sigma[ip](0,1)*strain_el[ip](0,1)
+						    + sigma[ip](0,2)*strain_el[ip](0,2)
+						    + sigma[ip](1,0)*strain_el[ip](1,0)
+						    + sigma[ip](1,1)*strain_el[ip](1,1)
+						    + sigma[ip](1,2)*strain_el[ip](1,2)
+						    + sigma[ip](2,0)*strain_el[ip](2,0)
+						    + sigma[ip](2,1)*strain_el[ip](2,1)
+						    + sigma[ip](2,2)*strain_el[ip](2,2));
+			    },Es);
 
 
   // Reduce Es:

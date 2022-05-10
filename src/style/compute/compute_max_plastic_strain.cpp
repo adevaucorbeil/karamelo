@@ -63,20 +63,16 @@ void ComputeMaxPlasticStrain::compute_value(Solid &solid) {
   Kokkos::View<int*> mask = solid.mask;
 
   int groupbit = this->groupbit;
-  int nsteps = update->nsteps;
-  bigint next = output->next;
-  double ntimestep = update->ntimestep;
 
-  Kokkos::parallel_reduce("ComputeAverageStress::compute_value", solid.np_local,
-			  KOKKOS_LAMBDA(const int &ip, double &lTmax, double &lEpmax) {
-			 if ((ntimestep != next &&
-			      ntimestep != nsteps) ||
-			     !(mask[ip] & groupbit))
-			   return;
-
-			 lTmax = lTmax > T[ip] ? lTmax : T[ip];
-			 lEpmax = lEpmax > eff_plastic_strain[ip] ? lEpmax : eff_plastic_strain[ip];
-			  },Tmax, Epmax);
+  if (update->ntimestep == output->next ||
+      update->ntimestep == update->nsteps)
+    Kokkos::parallel_reduce("ComputeMaxPlasticStrain::compute_value", solid.np_local,
+			    KOKKOS_LAMBDA(const int &ip, double &lTmax, double &lEpmax) {
+			      if (mask[ip] & groupbit) {
+				lTmax = lTmax > T[ip] ? lTmax : T[ip];
+				lEpmax = lEpmax > eff_plastic_strain[ip] ? lEpmax : eff_plastic_strain[ip];
+			      }
+			    },Kokkos::Max<double>(Tmax), Kokkos::Max<double>(Epmax));
 
   // Reduce Epmax:
   MPI_Allreduce(&Epmax, &Epmax_reduced, 1, MPI_DOUBLE, MPI_MAX, universe->uworld);

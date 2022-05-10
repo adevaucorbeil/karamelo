@@ -67,22 +67,18 @@ void ComputeAverageVelocity::compute_value(Solid &solid) {
   Kokkos::View<int*> mask = solid.mask;
 
   int groupbit = this->groupbit;
-  int nsteps = update->nsteps;
-  bigint next = output->next;
-  double ntimestep = update->ntimestep;
 
-  Kokkos::parallel_reduce("ComputeAverageStress::compute_value", solid.np_local,
-			  KOKKOS_LAMBDA(const int &ip,
-					double &lvx, double &lvy, double &lvz) {
-			 if ((ntimestep != next &&
-			      ntimestep != nsteps) ||
-			     !(mask[ip] & groupbit))
-			   return;
-
-			 lvx = sv[ip](0);
-			 lvy = sv[ip](1);
-			 lvz = sv[ip](2);
-			  },vx, vy, vz);
+  if (update->ntimestep == output->next ||
+      update->ntimestep == update->nsteps)
+    Kokkos::parallel_reduce("ComputeAverageVelocity::compute_value", solid.np_local,
+			    KOKKOS_LAMBDA(const int &ip,
+					  double &lvx, double &lvy, double &lvz) {
+			      if(mask[ip] & groupbit) {
+				lvx = sv[ip](0);
+				lvy = sv[ip](1);
+				lvz = sv[ip](2);
+			      }
+			    },vx, vy, vz);
 
 
   // Reduce velocity:

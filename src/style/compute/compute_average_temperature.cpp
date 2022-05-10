@@ -62,18 +62,14 @@ void ComputeAverageTemperature::compute_value(Solid &solid) {
   Kokkos::View<int*> mask = solid.mask;
 
   int groupbit = this->groupbit;
-  int nsteps = update->nsteps;
-  bigint next = output->next;
-  double ntimestep = update->ntimestep;
 
-  Kokkos::parallel_reduce("ComputeAverageStress::compute_value", solid.np_local,
+  if (update->ntimestep == output->next ||
+      update->ntimestep == update->nsteps)
+
+  Kokkos::parallel_reduce("ComputeAverageTemperature::compute_value", solid.np_local,
     			  KOKKOS_LAMBDA(const int &ip, double &lT) {
-   			  if ((ntimestep != next &&
-   			       ntimestep != nsteps) ||
-   			      !(mask[ip] & groupbit))
-   			    return;
-
-   			  lT += sT[ip];
+			      if (mask[ip] & groupbit)
+				lT += sT[ip];
 			  },T);
 
 

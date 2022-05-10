@@ -68,26 +68,22 @@ void ComputeAverageStress::compute_value(Solid &solid) {
   Kokkos::View<int*> mask = solid.mask;
 
   int groupbit = this->groupbit;
-  int nsteps = update->nsteps;
-  bigint next = output->next;
-  double ntimestep = update->ntimestep;
 
-  Kokkos::parallel_reduce("ComputeAverageStress::compute_value", solid.np_local,
-			  KOKKOS_LAMBDA(const int &ip,
-					double &ls0, double &ls1, double &ls2,
-					double &ls3, double &ls4, double &ls5) {
-			 if ((ntimestep != next &&
-			      ntimestep != nsteps) ||
-			     !(mask[ip] & groupbit))
-			   return;
-
-			 ls0 += sigma[ip](0, 0);
-			 ls1 += sigma[ip](1, 1);
-			 ls2 += sigma[ip](2, 2);
-			 ls3 += sigma[ip](1, 2);
-			 ls4 += sigma[ip](0, 2);
-			 ls5 += sigma[ip](0, 1);
-			  },s0, s1, s2, s3, s4, s5);
+  if (update->ntimestep == output->next ||
+      update->ntimestep == update->nsteps)
+    Kokkos::parallel_reduce("ComputeAverageStress::compute_value", solid.np_local,
+			    KOKKOS_LAMBDA(const int &ip,
+					  double &ls0, double &ls1, double &ls2,
+					  double &ls3, double &ls4, double &ls5) {
+			      if (mask[ip] & groupbit) {
+				ls0 += sigma[ip](0, 0);
+				ls1 += sigma[ip](1, 1);
+				ls2 += sigma[ip](2, 2);
+				ls3 += sigma[ip](1, 2);
+				ls4 += sigma[ip](0, 2);
+				ls5 += sigma[ip](0, 1);
+			      }
+			    },s0, s1, s2, s3, s4, s5);
 
   // Reduce Stress:
 
@@ -111,14 +107,14 @@ void ComputeAverageStress::compute_value(Solid &solid) {
   int groupbit = this->groupbit;
 
   if (update->ntimestep == output->next ||
-		  update->ntimestep == update->nsteps)
+      update->ntimestep == update->nsteps)
     Kokkos::parallel_reduce("ComputeAverageStress::compute_value", solid.np_local,
-		KOKKOS_LAMBDA(const int &ip,
-					        Matrix3d &sigma_reduced)
-    {
-			if (mask[ip] & groupbit)
-		    sigma_reduced += sigma[ip];
-		}, sigma_reduced_local);
+			    KOKKOS_LAMBDA(const int &ip,
+					  Matrix3d &sigma_reduced)
+			    {
+			      if (mask[ip] & groupbit)
+				sigma_reduced += sigma[ip];
+			    }, sigma_reduced_local);
 
   // Reduce Stress:
   MPI_Allreduce(sigma_reduced_local.elements, sigma_reduced.elements, 9, MPI_DOUBLE, MPI_SUM, universe->uworld);
