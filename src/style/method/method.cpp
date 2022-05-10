@@ -410,19 +410,19 @@ void Method::update_grid_velocities(Grid &grid)
   Kokkos::parallel_for("update_grid_velocities", grid.nnodes_local + grid.nnodes_ghost,
   KOKKOS_LAMBDA (const int &in)
   {
-    double T_update;
+    double mass = grid.mass[in];
   
     Vector3d &v_update = grid.v_update[in] = grid.v[in];
     if (temp)
-      T_update = grid.T_update[in] = grid.T[in];
 
-    if (double mass = grid.mass[in])
-    {
+    if (mass)
       if (!grid.rigid[in])
         v_update += dt*(grid.f[in] + grid.mb[in])/mass;
 
-      if (temp)
-        T_update += dt*(grid.Qint[in] + grid.Qext[in])/mass;
+    if (temp) {
+      double &T_update = grid.T_update[in] = grid.T[in];
+      if (mass)
+	T_update += dt*(grid.Qint[in] + grid.Qext[in])/mass;
     }
   });
 }
@@ -460,7 +460,7 @@ void Method::compute_velocity_acceleration(Solid &solid)
         f += delta_a*solid.mass[ip];
 
         if (temp)
-          T += wf*grid.T_update[in];
+          T += wf*(grid.T_update[in] - grid.T[in]);
       }
     }
 
@@ -468,7 +468,7 @@ void Method::compute_velocity_acceleration(Solid &solid)
     solid.a[ip] = a;
     solid.f[ip] = f;
     if (temp)
-      solid.T[ip] += T;
+      solid.T[ip] = T;
   });
 }
 
