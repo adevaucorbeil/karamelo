@@ -118,6 +118,8 @@ void FixConvectionParticles::initial_integrate(Solid &solid) {
 	gamma[ip] += Ap * qtemp * invcp;
 	lqtot += qtemp;
       }, qtot);
+
+  cout << update->ntimestep << " - qtot=" << qtot << " fix "<< id << endl;
 }
 
 void FixConvectionParticles::write_restart(ofstream *of) {

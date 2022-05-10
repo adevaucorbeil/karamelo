@@ -97,23 +97,20 @@ void FixInitialVelocityParticles::initial_integrate(Solid &solid) {
 
 
   int groupbit = this->groupbit;
-  double ntimestep = update->ntimestep;
   Kokkos::View<int*> mask = solid.mask;
   Kokkos::View<Vector3d*> sv = solid.v;
 
+  if (update->ntimestep == 1) 
+    for (int i = 0; i < 3; i++)
+      if (v[i])
+	{
+	  Kokkos::View<double **> v_i = v[i]->registers;
 
-  for (int i = 0; i < 3; i++)
-    if (v[i])
-    {
-      Kokkos::View<double **> v_i = v[i]->registers;
-
-      Kokkos::parallel_for("FixInitialVelocityParticles::initial_integrate", solid.np_local,
-                              KOKKOS_LAMBDA(const int &ip)
-      {
-	if (ntimestep != 1 || !(mask[ip] & groupbit))
-          return;
-
-        sv[ip][i] = v_i(0, ip);
-      });
-    }
+	  Kokkos::parallel_for("FixInitialVelocityParticles::initial_integrate", solid.np_local,
+			       KOKKOS_LAMBDA(const int &ip)
+          {
+	    if (mask[ip] & groupbit)
+	      sv[ip][i] = v_i(0, ip);
+	  });
+	}
 }

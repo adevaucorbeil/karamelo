@@ -74,7 +74,6 @@ FixHeatFluxParticles::FixHeatFluxParticles(MPM *mpm, vector<string> args):
 
 void FixHeatFluxParticles::prepare()
 {
-  q->evaluate();
   qtot = 0;
 }
 
@@ -91,6 +90,8 @@ void FixHeatFluxParticles::reduce()
 
 void FixHeatFluxParticles::initial_integrate(Solid &solid)
 {
+  q->evaluate(solid);
+
   // Go through all the particles in the group and set v_update to the right value:
 
   int groupbit = this->groupbit, dimension = domain->dimension;
@@ -98,7 +99,7 @@ void FixHeatFluxParticles::initial_integrate(Solid &solid)
   Kokkos::View<double*> T = solid.T, vol = solid.vol, gamma = solid.gamma;
   double invcp = solid.mat->invcp;
 
-  Kokkos::View<double**> q_ = q->registers;
+  Kokkos::View<double**> q_i = q->registers;
 
   Kokkos::parallel_reduce("FixVelocityNodes::post_update_grid_state", solid.np_local,
 			  KOKKOS_LAMBDA(const int &ip, double &lqtot)
@@ -114,8 +115,8 @@ void FixHeatFluxParticles::initial_integrate(Solid &solid)
 	else         
 	  Ap = Kokkos::Experimental::pow(vol[ip], 2/3);
 
-	gamma[ip] += Ap * q_(0,ip) * invcp;
-	lqtot += q_(0,ip);
+	gamma[ip] += Ap * q_i(0,ip) * invcp;
+	lqtot += q_i(0,ip);
       }, qtot);
 }
 
