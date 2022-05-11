@@ -410,19 +410,21 @@ void Method::update_grid_velocities(Grid &grid)
   Kokkos::parallel_for("update_grid_velocities", grid.nnodes_local + grid.nnodes_ghost,
   KOKKOS_LAMBDA (const int &in)
   {
-    double mass = grid.mass[in];
+    double T_update;
   
     Vector3d &v_update = grid.v_update[in] = grid.v[in];
     if (temp)
+      T_update = grid.T_update[in] = grid.T[in];
 
-    if (mass)
+    if (double mass = grid.mass[in])
+    {
       if (!grid.rigid[in])
         v_update += dt*(grid.f[in] + grid.mb[in])/mass;
 
-    if (temp) {
-      double &T_update = grid.T_update[in] = grid.T[in];
-      if (mass)
-	T_update += dt*(grid.Qint[in] + grid.Qext[in])/mass;
+      if (temp) {
+        T_update += dt*(grid.Qint[in] + grid.Qext[in])/mass;
+	grid.T_update[in] = T_update;
+      }
     }
   });
 }

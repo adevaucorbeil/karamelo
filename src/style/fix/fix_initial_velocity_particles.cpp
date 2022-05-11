@@ -81,7 +81,7 @@ FixInitialVelocityParticles::FixInitialVelocityParticles(MPM *mpm, vector<string
   if (domain->dimension == 3 && args[5] != "NULL") {
     input->parsev(args[5]);
     zset = true;
-    v[2] = &input->expressions[args[5]];    
+    v[2] = &input->expressions[args[5]];
   } else
     v[2] = nullptr;
 }
@@ -90,6 +90,9 @@ void FixInitialVelocityParticles::initial_integrate(Solid &solid) {
   // cout << "In FixInitialVelocityParticles::initial_integrate()" << endl;
 
   // Go through all the nodes in the group and set v to the right value:
+
+  if (update->ntimestep != 1)
+    return;
 
   for (int i = 0; i < 3; i++)
     if (v[i])
@@ -100,17 +103,16 @@ void FixInitialVelocityParticles::initial_integrate(Solid &solid) {
   Kokkos::View<int*> mask = solid.mask;
   Kokkos::View<Vector3d*> sv = solid.v;
 
-  if (update->ntimestep == 1) 
-    for (int i = 0; i < 3; i++)
-      if (v[i])
-	{
-	  Kokkos::View<double **> v_i = v[i]->registers;
+  for (int i = 0; i < 3; i++)
+    if (v[i])
+      {
+	Kokkos::View<double **> v_i = v[i]->registers;
 
-	  Kokkos::parallel_for("FixInitialVelocityParticles::initial_integrate", solid.np_local,
-			       KOKKOS_LAMBDA(const int &ip)
-          {
-	    if (mask[ip] & groupbit)
-	      sv[ip][i] = v_i(0, ip);
-	  });
-	}
+	Kokkos::parallel_for("FixInitialVelocityParticles::initial_integrate", solid.np_local,
+			     KOKKOS_LAMBDA(const int &ip)
+			     {
+			       if (mask[ip] & groupbit)
+				 sv[ip][i] = v_i(0, ip);
+			     });
+      }
 }
