@@ -28,6 +28,10 @@ class ComputeStrainEnergy : public Compute {
   ComputeStrainEnergy(class MPM *, vector<string>);
   
   void compute_value(Solid &solid);
+
+private:
+  int t;
+  double Es;
 };
 
 #endif

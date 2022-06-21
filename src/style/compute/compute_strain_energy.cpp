@@ -46,14 +46,20 @@ ComputeStrainEnergy::ComputeStrainEnergy(MPM *mpm, vector<string> args) : Comput
     cout << "Creating new compute ComputeStrainEnergy with ID: " << args[0] << endl;
   id = args[0];
 
-  (*input->vars)[id]=Var(id, 0);
+  input->parsev(id, 0);
+
+  t = update->ntimestep;
+  Es = 0;
 }
 
 void ComputeStrainEnergy::compute_value(Solid &solid) {
+  double Es_tmp, Es_reduced = 0;
 
-  double Es, Es_reduced;
+  if (t != update->ntimestep) {
+    t = update->ntimestep;
+    Es = 0;
+  }
 
-  Es = 0;
   Es_reduced = 0;
 
   Kokkos::View<Matrix3d*> sigma = solid.sigma;
@@ -78,10 +84,11 @@ void ComputeStrainEnergy::compute_value(Solid &solid) {
 						    + sigma[ip](2,0)*strain_el[ip](2,0)
 						    + sigma[ip](2,1)*strain_el[ip](2,1)
 						    + sigma[ip](2,2)*strain_el[ip](2,2));
-			    },Es);
+			    },Es_tmp);
 
+    Es += Es_tmp;
 
   // Reduce Es:
   MPI_Allreduce(&Es,&Es_reduced,1,MPI_DOUBLE,MPI_SUM,universe->uworld);
-  (*input->vars)[id]=Var(id, Es_reduced);
+  input->parsev(id, Es_reduced);
 }

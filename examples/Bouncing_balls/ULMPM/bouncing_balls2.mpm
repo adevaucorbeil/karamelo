@@ -34,18 +34,18 @@ group(gBall1, particles, region, rBall1, solid, sBall1)
 group(gBall2, particles, region, rBall2, solid, sBall2)
 v = 0.1
 fix(v0Ball1, initial_velocity_particles, gBall1, v, v, NULL)
-fix(v0Ball2, initial_velocity_particles, gBall2, -v, -v, NULL)
+fix(v0Ball2, initial_velocity_particles, gBall2, 0-v, 0-v, NULL)
 
 #-----------OUTPUT-------------------------------------#
 N_log = 50
 dumping_interval = N_log*1
-dump(dump1, all, particle, dumping_interval, dump_p.*.LAMMPS, x, y, z)
-dump(dump2, all, grid, dumping_interval, dump_g.*.LAMMPS, x, y, z)
+#dump(dump1, all, particle, dumping_interval, dump_p.*.LAMMPS, x, y, z)
+#dump(dump2, all, grid, dumping_interval, dump_g.*.LAMMPS, x, y, z)
 #dump(dump3, all, pyplot, 1, dump.*.pdf, 500, 500)
 #-----------OUTPUTS------------------#
 compute(Ek, kinetic_energy, all)
 compute(Es, strain_energy, all)
-Etot = Ek + Es
+#Etot = Ek + Es
 #----------- RUN --------------------#
 
 #dt_factor(0.1)  # => adaptive time step with CFL = 0.1

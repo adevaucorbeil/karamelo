@@ -342,8 +342,6 @@ int Domain::which_CPU_owns_me(double x, double y, double z) {
       }
     }
   }
-
-  return -1;
 }
 
 

@@ -24,6 +24,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <expression_operation.h>
 
 using namespace std;
 using namespace MathSpecial;
@@ -51,15 +52,23 @@ ComputeKineticEnergy::ComputeKineticEnergy(MPM *mpm, vector<string> args)
     cout << "Creating new compute ComputeKineticEnergy with ID: " << args[0] << endl;
   id = args[0];
 
-  (*input->vars)[id]=Var(id, 0);
+  input->parsev(id, 0);
+
+  //(*input->vars)[id]=Var(id, 0);
+  t = update->ntimestep;
+  Ek = 0;
 }
 
 ComputeKineticEnergy::~ComputeKineticEnergy() {}
 
 void ComputeKineticEnergy::compute_value(Solid &solid) {
-  double Ek, Ek_reduced;
+  double Ek_tmp, Ek_reduced = 0;
 
-  Ek = 0;
+  if (t != update->ntimestep) {
+    t = update->ntimestep;
+    Ek = 0;
+  }
+
   Ek_reduced = 0;
 
   Kokkos::View<Vector3d*> v = solid.v;
@@ -69,14 +78,18 @@ void ComputeKineticEnergy::compute_value(Solid &solid) {
   int groupbit = this->groupbit;
 
   if (update->ntimestep == output->next ||
-      update->ntimestep == update->nsteps)
+      update->ntimestep == update->nsteps){
     Kokkos::parallel_reduce("ComputeKineticEnergy::compute_value", solid.np_local,
-			  KOKKOS_LAMBDA(const int &ip, double &lEk) {
+			    KOKKOS_LAMBDA(const int &ip, double &lEk) {
 			      if (mask[ip] & groupbit)
-				lEk += 0.5 * mass[ip] * square(v[ip].norm());
-			    },Ek);
+				lEk += 0.5 * mass[ip] * (v[ip](0)*v[ip](0)
+							 + v[ip](1)*v[ip](1)
+							 + v[ip](2)*v[ip](2));
+			    },Ek_tmp);
+    Ek += Ek_tmp;
+  }
 
   // Reduce Ek:
   MPI_Allreduce(&Ek, &Ek_reduced, 1, MPI_DOUBLE, MPI_SUM, universe->uworld);
-  (*input->vars)[id] = Var(id, Ek_reduced);
+  input->parsev(id, Ek_reduced);
 }

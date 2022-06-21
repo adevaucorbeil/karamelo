@@ -29,6 +29,10 @@ class ComputeKineticEnergy : public Compute {
   ~ComputeKineticEnergy();
 
   void compute_value(Solid &solid);
+
+private:
+  int t;
+  double Ek;
 };
 
 #endif
