@@ -146,15 +146,18 @@ void FixVelocityNodes::post_update_grid_state(Grid &grid)
 
   // Go through all the nodes in the group and set v_update to the right value:
 
-  for (int i = 0; i < 3; i++)
+  for (int i = 0; i < 3; i++) {
     if (v[i])
       v[i]->evaluate(grid);
+    if (v_prev[i])
+      v_prev[i]->evaluate(grid);
+  }
 
   int groupbit = this->groupbit;
   double dt = update->dt;
   Kokkos::View<double*> mass = grid.mass;
   Kokkos::View<int*> mask = grid.mask;
-  Kokkos::View<Vector3d*> gv = grid.v, v_update = grid.v_update;
+  Kokkos::View<Vector3d*> gv = grid.v, gv_update = grid.v_update;
 
   for (int i = 0; i < 3; i++)
     if (v[i])
@@ -168,9 +171,12 @@ void FixVelocityNodes::post_update_grid_state(Grid &grid)
         if (!(mask[in] & groupbit))
           return;
 
-        gv[in][i] = v_prev_i(0, in);
+	gv[in][i] = v_i(0, in);
 
-        ftot_i += mass[in]*((v_update[in][i] = v_i(0, in)) - v_update[in][i])/dt;
+        ftot_i += mass[in]*(v_i(0, in) - gv_update[in][i])/dt;
+
+	gv_update[in][i] = v_prev_i(0, in);
+
       }, ftot[i]);
     }
 }
@@ -179,16 +185,31 @@ void FixVelocityNodes::post_velocities_to_grid(Grid &grid) {
   // cout << "In FixVelocityNodes::post_velocities_to_grid()" << endl;
 
   // Go through all the particles in the group and set v to the right value:
-  /*for (int in = 0; in < grid.nnodes_local + grid.nnodes_ghost; in++)
-  {
-    if (!(grid.mask[in] & groupbit))
-      continue;
 
-    if (xset) grid.v[in][0] = (*v[0])[in];
-    if (yset) grid.v[in][1] = (*v[1])[in];
-    if (zset) grid.v[in][2] = (*v[2])[in];
-  }*/
-  error->all(FLERR, "FixVelocityNodes::post_velocities_to_grid not parallelized");
+  for (int i = 0; i < 3; i++) {
+    if (v[i])
+      v[i]->evaluate(grid);
+  }
+
+  int groupbit = this->groupbit;
+  Kokkos::View<int*> mask = grid.mask;
+  Kokkos::View<Vector3d*> gv = grid.v;
+
+  for (int i = 0; i < 3; i++)
+    if (v[i])
+    {
+      Kokkos::View<double **> v_i = v[i]->registers;
+
+      Kokkos::parallel_for("FixVelocityNodes::post_velocities_to_grid", grid.nnodes_local + grid.nnodes_ghost,
+                              KOKKOS_LAMBDA(const int &in)
+      {
+        if (!(mask[in] & groupbit))
+          return;
+
+	gv[in][i] = v_i(0, in);
+      });
+    }
+
 }
 
 void FixVelocityNodes::write_restart(ofstream *of) {

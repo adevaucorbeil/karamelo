@@ -64,13 +64,17 @@ TemperaturePlasticWork::compute_heat_source(Solid &solid,
   double Tm = this->Tm;
   double chi = this->chi;
 
+  Kokkos::View<double*> seff_plastic_strain_rate = solid.eff_plastic_strain_rate;
+  Kokkos::View<double*> sgamma = solid.gamma;
+  Kokkos::View<double*> sT = solid.T;
+
   Kokkos::parallel_for("TemperaturePlasticWork::compute_heat_source", solid.np_local,
   KOKKOS_LAMBDA (const int &ip)
   {
-    if (solid.T[ip] < Tm)
-      solid.gamma[ip] = chi*SQRT_3_OVER_2*sigma_dev[ip].norm()*solid.eff_plastic_strain_rate[ip];
+    if (sT[ip] < Tm)
+      sgamma[ip] = chi*SQRT_3_OVER_2*sigma_dev[ip].norm()*seff_plastic_strain_rate[ip];
     else
-      solid.gamma[ip] = 0;
+      sgamma[ip] = 0;
   });
 }
 

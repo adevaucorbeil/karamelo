@@ -54,7 +54,6 @@ ComputeKineticEnergy::ComputeKineticEnergy(MPM *mpm, vector<string> args)
 
   input->parsev(id, 0);
 
-  //(*input->vars)[id]=Var(id, 0);
   t = update->ntimestep;
   Ek = 0;
 }

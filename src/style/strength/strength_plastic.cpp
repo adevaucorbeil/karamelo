@@ -69,6 +69,10 @@ StrengthPlastic::update_deviatoric_stress(Solid &solid,
   
   double dt = update->dt;
 
+  Kokkos::View<Matrix3d*> ssigma = solid.sigma;
+  Kokkos::View<Matrix3d*> sD = solid.D;
+  Kokkos::View<double*> sdamage = solid.damage;
+
   Kokkos::parallel_for("EOSLinear::compute_pressure", solid.np_local,
   KOKKOS_LAMBDA (const int &ip)
   {
@@ -78,10 +82,10 @@ StrengthPlastic::update_deviatoric_stress(Solid &solid,
     /*
      * deviatoric rate of unrotated stress
      */
-    Gd = G_*(1 - solid.damage[ip]);
-    yieldStressD = yieldStress*(1 - solid.damage[ip]);
-    dev_rate = 2*Gd*Deviator(solid.D[ip]);
-    sigmaInitial_dev = Deviator(solid.sigma[ip]);
+    Gd = G_*(1 - sdamage[ip]);
+    yieldStressD = yieldStress*(1 - sdamage[ip]);
+    dev_rate = 2*Gd*Deviator(sD[ip]);
+    sigmaInitial_dev = Deviator(ssigma[ip]);
 
     /*
      * perform a trial elastic update to the deviatoric stress

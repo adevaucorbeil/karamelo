@@ -45,7 +45,7 @@ DumpGridGz::DumpGridGz(MPM *mpm, vector<string> args) : Dump(mpm, args) {
   bool bxyz = true;
   bool ntypexyz = true;
 
-  const Grid &g = *domain->grid;
+  const Grid &g  = *domain->solids.front()->grid;
 
   ntag = create_mirror(g.ntag);
 

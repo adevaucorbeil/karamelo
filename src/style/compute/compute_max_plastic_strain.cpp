@@ -50,13 +50,21 @@ ComputeMaxPlasticStrain::ComputeMaxPlasticStrain(MPM *mpm, vector<string> args)
     cout << "Creating new compute ComputeMaxPlasticStrain with ID: " << args[0] << endl;
   id = args[0];
 
-  (*input->vars)[id + "_Epmax"] = Var(id + "_Epmax", 0);
-  (*input->vars)[id + "_Tmax"] = Var(id + "_Tmax", 0);
+  input->parsev(id + "_Epmax", 0);
+  input->parsev(id + "_Tmax", 0);
+
+  t = update->ntimestep;
+  Epmax = Tmax = 0;
 }
 
 void ComputeMaxPlasticStrain::compute_value(Solid &solid) {
 
-  double Epmax(0.), Epmax_reduced(0.), Tmax(0.), Tmax_reduced(0.);
+  if (t != update->ntimestep) {
+    t = update->ntimestep;
+    Epmax = Tmax = 0;
+  }
+
+  double Epmax_reduced(0.), Tmax_reduced(0.), Epmax_tmp(0.), Tmax_tmp(0.);
 
   Kokkos::View<double*> T = solid.T;
   Kokkos::View<double*> eff_plastic_strain = solid.eff_plastic_strain;
@@ -65,20 +73,25 @@ void ComputeMaxPlasticStrain::compute_value(Solid &solid) {
   int groupbit = this->groupbit;
 
   if (update->ntimestep == output->next ||
-      update->ntimestep == update->nsteps)
+      update->ntimestep == update->nsteps) {
     Kokkos::parallel_reduce("ComputeMaxPlasticStrain::compute_value", solid.np_local,
 			    KOKKOS_LAMBDA(const int &ip, double &lTmax, double &lEpmax) {
 			      if (mask[ip] & groupbit) {
 				lTmax = lTmax > T[ip] ? lTmax : T[ip];
 				lEpmax = lEpmax > eff_plastic_strain[ip] ? lEpmax : eff_plastic_strain[ip];
 			      }
-			    },Kokkos::Max<double>(Tmax), Kokkos::Max<double>(Epmax));
+			    },Kokkos::Max<double>(Tmax_tmp), Kokkos::Max<double>(Epmax_tmp));
+
+    
+    Tmax = Tmax > Tmax_tmp ? Tmax : Tmax_tmp;
+    Epmax = Epmax > Epmax_tmp ? Epmax : Epmax_tmp;
+  }
 
   // Reduce Epmax:
   MPI_Allreduce(&Epmax, &Epmax_reduced, 1, MPI_DOUBLE, MPI_MAX, universe->uworld);
-  (*input->vars)[id + "_Epmax"] = Var(id + "_Epmax", Epmax_reduced);
+  input->parsev(id + "_Epmax", Epmax_reduced);
 
   // Reduce Tmax:
   MPI_Allreduce(&Tmax, &Tmax_reduced, 1, MPI_DOUBLE, MPI_MAX, universe->uworld);
-  (*input->vars)[id + "_Tmax"] = Var(id + "_Tmax", Tmax_reduced);
+  input->parsev(id + "_Tmax", Tmax_reduced);
 }

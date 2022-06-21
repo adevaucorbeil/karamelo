@@ -29,6 +29,9 @@ public:
 
   void compute_value(Solid &solid);
 
+private:
+  int t;
+  double Epmax, Tmax;
 };
 
 #endif

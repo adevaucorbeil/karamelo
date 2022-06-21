@@ -113,10 +113,15 @@ DamageJohnsonCook::compute_damage(Solid &solid,
 
   double cp = solid.mat->cp;
 
+  Kokkos::View<double*> sdamage = solid.damage;
+  Kokkos::View<double*> sdamage_init = solid.damage_init;
+  Kokkos::View<double*> sT = solid.T;
+  Kokkos::View<double*> seff_plastic_strain_rate = solid.eff_plastic_strain_rate;
+
   Kokkos::parallel_for("DamageJohnsonCook::compute_damage", solid.np_local,
   KOKKOS_LAMBDA (const int &ip)
   {
-    if (plastic_strain_increment[ip] == 0 && solid.damage[ip] >= 1.0)
+    if (plastic_strain_increment[ip] == 0 && sdamage[ip] >= 1.0)
       return;
 
     double vm = SQRT_3_OVER_2*sigma_dev[ip].norm(); // von-Mises equivalent stress
@@ -138,7 +143,7 @@ DamageJohnsonCook::compute_damage(Solid &solid,
     }
 
     if (triax <= -3) {
-      solid.damage_init[ip] = 0;
+      sdamage_init[ip] = 0;
       return ;
     }
 
@@ -148,19 +153,19 @@ DamageJohnsonCook::compute_damage(Solid &solid,
     // include strain rate dependency if parameter d4 is defined and current
     // plastic strain rate exceeds reference strain rate
     if (d4 > 0.0) {
-      if (solid.eff_plastic_strain_rate[ip] > epsdot0) {
-        double epdot_ratio = solid.eff_plastic_strain_rate[ip]/epsdot0;
+      if (seff_plastic_strain_rate[ip] > epsdot0) {
+        double epdot_ratio = seff_plastic_strain_rate[ip]/epsdot0;
         jc_failure_strain *= (1.0 + d4 * Kokkos::Experimental::log(epdot_ratio));
       }
     }
 
-    if (d5 > 0.0 && cp && solid.T[ip] >= Tr)
-      jc_failure_strain *= 1 + d5 * (solid.T[ip] - Tr) / Tmr;
+    if (d5 > 0.0 && cp && sT[ip] >= Tr)
+      jc_failure_strain *= 1 + d5 * (sT[ip] - Tr) / Tmr;
 
-    solid.damage_init[ip] += plastic_strain_increment[ip]/jc_failure_strain;
+    sdamage_init[ip] += plastic_strain_increment[ip]/jc_failure_strain;
 
-    if (solid.damage_init[ip] >= 1.0)
-      solid.damage[ip] = MIN((solid.damage_init[ip] - 1.0) * 10, 1.0);
+    if (sdamage_init[ip] >= 1.0)
+      sdamage[ip] = MIN((sdamage_init[ip] - 1.0) * 10, 1.0);
   });
 }
 

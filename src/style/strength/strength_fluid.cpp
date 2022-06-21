@@ -50,11 +50,12 @@ StrengthFluid::update_deviatoric_stress(Solid &solid,
                                         Kokkos::View<Matrix3d*> &sigma_dev) const
 {
   double G_ = this->G_;
+  Kokkos::View<Matrix3d*> sD = solid.D;
 
   Kokkos::parallel_for("EOSLinear::compute_pressure", solid.np_local,
   KOKKOS_LAMBDA (const int &ip)
   {
-    sigma_dev[ip] = 2*G_*Deviator(solid.D[ip]);
+    sigma_dev[ip] = 2*G_*Deviator(sD[ip]);
   });
 }
 

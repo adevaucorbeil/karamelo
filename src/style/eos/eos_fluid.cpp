@@ -71,13 +71,16 @@ void EOSFluid::compute_pressure(Solid &solid, Kokkos::View<double*> &pH) const
   double K_ = this->K_;
   double Gamma = this->Gamma;
 
+  Kokkos::View<double*> sienergy = solid.ienergy;
+  Kokkos::View<double*> srho = solid.rho;
+
   Kokkos::parallel_for("EOSFluid::compute_pressure", solid.np_local,
   KOKKOS_LAMBDA (const int &ip)
   {
-    double mu = solid.rho[ip]/rho0_;
+    double mu = srho[ip]/rho0_;
     pH[ip] = K_*(pow(mu, Gamma) - 1);
 
-    solid.ienergy[ip] = 0;
+    sienergy[ip] = 0;
   });
 }
 

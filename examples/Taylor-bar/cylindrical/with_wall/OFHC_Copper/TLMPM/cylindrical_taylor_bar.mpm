@@ -37,7 +37,7 @@ N        = 4
 cellsize = 1/N
 # 3D problem,
 x_wall = hLx
-dimension(3, -hLx, x_wall, -Df, Df, -Df, Df, cellsize)
+dimension(3, 0-hLx, x_wall, 0-Df, Df, 0-Df, Df, cellsize)
 
 #----------------- SETUP MATERIAL ------------------#
 # defining material model
@@ -74,9 +74,9 @@ fix(v0Ball1, initial_velocity_particles, gBall1, v, NULL, NULL)
 
 #-------------------- OUTPUT -----------------------#
 
-N_log = 10
-dump(dump1, all, particle, N_log, dump_p.*.LAMMPS, x, y, z, vx, vy, vz, s11, s22, s33, s12, s13, s23, seq, volume, mass)
-dump(dump2, all, grid, N_log, dump_g.*.LAMMPS, x, y, z)
+N_log = 500
+dump(dump1, all, particle/gz, N_log, dump_p.*.LAMMPS.gz, x, y, z, vx, vy, vz, s11, s22, s33, s12, s13, s23, seq, volume, mass)
+dump(dump2, all, grid/gz, N_log, dump_g.*.LAMMPS.gz, x, y, z)
 set_output(N_log)
 
 #--------------------- RUN ------------------------#

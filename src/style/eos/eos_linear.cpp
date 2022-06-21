@@ -71,12 +71,15 @@ double EOSLinear::K(){
 void EOSLinear::compute_pressure(Solid &solid, Kokkos::View<double*> &pH) const
 {
   double K_ = this->K_;
+  Kokkos::View<double*> sJ = solid.J;
+  Kokkos::View<double*> sdamage = solid.damage;
+  Kokkos::View<double*> sienergy = solid.ienergy;
 
   Kokkos::parallel_for("EOSLinear::compute_pressure", solid.np_local,
   KOKKOS_LAMBDA (const int &ip)
   {
-    solid.ienergy[ip] = 0;
-    pH[ip] = K_*(1 - solid.J[ip])*(1 - solid.damage[ip]);
+    sienergy[ip] = 0;
+    pH[ip] = K_*(1 - sJ[ip])*(1 - sdamage[ip]);
   });
 }
 

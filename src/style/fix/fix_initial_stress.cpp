@@ -117,7 +117,7 @@ void FixInitialStress::initial_integrate(Solid &solid)
     Kokkos::parallel_for("FixInitialStress::initial_integrate_tlmpm", solid.np_local,
 			 KOKKOS_LAMBDA(const int &ip)
 			 {
-			   solid.vol0PK1[ip] = vol0[ip]*sigma[ip];
+			   vol0PK1[ip] = vol0[ip]*sigma[ip];
 			 });
   }
 }

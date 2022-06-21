@@ -51,14 +51,22 @@ ComputeAverageVelocity::ComputeAverageVelocity(MPM *mpm, vector<string> args)
     cout << "Creating new compute ComputeAverageVelocity with ID: " << args[0] << endl;
   id = args[0];
 
-  (*input->vars)[id + "_x"]=Var(id + "_x", 0);
-  (*input->vars)[id + "_y"]=Var(id + "_y", 0);
-  (*input->vars)[id + "_z"]=Var(id + "_z", 0);
+  t = update->ntimestep;
+  input->parsev(id + "_x", 0);
+  input->parsev(id + "_y", 0);
+  input->parsev(id + "_z", 0);
+
+  v_average[0] = v_average[1] = v_average[2] = 0;
 }
 
 ComputeAverageVelocity::~ComputeAverageVelocity() {}
 
 void ComputeAverageVelocity::compute_value(Solid &solid) {
+  if (t != update->ntimestep) {
+    t = update->ntimestep;
+    v_average[0] = v_average[1] = v_average[2] = 0;
+  }
+
   double vx, vy, vz;
 
   vx = vy = vz = 0;
@@ -69,7 +77,7 @@ void ComputeAverageVelocity::compute_value(Solid &solid) {
   int groupbit = this->groupbit;
 
   if (update->ntimestep == output->next ||
-      update->ntimestep == update->nsteps)
+      update->ntimestep == update->nsteps) {
     Kokkos::parallel_reduce("ComputeAverageVelocity::compute_value", solid.np_local,
 			    KOKKOS_LAMBDA(const int &ip,
 					  double &lvx, double &lvy, double &lvz) {
@@ -80,13 +88,17 @@ void ComputeAverageVelocity::compute_value(Solid &solid) {
 			      }
 			    },vx, vy, vz);
 
+    v_average[0] += vx;
+    v_average[1] += vy;
+    v_average[2] += vz;
+  }
+
 
   // Reduce velocity:
-  double v[6] = {vx, vy, vz};
   double v_reduced[3] = {0, 0, 0};
-  MPI_Allreduce(v, v_reduced, 3, MPI_DOUBLE, MPI_SUM, universe->uworld);
+  MPI_Allreduce(v_average, v_reduced, 3, MPI_DOUBLE, MPI_SUM, universe->uworld);
 
-  (*input->vars)[id + "_x"]=Var(id + "_x", v_reduced[0]/group->n_tot(igroup));
-  (*input->vars)[id + "_y"]=Var(id + "_y", v_reduced[1]/group->n_tot(igroup));
-  (*input->vars)[id + "_z"]=Var(id + "_z", v_reduced[2]/group->n_tot(igroup));
+  input->parsev(id + "_x", v_reduced[0]/group->n_tot(igroup));
+  input->parsev(id + "_y", v_reduced[1]/group->n_tot(igroup));
+  input->parsev(id + "_z", v_reduced[2]/group->n_tot(igroup));
 }

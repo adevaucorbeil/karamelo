@@ -19,7 +19,6 @@
 #include <inverse.h>
 #include <determinant.h>
 
-
 #include <iostream>
 
 namespace MPM_Math {
@@ -53,7 +52,7 @@ static KOKKOS_INLINE_FUNCTION Matrix2d Deviator(const Matrix2d M) {
  * obtained again from an SVD. The rotation should proper now, i.e., det(R) = +1.
  */
 
-static inline bool PolDec(Matrix3d M, Matrix3d &R, Matrix3d &T, bool scaleF) {
+static KOKKOS_INLINE_FUNCTION bool PolDec(Matrix3d M, Matrix3d &R, Matrix3d &T, bool scaleF) {
 	Matrix3d S = M, U, V;
 	singular_value_decompose(S, U, V); // SVD(A) = U S V*
 	Matrix3d eye = Matrix3d::identity();
@@ -93,7 +92,7 @@ static inline bool PolDec(Matrix3d M, Matrix3d &R, Matrix3d &T, bool scaleF) {
 	return determinant(R) > 0.0;
 }
 
-static inline bool PolDec(Matrix3d M, Matrix3d &R) {
+static KOKKOS_INLINE_FUNCTION bool PolDec(Matrix3d M, Matrix3d &R) {
 	Matrix3d S = M, U, V;
 	singular_value_decompose(S, U, V); // SVD(A) = U S V*
 	Matrix3d eye = Matrix3d::identity();

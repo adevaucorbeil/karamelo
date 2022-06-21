@@ -161,7 +161,7 @@ Solid::Solid(MPM *mpm, vector<string> args): Pointers(mpm)
 
 Solid::~Solid()
 {
-  if (is_TL) delete grid;
+  if (is_TL && grid) delete grid;
 }
 
 void Solid::init()

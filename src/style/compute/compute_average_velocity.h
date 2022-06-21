@@ -29,6 +29,10 @@ class ComputeAverageVelocity : public Compute {
   ~ComputeAverageVelocity();
 
   void compute_value(Solid &solid);
+
+private:
+  int t;
+  double v_average[3];
 };
 
 #endif

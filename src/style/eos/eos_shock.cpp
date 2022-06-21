@@ -116,21 +116,28 @@ void EOSShock::compute_pressure(Solid &solid, Kokkos::View<double*> &pH) const
   double cp = solid.mat->cp;
   double cellsize = solid.grid->cellsize;
 
+  Kokkos::View<double*> srho = solid.rho;
+  Kokkos::View<double*> sJ = solid.J;
+  Kokkos::View<Matrix3d*> sD = solid.D;
+  Kokkos::View<double*> sT = solid.T;
+  Kokkos::View<double*> sdamage = solid.damage;
+  Kokkos::View<double*> sienergy = solid.ienergy;
+
   Kokkos::parallel_for("EOSShock::compute_pressure", solid.np_local,
   KOKKOS_LAMBDA (const int &ip)
   {
-    double mu = solid.rho[ip]/rho0_ - 1;
+    double mu = srho[ip]/rho0_ - 1;
     double pH0 = rho0_*c0*c0*mu*(1 + mu)/(1 - (S - 1)*mu)/(1 - (S - 1)*mu);
 
-    if (cp && solid.T[ip] > Tr)
-      solid.ienergy[ip] = alpha*(solid.T[ip] - Tr);
+    if (cp && sT[ip] > Tr)
+      sienergy[ip] = alpha*(sT[ip] - Tr);
     else
-       solid.ienergy[ip] = 0;
-    pH[ip] = pH0 + Gamma*(solid.ienergy[ip] - e0);
+       sienergy[ip] = 0;
+    pH[ip] = pH0 + Gamma*(sienergy[ip] - e0);
 
-    if (solid.damage[ip] > 0 && pH[ip] < 0)
+    if (sdamage[ip] > 0 && pH[ip] < 0)
     {
-      if (solid.damage[ip] >= 1.0)
+      if (sdamage[ip] >= 1.0)
       {
 	    // pFinal = rho0_ * Gamma * (e - e0);
 	    pH[ip] = 0;
@@ -140,16 +147,16 @@ void EOSShock::compute_pressure(Solid &solid, Kokkos::View<double*> &pH) const
 	    // double mu_damaged = (1.0 - damage) * mu;
 	    // double pH_damaged = rho0_ * (1.0 - damage) * square(c0) * mu_damaged * (1.0 + mu_damaged) / square(1.0 - (S - 1.0) * mu_damaged);
 	    // pFinal = (pH_damaged + rho0_ * (1 + mu_damaged) * Gamma * (e - e0));;
-	    pH[ip] *= 1 - solid.damage[ip];
+	    pH[ip] *= 1 - sdamage[ip];
       }
     }
 
     if (artificial_viscosity)
     {
-      double tr_eps = solid.D[ip].trace();
+      double tr_eps = sD[ip].trace();
 
       if (tr_eps < 0)
-        pH[ip] += solid.rho[ip]*cellsize*tr_eps*(Q1*cellsize*tr_eps - Q2*c0*Kokkos::Experimental::sqrt(solid.J[ip]));
+        pH[ip] += srho[ip]*cellsize*tr_eps*(Q1*cellsize*tr_eps - Q2*c0*Kokkos::Experimental::sqrt(sJ[ip]));
     }
   });
 }

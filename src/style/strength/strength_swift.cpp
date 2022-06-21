@@ -86,10 +86,15 @@ StrengthSwift::update_deviatoric_stress(Solid &solid,
   double G_ = this->G_;
   double dt = update->dt;
 
+  Kokkos::View<Matrix3d*> ssigma = solid.sigma;
+  Kokkos::View<Matrix3d*> sD = solid.D;
+  Kokkos::View<double*> sdamage = solid.damage;
+  Kokkos::View<double*> seff_plastic_strain = solid.eff_plastic_strain;
+
   Kokkos::parallel_for("EOSLinear::compute_pressure", solid.np_local,
   KOKKOS_LAMBDA (const int &ip)
   {
-    if (solid.damage[ip] >= 1)
+    if (sdamage[ip] >= 1)
     {
       sigma_dev[ip] = Matrix3d();
       return;
@@ -98,8 +103,8 @@ StrengthSwift::update_deviatoric_stress(Solid &solid,
     Matrix3d sigmaFinal_dev, sigmaTrial, sigmaTrial_dev;
     double J2, Gd, yieldStress;
 
-    if (solid.eff_plastic_strain[ip] > 1.0e-10 && solid.eff_plastic_strain[ip] > C)
-      yieldStress = A + B*Kokkos::Experimental::pow(solid.eff_plastic_strain[ip] - C, n);
+    if (seff_plastic_strain[ip] > 1.0e-10 && seff_plastic_strain[ip] > C)
+      yieldStress = A + B*Kokkos::Experimental::pow(seff_plastic_strain[ip] - C, n);
     else
       yieldStress = A;
 
@@ -108,10 +113,10 @@ StrengthSwift::update_deviatoric_stress(Solid &solid,
      */
     Gd               = G_;
 
-    if (solid.damage[ip] > 0)
+    if (sdamage[ip] > 0)
     {
-      Gd *= (1 - solid.damage[ip]);
-      yieldStress *= (1 - solid.damage[ip]);
+      Gd *= (1 - sdamage[ip]);
+      yieldStress *= (1 - sdamage[ip]);
     }
 
     // sigmaInitial_dev = Deviator(sigma);
@@ -119,7 +124,7 @@ StrengthSwift::update_deviatoric_stress(Solid &solid,
     /*
      * perform a trial elastic update to the deviatoric stress
      */
-    sigmaTrial = solid.sigma[ip] + dt*2*Gd*solid.D[ip];
+    sigmaTrial = ssigma[ip] + dt*2*Gd*sD[ip];
     sigmaTrial_dev = Deviator(sigmaTrial); // increment stress deviator using deviatoric rate
 
     /*
