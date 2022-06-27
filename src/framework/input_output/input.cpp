@@ -100,6 +100,12 @@ Input::Input(MPM *mpm, int argc, char **argv) : Pointers(mpm)
   protected_vars.push_back(s);
   s = "z";
   protected_vars.push_back(s);
+  s = "x0";
+  protected_vars.push_back(s);
+  s = "y0";
+  protected_vars.push_back(s);
+  s = "z0";
+  protected_vars.push_back(s);
   s = "time";
   protected_vars.push_back(s);
   s = "dt";
@@ -164,6 +170,10 @@ Input::Input(MPM *mpm, int argc, char **argv) : Pointers(mpm)
   operation_factory.register_class<ExpressionOperandVector<&Solid::x, &Grid::x, 0>>("x");
   operation_factory.register_class<ExpressionOperandVector<&Solid::x, &Grid::x, 1>>("y");
   operation_factory.register_class<ExpressionOperandVector<&Solid::x, &Grid::x, 2>>("z");
+
+  operation_factory.register_class<ExpressionOperandVector<&Solid::x0, &Grid::x0, 0>>("x0");
+  operation_factory.register_class<ExpressionOperandVector<&Solid::x0, &Grid::x0, 1>>("y0");
+  operation_factory.register_class<ExpressionOperandVector<&Solid::x0, &Grid::x0, 2>>("z0");
 
   operation_factory.register_class<ExpressionOperandTime>("time");
 

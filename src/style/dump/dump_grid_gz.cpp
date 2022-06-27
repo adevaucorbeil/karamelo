@@ -25,7 +25,7 @@
 using namespace std;
 
 DumpGridGz::DumpGridGz(MPM *mpm, vector<string> args) : Dump(mpm, args) {
-  cout << "In DumpGridGz::DumpGridGz()" << endl;
+  // cout << "In DumpGridGz::DumpGridGz()" << endl;
   for (int i=5; i<args.size(); i++){
     if (find(known_var.begin(), known_var.end(), args[i]) != known_var.end()) {
       output_var.push_back(args[i]);
@@ -55,7 +55,6 @@ DumpGridGz::DumpGridGz(MPM *mpm, vector<string> args) : Dump(mpm, args) {
     {
       x = create_mirror(g.x);
       xyz = false;
-      cout << "x.extent=" << x.extent(0) << endl;
     }
     else if ((v == "vx" || v == "vy" || v == "vz") && vxyz)
     {
