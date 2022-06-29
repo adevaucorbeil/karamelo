@@ -98,10 +98,12 @@ Solid::Solid(MPM *mpm, vector<string> args): Pointers(mpm)
   if (update->sub_method_type == Update::SubMethodType::APIC)
   {
     apic = true;
+    update_Di = true;
   }
   else
   {
     apic = false;
+    update_Di = false;
   }
 
   vtot = 0;
@@ -328,6 +330,9 @@ void Solid::compute_position_corners()
 
 void Solid::compute_inertia_tensor()
 {
+  if (!update_Di)
+    return;
+
   Vector3d dx;
 
   Matrix3d eye = Matrix3d::identity(), Dtemp;
@@ -379,6 +384,7 @@ void Solid::compute_inertia_tensor()
     Di(2, 2) = 1;
   }
 
+  update_Di = false;
   // if (is_TL)
   //   pos = &x0;
   // else

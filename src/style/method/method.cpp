@@ -167,7 +167,7 @@ void Method::compute_grid_weight_functions_and_gradients(Solid &solid)
     }
   });
 
-  if (update_Di && apic())
+  if (apic())
     solid.compute_inertia_tensor();
 
   if (update->ntimestep == 0)
@@ -184,7 +184,6 @@ void Method::compute_grid_weight_functions_and_gradients(Solid &solid)
   if (rigid_solids)
     domain->grid->reduce_rigid_ghost_nodes();
 
-  update_Di = 0;
 }
 
 void Method::setup(vector<string> args)
@@ -783,8 +782,6 @@ void Method::update_deformation_gradient_stress(bool doublemapping, Solid &solid
   else if (solid.mat->type == Material::constitutive_model::NEO_HOOKEAN)
   {
     Kokkos::View<Matrix3d*> svol0PK1 = solid.vol0PK1;
-    Kokkos::View<Matrix3d*> sR = solid.R;
-    Kokkos::View<Matrix3d*> sD = solid.D;
     Kokkos::View<Matrix3d*> sstrain_el = solid.strain_el;
     Kokkos::View<Matrix3d*> ssigma = solid.sigma;
     Kokkos::View<double*> sgamma = solid.gamma;

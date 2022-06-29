@@ -146,6 +146,7 @@ private:
 	     {"mesh",   6},
              {"file",   6}
            };
+  bool update_Di;
 
 public:
   double T0;                     ///< Initial temperature

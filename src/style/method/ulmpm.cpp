@@ -34,7 +34,6 @@ ULMPM::ULMPM(MPM *mpm):
 {
   // cout << "In ULMPM::ULMPM()" << endl;
 
-  update_Di   = 1;
   update->PIC_FLIP = 0.99;
 
   rigid_solids = 0;
