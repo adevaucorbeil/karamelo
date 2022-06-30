@@ -785,6 +785,10 @@ void Method::update_deformation_gradient_stress(bool doublemapping, Solid &solid
     Kokkos::View<Matrix3d*> sstrain_el = solid.strain_el;
     Kokkos::View<Matrix3d*> ssigma = solid.sigma;
     Kokkos::View<double*> sgamma = solid.gamma;
+    Kokkos::View<double*> sT = solid.T;
+    double alpha = solid.mat->alpha;
+    double K = solid.mat->K;
+    double T0 = solid.T0;
 
     Kokkos::parallel_for("update_deformation_gradient_stress0", solid.np_local,
     KOKKOS_LAMBDA (const int &ip)
@@ -796,6 +800,10 @@ void Method::update_deformation_gradient_stress(bool doublemapping, Solid &solid
 
       sstrain_el[ip] = 0.5*(sF[ip].transpose()*sF[ip] - Matrix3d::identity());
       sgamma[ip] = 0;
+      if (alpha != 0) {
+	ssigma[ip] -= 3 * K * alpha * (sT[ip] - T0) * Matrix3d::identity();
+	sstrain_el[ip] -= alpha * (sT[ip] - T0) * Matrix3d::identity();
+      }
     });
   }
   else
