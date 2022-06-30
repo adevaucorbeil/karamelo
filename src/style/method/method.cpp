@@ -500,7 +500,7 @@ void Method::compute_velocity_acceleration(Solid &solid)
     Vector3d f;
     double T;
     if (temp)
-      T = sT[ip];
+      T = 0.9999*sT[ip];
 
     for (int i = 0; i < neigh_n.extent(1); i++)
     {

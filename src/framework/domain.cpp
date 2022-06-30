@@ -511,9 +511,6 @@ void Domain::set_dimension(vector<string> args) {
     dimension = dim;
   }
 
-  if (universe->me == 0)
-    cout << "Set dimension to " << dim << endl;
-
   if (args.size() < Nargs_dimension.find(args[m])->second) {
     error->all(FLERR, "Error: not enough arguments.\n"
 	       + usage_dimension.find(args[m])->second);
@@ -540,6 +537,11 @@ void Domain::set_dimension(vector<string> args) {
       error->all(FLERR, "Error: cellsize negative! You gave: " + to_string(grid->cellsize) + "\n.");
     }
   }
+
+  if (universe->me == 0)
+    cout << "Set dimension to " << dim << " box dimensions=[" << boxlo[0] << ", " << boxhi[0] << ", "
+	 << boxlo[1] << ", " << boxhi[1] << ", "
+	 << boxlo[2] << ", " << boxhi[2] << "]" << endl;
 
   universe->set_proc_grid();
   if (!update->method->is_TL) {

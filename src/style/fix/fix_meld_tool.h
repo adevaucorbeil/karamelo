@@ -24,6 +24,8 @@ FixStyle(meldtool, FixMeldTool)
 #include <var.h>
 #include <matrix.h>
 
+class Expression;
+
 class FixMeldTool : public Fix {
 public:
   FixMeldTool(MPM *, vector<string>);
@@ -42,7 +44,7 @@ private:
   int dim, axis0, axis1;
   double K, w, lo, hi, Rmax, RmaxSq;
 
-  Var c1, c2, theta;         //< Position and angle of the tool
+  Expression *c1, *c2, *theta;         //< Position and angle of the tool
   Vector3d ftot;
 
   enum Axis { X, Y, Z, };

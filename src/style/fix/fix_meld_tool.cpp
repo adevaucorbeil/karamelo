@@ -14,6 +14,7 @@
 #include <fix_meld_tool.h>
 #include <domain.h>
 #include <error.h>
+#include <expression_operation.h>
 #include <group.h>
 #include <input.h>
 #include <solid.h>
@@ -78,9 +79,14 @@ FixMeldTool::FixMeldTool(MPM *mpm, vector<string> args)
   }
 
   w = input->parsev(args[++k]).result(mpm);
-  c1 = input->parsev(args[++k]);
-  c2 = input->parsev(args[++k]);
-  theta = input->parsev(args[++k]);
+
+  input->parsev(args[++k]);
+  c1 = &input->expressions[args[k]];
+  input->parsev(args[++k]);
+  c2 = &input->expressions[args[k]];
+  input->parsev(args[++k]);
+  theta = &input->expressions[args[k]];
+
   lo = input->parsev(args[++k]).result(mpm);
   hi = input->parsev(args[++k]).result(mpm);
   Rmax = input->parsev(args[++k]).result(mpm);
@@ -89,10 +95,6 @@ FixMeldTool::FixMeldTool(MPM *mpm, vector<string> args)
 
 void FixMeldTool::prepare()
 {
-  theta.result(mpm);
-  c1.result(mpm);
-  c2.result(mpm);
-
   ftot = Vector3d();
 }
 
@@ -104,9 +106,9 @@ void FixMeldTool::reduce()
   MPI_Allreduce(ftot.elements, ftot_reduced.elements, 3, MPI_DOUBLE, MPI_SUM,
                 universe->uworld);
 
-  (*input->vars)[id + "_x"] = Var(id + "_x", ftot_reduced[0]);
-  (*input->vars)[id + "_y"] = Var(id + "_y", ftot_reduced[1]);
-  (*input->vars)[id + "_z"] = Var(id + "_z", ftot_reduced[2]);
+  input->parsev(id + "_x", ftot_reduced[0]);
+  input->parsev(id + "_y", ftot_reduced[1]);
+  input->parsev(id + "_z", ftot_reduced[2]);
 }
 
 void FixMeldTool::initial_integrate(Solid &solid)
@@ -114,155 +116,160 @@ void FixMeldTool::initial_integrate(Solid &solid)
   // cout << "In FixMeldTool::initial_integrate()\n";
 
   // Go through all the particles in the group and set b to the right value:
-  for (int ip = 0; ip < solid.np_local; ip++)
+
+  c1->evaluate(solid);
+  c2->evaluate(solid);
+  theta->evaluate(solid);
+
+  Kokkos::View<double **> c1_ = c1->registers;
+  Kokkos::View<double **> c2_ = c2->registers;
+  Kokkos::View<double **> theta_ = theta->registers;
+
+  int groupbit = this->groupbit;
+  int dim = this->dim;
+  int axis0 = this->axis0;
+  int axis1 = this->axis1;
+  double K = this->K;
+  double w = this->w;
+  double lo = this->lo;
+  double hi = this->hi;
+  double Rmax = this->Rmax;
+  double RmaxSq = this->RmaxSq;
+  Kokkos::View<double*> mass = solid.mass;
+  Kokkos::View<int*> mask = solid.mask;
+  Kokkos::View<Vector3d*> sx = solid.x;
+  Kokkos::View<Vector3d*> smbp = solid.mbp;
+  Kokkos::View<double*> sdamage = solid.damage;
+  double G = solid.mat->G;
+
+  double f0, f1, f2;
+  int n;
+
+  Kokkos::parallel_reduce("FixMeldTool::initial_integrate", solid.np_local,
+			  KOKKOS_LAMBDA(const int &ip, double &ftot0, double &ftot1, double &ftot2, int &n_)
   {
-    if (!solid.mass[ip] || !(solid.mask[ip] & groupbit))
-      continue;
+    if (!mass[ip] || !(mask[ip] & groupbit))
+      return;
 
-    double theta_ = theta.result(mpm, true);
-    double c = cos(theta_);
-    double s = sin(theta_);
+    const double &c = Kokkos::Experimental::cos(theta_(0, ip));
+    const double &s = Kokkos::Experimental::sin(theta_(0, ip));
 
-    double c1_ = c1.result(mpm, true);
-    double c2_ = c2.result(mpm, true);
-
-    Vector3d xprime;
+    Vector3d xprime, xtool;
     Matrix3d R;
 
-    if (dim == X)
+    if (dim == 0)
     {
       R = Matrix3d(1, 0, 0,
                    0, c, s,
                    0, -s, c);
 
-      xprime = Vector3d(lo, c1_, c2_);
+      xtool = Vector3d(lo, c1_(0, ip), c2_(0, ip));
     }
-    else if (dim == Y)
+    else if (dim == 1)
     {
       R = Matrix3d(c, 0, s,
                    0, 1, 0,
                    -s, 0, c);
 
-      xprime = Vector3d(c1_, lo, c2_);
+      xtool = Vector3d(c1_(0, ip), lo, c2_(0, ip));
     }
-    else if (dim == Z)
+    else if (dim == 2)
     {
       R = Matrix3d(1, 0, 0,
                    0, c, s,
                    0, -s, c);
 
-      xprime = Vector3d(c1_, c2_, lo);
+      xtool = Vector3d(c1_(0, ip), c2_(0, ip), lo);
     }
 
-    xprime = solid.x[ip] - xprime;
-    // if (update->ntimestep > 89835 && (solid.ptag[ip]==12 || solid.ptag[ip]==21)) {
-    //   cout << "Check Particle " << solid.ptag[ip] << "\txprime=[" << xprime[0] << "," << xprime[1] << "," << xprime[2] << "]\n";
-    //   cout << "R=\n" << R << endl;
-    // }
-    if (xprime(dim)   < 0    || xprime(dim)   > hi - lo ||
-        xprime(axis0) > Rmax || xprime(axis0) < -Rmax   ||
-        xprime(axis1) > Rmax || xprime(axis1) < -Rmax)
-      continue;
+    xprime = sx[ip] - xtool;
+    if (xprime[dim]   < 0    || xprime[dim]   > hi - lo ||
+        xprime[axis0] > Rmax || xprime[axis0] < -Rmax   ||
+        xprime[axis1] > Rmax || xprime[axis1] < -Rmax)
+      return;
 
-    // if (solid.ptag[ip]==12 || solid.ptag[ip]==21) {
-    //   cout << "Particle " << solid.ptag[ip] << " in 1\n";
-    // }
-
-    double rSq = xprime(axis0) * xprime(axis0) + xprime(axis1) * xprime(axis1);
+    const double &rSq = xprime[axis0] * xprime[axis0] + xprime[axis1] * xprime[axis1];
 
     if (rSq > RmaxSq)
-      continue;
+      return;
 
-    // if (solid.ptag[ip]==12 || solid.ptag[ip]==21) {
-    //     cout << "Particle " << solid.ptag[ip] << " in 2\n";
-    // }
     xprime = R*xprime;
-    double p0 = xprime[axis0];
-    double p1 = xprime[axis1];
-    double p2 = xprime[dim];
-    double pext = Rmax - sqrt(p0*p0 + p1*p1);
+    const double &p0 = xprime[axis0];
+    const double &p1 = xprime[axis1];
+    const double &p2 = xprime[dim];
+    const double &pext = Rmax - Kokkos::Experimental::sqrt(p0*p0 + p1*p1);
     double p;
 
     Vector3d f;
 
-    if (p0 > w)
-    {
+    if (p0 > w) {
       p = p0 - w;
       f[axis0] = -p;
-    }
-    else if (p0 < -w)
-    {
+    } else if (p0 < -w) {
       p = -w - p0;
       f[axis0] = p;
     }
 
-    if (p1 > w)
-    {
+    if (p1 > w) {
       p = p1 - w;
       f[axis1] = -p;
-    }
-    else if (p1 < -w)
-    {
+    } else if (p1 < -w) {
       p = -p1 - w;
       f[axis1] = p;
     }
 
-    if (pext > 0 && pext < f.norm())
-    {
+    if (pext > 0 && pext < f.norm()) {
       f = Vector3d();
-      double r = sqrt(rSq);
-      f[axis0] = pext*xprime[axis0]/r;
-      f[axis1] = pext*xprime[axis1]/r;
+      const double &r = Kokkos::Experimental::sqrt(rSq);
+      f[axis0] = pext * xprime[axis0] / r;
+      f[axis1] = pext * xprime[axis1] / r;
     }
 
-    if (p2 > 0 || p2 < f.norm())
-    {
+    if (p2 > 0 && p2 < f.norm()) {
       f = Vector3d();
       f[dim] = -p2;
     }
 
-    f = K*solid.mat->G*(1 - solid.damage[ip])*R.transpose()*f;
-    solid.mbp[ip] += f;
-    // if (solid.ptag[ip]==12 || solid.ptag[ip]==21) {
-    //     Vector3d dx = solid.x[ip] - c;
-    //     cout << "Particle " << solid.ptag[ip] << " f=[" << f[0] << "," << f[1] << "," << f[2] << "]\tw=" << w << " p0=" << p0 << " p1=" << p1 << " p2=" << p2 << "\txprime=[" << xprime[0] << "," << xprime[1] << "," << xprime[2] << "]\tdx=[" << dx(0) << "," << dx(1) << "," << dx(2) << "]\n";
-    //     cout << "R=\n" << R << endl;
-    // }
-    ftot += f;
-    // if (f[dim] != 0) {
-    //     cout << "particle " << solid.ptag[ip] << " force:" << f[0] << ", " << f[1] << ", " << f[2] << endl;
-    // }
-  }
+    f = K * G * (1 - sdamage[ip]) * R.transpose() * f;
+    smbp[ip] += f;
+
+    ftot0 += f[0];
+    ftot1 += f[1];
+    ftot2 += f[2];
+    n_ += 1;
+  }, f0, f1, f2, n);
+
+  ftot += Vector3d(f0, f1, f2);
 }
 
 
 void FixMeldTool::write_restart(ofstream *of) {
-  of->write(reinterpret_cast<const char *>(&dim), sizeof(int));
-  of->write(reinterpret_cast<const char *>(&axis0), sizeof(int));
-  of->write(reinterpret_cast<const char *>(&axis1), sizeof(int));
-  of->write(reinterpret_cast<const char *>(&K), sizeof(double));
-  of->write(reinterpret_cast<const char *>(&w), sizeof(double));
-  of->write(reinterpret_cast<const char *>(&lo), sizeof(double));
-  of->write(reinterpret_cast<const char *>(&hi), sizeof(double));
-  of->write(reinterpret_cast<const char *>(&Rmax), sizeof(double));
+  // of->write(reinterpret_cast<const char *>(&dim), sizeof(int));
+  // of->write(reinterpret_cast<const char *>(&axis0), sizeof(int));
+  // of->write(reinterpret_cast<const char *>(&axis1), sizeof(int));
+  // of->write(reinterpret_cast<const char *>(&K), sizeof(double));
+  // of->write(reinterpret_cast<const char *>(&w), sizeof(double));
+  // of->write(reinterpret_cast<const char *>(&lo), sizeof(double));
+  // of->write(reinterpret_cast<const char *>(&hi), sizeof(double));
+  // of->write(reinterpret_cast<const char *>(&Rmax), sizeof(double));
   
-  c1.write_to_restart(of);
-  c2.write_to_restart(of);
-  theta.write_to_restart(of);
+  // c1.write_to_restart(of);
+  // c2.write_to_restart(of);
+  // theta.write_to_restart(of);
 }
 
 void FixMeldTool::read_restart(ifstream *ifr) {
-  ifr->read(reinterpret_cast<char *>(&dim), sizeof(int));
-  ifr->read(reinterpret_cast<char *>(&axis0), sizeof(int));
-  ifr->read(reinterpret_cast<char *>(&axis1), sizeof(int));
-  ifr->read(reinterpret_cast<char *>(&K), sizeof(double));
-  ifr->read(reinterpret_cast<char *>(&w), sizeof(double));
-  ifr->read(reinterpret_cast<char *>(&lo), sizeof(double));
-  ifr->read(reinterpret_cast<char *>(&hi), sizeof(double));
-  ifr->read(reinterpret_cast<char *>(&Rmax), sizeof(double));
-  RmaxSq = Rmax * Rmax;
+  // ifr->read(reinterpret_cast<char *>(&dim), sizeof(int));
+  // ifr->read(reinterpret_cast<char *>(&axis0), sizeof(int));
+  // ifr->read(reinterpret_cast<char *>(&axis1), sizeof(int));
+  // ifr->read(reinterpret_cast<char *>(&K), sizeof(double));
+  // ifr->read(reinterpret_cast<char *>(&w), sizeof(double));
+  // ifr->read(reinterpret_cast<char *>(&lo), sizeof(double));
+  // ifr->read(reinterpret_cast<char *>(&hi), sizeof(double));
+  // ifr->read(reinterpret_cast<char *>(&Rmax), sizeof(double));
+  // RmaxSq = Rmax * Rmax;
 
-  c1.read_from_restart(ifr);
-  c2.read_from_restart(ifr);
-  theta.read_from_restart(ifr);
+  // c1.read_from_restart(ifr);
+  // c2.read_from_restart(ifr);
+  // theta.read_from_restart(ifr);
 }
