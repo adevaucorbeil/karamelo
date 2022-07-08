@@ -56,7 +56,7 @@ void Method::compute_grid_weight_functions_and_gradients(Solid &solid)
   Kokkos::View<double**> wf = solid.wf;
   Kokkos::View<Vector3d**> wfd = solid.wfd;
 
-  double inv_cellsize = 1/solid.grid->cellsize;
+  const double &inv_cellsize = 1/solid.grid->cellsize;
     
   int ny = solid.grid->ny_global;
   int nz = solid.grid->nz_global;
@@ -76,25 +76,25 @@ void Method::compute_grid_weight_functions_and_gradients(Solid &solid)
     int count = 0;
 
     const Vector3d &xp = x[ip];
-    int i0 = (xp[0] - boxlo[0])*inv_cellsize + 1 - half_support;
+    const int &i0 = (xp[0] - boxlo[0])*inv_cellsize + 1 - half_support;
 
     for (int i = i0; i < i0 + 2*half_support; i++)
     {
       if (ny > 1)
       {
-        int j0 = (xp[1] - boxlo[1])*inv_cellsize + 1 - half_support;
+        const int &j0 = (xp[1] - boxlo[1])*inv_cellsize + 1 - half_support;
         for (int j = j0; j < j0 + 2*half_support; j++)
         {
           if (nz > 1)
           {
-            int k0 = (xp[2] - boxlo[2])*inv_cellsize + 1 - half_support;
+            const int &k0 = (xp[2] - boxlo[2])*inv_cellsize + 1 - half_support;
             for (int k = k0; k < k0 + 2*half_support; k++)
             {
-              int tag = nz*ny*i + nz*j + k;
+              const int &tag = nz*ny*i + nz*j + k;
 
               if (tag < nnodes)
               {
-                tagint in = map_ntag[tag];
+                const tagint &in = map_ntag[tag];
 
                 if (in != -1)
                   neigh_n(ip, count++) = in;
@@ -103,11 +103,11 @@ void Method::compute_grid_weight_functions_and_gradients(Solid &solid)
           }
           else
           {
-            int tag = ny*i + j;
+            const int &tag = ny*i + j;
 
             if (tag < nnodes)
             {
-              tagint in = map_ntag[tag];
+              const tagint &in = map_ntag[tag];
 
               if (in != -1)
                 neigh_n(ip, count++) = in;
@@ -121,7 +121,7 @@ void Method::compute_grid_weight_functions_and_gradients(Solid &solid)
 
     for (int i = 0; i < count; i++)
     {
-      int in = neigh_n(ip, i);
+      const int &in = neigh_n(ip, i);
 
       // Calculate the distance between each pair of particle/node:
       const Vector3d &r = (xp - x0[in])*inv_cellsize;
@@ -536,23 +536,51 @@ void Method::update_position(Solid &solid)
 
   Kokkos::View<Vector3d*> sx = solid.x;
   Kokkos::View<Vector3d*> sv_update = solid.v_update;
+  Kokkos::View<int*> serror_flag = solid.error_flag;
 
-  Kokkos::parallel_for("compute_velocity_acceleration0", solid.np_local,
-  KOKKOS_LAMBDA (const int &ip)
-  {
-    sx[ip] += dt*sv_update[ip];
-  });
+  Vector3d boxlo(domain->boxlo[0], domain->boxlo[1], domain->boxlo[2]);
+  Vector3d boxhi(domain->boxhi[0], domain->boxhi[1], domain->boxhi[2]);
 
-  if (!is_TL)
-  {
-    /*if (!domain->inside(solid.x[ip]))
-    cout << "Error: Particle " << ip << " left the domain ("
-          << domain->boxlo[0] << "," << domain->boxhi[0] << ","
-          << domain->boxlo[1] << "," << domain->boxhi[1] << ","
-          << domain->boxlo[2] << "," << domain->boxhi[2] << "):\n"
-          << solid.x[ip] << endl;
+  int error_sum;
+  if (!is_TL) {
+    Kokkos::parallel_reduce("compute_velocity_acceleration0", solid.np_local,
+			    KOKKOS_LAMBDA (const int &ip, int &error_)
+    {
+      sx[ip] += dt*sv_update[ip];
 
-    error->one(FLERR, "");*/
+      if (sx[ip][0] < boxlo[0] ||
+	  sx[ip][0] > boxhi[0] ||
+	  sx[ip][1] < boxlo[1] ||
+	  sx[ip][1] > boxhi[1] ||
+	  sx[ip][2] < boxlo[2] ||
+	  sx[ip][2] > boxhi[2])
+	serror_flag[ip] = 1;
+      error_ += serror_flag[ip];
+    }, error_sum);
+
+    if (error_sum) {
+      Kokkos::View<Vector3d*>::HostMirror xp = create_mirror(solid.x);
+      deep_copy(xp, solid.x);
+
+      for (int ip = 0; ip < solid.np_local; ip++) {
+        if (!domain->inside(xp[ip])) {
+	  string msg = "Error: Particle " + to_string(ip) + " left the domain ("
+	    + to_string(boxlo[0]) + "," + to_string(boxhi[0]) + ","
+	    + to_string(boxlo[1]) + "," + to_string(boxhi[1]) + ","
+	    + to_string(boxlo[2]) + "," + to_string(boxhi[2]) + "):\n"
+	    + "x[" + to_string(ip) + "]=[" + to_string(xp[ip][0])
+	    + ", " + to_string(xp[ip][1]) + ", "+ to_string(xp[ip][2]) + "]\n";
+
+	  error->one(FLERR, msg);
+	}
+      }
+    }
+  } else {
+    Kokkos::parallel_for("compute_velocity_acceleration0", solid.np_local,
+			 KOKKOS_LAMBDA (const int &ip)
+    {
+      sx[ip] += dt*sv_update[ip];
+    });
   }
 }
 
@@ -634,12 +662,9 @@ void Method::compute_rate_deformation_gradient(bool doublemapping, Solid &solid)
           const Vector3d &dx = is_TL? grid.x0[in] - sx0[ip]:
                                       grid.x0[in] - sx [ip];
 
-          Matrix3d dgradient;
           for (int j = 0; j < dimension; j++)
             for (int k = 0; k < dimension; k++)
-              dgradient(j, k) += vn[in][j]*dx[k]*wf;
-
-          gradient += dgradient*Di;
+              gradient(j, k) += vn[in][j]*dx[k]*wf;
         }
         else
           for (int j = 0; j < dimension; j++)
@@ -655,7 +680,11 @@ void Method::compute_rate_deformation_gradient(bool doublemapping, Solid &solid)
       }
     }
 
-    gradients[ip] = gradient;
+    if (sub_method_type == Update::SubMethodType::APIC)
+	gradients[ip] = gradient*Di;
+    else
+      gradients[ip] = gradient;
+
     if (temp)
       sq[ip] = q;
   });

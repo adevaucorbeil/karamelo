@@ -74,7 +74,7 @@ MPM::MPM(int narg, char **arg, MPI_Comm communicator)
   if (universe->me == 0) {
     cout << "Karamelo -- Parallel Material Point Methods Simulator Build SHA1:"
          << GIT_SHA1 << endl;
-    cout << "Running on " << universe->nprocs << " procs\n";
+    cout << "Running on " << typeid(Kokkos::DefaultExecutionSpace).name() <<" with " << universe->nprocs << " procs\n";
 
     if (inflag != 0)
       {

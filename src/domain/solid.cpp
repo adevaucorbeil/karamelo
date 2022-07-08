@@ -312,6 +312,7 @@ void Solid::grow(int nparticles)
   wf_corners = Kokkos::View<double***> ("wfcorners", nparticles, neighbor_nodes_per_particle, nc);
   wfd        = Kokkos::View<Vector3d**>("wfd",       nparticles, neighbor_nodes_per_particle);
 
+  error_flag = Kokkos::View<int*>      ("error_flag",nparticles);
   neigh_policy = Kokkos::MDRangePolicy<Kokkos::Rank<2>>({ 0, 0 }, { (size_t)nparticles, neighbor_nodes_per_particle });
 }
 
@@ -462,42 +463,43 @@ void Solid::compute_inertia_tensor()
 
 void Solid::copy_particle(int i, int j)
 {
-  ptag[j] = ptag[i];
-  x0[j] = x0[i];
-  x[j] = x[i];
-  v[j] = v[i];
+  ptag[j]     = ptag[i];
+  x0[j]       = x0[i];
+  x[j]        = x[i];
+  v[j]        = v[i];
   v_update[j] = v_update[i];
-  a[j] = a[i];
-  mbp[j] = mbp[i];
-  f[j] = f[i];
-  vol0[j] = vol0[i];
-  vol[j] = vol[i];
-  rho0[j] = rho0[i];
-  rho[j] = rho[i];
-  mass[j] = mass[i];
-  eff_plastic_strain[j] = eff_plastic_strain[i];
+  a[j]        = a[i];
+  mbp[j]      = mbp[i];
+  f[j]        = f[i];
+  vol0[j]     = vol0[i];
+  vol[j]      = vol[i];
+  rho0[j]     = rho0[i];
+  rho[j]      = rho[i];
+  mass[j]     = mass[i];
+  eff_plastic_strain[j]      = eff_plastic_strain[i];
   eff_plastic_strain_rate[j] = eff_plastic_strain_rate[i];
-  damage[j] = damage[i];
+  damage[j]      = damage[i];
   damage_init[j] = damage_init[i];
   if (update->method->temp)
   {
-    T[j] = T[i];
-    gamma[j] = gamma[i];
-    q[j] = q[i];
+    T[j]        = T[i];
+    gamma[j]    = gamma[i];
+    q[j]        = q[i];
   }
-  ienergy[j] = ienergy[i];
-  mask[j] = mask[i];
-  sigma[j] = sigma[i];
-  strain_el[j] = strain_el[i];
-  vol0PK1[j] = vol0PK1[i];
-  L[j] = L[i];
-  F[j] = F[i];
-  R[j] = R[i];
-  D[j] = D[i];
-  Finv[j] = Finv[i];
-  dtCFL[j] = dtCFL[i];
-  Fdot[j] = Fdot[i];
-  J[j] = J[i];
+  ienergy[j]    = ienergy[i];
+  mask[j]       = mask[i];
+  sigma[j]      = sigma[i];
+  strain_el[j]  = strain_el[i];
+  vol0PK1[j]    = vol0PK1[i];
+  L[j]          = L[i];
+  F[j]          = F[i];
+  R[j]          = R[i];
+  D[j]          = D[i];
+  Finv[j]       = Finv[i];
+  dtCFL[j]      = dtCFL[i];
+  Fdot[j]       = Fdot[i];
+  J[j]          = J[i];
+  error_flag[j] = error_flag[i];
   // if (method_type == "tlcpdi" || method_type == "ulcpdi")
   //   {
   //     if (update->method->style == 0)
@@ -519,6 +521,7 @@ void Solid::copy_particle(int i, int j)
   // 	}
   //   }
 }
+
 
 void Solid::pack_particle(int i, vector<double> &buf)
 {
@@ -1213,7 +1216,7 @@ void Solid::populate(vector<string> args)
   Kokkos::View<tagint*> ptag = this->ptag;
 
   Kokkos::View<Vector3d*> x = this->x;
-  Kokkos::View<Vector3d*> x0 = this->x;
+  Kokkos::View<Vector3d*> x0 = this->x0;
   Kokkos::View<Vector3d*> v = this->v;
   Kokkos::View<Vector3d*> v_update = this->v_update;
   Kokkos::View<Vector3d*> a = this->a;
@@ -1247,6 +1250,8 @@ void Solid::populate(vector<string> args)
   Kokkos::View<double*> T = this->T;
   Kokkos::View<double*> gamma = this->gamma;
   Kokkos::View<Vector3d*> q = this->q;
+
+  Kokkos::View<int*> error_flag = this->error_flag;
 
   Kokkos::parallel_for(__PRETTY_FUNCTION__, np_local,
   KOKKOS_LAMBDA (int i)
@@ -1291,6 +1296,8 @@ void Solid::populate(vector<string> args)
     Fdot[i] = Matrix3d();
     J[i] = 1;
     mask[i] = 1;
+
+    error_flag[i] = 0;
 
     ptag[i] = ptag0 + i + 1 + np_total;
   });
@@ -1639,6 +1646,7 @@ void Solid::read_mesh(string fileName)
     Finv[i] = Matrix3d();
     Fdot[i] = Matrix3d();
     J[i] = 1;
+    error_flag[i] = 0;
 
     if (x0[i][0] < solidlo[0])
       solidlo[0] = x0[i][0];

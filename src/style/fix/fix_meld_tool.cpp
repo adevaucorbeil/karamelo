@@ -188,34 +188,30 @@ void FixMeldTool::initial_integrate(Solid &solid)
         xprime[axis1] > Rmax || xprime[axis1] < -Rmax)
       return;
 
-    const double &rSq = xprime[axis0] * xprime[axis0] + xprime[axis1] * xprime[axis1];
+    const double &p0 = xprime[axis0];
+    const double &p1 = xprime[axis1];
+    const double &p2 = xprime[dim];
+
+    const double &rSq = p0 * p0 + p1 * p1;
 
     if (rSq > RmaxSq)
       return;
 
     xprime = R*xprime;
-    const double &p0 = xprime[axis0];
-    const double &p1 = xprime[axis1];
-    const double &p2 = xprime[dim];
-    const double &pext = Rmax - Kokkos::Experimental::sqrt(p0*p0 + p1*p1);
-    double p;
+    const double &pext = Rmax - Kokkos::Experimental::sqrt(rSq);
 
     Vector3d f;
 
     if (p0 > w) {
-      p = p0 - w;
-      f[axis0] = -p;
+      f[axis0] = w - p0;
     } else if (p0 < -w) {
-      p = -w - p0;
-      f[axis0] = p;
+      f[axis0] = -w - p0;
     }
 
     if (p1 > w) {
-      p = p1 - w;
-      f[axis1] = -p;
+      f[axis1] = w - p1;
     } else if (p1 < -w) {
-      p = -p1 - w;
-      f[axis1] = p;
+      f[axis1] = -w - p1;
     }
 
     if (pext > 0 && pext < f.norm()) {

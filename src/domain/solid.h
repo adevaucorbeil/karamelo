@@ -101,6 +101,8 @@ class Solid : public Pointers {
   Kokkos::View<double***> wf_corners;       ///< Particles' node neighbors' weight functions \f$\Phi\f$ evaluated at the corners of the particle's domain (used in CPDI)
   Kokkos::View<Vector3d**> wfd;             ///< Particles' node neighbors' weight function derivatives \f$\partial \Phi/ \partial x\f$
 
+  Kokkos::View<int*> error_flag;            ///< Error codes
+
   Kokkos::MDRangePolicy<Kokkos::Rank<2>> neigh_policy;
 
   class Mat *mat;                          ///< Pointer to the material
@@ -131,7 +133,7 @@ class Solid : public Pointers {
   void read_restart(ifstream*);                     ///< Read solid information from the restart file
 
   void populate(vector<string>);
-  
+
 private:
   void read_mesh(string);
   void read_file(string);

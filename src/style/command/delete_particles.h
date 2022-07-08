@@ -22,14 +22,14 @@ CommandStyle(delete_particles,DeleteParticles)
 
 #include <vector>
 #include <pointers.h>
+#include <deque>
 
 class DeleteParticles : protected Pointers {
  public:
   DeleteParticles(class MPM *);
   class Var command(vector<string>);
 
- private:
-  int **dlist;
+
   void delete_region(vector<string>, int);
 };
 
