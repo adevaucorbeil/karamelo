@@ -7,7 +7,7 @@
 class ExpressionOperandTime:
   public ExpressionOperand<ExpressionOperandTime>
 {
-  double t;
+  float t;
 
 public:
   void
@@ -22,7 +22,7 @@ public:
     t = grid.update->atime;
   }
 
-  KOKKOS_INLINE_FUNCTION double
+  KOKKOS_INLINE_FUNCTION float
   evaluate(int i) const
   {
     return t;

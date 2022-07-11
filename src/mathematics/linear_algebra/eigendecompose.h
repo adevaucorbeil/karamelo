@@ -21,7 +21,7 @@ eigendecompose(Matrix<T, N, N> &matrix)
     const T &c = matrix(k    , k    );
     const V &d = (a - c)/2;
     Matrix<V, N, N> shift;
-    double denominator = Kokkos::Experimental::abs(d) + Kokkos::Experimental::hypot(d, b);
+    float denominator = Kokkos::Experimental::abs(d) + Kokkos::Experimental::hypot(d, b);
     if (abs(denominator) > 1e-10)
      shift = (c - sign(d)*b*b/denominator)*Matrix<V, N, N>::identity();
 

@@ -64,10 +64,10 @@ void ComputeMaxPlasticStrain::compute_value(Solid &solid) {
     Epmax = Tmax = 0;
   }
 
-  double Epmax_reduced(0.), Tmax_reduced(0.), Epmax_tmp(0.), Tmax_tmp(0.);
+  float Epmax_reduced(0.), Tmax_reduced(0.), Epmax_tmp(0.), Tmax_tmp(0.);
 
-  Kokkos::View<double*> T = solid.T;
-  Kokkos::View<double*> eff_plastic_strain = solid.eff_plastic_strain;
+  Kokkos::View<float*> T = solid.T;
+  Kokkos::View<float*> eff_plastic_strain = solid.eff_plastic_strain;
   Kokkos::View<int*> mask = solid.mask;
 
   int groupbit = this->groupbit;
@@ -75,12 +75,12 @@ void ComputeMaxPlasticStrain::compute_value(Solid &solid) {
   if (update->ntimestep == output->next ||
       update->ntimestep == update->nsteps) {
     Kokkos::parallel_reduce("ComputeMaxPlasticStrain::compute_value", solid.np_local,
-			    KOKKOS_LAMBDA(const int &ip, double &lTmax, double &lEpmax) {
+			    KOKKOS_LAMBDA(const int &ip, float &lTmax, float &lEpmax) {
 			      if (mask[ip] & groupbit) {
 				lTmax = lTmax > T[ip] ? lTmax : T[ip];
 				lEpmax = lEpmax > eff_plastic_strain[ip] ? lEpmax : eff_plastic_strain[ip];
 			      }
-			    },Kokkos::Max<double>(Tmax_tmp), Kokkos::Max<double>(Epmax_tmp));
+			    },Kokkos::Max<float>(Tmax_tmp), Kokkos::Max<float>(Epmax_tmp));
 
     
     Tmax = Tmax > Tmax_tmp ? Tmax : Tmax_tmp;
@@ -88,10 +88,10 @@ void ComputeMaxPlasticStrain::compute_value(Solid &solid) {
   }
 
   // Reduce Epmax:
-  MPI_Allreduce(&Epmax, &Epmax_reduced, 1, MPI_DOUBLE, MPI_MAX, universe->uworld);
+  MPI_Allreduce(&Epmax, &Epmax_reduced, 1, MPI_FLOAT, MPI_MAX, universe->uworld);
   input->parsev(id + "_Epmax", Epmax_reduced);
 
   // Reduce Tmax:
-  MPI_Allreduce(&Tmax, &Tmax_reduced, 1, MPI_DOUBLE, MPI_MAX, universe->uworld);
+  MPI_Allreduce(&Tmax, &Tmax_reduced, 1, MPI_FLOAT, MPI_MAX, universe->uworld);
   input->parsev(id + "_Tmax", Tmax_reduced);
 }

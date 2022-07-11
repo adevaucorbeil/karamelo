@@ -44,7 +44,7 @@ Intersection::Intersection(MPM *mpm, vector<string> args) : Region(mpm, args)
                "Error: region_intersection command not enough arguments\n" + usage);
   }
 
-  vector<double> lim;
+  vector<float> lim;
 
   xlo = -BIG;
   xhi = BIG;
@@ -86,7 +86,7 @@ Intersection::~Intersection()
    inside = 0 if x,y,z is outside and not on surface
 ------------------------------------------------------------------------- */
 
-int Intersection::inside(double x, double y, double z)
+int Intersection::inside(float x, float y, float z)
 {
   for(int i = 0; i < iregions.size(); i++) {
     if (domain->regions[iregions[i]]->inside(x, y, z) == 0)
@@ -98,8 +98,8 @@ int Intersection::inside(double x, double y, double z)
 /* ----------------------------------------------------------------------
    return a vector that contains the limits of the box
 ------------------------------------------------------------------------- */
-vector<double> Intersection::limits(){
-  vector<double> lim;
+vector<float> Intersection::limits(){
+  vector<float> lim;
   lim.push_back(xlo);
   lim.push_back(xhi);
   lim.push_back(ylo);
@@ -116,12 +116,12 @@ void Intersection::write_restart(ofstream *of) {
     of->write(reinterpret_cast<const char *>(&iregions[i]), sizeof(int));
   }
 
-  of->write(reinterpret_cast<const char *>(&xlo), sizeof(double));
-  of->write(reinterpret_cast<const char *>(&xhi), sizeof(double));
-  of->write(reinterpret_cast<const char *>(&ylo), sizeof(double));
-  of->write(reinterpret_cast<const char *>(&yhi), sizeof(double));
-  of->write(reinterpret_cast<const char *>(&zlo), sizeof(double));
-  of->write(reinterpret_cast<const char *>(&zhi), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&xlo), sizeof(float));
+  of->write(reinterpret_cast<const char *>(&xhi), sizeof(float));
+  of->write(reinterpret_cast<const char *>(&ylo), sizeof(float));
+  of->write(reinterpret_cast<const char *>(&yhi), sizeof(float));
+  of->write(reinterpret_cast<const char *>(&zlo), sizeof(float));
+  of->write(reinterpret_cast<const char *>(&zhi), sizeof(float));
 }
 
 void Intersection::read_restart(ifstream *ifr) {
@@ -135,10 +135,10 @@ void Intersection::read_restart(ifstream *ifr) {
   ifr->read(reinterpret_cast<char *>(&iregions[i]), sizeof(int));
   }
 
-  ifr->read(reinterpret_cast<char *>(&xlo), sizeof(double));
-  ifr->read(reinterpret_cast<char *>(&xhi), sizeof(double));
-  ifr->read(reinterpret_cast<char *>(&ylo), sizeof(double));
-  ifr->read(reinterpret_cast<char *>(&yhi), sizeof(double));
-  ifr->read(reinterpret_cast<char *>(&zlo), sizeof(double));
-  ifr->read(reinterpret_cast<char *>(&zhi), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&xlo), sizeof(float));
+  ifr->read(reinterpret_cast<char *>(&xhi), sizeof(float));
+  ifr->read(reinterpret_cast<char *>(&ylo), sizeof(float));
+  ifr->read(reinterpret_cast<char *>(&yhi), sizeof(float));
+  ifr->read(reinterpret_cast<char *>(&zlo), sizeof(float));
+  ifr->read(reinterpret_cast<char *>(&zhi), sizeof(float));
 }

@@ -88,14 +88,14 @@ void FixInitialStress::initial_integrate(Solid &solid)
 
 
   int groupbit = this->groupbit;
-  double ntimestep = update->ntimestep;
+  float ntimestep = update->ntimestep;
   Kokkos::View<int*> mask = solid.mask;
   Kokkos::View<Matrix3d*> sigma = solid.sigma;
 
   for (int i = 0; i < 6; i++)
     if (s_value[i])
       {
-	Kokkos::View<double **> s_value_i = s_value[i]->registers;
+	Kokkos::View<float **> s_value_i = s_value[i]->registers;
 	Kokkos::parallel_for("FixInitialStress::initial_integrate", solid.np_local,
 			     KOKKOS_LAMBDA(const int &ip)
 			     {
@@ -111,7 +111,7 @@ void FixInitialStress::initial_integrate(Solid &solid)
 
   
   if (update->method_type == "tlmpm" || update->method_type == "tlcpdi") {
-    Kokkos::View<double*> vol0 = solid.vol0;
+    Kokkos::View<float*> vol0 = solid.vol0;
     Kokkos::View<Matrix3d*> vol0PK1 = solid.vol0PK1;
 
     Kokkos::parallel_for("FixInitialStress::initial_integrate_tlmpm", solid.np_local,

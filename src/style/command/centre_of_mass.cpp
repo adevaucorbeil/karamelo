@@ -37,7 +37,7 @@ Var CentreOfMass::command(vector<string> args) {
   else if (args[1] == "z") dir = 2;
   else error->all(FLERR, "Error: directions should be either x,y or z: " + args[1] + " not understood.\n");
 
-  double com = group->xcm(igroup, dir);
+  float com = group->xcm(igroup, dir);
   string eq = "xcm(" + args[0] + "," + args[1] + ")";
   return Var(eq, com);
 }

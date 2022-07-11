@@ -57,15 +57,15 @@ class Union : public Region {
  public:
   Union(class MPM *, vector<string>);
   ~Union();
-  int inside(double, double, double);
-  vector<double> limits();
+  int inside(float, float, float);
+  vector<float> limits();
   void write_restart(ofstream *);
   void read_restart(ifstream *);
 
  protected:
   //vector<string> regions;
   vector<int> iregions;
-  double xlo, xhi, ylo, yhi, zlo, zhi;
+  float xlo, xhi, ylo, yhi, zlo, zhi;
   
   const string usage = "Usage: region(region-ID, union, region-1, region-2, ..., region-N)\n";
   const int Nargs = 4;

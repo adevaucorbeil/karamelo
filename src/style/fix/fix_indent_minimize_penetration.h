@@ -43,10 +43,10 @@ private:
                  "vy_center, vz_center, mu)\n";
   int Nargs = 12;
   Var xvalue, yvalue, zvalue, vxvalue, vyvalue, vzvalue;
-  double R;  //< Sphere radius
-  double mu; //< Friction coefficient
-  double A;
-  double cellsizeSq;
+  float R;  //< Sphere radius
+  float mu; //< Friction coefficient
+  float A;
+  float cellsizeSq;
   Vector3d ftot;
 };
 

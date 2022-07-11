@@ -38,12 +38,12 @@ class Region : protected Pointers {
 
   // called by other classes to check point versus region
 
-  int match(double, double, double);
+  int match(float, float, float);
 
   // implemented by each region
 
-  virtual vector<double> limits() {return vector<double>();};
-  virtual int inside(double, double, double) = 0;
+  virtual vector<float> limits() {return vector<float>();};
+  virtual int inside(float, float, float) = 0;
   virtual void write_restart(ofstream*) = 0;
   virtual void read_restart(ifstream*) = 0;
   //protected:

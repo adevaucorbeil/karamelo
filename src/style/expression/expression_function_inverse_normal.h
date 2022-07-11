@@ -10,24 +10,24 @@ ExpressionStyle(inv_norm, ExpressionFunctionInverseNormal)
 class ExpressionFunctionInverseNormal:
   public ExpressionFunction<ExpressionFunctionInverseNormal, 1>
 {
-  static KOKKOS_INLINE_FUNCTION double
-  normalCDF(double x)
+  static KOKKOS_INLINE_FUNCTION float
+  normalCDF(float x)
   {
     return Kokkos::Experimental::erfc(-x/Kokkos::Experimental::sqrt(2))/2;
   }
 
 public:
-  KOKKOS_INLINE_FUNCTION double
+  KOKKOS_INLINE_FUNCTION float
   evaluate(int i) const
   {
-    constexpr double eps = 1e-5;
+    constexpr float eps = 1e-5;
 
-    double value = get_value(0, i);
+    float value = get_value(0, i);
 
     if (value < eps || value > 1 - eps)
       return Kokkos::Experimental::nan("");
 
-    double x_min = -1, x_max = 1;
+    float x_min = -1, x_max = 1;
 
     while (normalCDF(x_min) > value)
     {
@@ -43,7 +43,7 @@ public:
 
     while (x_max - x_min > eps)
     {
-      double x = (x_min + x_max)/2;
+      float x = (x_min + x_max)/2;
 
       (normalCDF(x) < value? x_min: x_max) = x;
     }

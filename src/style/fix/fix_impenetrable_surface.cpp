@@ -89,7 +89,7 @@ void FixImpenetrableSurface::reduce()
   Vector3d ftot_reduced;
 
   // Reduce ftot:
-  MPI_Allreduce(ftot.elements, ftot_reduced.elements, 3, MPI_DOUBLE, MPI_SUM,
+  MPI_Allreduce(ftot.elements, ftot_reduced.elements, 3, MPI_FLOAT, MPI_SUM,
                 universe->uworld);
 
   (*input->vars)[id + "_x"] = Var(id + "_x", ftot_reduced[0]);
@@ -118,7 +118,7 @@ void FixImpenetrableSurface::initial_integrate(Solid &solid) {
     if (!solid.mass[ip] || !(solid.mask[ip] & groupbit))
       continue;
 
-    double p = n.dot(solid.x[ip] - xs);
+    float p = n.dot(solid.x[ip] - xs);
     // if (s->ptag[ip] == 1) {
     //   cout << id << "- Particle " << s->ptag[ip] << "\t";
     //   cout << "p = " << p << "\t";
@@ -142,7 +142,7 @@ void FixImpenetrableSurface::initial_integrate(Solid &solid) {
 }
 
 void FixImpenetrableSurface::write_restart(ofstream *of) {
-  of->write(reinterpret_cast<const char *>(&K), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&K), sizeof(float));
 
   xs_x.write_to_restart(of);
   xs_y.write_to_restart(of);
@@ -154,7 +154,7 @@ void FixImpenetrableSurface::write_restart(ofstream *of) {
 }
 
 void FixImpenetrableSurface::read_restart(ifstream *ifr) {
-  ifr->read(reinterpret_cast<char *>(&K), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&K), sizeof(float));
 
   xs_x.read_from_restart(ifr);
   xs_y.read_from_restart(ifr);

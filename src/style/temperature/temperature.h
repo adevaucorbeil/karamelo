@@ -24,14 +24,14 @@ class Temperature : protected Pointers {
   virtual void read_restart(ifstream*) = 0;
 
   // implemented by each Temperature
-  virtual double cp() = 0;
-  virtual double kappa() = 0;
-  virtual double alpha() = 0;
+  virtual float cp() = 0;
+  virtual float kappa() = 0;
+  virtual float alpha() = 0;
   virtual void compute_heat_source(Solid &solid,
                                    Kokkos::View<Matrix3d*> &sigma_dev) const = 0;
 
 protected:
-  double cp_, kappa_, alpha_ = 0;
+  float cp_, kappa_, alpha_ = 0;
 };
 
 #endif

@@ -88,35 +88,35 @@ DamageJohnsonCook::DamageJohnsonCook(MPM *mpm, vector<string> args)
   Tmr = Tm - Tr;
 }
 
-//void DamageJohnsonCook::compute_damage(double &damage_init, double &damage,
-//                                       const double pH,
+//void DamageJohnsonCook::compute_damage(float &damage_init, float &damage,
+//                                       const float pH,
 //                                       const Matrix3d Sdev,
-//                                       const double epsdot,
-//                                       const double plastic_strain_increment,
-//                                       const double T) {
+//                                       const float epsdot,
+//                                       const float plastic_strain_increment,
+//                                       const float T) {
 
 
 void
 DamageJohnsonCook::compute_damage(Solid &solid,
-                                  Kokkos::View<double*> &pH,
+                                  Kokkos::View<float*> &pH,
                                   Kokkos::View<Matrix3d*> &sigma_dev,
-                                  Kokkos::View<double*> &plastic_strain_increment) const
+                                  Kokkos::View<float*> &plastic_strain_increment) const
 {
-  double d1 = this->d1;
-  double d2 = this->d2;
-  double d3 = this->d3;
-  double d4 = this->d4;
-  double d5 = this->d5;
-  double epsdot0 = this->epsdot0;
-  double Tr = this->Tr;
-  double Tmr = this->Tmr;
+  float d1 = this->d1;
+  float d2 = this->d2;
+  float d3 = this->d3;
+  float d4 = this->d4;
+  float d5 = this->d5;
+  float epsdot0 = this->epsdot0;
+  float Tr = this->Tr;
+  float Tmr = this->Tmr;
 
-  double cp = solid.mat->cp;
+  float cp = solid.mat->cp;
 
-  Kokkos::View<double*> sdamage = solid.damage;
-  Kokkos::View<double*> sdamage_init = solid.damage_init;
-  Kokkos::View<double*> sT = solid.T;
-  Kokkos::View<double*> seff_plastic_strain_rate = solid.eff_plastic_strain_rate;
+  Kokkos::View<float*> sdamage = solid.damage;
+  Kokkos::View<float*> sdamage_init = solid.damage_init;
+  Kokkos::View<float*> sT = solid.T;
+  Kokkos::View<float*> seff_plastic_strain_rate = solid.eff_plastic_strain_rate;
 
   Kokkos::parallel_for("DamageJohnsonCook::compute_damage", solid.np_local,
   KOKKOS_LAMBDA (const int &ip)
@@ -124,7 +124,7 @@ DamageJohnsonCook::compute_damage(Solid &solid,
     if (plastic_strain_increment[ip] == 0 && sdamage[ip] >= 1.0)
       return;
 
-    double vm = SQRT_3_OVER_2*sigma_dev[ip].norm(); // von-Mises equivalent stress
+    float vm = SQRT_3_OVER_2*sigma_dev[ip].norm(); // von-Mises equivalent stress
 
     //if (vm < 0.0)
     //{
@@ -135,7 +135,7 @@ DamageJohnsonCook::compute_damage(Solid &solid,
     //}
 
     // determine stress triaxiality
-    double triax = 0.0;
+    float triax = 0.0;
     if (pH[ip] != 0.0 && vm != 0.0)
     {
       triax = -pH[ip] / (vm + 0.001 * Kokkos::Experimental::fabs(pH[ip])); // have softening in denominator to
@@ -148,13 +148,13 @@ DamageJohnsonCook::compute_damage(Solid &solid,
     }
 
     // Johnson-Cook failure strain, dependence on stress triaxiality
-    double jc_failure_strain = d1 + d2 * Kokkos::Experimental::exp(d3 * triax);
+    float jc_failure_strain = d1 + d2 * Kokkos::Experimental::exp(d3 * triax);
 
     // include strain rate dependency if parameter d4 is defined and current
     // plastic strain rate exceeds reference strain rate
     if (d4 > 0.0) {
       if (seff_plastic_strain_rate[ip] > epsdot0) {
-        double epdot_ratio = seff_plastic_strain_rate[ip]/epsdot0;
+        float epdot_ratio = seff_plastic_strain_rate[ip]/epsdot0;
         jc_failure_strain *= (1.0 + d4 * Kokkos::Experimental::log(epdot_ratio));
       }
     }
@@ -170,25 +170,25 @@ DamageJohnsonCook::compute_damage(Solid &solid,
 }
 
 void DamageJohnsonCook::write_restart(ofstream *of) {
-  of->write(reinterpret_cast<const char *>(&d1), sizeof(double));
-  of->write(reinterpret_cast<const char *>(&d2), sizeof(double));
-  of->write(reinterpret_cast<const char *>(&d3), sizeof(double));
-  of->write(reinterpret_cast<const char *>(&d4), sizeof(double));
-  of->write(reinterpret_cast<const char *>(&d5), sizeof(double));
-  of->write(reinterpret_cast<const char *>(&epsdot0), sizeof(double));
-  of->write(reinterpret_cast<const char *>(&Tr), sizeof(double));
-  of->write(reinterpret_cast<const char *>(&Tm), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&d1), sizeof(float));
+  of->write(reinterpret_cast<const char *>(&d2), sizeof(float));
+  of->write(reinterpret_cast<const char *>(&d3), sizeof(float));
+  of->write(reinterpret_cast<const char *>(&d4), sizeof(float));
+  of->write(reinterpret_cast<const char *>(&d5), sizeof(float));
+  of->write(reinterpret_cast<const char *>(&epsdot0), sizeof(float));
+  of->write(reinterpret_cast<const char *>(&Tr), sizeof(float));
+  of->write(reinterpret_cast<const char *>(&Tm), sizeof(float));
 }
 
 void DamageJohnsonCook::read_restart(ifstream *ifr) {
   // cout << "Restart DamageJohnsonCook" << endl;
-  ifr->read(reinterpret_cast<char *>(&d1), sizeof(double));
-  ifr->read(reinterpret_cast<char *>(&d2), sizeof(double));
-  ifr->read(reinterpret_cast<char *>(&d3), sizeof(double));
-  ifr->read(reinterpret_cast<char *>(&d4), sizeof(double));
-  ifr->read(reinterpret_cast<char *>(&d5), sizeof(double));
-  ifr->read(reinterpret_cast<char *>(&epsdot0), sizeof(double));
-  ifr->read(reinterpret_cast<char *>(&Tr), sizeof(double));
-  ifr->read(reinterpret_cast<char *>(&Tm), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&d1), sizeof(float));
+  ifr->read(reinterpret_cast<char *>(&d2), sizeof(float));
+  ifr->read(reinterpret_cast<char *>(&d3), sizeof(float));
+  ifr->read(reinterpret_cast<char *>(&d4), sizeof(float));
+  ifr->read(reinterpret_cast<char *>(&d5), sizeof(float));
+  ifr->read(reinterpret_cast<char *>(&epsdot0), sizeof(float));
+  ifr->read(reinterpret_cast<char *>(&Tr), sizeof(float));
+  ifr->read(reinterpret_cast<char *>(&Tm), sizeof(float));
   Tmr = Tm - Tr;
 }

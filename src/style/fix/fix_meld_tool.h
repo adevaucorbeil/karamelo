@@ -42,7 +42,7 @@ private:
   string usage = "Usage: fix(fix-ID, meldtool, group, K, dim, half-width, c1, c2, theta, lo, hi, Rmax)\n";
   int Nargs = 12;
   int dim, axis0, axis1;
-  double K, w, lo, hi, Rmax, RmaxSq;
+  float K, w, lo, hi, Rmax, RmaxSq;
 
   Expression *c1, *c2, *theta;         //< Position and angle of the tool
   Vector3d ftot;

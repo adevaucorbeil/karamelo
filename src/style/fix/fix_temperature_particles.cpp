@@ -81,9 +81,9 @@ void FixTemperatureParticles::initial_integrate(Solid &solid)
 
   int groupbit = this->groupbit;
   Kokkos::View<int*> mask = solid.mask;
-  Kokkos::View<double*> T = solid.T;
+  Kokkos::View<float*> T = solid.T;
 
-  Kokkos::View<double **> Tpv = Tprevvalue->registers;
+  Kokkos::View<float **> Tpv = Tprevvalue->registers;
 
   Kokkos::parallel_for("FixTemperatureParticles::initial_integrate", solid.np_local,
 		       KOKKOS_LAMBDA(const int &ip)
@@ -102,9 +102,9 @@ void FixTemperatureParticles::post_advance_particles(Solid &solid)
 
   int groupbit = this->groupbit;
   Kokkos::View<int*> mask = solid.mask;
-  Kokkos::View<double*> T = solid.T;
+  Kokkos::View<float*> T = solid.T;
 
-  Kokkos::View<double **> Tv = Tvalue->registers;
+  Kokkos::View<float **> Tv = Tvalue->registers;
 
   Kokkos::parallel_for("FixTemperatureParticles::post_advance_particles", solid.np_local,
 		       KOKKOS_LAMBDA(const int &ip)

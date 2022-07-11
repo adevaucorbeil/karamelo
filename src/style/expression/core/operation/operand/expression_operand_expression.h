@@ -6,7 +6,7 @@ class ExpressionOperandExpression:
   public ExpressionOperand<ExpressionOperandExpression>
 {
   string name;
-  Kokkos::View<double**> registers;
+  Kokkos::View<float**> registers;
 
 public:
   ExpressionOperandExpression(const string &name):
@@ -31,7 +31,7 @@ public:
     registers = grid.input->expressions[name].registers;
   }
 
-  KOKKOS_INLINE_FUNCTION double
+  KOKKOS_INLINE_FUNCTION float
   evaluate(int i) const
   {
     return registers(0, registers.extent(1) > 1? i: 0);

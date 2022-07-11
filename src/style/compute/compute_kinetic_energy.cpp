@@ -61,7 +61,7 @@ ComputeKineticEnergy::ComputeKineticEnergy(MPM *mpm, vector<string> args)
 ComputeKineticEnergy::~ComputeKineticEnergy() {}
 
 void ComputeKineticEnergy::compute_value(Solid &solid) {
-  double Ek_tmp, Ek_reduced = 0;
+  float Ek_tmp, Ek_reduced = 0;
 
   if (t != update->ntimestep) {
     t = update->ntimestep;
@@ -71,7 +71,7 @@ void ComputeKineticEnergy::compute_value(Solid &solid) {
   Ek_reduced = 0;
 
   Kokkos::View<Vector3d*> v = solid.v;
-  Kokkos::View<double*> mass = solid.mass;
+  Kokkos::View<float*> mass = solid.mass;
   Kokkos::View<int*> mask = solid.mask;
 
   int groupbit = this->groupbit;
@@ -79,7 +79,7 @@ void ComputeKineticEnergy::compute_value(Solid &solid) {
   if (update->ntimestep == output->next ||
       update->ntimestep == update->nsteps){
     Kokkos::parallel_reduce("ComputeKineticEnergy::compute_value", solid.np_local,
-			    KOKKOS_LAMBDA(const int &ip, double &lEk) {
+			    KOKKOS_LAMBDA(const int &ip, float &lEk) {
 			      if (mask[ip] & groupbit)
 				lEk += 0.5 * mass[ip] * (v[ip](0)*v[ip](0)
 							 + v[ip](1)*v[ip](1)
@@ -89,6 +89,6 @@ void ComputeKineticEnergy::compute_value(Solid &solid) {
   }
 
   // Reduce Ek:
-  MPI_Allreduce(&Ek, &Ek_reduced, 1, MPI_DOUBLE, MPI_SUM, universe->uworld);
+  MPI_Allreduce(&Ek, &Ek_reduced, 1, MPI_FLOAT, MPI_SUM, universe->uworld);
   input->parsev(id, Ek_reduced);
 }

@@ -57,27 +57,27 @@ EOSFluid::~EOSFluid()
 
 }
 
-double EOSFluid::rho0(){
+float EOSFluid::rho0(){
   return rho0_;
 }
 
-double EOSFluid::K(){
+float EOSFluid::K(){
   return K_;
 }
 
-void EOSFluid::compute_pressure(Solid &solid, Kokkos::View<double*> &pH) const
+void EOSFluid::compute_pressure(Solid &solid, Kokkos::View<float*> &pH) const
 {
-  double rho0_ = this->rho0_;
-  double K_ = this->K_;
-  double Gamma = this->Gamma;
+  float rho0_ = this->rho0_;
+  float K_ = this->K_;
+  float Gamma = this->Gamma;
 
-  Kokkos::View<double*> sienergy = solid.ienergy;
-  Kokkos::View<double*> srho = solid.rho;
+  Kokkos::View<float*> sienergy = solid.ienergy;
+  Kokkos::View<float*> srho = solid.rho;
 
   Kokkos::parallel_for("EOSFluid::compute_pressure", solid.np_local,
   KOKKOS_LAMBDA (const int &ip)
   {
-    double mu = srho[ip]/rho0_;
+    float mu = srho[ip]/rho0_;
     pH[ip] = K_*(pow(mu, Gamma) - 1);
 
     sienergy[ip] = 0;
@@ -86,18 +86,18 @@ void EOSFluid::compute_pressure(Solid &solid, Kokkos::View<double*> &pH) const
 
 
 void EOSFluid::write_restart(ofstream *of) {
-  of->write(reinterpret_cast<const char *>(&rho0_), sizeof(double));
-  of->write(reinterpret_cast<const char *>(&K_), sizeof(double));
-  of->write(reinterpret_cast<const char *>(&Gamma), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&rho0_), sizeof(float));
+  of->write(reinterpret_cast<const char *>(&K_), sizeof(float));
+  of->write(reinterpret_cast<const char *>(&Gamma), sizeof(float));
 }
 
 void EOSFluid::read_restart(ifstream *ifr) {
   if (universe->me == 0) {
     cout << "Restart EOSFluid" << endl;
   }
-  ifr->read(reinterpret_cast<char *>(&rho0_), sizeof(double));
-  ifr->read(reinterpret_cast<char *>(&K_), sizeof(double));
-  ifr->read(reinterpret_cast<char *>(&Gamma), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&rho0_), sizeof(float));
+  ifr->read(reinterpret_cast<char *>(&K_), sizeof(float));
+  ifr->read(reinterpret_cast<char *>(&Gamma), sizeof(float));
 }
 
 

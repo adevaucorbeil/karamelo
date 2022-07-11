@@ -32,7 +32,7 @@ class ComputeKineticEnergy : public Compute {
 
 private:
   int t;
-  double Ek;
+  float Ek;
 };
 
 #endif

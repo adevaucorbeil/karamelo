@@ -20,7 +20,7 @@
 namespace MathSpecial {
   // x**2, use instead of pow(x,2.0)
 
-  static inline double square(const double &x) { return x*x; }
+  static inline float square(const float &x) { return x*x; }
 }
 
 #endif

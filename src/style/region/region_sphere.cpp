@@ -117,10 +117,10 @@ Sphere::~Sphere()
    inside = 0 if x,y,z is outside and not on surface
 ------------------------------------------------------------------------- */
 
-int Sphere::inside(double x, double y, double z)
+int Sphere::inside(float x, float y, float z)
 {
   //cout << "Check if point (" << x << ", " << y << ", " << z << ") is inside the region" << endl;
-  double dSq;
+  float dSq;
   dSq = square(x - c1) + square(y - c2) + square(z - c3);
   if (dSq <= RSq) {
     return 1;
@@ -131,8 +131,8 @@ int Sphere::inside(double x, double y, double z)
 /* ----------------------------------------------------------------------
    return a vector that contains the limits of the box
 ------------------------------------------------------------------------- */
-vector<double> Sphere::limits(){
-  vector<double> lim;
+vector<float> Sphere::limits(){
+  vector<float> lim;
   lim.push_back(xlo);
   lim.push_back(xhi);
   lim.push_back(ylo);
@@ -143,31 +143,31 @@ vector<double> Sphere::limits(){
 }
 
 void Sphere::write_restart(ofstream *of) {
-  of->write(reinterpret_cast<const char *>(&c1), sizeof(double));
-  of->write(reinterpret_cast<const char *>(&c2), sizeof(double));
-  of->write(reinterpret_cast<const char *>(&c3), sizeof(double));
-  of->write(reinterpret_cast<const char *>(&R), sizeof(double));
-  of->write(reinterpret_cast<const char *>(&xlo), sizeof(double));
-  of->write(reinterpret_cast<const char *>(&xhi), sizeof(double));
-  of->write(reinterpret_cast<const char *>(&ylo), sizeof(double));
-  of->write(reinterpret_cast<const char *>(&yhi), sizeof(double));
-  of->write(reinterpret_cast<const char *>(&zlo), sizeof(double));
-  of->write(reinterpret_cast<const char *>(&zhi), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&c1), sizeof(float));
+  of->write(reinterpret_cast<const char *>(&c2), sizeof(float));
+  of->write(reinterpret_cast<const char *>(&c3), sizeof(float));
+  of->write(reinterpret_cast<const char *>(&R), sizeof(float));
+  of->write(reinterpret_cast<const char *>(&xlo), sizeof(float));
+  of->write(reinterpret_cast<const char *>(&xhi), sizeof(float));
+  of->write(reinterpret_cast<const char *>(&ylo), sizeof(float));
+  of->write(reinterpret_cast<const char *>(&yhi), sizeof(float));
+  of->write(reinterpret_cast<const char *>(&zlo), sizeof(float));
+  of->write(reinterpret_cast<const char *>(&zhi), sizeof(float));
 }
 
 
 
 void Sphere::read_restart(ifstream *ifr) {
   // cout << "Restart Sphere" << endl;
-  ifr->read(reinterpret_cast<char *>(&c1), sizeof(double));
-  ifr->read(reinterpret_cast<char *>(&c2), sizeof(double));
-  ifr->read(reinterpret_cast<char *>(&c3), sizeof(double));
-  ifr->read(reinterpret_cast<char *>(&R), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&c1), sizeof(float));
+  ifr->read(reinterpret_cast<char *>(&c2), sizeof(float));
+  ifr->read(reinterpret_cast<char *>(&c3), sizeof(float));
+  ifr->read(reinterpret_cast<char *>(&R), sizeof(float));
   RSq = R * R;
-  ifr->read(reinterpret_cast<char *>(&xlo), sizeof(double));
-  ifr->read(reinterpret_cast<char *>(&xhi), sizeof(double));
-  ifr->read(reinterpret_cast<char *>(&ylo), sizeof(double));
-  ifr->read(reinterpret_cast<char *>(&yhi), sizeof(double));
-  ifr->read(reinterpret_cast<char *>(&zlo), sizeof(double));
-  ifr->read(reinterpret_cast<char *>(&zhi), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&xlo), sizeof(float));
+  ifr->read(reinterpret_cast<char *>(&xhi), sizeof(float));
+  ifr->read(reinterpret_cast<char *>(&ylo), sizeof(float));
+  ifr->read(reinterpret_cast<char *>(&yhi), sizeof(float));
+  ifr->read(reinterpret_cast<char *>(&zlo), sizeof(float));
+  ifr->read(reinterpret_cast<char *>(&zhi), sizeof(float));
 }

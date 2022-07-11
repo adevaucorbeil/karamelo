@@ -78,10 +78,10 @@ void FixConvectionParticles::prepare()
 
 void FixConvectionParticles::reduce()
 {
-  double qtot_reduced;
+  float qtot_reduced;
 
   // Reduce qtot:
-  MPI_Allreduce(&qtot, &qtot_reduced, 1, MPI_DOUBLE, MPI_SUM,
+  MPI_Allreduce(&qtot, &qtot_reduced, 1, MPI_FLOAT, MPI_SUM,
                 universe->uworld);
 
   (*input->vars)[id + "_s"] = Var(id + "_s", qtot_reduced);
@@ -92,21 +92,21 @@ void FixConvectionParticles::initial_integrate(Solid &solid) {
 
 
   Tinf->evaluate();
-  double h = this->h;
+  float h = this->h;
   int groupbit = this->groupbit, dimension = domain->dimension;
   Kokkos::View<int*> mask = solid.mask;
-  Kokkos::View<double*> T = solid.T, vol = solid.vol, gamma = solid.gamma;
-  double invcp = solid.mat->invcp;
+  Kokkos::View<float*> T = solid.T, vol = solid.vol, gamma = solid.gamma;
+  float invcp = solid.mat->invcp;
 
-  Kokkos::View<double**> Tinf_ = Tinf->registers;
+  Kokkos::View<float**> Tinf_ = Tinf->registers;
 
   Kokkos::parallel_reduce("FixVelocityNodes::post_update_grid_state", solid.np_local,
-			  KOKKOS_LAMBDA(const int &ip, double &lqtot)
+			  KOKKOS_LAMBDA(const int &ip, float &lqtot)
       {
         if (!(mask[ip] & groupbit))
           return;
 
-	double Ap;
+	float Ap;
 	if (dimension == 1)
 	  Ap = 1;
 	else if (dimension == 2)
@@ -114,7 +114,7 @@ void FixConvectionParticles::initial_integrate(Solid &solid) {
 	else         
 	  Ap = Kokkos::Experimental::pow(vol[ip], 2/3);
 	
-	double qtemp = h*(Tinf_(0, 0) - T[ip]);
+	float qtemp = h*(Tinf_(0, 0) - T[ip]);
 	gamma[ip] += Ap * qtemp * invcp;
 	lqtot += qtemp;
       }, qtot);
@@ -123,11 +123,11 @@ void FixConvectionParticles::initial_integrate(Solid &solid) {
 }
 
 void FixConvectionParticles::write_restart(ofstream *of) {
-  of->write(reinterpret_cast<const char *>(&h), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&h), sizeof(float));
   // Tinf.write_to_restart(of);
 }
 
 void FixConvectionParticles::read_restart(ifstream *ifr) {
-  ifr->read(reinterpret_cast<char *>(&h), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&h), sizeof(float));
   // Tinf.read_from_restart(ifr);
 }

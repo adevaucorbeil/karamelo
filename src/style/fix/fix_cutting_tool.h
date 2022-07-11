@@ -40,7 +40,7 @@ private:
   string usage = "Usage: fix(fix-ID, cuttingtool, group, K, x_tip, y_tip, "
                  "z_tip, vx_tip, vy_tip, vz_tip, xA, yA, xB, yB)\n";
   int Nargs = 14;
-  double K;
+  float K;
   Var xtvalue, ytvalue, ztvalue;
   Var vtxvalue, vtyvalue, vtzvalue;
   Var xAvalue, yAvalue;

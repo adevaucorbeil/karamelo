@@ -11,7 +11,7 @@ void Expression::evaluate()
     expression_dependency->evaluate();
 
   index = 0;
-  registers = Kokkos::View<double**>("expression", registers.extent(0), 1);
+  registers = Kokkos::View<float**>("expression", registers.extent(0), 1);
 
   for (const std::unique_ptr<Operation> &operation: operations)
     operation->apply(this);
@@ -23,7 +23,7 @@ void Expression::evaluate(Solid &solid)
     expression_dependency->evaluate(solid);
 
   index = 0;
-  registers = Kokkos::View<double**>("expression", registers.extent(0), solid.np_local);
+  registers = Kokkos::View<float**>("expression", registers.extent(0), solid.np_local);
 
   for (const std::unique_ptr<Operation> &operation: operations)
   {
@@ -38,7 +38,7 @@ void Expression::evaluate(Grid &grid)
     expression_dependency->evaluate(grid);
 
   index = 0;
-  registers = Kokkos::View<double**>("expression", registers.extent(0), grid.nnodes);
+  registers = Kokkos::View<float**>("expression", registers.extent(0), grid.nnodes);
 
   for (const std::unique_ptr<Operation> &operation: operations)
   {

@@ -32,7 +32,7 @@ class ComputeAverageVelocity : public Compute {
 
 private:
   int t;
-  double v_average[3];
+  float v_average[3];
 };
 
 #endif

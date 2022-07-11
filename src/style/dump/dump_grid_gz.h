@@ -30,12 +30,12 @@ class DumpGridGz : public Dump {
   Kokkos::View<Vector3d*>::HostMirror v;            ///< nodes' velocity at time t
   Kokkos::View<Vector3d*>::HostMirror mb;           ///< nodes' external forces times the mass
 
-  Kokkos::View<double*>::HostMirror mass;              ///< nodes' current mass
+  Kokkos::View<float*>::HostMirror mass;              ///< nodes' current mass
   Kokkos::View<int*>::HostMirror mask;                 ///< nodes' group mask
   Kokkos::View<bool*>::HostMirror rigid;               ///< are the nodes in the area of influence of a rigid body?
   Kokkos::View<Vector3i*>::HostMirror ntype;      ///< node type in x, y, and z directions (False for an edge, True otherwise)
 
-  Kokkos::View<double*>::HostMirror T;                 ///< nodes' temperature at time t
+  Kokkos::View<float*>::HostMirror T;                 ///< nodes' temperature at time t
 
  public:
   DumpGridGz(MPM *, vector<string>);

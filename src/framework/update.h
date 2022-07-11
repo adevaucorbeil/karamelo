@@ -24,15 +24,15 @@ class Update : protected Pointers {
   enum class ShapeFunctions;
   enum class SubMethodType;
 
-  double run_duration;                ///< Stop simulation if elapsed simulation time exceeds this.
-  double elapsed_time_in_run;	      ///< Elapsed simulation time for a single run;
-  double dt;                          ///< Timestep
-  double dt_factor;                   ///< Timestep factor
+  float run_duration;                ///< Stop simulation if elapsed simulation time exceeds this.
+  float elapsed_time_in_run;	      ///< Elapsed simulation time for a single run;
+  float dt;                          ///< Timestep
+  float dt_factor;                   ///< Timestep factor
   bool dt_constant;                   ///< is dt constant?
   bigint ntimestep;                   ///< current step
   int nsteps;                         ///< Number of steps to run
-  double atime;                       ///< Simulation time at atime_step
-  double maxtime;                     ///< Maximum simulation time (infinite if -1)
+  float atime;                       ///< Simulation time at atime_step
+  float maxtime;                     ///< Maximum simulation time (infinite if -1)
   bigint atimestep;                   ///< Last timestep atime was updated
   bigint firststep,laststep;          ///< 1st & last step of this run
   bigint beginstep,endstep;           ///< 1st and last step of multiple runs
@@ -45,7 +45,7 @@ class Update : protected Pointers {
   string method_type;                 ///< Name of the method type
   SubMethodType sub_method_type;      ///< Name of the velocity updating method type
   ShapeFunctions shape_function;      ///< Type of shape function used
-  double PIC_FLIP;                    ///< PIC/FLIP mixing factor
+  float PIC_FLIP;                    ///< PIC/FLIP mixing factor
   bool temp;                          ///< True for thermo-mechanical simulations
 
   Update(class MPM *);

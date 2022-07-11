@@ -50,7 +50,7 @@ Var PopulateCylindricalCoordinates::command(vector<string> args) {
       error->all(FLERR, "Error: region " + args[1] + " unknown.\n");
     }
 
-  double c1, c2, R, lo, hi, T0;
+  float c1, c2, R, lo, hi, T0;
   int Ndx, Ndr, Ndtheta;
   char axis;
   int ii, jj, kk;
@@ -115,12 +115,12 @@ Var PopulateCylindricalCoordinates::command(vector<string> args) {
 
   int l = 0;
 
-  double Ndr_ = R/Ndr;
-  double Ndtheta_ = (2*M_PI)/Ndtheta;
-  double Ndx_ = (hi - lo)/Ndx;
+  float Ndr_ = R/Ndr;
+  float Ndtheta_ = (2*M_PI)/Ndtheta;
+  float Ndx_ = (hi - lo)/Ndx;
   if (Ndx_ == 0)
     Ndx_++;
-  double vol_ = Ndr_ * Ndtheta_ * Ndx_;
+  float vol_ = Ndr_ * Ndtheta_ * Ndx_;
 
   for (int i = 0; i < Ndx; i++) {
     for (int j = 0; j < Ndr; j++) {

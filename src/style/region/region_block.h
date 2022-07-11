@@ -55,13 +55,13 @@ class Block_ : public Region {
 public:
   Block_(class MPM *, vector<string>);
   ~Block_();
-  int inside(double, double, double);
-  vector<double> limits();
+  int inside(float, float, float);
+  vector<float> limits();
   void write_restart(ofstream *);
   void read_restart(ifstream *);
 
 protected:
-  double xlo, xhi, ylo, yhi, zlo, zhi;
+  float xlo, xhi, ylo, yhi, zlo, zhi;
 };
 
 #endif

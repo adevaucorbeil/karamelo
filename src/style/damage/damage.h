@@ -36,9 +36,9 @@ class Damage : protected Pointers {
 
   // implemented by each Damage
   virtual void compute_damage(Solid &solid,
-                              Kokkos::View<double*> &pH,
+                              Kokkos::View<float*> &pH,
                               Kokkos::View<Matrix3d*> &sigma_dev,
-                              Kokkos::View<double*> &plastic_strain_increment) const = 0;
+                              Kokkos::View<float*> &plastic_strain_increment) const = 0;
 };
 
 #endif

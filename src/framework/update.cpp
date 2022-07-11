@@ -250,7 +250,7 @@ void Update::write_restart(ofstream *of) {
   of->write(reinterpret_cast<const char *>(&sub_method_type), sizeof(int));
 
   // PIC_FLIP
-  of->write(reinterpret_cast<const char *>(&PIC_FLIP), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&PIC_FLIP), sizeof(float));
   // cout << "PIC_FLIP=" << PIC_FLIP << endl;
 
   // The type of shape function:
@@ -266,16 +266,16 @@ void Update::write_restart(ofstream *of) {
   }
 
   // atime:
-  of->write(reinterpret_cast<const char *>(&atime), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&atime), sizeof(float));
 
   // Timestep:
   of->write(reinterpret_cast<const char *>(&ntimestep), sizeof(bigint));
 
   // dt:
-  of->write(reinterpret_cast<const char *>(&dt), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&dt), sizeof(float));
 
   // dt_factor:
-  of->write(reinterpret_cast<const char *>(&dt_factor), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&dt_factor), sizeof(float));
 
   // dt_contant:
   of->write(reinterpret_cast<const char *>(&dt_constant), sizeof(bool));
@@ -343,7 +343,7 @@ void Update::read_restart(ifstream *ifr) {
   // cout << "sub_method_type=" << sub_method_type << endl;
 
   // PIC_FLIP
-  ifr->read(reinterpret_cast<char *>(&PIC_FLIP), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&PIC_FLIP), sizeof(float));
   // cout << "PIC_FLIP=" << PIC_FLIP << endl;
 
   // The type of shape function:
@@ -363,7 +363,7 @@ void Update::read_restart(ifstream *ifr) {
   method->setup(additional_args);
 
   // atime:
-  ifr->read(reinterpret_cast<char *>(&atime), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&atime), sizeof(float));
   // cout << "atime=" << atime << endl;
   (*input->vars)["time"] = Var("time", atime);
 
@@ -374,11 +374,11 @@ void Update::read_restart(ifstream *ifr) {
   (*input->vars)["timestep"] = Var("timestep", ntimestep);
 
   // dt:
-  ifr->read(reinterpret_cast<char *>(&dt), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&dt), sizeof(float));
   // cout << "dt=" << dt << endl;
 
   // dt_factor:
-  ifr->read(reinterpret_cast<char *>(&dt_factor), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&dt_factor), sizeof(float));
   // cout << "dt_factor=" << dt_factor << endl;
 
   // dt_contant:

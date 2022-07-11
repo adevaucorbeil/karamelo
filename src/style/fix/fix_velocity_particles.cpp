@@ -116,7 +116,7 @@
 //  Vector3d ftot_reduced;
 //
 //  // Reduce ftot:
-//  MPI_Allreduce(ftot.elements, ftot_reduced.elements, 3, MPI_DOUBLE, MPI_SUM,
+//  MPI_Allreduce(ftot.elements, ftot_reduced.elements, 3, MPI_FLOAT, MPI_SUM,
 //                universe->uworld);
 //
 //  (*input->vars)[id + "_x"] = Var(id + "_x", ftot_reduced[0]);
@@ -209,14 +209,14 @@
 //
 //void FixVelocityParticles::post_advance_particles() {
 //  // Go through all the particles in the group and set v to the right value:
-//  double vx, vy, vz;
+//  float vx, vy, vz;
 //  
 //  int solid = group->solid[igroup];
 //  Solid *s;
 //  Vector3d Dv;
 //
 //  int n = 0;
-//  double inv_dt = 1.0/update->dt;
+//  float inv_dt = 1.0/update->dt;
 //
 //  if (solid == -1) {
 //    for (int isolid = 0; isolid < domain->solids.size(); isolid++) {

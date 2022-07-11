@@ -95,34 +95,34 @@ StrengthJohnsonCook::StrengthJohnsonCook(MPM *mpm, vector<string> args)
   Tmr = Tm - Tr;
 }
 
-double StrengthJohnsonCook::G() { return G_; }
+float StrengthJohnsonCook::G() { return G_; }
   
 void
 StrengthJohnsonCook::update_deviatoric_stress(Solid &solid,
-                                              Kokkos::View<double*> &plastic_strain_increment,
+                                              Kokkos::View<float*> &plastic_strain_increment,
                                               Kokkos::View<Matrix3d*> &sigma_dev) const
 {
-  double epsdot0 = this->epsdot0;
-  double A = this->A;
-  double B = this->B;
-  double n = this->n;
-  double C = this->C;
-  double Tm = this->Tm;
-  double Tr = this->Tr;
-  double Tmr = this->Tmr;
-  double m = this->m;
-  double G_ = this->G_;
+  float epsdot0 = this->epsdot0;
+  float A = this->A;
+  float B = this->B;
+  float n = this->n;
+  float C = this->C;
+  float Tm = this->Tm;
+  float Tr = this->Tr;
+  float Tmr = this->Tmr;
+  float m = this->m;
+  float G_ = this->G_;
 
-  double dt = update->dt;
+  float dt = update->dt;
 
-  double cp = solid.mat->cp;
+  float cp = solid.mat->cp;
 
   Kokkos::View<Matrix3d*> ssigma = solid.sigma;
   Kokkos::View<Matrix3d*> sD = solid.D;
-  Kokkos::View<double*> sdamage = solid.damage;
-  Kokkos::View<double*> seff_plastic_strain = solid.eff_plastic_strain;
-  Kokkos::View<double*> seff_plastic_strain_rate = solid.eff_plastic_strain_rate;
-  Kokkos::View<double*> sT = solid.T;
+  Kokkos::View<float*> sdamage = solid.damage;
+  Kokkos::View<float*> seff_plastic_strain = solid.eff_plastic_strain;
+  Kokkos::View<float*> seff_plastic_strain_rate = solid.eff_plastic_strain_rate;
+  Kokkos::View<float*> sT = solid.T;
 
   Kokkos::parallel_for("StrengthJohnsonCook::update_deviatoric_stress", solid.np_local,
   KOKKOS_LAMBDA (const int &ip)
@@ -134,9 +134,9 @@ StrengthJohnsonCook::update_deviatoric_stress(Solid &solid,
     }
 
     Matrix3d sigmaFinal_dev, sigmaTrial, sigmaTrial_dev;
-    double J2, Gd, yieldStress;
+    float J2, Gd, yieldStress;
 
-    double epsdot_ratio = seff_plastic_strain_rate[ip]/epsdot0;
+    float epsdot_ratio = seff_plastic_strain_rate[ip]/epsdot0;
     epsdot_ratio        = MAX(epsdot_ratio, 1.0);
 
     if (seff_plastic_strain[ip] < 1.0e-10)
@@ -209,29 +209,29 @@ StrengthJohnsonCook::update_deviatoric_stress(Solid &solid,
 }
 
 void StrengthJohnsonCook::write_restart(ofstream *of) {
-  of->write(reinterpret_cast<const char *>(&G_), sizeof(double));
-  of->write(reinterpret_cast<const char *>(&A), sizeof(double));
-  of->write(reinterpret_cast<const char *>(&B), sizeof(double));
-  of->write(reinterpret_cast<const char *>(&n), sizeof(double));
-  of->write(reinterpret_cast<const char *>(&m), sizeof(double));
-  of->write(reinterpret_cast<const char *>(&epsdot0), sizeof(double));
-  of->write(reinterpret_cast<const char *>(&C), sizeof(double));
-  of->write(reinterpret_cast<const char *>(&Tr), sizeof(double));
-  of->write(reinterpret_cast<const char *>(&Tm), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&G_), sizeof(float));
+  of->write(reinterpret_cast<const char *>(&A), sizeof(float));
+  of->write(reinterpret_cast<const char *>(&B), sizeof(float));
+  of->write(reinterpret_cast<const char *>(&n), sizeof(float));
+  of->write(reinterpret_cast<const char *>(&m), sizeof(float));
+  of->write(reinterpret_cast<const char *>(&epsdot0), sizeof(float));
+  of->write(reinterpret_cast<const char *>(&C), sizeof(float));
+  of->write(reinterpret_cast<const char *>(&Tr), sizeof(float));
+  of->write(reinterpret_cast<const char *>(&Tm), sizeof(float));
 }
 
 void StrengthJohnsonCook::read_restart(ifstream *ifr) {
   if (universe->me == 0) {
     cout << "Restart StrengthJohnsonCook" << endl;
   }
-  ifr->read(reinterpret_cast<char *>(&G_), sizeof(double));
-  ifr->read(reinterpret_cast<char *>(&A), sizeof(double));
-  ifr->read(reinterpret_cast<char *>(&B), sizeof(double));
-  ifr->read(reinterpret_cast<char *>(&n), sizeof(double));
-  ifr->read(reinterpret_cast<char *>(&m), sizeof(double));
-  ifr->read(reinterpret_cast<char *>(&epsdot0), sizeof(double));
-  ifr->read(reinterpret_cast<char *>(&C), sizeof(double));
-  ifr->read(reinterpret_cast<char *>(&Tr), sizeof(double));
-  ifr->read(reinterpret_cast<char *>(&Tm), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&G_), sizeof(float));
+  ifr->read(reinterpret_cast<char *>(&A), sizeof(float));
+  ifr->read(reinterpret_cast<char *>(&B), sizeof(float));
+  ifr->read(reinterpret_cast<char *>(&n), sizeof(float));
+  ifr->read(reinterpret_cast<char *>(&m), sizeof(float));
+  ifr->read(reinterpret_cast<char *>(&epsdot0), sizeof(float));
+  ifr->read(reinterpret_cast<char *>(&C), sizeof(float));
+  ifr->read(reinterpret_cast<char *>(&Tr), sizeof(float));
+  ifr->read(reinterpret_cast<char *>(&Tm), sizeof(float));
   Tmr = Tm - Tr;
 }

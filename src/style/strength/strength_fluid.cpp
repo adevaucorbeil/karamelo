@@ -39,17 +39,17 @@ StrengthFluid::StrengthFluid(MPM *mpm, vector<string> args) : Strength(mpm, args
   }
 }
 
-double StrengthFluid::G(){
+float StrengthFluid::G(){
   return G_;
 }
 
 
 void
 StrengthFluid::update_deviatoric_stress(Solid &solid,
-                                        Kokkos::View<double*> &plastic_strain_increment,
+                                        Kokkos::View<float*> &plastic_strain_increment,
                                         Kokkos::View<Matrix3d*> &sigma_dev) const
 {
-  double G_ = this->G_;
+  float G_ = this->G_;
   Kokkos::View<Matrix3d*> sD = solid.D;
 
   Kokkos::parallel_for("EOSLinear::compute_pressure", solid.np_local,
@@ -60,12 +60,12 @@ StrengthFluid::update_deviatoric_stress(Solid &solid,
 }
 
 void StrengthFluid::write_restart(ofstream *of) {
-  of->write(reinterpret_cast<const char *>(&G_), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&G_), sizeof(float));
 }
 
 void StrengthFluid::read_restart(ifstream *ifr) {
   if (universe->me == 0) {
     cout << "Restart StrengthFluid" << endl;
   }
-  ifr->read(reinterpret_cast<char *>(&G_), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&G_), sizeof(float));
 }

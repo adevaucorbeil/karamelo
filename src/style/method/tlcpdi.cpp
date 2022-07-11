@@ -116,8 +116,8 @@
 //
 //      deque<int> &neigh_p = domain->solids[isolid]->neigh_p; neigh_p.clear();
 //      deque<int> &neigh_n = domain->solids[isolid]->neigh_n; neigh_n.clear();
-//      deque<double> &wfs = domain->solids[isolid]->wf; wfs.clear();
-//      deque<double> &wf_corners = domain->solids[isolid]->wf_corners; wf_corners.clear();
+//      deque<float> &wfs = domain->solids[isolid]->wf; wfs.clear();
+//      deque<float> &wf_corners = domain->solids[isolid]->wf_corners; wf_corners.clear();
 //      deque<Vector3d> &wfds = domain->solids[isolid]->wfd; wfds.clear();
 //
 //      vector<Vector3d> *xp  = &domain->solids[isolid]->x0;
@@ -125,17 +125,17 @@
 //      vector<Vector3d> *xn  = &domain->solids[isolid]->grid->x0;
 //      vector<Vector3d> *rp  = &domain->solids[isolid]->rp;
 //
-//      double inv_cellsize          = 1.0 / domain->solids[isolid]->grid->cellsize;
-//      vector<double> *vol          = &domain->solids[isolid]->vol;
+//      float inv_cellsize          = 1.0 / domain->solids[isolid]->grid->cellsize;
+//      vector<float> *vol          = &domain->solids[isolid]->vol;
 //      vector<array<int, 3>> *ntype = &domain->solids[isolid]->grid->ntype;
 //
-//      double wf;
-//      double s[3];
+//      float wf;
+//      float s[3];
 //      Vector3d r, wfd;
 //      vector<Vector3d> xcorner(nc);
-//      vector<double> wfc(nc, 0);
+//      vector<float> wfc(nc, 0);
 //
-//      double a, b, inv_Vp, alpha_over_Vp, sixVp;
+//      float a, b, inv_Vp, alpha_over_Vp, sixVp;
 //
 //      if (np_local && nnodes) {
 //	for (int ip=0; ip<np_local; ip++) {
@@ -340,7 +340,7 @@
 //    {
 //      int in = solid->neigh_n.at(i);
 //      int ip = solid->neigh_p.at(i);
-//      double wf = solid->wf.at(i);
+//      float wf = solid->wf.at(i);
 //      const Vector3d &wfd = solid->wfd.at(i);
 //
 //      solid->compute_mass_nodes(in, ip, wf);
@@ -361,7 +361,7 @@
 //    {
 //      int in = solid->neigh_n.at(i);
 //      int ip = solid->neigh_p.at(i);
-//      double wf = solid->wf.at(i);
+//      float wf = solid->wf.at(i);
 //      solid->compute_mass_nodes(in, ip, wf);
 //      solid->compute_velocity_nodes(in, ip, wf, method_type == "APIC");
 //    }
@@ -378,7 +378,7 @@
 //    {
 //      int in = solid->neigh_n.at(i);
 //      int ip = solid->neigh_p.at(i);
-//      double wf = solid->wf.at(i);
+//      float wf = solid->wf.at(i);
 //      const Vector3d &wfd = solid->wfd.at(i);
 //      
 //      solid->compute_force_nodes(in, ip, wf, wfd, true, false);
@@ -402,7 +402,7 @@
 //    {
 //      int in = solid->neigh_n.at(i);
 //      int ip = solid->neigh_p.at(i);
-//      double wf = solid->wf.at(i);
+//      float wf = solid->wf.at(i);
 //
 //      solid->compute_velocity_acceleration(in, ip, wf);
 //    }
@@ -430,7 +430,7 @@
 //      {
 //        int in = solid->neigh_n.at(i);
 //        int ip = solid->neigh_p.at(i);
-//        double wf = solid->wf.at(i);
+//        float wf = solid->wf.at(i);
 //
 //        solid->compute_velocity_nodes(in, ip, wf, false);
 //      }
@@ -453,7 +453,7 @@
 //      {
 //        int in = solid->neigh_n.at(i);
 //        int ip = solid->neigh_p.at(i);
-//        double wf = solid->wf.at(i);
+//        float wf = solid->wf.at(i);
 //        const Vector3d &wfd = solid->wfd.at(i);
 //
 //        solid->compute_rate_deformation_gradient(in, ip, wf, wfd, doublemapping, true,
@@ -481,7 +481,7 @@
 //  if (update->dt_constant)
 //    return; // dt is set as a constant, do not update
 //    
-//  double dtCFL = 1.0e22;
+//  float dtCFL = 1.0e22;
 //
 //  for (int isolid=0; isolid<domain->solids.size(); isolid++) {
 //    dtCFL = MIN(dtCFL, domain->solids[isolid]->dtCFL);

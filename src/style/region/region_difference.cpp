@@ -50,7 +50,7 @@ Difference::Difference(MPM *mpm, vector<string> args) : Region(mpm, args) {
                    usage);
   }
 
-  vector<double> lim;
+  vector<float> lim;
   int ir;
 
   // Look for the regionID:
@@ -90,7 +90,7 @@ Difference::~Difference()
    inside = 0 if x,y,z is outside and not on surface
 ------------------------------------------------------------------------- */
 
-int Difference::inside(double x, double y, double z) {
+int Difference::inside(float x, float y, float z) {
   if (domain->regions[iregions[0]]->inside(x, y, z) == 1 &&
       domain->regions[iregions[1]]->inside(x, y, z) == 0) {
     return 1;
@@ -102,8 +102,8 @@ int Difference::inside(double x, double y, double z) {
 /* ----------------------------------------------------------------------
    return a vector that contains the limits of the box
 ------------------------------------------------------------------------- */
-vector<double> Difference::limits(){
-  vector<double> lim;
+vector<float> Difference::limits(){
+  vector<float> lim;
   lim.push_back(xlo);
   lim.push_back(xhi);
   lim.push_back(ylo);
@@ -120,12 +120,12 @@ void Difference::write_restart(ofstream *of) {
     of->write(reinterpret_cast<const char *>(&iregions[i]), sizeof(int));
   }
 
-  of->write(reinterpret_cast<const char *>(&xlo), sizeof(double));
-  of->write(reinterpret_cast<const char *>(&xhi), sizeof(double));
-  of->write(reinterpret_cast<const char *>(&ylo), sizeof(double));
-  of->write(reinterpret_cast<const char *>(&yhi), sizeof(double));
-  of->write(reinterpret_cast<const char *>(&zlo), sizeof(double));
-  of->write(reinterpret_cast<const char *>(&zhi), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&xlo), sizeof(float));
+  of->write(reinterpret_cast<const char *>(&xhi), sizeof(float));
+  of->write(reinterpret_cast<const char *>(&ylo), sizeof(float));
+  of->write(reinterpret_cast<const char *>(&yhi), sizeof(float));
+  of->write(reinterpret_cast<const char *>(&zlo), sizeof(float));
+  of->write(reinterpret_cast<const char *>(&zhi), sizeof(float));
 }
 
 
@@ -140,10 +140,10 @@ void Difference::read_restart(ifstream *ifr) {
   ifr->read(reinterpret_cast<char *>(&iregions[i]), sizeof(int));
   }
 
-  ifr->read(reinterpret_cast<char *>(&xlo), sizeof(double));
-  ifr->read(reinterpret_cast<char *>(&xhi), sizeof(double));
-  ifr->read(reinterpret_cast<char *>(&ylo), sizeof(double));
-  ifr->read(reinterpret_cast<char *>(&yhi), sizeof(double));
-  ifr->read(reinterpret_cast<char *>(&zlo), sizeof(double));
-  ifr->read(reinterpret_cast<char *>(&zhi), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&xlo), sizeof(float));
+  ifr->read(reinterpret_cast<char *>(&xhi), sizeof(float));
+  ifr->read(reinterpret_cast<char *>(&ylo), sizeof(float));
+  ifr->read(reinterpret_cast<char *>(&yhi), sizeof(float));
+  ifr->read(reinterpret_cast<char *>(&zlo), sizeof(float));
+  ifr->read(reinterpret_cast<char *>(&zhi), sizeof(float));
 }

@@ -108,7 +108,7 @@ Solid::Solid(MPM *mpm, vector<string> args): Pointers(mpm)
 
   vtot = 0;
   mtot = 0;
-  comm_n = 50; // Number of double to pack for particle exchange between CPUs.
+  comm_n = 50; // Number of float to pack for particle exchange between CPUs.
 
 
   if (args[1] == "restart")
@@ -156,7 +156,7 @@ Solid::Solid(MPM *mpm, vector<string> args): Pointers(mpm)
   }
 
   if (update->method->temp)
-    comm_n = 54; // Number of double to pack for particle exchange between CPUs.
+    comm_n = 54; // Number of float to pack for particle exchange between CPUs.
   else
     comm_n = 49;
 }
@@ -177,20 +177,20 @@ void Solid::init()
   }
 
   // Calculate total volume:
-  Kokkos::View<double*> vol = this->vol;
-  Kokkos::View<double*> mass = this->mass;
+  Kokkos::View<float*> vol = this->vol;
+  Kokkos::View<float*> mass = this->mass;
 
-  double vtot_local = 0;
-  double mtot_local = 0;
+  float vtot_local = 0;
+  float mtot_local = 0;
   Kokkos::parallel_reduce(__PRETTY_FUNCTION__, np_local,
-  KOKKOS_LAMBDA (int ip, double &vtot_local, double &mtot_local)
+  KOKKOS_LAMBDA (int ip, float &vtot_local, float &mtot_local)
   {
     vtot_local += vol[ip];
     mtot_local += mass[ip];
   }, vtot_local, mtot_local);
 
-  MPI_Allreduce(&vtot_local, &vtot, 1, MPI_DOUBLE, MPI_SUM, universe->uworld);
-  MPI_Allreduce(&mtot_local, &mtot, 1, MPI_DOUBLE, MPI_SUM, universe->uworld);
+  MPI_Allreduce(&vtot_local, &vtot, 1, MPI_FLOAT, MPI_SUM, universe->uworld);
+  MPI_Allreduce(&mtot_local, &mtot, 1, MPI_FLOAT, MPI_SUM, universe->uworld);
 
   if (universe->me == 0)
   {
@@ -284,32 +284,32 @@ void Solid::grow(int nparticles)
   Finv      = Kokkos::View<Matrix3d*>("Finv",       nparticles);
   Fdot      = Kokkos::View<Matrix3d*>("Fdot",       nparticles);
 
-  vol0                    = Kokkos::View<double*>("vol0",                    nparticles);
-  vol                     = Kokkos::View<double*>("vol",                     nparticles);
-  rho0                    = Kokkos::View<double*>("rho0",                    nparticles);
-  rho                     = Kokkos::View<double*>("rho",                     nparticles);
-  mass                    = Kokkos::View<double*>("mass",                    nparticles);
-  eff_plastic_strain      = Kokkos::View<double*>("eff_plastic_strain",      nparticles);
-  eff_plastic_strain_rate = Kokkos::View<double*>("eff_plastic_strain_rate", nparticles);
-  damage                  = Kokkos::View<double*>("damage",                  nparticles);
-  damage_init             = Kokkos::View<double*>("damage_init",             nparticles);
-  ienergy                 = Kokkos::View<double*>("ienergy",                 nparticles);
-  J                       = Kokkos::View<double*>("J",                       nparticles);
-  dtCFL                   = Kokkos::View<double*>("dtCFL",                   nparticles);
-  gamma                   = Kokkos::View<double*>("gamma",                   nparticles);
+  vol0                    = Kokkos::View<float*>("vol0",                    nparticles);
+  vol                     = Kokkos::View<float*>("vol",                     nparticles);
+  rho0                    = Kokkos::View<float*>("rho0",                    nparticles);
+  rho                     = Kokkos::View<float*>("rho",                     nparticles);
+  mass                    = Kokkos::View<float*>("mass",                    nparticles);
+  eff_plastic_strain      = Kokkos::View<float*>("eff_plastic_strain",      nparticles);
+  eff_plastic_strain_rate = Kokkos::View<float*>("eff_plastic_strain_rate", nparticles);
+  damage                  = Kokkos::View<float*>("damage",                  nparticles);
+  damage_init             = Kokkos::View<float*>("damage_init",             nparticles);
+  ienergy                 = Kokkos::View<float*>("ienergy",                 nparticles);
+  J                       = Kokkos::View<float*>("J",                       nparticles);
+  dtCFL                   = Kokkos::View<float*>("dtCFL",                   nparticles);
+  gamma                   = Kokkos::View<float*>("gamma",                   nparticles);
 
   mask = Kokkos::View<int*>("mask", nparticles);
   if (mat->cp != 0)
   {
-    T = Kokkos::View<double*>  ("T", nparticles);
+    T = Kokkos::View<float*>  ("T", nparticles);
     q = Kokkos::View<Vector3d*>("q", nparticles);
   }
 
   size_t neighbor_nodes_per_particle = 64;
 
   neigh_n    = Kokkos::View<int**>     ("neigh_n",   nparticles, neighbor_nodes_per_particle);
-  wf         = Kokkos::View<double**>  ("wf",        nparticles, neighbor_nodes_per_particle);
-  wf_corners = Kokkos::View<double***> ("wfcorners", nparticles, neighbor_nodes_per_particle, nc);
+  wf         = Kokkos::View<float**>  ("wf",        nparticles, neighbor_nodes_per_particle);
+  wf_corners = Kokkos::View<float***> ("wfcorners", nparticles, neighbor_nodes_per_particle, nc);
   wfd        = Kokkos::View<Vector3d**>("wfd",       nparticles, neighbor_nodes_per_particle);
 
   error_flag = Kokkos::View<int*>      ("error_flag",nparticles);
@@ -337,7 +337,7 @@ void Solid::compute_inertia_tensor()
   Vector3d dx;
 
   Matrix3d eye = Matrix3d::identity(), Dtemp;
-  double cellsizeSqInv = 1.0/(grid->cellsize*grid->cellsize);
+  float cellsizeSqInv = 1.0/(grid->cellsize*grid->cellsize);
 
   if (update->shape_function == Update::ShapeFunctions::LINEAR)
   {
@@ -428,7 +428,7 @@ void Solid::compute_inertia_tensor()
   // Matrix3d eye;
   // eye.setIdentity();
 
-  // double cellsizeSqInv = 1.0/(grid->cellsize*grid->cellsize);
+  // float cellsizeSqInv = 1.0/(grid->cellsize*grid->cellsize);
 
   // for (int ip = 0; ip < np_local; ip++)
   //   {
@@ -523,7 +523,7 @@ void Solid::copy_particle(int i, int j)
 }
 
 
-void Solid::pack_particle(int i, vector<double> &buf)
+void Solid::pack_particle(int i, vector<float> &buf)
 {
   buf.push_back(ptag[i]);
 
@@ -617,7 +617,7 @@ void Solid::pack_particle(int i, vector<double> &buf)
   buf.push_back(J[i]);
 }
 
-void Solid::unpack_particle(int &i, vector<int> list, vector<double> &buf)
+void Solid::unpack_particle(int &i, vector<int> list, vector<float> &buf)
 {
   int m;
   for (auto j: list)
@@ -742,10 +742,10 @@ void Solid::populate(vector<string> args)
     error->all(FLERR, "The domain must be created before any solids can (create_domain(...)).");
   }
 
-  double *sublo = domain->sublo;
-  double *subhi = domain->subhi;
+  float *sublo = domain->sublo;
+  float *subhi = domain->subhi;
 
-  vector<double> limits = domain->regions[iregion]->limits();
+  vector<float> limits = domain->regions[iregion]->limits();
 
   solidlo[0] = limits[0];
   solidhi[0] = limits[1];
@@ -768,16 +768,16 @@ void Solid::populate(vector<string> args)
     << "]\t solidsubhi=["<< solidsubhi[0] << "," << solidsubhi[1] << "," << solidsubhi[2]
     << "]\n";
 
-//   std::vector<double> x2plot, y2plot;
+//   std::vector<float> x2plot, y2plot;
 #endif
 
   // Calculate total number of particles np_local:
   int nsubx, nsuby, nsubz;
-  double delta;
-  //double hdelta;
-  //double Lsubx, Lsuby, Lsubz;
+  float delta;
+  //float hdelta;
+  //float Lsubx, Lsuby, Lsubz;
 
-  double *boundlo, *boundhi;
+  float *boundlo, *boundhi;
 
   delta = grid->cellsize;
 
@@ -853,12 +853,12 @@ void Solid::populate(vector<string> args)
     boundhi = domain->boxhi;
   }
 
-  double Loffsetlo[3] = {MAX(0.0, sublo[0] - boundlo[0]),
-    MAX(0.0, sublo[1] - boundlo[1]),
-    MAX(0.0, sublo[2] - boundlo[2])};
-  double Loffsethi[3] = {MAX(0.0, MIN(subhi[0], boundhi[0]) - boundlo[0]),
-    MAX(0.0, MIN(subhi[1], boundhi[1]) - boundlo[1]),
-    MAX(0.0, MIN(subhi[2], boundhi[2]) - boundlo[2])};
+  float Loffsetlo[3] = {MAX(0.0f, sublo[0] - boundlo[0]),
+			MAX(0.0f, sublo[1] - boundlo[1]),
+			MAX(0.0f, sublo[2] - boundlo[2])};
+  float Loffsethi[3] = {MAX(0.0f, MIN(subhi[0], boundhi[0]) - boundlo[0]),
+			MAX(0.0f, MIN(subhi[1], boundhi[1]) - boundlo[1]),
+			MAX(0.0f, MIN(subhi[2], boundhi[2]) - boundlo[2])};
 
   int noffsetlo[3] = {(int)floor(Loffsetlo[0]/delta),
     (int)floor(Loffsetlo[1]/delta),
@@ -942,7 +942,7 @@ void Solid::populate(vector<string> args)
   if (universe->me == 0)
     cout << "delta = " << delta << endl;
 
-  double vol_;
+  float vol_;
 
   if (domain->dimension == 1)
     vol_ = delta;
@@ -951,17 +951,17 @@ void Solid::populate(vector<string> args)
   else
     vol_ = delta*delta*delta;
 
-  double mass_;
+  float mass_;
   if (mat->rigid)
     mass_ = 1;
   else
     mass_ = mat->rho0*vol_;
 
   np_per_cell = (int)input->parsev(args[3]);
-  double xi = 0.5;
-  double lp = delta;
+  float xi = 0.5;
+  float lp = delta;
   int nip = 1;
-  vector<double> intpoints;
+  vector<float> intpoints;
 
   if (np_per_cell == 1)
   {
@@ -1053,7 +1053,7 @@ void Solid::populate(vector<string> args)
       nip = np_per_cell*np_per_cell*np_per_cell;
     }
 
-    double d = 1.0/np_per_cell;
+    float d = 1.0/np_per_cell;
 
     for (int k = 0; k < np_per_cell; k++)
     {
@@ -1069,8 +1069,8 @@ void Solid::populate(vector<string> args)
     }
   }
 
-  mass_ /= (double)nip;
-  vol_ /= (double)nip;
+  mass_ /= (float)nip;
+  vol_ /= (float)nip;
 
   int dim = domain->dimension;
   bool r4 = false;
@@ -1099,9 +1099,9 @@ void Solid::populate(vector<string> args)
       {
         for (int ip = 0; ip < nip; ip++)
         {
-          double x =             boundlo[0] + delta*(noffsetlo[0] + i + 0.5 + intpoints[3*ip + 0]);
-          double y =             boundlo[1] + delta*(noffsetlo[1] + j + 0.5 + intpoints[3*ip + 1]);
-          double z = dim < 3? 0: boundlo[2] + delta*(noffsetlo[2] + k + 0.5 + intpoints[3*ip + 2]);
+          float x =             boundlo[0] + delta*(noffsetlo[0] + i + 0.5 + intpoints[3*ip + 0]);
+          float y =             boundlo[1] + delta*(noffsetlo[1] + j + 0.5 + intpoints[3*ip + 1]);
+          float z = dim < 3? 0: boundlo[2] + delta*(noffsetlo[2] + k + 0.5 + intpoints[3*ip + 2]);
 
           // Check if the particle is inside the region:
           if (domain->inside_subdomain(x, y, z) && domain->regions[iregion]->inside(x, y, z) == 1)
@@ -1207,11 +1207,11 @@ void Solid::populate(vector<string> args)
 // #endif
   cout << "np_local=" << np_local << endl;
 
-  double rho0_ = mat->rho0;
+  float rho0_ = mat->rho0;
   bool axisymmetric = domain->axisymmetric;
   bool temp = update->method->temp;
   int np_total = domain->np_total;
-  double T0 = this->T0;
+  float T0 = this->T0;
 
   Kokkos::View<tagint*> ptag = this->ptag;
 
@@ -1234,21 +1234,21 @@ void Solid::populate(vector<string> args)
   Kokkos::View<Matrix3d*> Finv = this->Finv;
   Kokkos::View<Matrix3d*> Fdot = this->Fdot;
   
-  Kokkos::View<double*> J = this->J;
-  Kokkos::View<double*> vol = this->vol;
-  Kokkos::View<double*> vol0 = this->vol0;
-  Kokkos::View<double*> rho = this->rho;
-  Kokkos::View<double*> rho0 = this->rho0;
-  Kokkos::View<double*> mass = this->mass;
-  Kokkos::View<double*> eff_plastic_strain = this->eff_plastic_strain;
-  Kokkos::View<double*> eff_plastic_strain_rate = this->eff_plastic_strain_rate;
-  Kokkos::View<double*> damage = this->damage;
-  Kokkos::View<double*> damage_init = this->damage_init;
-  Kokkos::View<double*> ienergy = this->ienergy;
+  Kokkos::View<float*> J = this->J;
+  Kokkos::View<float*> vol = this->vol;
+  Kokkos::View<float*> vol0 = this->vol0;
+  Kokkos::View<float*> rho = this->rho;
+  Kokkos::View<float*> rho0 = this->rho0;
+  Kokkos::View<float*> mass = this->mass;
+  Kokkos::View<float*> eff_plastic_strain = this->eff_plastic_strain;
+  Kokkos::View<float*> eff_plastic_strain_rate = this->eff_plastic_strain_rate;
+  Kokkos::View<float*> damage = this->damage;
+  Kokkos::View<float*> damage_init = this->damage_init;
+  Kokkos::View<float*> ienergy = this->ienergy;
   Kokkos::View<int*> mask = this->mask;
 
-  Kokkos::View<double*> T = this->T;
-  Kokkos::View<double*> gamma = this->gamma;
+  Kokkos::View<float*> T = this->T;
+  Kokkos::View<float*> gamma = this->gamma;
   Kokkos::View<Vector3d*> q = this->q;
 
   Kokkos::View<int*> error_flag = this->error_flag;
@@ -1345,14 +1345,14 @@ void Solid::read_mesh(string fileName)
   int id;
   int elemType;
   vector<string> splitLine;
-  array<double, 3> xn;
+  array<float, 3> xn;
 
   int nodeCount; // Count the number of nodes
-  vector<array<double, 3>> nodes;
+  vector<array<float, 3>> nodes;
 
 // #ifdef DEBUG
-//   std::vector<double> x2plot, y2plot;
-//   std::vector<double> xcplot, ycplot;
+//   std::vector<float> x2plot, y2plot;
+//   std::vector<float> xcplot, ycplot;
 // #endif
 
   ifstream file(fileName, std::ios::in);
@@ -1372,7 +1372,7 @@ void Solid::read_mesh(string fileName)
     if (line == "$MeshFormat")
     {
       // Read mesh format informations:
-      double version;
+      float version;
       file >> version;
 
       if (version >= 3.0)
@@ -1559,31 +1559,31 @@ void Solid::read_mesh(string fileName)
           int no3 = stoi(splitLine[7]) - 1;
           int no4 = stoi(splitLine[8]) - 1;
 
-          double x1 = nodes[no1][0];
-          double y1 = nodes[no1][1];
-          double z1 = nodes[no1][2];
-          double x2 = nodes[no2][0];
-          double y2 = nodes[no2][1];
-          double z2 = nodes[no2][2];
-          double x3 = nodes[no3][0];
-          double y3 = nodes[no3][1];
-          double z3 = nodes[no3][2];
-          double x4 = nodes[no4][0];
-          double y4 = nodes[no4][1];
-          double z4 = nodes[no4][2];
+          float x1 = nodes[no1][0];
+          float y1 = nodes[no1][1];
+          float z1 = nodes[no1][2];
+          float x2 = nodes[no2][0];
+          float y2 = nodes[no2][1];
+          float z2 = nodes[no2][2];
+          float x3 = nodes[no3][0];
+          float y3 = nodes[no3][1];
+          float z3 = nodes[no3][2];
+          float x4 = nodes[no4][0];
+          float y4 = nodes[no4][1];
+          float z4 = nodes[no4][2];
 
-          double x21 = x2 - x1;
-          double x32 = x3 - x2;
-          double x43 = x4 - x3;
-          double x42 = x4 - x2;
-          double y23 = y2 - y3;
-          double y34 = y3 - y4;
-          double y12 = y1 - y2;
-          double y42 = y4 - y2;
-          double z34 = z3 - z4;
-          double z23 = z2 - z3;
-          double z12 = z1 - z2;
-          double z42 = z4 - z2;
+          float x21 = x2 - x1;
+          float x32 = x3 - x2;
+          float x43 = x4 - x3;
+          float x42 = x4 - x2;
+          float y23 = y2 - y3;
+          float y34 = y3 - y4;
+          float y12 = y1 - y2;
+          float y42 = y4 - y2;
+          float z34 = z3 - z4;
+          float z23 = z2 - z3;
+          float z12 = z1 - z2;
+          float z42 = z4 - z2;
 
           x0[ie][0] = x[ie][0] = 0.25*(x1 + x2 + x3 + x4);
           x0[ie][1] = x[ie][1] = 0.25*(y1 + y2 + y3 + y4);
@@ -1672,10 +1672,10 @@ void Solid::read_mesh(string fileName)
 void Solid::write_restart(ofstream *of)
 {
 // Write solid bounds:
-  of->write(reinterpret_cast<const char *>(&solidlo[0]), 3*sizeof(double));
-  of->write(reinterpret_cast<const char *>(&solidhi[0]), 3*sizeof(double));
-  of->write(reinterpret_cast<const char *>(&solidsublo[0]), 3*sizeof(double));
-  of->write(reinterpret_cast<const char *>(&solidsubhi[0]), 3*sizeof(double));
+  of->write(reinterpret_cast<const char *>(&solidlo[0]), 3*sizeof(float));
+  of->write(reinterpret_cast<const char *>(&solidhi[0]), 3*sizeof(float));
+  of->write(reinterpret_cast<const char *>(&solidsublo[0]), 3*sizeof(float));
+  of->write(reinterpret_cast<const char *>(&solidsubhi[0]), 3*sizeof(float));
 
   // Write number of particles:
   of->write(reinterpret_cast<const char *>(&np), sizeof(bigint));
@@ -1687,7 +1687,7 @@ void Solid::write_restart(ofstream *of)
   of->write(reinterpret_cast<const char *>(&iMat), sizeof(int));
 
   // Write cellsize:
-  of->write(reinterpret_cast<const char *>(&grid->cellsize), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&grid->cellsize), sizeof(float));
 
 
   // Write particle's attributes:
@@ -1705,15 +1705,15 @@ void Solid::write_restart(ofstream *of)
       of->write(reinterpret_cast<const char *>(&vol0PK1[ip]), sizeof(Matrix3d));
     }
     of->write(reinterpret_cast<const char *>(&F                      [ip]), sizeof(Matrix3d));
-    of->write(reinterpret_cast<const char *>(&J                      [ip]), sizeof(double));
-    of->write(reinterpret_cast<const char *>(&vol0                   [ip]), sizeof(double));
-    of->write(reinterpret_cast<const char *>(&rho0                   [ip]), sizeof(double));
-    of->write(reinterpret_cast<const char *>(&eff_plastic_strain     [ip]), sizeof(double));
-    of->write(reinterpret_cast<const char *>(&eff_plastic_strain_rate[ip]), sizeof(double));
-    of->write(reinterpret_cast<const char *>(&damage                 [ip]), sizeof(double));
-    of->write(reinterpret_cast<const char *>(&damage_init            [ip]), sizeof(double));
-    of->write(reinterpret_cast<const char *>(&T                      [ip]), sizeof(double));
-    of->write(reinterpret_cast<const char *>(&ienergy                [ip]), sizeof(double));
+    of->write(reinterpret_cast<const char *>(&J                      [ip]), sizeof(float));
+    of->write(reinterpret_cast<const char *>(&vol0                   [ip]), sizeof(float));
+    of->write(reinterpret_cast<const char *>(&rho0                   [ip]), sizeof(float));
+    of->write(reinterpret_cast<const char *>(&eff_plastic_strain     [ip]), sizeof(float));
+    of->write(reinterpret_cast<const char *>(&eff_plastic_strain_rate[ip]), sizeof(float));
+    of->write(reinterpret_cast<const char *>(&damage                 [ip]), sizeof(float));
+    of->write(reinterpret_cast<const char *>(&damage_init            [ip]), sizeof(float));
+    of->write(reinterpret_cast<const char *>(&T                      [ip]), sizeof(float));
+    of->write(reinterpret_cast<const char *>(&ienergy                [ip]), sizeof(float));
     of->write(reinterpret_cast<const char *>(&mask                   [ip]), sizeof(int));
   }
 }
@@ -1721,10 +1721,10 @@ void Solid::write_restart(ofstream *of)
 void Solid::read_restart(ifstream *ifr)
 {
 // Read solid bounds:
-  ifr->read(reinterpret_cast<char *>(&solidlo   [0]), 3*sizeof(double));
-  ifr->read(reinterpret_cast<char *>(&solidhi   [0]), 3*sizeof(double));
-  ifr->read(reinterpret_cast<char *>(&solidsublo[0]), 3*sizeof(double));
-  ifr->read(reinterpret_cast<char *>(&solidsubhi[0]), 3*sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&solidlo   [0]), 3*sizeof(float));
+  ifr->read(reinterpret_cast<char *>(&solidhi   [0]), 3*sizeof(float));
+  ifr->read(reinterpret_cast<char *>(&solidsublo[0]), 3*sizeof(float));
+  ifr->read(reinterpret_cast<char *>(&solidsubhi[0]), 3*sizeof(float));
   // cout << "solidlo=[" << solidlo[0] << "," << solidlo[1] << "," << solidlo[2] << endl;
   // cout << "solidhi=[" << solidhi[0] << "," << solidhi[1] << "," << solidhi[2] << endl;
   // cout << "solidsublo=[" << solidsublo[0] << "," << solidsublo[1] << "," << solidsublo[2] << endl;
@@ -1742,7 +1742,7 @@ void Solid::read_restart(ifstream *ifr)
   mat = &material->materials[iMat];
 
   // Read cellsize:
-  ifr->read(reinterpret_cast<char *>(&grid->cellsize), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&grid->cellsize), sizeof(float));
   if (is_TL)
   {
     grid->init(solidlo, solidhi);
@@ -1773,18 +1773,18 @@ void Solid::read_restart(ifstream *ifr)
     D   [ip] = Matrix3d();
     Finv[ip] = Matrix3d();
     Fdot[ip] = Matrix3d();
-    ifr->read(reinterpret_cast<char *>(&J   [ip]), sizeof(double));
-    ifr->read(reinterpret_cast<char *>(&vol0[ip]), sizeof(double));
+    ifr->read(reinterpret_cast<char *>(&J   [ip]), sizeof(float));
+    ifr->read(reinterpret_cast<char *>(&vol0[ip]), sizeof(float));
     vol[ip] = J[ip]*vol0[ip];
-    ifr->read(reinterpret_cast<char *>(&rho0[ip]), sizeof(double));
+    ifr->read(reinterpret_cast<char *>(&rho0[ip]), sizeof(float));
     rho [ip] = rho0[ip]/J   [ip];
     mass[ip] = rho0[ip]*vol0[ip];
-    ifr->read(reinterpret_cast<char *>(&eff_plastic_strain     [ip]), sizeof(double));
-    ifr->read(reinterpret_cast<char *>(&eff_plastic_strain_rate[ip]), sizeof(double));
-    ifr->read(reinterpret_cast<char *>(&damage                 [ip]), sizeof(double));
-    ifr->read(reinterpret_cast<char *>(&damage_init            [ip]), sizeof(double));
-    ifr->read(reinterpret_cast<char *>(&T                      [ip]), sizeof(double));
-    ifr->read(reinterpret_cast<char *>(&ienergy                [ip]), sizeof(double));
+    ifr->read(reinterpret_cast<char *>(&eff_plastic_strain     [ip]), sizeof(float));
+    ifr->read(reinterpret_cast<char *>(&eff_plastic_strain_rate[ip]), sizeof(float));
+    ifr->read(reinterpret_cast<char *>(&damage                 [ip]), sizeof(float));
+    ifr->read(reinterpret_cast<char *>(&damage_init            [ip]), sizeof(float));
+    ifr->read(reinterpret_cast<char *>(&T                      [ip]), sizeof(float));
+    ifr->read(reinterpret_cast<char *>(&ienergy                [ip]), sizeof(float));
     ifr->read(reinterpret_cast<char *>(&mask                   [ip]), sizeof(int));
   }
   // cout << x[0](0) << ", " << x[0](1) << ", " << x[0](2) << endl;

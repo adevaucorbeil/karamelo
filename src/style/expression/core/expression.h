@@ -14,7 +14,7 @@ class Grid;
 class Expression
 {
 public:
-  Kokkos::View<double**> registers;
+  Kokkos::View<float**> registers;
   int index = 0;
 
   class Operation;
@@ -32,12 +32,12 @@ public:
   void evaluate(Solid &solid);
   void evaluate(Grid &grid);
 
-  double
+  float
   getConstant()
   {
     evaluate();
     auto element_device = Kokkos::subview(registers, 0, 0);
-    double element_host;
+    float element_host;
     Kokkos::deep_copy(element_host, element_device);
     return element_host;
   }

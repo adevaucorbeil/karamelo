@@ -101,10 +101,10 @@ void FixCheckSolution::reduce()
   Vector3d error_reduced, u_th_reduced;
 
   // Reduce error:
-  MPI_Allreduce(error_vec.elements, error_reduced.elements, 3, MPI_DOUBLE,MPI_SUM, universe->uworld);
-  MPI_Allreduce(u_th     .elements, u_th_reduced .elements, 3, MPI_DOUBLE,MPI_SUM, universe->uworld);
+  MPI_Allreduce(error_vec.elements, error_reduced.elements, 3, MPI_FLOAT,MPI_SUM, universe->uworld);
+  MPI_Allreduce(u_th     .elements, u_th_reduced .elements, 3, MPI_FLOAT,MPI_SUM, universe->uworld);
 
-  double vtot = 0;
+  float vtot = 0;
 
   int solid = group->solid[igroup];
 
@@ -131,22 +131,22 @@ void FixCheckSolution::final_integrate(Solid &solid)
       u[i]->evaluate(solid);
 
   int groupbit = this->groupbit;
-  double ntimestep = update->ntimestep;
+  float ntimestep = update->ntimestep;
   int nsteps = update->nsteps;
   bigint next = output->next;
   Kokkos::View<int*> mask = solid.mask;
-  Kokkos::View<double*> vol0 = solid.vol0;
+  Kokkos::View<float*> vol0 = solid.vol0;
   Kokkos::View<Vector3d*> x = solid.x;
   Kokkos::View<Vector3d*> x0 = solid.x0;
 
   for (int i = 0; i < 3; i++)
     if (u[i])
     {
-      Kokkos::View<double **> u_i = u[i]->registers;
+      Kokkos::View<float **> u_i = u[i]->registers;
 
       Kokkos::parallel_reduce(
           "FixCheckSolution::final_integrate", solid.np_local,
-          KOKKOS_LAMBDA(const int &ip, double &error_vec_i, double &u_th_i) {
+          KOKKOS_LAMBDA(const int &ip, float &error_vec_i, float &u_th_i) {
             if ((ntimestep != next && ntimestep != nsteps) ||
                 !(mask[ip] & groupbit))
               return;
@@ -169,33 +169,33 @@ void FixCheckSolution::write_restart(ofstream *of) {
   // if (xset) {
   //   string eq = xvalue.eq();
   //   size_t N = eq.size();
-  //   double value = xvalue.result();
+  //   float value = xvalue.result();
   //   bool cst = xvalue.is_constant();
   //   of->write(reinterpret_cast<const char *>(&N), sizeof(size_t));
   //   of->write(reinterpret_cast<const char *>(eq.c_str()), N);
-  //   of->write(reinterpret_cast<const char *>(&value), sizeof(double));
+  //   of->write(reinterpret_cast<const char *>(&value), sizeof(float));
   //   of->write(reinterpret_cast<const char *>(&cst), sizeof(bool));
   // }
 
   // if (yset) {
   //   string eq = yvalue.eq();
   //   size_t N = eq.size();
-  //   double value = yvalue.result();
+  //   float value = yvalue.result();
   //   bool cst = yvalue.is_constant();
   //   of->write(reinterpret_cast<const char *>(&N), sizeof(size_t));
   //   of->write(reinterpret_cast<const char *>(eq.c_str()), N);
-  //   of->write(reinterpret_cast<const char *>(&value), sizeof(double));
+  //   of->write(reinterpret_cast<const char *>(&value), sizeof(float));
   //   of->write(reinterpret_cast<const char *>(&cst), sizeof(bool));
   // }
 
   // if (zset) {
   //   string eq = zvalue.eq();
   //   size_t N = eq.size();
-  //   double value = zvalue.result();
+  //   float value = zvalue.result();
   //   bool cst = zvalue.is_constant();
   //   of->write(reinterpret_cast<const char *>(&N), sizeof(size_t));
   //   of->write(reinterpret_cast<const char *>(eq.c_str()), N);
-  //   of->write(reinterpret_cast<const char *>(&value), sizeof(double));
+  //   of->write(reinterpret_cast<const char *>(&value), sizeof(float));
   //   of->write(reinterpret_cast<const char *>(&cst), sizeof(bool));
   // }
 }
@@ -209,14 +209,14 @@ void FixCheckSolution::read_restart(ifstream *ifr) {
   // if (xset) {
   //   string eq = "";
   //   size_t N = 0;
-  //   double value = 0;
+  //   float value = 0;
   //   bool cst = false;
 
   //   ifr->read(reinterpret_cast<char *>(&N), sizeof(size_t));
   //   eq.resize(N);
 
   //   ifr->read(reinterpret_cast<char *>(&eq[0]), N);
-  //   ifr->read(reinterpret_cast<char *>(&value), sizeof(double));
+  //   ifr->read(reinterpret_cast<char *>(&value), sizeof(float));
   //   ifr->read(reinterpret_cast<char *>(&cst), sizeof(bool));
   //   xvalue = Var(eq, value, cst);
   // }
@@ -224,14 +224,14 @@ void FixCheckSolution::read_restart(ifstream *ifr) {
   // if (yset) {
   //   string eq = "";
   //   size_t N = 0;
-  //   double value = 0;
+  //   float value = 0;
   //   bool cst = false;
 
   //   ifr->read(reinterpret_cast<char *>(&N), sizeof(size_t));
   //   eq.resize(N);
 
   //   ifr->read(reinterpret_cast<char *>(&eq[0]), N);
-  //   ifr->read(reinterpret_cast<char *>(&value), sizeof(double));
+  //   ifr->read(reinterpret_cast<char *>(&value), sizeof(float));
   //   ifr->read(reinterpret_cast<char *>(&cst), sizeof(bool));
   //   yvalue = Var(eq, value, cst);
   // }
@@ -239,14 +239,14 @@ void FixCheckSolution::read_restart(ifstream *ifr) {
   // if (zset) {
   //   string eq = "";
   //   size_t N = 0;
-  //   double value = 0;
+  //   float value = 0;
   //   bool cst = false;
 
   //   ifr->read(reinterpret_cast<char *>(&N), sizeof(size_t));
   //   eq.resize(N);
 
   //   ifr->read(reinterpret_cast<char *>(&eq[0]), N);
-  //   ifr->read(reinterpret_cast<char *>(&value), sizeof(double));
+  //   ifr->read(reinterpret_cast<char *>(&value), sizeof(float));
   //   ifr->read(reinterpret_cast<char *>(&cst), sizeof(bool));
   //   zvalue = Var(eq, value, cst);
   // }

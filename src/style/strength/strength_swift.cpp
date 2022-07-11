@@ -72,24 +72,24 @@ StrengthSwift::StrengthSwift(MPM *mpm, vector<string> args)
   }
 }
 
-double StrengthSwift::G() { return G_; }
+float StrengthSwift::G() { return G_; }
 
 void
 StrengthSwift::update_deviatoric_stress(Solid &solid,
-                                        Kokkos::View<double*> &plastic_strain_increment,
+                                        Kokkos::View<float*> &plastic_strain_increment,
                                         Kokkos::View<Matrix3d*> &sigma_dev) const
 {
-  double C = this->C;
-  double A = this->A;
-  double B = this->B;
-  double n = this->n;
-  double G_ = this->G_;
-  double dt = update->dt;
+  float C = this->C;
+  float A = this->A;
+  float B = this->B;
+  float n = this->n;
+  float G_ = this->G_;
+  float dt = update->dt;
 
   Kokkos::View<Matrix3d*> ssigma = solid.sigma;
   Kokkos::View<Matrix3d*> sD = solid.D;
-  Kokkos::View<double*> sdamage = solid.damage;
-  Kokkos::View<double*> seff_plastic_strain = solid.eff_plastic_strain;
+  Kokkos::View<float*> sdamage = solid.damage;
+  Kokkos::View<float*> seff_plastic_strain = solid.eff_plastic_strain;
 
   Kokkos::parallel_for("EOSLinear::compute_pressure", solid.np_local,
   KOKKOS_LAMBDA (const int &ip)
@@ -101,7 +101,7 @@ StrengthSwift::update_deviatoric_stress(Solid &solid,
     }
 
     Matrix3d sigmaFinal_dev, sigmaTrial, sigmaTrial_dev;
-    double J2, Gd, yieldStress;
+    float J2, Gd, yieldStress;
 
     if (seff_plastic_strain[ip] > 1.0e-10 && seff_plastic_strain[ip] > C)
       yieldStress = A + B*Kokkos::Experimental::pow(seff_plastic_strain[ip] - C, n);
@@ -161,18 +161,18 @@ StrengthSwift::update_deviatoric_stress(Solid &solid,
 }
 
 void StrengthSwift::write_restart(ofstream *of) {
-  of->write(reinterpret_cast<const char *>(&G_), sizeof(double));
-  of->write(reinterpret_cast<const char *>(&A), sizeof(double));
-  of->write(reinterpret_cast<const char *>(&B), sizeof(double));
-  of->write(reinterpret_cast<const char *>(&C), sizeof(double));
-  of->write(reinterpret_cast<const char *>(&n), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&G_), sizeof(float));
+  of->write(reinterpret_cast<const char *>(&A), sizeof(float));
+  of->write(reinterpret_cast<const char *>(&B), sizeof(float));
+  of->write(reinterpret_cast<const char *>(&C), sizeof(float));
+  of->write(reinterpret_cast<const char *>(&n), sizeof(float));
 }
 
 void StrengthSwift::read_restart(ifstream *ifr) {
   // cout << "Restart StrengthSwift" << endl;
-  ifr->read(reinterpret_cast<char *>(&G_), sizeof(double));
-  ifr->read(reinterpret_cast<char *>(&A), sizeof(double));
-  ifr->read(reinterpret_cast<char *>(&B), sizeof(double));
-  ifr->read(reinterpret_cast<char *>(&C), sizeof(double));
-  ifr->read(reinterpret_cast<char *>(&n), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&G_), sizeof(float));
+  ifr->read(reinterpret_cast<char *>(&A), sizeof(float));
+  ifr->read(reinterpret_cast<char *>(&B), sizeof(float));
+  ifr->read(reinterpret_cast<char *>(&C), sizeof(float));
+  ifr->read(reinterpret_cast<char *>(&n), sizeof(float));
 }

@@ -61,12 +61,12 @@ void
 TemperaturePlasticWork::compute_heat_source(Solid &solid,
                                             Kokkos::View<Matrix3d*> &sigma_dev) const
 {
-  double Tm = this->Tm;
-  double chi = this->chi;
+  float Tm = this->Tm;
+  float chi = this->chi;
 
-  Kokkos::View<double*> seff_plastic_strain_rate = solid.eff_plastic_strain_rate;
-  Kokkos::View<double*> sgamma = solid.gamma;
-  Kokkos::View<double*> sT = solid.T;
+  Kokkos::View<float*> seff_plastic_strain_rate = solid.eff_plastic_strain_rate;
+  Kokkos::View<float*> sgamma = solid.gamma;
+  Kokkos::View<float*> sT = solid.T;
 
   Kokkos::parallel_for("TemperaturePlasticWork::compute_heat_source", solid.np_local,
   KOKKOS_LAMBDA (const int &ip)
@@ -79,20 +79,20 @@ TemperaturePlasticWork::compute_heat_source(Solid &solid,
 }
 
 void TemperaturePlasticWork::write_restart(ofstream *of) {
-  of->write(reinterpret_cast<const char *>(&chi), sizeof(double));
-  of->write(reinterpret_cast<const char *>(&kappa_), sizeof(double));
-  of->write(reinterpret_cast<const char *>(&cp_), sizeof(double));
-  of->write(reinterpret_cast<const char *>(&alpha_), sizeof(double));
-  of->write(reinterpret_cast<const char *>(&T0), sizeof(double));
-  of->write(reinterpret_cast<const char *>(&Tm), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&chi), sizeof(float));
+  of->write(reinterpret_cast<const char *>(&kappa_), sizeof(float));
+  of->write(reinterpret_cast<const char *>(&cp_), sizeof(float));
+  of->write(reinterpret_cast<const char *>(&alpha_), sizeof(float));
+  of->write(reinterpret_cast<const char *>(&T0), sizeof(float));
+  of->write(reinterpret_cast<const char *>(&Tm), sizeof(float));
 }
 
 void TemperaturePlasticWork::read_restart(ifstream *ifr) {
   // cout << "Restart TemperaturePlasticWork" << endl;
-  ifr->read(reinterpret_cast<char *>(&chi), sizeof(double));
-  ifr->read(reinterpret_cast<char *>(&kappa_), sizeof(double));
-  ifr->read(reinterpret_cast<char *>(&cp_), sizeof(double));
-  ifr->read(reinterpret_cast<char *>(&alpha_), sizeof(double));
-  ifr->read(reinterpret_cast<char *>(&T0), sizeof(double));
-  ifr->read(reinterpret_cast<char *>(&Tm), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&chi), sizeof(float));
+  ifr->read(reinterpret_cast<char *>(&kappa_), sizeof(float));
+  ifr->read(reinterpret_cast<char *>(&cp_), sizeof(float));
+  ifr->read(reinterpret_cast<char *>(&alpha_), sizeof(float));
+  ifr->read(reinterpret_cast<char *>(&T0), sizeof(float));
+  ifr->read(reinterpret_cast<char *>(&Tm), sizeof(float));
 }

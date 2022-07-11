@@ -55,14 +55,14 @@ class Sphere : public Region {
  public:
   Sphere(class MPM *, vector<string>);
   ~Sphere();
-  int inside(double, double, double);
-  vector<double> limits();
+  int inside(float, float, float);
+  vector<float> limits();
   void write_restart(ofstream *);
   void read_restart(ifstream *);
 
  protected:
-  double c1, c2, c3, R, RSq;
-  double xlo, xhi, ylo, yhi, zlo, zhi;
+  float c1, c2, c3, R, RSq;
+  float xlo, xhi, ylo, yhi, zlo, zhi;
   string usage[3] = {"Usage in 1D: region(region-ID, sphere, center_x, R)\n",
 		     "Usage in 3D: region(region-ID, sphere, center_x, center_y, R)\n",
 		     "Usage in 3D: region(region-ID, sphere, center_x, center_y, center_z, R)\n"};

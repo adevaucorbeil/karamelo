@@ -21,21 +21,21 @@ using namespace std;
 
 //#define PRECISION 15
 
-std::string to_string_with_precision(const double a_value){
+std::string to_string_with_precision(const float a_value){
     std::string s(30, '\0');
     auto written = std::snprintf(&s[0], s.size(), "%.15f", a_value);
     s.resize(written);
     return s;
 }
 
-Var::Var(double v)
+Var::Var(float v)
 {
   equation = to_string_with_precision(v);
   value = v;
   constant = true;
 }
 
-Var::Var(string eq, double v, bool c)
+Var::Var(string eq, float v, bool c)
 {
   equation = eq;
   value = v;
@@ -50,7 +50,7 @@ void Var::evaluate(MPM * mpm)
 }
 
 
-double Var::result(MPM * mpm, bool only_position_changed)
+float Var::result(MPM * mpm, bool only_position_changed)
 {
   if (constant || position_independent && only_position_changed) return value;
   else {
@@ -315,7 +315,7 @@ Var ifv(Var condition, Var x, Var y) {
     else
       return y;
   } else {
-    double value;
+    float value;
     if (condition.result())
       value = x.result();
     else
@@ -330,7 +330,7 @@ void Var::write_to_restart(ofstream *of) {
   size_t N = equation.size();
   of->write(reinterpret_cast<const char *>(&N), sizeof(size_t));
   of->write(reinterpret_cast<const char *>(equation.c_str()), N);
-  of->write(reinterpret_cast<const char *>(&value), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&value), sizeof(float));
   of->write(reinterpret_cast<const char *>(&constant), sizeof(bool));
 
 }
@@ -343,6 +343,6 @@ void Var::read_from_restart(ifstream *ifr) {
   equation.resize(N);
 
   ifr->read(reinterpret_cast<char *>(&equation[0]), N);
-  ifr->read(reinterpret_cast<char *>(&value), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&value), sizeof(float));
   ifr->read(reinterpret_cast<char *>(&constant), sizeof(bool));
 }

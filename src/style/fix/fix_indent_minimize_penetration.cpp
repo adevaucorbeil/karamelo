@@ -106,12 +106,12 @@ void FixIndentMinimizePenetration::prepare()
 
 void FixIndentMinimizePenetration::reduce()
 {
-  double A_reduced;
+  float A_reduced;
   Vector3d ftot_reduced;
 
   // Reduce ftot:
-  MPI_Allreduce(&A, &A_reduced, 1, MPI_DOUBLE, MPI_SUM, universe->uworld);
-  MPI_Allreduce(ftot.elements, ftot_reduced.elements, 3, MPI_DOUBLE, MPI_SUM,
+  MPI_Allreduce(&A, &A_reduced, 1, MPI_FLOAT, MPI_SUM, universe->uworld);
+  MPI_Allreduce(ftot.elements, ftot_reduced.elements, 3, MPI_FLOAT, MPI_SUM,
                 universe->uworld);
 
   (*input->vars)[id + "_s"] = Var(id + "_s", A_reduced);
@@ -138,7 +138,7 @@ void FixIndentMinimizePenetration::initial_integrate(Solid &solid)
     // Gross screening:
     Vector3d xsp = solid.x[ip] - xs;
 
-    double Rs = 0;
+    float Rs = 0;
     if (domain->dimension == 2)
     {
       if (domain->axisymmetric)
@@ -161,26 +161,26 @@ void FixIndentMinimizePenetration::initial_integrate(Solid &solid)
     }
 
     // Finer screening:
-    double r = xsp.norm();
+    float r = xsp.norm();
 
     if (r >= Rs)
       continue;
 
     // penetration
-    double p = Rs - r;
+    float p = Rs - r;
 
     if (p <= 0)
       continue;
 
     xsp /= r;
-    double fmag = solid.mass[ip]*p/update->dt/update->dt;
+    float fmag = solid.mass[ip]*p/update->dt/update->dt;
     Vector3d f = fmag*xsp;
 
     if (mu)
     {
       const Vector3d &vps = vs - solid.v[ip];
       Vector3d vt = vps - vps.dot(xsp)*xsp;
-      double vtnorm = vt.norm();
+      float vtnorm = vt.norm();
 
       if (vtnorm)
       {
@@ -196,8 +196,8 @@ void FixIndentMinimizePenetration::initial_integrate(Solid &solid)
 }
 
 void FixIndentMinimizePenetration::write_restart(ofstream *of) {
-  of->write(reinterpret_cast<const char *>(&R), sizeof(double));
-  of->write(reinterpret_cast<const char *>(&mu), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&R), sizeof(float));
+  of->write(reinterpret_cast<const char *>(&mu), sizeof(float));
   xvalue.write_to_restart(of);
   yvalue.write_to_restart(of);
   zvalue.write_to_restart(of);
@@ -208,8 +208,8 @@ void FixIndentMinimizePenetration::write_restart(ofstream *of) {
 }
 
 void FixIndentMinimizePenetration::read_restart(ifstream *ifr) {
-  ifr->read(reinterpret_cast<char *>(&R), sizeof(double));
-  ifr->read(reinterpret_cast<char *>(&mu), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&R), sizeof(float));
+  ifr->read(reinterpret_cast<char *>(&mu), sizeof(float));
   xvalue.read_from_restart(ifr);
   yvalue.read_from_restart(ifr);
   zvalue.read_from_restart(ifr);

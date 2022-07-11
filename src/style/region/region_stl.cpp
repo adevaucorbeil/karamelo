@@ -182,12 +182,12 @@ Stl::Stl(MPM *mpm, vector<string> args) : Region(mpm, args) {
    inside = 0 if x,y,z is outside and not on surface
 ------------------------------------------------------------------------- */
 
-int Stl::inside(double x, double y, double z)
+int Stl::inside(float x, float y, float z)
 {
   Vector3d p(x, y, z);
   
-  double theta = M_PI*rand()/RAND_MAX;
-  double phi = 2*M_PI*rand()/RAND_MAX;
+  float theta = M_PI*rand()/RAND_MAX;
+  float phi = 2*M_PI*rand()/RAND_MAX;
   Vector3d direction(sin(theta)*cos(phi), sin(theta)*sin(phi), cos(theta));
 
   return octree.intersections(p, direction).size()%2;
@@ -196,8 +196,8 @@ int Stl::inside(double x, double y, double z)
 /* ----------------------------------------------------------------------
    return a vector that contains the limits of the box
 ------------------------------------------------------------------------- */
-vector<double> Stl::limits(){
-  vector<double> lim;
+vector<float> Stl::limits(){
+  vector<float> lim;
   lim.push_back(interval_x.x0);
   lim.push_back(interval_x.x1);
   lim.push_back(interval_y.x0);
@@ -212,12 +212,12 @@ void Stl::write_restart(ofstream *of) {
   of->write(reinterpret_cast<const char *>(&input_file_name_length), sizeof(int));
   of->write(input_file_name.c_str(), input_file_name_length);
 
-  of->write(reinterpret_cast<const char *>(&interval_x.x0), sizeof(double));
-  of->write(reinterpret_cast<const char *>(&interval_x.x1), sizeof(double));
-  of->write(reinterpret_cast<const char *>(&interval_y.x0), sizeof(double));
-  of->write(reinterpret_cast<const char *>(&interval_y.x1), sizeof(double));
-  of->write(reinterpret_cast<const char *>(&interval_z.x0), sizeof(double));
-  of->write(reinterpret_cast<const char *>(&interval_z.x1), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&interval_x.x0), sizeof(float));
+  of->write(reinterpret_cast<const char *>(&interval_x.x1), sizeof(float));
+  of->write(reinterpret_cast<const char *>(&interval_y.x0), sizeof(float));
+  of->write(reinterpret_cast<const char *>(&interval_y.x1), sizeof(float));
+  of->write(reinterpret_cast<const char *>(&interval_z.x0), sizeof(float));
+  of->write(reinterpret_cast<const char *>(&interval_z.x1), sizeof(float));
 }
 
 void Stl::read_restart(ifstream *ifr) {
@@ -229,10 +229,10 @@ void Stl::read_restart(ifstream *ifr) {
   buffer.back() = '\0';
   input_file_name = string(buffer.data());
 
-  ifr->read(reinterpret_cast<char *>(&interval_x.x0), sizeof(double));
-  ifr->read(reinterpret_cast<char *>(&interval_x.x1), sizeof(double));
-  ifr->read(reinterpret_cast<char *>(&interval_y.x0), sizeof(double));
-  ifr->read(reinterpret_cast<char *>(&interval_y.x1), sizeof(double));
-  ifr->read(reinterpret_cast<char *>(&interval_z.x0), sizeof(double));
-  ifr->read(reinterpret_cast<char *>(&interval_z.x1), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&interval_x.x0), sizeof(float));
+  ifr->read(reinterpret_cast<char *>(&interval_x.x1), sizeof(float));
+  ifr->read(reinterpret_cast<char *>(&interval_y.x0), sizeof(float));
+  ifr->read(reinterpret_cast<char *>(&interval_y.x1), sizeof(float));
+  ifr->read(reinterpret_cast<char *>(&interval_z.x0), sizeof(float));
+  ifr->read(reinterpret_cast<char *>(&interval_z.x1), sizeof(float));
 }

@@ -35,15 +35,15 @@ class Solid : public Pointers {
  public:
   string id;                                ///< Solid id
 
-  double solidlo[3], solidhi[3];            ///< Solid global bounds
-  double solidsublo[3], solidsubhi[3];      ///< Solid local bounds
+  float solidlo[3], solidhi[3];            ///< Solid global bounds
+  float solidsublo[3], solidsubhi[3];      ///< Solid local bounds
 
   bigint np;                                ///< Total number of particles in the domain
   int np_local;                             ///< Number of local particles (in this CPU)
   int np_per_cell;                          ///< Number of particles per cell (at the beginning)
-  int comm_n;                               ///< Number of double to pack for particle exchange between CPU
-  double vtot;                              ///< Total volume
-  double mtot;                              ///< Total mass
+  int comm_n;                               ///< Number of float to pack for particle exchange between CPU
+  float vtot;                              ///< Total volume
+  float mtot;                              ///< Total mass
 
   Kokkos::View<tagint*> ptag;               ///< Unique identifier for particles in the system
 
@@ -77,28 +77,28 @@ class Solid : public Pointers {
   Matrix3d Di;                       ///< Inertia tensor
   // vector<Matrix3d> BDinv;            ///< APIC B*Dinv tensor
 
-  Kokkos::View<double*> J;                         ///< Determinant of the deformation matrix
-  Kokkos::View<double*> vol0;                      ///< Particles' reference volume
-  Kokkos::View<double*> vol;                       ///< Particles' current volume
-  Kokkos::View<double*> rho0;                      ///< Particles' reference density
-  Kokkos::View<double*> rho;                       ///< Particles' current density
-  Kokkos::View<double*> mass;                      ///< Particles' current mass
-  Kokkos::View<double*> eff_plastic_strain;        ///< Particles' effective plastic strain
-  Kokkos::View<double*> eff_plastic_strain_rate;   ///< Particles' effective plastic strain rate
-  Kokkos::View<double*> damage;                    ///< Particles' damage variable
-  Kokkos::View<double*> damage_init;               ///< Particles' damage initiation variable
-  Kokkos::View<double*> ienergy;                   ///< Particles' internal energy
+  Kokkos::View<float*> J;                         ///< Determinant of the deformation matrix
+  Kokkos::View<float*> vol0;                      ///< Particles' reference volume
+  Kokkos::View<float*> vol;                       ///< Particles' current volume
+  Kokkos::View<float*> rho0;                      ///< Particles' reference density
+  Kokkos::View<float*> rho;                       ///< Particles' current density
+  Kokkos::View<float*> mass;                      ///< Particles' current mass
+  Kokkos::View<float*> eff_plastic_strain;        ///< Particles' effective plastic strain
+  Kokkos::View<float*> eff_plastic_strain_rate;   ///< Particles' effective plastic strain rate
+  Kokkos::View<float*> damage;                    ///< Particles' damage variable
+  Kokkos::View<float*> damage_init;               ///< Particles' damage initiation variable
+  Kokkos::View<float*> ienergy;                   ///< Particles' internal energy
   Kokkos::View<int*> mask;                         ///< Particles' group mask
 
-  Kokkos::View<double*> T;                         ///< Particles' current temperature
-  Kokkos::View<double*> gamma;                     ///< Particles' heat source
+  Kokkos::View<float*> T;                         ///< Particles' current temperature
+  Kokkos::View<float*> gamma;                     ///< Particles' heat source
   Kokkos::View<Vector3d*> q;                       ///< Particles' heat flux
   
-  Kokkos::View<double*> dtCFL;
+  Kokkos::View<float*> dtCFL;
 
   Kokkos::View<int**> neigh_n;              ///< Particles' node neighbors
-  Kokkos::View<double**> wf;                ///< Particles' node neighbors' weight functions \f$\Phi\f$
-  Kokkos::View<double***> wf_corners;       ///< Particles' node neighbors' weight functions \f$\Phi\f$ evaluated at the corners of the particle's domain (used in CPDI)
+  Kokkos::View<float**> wf;                ///< Particles' node neighbors' weight functions \f$\Phi\f$
+  Kokkos::View<float***> wf_corners;       ///< Particles' node neighbors' weight functions \f$\Phi\f$ evaluated at the corners of the particle's domain (used in CPDI)
   Kokkos::View<Vector3d**> wfd;             ///< Particles' node neighbors' weight function derivatives \f$\partial \Phi/ \partial x\f$
 
   Kokkos::View<int*> error_flag;            ///< Error codes
@@ -126,8 +126,8 @@ class Solid : public Pointers {
   void copy_particle(int, int);                     ///< Copy particle i attribute and copy it to particle j.
                                                     ///< This function is used to re-order the memory arrangment of particles.
                                                     ///< Usually this is done when particle j is deleted.
-  void pack_particle(int, vector<double> &);        ///< Pack particles attributes into a buffer (used for generating a restart).
-  void unpack_particle(int &, vector<int>, vector<double> &); ///< Unpack particles attributes from a buffer (used when reading a restart).
+  void pack_particle(int, vector<float> &);        ///< Pack particles attributes into a buffer (used for generating a restart).
+  void unpack_particle(int &, vector<int>, vector<float> &); ///< Unpack particles attributes from a buffer (used when reading a restart).
 
   void write_restart(ofstream*);                    ///< Write solid information in the restart file
   void read_restart(ifstream*);                     ///< Read solid information from the restart file
@@ -151,7 +151,7 @@ private:
   bool update_Di;
 
 public:
-  double T0;                     ///< Initial temperature
+  float T0;                     ///< Initial temperature
   bool is_TL, apic;              ///< Boolean variables that are true if using total Lagrangian MPM, and APIC, respectively
 };
 

@@ -5,16 +5,16 @@
 class ExpressionOperandLiteral:
   public ExpressionOperand<ExpressionOperandLiteral>
 {
-  double value;
+  float value;
 
   friend class Input;
 
 public:
-  ExpressionOperandLiteral(double value):
+  ExpressionOperandLiteral(float value):
     value(value)
   {}
 
-  KOKKOS_INLINE_FUNCTION double
+  KOKKOS_INLINE_FUNCTION float
   evaluate(int i) const
   {
     return value;

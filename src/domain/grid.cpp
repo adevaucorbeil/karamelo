@@ -42,13 +42,13 @@ Grid::Grid(MPM *mpm) :
   nnodes = 0;
 }
 
-void Grid::init(double *solidlo, double *solidhi) {
+void Grid::init(float *solidlo, float *solidhi) {
 
   bool linear = false;
   bool cubic = false;
   bool bernstein = false;
   bool quadratic = false;
-  double h = cellsize;
+  float h = cellsize;
 
   if (update->shape_function == Update::ShapeFunctions::LINEAR)
     linear = true;
@@ -61,10 +61,10 @@ void Grid::init(double *solidlo, double *solidhi) {
     h /= 2;
   }
 
-  double *sublo = domain->sublo;
-  double *subhi = domain->subhi;
+  float *sublo = domain->sublo;
+  float *subhi = domain->subhi;
 
-  double *boundlo, *boundhi;
+  float *boundlo, *boundhi;
   if (update->method->is_TL) {
     boundlo = solidlo;
     boundhi = solidhi;
@@ -73,12 +73,12 @@ void Grid::init(double *solidlo, double *solidhi) {
     boundhi = domain->boxhi;
   }
 
-  double Loffsetlo[3] = {MAX(0.0, sublo[0] - boundlo[0]),
-                         MAX(0.0, sublo[1] - boundlo[1]),
-                         MAX(0.0, sublo[2] - boundlo[2])};
-  double Loffsethi_[3] = {MAX(0.0, MIN(subhi[0], boundhi[0]) - boundlo[0]),
-                          MAX(0.0, MIN(subhi[1], boundhi[1]) - boundlo[1]),
-                          MAX(0.0, MIN(subhi[2], boundhi[2]) - boundlo[2])};
+  float Loffsetlo[3] = {MAX(0.0f, sublo[0] - boundlo[0]),
+			MAX(0.0f, sublo[1] - boundlo[1]),
+			MAX(0.0f, sublo[2] - boundlo[2])};
+  float Loffsethi_[3] = {MAX(0.0f, MIN(subhi[0], boundhi[0]) - boundlo[0]),
+			 MAX(0.0f, MIN(subhi[1], boundhi[1]) - boundlo[1]),
+			 MAX(0.0f, MIN(subhi[2], boundhi[2]) - boundlo[2])};
 
   int noffsetlo[3] = {(int)ceil(Loffsetlo[0] / h), (int)ceil(Loffsetlo[1] / h),
                       (int)ceil(Loffsetlo[2] / h)};
@@ -125,13 +125,13 @@ void Grid::init(double *solidlo, double *solidhi) {
   // cout << "2--- proc " << universe->me << " noffsetlo=[" << noffsetlo[0] << "," << noffsetlo[1] << "," << noffsetlo[2] << "]\n";
   // cout << "2--- proc " << universe->me << " noffsethi_=[" << noffsethi_[0] << "," << noffsethi_[1] << "," << noffsethi_[2] << "]\n";
 
-  double Lx_global = solidhi[0]-solidlo[0];//+2*cellsize;
+  float Lx_global = solidhi[0]-solidlo[0];//+2*cellsize;
 
   nx_global = ((int) (Lx_global/h))+1;
   while (nx_global*h <= Lx_global+0.5*h) nx_global++;
 
   if (domain->dimension >= 2) {
-    double Ly_global = solidhi[1]-solidlo[1];
+    float Ly_global = solidhi[1]-solidlo[1];
     ny_global = ((int) Ly_global/h)+1;
     while (ny_global*h <= Ly_global+0.5*h) ny_global++;
   } else {
@@ -139,7 +139,7 @@ void Grid::init(double *solidlo, double *solidhi) {
   }
 
   if (domain->dimension == 3) {
-    double Lz_global = solidhi[2]-solidlo[2];
+    float Lz_global = solidhi[2]-solidlo[2];
     nz_global = ((int) Lz_global/h)+1;
     while (nz_global*h <= Lz_global+0.5*h) nz_global++;
   } else {
@@ -201,7 +201,7 @@ void Grid::init(double *solidlo, double *solidhi) {
   vector<Point> ns;
   vector<Point> gnodes;
 
-  double delta;
+  float delta;
   if (cubic || quadratic || bernstein) delta = 2*h - 1.0e-12;
   else delta = h - 1.0e-12;
 
@@ -319,7 +319,7 @@ void Grid::init(double *solidlo, double *solidhi) {
   grow(nnodes_local + nnodes_ghost);
 
   int me = universe->me;
-  double boundlo_0   = boundlo[0],   boundlo_1   = boundlo[1],   boundlo_2   = boundlo[2];
+  float boundlo_0   = boundlo[0],   boundlo_1   = boundlo[1],   boundlo_2   = boundlo[2];
   int noffsetlo_0 = noffsetlo[0], noffsetlo_1 = noffsetlo[1], noffsetlo_2 = noffsetlo[2];
   int dimension = domain->dimension;
   int nx = this->nx, ny = this->ny, nz = this->nz;
@@ -335,7 +335,7 @@ void Grid::init(double *solidlo, double *solidhi) {
   Kokkos::View<Vector3d*> mb = this->mb;
   Kokkos::View<Vector3d*> f = this->f;
 
-  Kokkos::View<double*> mass = this->mass;
+  Kokkos::View<float*> mass = this->mass;
   Kokkos::View<bool*> rigid = this->rigid;
   Kokkos::View<Vector3i*> ntype = this->ntype;
 
@@ -436,7 +436,7 @@ void Grid::grow(int nn){
   mb       = Kokkos::View<Vector3d*>("mb",       nn);
   f        = Kokkos::View<Vector3d*>("f",        nn);
 
-  mass = Kokkos::View<double*>("mass", nn);
+  mass = Kokkos::View<float*>("mass", nn);
   mask = Kokkos::View<int*>   ("mask", nn);
 
   Kokkos::View<int*> mask = this->mask;
@@ -450,17 +450,17 @@ void Grid::grow(int nn){
   ntype = Kokkos::View<Vector3i*>("ntype", nn);
   rigid = Kokkos::View<bool*>    ("rigid", nn);
 
-  T        = Kokkos::View<double*>("T",        nn);
-  T_update = Kokkos::View<double*>("T_update", nn);
-  Qext     = Kokkos::View<double*>("Qext",     nn);
-  Qint     = Kokkos::View<double*>("Qint",     nn);
+  T        = Kokkos::View<float*>("T",        nn);
+  T_update = Kokkos::View<float*>("T_update", nn);
+  Qext     = Kokkos::View<float*>("Qext",     nn);
+  Qint     = Kokkos::View<float*>("Qint",     nn);
 }
 
 
 void Grid::reduce_mass_ghost_nodes() {
-  vector<vector<double>> tmp_mass_vect(universe->nprocs);
-  vector<vector<double>> buf_recv_vect(universe->nprocs);
-  //vector<double> tmp_mass;
+  vector<vector<float>> tmp_mass_vect(universe->nprocs);
+  vector<vector<float>> buf_recv_vect(universe->nprocs);
+  //vector<float> tmp_mass;
   int j, size_r, size_s, jproc;
 
   // 1. Pack mass of nodes to be sent back to their owner:
@@ -503,13 +503,13 @@ void Grid::reduce_mass_ghost_nodes() {
       // Receive
       jproc = universe->sendnrecv[i][1];
 
-      MPI_Recv(&buf_recv_vect[jproc][0], dest_nshared[jproc].size(), MPI_DOUBLE,
+      MPI_Recv(&buf_recv_vect[jproc][0], dest_nshared[jproc].size(), MPI_FLOAT,
                jproc, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
     } else {
       // Send
       jproc = universe->sendnrecv[i][1];
       MPI_Send(tmp_mass_vect[jproc].data(), origin_nshared[jproc].size(),
-               MPI_DOUBLE, jproc, 0, MPI_COMM_WORLD);
+               MPI_FLOAT, jproc, 0, MPI_COMM_WORLD);
     }
   }
 
@@ -574,13 +574,13 @@ void Grid::reduce_mass_ghost_nodes() {
       // Receive
       jproc = universe->sendnrecv[i][1];
 
-      MPI_Send(tmp_mass_vect[jproc].data(), dest_nshared[jproc].size(), MPI_DOUBLE,
+      MPI_Send(tmp_mass_vect[jproc].data(), dest_nshared[jproc].size(), MPI_FLOAT,
                jproc, 0, MPI_COMM_WORLD);
     } else {
       // Send
       jproc = universe->sendnrecv[i][1];
       MPI_Recv(&buf_recv_vect[jproc][0], origin_nshared[jproc].size(),
-	       MPI_DOUBLE, jproc, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+	       MPI_FLOAT, jproc, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
     }
   }
 
@@ -605,7 +605,7 @@ void Grid::reduce_mass_ghost_nodes() {
 
 
 void Grid::reduce_mass_ghost_nodes_old() {
-  vector<double> tmp_mass;
+  vector<float> tmp_mass;
   int j, size_r, size_s, jproc;
 
   // Some ghost nodes' mass on the CPU that owns them:
@@ -620,10 +620,10 @@ void Grid::reduce_mass_ghost_nodes_old() {
 
 	size_r = idest->second.size();
 
-        vector<double> buf_recv(size_r);
+        vector<float> buf_recv(size_r);
 
 	// cout << "proc " << universe->me << " receives masses from " << jproc << endl;
-        MPI_Recv(&buf_recv[0], size_r, MPI_DOUBLE, jproc, 0, MPI_COMM_WORLD,
+        MPI_Recv(&buf_recv[0], size_r, MPI_FLOAT, jproc, 0, MPI_COMM_WORLD,
                  MPI_STATUS_IGNORE);
 
         // Add the received masses to that of the nodes:
@@ -660,7 +660,7 @@ void Grid::reduce_mass_ghost_nodes_old() {
         }
 
 	// cout << "proc " << universe->me << " sends mass to " << iproc << endl;
-        MPI_Send(tmp_mass.data(), size_s, MPI_DOUBLE, iproc, 0, MPI_COMM_WORLD);
+        MPI_Send(tmp_mass.data(), size_s, MPI_FLOAT, iproc, 0, MPI_COMM_WORLD);
       }
     }
   }
@@ -691,7 +691,7 @@ void Grid::reduce_mass_ghost_nodes_old() {
         }
 
 	// cout << "proc " << universe->me << " sends masses to " << jproc << endl;
-        MPI_Send(tmp_mass.data(), size_s, MPI_DOUBLE, jproc, 0, MPI_COMM_WORLD);
+        MPI_Send(tmp_mass.data(), size_s, MPI_FLOAT, jproc, 0, MPI_COMM_WORLD);
       }
     } else {
 
@@ -705,10 +705,10 @@ void Grid::reduce_mass_ghost_nodes_old() {
         //          MPI_STATUS_IGNORE);
 
 	size_r = origin_nshared[iproc].size();
-        vector<double> buf_recv(size_r);
+        vector<float> buf_recv(size_r);
 
 	// cout << "proc " << universe->me << " receives masses from " << iproc << endl;
-        MPI_Recv(&buf_recv[0], size_r, MPI_DOUBLE, iproc, 0, MPI_COMM_WORLD,
+        MPI_Recv(&buf_recv[0], size_r, MPI_FLOAT, iproc, 0, MPI_COMM_WORLD,
                  MPI_STATUS_IGNORE);
 
         // Add the received masses to that of the nodes:
@@ -862,9 +862,9 @@ void Grid::reduce_rigid_ghost_nodes() {
 }
 
 void Grid::reduce_ghost_nodes(bool reduce_v, bool reduce_forces, bool temp) {
-  vector<vector<double>> tmp_vect(universe->nprocs);
-  vector<vector<double>> buf_recv_vect(universe->nprocs);
-  //vector<double> tmp_mass;
+  vector<vector<float>> tmp_vect(universe->nprocs);
+  vector<vector<float>> buf_recv_vect(universe->nprocs);
+  //vector<float> tmp_mass;
   int j, k, m, size_r, size_s, jproc, nsend;
 
   nsend = (3 + temp) * (reduce_v + 2*reduce_forces);
@@ -936,13 +936,13 @@ void Grid::reduce_ghost_nodes(bool reduce_v, bool reduce_forces, bool temp) {
       // Receive
       jproc = universe->sendnrecv[i][1];
 
-      MPI_Recv(&buf_recv_vect[jproc][0], nsend * dest_nshared[jproc].size(), MPI_DOUBLE,
+      MPI_Recv(&buf_recv_vect[jproc][0], nsend * dest_nshared[jproc].size(), MPI_FLOAT,
                jproc, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
     } else {
       // Send
       jproc = universe->sendnrecv[i][1];
       MPI_Send(tmp_vect[jproc].data(), nsend * origin_nshared[jproc].size(),
-               MPI_DOUBLE, jproc, 0, MPI_COMM_WORLD);
+               MPI_FLOAT, jproc, 0, MPI_COMM_WORLD);
     }
   }
 
@@ -1060,12 +1060,12 @@ void Grid::reduce_ghost_nodes(bool reduce_v, bool reduce_forces, bool temp) {
       jproc = universe->sendnrecv[i][1];
 
       MPI_Send(tmp_vect[jproc].data(), nsend * dest_nshared[jproc].size(),
-               MPI_DOUBLE, jproc, 0, MPI_COMM_WORLD);
+               MPI_FLOAT, jproc, 0, MPI_COMM_WORLD);
     } else {
       // Send
       jproc = universe->sendnrecv[i][1];
       MPI_Recv(&buf_recv_vect[jproc][0], nsend * origin_nshared[jproc].size(),
-               MPI_DOUBLE, jproc, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+               MPI_FLOAT, jproc, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
     }
   }
 
@@ -1115,7 +1115,7 @@ void Grid::reduce_ghost_nodes(bool reduce_v, bool reduce_forces, bool temp) {
 }
 
 void Grid::reduce_ghost_nodes_old(bool only_v, bool temp) {
-  vector<double> tmp;
+  vector<float> tmp;
   int j, k, m, size_r, size_s, jproc, nsend;
 
   if (only_v) {
@@ -1136,11 +1136,11 @@ void Grid::reduce_ghost_nodes_old(bool only_v, bool temp) {
 
         size_r = idest->second.size();
 
-        vector<double> buf_recv(nsend * size_r);
+        vector<float> buf_recv(nsend * size_r);
 
         // cout << "proc " << universe->me << " receives masses from " << jproc
         // << endl;
-        MPI_Recv(&buf_recv[0], nsend * size_r, MPI_DOUBLE, jproc, 0,
+        MPI_Recv(&buf_recv[0], nsend * size_r, MPI_FLOAT, jproc, 0,
                  MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
         // Add the received data to that of the nodes:
@@ -1222,7 +1222,7 @@ void Grid::reduce_ghost_nodes_old(bool only_v, bool temp) {
 
         // cout << "proc " << universe->me << " sends mass to " << iproc <<
         // endl;
-        MPI_Send(tmp.data(), nsend * size_s, MPI_DOUBLE, iproc, 0,
+        MPI_Send(tmp.data(), nsend * size_s, MPI_FLOAT, iproc, 0,
                  MPI_COMM_WORLD);
       }
     }
@@ -1277,7 +1277,7 @@ void Grid::reduce_ghost_nodes_old(bool only_v, bool temp) {
 
         // cout << "proc " << universe->me << " sends masses to " << jproc <<
         // endl;
-        MPI_Send(tmp.data(), nsend * size_s, MPI_DOUBLE, jproc, 0,
+        MPI_Send(tmp.data(), nsend * size_s, MPI_FLOAT, jproc, 0,
                  MPI_COMM_WORLD);
       }
     } else {
@@ -1292,11 +1292,11 @@ void Grid::reduce_ghost_nodes_old(bool only_v, bool temp) {
         //          MPI_STATUS_IGNORE);
 
         size_r = origin_nshared[iproc].size();
-        vector<double> buf_recv(nsend * size_r);
+        vector<float> buf_recv(nsend * size_r);
 
         // cout << "proc " << universe->me << " receives masses from " << iproc
         // << endl;
-        MPI_Recv(&buf_recv[0], nsend * size_r, MPI_DOUBLE, iproc, 0,
+        MPI_Recv(&buf_recv[0], nsend * size_r, MPI_FLOAT, iproc, 0,
                  MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
         // Update the local data with the received values

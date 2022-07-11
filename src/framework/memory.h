@@ -19,7 +19,7 @@
 /*! This class handles the allocation of all large vectors and arrays.
  * This class is directly herited (aka copied) from LAMMPS.\n\n
  * Create/grow/destroy vecs and multidim arrays with contiguous memory blocks
- * only use with primitive data types, e.g. 1d vec of ints, 2d array of doubles
+ * only use with primitive data types, e.g. 1d vec of ints, 2d array of floats
  * fail() prevents use with pointers, 
  * e.g. 1d vec of int*, due to mismatched destroy
  * avoid use with non-primitive data types to avoid code bloat

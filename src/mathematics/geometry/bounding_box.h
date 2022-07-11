@@ -11,9 +11,9 @@ public:
 
   BoundingBox() = default;
 
-  BoundingBox(double x0, double x1,
-              double y0, double y1,
-              double z0, double z1) :
+  BoundingBox(float x0, float x1,
+              float y0, float y1,
+              float z0, float z1) :
     interval_x(x0, x1),
     interval_y(y0, y1),
     interval_z(z0, z1)
@@ -40,7 +40,7 @@ public:
   }
 
   bool intercepts(const Vector3d &origin, const Vector3d &direction) const {
-     double t[9];
+     float t[9];
      t[1] = (interval_x.x0 - origin.x())/direction.x();
      t[2] = (interval_x.x1 - origin.x())/direction.x();
      t[3] = (interval_y.x0 - origin.y())/direction.y();

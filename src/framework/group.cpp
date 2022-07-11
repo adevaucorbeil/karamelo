@@ -240,14 +240,14 @@ int Group::find_unused()
   return -1;
 }
 
-double Group::xcm(int igroup, int dir)
+float Group::xcm(int igroup, int dir)
 {
   Kokkos::View<Vector3d*> *x;
-  Kokkos::View<double*> *mass;
+  Kokkos::View<float*> *mass;
   int nmax;
   Kokkos::View<int*> *mask;
-  double com = 0;
-  double mass_tot = 0;
+  float com = 0;
+  float mass_tot = 0;
   int groupbit    = group->bitmask[igroup];
 
   if (solid[igroup] == -1)
@@ -308,22 +308,22 @@ double Group::xcm(int igroup, int dir)
 	}
     }
 
-  double com_reduced,  mass_tot_reduced;
+  float com_reduced,  mass_tot_reduced;
 
-  MPI_Allreduce(&com,&com_reduced,1,MPI_DOUBLE,MPI_SUM,universe->uworld);
-  MPI_Allreduce(&mass_tot,&mass_tot_reduced,1,MPI_DOUBLE,MPI_SUM,universe->uworld);
+  MPI_Allreduce(&com,&com_reduced,1,MPI_FLOAT,MPI_SUM,universe->uworld);
+  MPI_Allreduce(&mass_tot,&mass_tot_reduced,1,MPI_FLOAT,MPI_SUM,universe->uworld);
 
   if (mass_tot_reduced) return com_reduced/mass_tot_reduced;
   else return 0;
 }
 
-double Group::internal_force(int igroup, int dir)
+float Group::internal_force(int igroup, int dir)
 {
   
   Kokkos::View<Vector3d*> *f;
   int nmax;
   Kokkos::View<int*> *mask;
-  double resulting_force = 0;
+  float resulting_force = 0;
   int groupbit           = group->bitmask[igroup];
 
   if (solid[igroup] == -1)
@@ -378,14 +378,14 @@ double Group::internal_force(int igroup, int dir)
     }
   }
 
-  double resulting_force_reduced;
+  float resulting_force_reduced;
 
-  MPI_Allreduce(&resulting_force,&resulting_force_reduced,1,MPI_DOUBLE,MPI_SUM,universe->uworld);
+  MPI_Allreduce(&resulting_force,&resulting_force_reduced,1,MPI_FLOAT,MPI_SUM,universe->uworld);
 
   return resulting_force_reduced;
 }
 
-double Group::external_force(int igroup, int dir)
+float Group::external_force(int igroup, int dir)
 {
   if (pon[igroup] == "nodes")
     {
@@ -396,7 +396,7 @@ double Group::external_force(int igroup, int dir)
   Kokkos::View<Vector3d*> *f;
   int nmax;
   Kokkos::View<int*> *mask;
-  double resulting_force = 0;
+  float resulting_force = 0;
   int groupbit           = group->bitmask[igroup];
 
   if (solid[igroup] == -1)
@@ -433,9 +433,9 @@ double Group::external_force(int igroup, int dir)
     }
   }
 
-  double resulting_force_reduced;
+  float resulting_force_reduced;
 
-  MPI_Allreduce(&resulting_force,&resulting_force_reduced,1,MPI_DOUBLE,MPI_SUM,universe->uworld);
+  MPI_Allreduce(&resulting_force,&resulting_force_reduced,1,MPI_FLOAT,MPI_SUM,universe->uworld);
 
   return resulting_force;
 }

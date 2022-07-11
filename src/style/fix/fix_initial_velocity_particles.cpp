@@ -106,7 +106,7 @@ void FixInitialVelocityParticles::initial_integrate(Solid &solid) {
   for (int i = 0; i < 3; i++)
     if (v[i])
       {
-	Kokkos::View<double **> v_i = v[i]->registers;
+	Kokkos::View<float **> v_i = v[i]->registers;
 
 	Kokkos::parallel_for("FixInitialVelocityParticles::initial_integrate", solid.np_local,
 			     KOKKOS_LAMBDA(const int &ip)

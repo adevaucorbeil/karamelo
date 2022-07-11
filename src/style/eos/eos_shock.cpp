@@ -88,46 +88,46 @@ EOSShock::~EOSShock()
 
 }
 
-double EOSShock::rho0(){
+float EOSShock::rho0(){
   return rho0_;
 }
 
-double EOSShock::K(){
+float EOSShock::K(){
   return K_;
 }
 
 //pH, solid.ienergy[ip], solid.J[ip], solid.rho[ip], solid.damage[ip], solid.D[ip], solid.grid->cellsize, T
-//double &pFinal, double &e, const double J, const double rho, const double damage, const Matrix3d D, const double cellsize, const double T
+//float &pFinal, float &e, const float J, const float rho, const float damage, const Matrix3d D, const float cellsize, const float T
 
 
-void EOSShock::compute_pressure(Solid &solid, Kokkos::View<double*> &pH) const
+void EOSShock::compute_pressure(Solid &solid, Kokkos::View<float*> &pH) const
 {
-  double rho0_ = this->rho0_;
-  double c0 = this->c0;
-  double S = this->S;
-  double Tr = this->Tr;
-  double alpha = this->alpha;
-  double Gamma = this->Gamma;
-  double e0 = this->e0;
+  float rho0_ = this->rho0_;
+  float c0 = this->c0;
+  float S = this->S;
+  float Tr = this->Tr;
+  float alpha = this->alpha;
+  float Gamma = this->Gamma;
+  float e0 = this->e0;
   bool artificial_viscosity = this->artificial_viscosity;
-  double Q1 = this->Q1;
-  double Q2 = this->Q2;
+  float Q1 = this->Q1;
+  float Q2 = this->Q2;
 
-  double cp = solid.mat->cp;
-  double cellsize = solid.grid->cellsize;
+  float cp = solid.mat->cp;
+  float cellsize = solid.grid->cellsize;
 
-  Kokkos::View<double*> srho = solid.rho;
-  Kokkos::View<double*> sJ = solid.J;
+  Kokkos::View<float*> srho = solid.rho;
+  Kokkos::View<float*> sJ = solid.J;
   Kokkos::View<Matrix3d*> sD = solid.D;
-  Kokkos::View<double*> sT = solid.T;
-  Kokkos::View<double*> sdamage = solid.damage;
-  Kokkos::View<double*> sienergy = solid.ienergy;
+  Kokkos::View<float*> sT = solid.T;
+  Kokkos::View<float*> sdamage = solid.damage;
+  Kokkos::View<float*> sienergy = solid.ienergy;
 
   Kokkos::parallel_for("EOSShock::compute_pressure", solid.np_local,
   KOKKOS_LAMBDA (const int &ip)
   {
-    double mu = srho[ip]/rho0_ - 1;
-    double pH0 = rho0_*c0*c0*mu*(1 + mu)/(1 - (S - 1)*mu)/(1 - (S - 1)*mu);
+    float mu = srho[ip]/rho0_ - 1;
+    float pH0 = rho0_*c0*c0*mu*(1 + mu)/(1 - (S - 1)*mu)/(1 - (S - 1)*mu);
 
     if (cp && sT[ip] > Tr)
       sienergy[ip] = alpha*(sT[ip] - Tr);
@@ -144,8 +144,8 @@ void EOSShock::compute_pressure(Solid &solid, Kokkos::View<double*> &pH) const
       }
       else
       {
-	    // double mu_damaged = (1.0 - damage) * mu;
-	    // double pH_damaged = rho0_ * (1.0 - damage) * square(c0) * mu_damaged * (1.0 + mu_damaged) / square(1.0 - (S - 1.0) * mu_damaged);
+	    // float mu_damaged = (1.0 - damage) * mu;
+	    // float pH_damaged = rho0_ * (1.0 - damage) * square(c0) * mu_damaged * (1.0 + mu_damaged) / square(1.0 - (S - 1.0) * mu_damaged);
 	    // pFinal = (pH_damaged + rho0_ * (1 + mu_damaged) * Gamma * (e - e0));;
 	    pH[ip] *= 1 - sdamage[ip];
       }
@@ -153,7 +153,7 @@ void EOSShock::compute_pressure(Solid &solid, Kokkos::View<double*> &pH) const
 
     if (artificial_viscosity)
     {
-      double tr_eps = sD[ip].trace();
+      float tr_eps = sD[ip].trace();
 
       if (tr_eps < 0)
         pH[ip] += srho[ip]*cellsize*tr_eps*(Q1*cellsize*tr_eps - Q2*c0*Kokkos::Experimental::sqrt(sJ[ip]));
@@ -162,30 +162,30 @@ void EOSShock::compute_pressure(Solid &solid, Kokkos::View<double*> &pH) const
 }
 
 void EOSShock::write_restart(ofstream *of) {
-  of->write(reinterpret_cast<const char *>(&rho0_), sizeof(double));
-  of->write(reinterpret_cast<const char *>(&K_), sizeof(double));
-  of->write(reinterpret_cast<const char *>(&c0), sizeof(double));
-  of->write(reinterpret_cast<const char *>(&S), sizeof(double));
-  of->write(reinterpret_cast<const char *>(&Gamma), sizeof(double));
-  of->write(reinterpret_cast<const char *>(&Tr), sizeof(double));
-  of->write(reinterpret_cast<const char *>(&cv), sizeof(double));
-  of->write(reinterpret_cast<const char *>(&Q1), sizeof(double));
-  of->write(reinterpret_cast<const char *>(&Q2), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&rho0_), sizeof(float));
+  of->write(reinterpret_cast<const char *>(&K_), sizeof(float));
+  of->write(reinterpret_cast<const char *>(&c0), sizeof(float));
+  of->write(reinterpret_cast<const char *>(&S), sizeof(float));
+  of->write(reinterpret_cast<const char *>(&Gamma), sizeof(float));
+  of->write(reinterpret_cast<const char *>(&Tr), sizeof(float));
+  of->write(reinterpret_cast<const char *>(&cv), sizeof(float));
+  of->write(reinterpret_cast<const char *>(&Q1), sizeof(float));
+  of->write(reinterpret_cast<const char *>(&Q2), sizeof(float));
 }
 
 void EOSShock::read_restart(ifstream *ifr) {
   if (universe->me == 0) {
     cout << "Restart EOSShock" << endl;
   }
-  ifr->read(reinterpret_cast<char *>(&rho0_), sizeof(double));
-  ifr->read(reinterpret_cast<char *>(&K_), sizeof(double));
-  ifr->read(reinterpret_cast<char *>(&c0), sizeof(double));
-  ifr->read(reinterpret_cast<char *>(&S), sizeof(double));
-  ifr->read(reinterpret_cast<char *>(&Gamma), sizeof(double));
-  ifr->read(reinterpret_cast<char *>(&Tr), sizeof(double));
-  ifr->read(reinterpret_cast<char *>(&cv), sizeof(double));
-  ifr->read(reinterpret_cast<char *>(&Q1), sizeof(double));
-  ifr->read(reinterpret_cast<char *>(&Q2), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&rho0_), sizeof(float));
+  ifr->read(reinterpret_cast<char *>(&K_), sizeof(float));
+  ifr->read(reinterpret_cast<char *>(&c0), sizeof(float));
+  ifr->read(reinterpret_cast<char *>(&S), sizeof(float));
+  ifr->read(reinterpret_cast<char *>(&Gamma), sizeof(float));
+  ifr->read(reinterpret_cast<char *>(&Tr), sizeof(float));
+  ifr->read(reinterpret_cast<char *>(&cv), sizeof(float));
+  ifr->read(reinterpret_cast<char *>(&Q1), sizeof(float));
+  ifr->read(reinterpret_cast<char *>(&Q2), sizeof(float));
   if (Q1 == 0 && Q2 == 0) {
     artificial_viscosity = false;
   } else {

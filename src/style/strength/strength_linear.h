@@ -30,17 +30,17 @@ public:
   StrengthLinear(class MPM *, vector<string>);
   ~StrengthLinear() {};
 
-  double G();
+  float G();
 
   void write_restart(ofstream *);
   void read_restart(ifstream *);
 
   void update_deviatoric_stress(Solid &solid,
-                                Kokkos::View<double*> &plastic_strain_increment,
+                                Kokkos::View<float*> &plastic_strain_increment,
                                 Kokkos::View<Matrix3d*> &sigma_dev) const override;
 
 protected:
-  double G_;
+  float G_;
 };
 
 #endif

@@ -53,7 +53,7 @@ ComputeStrainEnergy::ComputeStrainEnergy(MPM *mpm, vector<string> args) : Comput
 }
 
 void ComputeStrainEnergy::compute_value(Solid &solid) {
-  double Es_tmp, Es_reduced = 0;
+  float Es_tmp, Es_reduced = 0;
 
   if (t != update->ntimestep) {
     t = update->ntimestep;
@@ -64,7 +64,7 @@ void ComputeStrainEnergy::compute_value(Solid &solid) {
 
   Kokkos::View<Matrix3d*> sigma = solid.sigma;
   Kokkos::View<Matrix3d*> strain_el = solid.strain_el;
-  Kokkos::View<double*> vol = solid.vol;
+  Kokkos::View<float*> vol = solid.vol;
   Kokkos::View<int*> mask = solid.mask;
 
   int groupbit = this->groupbit;
@@ -73,7 +73,7 @@ void ComputeStrainEnergy::compute_value(Solid &solid) {
       update->ntimestep == update->nsteps)
 
     Kokkos::parallel_reduce("ComputeStrainEnergy::compute_value", solid.np_local,
-			    KOKKOS_LAMBDA(const int &ip, double &lEs) {
+			    KOKKOS_LAMBDA(const int &ip, float &lEs) {
 			      if (mask[ip] & groupbit)
 				lEs += 0.5*vol[ip]*(sigma[ip](0,0)*strain_el[ip](0,0)
 						    + sigma[ip](0,1)*strain_el[ip](0,1)
@@ -89,6 +89,6 @@ void ComputeStrainEnergy::compute_value(Solid &solid) {
     Es += Es_tmp;
 
   // Reduce Es:
-  MPI_Allreduce(&Es,&Es_reduced,1,MPI_DOUBLE,MPI_SUM,universe->uworld);
+  MPI_Allreduce(&Es,&Es_reduced,1,MPI_FLOAT,MPI_SUM,universe->uworld);
   input->parsev(id, Es_reduced);
 }

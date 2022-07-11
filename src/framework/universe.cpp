@@ -27,7 +27,7 @@ static vector<int> tile2d(int); ///< Determines the tiling of p procs in 2D
 static vector<int> tile3d(int); ///< Determines the tiling of p proces in 3D
 
 struct boundsize { 
-    double dl;
+    float dl;
     int rank;
 };
 
@@ -40,7 +40,7 @@ Universe::Universe(MPM *mpm, MPI_Comm communicator) : Pointers(mpm)
   // Create MPI type for struct Point:
   Point dummy;
 
-  MPI_Datatype type[4] = {MPI_INT, MPI_MPM_TAGINT, MPI_DOUBLE, MPI_INT};
+  MPI_Datatype type[4] = {MPI_INT, MPI_MPM_TAGINT, MPI_FLOAT, MPI_INT};
   int blocklen[4] = {1, 1, 3, 3};
   MPI_Aint disp[4];
   MPI_Get_address( &dummy.owner, &disp[0] );
@@ -68,10 +68,10 @@ void Universe::set_proc_grid() {
     error->all(FLERR, "Error in Universe::set_proc_grid(): invalid dimension: " + to_string(dim) + ".\n");
   }
 
-  double *sublo = domain->sublo;
-  double *subhi = domain->subhi;
-  double *boxlo = domain->boxlo;
-  double *boxhi = domain->boxhi;
+  float *sublo = domain->sublo;
+  float *subhi = domain->subhi;
+  float *boxlo = domain->boxlo;
+  float *boxhi = domain->boxhi;
 
   procgrid[0] = 1;
   procgrid[1] = 1;
@@ -90,7 +90,7 @@ void Universe::set_proc_grid() {
 
   if (nprocs > 1 && dim == 2) {
     // Determine the smallest dimension:
-    double l[2] = {domain->boxhi[0] - domain->boxlo[0],
+    float l[2] = {domain->boxhi[0] - domain->boxlo[0],
 		   domain->boxhi[1] - domain->boxlo[1]};
 
     if (l[0]<1.0e-10 || l[1]<1.0e-10) {

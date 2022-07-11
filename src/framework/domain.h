@@ -41,10 +41,10 @@ class Domain : protected Pointers {
   tagint np_total;                       ///< total number of particles
   tagint np_local;                       ///< sum of the local number of particles
 
-  double boxlo[3];                       ///< Lower orthogonal box global bounds
-  double boxhi[3];                       ///< Higher orthogonal box global bounds
-  double sublo[3];                       ///< Lower sub-box bounds on this proc
-  double subhi[3];                       ///< Higher sub-box bounds on this proc
+  float boxlo[3];                       ///< Lower orthogonal box global bounds
+  float boxhi[3];                       ///< Higher orthogonal box global bounds
+  float sublo[3];                       ///< Lower sub-box bounds on this proc
+  float subhi[3];                       ///< Higher sub-box bounds on this proc
 
   vector<class Region *> regions;        ///< list of defined Regions
   vector<class Solid *> solids;          ///< list of defined Solids
@@ -57,9 +57,9 @@ class Domain : protected Pointers {
   void create_domain(vector<string>);    ///< Deprecated function
   void set_dimension(vector<string>);    ///< Called when user calls dimension()
   void set_axisymmetric(vector<string>); ///< Called when user calls axisymmetric()
-  bool inside_subdomain(double, double, double); ///< Checks if the set of coordinates lies in the simulation domain.
-  int which_CPU_owns_me(double, double, double); ///< Determine in which CPU a particle belongs.
-  bool inside_subdomain_extended(double, double, double, double); ///< Checks if the set of coordinates lies in this proc sub-domain.
+  bool inside_subdomain(float, float, float); ///< Checks if the set of coordinates lies in the simulation domain.
+  int which_CPU_owns_me(float, float, float); ///< Determine in which CPU a particle belongs.
+  bool inside_subdomain_extended(float, float, float, float); ///< Checks if the set of coordinates lies in this proc sub-domain.
   void set_local_box();                  ///< Determine the boundaries of this proc subdomain
   void add_region(vector<string>);       ///< Create a new region
   int find_region(string);               ///< Finds the ID of a region

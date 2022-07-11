@@ -52,21 +52,21 @@ StrengthLinear::StrengthLinear(MPM *mpm, vector<string> args) : Strength(mpm, ar
   }
 }
 
-double StrengthLinear::G(){
+float StrengthLinear::G(){
   return G_;
 }
 
 void
 StrengthLinear::update_deviatoric_stress(Solid &solid,
-                                              Kokkos::View<double*> &plastic_strain_increment,
+                                              Kokkos::View<float*> &plastic_strain_increment,
                                               Kokkos::View<Matrix3d*> &sigma_dev) const
 {
-  double G_ = this->G_;
-  double dt = update->dt;
+  float G_ = this->G_;
+  float dt = update->dt;
 
   Kokkos::View<Matrix3d*> ssigma = solid.sigma;
   Kokkos::View<Matrix3d*> sD = solid.D;
-  Kokkos::View<double*> sdamage = solid.damage;
+  Kokkos::View<float*> sdamage = solid.damage;
 
   Kokkos::parallel_for("EOSLinear::compute_pressure", solid.np_local,
   KOKKOS_LAMBDA (const int &ip)
@@ -76,13 +76,13 @@ StrengthLinear::update_deviatoric_stress(Solid &solid,
 }
 
 void StrengthLinear::write_restart(ofstream *of) {
-  of->write(reinterpret_cast<const char *>(&G_), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&G_), sizeof(float));
 }
 
 void StrengthLinear::read_restart(ifstream *ifr) {
   if (universe->me == 0) {
     cout << "Restart StrengthLinear" << endl;
   }
-  ifr->read(reinterpret_cast<char *>(&G_), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&G_), sizeof(float));
 }
 

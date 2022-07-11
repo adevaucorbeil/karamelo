@@ -72,7 +72,7 @@ void TranslateParticles::translate_region(vector<string> args, int isolid) {
   else zset = true;
 
   int ns = domain->solids.size();
-  double delx_value, dely_value, delz_value;
+  float delx_value, dely_value, delz_value;
   Solid *s;
 
   for(int is = 0; is < ns; is++)

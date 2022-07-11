@@ -1,3 +1,3 @@
 #pragma once
 
-constexpr double eps = 1e-6;
+constexpr float eps = 1e-6;

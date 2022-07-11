@@ -29,12 +29,12 @@ public:
   TLMPM(class MPM *);
 };
 
-// double linear_basis_function(double, int);
-// double derivative_linear_basis_function(double, int, double);
-// double cubic_spline_basis_function(double, int);
-// double derivative_cubic_spline_basis_function(double, int, double);
-// double bernstein_quadratic_basis_function(double, int);
-// double derivative_bernstein_quadratic_basis_function(double, int, double);
+// float linear_basis_function(float, int);
+// float derivative_linear_basis_function(float, int, float);
+// float cubic_spline_basis_function(float, int);
+// float derivative_cubic_spline_basis_function(float, int, float);
+// float bernstein_quadratic_basis_function(float, int);
+// float derivative_bernstein_quadratic_basis_function(float, int, float);
 
 
 #endif

@@ -62,7 +62,7 @@ void Region::options(vector<string> *args, vector<string>::iterator it)
   }
 }
 
-int Region::match(double x, double y, double z)
+int Region::match(float x, float y, float z)
 {
   if (interior)
     return inside(x, y, z);

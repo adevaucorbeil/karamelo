@@ -35,10 +35,10 @@ public:
   vector<FieldPlt> field; 
 
   int ivalue;            // integer value to print
-  double dvalue;         // double value to print
+  float dvalue;         // float value to print
   bigint bivalue;        // big integer value to print
-  vector<double> x;      // vector of values to plot as x
-  vector<double> y;      // vector of values to plot as y
+  vector<float> x;      // vector of values to plot as x
+  vector<float> y;      // vector of values to plot as y
 
   Plot(class MPM*, vector<string>);
   ~Plot() {};

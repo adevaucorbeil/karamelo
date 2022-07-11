@@ -43,7 +43,7 @@ private:
 
   Var xs_x, xs_y, xs_z;                  //< Position of a point on the surface
   Var nx, ny, nz;                        //< Normal to the plane
-  double K;                                    //< Contact stiffness
+  float K;                                    //< Contact stiffness
   Vector3d ftot;
 };
 

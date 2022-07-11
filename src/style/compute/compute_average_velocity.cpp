@@ -67,7 +67,7 @@ void ComputeAverageVelocity::compute_value(Solid &solid) {
     v_average[0] = v_average[1] = v_average[2] = 0;
   }
 
-  double vx, vy, vz;
+  float vx, vy, vz;
 
   vx = vy = vz = 0;
 
@@ -80,7 +80,7 @@ void ComputeAverageVelocity::compute_value(Solid &solid) {
       update->ntimestep == update->nsteps) {
     Kokkos::parallel_reduce("ComputeAverageVelocity::compute_value", solid.np_local,
 			    KOKKOS_LAMBDA(const int &ip,
-					  double &lvx, double &lvy, double &lvz) {
+					  float &lvx, float &lvy, float &lvz) {
 			      if(mask[ip] & groupbit) {
 				lvx = sv[ip](0);
 				lvy = sv[ip](1);
@@ -95,8 +95,8 @@ void ComputeAverageVelocity::compute_value(Solid &solid) {
 
 
   // Reduce velocity:
-  double v_reduced[3] = {0, 0, 0};
-  MPI_Allreduce(v_average, v_reduced, 3, MPI_DOUBLE, MPI_SUM, universe->uworld);
+  float v_reduced[3] = {0, 0, 0};
+  MPI_Allreduce(v_average, v_reduced, 3, MPI_FLOAT, MPI_SUM, universe->uworld);
 
   input->parsev(id + "_x", v_reduced[0]/group->n_tot(igroup));
   input->parsev(id + "_y", v_reduced[1]/group->n_tot(igroup));

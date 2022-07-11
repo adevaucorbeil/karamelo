@@ -33,7 +33,7 @@ public:
   vector<Field> field; 
 
   int ivalue;            // integer value to print
-  double dvalue;         // double value to print
+  float dvalue;         // float value to print
   bigint bivalue;        // big integer value to print
 
   Log(class MPM*, vector<string>);

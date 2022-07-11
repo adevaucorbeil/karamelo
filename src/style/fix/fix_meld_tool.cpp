@@ -103,7 +103,7 @@ void FixMeldTool::reduce()
   Vector3d ftot_reduced;
 
   // Reduce ftot:
-  MPI_Allreduce(ftot.elements, ftot_reduced.elements, 3, MPI_DOUBLE, MPI_SUM,
+  MPI_Allreduce(ftot.elements, ftot_reduced.elements, 3, MPI_FLOAT, MPI_SUM,
                 universe->uworld);
 
   input->parsev(id + "_x", ftot_reduced[0]);
@@ -121,38 +121,38 @@ void FixMeldTool::initial_integrate(Solid &solid)
   c2->evaluate(solid);
   theta->evaluate(solid);
 
-  Kokkos::View<double **> c1_ = c1->registers;
-  Kokkos::View<double **> c2_ = c2->registers;
-  Kokkos::View<double **> theta_ = theta->registers;
+  Kokkos::View<float **> c1_ = c1->registers;
+  Kokkos::View<float **> c2_ = c2->registers;
+  Kokkos::View<float **> theta_ = theta->registers;
 
   int groupbit = this->groupbit;
   int dim = this->dim;
   int axis0 = this->axis0;
   int axis1 = this->axis1;
-  double K = this->K;
-  double w = this->w;
-  double lo = this->lo;
-  double hi = this->hi;
-  double Rmax = this->Rmax;
-  double RmaxSq = this->RmaxSq;
-  Kokkos::View<double*> mass = solid.mass;
+  float K = this->K;
+  float w = this->w;
+  float lo = this->lo;
+  float hi = this->hi;
+  float Rmax = this->Rmax;
+  float RmaxSq = this->RmaxSq;
+  Kokkos::View<float*> mass = solid.mass;
   Kokkos::View<int*> mask = solid.mask;
   Kokkos::View<Vector3d*> sx = solid.x;
   Kokkos::View<Vector3d*> smbp = solid.mbp;
-  Kokkos::View<double*> sdamage = solid.damage;
-  double G = solid.mat->G;
+  Kokkos::View<float*> sdamage = solid.damage;
+  float G = solid.mat->G;
 
-  double f0, f1, f2;
+  float f0, f1, f2;
   int n;
 
   Kokkos::parallel_reduce("FixMeldTool::initial_integrate", solid.np_local,
-			  KOKKOS_LAMBDA(const int &ip, double &ftot0, double &ftot1, double &ftot2, int &n_)
+			  KOKKOS_LAMBDA(const int &ip, float &ftot0, float &ftot1, float &ftot2, int &n_)
   {
     if (!mass[ip] || !(mask[ip] & groupbit))
       return;
 
-    const double &c = Kokkos::Experimental::cos(theta_(0, ip));
-    const double &s = Kokkos::Experimental::sin(theta_(0, ip));
+    const float &c = Kokkos::Experimental::cos(theta_(0, ip));
+    const float &s = Kokkos::Experimental::sin(theta_(0, ip));
 
     Vector3d xprime, xtool;
     Matrix3d R;
@@ -188,17 +188,17 @@ void FixMeldTool::initial_integrate(Solid &solid)
         xprime[axis1] > Rmax || xprime[axis1] < -Rmax)
       return;
 
-    const double &p0 = xprime[axis0];
-    const double &p1 = xprime[axis1];
-    const double &p2 = xprime[dim];
+    const float &p0 = xprime[axis0];
+    const float &p1 = xprime[axis1];
+    const float &p2 = xprime[dim];
 
-    const double &rSq = p0 * p0 + p1 * p1;
+    const float &rSq = p0 * p0 + p1 * p1;
 
     if (rSq > RmaxSq)
       return;
 
     xprime = R*xprime;
-    const double &pext = Rmax - Kokkos::Experimental::sqrt(rSq);
+    const float &pext = Rmax - Kokkos::Experimental::sqrt(rSq);
 
     Vector3d f;
 
@@ -216,7 +216,7 @@ void FixMeldTool::initial_integrate(Solid &solid)
 
     if (pext > 0 && pext < f.norm()) {
       f = Vector3d();
-      const double &r = Kokkos::Experimental::sqrt(rSq);
+      const float &r = Kokkos::Experimental::sqrt(rSq);
       f[axis0] = pext * xprime[axis0] / r;
       f[axis1] = pext * xprime[axis1] / r;
     }
@@ -243,11 +243,11 @@ void FixMeldTool::write_restart(ofstream *of) {
   // of->write(reinterpret_cast<const char *>(&dim), sizeof(int));
   // of->write(reinterpret_cast<const char *>(&axis0), sizeof(int));
   // of->write(reinterpret_cast<const char *>(&axis1), sizeof(int));
-  // of->write(reinterpret_cast<const char *>(&K), sizeof(double));
-  // of->write(reinterpret_cast<const char *>(&w), sizeof(double));
-  // of->write(reinterpret_cast<const char *>(&lo), sizeof(double));
-  // of->write(reinterpret_cast<const char *>(&hi), sizeof(double));
-  // of->write(reinterpret_cast<const char *>(&Rmax), sizeof(double));
+  // of->write(reinterpret_cast<const char *>(&K), sizeof(float));
+  // of->write(reinterpret_cast<const char *>(&w), sizeof(float));
+  // of->write(reinterpret_cast<const char *>(&lo), sizeof(float));
+  // of->write(reinterpret_cast<const char *>(&hi), sizeof(float));
+  // of->write(reinterpret_cast<const char *>(&Rmax), sizeof(float));
   
   // c1.write_to_restart(of);
   // c2.write_to_restart(of);
@@ -258,11 +258,11 @@ void FixMeldTool::read_restart(ifstream *ifr) {
   // ifr->read(reinterpret_cast<char *>(&dim), sizeof(int));
   // ifr->read(reinterpret_cast<char *>(&axis0), sizeof(int));
   // ifr->read(reinterpret_cast<char *>(&axis1), sizeof(int));
-  // ifr->read(reinterpret_cast<char *>(&K), sizeof(double));
-  // ifr->read(reinterpret_cast<char *>(&w), sizeof(double));
-  // ifr->read(reinterpret_cast<char *>(&lo), sizeof(double));
-  // ifr->read(reinterpret_cast<char *>(&hi), sizeof(double));
-  // ifr->read(reinterpret_cast<char *>(&Rmax), sizeof(double));
+  // ifr->read(reinterpret_cast<char *>(&K), sizeof(float));
+  // ifr->read(reinterpret_cast<char *>(&w), sizeof(float));
+  // ifr->read(reinterpret_cast<char *>(&lo), sizeof(float));
+  // ifr->read(reinterpret_cast<char *>(&hi), sizeof(float));
+  // ifr->read(reinterpret_cast<char *>(&Rmax), sizeof(float));
   // RmaxSq = Rmax * Rmax;
 
   // c1.read_from_restart(ifr);

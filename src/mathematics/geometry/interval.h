@@ -10,29 +10,29 @@ using namespace std;
 
 class Interval {
 public:
-  double x0;
-  double x1;
+  float x0;
+  float x1;
 
   Interval() :
     x0(NAN),
     x1(NAN)
   {}
 
-  Interval(double x0, double x1) :
+  Interval(float x0, float x1) :
     x0(x0),
     x1(x1)
   {}
 
   Interval(const Interval &interval) = default;
 
-  void add(double x) {
+  void add(float x) {
     if (x > x1 || std::isnan(x1))
       x1 = x;
     if (x < x0 || std::isnan(x0))
       x0 = x;
   }
 
-  bool contains(double x) const {
+  bool contains(float x) const {
     return x0 - eps < x && x < x1 + eps;
   }
 

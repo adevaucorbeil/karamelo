@@ -184,7 +184,7 @@ int Domain::inside(Vector3d x)
 /*! inside = 1 if x,y,z is inside or on the boundary of this proc domain.
  *  inside = 0 if x,y,z is outside and not on boundary of this proc domain.
  */
-bool Domain::inside_subdomain(double x, double y, double z) {
+bool Domain::inside_subdomain(float x, float y, float z) {
   if (x < sublo[0]) return false;
   if (x > subhi[0]) return false;
   if (y < sublo[1]) return false;
@@ -196,7 +196,7 @@ bool Domain::inside_subdomain(double x, double y, double z) {
 
 /*! Determine the CPU owning the particle with x, y, z coordinates.
  */
-int Domain::which_CPU_owns_me(double x, double y, double z) {
+int Domain::which_CPU_owns_me(float x, float y, float z) {
   if (x < sublo[0]) {
     // target[0] = -1;
     if (y < sublo[1]) {
@@ -348,7 +348,7 @@ int Domain::which_CPU_owns_me(double x, double y, double z) {
 /*! inside = 1 if x,y,z is inside or on the boundary of this proc domain, extended by h.
  *  inside = 0 if x,y,z is outside and not on boundary of this proc domain, extended by h.
  */
-bool Domain::inside_subdomain_extended(double x, double y, double z, double h) {
+bool Domain::inside_subdomain_extended(float x, float y, float z, float h) {
   if (x < sublo[0] - h) return false;
   if (x > subhi[0] + h) return false;
   if (y < sublo[1] - h) return false;
@@ -365,11 +365,11 @@ void Domain::set_local_box() {
   int *procgrid = universe->procgrid;
   int *myloc = universe->myloc;
 
-  double l[3] = {boxhi[0] - boxlo[0],
+  float l[3] = {boxhi[0] - boxlo[0],
 		 boxhi[1] - boxlo[1],
 		 boxhi[2] - boxlo[2]};
 
-  double h[3];
+  float h[3];
   h[0] = l[0]/procgrid[0];
   sublo[0] = myloc[0]*h[0] + boxlo[0];
   subhi[0] = sublo[0] + h[0];
@@ -412,11 +412,11 @@ void Domain::create_domain(vector<string> args) {
 	error->all(FLERR, "Error: create_domain received too many arguments: 3 needed for 1D total Lagrangian simulations: domain xmin, domain xmax, grid cell size.\n");
     }
 
-    boxlo[0] = (double) input->parsev(args[0]);
-    boxhi[0] = (double) input->parsev(args[1]);
+    boxlo[0] = (float) input->parsev(args[0]);
+    boxhi[0] = (float) input->parsev(args[1]);
 
     if (!update->method->is_TL) {
-      grid->cellsize = (double) input->parsev(args[2]);
+      grid->cellsize = (float) input->parsev(args[2]);
 
       if (grid->cellsize < 0) 
 	error->all(FLERR, "Error: cellsize negative! You gave: " + to_string(grid->cellsize) + "\n");
@@ -436,13 +436,13 @@ void Domain::create_domain(vector<string> args) {
 	error->all(FLERR, "Error: create_domain received too many arguments: 3 needed for 2D total Lagrangian simulations: domain xmin, domain xmax, domain ymin, domain ymax, grid cell size.\n");
     }
 
-    boxlo[0] = (double) input->parsev(args[0]);
-    boxhi[0] = (double) input->parsev(args[1]);
-    boxlo[1] = (double) input->parsev(args[2]);
-    boxhi[1] = (double) input->parsev(args[3]);
+    boxlo[0] = (float) input->parsev(args[0]);
+    boxhi[0] = (float) input->parsev(args[1]);
+    boxlo[1] = (float) input->parsev(args[2]);
+    boxhi[1] = (float) input->parsev(args[3]);
 
     if (!update->method->is_TL) {
-      grid->cellsize = (double) input->parsev(args[4]);
+      grid->cellsize = (float) input->parsev(args[4]);
 
       if (grid->cellsize < 0) 
 	error->all(FLERR, "Error: cellsize negative! You gave: " + to_string(grid->cellsize) + "\n");
@@ -461,15 +461,15 @@ void Domain::create_domain(vector<string> args) {
       else if (args.size() > 7)
 	error->all(FLERR, "Error: create_domain received too many arguments: 3 needed for 3D total Lagrangian simulations: domain xmin, domain xmax, domain ymin, domain ymax, domain zmin, domain zmax, grid cell size.\n");
     }
-    boxlo[0] = (double) input->parsev(args[0]);
-    boxhi[0] = (double) input->parsev(args[1]);
-    boxlo[1] = (double) input->parsev(args[2]);
-    boxhi[1] = (double) input->parsev(args[3]);
-    boxlo[2] = (double) input->parsev(args[4]);
-    boxhi[2] = (double) input->parsev(args[5]);
+    boxlo[0] = (float) input->parsev(args[0]);
+    boxhi[0] = (float) input->parsev(args[1]);
+    boxlo[1] = (float) input->parsev(args[2]);
+    boxhi[1] = (float) input->parsev(args[3]);
+    boxlo[2] = (float) input->parsev(args[4]);
+    boxhi[2] = (float) input->parsev(args[5]);
 
     if (!update->method->is_TL) {
-      grid->cellsize = (double) input->parsev(args[6]);
+      grid->cellsize = (float) input->parsev(args[6]);
 
       if (grid->cellsize < 0) 
 	error->all(FLERR, "Error: cellsize negative! You gave: " + to_string(grid->cellsize) + "\n");
@@ -519,19 +519,19 @@ void Domain::set_dimension(vector<string> args) {
 	       + usage_dimension.find(args[m])->second);
   }
 
-  boxlo[0] = (double)input->parsev(args[++m]);
-  boxhi[0] = (double)input->parsev(args[++m]);
+  boxlo[0] = (float)input->parsev(args[++m]);
+  boxhi[0] = (float)input->parsev(args[++m]);
   if (dim > 1) {
-    boxlo[1] = (double)input->parsev(args[++m]);
-    boxhi[1] = (double)input->parsev(args[++m]);
+    boxlo[1] = (float)input->parsev(args[++m]);
+    boxhi[1] = (float)input->parsev(args[++m]);
   }
   if (dim == 3) {
-    boxlo[2] = (double)input->parsev(args[++m]);
-    boxhi[2] = (double)input->parsev(args[++m]);
+    boxlo[2] = (float)input->parsev(args[++m]);
+    boxhi[2] = (float)input->parsev(args[++m]);
   }
 
   if (!update->method->is_TL) {
-    grid->cellsize = (double)input->parsev(args[++m]);
+    grid->cellsize = (float)input->parsev(args[++m]);
 
     if (grid->cellsize < 0) {
       error->all(FLERR, "Error: cellsize negative! You gave: " + to_string(grid->cellsize) + "\n.");
@@ -574,16 +574,16 @@ void Domain::set_axisymmetric(vector<string> args) {
 void Domain::write_restart(ofstream* of){
 
   // Write boxlo:
-  of->write(reinterpret_cast<const char *>(&boxlo[0]), 3*sizeof(double));
+  of->write(reinterpret_cast<const char *>(&boxlo[0]), 3*sizeof(float));
   
   // Write boxhi:
-  of->write(reinterpret_cast<const char *>(&boxhi[0]), 3*sizeof(double));
+  of->write(reinterpret_cast<const char *>(&boxhi[0]), 3*sizeof(float));
 
   // Write sublo:
-  of->write(reinterpret_cast<const char *>(&sublo[0]), 3*sizeof(double));
+  of->write(reinterpret_cast<const char *>(&sublo[0]), 3*sizeof(float));
 
   // Write subhi:
-  of->write(reinterpret_cast<const char *>(&subhi[0]), 3*sizeof(double));
+  of->write(reinterpret_cast<const char *>(&subhi[0]), 3*sizeof(float));
 
   // Write axisymmetric:
   of->write(reinterpret_cast<const char *>(&axisymmetric), sizeof(bool));
@@ -593,7 +593,7 @@ void Domain::write_restart(ofstream* of){
   // cout << "np_total=" << np_total << endl;
   
   if (!update->method->is_TL) {
-    of->write(reinterpret_cast<const char *>(&grid->cellsize), sizeof(double));
+    of->write(reinterpret_cast<const char *>(&grid->cellsize), sizeof(float));
     // cout << "cellsize=" << grid->cellsize << endl;
   }
 
@@ -634,19 +634,19 @@ void Domain::write_restart(ofstream* of){
  */
 void Domain::read_restart(ifstream *ifr) {
   // Write boxlo:
-  ifr->read(reinterpret_cast<char *>(&boxlo[0]), 3*sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&boxlo[0]), 3*sizeof(float));
   // cout << "boxlo=[" << boxlo[0] << "," << boxlo[1] << "," << boxlo[2] << endl;
   
   // Write boxhi:
-  ifr->read(reinterpret_cast<char *>(&boxhi[0]), 3*sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&boxhi[0]), 3*sizeof(float));
   // cout << "boxhi=[" << boxhi[0] << "," << boxhi[1] << "," << boxhi[2] << endl;
 
   // Write sublo:
-  ifr->read(reinterpret_cast<char *>(&sublo[0]), 3*sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&sublo[0]), 3*sizeof(float));
   // cout << "sublo=[" << sublo[0] << "," << sublo[1] << "," << sublo[2] << endl;
 
   // Write subhi:
-  ifr->read(reinterpret_cast<char *>(&subhi[0]), 3*sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&subhi[0]), 3*sizeof(float));
   // cout << "subhi=[" << subhi[0] << "," << subhi[1] << "," << subhi[2] << endl;
 
   // Write axisymmetric:
@@ -660,7 +660,7 @@ void Domain::read_restart(ifstream *ifr) {
   universe->set_proc_grid();
   if (!update->method->is_TL) {
     grid = new Grid(mpm);
-    ifr->read(reinterpret_cast<char *>(&grid->cellsize), sizeof(double));
+    ifr->read(reinterpret_cast<char *>(&grid->cellsize), sizeof(float));
     // cout << "cellsize=" << grid->cellsize << endl;
     
     grid->init(boxlo, boxhi);

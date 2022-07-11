@@ -30,17 +30,17 @@ public:
   StrengthSwift(class MPM *, vector<string>);
   ~StrengthSwift() {};
 
-  double G();
+  float G();
 
   void write_restart(ofstream *);
   void read_restart(ifstream *);
 
   void update_deviatoric_stress(Solid &solid,
-                                Kokkos::View<double*> &plastic_strain_increment,
+                                Kokkos::View<float*> &plastic_strain_increment,
                                 Kokkos::View<Matrix3d*> &sigma_dev) const override;
 
 protected:
-  double G_, A, B, C, n;
+  float G_, A, B, C, n;
   string usage = "Usage: strength(strength-ID, swift, G, A, B, C, n)\n";
   int Nargs = 7;
 };

@@ -51,20 +51,20 @@ public:
   class Strength *strength = nullptr;                ///< Pointer to the Strength (flow stress rule)
   class Damage *damage = nullptr;                    ///< Pointer to the Damage law
   class Temperature *temp = nullptr;                 ///< Pointer to the Temperature law
-  double rho0;                                       ///< Density in the reference state \f$\rho_0\f$
-  double E;                                          ///< Young's modulus
-  double nu;                                         ///< Poisson's ratio \f$\nu\f$
-  double G;                                          ///< Shear modulus
-  double K;                                          ///< Bulk modulus
-  double lambda;                                     ///< 1st Lame parameter \f$\lambda\f$
-  double signal_velocity;                            ///< Signal velocity in the reference state \f$c_0 = \sqrt{\frac{\lambda+2G}{\rho_0}}\f$
-  double cp = 0;                                     ///< Heat capacity at constant pressure
-  double invcp = 0;                                  ///< Inverse of the heat capacity at constant pressure
-  double kappa = 0;                                  ///< Thermal conductivity
-  double alpha = 0;                                  ///< Coefficient of thermal expansion
+  float rho0;                                       ///< Density in the reference state \f$\rho_0\f$
+  float E;                                          ///< Young's modulus
+  float nu;                                         ///< Poisson's ratio \f$\nu\f$
+  float G;                                          ///< Shear modulus
+  float K;                                          ///< Bulk modulus
+  float lambda;                                     ///< 1st Lame parameter \f$\lambda\f$
+  float signal_velocity;                            ///< Signal velocity in the reference state \f$c_0 = \sqrt{\frac{\lambda+2G}{\rho_0}}\f$
+  float cp = 0;                                     ///< Heat capacity at constant pressure
+  float invcp = 0;                                  ///< Inverse of the heat capacity at constant pressure
+  float kappa = 0;                                  ///< Thermal conductivity
+  float alpha = 0;                                  ///< Coefficient of thermal expansion
   Mat(string, int, class EOS *, class Strength *, class Damage *,
       class Temperature *);                          ///< Creates an elasto-plastic material
-  Mat(string, int, double, double, double, double, double, double); ///< Creates a linear or Neo-Hookean material
+  Mat(string, int, float, float, float, float, float, float); ///< Creates a linear or Neo-Hookean material
   Mat(string, int);                                  ///< Creates a rigid material
 };
 

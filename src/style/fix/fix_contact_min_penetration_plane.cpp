@@ -81,7 +81,7 @@ void FixContactMinPenetrationPlane::reduce()
   Vector3d ftot_reduced;
 
   // Reduce ftot:
-  MPI_Allreduce(ftot.elements, ftot_reduced.elements, 3, MPI_DOUBLE, MPI_SUM,
+  MPI_Allreduce(ftot.elements, ftot_reduced.elements, 3, MPI_FLOAT, MPI_SUM,
                 universe->uworld);
 
   (*input->vars)[id + "_x"] = Var(id + "_x", ftot_reduced[0]);
@@ -98,12 +98,12 @@ void FixContactMinPenetrationPlane::initial_integrate(Solid &solid)
   for (int ip = 0; ip < solid.np_local; ip++)
   {
     // Extremely gross screening:
-    double d = n.dot(solid.x[ip] - xq);
+    float d = n.dot(solid.x[ip] - xq);
 
     if (d >= solid.grid->cellsize)
       continue;
 
-    double Rp;
+    float Rp;
     if (domain->dimension == 2)
     {
       Rp = sqrt(solid.vol[ip]);
@@ -114,18 +114,18 @@ void FixContactMinPenetrationPlane::initial_integrate(Solid &solid)
     }
   
     // Fine screening:
-    double p = Rp/2 - d;
+    float p = Rp/2 - d;
 
     if (p < 0)
       continue;
 
-    double fnorm = solid.mass[ip]*p/update->dt/update->dt;
+    float fnorm = solid.mass[ip]*p/update->dt/update->dt;
     Vector3d f = fnorm*n;
 
     if (mu)
     {
       Vector3d vt = solid.v[ip] - n.dot(solid.v[ip])*n;
-      double vtnorm = vt.norm();
+      float vtnorm = vt.norm();
       if (vtnorm)
       {
         vt /= vtnorm;
@@ -140,16 +140,16 @@ void FixContactMinPenetrationPlane::initial_integrate(Solid &solid)
 
 void FixContactMinPenetrationPlane::write_restart(ofstream *of)
 {
-  of->write(reinterpret_cast<const char *>(&D), sizeof(double));
-  of->write(reinterpret_cast<const char *>(&mu), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&D), sizeof(float));
+  of->write(reinterpret_cast<const char *>(&mu), sizeof(float));
   of->write(reinterpret_cast<const char *>(&xq), sizeof(Vector3d));
   of->write(reinterpret_cast<const char *>(&n), sizeof(Vector3d));
 }
 
 void FixContactMinPenetrationPlane::read_restart(ifstream *ifr)
 {
-  ifr->read(reinterpret_cast<char *>(&D), sizeof(double));
-  ifr->read(reinterpret_cast<char *>(&mu), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&D), sizeof(float));
+  ifr->read(reinterpret_cast<char *>(&mu), sizeof(float));
   ifr->read(reinterpret_cast<char *>(&xq), sizeof(Vector3d));
   ifr->read(reinterpret_cast<char *>(&n), sizeof(Vector3d));
 }

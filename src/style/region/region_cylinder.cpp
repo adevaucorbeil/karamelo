@@ -144,10 +144,10 @@ Cylinder::~Cylinder()
    inside = 0 if x,y,z is outside and not on surface
 ------------------------------------------------------------------------- */
 
-int Cylinder::inside(double x, double y, double z)
+int Cylinder::inside(float x, float y, float z)
 {
   //cout << "Check if point (" << x << ", " << y << ", " << z << ") is inside the region" << endl;
-  double dSq;
+  float dSq;
   if (axis=='x') {
     dSq = square(y - c1) + square(z - c2);
     if (x >= lo && x <= hi && dSq <= RSq) {
@@ -170,8 +170,8 @@ int Cylinder::inside(double x, double y, double z)
 /* ----------------------------------------------------------------------
    return a vector that contains the limits of the box
 ------------------------------------------------------------------------- */
-vector<double> Cylinder::limits(){
-  vector<double> lim;
+vector<float> Cylinder::limits(){
+  vector<float> lim;
   lim.push_back(xlo);
   lim.push_back(xhi);
   lim.push_back(ylo);
@@ -182,34 +182,34 @@ vector<double> Cylinder::limits(){
 }
 
 void Cylinder::write_restart(ofstream *of) {
-  of->write(reinterpret_cast<const char *>(&c1), sizeof(double));
-  of->write(reinterpret_cast<const char *>(&c2), sizeof(double));
-  of->write(reinterpret_cast<const char *>(&R), sizeof(double));
-  of->write(reinterpret_cast<const char *>(&lo), sizeof(double));
-  of->write(reinterpret_cast<const char *>(&hi), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&c1), sizeof(float));
+  of->write(reinterpret_cast<const char *>(&c2), sizeof(float));
+  of->write(reinterpret_cast<const char *>(&R), sizeof(float));
+  of->write(reinterpret_cast<const char *>(&lo), sizeof(float));
+  of->write(reinterpret_cast<const char *>(&hi), sizeof(float));
   of->write(&axis, sizeof(char));
-  of->write(reinterpret_cast<const char *>(&xlo), sizeof(double));
-  of->write(reinterpret_cast<const char *>(&xhi), sizeof(double));
-  of->write(reinterpret_cast<const char *>(&ylo), sizeof(double));
-  of->write(reinterpret_cast<const char *>(&yhi), sizeof(double));
-  of->write(reinterpret_cast<const char *>(&zlo), sizeof(double));
-  of->write(reinterpret_cast<const char *>(&zhi), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&xlo), sizeof(float));
+  of->write(reinterpret_cast<const char *>(&xhi), sizeof(float));
+  of->write(reinterpret_cast<const char *>(&ylo), sizeof(float));
+  of->write(reinterpret_cast<const char *>(&yhi), sizeof(float));
+  of->write(reinterpret_cast<const char *>(&zlo), sizeof(float));
+  of->write(reinterpret_cast<const char *>(&zhi), sizeof(float));
 }
 
 void Cylinder::read_restart(ifstream *ifr)
 {
   // cout << "Restart Cylinder" << endl;
-  ifr->read(reinterpret_cast<char *>(&c1), sizeof(double));
-  ifr->read(reinterpret_cast<char *>(&c2), sizeof(double));
-  ifr->read(reinterpret_cast<char *>(&R), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&c1), sizeof(float));
+  ifr->read(reinterpret_cast<char *>(&c2), sizeof(float));
+  ifr->read(reinterpret_cast<char *>(&R), sizeof(float));
   RSq = R * R;
-  ifr->read(reinterpret_cast<char *>(&lo), sizeof(double));
-  ifr->read(reinterpret_cast<char *>(&hi), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&lo), sizeof(float));
+  ifr->read(reinterpret_cast<char *>(&hi), sizeof(float));
   ifr->read(&axis, sizeof(char));
-  ifr->read(reinterpret_cast<char *>(&xlo), sizeof(double));
-  ifr->read(reinterpret_cast<char *>(&xhi), sizeof(double));
-  ifr->read(reinterpret_cast<char *>(&ylo), sizeof(double));
-  ifr->read(reinterpret_cast<char *>(&yhi), sizeof(double));
-  ifr->read(reinterpret_cast<char *>(&zlo), sizeof(double));
-  ifr->read(reinterpret_cast<char *>(&zhi), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&xlo), sizeof(float));
+  ifr->read(reinterpret_cast<char *>(&xhi), sizeof(float));
+  ifr->read(reinterpret_cast<char *>(&ylo), sizeof(float));
+  ifr->read(reinterpret_cast<char *>(&yhi), sizeof(float));
+  ifr->read(reinterpret_cast<char *>(&zlo), sizeof(float));
+  ifr->read(reinterpret_cast<char *>(&zhi), sizeof(float));
 }

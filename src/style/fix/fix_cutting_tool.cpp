@@ -29,25 +29,25 @@ using namespace FixConst;
 // void write_var(Var v, ofstream *of) {
 //   string eq = v.eq();
 //   size_t N = eq.size();
-//   double value = v.result();
+//   float value = v.result();
 //   bool cst = v.is_constant();
 //   of->write(reinterpret_cast<const char *>(&N), sizeof(size_t));
 //   of->write(reinterpret_cast<const char *>(eq.c_str()), N);
-//   of->write(reinterpret_cast<const char *>(&value), sizeof(double));
+//   of->write(reinterpret_cast<const char *>(&value), sizeof(float));
 //   of->write(reinterpret_cast<const char *>(&cst), sizeof(bool));
 // }
 
 // Var read_var(ifstream *ifr) {
 //   string eq = "";
 //   size_t N = 0;
-//   double value = 0;
+//   float value = 0;
 //   bool cst = false;
 
 //   ifr->read(reinterpret_cast<char *>(&N), sizeof(size_t));
 //   eq.resize(N);
 
 //   ifr->read(reinterpret_cast<char *>(&eq[0]), N);
-//   ifr->read(reinterpret_cast<char *>(&value), sizeof(double));
+//   ifr->read(reinterpret_cast<char *>(&value), sizeof(float));
 //   ifr->read(reinterpret_cast<char *>(&cst), sizeof(bool));
 //   return Var(eq, value, cst);
 // }
@@ -124,7 +124,7 @@ void FixCuttingTool::reduce()
   Vector3d ftot_reduced;
 
   // Reduce ftot:
-  MPI_Allreduce(ftot.elements, ftot_reduced.elements, 3, MPI_DOUBLE, MPI_SUM,
+  MPI_Allreduce(ftot.elements, ftot_reduced.elements, 3, MPI_FLOAT, MPI_SUM,
                 universe->uworld);
 
   input->parsev(id + "_x", ftot_reduced[0]);
@@ -163,7 +163,7 @@ void FixCuttingTool::initial_integrate(Solid &solid) {
     // xt = 0 The equation of line 2 is: (yB - yt) * x - (xB - xt) * y + yt * xB -
     // yB * xt = 0
 
-    double line1[4], line2[4];
+    float line1[4], line2[4];
     line1[0] = xA[1] - xt[1];
     line1[1] = -xA[0] + xt[0];
     line1[2] = xt[1]*xA[0] - xt[0]*xA[1];
@@ -203,17 +203,17 @@ void FixCuttingTool::initial_integrate(Solid &solid) {
     // cout << "line 1: " << line1[0] << "x + " << line1[1] << "y + " << line1[2] << endl;
     // cout << "line 2: " << line2[0] << "x + " << line2[1] << "y + " << line2[2] << endl;
 
-    double c1p = line1[0]*solid.x[ip][0] + line1[1]*solid.x[ip][1] + line1[1];
-    double c2p = line2[0]*solid.x[ip][0] + line2[1]*solid.x[ip][1] + line2[1];
+    float c1p = line1[0]*solid.x[ip][0] + line1[1]*solid.x[ip][1] + line1[1];
+    float c2p = line2[0]*solid.x[ip][0] + line2[1]*solid.x[ip][1] + line2[1];
 
     if (c1p < 0 || c2p < 0)
       continue;
 
     // The particle is inside the tool
-    double p1 = fabs(c1p*line1[3]);
-    double p2 = fabs(c2p*line2[3]);
+    float p1 = fabs(c1p*line1[3]);
+    float p2 = fabs(c2p*line2[3]);
 
-    double p;
+    float p;
     Vector3d n;
 
     if (p1 < p2)
@@ -234,7 +234,7 @@ void FixCuttingTool::initial_integrate(Solid &solid) {
 }
 
 void FixCuttingTool::write_restart(ofstream *of) {
-  of->write(reinterpret_cast<const char *>(&K), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&K), sizeof(float));
   xtvalue.write_to_restart(of);
   ytvalue.write_to_restart(of);
   ztvalue.write_to_restart(of);
@@ -251,7 +251,7 @@ void FixCuttingTool::write_restart(ofstream *of) {
 }
 
 void FixCuttingTool::read_restart(ifstream *ifr) {
-  ifr->read(reinterpret_cast<char *>(&K), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&K), sizeof(float));
   xtvalue.read_from_restart(ifr);
   ytvalue.read_from_restart(ifr);
   ztvalue.read_from_restart(ifr);

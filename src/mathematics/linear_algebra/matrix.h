@@ -459,11 +459,11 @@ operator<<(std::ostream &os, const Matrix<T, M, N> &matrix)
 template<typename T, std::size_t N>
 using Vector = Matrix<T, N, 1>;
 
-using Vector2d = Vector<double, 2>;
-using Vector3d = Vector<double, 3>;
-using Vector4d = Vector<double, 4>;
-using Matrix2d = Matrix<double, 2, 2>;
-using Matrix3d = Matrix<double, 3, 3>;
-using Matrix4d = Matrix<double, 4, 4>;
+using Vector2d = Vector<float, 2>;
+using Vector3d = Vector<float, 3>;
+using Vector4d = Vector<float, 4>;
+using Matrix2d = Matrix<float, 2, 2>;
+using Matrix3d = Matrix<float, 3, 3>;
+using Matrix4d = Matrix<float, 4, 4>;
 
 using Vector3i = Vector<int, 3>;

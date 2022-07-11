@@ -25,7 +25,7 @@ public:
     vector = grid.*GRID_TO_VECTOR;
   }
 
-  KOKKOS_INLINE_FUNCTION double
+  KOKKOS_INLINE_FUNCTION float
   evaluate(int i) const
   {
     return vector[i][N];

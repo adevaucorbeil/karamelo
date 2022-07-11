@@ -71,15 +71,15 @@ public:
   EOSShock(class MPM *, vector<string>);
   ~EOSShock();
 
-  double rho0();
-  double K();
-  double G();
-  void compute_pressure(Solid &solid, Kokkos::View<double*> &pH) const override;
+  float rho0();
+  float K();
+  float G();
+  void compute_pressure(Solid &solid, Kokkos::View<float*> &pH) const override;
   void write_restart(ofstream *);
   void read_restart(ifstream *);
 
 protected:
-  double rho0_, K_, e0, c0, S, Gamma, Tr, cv, alpha, Q1, Q2;
+  float rho0_, K_, e0, c0, S, Gamma, Tr, cv, alpha, Q1, Q2;
   string usage = "Usage: eos(eos-ID, shock, rho, K, c0, S, Gamma, cv, Tr, Q1, Q2)\n";
   int Nargs = 11;
 

@@ -36,7 +36,7 @@
 struct Point {
   int owner;    ///< ID of the CPU who created the point
   tagint tag;   ///< Unique identification number of the point
-  double x[3];  ///< Position vector of the point
+  float x[3];  ///< Position vector of the point
   int ntype[3]; ///< Type of the point (0, 1, or 2)
 };
 
@@ -73,7 +73,7 @@ class Grid : public Pointers {
 
   Kokkos::View<int*> nowner;    ///< which CPU owns each node (universe->me for local nodes, other CPU for ghost nodes
 
-  double cellsize;       ///< size of the square cells forming the grid
+  float cellsize;       ///< size of the square cells forming the grid
 
   Kokkos::View<Vector3d*> x;            ///< nodes' current position
   Kokkos::View<Vector3d*> x0;           ///< nodes' position in the reference coordinate system
@@ -82,20 +82,20 @@ class Grid : public Pointers {
   Kokkos::View<Vector3d*> mb;           ///< nodes' external forces times the mass
   Kokkos::View<Vector3d*> f;            ///< nodes' internal forces
 
-  Kokkos::View<double*> mass;              ///< nodes' current mass
+  Kokkos::View<float*> mass;              ///< nodes' current mass
   Kokkos::View<int*> mask;                 ///< nodes' group mask
   Kokkos::View<bool*> rigid;               ///< are the nodes in the area of influence of a rigid body?
   Kokkos::View<Vector3i*> ntype;      ///< node type in x, y, and z directions (False for an edge, True otherwise)
 
-  Kokkos::View<double*> T;                 ///< nodes' temperature at time t
-  Kokkos::View<double*> T_update;          ///< nodes' temperature at time t+dt
-  Kokkos::View<double*> Qext;              ///< nodes' external thermal driving force
-  Kokkos::View<double*> Qint;              ///< nodes' internal thermal driving force
+  Kokkos::View<float*> T;                 ///< nodes' temperature at time t
+  Kokkos::View<float*> T_update;          ///< nodes' temperature at time t+dt
+  Kokkos::View<float*> Qext;              ///< nodes' external thermal driving force
+  Kokkos::View<float*> Qint;              ///< nodes' internal thermal driving force
 
   Grid(class MPM *);
   void grow(int);              ///< Allocate memory for the vectors used for local nodes or resize them  
   void setup(string);
-  void init(double*, double*); ///< Create the array of nodes. Give them their position, tag, and type
+  void init(float*, float*); ///< Create the array of nodes. Give them their position, tag, and type
 
   void reduce_mass_ghost_nodes();                  ///< Reduce the mass of all the ghost nodes from that computed on each CPU.
   void reduce_mass_ghost_nodes_old();              ///< Deprecated

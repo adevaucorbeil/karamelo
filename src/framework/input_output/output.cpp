@@ -25,8 +25,6 @@
 #include <var.h>
 #include <write_restart.h>
 
-#define MIN(A,B) ((A) < (B) ? (A) : (B))
-
 using namespace std;
 
 Output::Output(MPM *mpm) : Pointers(mpm)

@@ -55,29 +55,29 @@ StrengthPlastic::StrengthPlastic(MPM *mpm, vector<string> args) : Strength(mpm, 
   }
 }
 
-double StrengthPlastic::G(){
+float StrengthPlastic::G(){
   return G_;
 }
 
 void
 StrengthPlastic::update_deviatoric_stress(Solid &solid,
-                                          Kokkos::View<double*> &plastic_strain_increment,
+                                          Kokkos::View<float*> &plastic_strain_increment,
                                           Kokkos::View<Matrix3d*> &sigma_dev) const
 {
-  double G_ = this->G_;
-  double yieldStress = this->yieldStress;
+  float G_ = this->G_;
+  float yieldStress = this->yieldStress;
   
-  double dt = update->dt;
+  float dt = update->dt;
 
   Kokkos::View<Matrix3d*> ssigma = solid.sigma;
   Kokkos::View<Matrix3d*> sD = solid.D;
-  Kokkos::View<double*> sdamage = solid.damage;
+  Kokkos::View<float*> sdamage = solid.damage;
 
   Kokkos::parallel_for("EOSLinear::compute_pressure", solid.np_local,
   KOKKOS_LAMBDA (const int &ip)
   {
     Matrix3d sigmaInitial_dev, sigmaFinal_dev, sigmaTrial_dev, dev_rate;
-    double J2, Gd, yieldStressD;
+    float J2, Gd, yieldStressD;
 
     /*
      * deviatoric rate of unrotated stress
@@ -125,14 +125,14 @@ StrengthPlastic::update_deviatoric_stress(Solid &solid,
 }
 
 void StrengthPlastic::write_restart(ofstream *of) {
-  of->write(reinterpret_cast<const char *>(&G_), sizeof(double));
-  of->write(reinterpret_cast<const char *>(&yieldStress), sizeof(double));
+  of->write(reinterpret_cast<const char *>(&G_), sizeof(float));
+  of->write(reinterpret_cast<const char *>(&yieldStress), sizeof(float));
 }
 
 void StrengthPlastic::read_restart(ifstream *ifr) {
   if (universe->me == 0) {
     cout << "Restart StrengthPlastic" << endl;
   }
-  ifr->read(reinterpret_cast<char *>(&G_), sizeof(double));
-  ifr->read(reinterpret_cast<char *>(&yieldStress), sizeof(double));
+  ifr->read(reinterpret_cast<char *>(&G_), sizeof(float));
+  ifr->read(reinterpret_cast<char *>(&yieldStress), sizeof(float));
 }

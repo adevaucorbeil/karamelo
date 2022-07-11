@@ -77,8 +77,8 @@ static KOKKOS_INLINE_FUNCTION bool PolDec(Matrix3d M, Matrix3d &R, Matrix3d &T, 
 	 */
 
 	if (scaleF) {
-		double min = 0.3; // 0.3^2 = 0.09, should suffice for most problems
-		double max = 2.0;
+		float min = 0.3; // 0.3^2 = 0.09, should suffice for most problems
+		float max = 2.0;
 		for (int i = 0; i < 3; i++) {
 			if (S(i, i) < min) {
 				S(i, i) = min;

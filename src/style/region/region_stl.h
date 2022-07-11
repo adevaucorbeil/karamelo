@@ -50,8 +50,8 @@ This command defines a region of space described by an stl file. It is usually u
 class Stl : public Region, public BoundingBox {
  public:
   Stl(class MPM *, vector<string>);
-  int inside(double, double, double);
-  vector<double> limits();
+  int inside(float, float, float);
+  vector<float> limits();
   void write_restart(ofstream *);
   void read_restart(ifstream *);
 

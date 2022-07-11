@@ -41,7 +41,7 @@ Var IntForce::command(vector<string> args) {
     error->all(FLERR, "Error: directions should be either x,y or z: " + args[1] + " not understood.\n");
   }
 
-  double iforce = group->internal_force(igroup, dir);
+  float iforce = group->internal_force(igroup, dir);
   string eq = "internal_force(" + args[0] + "," + args[1] + ")";
   return Var(eq, iforce);
 }

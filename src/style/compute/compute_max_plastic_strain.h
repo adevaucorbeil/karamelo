@@ -31,7 +31,7 @@ public:
 
 private:
   int t;
-  double Epmax, Tmax;
+  float Epmax, Tmax;
 };
 
 #endif

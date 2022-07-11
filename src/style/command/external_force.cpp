@@ -41,7 +41,7 @@ Var ExtForce::command(vector<string> args) {
     error->all(FLERR, "Error: directions should be either x,y or z: " + args[1] + " not understood.\n");
   }
 
-  double eforce = group->external_force(igroup, dir);
+  float eforce = group->external_force(igroup, dir);
   string eq = "external_force(" + args[0] + "," + args[1] + ")";
   return Var(eq, eforce);
 }

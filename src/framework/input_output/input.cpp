@@ -160,10 +160,10 @@ Input::Input(MPM *mpm, int argc, char **argv) : Pointers(mpm)
   operation_factory.register_class<ExpressionProduct   >("*");
   operation_factory.register_class<ExpressionQuotient  >("/");
 
-  operation_factory.register_class<ExpressionOperandConstant<Kokkos::Experimental::    pi_v<double>>>("PI"    );
-  operation_factory.register_class<ExpressionOperandConstant<Kokkos::Experimental::     e_v<double>>>("E"     );
-  operation_factory.register_class<ExpressionOperandConstant<Kokkos::Experimental::egamma_v<double>>>("EGAMMA");
-  operation_factory.register_class<ExpressionOperandConstant<Kokkos::Experimental::   phi_v<double>>>("PHI"   );
+  operation_factory.register_class<ExpressionOperandConstant<Kokkos::Experimental::    pi_v<float>>>("PI"    );
+  operation_factory.register_class<ExpressionOperandConstant<Kokkos::Experimental::     e_v<float>>>("E"     );
+  operation_factory.register_class<ExpressionOperandConstant<Kokkos::Experimental::egamma_v<float>>>("EGAMMA");
+  operation_factory.register_class<ExpressionOperandConstant<Kokkos::Experimental::   phi_v<float>>>("PHI"   );
 
   operation_factory.register_class<ExpressionOperandIndex>("i");
 
@@ -246,7 +246,7 @@ void Input::file()
  * Precedence == 2 for the addition and subtraction operators.\n
  * Precedence == 1 for the other known operators.\n
  * The function returns 0 if the operator is not known.*/
-double Input::precedence(const string op){
+float Input::precedence(const string op){
   if (op[0] == '>') return 1;
   // if (op == ">=") return 1;
   if (op[0] == '<') return 1;
@@ -467,13 +467,13 @@ string Input::remove_whitespace(string str){
   return str_;
 }
 
-double Input::parse(string str){
+float Input::parse(string str){
   error->all(FLERR, "Error: Input::parse deprecated function.\n");
   return nan("");
 }
 
 Expression &
-Input::parsev(const string &name, double value)
+Input::parsev(const string &name, float value)
 {
     const pair<map<string, Expression>::iterator, bool> it = expressions.emplace(piecewise_construct, forward_as_tuple(name), tuple<>());
     
@@ -496,7 +496,7 @@ Input::parsev(const string &name, double value)
         error->all(FLERR, name + " was not a literal expression.\n");
     }
 
-    expression.registers = Kokkos::View<double**>("expression", 1, 1);
+    expression.registers = Kokkos::View<float**>("expression", 1, 1);
 
     return expression;
 }
@@ -649,7 +649,7 @@ Var Input::parsev(string str)
       if (!max_index)
         cout << "MAX INDEX CANNOT BE ZERO" << endl;
         
-      expression.registers = Kokkos::View<double**>("expression", max_index, 1);
+      expression.registers = Kokkos::View<float**>("expression", max_index, 1);
     }
   }
 

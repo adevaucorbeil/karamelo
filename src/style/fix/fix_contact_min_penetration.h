@@ -38,7 +38,7 @@ public:
 private:
   string usage = "Usage: fix(fix-ID, contact/minimize_penetration, solid1, solid2, mu)\n";
   int Nargs = 5;
-  double mu;    // Friction coefficient
+  float mu;    // Friction coefficient
   Vector3d ftot;
 };
 

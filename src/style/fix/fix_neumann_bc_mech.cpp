@@ -83,7 +83,7 @@ void FixNeumannBCMech::reduce()
   Vector3d ftot_reduced;
 
   // Reduce ftot:
-  MPI_Allreduce(&ftot, &ftot_reduced, 3, MPI_DOUBLE, MPI_SUM,
+  MPI_Allreduce(&ftot, &ftot_reduced, 3, MPI_FLOAT, MPI_SUM,
                 universe->uworld);
 
   (*input->vars)[id + "_x"] = Var(id + "_x", ftot_reduced[0]);
@@ -101,19 +101,19 @@ void FixNeumannBCMech::initial_integrate(Solid &solid)
   int dimension = domain->dimension;
   Kokkos::View<int*> mask = solid.mask;
   Kokkos::View<Vector3d*> mbp = solid.mbp;
-  Kokkos::View<double*> vol = solid.vol;
+  Kokkos::View<float*> vol = solid.vol;
 
   for (int i = 0; i < domain->dimension; i++)
     if (t[i])
       {
-	Kokkos::View<double **> t_i = t[i]->registers;
+	Kokkos::View<float **> t_i = t[i]->registers;
 	Kokkos::parallel_reduce("FixNeumannBCMech::initial_integrate", solid.np_local,
-			     KOKKOS_LAMBDA(const int &ip, double &ftot_i)
+			     KOKKOS_LAMBDA(const int &ip, float &ftot_i)
 			     {
 			       if (!(mask[ip] & groupbit))
 				 return;
 
-			       double Ap;
+			       float Ap;
 			       if (dimension == 1)
 				 Ap = 1;
 			       else if (dimension == 2)
@@ -121,7 +121,7 @@ void FixNeumannBCMech::initial_integrate(Solid &solid)
 			       else         
 				 Ap = Kokkos::Experimental::pow(vol[ip], 2/3);
 
-			       const double &f = Ap*t_i(0, ip);
+			       const float &f = Ap*t_i(0, ip);
 
 			       mbp[ip][i] += f;
 			       ftot_i += f;

@@ -117,33 +117,33 @@ void DeleteParticles::delete_region(vector<string> args, int isolid) {
       Kokkos::View<Matrix3d*> Finv = s.Finv;
       Kokkos::View<Matrix3d*> Fdot = s.Fdot;
 
-      Kokkos::View<double*> J = s.J;
-      Kokkos::View<double*> vol = s.vol;
-      Kokkos::View<double*> vol0 = s.vol0;
-      Kokkos::View<double*> rho = s.rho;
-      Kokkos::View<double*> rho0 = s.rho0;
-      Kokkos::View<double*> mass = s.mass;
-      Kokkos::View<double*> eff_plastic_strain = s.eff_plastic_strain;
-      Kokkos::View<double*> eff_plastic_strain_rate = s.eff_plastic_strain_rate;
-      Kokkos::View<double*> damage = s.damage;
-      Kokkos::View<double*> damage_init = s.damage_init;
-      Kokkos::View<double*> ienergy = s.ienergy;
+      Kokkos::View<float*> J = s.J;
+      Kokkos::View<float*> vol = s.vol;
+      Kokkos::View<float*> vol0 = s.vol0;
+      Kokkos::View<float*> rho = s.rho;
+      Kokkos::View<float*> rho0 = s.rho0;
+      Kokkos::View<float*> mass = s.mass;
+      Kokkos::View<float*> eff_plastic_strain = s.eff_plastic_strain;
+      Kokkos::View<float*> eff_plastic_strain_rate = s.eff_plastic_strain_rate;
+      Kokkos::View<float*> damage = s.damage;
+      Kokkos::View<float*> damage_init = s.damage_init;
+      Kokkos::View<float*> ienergy = s.ienergy;
       Kokkos::View<int*> mask = s.mask;
 
-      Kokkos::View<double*> T = s.T;
-      Kokkos::View<double*> gamma = s.gamma;
+      Kokkos::View<float*> T = s.T;
+      Kokkos::View<float*> gamma = s.gamma;
       Kokkos::View<Vector3d*> q = s.q;
 
       Kokkos::View<int*> error_flag = s.error_flag;
-      Kokkos::View<double*> dtCFL = s.dtCFL;
+      Kokkos::View<float*> dtCFL = s.dtCFL;
 
-      double vtot_local;
-      double mtot_local;
+      float vtot_local;
+      float mtot_local;
 
       np_local -= ndelete;
 
       Kokkos::parallel_reduce("copy_particles", np_local,
-			      KOKKOS_LAMBDA(int ip, double &vtot_, double &mtot_)
+			      KOKKOS_LAMBDA(int ip, float &vtot_, float &mtot_)
       {
 	if (dlist[ip]) {
 	  const int &j = inew[np_local - sum_post[ip]];
@@ -225,10 +225,10 @@ void DeleteParticles::delete_region(vector<string> args, int isolid) {
 	resize(J, np_local);
 	resize(error_flag, np_local);
 
-	double values[3] = {(double) ndelete, vtot_local, mtot_local};
-	double reduced_values[3] = {0, 0, 0};
+	float values[3] = {(float) ndelete, vtot_local, mtot_local};
+	float reduced_values[3] = {0, 0, 0};
 
-	MPI_Allreduce(values, reduced_values, 3, MPI_DOUBLE, MPI_SUM, universe->uworld);
+	MPI_Allreduce(values, reduced_values, 3, MPI_FLOAT, MPI_SUM, universe->uworld);
 
 	int ndelete_reduced = (int) reduced_values[0];
 	s.vtot = reduced_values[1];

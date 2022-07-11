@@ -56,9 +56,9 @@ ComputeAverageTemperature::~ComputeAverageTemperature() {}
 
 void ComputeAverageTemperature::compute_value(Solid &solid) {
 
-  double T, T_reduced;
+  float T, T_reduced;
 
-  Kokkos::View<double*> sT = solid.T;
+  Kokkos::View<float*> sT = solid.T;
   Kokkos::View<int*> mask = solid.mask;
 
   int groupbit = this->groupbit;
@@ -67,13 +67,13 @@ void ComputeAverageTemperature::compute_value(Solid &solid) {
       update->ntimestep == update->nsteps)
 
   Kokkos::parallel_reduce("ComputeAverageTemperature::compute_value", solid.np_local,
-    			  KOKKOS_LAMBDA(const int &ip, double &lT) {
+    			  KOKKOS_LAMBDA(const int &ip, float &lT) {
 			      if (mask[ip] & groupbit)
 				lT += sT[ip];
 			  },T);
 
 
   // Reduce T:
-  MPI_Allreduce(&T, &T_reduced, 1, MPI_DOUBLE, MPI_SUM, universe->uworld);
+  MPI_Allreduce(&T, &T_reduced, 1, MPI_FLOAT, MPI_SUM, universe->uworld);
   (*input->vars)[id] = Var(id, T_reduced/group->n_tot(igroup));
 }
