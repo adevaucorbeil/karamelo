@@ -228,7 +228,7 @@ void DeleteParticles::delete_region(vector<string> args, int isolid) {
 	double values[3] = {(double) ndelete, vtot_local, mtot_local};
 	double reduced_values[3] = {0, 0, 0};
 
-	MPI_Allreduce(values, reduced_values, 3, MPI_INT, MPI_SUM, universe->uworld);
+	MPI_Allreduce(values, reduced_values, 3, MPI_DOUBLE, MPI_SUM, universe->uworld);
 
 	int ndelete_reduced = (int) reduced_values[0];
 	s.vtot = reduced_values[1];
