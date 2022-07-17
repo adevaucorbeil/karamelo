@@ -59,6 +59,7 @@
 
 using namespace std;
 
+const bool Input::DEBUG_EXPRESSIONS = false;
 
 Input::Input(MPM *mpm, int argc, char **argv) : Pointers(mpm)
 {
@@ -155,10 +156,11 @@ Input::Input(MPM *mpm, int argc, char **argv) : Pointers(mpm)
   operation_factory.register_class<ExpressionFunctionAtan>("atan(");
   operation_factory.register_class<ExpressionFunctionAtan2>("atan2(");
 
-  operation_factory.register_class<ExpressionSum       >("+");
-  operation_factory.register_class<ExpressionDifference>("-");
-  operation_factory.register_class<ExpressionProduct   >("*");
-  operation_factory.register_class<ExpressionQuotient  >("/");
+  infix_factory.register_class<ExpressionSum       >("+");
+  infix_factory.register_class<ExpressionDifference>("-");
+  infix_factory.register_class<ExpressionProduct   >("*");
+  infix_factory.register_class<ExpressionQuotient  >("/");
+  operation_factory.register_class<ExpressionNegation>("-");
 
   operation_factory.register_class<ExpressionOperandConstant<Kokkos::Experimental::    pi_v<double>>>("PI"    );
   operation_factory.register_class<ExpressionOperandConstant<Kokkos::Experimental::     e_v<double>>>("E"     );
@@ -182,6 +184,28 @@ Input::Input(MPM *mpm, int argc, char **argv) : Pointers(mpm)
 #include <style_expression.h>
 #undef ExpressionStyle
 #undef EXPRESSION_CLASS
+
+  if (DEBUG_EXPRESSIONS)
+    for (const string &str: {
+    "1/2/3",
+    "1 - 2 - 3",
+    "sin(cos(2)) + 1",
+    "cos(2)",
+    "cos(PI)",
+    "-1",
+    "-sqrt(14.386*-sin(4))",
+    "-PI*-1",
+    "1 - -PI"
+    })
+    {
+      cout << "----- Parsing \"" << str << "\" -----" << endl;
+      parsev(str);
+      cout << "-------- Evaluating --------" << endl;
+      Expression &expression = expressions.at(str);
+      expression.evaluate();
+      cout << str << " = " << expression.registers(0, 0) << endl;
+      cout << "----------------------------" << endl << endl;
+    }
 }
 
 
@@ -506,8 +530,10 @@ Input::parsev(const string &name, double value)
  */
 Var Input::parsev(string str)
 {
+  static int depth = -1;
+  depth++;
   /////////////////////////////////////////// EXPRESSIONS ///////////////////////////////////////////////////////////
-  if (!str.empty())
+  if (!str.empty() && !depth)
   {
     smatch match;
     string name, expression_string;
@@ -543,9 +569,14 @@ Var Input::parsev(string str)
         NONE
       } current_type = CharacterType::NONE;
 
+      bool after_operand = false;
+
       for (string::const_iterator it = expression_string.cbegin(), end = expression_string.cend();; it++)
       {
         char current_character = it == end? ' ': *it;
+
+        if (DEBUG_EXPRESSIONS)
+          cout << "\"" << current_character << "\", ";
 
         CharacterType next_type = current_character == ' '?   CharacterType::NONE:
                                   current_character >= '0' &&
@@ -568,7 +599,8 @@ Var Input::parsev(string str)
             current_token.back() == 'e' && current_character == '-'))
           next_type = CharacterType::NUMBER;
 
-        if ((current_type != next_type || next_type == CharacterType::OPEN_PARENTHESIS ) &&
+        if ((current_type != next_type || next_type == CharacterType::SYMBOL || next_type == CharacterType::OPEN_PARENTHESIS ||
+             next_type == CharacterType::CLOSE_PARENTHESIS) &&
             (current_type != CharacterType::LETTER || next_type != CharacterType::OPEN_PARENTHESIS))
         {
           if (current_type == CharacterType::CLOSE_PARENTHESIS ||
@@ -580,23 +612,37 @@ Var Input::parsev(string str)
               operator_stack.pop_back();
             }
 
-            if (current_type == CharacterType::CLOSE_PARENTHESIS)
+            if (after_operand = current_type == CharacterType::CLOSE_PARENTHESIS)
             {
               expression.operations.push_back(move(operator_stack.back()));
               operator_stack.pop_back();
+
+              after_operand = true;
             }
+
+            if (DEBUG_EXPRESSIONS)
+              cout << endl << "CLOSE_PARENTHESIS OR COMMA" << endl;
           }
           else if (current_type != CharacterType::NONE)
           {
             Expression::Operation *new_operation = current_type == CharacterType::NUMBER? new ExpressionOperandLiteral(stod(current_token)): nullptr;
+            if (current_type == CharacterType::NUMBER && DEBUG_EXPRESSIONS)
+              cout << endl << "NUMBER " << stod(current_token) << endl;
+            
             if (!new_operation)
             {
-              const map<string,Expression>::iterator &it = expressions.find(current_token);
+              const map<string,Expression>::iterator &it = current_token == name? expressions.end(): expressions.find(current_token);
 
-              if (it == expressions.cend())
-                new_operation = operation_factory.new_instance(current_token);
+              if (it == expressions.end())
+              {
+                if (DEBUG_EXPRESSIONS)
+                  cout << endl << "(\"" << current_token << "\", " << (after_operand? "infix": "unary") << "), " << endl;
+                new_operation = (after_operand? infix_factory: operation_factory).new_instance(current_token);
+              }
               else
               {
+                if (DEBUG_EXPRESSIONS)
+                  cout << endl << "EXPRESSION FROM EXPRESSION \"" << current_token << "\"" << endl;
                 expression.expression_dependencies.insert(&it->second);
                 new_operation = new ExpressionOperandExpression(current_token);
               }
@@ -604,16 +650,16 @@ Var Input::parsev(string str)
 
             if (!new_operation)
             {
-              //cout << expression_string << " does not appear to be an operation. Aborting." << endl;
+              cout << current_token << " does not appear to be an operation. Aborting." << endl;
               expressions.erase(name);
               goto end_of_expressions;
             }
 
-            if (new_operation->isOperand())
+            if (after_operand = new_operation->isOperand())
               expression.operations.emplace_back(new_operation);
             else
             {
-              while (!operator_stack.empty() && operator_stack.back()->precedence() < new_operation->precedence() &&
+              while (!operator_stack.empty() && operator_stack.back()->precedence() <= new_operation->precedence() &&
                      !operator_stack.back()->isFunction())
               {
                 expression.operations.push_back(move(operator_stack.back()));
@@ -887,6 +933,7 @@ Var Input::parsev(string str)
 		(*vars)[returnvar].result();
 	      }
 	    }
+      depth--;
 	    return -(*vars)[word];
 	  }
 	  else {
@@ -898,6 +945,7 @@ Var Input::parsev(string str)
 		(*vars)[returnvar].result();
 	      }
 	    }
+      depth--;
 	    return (*vars)[word];
 	  }
 	}
@@ -1003,6 +1051,7 @@ Var Input::parsev(string str)
     if (!returnvar.empty()) {
       (*vars)[returnvar] = -1;
     }
+    depth--;
     return Var(-1);
   }
   else {
@@ -1014,6 +1063,7 @@ Var Input::parsev(string str)
 	(*vars)[returnvar].result(mpm);
       }
     }
+    depth--;
     return values.top();
   }
 }
