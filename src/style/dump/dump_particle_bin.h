@@ -13,19 +13,18 @@
 
 #ifdef DUMP_CLASS
 
-DumpStyle(particle/gz,DumpParticleGz)
+DumpStyle(particle/bin,DumpParticleBin)
 
 #else
 
-#ifndef MPM_DUMP_PARTICLE_GZ_H
-#define MPM_DUMP_PARTICLE_GZ_H
+#ifndef MPM_DUMP_PARTICLE_BIN_H
+#define MPM_DUMP_PARTICLE_BIN_H
 
-#include <deque>
 #include <dump.h>
 #include <grid.h>
-#include <thread>
+#include <deque>
 
-class DumpParticleGz : public Dump {
+class DumpParticleBin : public Dump {
   deque<Kokkos::View<tagint*>::HostMirror> ptag;               ///< Unique identifier for particles in the system
 
   deque<Kokkos::View<Vector3d*>::HostMirror> x;                ///< Particles' current position
@@ -50,9 +49,9 @@ class DumpParticleGz : public Dump {
   deque<Kokkos::View<double*>::HostMirror> T;                         ///< Particles' current temperature
   deque<Kokkos::View<double*>::HostMirror> gamma;                     ///< Particles' heat source
 
-public:
-  DumpParticleGz(MPM *, vector<string>);
-  ~DumpParticleGz();
+ public:
+  DumpParticleBin(MPM *, vector<string>);
+  ~DumpParticleBin();
 
   void write();
   protected:
@@ -68,12 +67,6 @@ public:
 			      "bx", "by", "bz",
 			      "ep", "epdot", "T",
 			      "ienergy", "gamma"};
-private:
-  deque<thread>        threads;        ///< Deque storing the threads for each write_to_file
-  deque<bool>          thread_status;  ///< true when thread is running
-  deque<deque<double>> bufs;           ///< Deque of buffers containing the values to be written in dump
-
-  void write_to_file(int, bigint, string, bigint);
 };
 
 #endif
