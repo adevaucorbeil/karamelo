@@ -119,24 +119,37 @@ DumpParticleGz::DumpParticleGz(MPM *mpm, vector<string> args)
 }
 
 DumpParticleGz::~DumpParticleGz() {
-  while (threads.size()) {
-    threads.back().join();
-    threads.pop_back();
-    thread_status.pop_back();
-    bufs.pop_back();    
+   // Wait for all threads to be completed.
+  for (auto &th : threads) {
+    if (th.second.joinable())
+      th.second.join();
   }
 }
 
 void DumpParticleGz::write() {
 
-  if (threads.size()) {
-    // clear unnecessary variables:
-    for(int i=0; i<threads.size(); i++) {
-      if (!thread_status[i])
-	bufs[i].resize(0);
+  // Clear unnecessary threads
+  deque<bigint> erase;
+  for (auto &th : thread_status) {
+    // cout << "thread" << th.first << "=" << threads[th.first].get_id() << endl;
+    if (!th.second) {
+      // The thread th has finished, we can remove all information related to it:
+      erase.emplace_back(th.first);
+      threads[th.first].join();
+      threads.erase(th.first);
     }
   }
-  int ithread = threads.size();
+
+  for(auto &key: erase) {
+    thread_status.erase(key);
+    bufs.erase(key);
+  }
+
+  // cout << "threads.size()=" << threads.size() << endl;
+  // cout << "thread_status.size()=" << thread_status.size() << endl;
+  // cout << "bufs.size()=" << bufs.size() << endl;
+
+  bigint ithread = update->ntimestep;
 
   // Open dump file:
   size_t pos_asterisk = filename.find('*');
@@ -166,8 +179,10 @@ void DumpParticleGz::write() {
   int size_one = output_var.size() + 2;
 
   // Resize the buffer:
-  bufs.resize(ithread + 1);
-  bufs[ithread].resize(total_np * size_one);
+  deque<double> buf_dummy;
+  bufs[ithread] = buf_dummy;
+  deque<double> &buf =  bufs[ithread];
+  buf.resize(total_np * size_one);
 
   int m = 0;
   Matrix3d sigma_;
@@ -249,101 +264,101 @@ void DumpParticleGz::write() {
 	      sigma_ = R[isolid][i]*sigma[isolid][i]*R[isolid][i].transpose();
       else
 	      sigma_ = sigma[isolid][i];
-      bufs[ithread][m++] = ptag[isolid][i];
-      bufs[ithread][m++] = isolid + 1;
+      buf[m++] = ptag[isolid][i];
+      buf[m++] = isolid + 1;
       for (const string &v: output_var)
       {
         if (v == "x")
-          bufs[ithread][m++] = x[isolid][i][0];
+          buf[m++] = x[isolid][i][0];
         else if (v == "y")
-          bufs[ithread][m++] = x[isolid][i][1];
+          buf[m++] = x[isolid][i][1];
         else if (v == "z")
-          bufs[ithread][m++] = x[isolid][i][2];
+          buf[m++] = x[isolid][i][2];
         else if (v == "x0")
-          bufs[ithread][m++] = x0[isolid][i][0];
+          buf[m++] = x0[isolid][i][0];
         else if (v == "y0")
-          bufs[ithread][m++] = x0[isolid][i][1];
+          buf[m++] = x0[isolid][i][1];
         else if (v == "z0")
-          bufs[ithread][m++] = x0[isolid][i][2];
+          buf[m++] = x0[isolid][i][2];
         else if (v == "vx")
-          bufs[ithread][m++] = this->v[isolid][i][0];
+          buf[m++] = this->v[isolid][i][0];
         else if (v == "vy")
-          bufs[ithread][m++] = this->v[isolid][i][1];
+          buf[m++] = this->v[isolid][i][1];
         else if (v == "vz")
-          bufs[ithread][m++] = this->v[isolid][i][2];
+          buf[m++] = this->v[isolid][i][2];
         else if (v == "s11")
-          bufs[ithread][m++] = sigma_(0, 0);
+          buf[m++] = sigma_(0, 0);
         else if (v == "s22")
-          bufs[ithread][m++] = sigma_(1, 1);
+          buf[m++] = sigma_(1, 1);
         else if (v == "s33")
-          bufs[ithread][m++] = sigma_(2, 2);
+          buf[m++] = sigma_(2, 2);
         else if (v == "s12")
-          bufs[ithread][m++] = sigma_(0, 1);
+          buf[m++] = sigma_(0, 1);
         else if (v == "s13")
-          bufs[ithread][m++] = sigma_(0, 2);
+          buf[m++] = sigma_(0, 2);
         else if (v == "s23")
-          bufs[ithread][m++] = sigma_(1, 2);
+          buf[m++] = sigma_(1, 2);
         else if (v == "seq")
-          bufs[ithread][m++] = sqrt(3. / 2.) * Deviator(sigma_).norm();
+          buf[m++] = sqrt(3. / 2.) * Deviator(sigma_).norm();
         else if (v == "e11")
-          bufs[ithread][m++] = strain_el[isolid][i](0, 0);
+          buf[m++] = strain_el[isolid][i](0, 0);
         else if (v == "e22")
-          bufs[ithread][m++] = strain_el[isolid][i](1, 1);
+          buf[m++] = strain_el[isolid][i](1, 1);
         else if (v == "e33")
-          bufs[ithread][m++] = strain_el[isolid][i](2, 2);
+          buf[m++] = strain_el[isolid][i](2, 2);
         else if (v == "e12")
-          bufs[ithread][m++] = strain_el[isolid][i](0, 1);
+          buf[m++] = strain_el[isolid][i](0, 1);
         else if (v == "e13")
-          bufs[ithread][m++] = strain_el[isolid][i](0, 2);
+          buf[m++] = strain_el[isolid][i](0, 2);
         else if (v == "e23")
-          bufs[ithread][m++] = strain_el[isolid][i](1, 2);
+          buf[m++] = strain_el[isolid][i](1, 2);
         else if (v == "damage")
-          bufs[ithread][m++] = damage[isolid][i];
+          buf[m++] = damage[isolid][i];
         else if (v == "damage_init")
-          bufs[ithread][m++] = damage_init[isolid][i];
+          buf[m++] = damage_init[isolid][i];
         else if (v == "volume")
-          bufs[ithread][m++] = vol[isolid][i];
+          buf[m++] = vol[isolid][i];
         else if (v == "mass")
-          bufs[ithread][m++] = mass[isolid][i];
+          buf[m++] = mass[isolid][i];
         else if (v == "bx")
-          bufs[ithread][m++] = mbp[isolid][i][0];
+          buf[m++] = mbp[isolid][i][0];
         else if (v == "by")
-          bufs[ithread][m++] = mbp[isolid][i][1];
+          buf[m++] = mbp[isolid][i][1];
         else if (v == "bz")
-          bufs[ithread][m++] = mbp[isolid][i][2];
+          buf[m++] = mbp[isolid][i][2];
         else if (v == "ep")
-          bufs[ithread][m++] = eff_plastic_strain[isolid][i];
+          buf[m++] = eff_plastic_strain[isolid][i];
         else if (v == "epdot")
-          bufs[ithread][m++] = eff_plastic_strain_rate[isolid][i];
+          buf[m++] = eff_plastic_strain_rate[isolid][i];
         else if (v == "ienergy")
-          bufs[ithread][m++] = ienergy[isolid][i];
+          buf[m++] = ienergy[isolid][i];
         else if (v == "T") {
           if (update->method->temp) {
-            bufs[ithread][m++] = T[isolid][i];
+            buf[m++] = T[isolid][i];
           } else {
-            bufs[ithread][m++] = 0.0;
+            buf[m++] = 0.0;
           }
         } else if (v == "gamma") {
           if (update->method->temp) {
-            bufs[ithread][m++] = gamma[isolid][i];
+            buf[m++] = gamma[isolid][i];
           } else {
-            bufs[ithread][m++] = 0.0;
+            buf[m++] = 0.0;
           }
         }
       }
     }
   }
 
-  thread_status.emplace_back(true);
-  threads.emplace_back(thread(&DumpParticleGz::write_to_file, this, ithread, update->ntimestep, fdump, total_np));
+  thread_status[ithread] = true;
+  threads[ithread] = thread(&DumpParticleGz::write_to_file, this, ithread, fdump, total_np);
 }
 
 
-void DumpParticleGz::write_to_file(int i, bigint ntimestep, string fdump, bigint total_np) {
+void DumpParticleGz::write_to_file(bigint i, string fdump, bigint total_np) {
   // Open the file fdump:
   ogzstream dumpstream(fdump.c_str());
 
-  dumpstream << "ITEM: TIMESTEP\n" << ntimestep << "\nITEM: NUMBER OF ATOMS\n";
+  dumpstream << "ITEM: TIMESTEP\n" << i << "\nITEM: NUMBER OF ATOMS\n";
 
   dumpstream << total_np << endl;
   dumpstream << "ITEM: BOX BOUNDS sm sm sm\n";
@@ -358,14 +373,16 @@ void DumpParticleGz::write_to_file(int i, bigint ntimestep, string fdump, bigint
 
   int size_one = output_var.size();
 
+  deque<double> &buf = bufs[i];
+
   int m = 0;
   for (int j = 0; j < total_np; j++) {
-    dumpstream << (tagint)bufs[i][m++] << " ";
-    dumpstream << (int)bufs[i][m++] << " ";
+    dumpstream << (tagint)buf[m++] << " ";
+    dumpstream << (int)buf[m++] << " ";
     for (int k = 0; k < size_one - 1; k++) {
-      dumpstream << bufs[i][m++] << " ";
+      dumpstream << buf[m++] << " ";
     }
-    dumpstream << bufs[i][m++] << endl;
+    dumpstream << buf[m++] << endl;
   }
 
   dumpstream << endl;
