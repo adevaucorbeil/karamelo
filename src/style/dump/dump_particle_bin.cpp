@@ -148,6 +148,15 @@ void DumpParticleBin::write() {
     error->one(FLERR, "Cannot open file " + fdump + ".\n");
   }
 
+  // use negative ntimestep as marker for new format
+  bigint fmtlen = MAGIC_STRING.length();
+  bigint marker = -fmtlen;
+  dumpstream.write(reinterpret_cast<const char *>(&marker),sizeof(bigint));
+  dumpstream.write(reinterpret_cast<const char *>(MAGIC_STRING.c_str()), MAGIC_STRING.size());
+  dumpstream.write(reinterpret_cast<const char *>(&ENDIAN),sizeof(int));
+  dumpstream.write(reinterpret_cast<const char *>(&FORMAT_REVISION),sizeof(int));
+
+
   dumpstream.write(reinterpret_cast<const char *>(&update->ntimestep),sizeof(bigint));
 
   bigint total_np = 0;
@@ -160,7 +169,7 @@ void DumpParticleBin::write() {
 
   int one = 1;
   for(int i=0; i<6; i++)
-    dumpstream.write(reinterpret_cast<const char *>(&one),sizeof(int));
+    dumpstream.write(reinterpret_cast<const char *>(&one),sizeof(int)); // Boundary types
 
   dumpstream.write(reinterpret_cast<const char *>(&domain->boxlo[0]),sizeof(double));
   dumpstream.write(reinterpret_cast<const char *>(&domain->boxhi[0]),sizeof(double));
@@ -170,13 +179,33 @@ void DumpParticleBin::write() {
   dumpstream.write(reinterpret_cast<const char *>(&domain->boxhi[2]),sizeof(double));
   int size_one = output_var.size() + 2;
   dumpstream.write(reinterpret_cast<const char *>(&size_one),sizeof(int));
+
+
+  // We are not setting any unit style, so we write 0:
+  int unit_style = 0;
+  dumpstream.write(reinterpret_cast<const char *>(&unit_style),sizeof(int));
+
+  // We are not storing the simulation time, so we write 0:
+  char time_flag = 0;
+  dumpstream.write(reinterpret_cast<const char *>(&time_flag),sizeof(char));
+
+  // Write column names:
+  string columns = "id type ";
+  for (auto v: output_var) {
+    columns +=  v + " ";
+  }
+  int Nc = strlen(columns.c_str());
+  dumpstream.write(reinterpret_cast<const char *>(&Nc), sizeof(int));
+  dumpstream.write(columns.data(), Nc*sizeof(char));
+
+
   int nclusterprocs = 1;
   dumpstream.write(reinterpret_cast<const char *>(&nclusterprocs),sizeof(int));
 
-  int nme = (int) total_np; // # of dump lines this proc contributes to dump (np->local since each cpu creates its own dump.
+  int nme = (int) (total_np * size_one); // # of dump lines this proc contributes to dump (np->local since each cpu creates its own dump.
   dumpstream.write(reinterpret_cast<const char *>(&nme),sizeof(int));
 
-  double buf[total_np*size_one];
+  double buf[nme];
 
   int m = 0;
   Matrix3d sigma_;

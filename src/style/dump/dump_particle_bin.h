@@ -67,6 +67,11 @@ class DumpParticleBin : public Dump {
 			      "bx", "by", "bz",
 			      "ep", "epdot", "T",
 			      "ienergy", "gamma"};
+
+private:
+  const string MAGIC_STRING = "DUMPCUSTOM";
+  const int FORMAT_REVISION = 0x0002;
+  const int ENDIAN = 0x0001;
 };
 
 #endif
