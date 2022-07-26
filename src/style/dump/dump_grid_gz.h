@@ -20,8 +20,11 @@ DumpStyle(grid/gz,DumpGridGz)
 #ifndef MPM_DUMP_GRID_GZ_H
 #define MPM_DUMP_GRID_GZ_H
 
+#include <deque>
 #include <dump.h>
 #include <grid.h>
+#include <thread>
+#include <utility>
 
 class DumpGridGz : public Dump {
   Kokkos::View<tagint*>::HostMirror ntag;   ///< unique identifier for nodes in the system.
@@ -49,6 +52,10 @@ class DumpGridGz : public Dump {
 			      "mass", "mask",
 			      "rigid", "T",
 			      "ntypex", "ntypey", "ntypez"};
+private:
+  deque<pair<thread, vector<double>>>  threads;        ///< Pair storing the threads and the buffer
+
+  void write_to_file(bigint, string, bigint, bigint);
 };
 
 #endif

@@ -82,9 +82,34 @@ DumpGridGz::DumpGridGz(MPM *mpm, vector<string> args) : Dump(mpm, args) {
   }
 }
 
-DumpGridGz::~DumpGridGz() {}
+DumpGridGz::~DumpGridGz() {
+  // Wait for all threads to be completed.
+  for (int i=0; i<threads.size(); i++)
+    threads[i].first.join();
+}
 
 void DumpGridGz::write() {
+
+  int ithread;
+  pair<thread, vector<double>> *th = nullptr;
+
+  for (int i=0; i<threads.size(); i++) {
+    if (threads[i].second.empty()) {
+      th = &threads[i];
+      threads[i].first.join();
+      ithread = i;
+      break;
+    }
+  }
+
+  if (!th) {
+    ithread = threads.size();
+    threads.emplace_back();
+    th = &threads.back();
+  }
+
+  vector<double> &buf = th->second;
+
   // Open dump file:
   size_t pos_asterisk = filename.find('*');
   string fdump;
@@ -104,14 +129,8 @@ void DumpGridGz::write() {
 
   // cout << "Filemame for dump: " << fdump << endl;
 
-  // Open the file fdump:
-  ogzstream dumpstream(fdump.c_str());
-
-  dumpstream << "ITEM: TIMESTEP\n0\nITEM: NUMBER OF ATOMS\n";
-
   // Check how many different grids we have:
-  vector<class Grid *>
-      grids; // We will store the different pointers to grids here.
+  vector<class Grid *>  grids; // We will store the different pointers to grids here.
 
   for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
     if (grids.size() == 0) {
@@ -131,16 +150,10 @@ void DumpGridGz::write() {
     total_nn += g->nnodes_local;
   }
 
-  dumpstream << total_nn << endl;
-  dumpstream << "ITEM: BOX BOUNDS sm sm sm\n";
-  dumpstream << domain->boxlo[0] << " " << domain->boxhi[0] << endl;
-  dumpstream << domain->boxlo[1] << " " << domain->boxhi[1] << endl;
-  dumpstream << domain->boxlo[2] << " " << domain->boxhi[2] << endl;
-  dumpstream << "ITEM: ATOMS id type ";
-  for (auto v : output_var) {
-    dumpstream << v << " ";
-  }
-  dumpstream << endl;
+  int size_one = output_var.size() + 2;
+
+  // Resize the buffer:
+  buf.reserve(total_nn * size_one);
 
   int igrid = 0;
   for (auto g: grids) {
@@ -184,43 +197,81 @@ void DumpGridGz::write() {
     }
 
     for (bigint i = 0; i < g->nnodes_local; i++) {
-      dumpstream << ntag[i] << " " << igrid + 1 << " ";
+      buf.push_back(ntag[i]);
+      buf.push_back(igrid + 1);
       for (auto v : output_var) {
         if (v == "x")
-          dumpstream << x[i][0] << " ";
+          buf.push_back(x[i][0]);
         else if (v == "y")
-          dumpstream << x[i][1] << " ";
+          buf.push_back(x[i][1]);
         else if (v == "z")
-          dumpstream << x[i][2] << " ";
+          buf.push_back(x[i][2]);
         else if (v == "vx")
-          dumpstream << this->v[i][0] << " ";
+          buf.push_back(this->v[i][0]);
         else if (v == "vy")
-          dumpstream << this->v[i][1] << " ";
+          buf.push_back(this->v[i][1]);
         else if (v == "vz")
-          dumpstream << this->v[i][2] << " ";
+          buf.push_back(this->v[i][2]);
         else if (v == "bx")
-          dumpstream << mb[i][0] << " ";
+          buf.push_back(mb[i][0]);
         else if (v == "by")
-          dumpstream << mb[i][1] << " ";
+          buf.push_back(mb[i][1]);
         else if (v == "bz")
-          dumpstream << mb[i][2] << " ";
+          buf.push_back(mb[i][2]);
         else if (v == "mass")
-          dumpstream << mass[i] << " ";
-	      else if (v.compare("mask")==0)
-	        dumpstream << mask[i] << " ";
+          buf.push_back(mass[i]);
+	else if (v.compare("mask")==0)
+	  buf.push_back(mask[i]);
         else if (v == "ntypex")
-          dumpstream << ntype[i][0] << " ";
+          buf.push_back(ntype[i][0]);
         else if (v == "ntypey")
-          dumpstream << ntype[i][1] << " ";
+          buf.push_back(ntype[i][1]);
         else if (v == "ntypez")
-          dumpstream << ntype[i][2] << " ";
+          buf.push_back(ntype[i][2]);
         else if (v == "T")
-          dumpstream << T[i] << " ";
+          buf.push_back(T[i]);
         else if (v == "rigid")
-          dumpstream << rigid[i] << " ";
+          buf.push_back(rigid[i]);
       }
-      dumpstream << endl;
     }
   }
+
+  th->first = thread(&DumpGridGz::write_to_file, this, ithread, fdump, total_nn, update->ntimestep);
+}
+
+void DumpGridGz::write_to_file(bigint i, string fdump, bigint total_nn, bigint timestep) {
+  // Open the file fdump:
+  ogzstream dumpstream(fdump.c_str());
+
+  dumpstream << "ITEM: TIMESTEP\n" << timestep << "\nITEM: NUMBER OF ATOMS\n";
+
+  dumpstream << total_nn << endl;
+  dumpstream << "ITEM: BOX BOUNDS sm sm sm\n";
+  dumpstream << domain->boxlo[0] << " " << domain->boxhi[0] << endl;
+  dumpstream << domain->boxlo[1] << " " << domain->boxhi[1] << endl;
+  dumpstream << domain->boxlo[2] << " " << domain->boxhi[2] << endl;
+  dumpstream << "ITEM: ATOMS id type ";
+  for (auto v : output_var) {
+    dumpstream << v << " ";
+  }
+  dumpstream << endl;
+
+  int size_one = output_var.size();
+
+  vector<double> &buf = threads[i].second;
+
+  int m = 0;
+  for (int j = 0; j < total_nn; j++) {
+    dumpstream << (tagint)buf[m++] << " ";
+    dumpstream << (int)buf[m++] << " ";
+    for (int k = 0; k < size_one - 1; k++) {
+      dumpstream << buf[m++] << " ";
+    }
+    dumpstream << buf[m++] << endl;
+  }
+
+  dumpstream << endl;
   dumpstream.close();
+  // Empty buffer:
+  buf.clear();
 }

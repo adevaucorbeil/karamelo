@@ -22,7 +22,6 @@ DumpStyle(particle/gz,DumpParticleGz)
 
 #include <deque>
 #include <dump.h>
-#include <grid.h>
 #include <thread>
 #include <utility>
 
