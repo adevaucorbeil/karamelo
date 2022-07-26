@@ -24,7 +24,7 @@ DumpStyle(particle/gz,DumpParticleGz)
 #include <dump.h>
 #include <grid.h>
 #include <thread>
-#include <unordered_map>
+#include <utility>
 
 class DumpParticleGz : public Dump {
   deque<Kokkos::View<tagint*>::HostMirror> ptag;               ///< Unique identifier for particles in the system
@@ -70,11 +70,9 @@ public:
 			      "ep", "epdot", "T",
 			      "ienergy", "gamma"};
 private:
-  unordered_map<bigint, thread>        threads;        ///< Map storing the threads for each write_to_file
-  unordered_map<bigint, bool>          thread_status;  ///< true when thread is running
-  unordered_map<bigint, deque<double>> bufs;           ///< Buffers containing the values to be written in dump
+  deque<pair<thread, vector<double>>>  threads;        ///< Pair storing the threads and the buffer
 
-  void write_to_file(bigint, string, bigint);
+  void write_to_file(bigint, string, bigint, bigint);
 };
 
 #endif
