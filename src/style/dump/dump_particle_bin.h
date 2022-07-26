@@ -20,9 +20,11 @@ DumpStyle(particle/bin,DumpParticleBin)
 #ifndef MPM_DUMP_PARTICLE_BIN_H
 #define MPM_DUMP_PARTICLE_BIN_H
 
+#include <deque>
 #include <dump.h>
 #include <grid.h>
-#include <deque>
+#include <thread>
+#include <utility>
 
 class DumpParticleBin : public Dump {
   deque<Kokkos::View<tagint*>::HostMirror> ptag;               ///< Unique identifier for particles in the system
@@ -72,6 +74,10 @@ private:
   const string MAGIC_STRING = "DUMPCUSTOM";
   const int FORMAT_REVISION = 0x0002;
   const int ENDIAN = 0x0001;
+
+  deque<pair<thread, vector<double>>>  threads;        ///< Pair storing the threads and the buffer
+
+  void write_to_file(bigint, string, bigint, bigint);
 };
 
 #endif

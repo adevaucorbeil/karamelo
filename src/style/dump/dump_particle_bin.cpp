@@ -118,9 +118,34 @@ DumpParticleBin::DumpParticleBin(MPM *mpm, vector<string> args)
   }
 }
 
-DumpParticleBin::~DumpParticleBin() {}
+DumpParticleBin::~DumpParticleBin() {
+  // Wait for all threads to be completed.
+  for (int i=0; i<threads.size(); i++)
+    threads[i].first.join();
+}
 
 void DumpParticleBin::write() {
+
+  int ithread;
+  pair<thread, vector<double>> *th = nullptr;
+
+  for (int i=0; i<threads.size(); i++) {
+    if (threads[i].second.empty()) {
+      th = &threads[i];
+      threads[i].first.join();
+      ithread = i;
+      break;
+    }
+  }
+
+  if (!th) {
+    ithread = threads.size();
+    threads.emplace_back();
+    th = &threads.back();
+  }
+
+  vector<double> &buf = th->second;
+
   // Open dump file:
   size_t pos_asterisk = filename.find('*');
   string fdump;
@@ -140,74 +165,10 @@ void DumpParticleBin::write() {
 
   // cout << "Filemame for dump: " << fdump << endl;
 
-  // Open the file fdump:
-  ofstream dumpstream;
-  dumpstream.open(fdump.c_str(), std::fstream::out | std::fstream::binary | std::fstream::trunc);
-
-  if (!dumpstream) {
-    error->one(FLERR, "Cannot open file " + fdump + ".\n");
-  }
-
-  // use negative ntimestep as marker for new format
-  bigint fmtlen = MAGIC_STRING.length();
-  bigint marker = -fmtlen;
-  dumpstream.write(reinterpret_cast<const char *>(&marker),sizeof(bigint));
-  dumpstream.write(reinterpret_cast<const char *>(MAGIC_STRING.c_str()), MAGIC_STRING.size());
-  dumpstream.write(reinterpret_cast<const char *>(&ENDIAN),sizeof(int));
-  dumpstream.write(reinterpret_cast<const char *>(&FORMAT_REVISION),sizeof(int));
-
-
-  dumpstream.write(reinterpret_cast<const char *>(&update->ntimestep),sizeof(bigint));
-
   bigint total_np = 0;
   for (int isolid = 0; isolid < domain->solids.size(); isolid++)
     total_np += domain->solids[isolid]->np_local;
 
-  dumpstream.write(reinterpret_cast<const char *>(&total_np),sizeof(bigint));
-  int triclinic = 0;
-  dumpstream.write(reinterpret_cast<const char *>(&triclinic),sizeof(int));
-
-  int one = 1;
-  for(int i=0; i<6; i++)
-    dumpstream.write(reinterpret_cast<const char *>(&one),sizeof(int)); // Boundary types
-
-  dumpstream.write(reinterpret_cast<const char *>(&domain->boxlo[0]),sizeof(double));
-  dumpstream.write(reinterpret_cast<const char *>(&domain->boxhi[0]),sizeof(double));
-  dumpstream.write(reinterpret_cast<const char *>(&domain->boxlo[1]),sizeof(double));
-  dumpstream.write(reinterpret_cast<const char *>(&domain->boxhi[1]),sizeof(double));
-  dumpstream.write(reinterpret_cast<const char *>(&domain->boxlo[2]),sizeof(double));
-  dumpstream.write(reinterpret_cast<const char *>(&domain->boxhi[2]),sizeof(double));
-  int size_one = output_var.size() + 2;
-  dumpstream.write(reinterpret_cast<const char *>(&size_one),sizeof(int));
-
-
-  // We are not setting any unit style, so we write 0:
-  int unit_style = 0;
-  dumpstream.write(reinterpret_cast<const char *>(&unit_style),sizeof(int));
-
-  // We are not storing the simulation time, so we write 0:
-  char time_flag = 0;
-  dumpstream.write(reinterpret_cast<const char *>(&time_flag),sizeof(char));
-
-  // Write column names:
-  string columns = "id type ";
-  for (auto v: output_var) {
-    columns +=  v + " ";
-  }
-  int Nc = strlen(columns.c_str());
-  dumpstream.write(reinterpret_cast<const char *>(&Nc), sizeof(int));
-  dumpstream.write(columns.data(), Nc*sizeof(char));
-
-
-  int nclusterprocs = 1;
-  dumpstream.write(reinterpret_cast<const char *>(&nclusterprocs),sizeof(int));
-
-  int nme = (int) (total_np * size_one); // # of dump lines this proc contributes to dump (np->local since each cpu creates its own dump.
-  dumpstream.write(reinterpret_cast<const char *>(&nme),sizeof(int));
-
-  double buf[nme];
-
-  int m = 0;
   Matrix3d sigma_;
 
   for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
@@ -282,102 +243,168 @@ void DumpParticleBin::write() {
     }
 
     for (bigint i = 0; i < s->np_local; i++) {
-      if (update->method_type == "tlmpm" ||
-	        update->method_type == "tlcpdi")
-	      sigma_ = R[isolid][i]*sigma[isolid][i]*R[isolid][i].transpose();
+      if (update->method_type == "tlmpm" || update->method_type == "tlcpdi")
+        sigma_ = R[isolid][i] * sigma[isolid][i] * R[isolid][i].transpose();
       else
-	      sigma_ = sigma[isolid][i];
+        sigma_ = sigma[isolid][i];
 
-      buf[m++] = (double) ptag[isolid][i];
-      buf[m++] = (double) isolid + 1;
+      buf.push_back((double) ptag[isolid][i]);
+      buf.push_back((double) isolid + 1);
       for (const string &v: output_var)
       {
         if (v == "x")
-          buf[m++] = (double) x[isolid][i][0];
+          buf.push_back((double) x[isolid][i][0]);
         else if (v == "y")
-          buf[m++] = (double) x[isolid][i][1];
+          buf.push_back((double) x[isolid][i][1]);
         else if (v == "z")
-          buf[m++] = (double) x[isolid][i][2];
+          buf.push_back((double) x[isolid][i][2]);
         else if (v == "x0")
-          buf[m++] = (double) x0[isolid][i][0];
+          buf.push_back((double) x0[isolid][i][0]);
         else if (v == "y0")
-          buf[m++] = (double) x0[isolid][i][1];
+          buf.push_back((double) x0[isolid][i][1]);
         else if (v == "z0")
-          buf[m++] = (double) x0[isolid][i][2];
+          buf.push_back((double) x0[isolid][i][2]);
         else if (v == "vx")
-          buf[m++] = (double) this->v[isolid][i][0];
+          buf.push_back((double) this->v[isolid][i][0]);
         else if (v == "vy")
-          buf[m++] = (double) this->v[isolid][i][1];
+          buf.push_back((double) this->v[isolid][i][1]);
         else if (v == "vz")
-          buf[m++] = (double) this->v[isolid][i][2];
+          buf.push_back((double) this->v[isolid][i][2]);
         else if (v == "s11")
-          buf[m++] = (double) sigma_(0, 0);
+          buf.push_back((double) sigma_(0, 0));
         else if (v == "s22")
-          buf[m++] = (double) sigma_(1, 1);
+          buf.push_back((double) sigma_(1, 1));
         else if (v == "s33")
-          buf[m++] = (double) sigma_(2, 2);
+          buf.push_back((double) sigma_(2, 2));
         else if (v == "s12")
-          buf[m++] = (double) sigma_(0, 1);
+          buf.push_back((double) sigma_(0, 1));
         else if (v == "s13")
-          buf[m++] = (double) sigma_(0, 2);
+          buf.push_back((double) sigma_(0, 2));
         else if (v == "s23")
-          buf[m++] = (double) sigma_(1, 2);
+          buf.push_back((double) sigma_(1, 2));
         else if (v == "seq")
-          buf[m++] = (double) sqrt(3. / 2.) * Deviator(sigma_).norm();
+          buf.push_back((double) sqrt(3. / 2.) * Deviator(sigma_).norm());
         else if (v == "e11")
-          buf[m++] = (double) strain_el[isolid][i](0, 0);
+          buf.push_back((double) strain_el[isolid][i](0, 0));
         else if (v == "e22")
-          buf[m++] = (double) strain_el[isolid][i](1, 1);
+          buf.push_back((double) strain_el[isolid][i](1, 1));
         else if (v == "e33")
-          buf[m++] = (double) strain_el[isolid][i](2, 2);
+          buf.push_back((double) strain_el[isolid][i](2, 2));
         else if (v == "e12")
-          buf[m++] = (double) strain_el[isolid][i](0, 1);
+          buf.push_back((double) strain_el[isolid][i](0, 1));
         else if (v == "e13")
-          buf[m++] = (double) strain_el[isolid][i](0, 2);
+          buf.push_back((double) strain_el[isolid][i](0, 2));
         else if (v == "e23")
-          buf[m++] = (double) strain_el[isolid][i](1, 2);
+          buf.push_back((double) strain_el[isolid][i](1, 2));
         else if (v == "damage")
-          buf[m++] = (double) damage[isolid][i];
+          buf.push_back((double) damage[isolid][i]);
         else if (v == "damage_init")
-          buf[m++] = (double) damage_init[isolid][i];
+          buf.push_back((double) damage_init[isolid][i]);
         else if (v == "volume")
-          buf[m++] = (double) vol[isolid][i];
+          buf.push_back((double) vol[isolid][i]);
         else if (v == "mass")
-          buf[m++] = (double) mass[isolid][i];
+          buf.push_back((double) mass[isolid][i]);
         else if (v == "bx")
-          buf[m++] = (double) mbp[isolid][i][0];
+          buf.push_back((double) mbp[isolid][i][0]);
         else if (v == "by")
-          buf[m++] = (double) mbp[isolid][i][1];
+          buf.push_back((double) mbp[isolid][i][1]);
         else if (v == "bz")
-          buf[m++] = (double) mbp[isolid][i][2];
+          buf.push_back((double) mbp[isolid][i][2]);
         else if (v == "ep")
-          buf[m++] = (double) eff_plastic_strain[isolid][i];
+          buf.push_back((double) eff_plastic_strain[isolid][i]);
         else if (v == "epdot")
-          buf[m++] = (double) eff_plastic_strain_rate[isolid][i];
+          buf.push_back((double) eff_plastic_strain_rate[isolid][i]);
         else if (v == "ienergy")
-          buf[m++] = (double) ienergy[isolid][i];
+          buf.push_back((double) ienergy[isolid][i]);
         else if (v == "T") {
           if (update->method->temp) {
-            buf[m++] = (double) T[isolid][i];
+            buf.push_back((double) T[isolid][i]);
           } else {
-            buf[m++] = (double) 0.0;
+            buf.push_back((double) 0.0);
           }
         } else if (v == "gamma") {
           if (update->method->temp) {
-            buf[m++] = (double) gamma[isolid][i];
+            buf.push_back((double) gamma[isolid][i]);
           } else {
-            buf[m++] = (double) 0.0;
+            buf.push_back((double) 0.0);
           }
         }
       }
     }
   }
 
-  if (m != total_np*size_one) {
-    error->one(FLERR, "m != total_np*size_one\n");
+  th->first = thread(&DumpParticleBin::write_to_file, this, ithread, fdump, total_np, update->ntimestep);
+}
+
+
+void DumpParticleBin::write_to_file(bigint i, string fdump, bigint total_np, bigint timestep) {
+  // Open the file fdump:
+  ofstream dumpstream;
+  dumpstream.open(fdump.c_str(), std::fstream::out | std::fstream::binary | std::fstream::trunc);
+
+  if (!dumpstream) {
+    error->one(FLERR, "Cannot open file " + fdump + ".\n");
   }
 
-  dumpstream.write(reinterpret_cast<const char *>(&buf[0]),m*sizeof(double));
-  
+  // use negative ntimestep as marker for new format
+  bigint fmtlen = MAGIC_STRING.length();
+  bigint marker = -fmtlen;
+  dumpstream.write(reinterpret_cast<const char *>(&marker),sizeof(bigint));
+  dumpstream.write(reinterpret_cast<const char *>(MAGIC_STRING.c_str()), MAGIC_STRING.size());
+  dumpstream.write(reinterpret_cast<const char *>(&ENDIAN),sizeof(int));
+  dumpstream.write(reinterpret_cast<const char *>(&FORMAT_REVISION),sizeof(int));
+
+
+  dumpstream.write(reinterpret_cast<const char *>(&timestep),sizeof(bigint));
+
+
+  dumpstream.write(reinterpret_cast<const char *>(&total_np),sizeof(bigint));
+  int triclinic = 0;
+  dumpstream.write(reinterpret_cast<const char *>(&triclinic),sizeof(int));
+
+  int one = 1;
+  for(int i=0; i<6; i++)
+    dumpstream.write(reinterpret_cast<const char *>(&one),sizeof(int)); // Boundary types
+
+  dumpstream.write(reinterpret_cast<const char *>(&domain->boxlo[0]),sizeof(double));
+  dumpstream.write(reinterpret_cast<const char *>(&domain->boxhi[0]),sizeof(double));
+  dumpstream.write(reinterpret_cast<const char *>(&domain->boxlo[1]),sizeof(double));
+  dumpstream.write(reinterpret_cast<const char *>(&domain->boxhi[1]),sizeof(double));
+  dumpstream.write(reinterpret_cast<const char *>(&domain->boxlo[2]),sizeof(double));
+  dumpstream.write(reinterpret_cast<const char *>(&domain->boxhi[2]),sizeof(double));
+  int size_one = output_var.size() + 2;
+  dumpstream.write(reinterpret_cast<const char *>(&size_one),sizeof(int));
+
+
+  // We are not setting any unit style, so we write 0:
+  int unit_style = 0;
+  dumpstream.write(reinterpret_cast<const char *>(&unit_style),sizeof(int));
+
+  // We are not storing the simulation time, so we write 0:
+  char time_flag = 0;
+  dumpstream.write(reinterpret_cast<const char *>(&time_flag),sizeof(char));
+
+  // Write column names:
+  string columns = "id type ";
+  for (auto v: output_var) {
+    columns +=  v + " ";
+  }
+  int Nc = strlen(columns.c_str());
+  dumpstream.write(reinterpret_cast<const char *>(&Nc), sizeof(int));
+  dumpstream.write(columns.data(), Nc*sizeof(char));
+
+
+  int nclusterprocs = 1;
+  dumpstream.write(reinterpret_cast<const char *>(&nclusterprocs),sizeof(int));
+
+  int nme = (int) (total_np * size_one); // # of dump lines this proc contributes to dump (np->local since each cpu creates its own dump.
+  dumpstream.write(reinterpret_cast<const char *>(&nme),sizeof(int));
+
+  vector<double> &buf = threads[i].second;
+  dumpstream.write(reinterpret_cast<const char *>(&buf[0]),buf.size()*sizeof(double));
+
   dumpstream.close();
+
+  // Empty buffer:
+  buf.clear();
 }

@@ -120,9 +120,9 @@ DumpParticleGz::DumpParticleGz(MPM *mpm, vector<string> args)
 }
 
 DumpParticleGz::~DumpParticleGz() {
-   // Wait for all threads to be completed.
+  // Wait for all threads to be completed.
   for (int i=0; i<threads.size(); i++)
-      threads[i].first.join();
+    threads[i].first.join();
 }
 
 void DumpParticleGz::write() {
