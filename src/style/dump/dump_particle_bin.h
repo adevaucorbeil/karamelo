@@ -40,16 +40,16 @@ class DumpParticleBin : public Dump {
   deque<Kokkos::View<Matrix3d*>::HostMirror> strain_el;        ///< Elastic strain matrix
   deque<Kokkos::View<Matrix3d*>::HostMirror> R;                ///< Rotation matrix
 
-  deque<Kokkos::View<double*>::HostMirror> vol;                       ///< Particles' current volume
-  deque<Kokkos::View<double*>::HostMirror> mass;                      ///< Particles' current mass
-  deque<Kokkos::View<double*>::HostMirror> eff_plastic_strain;        ///< Particles' effective plastic strain
-  deque<Kokkos::View<double*>::HostMirror> eff_plastic_strain_rate;   ///< Particles' effective plastic strain rate
-  deque<Kokkos::View<double*>::HostMirror> damage;                    ///< Particles' damage variable
-  deque<Kokkos::View<double*>::HostMirror> damage_init;               ///< Particles' damage initiation variable
-  deque<Kokkos::View<double*>::HostMirror> ienergy;                   ///< Particles' internal energy
+  deque<Kokkos::View<float*>::HostMirror> vol;                       ///< Particles' current volume
+  deque<Kokkos::View<float*>::HostMirror> mass;                      ///< Particles' current mass
+  deque<Kokkos::View<float*>::HostMirror> eff_plastic_strain;        ///< Particles' effective plastic strain
+  deque<Kokkos::View<float*>::HostMirror> eff_plastic_strain_rate;   ///< Particles' effective plastic strain rate
+  deque<Kokkos::View<float*>::HostMirror> damage;                    ///< Particles' damage variable
+  deque<Kokkos::View<float*>::HostMirror> damage_init;               ///< Particles' damage initiation variable
+  deque<Kokkos::View<float*>::HostMirror> ienergy;                   ///< Particles' internal energy
 
-  deque<Kokkos::View<double*>::HostMirror> T;                         ///< Particles' current temperature
-  deque<Kokkos::View<double*>::HostMirror> gamma;                     ///< Particles' heat source
+  deque<Kokkos::View<float*>::HostMirror> T;                         ///< Particles' current temperature
+  deque<Kokkos::View<float*>::HostMirror> gamma;                     ///< Particles' heat source
 
  public:
   DumpParticleBin(MPM *, vector<string>);
