@@ -384,67 +384,52 @@ void Method::compute_force_nodes(Solid &solid)
   Kokkos::View<float*> gQext = solid.grid->Qext;
   Kokkos::View<float*> gQint = solid.grid->Qint;
 
-  Kokkos::parallel_for("compute_force_nodes0", solid.neigh_policy,
+  Kokkos::parallel_for("compute_force_nodes", solid.neigh_policy,
   KOKKOS_LAMBDA (int ip, int i)
   {
     if (float wf = swf(ip, i))
     {
       int in = neigh_n(ip, i);
-      const Vector3d &wfd = swfd(ip, i);
+      if (gmass[in]) {
+	const Vector3d &wfd = swfd(ip, i);
     
-      Vector3d &f = gf[in];
+	Vector3d &f = gf[in];
 
-      if (is_TL)
-      {
-        const Matrix3d &vol0PK1 = svol0PK1[ip];
-        const Vector3d &x0 = sx0[ip];
+	if (is_TL)
+	  {
+	    const Matrix3d &vol0PK1 = svol0PK1[ip];
+	    const Vector3d &x0 = sx0[ip];
 
-        if (sub_method_type == Update::SubMethodType::MLS)
-          f.atomic_add(-vol0PK1*wf*Di*(grid.x0[in] - x0));
-        else
-          f.atomic_add(-vol0PK1*wfd);
+	    if (sub_method_type == Update::SubMethodType::MLS)
+	      f.atomic_add(-vol0PK1*wf*Di*(grid.x0[in] - x0));
+	    else
+	      f.atomic_add(-vol0PK1*wfd);
 
-        if (axisymmetric)
-          Kokkos::atomic_add(&f[0], -vol0PK1(2, 2)*wf/x0[0]);
-      }
-      else
-      {
-        const Matrix3d &vol_sigma = svol[ip]*ssigma[ip];
-        const Vector3d &x = sx[ip];
+	    if (axisymmetric)
+	      Kokkos::atomic_add(&f[0], -vol0PK1(2, 2)*wf/x0[0]);
+	  }
+	else
+	  {
+	    const Matrix3d &vol_sigma = svol[ip]*ssigma[ip];
+	    const Vector3d &x = sx[ip];
 
-        if (sub_method_type == Update::SubMethodType::MLS)
-          f.atomic_add(-vol_sigma*wf*Di*(gx0[in] - x));
-        else
-          f.atomic_add(-vol_sigma*wfd);
+	    if (sub_method_type == Update::SubMethodType::MLS)
+	      f.atomic_add(-vol_sigma*wf*Di*(gx0[in] - x));
+	    else
+	      f.atomic_add(-vol_sigma*wfd);
 
-        if (axisymmetric)
-          Kokkos::atomic_add(&f[0], -vol_sigma(2, 2)*wf/x[0]);
-      }
-    }
-  });
+	    if (axisymmetric)
+	      Kokkos::atomic_add(&f[0], -vol_sigma(2, 2)*wf/x[0]);
+	  }
 
-  if (temp && axisymmetric)
-  {
-    error->one(FLERR, "Temperature and axisymmetric not yet supported.\n");
-  }
-  
-  Kokkos::parallel_for("compute_force_nodes1", solid.neigh_policy,
-  KOKKOS_LAMBDA (int ip, int i)
-  {
-    if (float wf = swf(ip, i))
-    {
-      int in = neigh_n(ip, i);
-      const Vector3d &wfd = swfd(ip, i);
+	if (!grigid[in])
+	  gmb[in].atomic_add(wf*smbp[ip]);
 
-      if (!grigid[in])
-        gmb[in].atomic_add(wf*smbp[ip]);
-
-      if (temp)
-      {
-        if (gmass[in])
-          Kokkos::atomic_add(&gQext[in], wf*sgamma[ip]);
-
-        Kokkos::atomic_add(&gQint[in], wfd.dot(sq[ip]));
+	if (temp)
+	  {
+	    Kokkos::atomic_add(&gQext[in], wf*sgamma[ip]);
+	    Kokkos::atomic_add(&gQint[in], wfd.dot(sq[ip]));
+	  }
       }
     }
   });
