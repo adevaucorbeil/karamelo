@@ -644,12 +644,12 @@ void Method::compute_rate_deformation_gradient(bool doublemapping, Solid &solid)
 
         if (sub_method_type == Update::SubMethodType::APIC)
         {
-          const Vector3d &dx = is_TL? grid.x0[in] - sx0[ip]:
-                                      grid.x0[in] - sx [ip];
+          const Vector3d &wfdx = wf*(is_TL? grid.x0[in] - sx0[ip]):
+	                                    grid.x0[in] - sx [ip]));
 
           for (int j = 0; j < dimension; j++)
             for (int k = 0; k < dimension; k++)
-              gradient(j, k) += vn[in][j]*dx[k]*wf;
+              gradient(j, k) += vn[in][j]*wfdx[k];
         }
         else
           for (int j = 0; j < dimension; j++)
