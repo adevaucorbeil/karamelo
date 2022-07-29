@@ -30,6 +30,9 @@
  */
 class Input : protected Pointers {
   friend class Error;
+
+  static const bool DEBUG_EXPRESSIONS;
+
 public:
   int narg;                    ///< Number of command args
   char **arg;                  ///< Parsed args for command
@@ -39,6 +42,7 @@ public:
 
   map<string, Expression> expressions;
   StyleFactory<Expression::Operation> operation_factory;
+  StyleFactory<Expression::Operation> infix_factory;
 
   // functions
   Input(MPM *, int, char **);

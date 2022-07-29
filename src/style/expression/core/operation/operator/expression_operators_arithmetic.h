@@ -46,3 +46,13 @@ public:
   }
 };
 
+class ExpressionNegation:
+  public ExpressionOperation<ExpressionNegation, false, false, 3, 1>
+{
+public:
+  KOKKOS_INLINE_FUNCTION double
+  evaluate(int i) const
+  {
+    return -get_value(0, i);
+  }
+};

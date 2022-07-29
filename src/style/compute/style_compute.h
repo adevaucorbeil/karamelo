@@ -1,3 +1,4 @@
+#include <compute_angular_momentum.h>
 #include <compute_average_stress.h>
 #include <compute_average_temperature.h>
 #include <compute_average_velocity.h>

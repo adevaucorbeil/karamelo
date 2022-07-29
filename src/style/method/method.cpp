@@ -130,7 +130,7 @@ void Method::compute_grid_weight_functions_and_gradients(Solid &solid)
 
       for (int j = 0; j < 3; j++)
       {
-        if (dimension < j)
+        if (dimension <= j)
         {
           s [j] = 1;
           sd[j] = 0;

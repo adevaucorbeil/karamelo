@@ -11,7 +11,7 @@
  *
  * ----------------------------------------------------------------------- */
 
-#include <dump_grid_gz.h>
+#include <dump_grid_bin.h>
 #include <domain.h>
 #include <error.h>
 #include <output.h>
@@ -19,13 +19,12 @@
 #include <universe.h>
 #include <update.h>
 #include <algorithm>
-#include <gzstream.h>
 #include <iostream>
 
 using namespace std;
 
-DumpGridGz::DumpGridGz(MPM *mpm, vector<string> args) : Dump(mpm, args) {
-  // cout << "In DumpGridGz::DumpGridGz()" << endl;
+DumpGridBin::DumpGridBin(MPM *mpm, vector<string> args) : Dump(mpm, args) {
+  // cout << "In DumpGridBin::DumpGridBin()" << endl;
   for (int i=5; i<args.size(); i++){
     if (find(known_var.begin(), known_var.end(), args[i]) != known_var.end()) {
       output_var.push_back(args[i]);
@@ -82,13 +81,13 @@ DumpGridGz::DumpGridGz(MPM *mpm, vector<string> args) : Dump(mpm, args) {
   }
 }
 
-DumpGridGz::~DumpGridGz() {
+DumpGridBin::~DumpGridBin() {
   // Wait for all threads to be completed.
   for (int i=0; i<threads.size(); i++)
     threads[i].first.join();
 }
 
-void DumpGridGz::write() {
+void DumpGridBin::write() {
 
   int ithread;
   pair<thread, vector<double>> *th = nullptr;
@@ -236,42 +235,77 @@ void DumpGridGz::write() {
     }
   }
 
-  th->first = thread(&DumpGridGz::write_to_file, this, ithread, fdump, total_nn, update->ntimestep);
+  th->first = thread(&DumpGridBin::write_to_file, this, ithread, fdump, total_nn, update->ntimestep);
 }
 
-void DumpGridGz::write_to_file(bigint i, string fdump, bigint total_nn, bigint timestep) {
+void DumpGridBin::write_to_file(bigint i, string fdump, bigint total_nn, bigint timestep) {
   // Open the file fdump:
-  ogzstream dumpstream(fdump.c_str());
+  ofstream dumpstream;
+  dumpstream.open(fdump.c_str(), std::fstream::out | std::fstream::binary | std::fstream::trunc);
 
-  dumpstream << "ITEM: TIMESTEP\n" << timestep << "\nITEM: NUMBER OF ATOMS\n";
-
-  dumpstream << total_nn << endl;
-  dumpstream << "ITEM: BOX BOUNDS sm sm sm\n";
-  dumpstream << domain->boxlo[0] << " " << domain->boxhi[0] << endl;
-  dumpstream << domain->boxlo[1] << " " << domain->boxhi[1] << endl;
-  dumpstream << domain->boxlo[2] << " " << domain->boxhi[2] << endl;
-  dumpstream << "ITEM: ATOMS id type ";
-  for (auto v : output_var) {
-    dumpstream << v << " ";
+  if (!dumpstream) {
+    error->one(FLERR, "Cannot open file " + fdump + ".\n");
   }
-  dumpstream << endl;
 
-  int size_one = output_var.size();
+  // use negative ntimestep as marker for new format
+  bigint fmtlen = MAGIC_STRING.length();
+  bigint marker = -fmtlen;
+  dumpstream.write(reinterpret_cast<const char *>(&marker),sizeof(bigint));
+  dumpstream.write(reinterpret_cast<const char *>(MAGIC_STRING.c_str()), MAGIC_STRING.size());
+  dumpstream.write(reinterpret_cast<const char *>(&ENDIAN),sizeof(int));
+  dumpstream.write(reinterpret_cast<const char *>(&FORMAT_REVISION),sizeof(int));
+
+
+  dumpstream.write(reinterpret_cast<const char *>(&timestep),sizeof(bigint));
+
+
+  dumpstream.write(reinterpret_cast<const char *>(&total_nn),sizeof(bigint));
+  int triclinic = 0;
+  dumpstream.write(reinterpret_cast<const char *>(&triclinic),sizeof(int));
+
+  int one = 1;
+  for(int i=0; i<6; i++)
+    dumpstream.write(reinterpret_cast<const char *>(&one),sizeof(int)); // Boundary types
+
+  dumpstream.write(reinterpret_cast<const char *>(&domain->boxlo[0]),sizeof(double));
+  dumpstream.write(reinterpret_cast<const char *>(&domain->boxhi[0]),sizeof(double));
+  dumpstream.write(reinterpret_cast<const char *>(&domain->boxlo[1]),sizeof(double));
+  dumpstream.write(reinterpret_cast<const char *>(&domain->boxhi[1]),sizeof(double));
+  dumpstream.write(reinterpret_cast<const char *>(&domain->boxlo[2]),sizeof(double));
+  dumpstream.write(reinterpret_cast<const char *>(&domain->boxhi[2]),sizeof(double));
+  int size_one = output_var.size() + 2;
+  dumpstream.write(reinterpret_cast<const char *>(&size_one),sizeof(int));
+
+
+  // We are not setting any unit style, so we write 0:
+  int unit_style = 0;
+  dumpstream.write(reinterpret_cast<const char *>(&unit_style),sizeof(int));
+
+  // We are not storing the simulation time, so we write 0:
+  char time_flag = 0;
+  dumpstream.write(reinterpret_cast<const char *>(&time_flag),sizeof(char));
+
+  // Write column names:
+  string columns = "id type ";
+  for (auto v: output_var) {
+    columns +=  v + " ";
+  }
+  int Nc = strlen(columns.c_str());
+  dumpstream.write(reinterpret_cast<const char *>(&Nc), sizeof(int));
+  dumpstream.write(columns.data(), Nc*sizeof(char));
+
+
+  int nclusterprocs = 1;
+  dumpstream.write(reinterpret_cast<const char *>(&nclusterprocs),sizeof(int));
+
+  int nme = (int) (total_nn * size_one); // # of dump lines this proc contributes to dump (nn->local since each cpu creates its own dump.
+  dumpstream.write(reinterpret_cast<const char *>(&nme),sizeof(int));
 
   vector<double> &buf = threads[i].second;
+  dumpstream.write(reinterpret_cast<const char *>(&buf[0]),buf.size()*sizeof(double));
 
-  int m = 0;
-  for (int j = 0; j < total_nn; j++) {
-    dumpstream << (tagint)buf[m++] << " ";
-    dumpstream << (int)buf[m++] << " ";
-    for (int k = 0; k < size_one - 1; k++) {
-      dumpstream << buf[m++] << " ";
-    }
-    dumpstream << buf[m++] << endl;
-  }
-
-  dumpstream << endl;
   dumpstream.close();
+
   // Empty buffer:
   buf.clear();
 }

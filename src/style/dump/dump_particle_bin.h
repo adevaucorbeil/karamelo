@@ -13,19 +13,20 @@
 
 #ifdef DUMP_CLASS
 
-DumpStyle(particle/gz,DumpParticleGz)
+DumpStyle(particle/bin,DumpParticleBin)
 
 #else
 
-#ifndef MPM_DUMP_PARTICLE_GZ_H
-#define MPM_DUMP_PARTICLE_GZ_H
+#ifndef MPM_DUMP_PARTICLE_BIN_H
+#define MPM_DUMP_PARTICLE_BIN_H
 
 #include <deque>
 #include <dump.h>
+#include <grid.h>
 #include <thread>
 #include <utility>
 
-class DumpParticleGz : public Dump {
+class DumpParticleBin : public Dump {
   deque<Kokkos::View<tagint*>::HostMirror> ptag;               ///< Unique identifier for particles in the system
 
   deque<Kokkos::View<Vector3d*>::HostMirror> x;                ///< Particles' current position
@@ -39,20 +40,20 @@ class DumpParticleGz : public Dump {
   deque<Kokkos::View<Matrix3d*>::HostMirror> strain_el;        ///< Elastic strain matrix
   deque<Kokkos::View<Matrix3d*>::HostMirror> R;                ///< Rotation matrix
 
-  deque<Kokkos::View<float*>::HostMirror> vol;                       ///< Particles' current volume
-  deque<Kokkos::View<float*>::HostMirror> mass;                      ///< Particles' current mass
-  deque<Kokkos::View<float*>::HostMirror> eff_plastic_strain;        ///< Particles' effective plastic strain
-  deque<Kokkos::View<float*>::HostMirror> eff_plastic_strain_rate;   ///< Particles' effective plastic strain rate
-  deque<Kokkos::View<float*>::HostMirror> damage;                    ///< Particles' damage variable
-  deque<Kokkos::View<float*>::HostMirror> damage_init;               ///< Particles' damage initiation variable
-  deque<Kokkos::View<float*>::HostMirror> ienergy;                   ///< Particles' internal energy
+  deque<Kokkos::View<double*>::HostMirror> vol;                       ///< Particles' current volume
+  deque<Kokkos::View<double*>::HostMirror> mass;                      ///< Particles' current mass
+  deque<Kokkos::View<double*>::HostMirror> eff_plastic_strain;        ///< Particles' effective plastic strain
+  deque<Kokkos::View<double*>::HostMirror> eff_plastic_strain_rate;   ///< Particles' effective plastic strain rate
+  deque<Kokkos::View<double*>::HostMirror> damage;                    ///< Particles' damage variable
+  deque<Kokkos::View<double*>::HostMirror> damage_init;               ///< Particles' damage initiation variable
+  deque<Kokkos::View<double*>::HostMirror> ienergy;                   ///< Particles' internal energy
 
-  deque<Kokkos::View<float*>::HostMirror> T;                         ///< Particles' current temperature
-  deque<Kokkos::View<float*>::HostMirror> gamma;                     ///< Particles' heat source
+  deque<Kokkos::View<double*>::HostMirror> T;                         ///< Particles' current temperature
+  deque<Kokkos::View<double*>::HostMirror> gamma;                     ///< Particles' heat source
 
-public:
-  DumpParticleGz(MPM *, vector<string>);
-  ~DumpParticleGz();
+ public:
+  DumpParticleBin(MPM *, vector<string>);
+  ~DumpParticleBin();
 
   void write();
   protected:
@@ -68,7 +69,12 @@ public:
 			      "bx", "by", "bz",
 			      "ep", "epdot", "T",
 			      "ienergy", "gamma"};
+
 private:
+  const string MAGIC_STRING = "DUMPCUSTOM";
+  const int FORMAT_REVISION = 0x0002;
+  const int ENDIAN = 0x0001;
+
   deque<pair<thread, vector<double>>>  threads;        ///< Pair storing the threads and the buffer
 
   void write_to_file(bigint, string, bigint, bigint);
