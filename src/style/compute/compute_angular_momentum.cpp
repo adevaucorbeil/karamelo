@@ -69,8 +69,8 @@ ComputeAngularMomentum::ComputeAngularMomentum(MPM *mpm, vector<string> args)
 ComputeAngularMomentum::~ComputeAngularMomentum() {}
 
 void ComputeAngularMomentum::compute_value(Solid &solid) {
-  // double Ek_tmp, Ek_reduced = 0;
-  double Jx, Jy, Jz;
+  // float Ek_tmp, Ek_reduced = 0;
+  float Jx, Jy, Jz;
   Jx = Jy = Jz = 0;
 
   if (t != update->ntimestep) {
@@ -80,7 +80,7 @@ void ComputeAngularMomentum::compute_value(Solid &solid) {
 
   Kokkos::View<Vector3d*> x = solid.x;
   Kokkos::View<Vector3d*> v = solid.v;
-  Kokkos::View<double*> mass = solid.mass;
+  Kokkos::View<float*> mass = solid.mass;
   Kokkos::View<int*> mask = solid.mask;
 
   int groupbit = this->groupbit;
@@ -89,7 +89,7 @@ void ComputeAngularMomentum::compute_value(Solid &solid) {
   if (update->ntimestep == output->next ||
       update->ntimestep == update->nsteps){
     Kokkos::parallel_reduce("ComputeAngularMomentum::compute_value", solid.np_local,
-			    KOKKOS_LAMBDA(const int &ip, double &lJx, double &lJy, double &lJz)
+			    KOKKOS_LAMBDA(const int &ip, float &lJx, float &lJy, float &lJz)
 			    {
 			      if (mask[ip] & groupbit) {
 				const Vector3d &Jp = -mass[ip] * v[ip].cross(x[ip] - x0);
@@ -104,7 +104,7 @@ void ComputeAngularMomentum::compute_value(Solid &solid) {
   // Reduce J:
 
   Vector3d J_reduced;
-  MPI_Allreduce(J.elements, J_reduced.elements, 3, MPI_DOUBLE, MPI_SUM, universe->uworld);
+  MPI_Allreduce(J.elements, J_reduced.elements, 3, MPI_FLOAT, MPI_SUM, universe->uworld);
   input->parsev(id + "_x", J_reduced(0));
   input->parsev(id + "_y", J_reduced(1));
   input->parsev(id + "_z", J_reduced(2));

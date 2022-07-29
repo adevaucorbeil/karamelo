@@ -69,7 +69,7 @@ public:
 			      "ep", "epdot", "T",
 			      "ienergy", "gamma"};
 private:
-  deque<pair<thread, vector<double>>>  threads;        ///< Pair storing the threads and the buffer
+  deque<pair<thread, vector<float>>>  threads;        ///< Pair storing the threads and the buffer
 
   void write_to_file(bigint, string, bigint, bigint);
 };
