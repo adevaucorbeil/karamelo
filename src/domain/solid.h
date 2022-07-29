@@ -74,7 +74,7 @@ class Solid : public Pointers {
   Kokkos::View<Matrix3d*> D;                ///< Symmetric part of L
   Kokkos::View<Matrix3d*> Finv;             ///< Inverse of the deformation gradient matrix
   Kokkos::View<Matrix3d*> Fdot;             ///< Rate of deformation gradient matrix
-  Matrix3d Di;                       ///< Inertia tensor
+  float                   Di;               ///< Unique eigenvalue of the inertia tensor
   // vector<Matrix3d> BDinv;            ///< APIC B*Dinv tensor
 
   Kokkos::View<float*> J;                         ///< Determinant of the deformation matrix

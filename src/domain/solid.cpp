@@ -336,7 +336,7 @@ void Solid::compute_inertia_tensor()
 
   Vector3d dx;
 
-  Matrix3d eye = Matrix3d::identity(), Dtemp;
+  Matrix3d Dtemp;
   float cellsizeSqInv = 1.0/(grid->cellsize*grid->cellsize);
 
   if (update->shape_function == Update::ShapeFunctions::LINEAR)
@@ -347,11 +347,11 @@ void Solid::compute_inertia_tensor()
     }
     if (np_per_cell == 1)
     {
-      Di = 16.0/4.0*cellsizeSqInv*eye;
+      Di = 16.0/4.0*cellsizeSqInv;
     }
     else if (np_per_cell == 2)
     {
-      Di = 16.0/3.0*cellsizeSqInv*eye;
+      Di = 16.0/3.0*cellsizeSqInv;
     }
     else
     {
@@ -362,27 +362,17 @@ void Solid::compute_inertia_tensor()
   else if (update->shape_function == Update::ShapeFunctions::CUBIC_SPLINE)
   {
 
-    Di = 3.0*cellsizeSqInv*eye;
+    Di = 3.0*cellsizeSqInv;
   }
   else if (update->shape_function ==
            Update::ShapeFunctions::QUADRATIC_SPLINE)
   {
 
-    Di = 4.0*cellsizeSqInv*eye;
+    Di = 4.0*cellsizeSqInv;
   }
   else
   {
     error->all(FLERR, "Shape function not supported for APIC.\n");
-  }
-
-  if (domain->dimension == 1)
-  {
-    Di(1, 1) = 1;
-    Di(2, 2) = 1;
-  }
-  else if (domain->dimension == 2)
-  {
-    Di(2, 2) = 1;
   }
 
   update_Di = false;

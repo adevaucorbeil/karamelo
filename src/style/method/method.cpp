@@ -374,7 +374,7 @@ void Method::compute_force_nodes(Solid &solid)
   Kokkos::View<float*> svol = solid.vol;
   Kokkos::View<Matrix3d*> ssigma = solid.sigma;
 
-  Matrix3d &Di = solid.Di;
+  float &Di = solid.Di;
 
   Kokkos::View<float*> gmass = solid.grid->mass;
   Kokkos::View<Vector3d*> gx0 = solid.grid->x0;
@@ -627,7 +627,7 @@ void Method::compute_rate_deformation_gradient(bool doublemapping, Solid &solid)
   Kokkos::View<float*> svol = solid.vol;
   Kokkos::View<float*> svol0 = solid.vol0;
   Kokkos::View<Vector3d*> sq = solid.q;
-  Matrix3d &Di = solid.Di;
+  float &Di = solid.Di;
 
   Kokkos::parallel_for("compute_rate_deformation_gradient0", solid.np_local,
   KOKKOS_LAMBDA (const int &ip)
