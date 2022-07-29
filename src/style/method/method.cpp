@@ -615,19 +615,19 @@ void Method::compute_rate_deformation_gradient(bool doublemapping, Solid &solid)
   bool axisymmetric = domain->axisymmetric;
   bool is_TL = this->is_TL;
   Grid &grid = *solid.grid;
-  float invcp = solid.mat->invcp;
-  float kappa = solid.mat->kappa;
+  float kappa_over_cp = solid.mat->kappa * solid.mat->invcp;
 
   Kokkos::View<float**> swf = solid.wf;
   Kokkos::View<Vector3d**> swfd = solid.wfd;
   Kokkos::View<int**> neigh_n = solid.neigh_n;
-  Kokkos::View<Vector3d*> sx = solid.x;
-  Kokkos::View<Vector3d*> sx0 = solid.x0;
+  Kokkos::View<Vector3d*> sx = is_TL? solid.x0: solid.x;
   Kokkos::View<Vector3d*> sv = solid.v;
-  Kokkos::View<float*> svol = solid.vol;
-  Kokkos::View<float*> svol0 = solid.vol0;
+  Kokkos::View<float*> svol = is_TL? solid.vol0: solid.vol;
   Kokkos::View<Vector3d*> sq = solid.q;
+  Kokkos::View<float*> gT = doublemapping? grid.T: grid.T_update;
   float &Di = solid.Di;
+
+  bool apic = sub_method_type == Update::SubMethodType::APIC? true: false;
 
   Kokkos::parallel_for("compute_rate_deformation_gradient0", solid.np_local,
   KOKKOS_LAMBDA (const int &ip)
@@ -640,35 +640,21 @@ void Method::compute_rate_deformation_gradient(bool doublemapping, Solid &solid)
       if (float wf = swf(ip, i))
       {
         int in = neigh_n(ip, i);
-        const Vector3d &wfd = swfd(ip, i);
+        const Vector3d &wfd = apic? wf * (grid.x0[in] - sx [ip]) : swfd(ip, i);
 
-        if (sub_method_type == Update::SubMethodType::APIC)
-        {
-          const Vector3d &wfdx = wf*(is_TL? grid.x0[in] - sx0[ip]:
-	                                    grid.x0[in] - sx [ip]);
-
-          for (int j = 0; j < dimension; j++)
-            for (int k = 0; k < dimension; k++)
-              gradient(j, k) += vn[in][j]*wfdx[k];
-        }
-        else
-          for (int j = 0; j < dimension; j++)
-            for (int k = 0; k < dimension; k++)
-              gradient(j, k) += vn[in][j]*wfd[k];
+	for (int j = 0; j < dimension; j++)
+	  for (int k = 0; k < dimension; k++)
+	    gradient(j, k) += vn[in][j]*wfd[k];
 
         if (dimension == 2 && axisymmetric)
           gradient(2, 2) += vn[in][0]*wf/sv[ip][0];
 
         if (temp)
-          q -= wfd*(doublemapping? grid.T: grid.T_update)[in]*
-               (is_TL? svol0: svol)[ip]*invcp*kappa;
+          q -= wfd*gT[in]*svol[ip]*kappa_over_cp;
       }
     }
 
-    if (sub_method_type == Update::SubMethodType::APIC)
-	gradients[ip] = gradient*Di;
-    else
-      gradients[ip] = gradient;
+    gradients[ip] = apic? gradient*Di: gradient;
 
     if (temp)
       sq[ip] = q;
