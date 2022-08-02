@@ -24,6 +24,8 @@ FixStyle(indent/minimize_penetration, FixIndentMinimizePenetration)
 #include <var.h>
 #include <matrix.h>
 
+class Expression;
+
 class FixIndentMinimizePenetration : public Fix {
 public:
   FixIndentMinimizePenetration(MPM *, vector<string>);
@@ -42,11 +44,10 @@ private:
                  "sphere, R, x_center, y_center, z_center, vx_center, "
                  "vy_center, vz_center, mu)\n";
   int Nargs = 12;
-  Var xvalue, yvalue, zvalue, vxvalue, vyvalue, vzvalue;
+  Expression *xvalue, *yvalue, *zvalue, *vxvalue, *vyvalue, *vzvalue;
   float R;  //< Sphere radius
   float mu; //< Friction coefficient
-  float A;
-  float cellsizeSq;
+  float A;  //< Contact area?
   Vector3d ftot;
 };
 

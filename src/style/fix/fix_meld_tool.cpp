@@ -143,10 +143,9 @@ void FixMeldTool::initial_integrate(Solid &solid)
   float G = solid.mat->G;
 
   float f0, f1, f2;
-  int n;
 
   Kokkos::parallel_reduce("FixMeldTool::initial_integrate", solid.np_local,
-			  KOKKOS_LAMBDA(const int &ip, float &ftot0, float &ftot1, float &ftot2, int &n_)
+			  KOKKOS_LAMBDA(const int &ip, float &ftot0, float &ftot1, float &ftot2)
   {
     if (!mass[ip] || !(mask[ip] & groupbit))
       return;
@@ -232,8 +231,7 @@ void FixMeldTool::initial_integrate(Solid &solid)
     ftot0 += f[0];
     ftot1 += f[1];
     ftot2 += f[2];
-    n_ += 1;
-  }, f0, f1, f2, n);
+  }, f0, f1, f2);
 
   ftot += Vector3d(f0, f1, f2);
 }

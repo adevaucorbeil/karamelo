@@ -126,6 +126,8 @@ void USF::run(Var condition){
     for (Solid *solid: domain->solids)
       modify->final_integrate(*solid);
 
+    modify->reduce();
+
     if ((update->maxtime != -1) && (update->atime > update->maxtime)) {
       update->nsteps = ntimestep;
       output->write(ntimestep);

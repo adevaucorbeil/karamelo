@@ -14,12 +14,13 @@
 #include <fix_indent_minimize_penetration.h>
 #include <domain.h>
 #include <error.h>
+#include <expression_operation.h>
 #include <group.h>
 #include <input.h>
+#include <method.h>
 #include <solid.h>
 #include <universe.h>
 #include <update.h>
-
 
 using namespace std;
 using namespace FixConst;
@@ -72,34 +73,27 @@ FixIndentMinimizePenetration::FixIndentMinimizePenetration(MPM *mpm, vector<stri
                           " unknown. Only type sphere is supported.\n");
   }
 
-  R = input->parsev(args[4]);
-  xvalue = input->parsev(args[5]);
-  yvalue = input->parsev(args[6]);
-  zvalue = input->parsev(args[7]);
-  vxvalue = input->parsev(args[8]);
-  vyvalue = input->parsev(args[9]);
-  vzvalue = input->parsev(args[10]);
-  mu = input->parsev(args[11]);
+  R = input->parsev(args[4]).result(mpm);
+
+  input->parsev(args[5]);
+  xvalue = &input->expressions[args[5]];
+  input->parsev(args[6]);
+  yvalue = &input->expressions[args[6]];
+  input->parsev(args[7]);
+  zvalue = &input->expressions[args[7]];
+
+  input->parsev(args[8]);
+  vxvalue = &input->expressions[args[8]];
+  input->parsev(args[9]);
+  vyvalue = &input->expressions[args[9]];
+  input->parsev(args[10]);
+  vzvalue = &input->expressions[args[10]];
+
+  mu = input->parsev(args[11]).result(mpm);
 }
 
 void FixIndentMinimizePenetration::prepare()
 {
-  xvalue.result(mpm);
-  yvalue.result(mpm);
-  zvalue.result(mpm);
-  vxvalue.result(mpm);
-  vyvalue.result(mpm);
-  vzvalue.result(mpm);
-  
-  int solid = group->solid[igroup];
-
-  cellsizeSq = 0;
-  if (solid == -1)
-    for (const Solid *solid: domain->solids)
-      cellsizeSq += solid->grid->cellsize*solid->grid->cellsize;
-  else
-    cellsizeSq += domain->solids[solid]->grid->cellsize*domain->solids[solid]->grid->cellsize;
-
   A = 0;
   ftot = Vector3d();
 }
@@ -114,108 +108,142 @@ void FixIndentMinimizePenetration::reduce()
   MPI_Allreduce(ftot.elements, ftot_reduced.elements, 3, MPI_FLOAT, MPI_SUM,
                 universe->uworld);
 
-  (*input->vars)[id + "_s"] = Var(id + "_s", A_reduced);
-  (*input->vars)[id + "_x"] = Var(id + "_x", ftot_reduced[0]);
-  (*input->vars)[id + "_y"] = Var(id + "_y", ftot_reduced[1]);
-  (*input->vars)[id + "_z"] = Var(id + "_z", ftot_reduced[2]);
+  input->parsev(id + "_s", A_reduced);
+  input->parsev(id + "_x", ftot_reduced[0]);
+  input->parsev(id + "_y", ftot_reduced[1]);
+  input->parsev(id + "_z", ftot_reduced[2]);
 }
 
 void FixIndentMinimizePenetration::initial_integrate(Solid &solid)
 {
-  // Go through all the particles in the group and set b to the right value:
-  for (int ip = 0; ip < solid.np_local; ip++)
-  {
-    if (!solid.mass[ip] || !(solid.mask[ip] & groupbit))
-      continue;
+  xvalue->evaluate(solid);
+  yvalue->evaluate(solid);
+  zvalue->evaluate(solid);
 
-    Vector3d xs(xvalue .result(mpm, true),
-                yvalue .result(mpm, true),
-                zvalue .result(mpm, true));
-    Vector3d vs(vxvalue.result(mpm, true),
-                vyvalue.result(mpm, true),
-                vzvalue.result(mpm, true));
+  vxvalue->evaluate(solid);
+  vyvalue->evaluate(solid);
+  vzvalue->evaluate(solid);
+
+  Kokkos::View<float **> xvalue_ = xvalue->registers;
+  Kokkos::View<float **> yvalue_ = yvalue->registers;
+  Kokkos::View<float **> zvalue_ = zvalue->registers;
+
+  Kokkos::View<float **> vxvalue_ = vxvalue->registers;
+  Kokkos::View<float **> vyvalue_ = vyvalue->registers;
+  Kokkos::View<float **> vzvalue_ = vzvalue->registers;
+
+  // Go through all the particles in the group and set b to the right value:
+
+  int groupbit = this->groupbit;
+  float R      = this->R;
+  float mu     = this->mu;
+  int dimension = domain->dimension;
+  bool axisymmetric = domain->axisymmetric;
+
+  Kokkos::View<float*>    mass = solid.mass;
+  Kokkos::View<int*>      mask = solid.mask;
+  Kokkos::View<Vector3d*>  sx  = solid.x;
+  Kokkos::View<Vector3d*>  sx0 = solid.x0;
+  Kokkos::View<Vector3d*>   sv = solid.v;
+  Kokkos::View<float*>    svol = update->method->is_TL ? solid.vol0 : solid.vol;
+  Kokkos::View<Vector3d*> smbp = solid.mbp;
+  Kokkos::View<Matrix3d*> sF = solid.F;
+
+  const float &cellsizeSq = solid.grid->cellsize * solid.grid->cellsize;
+  float dt = update->dt;
+  float dtSq = dt*dt;
   
+  float f0 = 0, f1 = 0, f2 = 0;
+
+  Kokkos::parallel_reduce("FixIndentMinimizePenetration::initial_integrate", solid.np_local,
+  KOKKOS_LAMBDA(const int &ip, float &ftot0, float &ftot1, float &ftot2, float &A_)
+  {
+    if (!mass[ip] || !(mask[ip] & groupbit))
+      return;
+
+    const Vector3d xs( xvalue_(0, ip),  yvalue_(0, ip),  zvalue_(0, ip));
+    const Vector3d vs(vxvalue_(0, ip), vyvalue_(0, ip), vzvalue_(0, ip));
+
     // Gross screening:
-    Vector3d xsp = solid.x[ip] - xs;
+    Vector3d xsp = sx[ip] - xs;
 
     float Rs = 0;
-    if (domain->dimension == 2)
-    {
-      if (domain->axisymmetric)
-        Rs = 0.5*sqrt(solid.vol0[ip]/solid.x0[ip][0]);
+    if (dimension == 2) {
+      if (axisymmetric)
+        Rs = 0.5 * Kokkos::Experimental::sqrt(svol[ip] / sx0[ip][0]);
       else
-        Rs = 0.5*sqrt(solid.vol0[ip]);
+        Rs = 0.5 * Kokkos::Experimental::sqrt(svol[ip]);
       Rs += R;
 
-      if (xsp[0] >=  Rs || xsp[1] >=  Rs ||
-          xsp[0] <= -Rs || xsp[1] <= -Rs)
-        continue;
-    }
-    else if (domain->dimension == 3)
-    {
-      Rs = R + 0.5*cbrt(solid.vol0[ip]);
+      if (xsp[0] >= Rs || xsp[1] >= Rs || xsp[0] <= -Rs || xsp[1] <= -Rs)
+        return;
+    } else if (dimension == 3) {
+      Rs = R + 0.5 * Kokkos::Experimental::cbrt(svol[ip]);
 
-      if (xsp[0] >=  Rs || xsp[1] >=  Rs || xsp[2] >=  Rs ||
-          xsp[0] <= -Rs || xsp[1] <= -Rs || xsp[2] <= -Rs)
-        continue;
+      if (xsp[0] >= Rs || xsp[1] >= Rs || xsp[2] >= Rs || xsp[0] <= -Rs ||
+          xsp[1] <= -Rs || xsp[2] <= -Rs)
+        return;
     }
 
     // Finer screening:
-    float r = xsp.norm();
+    const float &r = xsp.norm();
 
     if (r >= Rs)
-      continue;
+      return;
 
     // penetration
-    float p = Rs - r;
+    const float &p = Rs - r;
 
     if (p <= 0)
-      continue;
+      return;
 
     xsp /= r;
-    float fmag = solid.mass[ip]*p/update->dt/update->dt;
+    const float &fmag = mass[ip]*p/dtSq;
     Vector3d f = fmag*xsp;
 
-    if (mu)
-    {
-      const Vector3d &vps = vs - solid.v[ip];
-      Vector3d vt = vps - vps.dot(xsp)*xsp;
-      float vtnorm = vt.norm();
+    if (mu) {
+      const Vector3d &vps = vs - sv[ip];
+      Vector3d vt = vps - vps.dot(xsp) * xsp;
+      const float &vtnorm = vt.norm();
 
-      if (vtnorm)
-      {
+      if (vtnorm) {
         vt /= vtnorm;
-        f += MIN(solid.mass[ip]*vtnorm/update->dt, mu*fmag)*vt;
+        f += MIN(mass[ip] * vtnorm / dt, mu * fmag) * vt;
       }
     }
 
-    A += cellsizeSq*solid.F[ip](0, 0)*solid.F[ip](2, 2);
-    solid.mbp[ip] += f;
-    ftot += f;
-  }
+    A_ += cellsizeSq*sF[ip](0, 0)*sF[ip](2, 2);
+    smbp[ip] += f;
+
+    ftot0 += f[0];
+    ftot1 += f[1];
+    ftot2 += f[2];
+  }, f0, f1, f2, A);
+
+  ftot += Vector3d(f0, f1, f2);
 }
 
 void FixIndentMinimizePenetration::write_restart(ofstream *of) {
-  of->write(reinterpret_cast<const char *>(&R), sizeof(float));
-  of->write(reinterpret_cast<const char *>(&mu), sizeof(float));
-  xvalue.write_to_restart(of);
-  yvalue.write_to_restart(of);
-  zvalue.write_to_restart(of);
+  // of->write(reinterpret_cast<const char *>(&R), sizeof(float));
+  // of->write(reinterpret_cast<const char *>(&mu), sizeof(float));
+  // xvalue.write_to_restart(of);
+  // yvalue.write_to_restart(of);
+  // zvalue.write_to_restart(of);
 
-  vxvalue.write_to_restart(of);
-  vyvalue.write_to_restart(of);
-  vzvalue.write_to_restart(of);
+  // vxvalue.write_to_restart(of);
+  // vyvalue.write_to_restart(of);
+  // vzvalue.write_to_restart(of);
 }
 
 void FixIndentMinimizePenetration::read_restart(ifstream *ifr) {
-  ifr->read(reinterpret_cast<char *>(&R), sizeof(float));
-  ifr->read(reinterpret_cast<char *>(&mu), sizeof(float));
-  xvalue.read_from_restart(ifr);
-  yvalue.read_from_restart(ifr);
-  zvalue.read_from_restart(ifr);
+  // ifr->read(reinterpret_cast<char *>(&R), sizeof(float));
+  // ifr->read(reinterpret_cast<char *>(&mu), sizeof(float));
+  // xvalue.read_from_restart(ifr);
+  // yvalue.read_from_restart(ifr);
+  // zvalue.read_from_restart(ifr);
 
-  vxvalue.read_from_restart(ifr);
-  vyvalue.read_from_restart(ifr);
-  vzvalue.read_from_restart(ifr);
-  type = "sphere";
+  // vxvalue.read_from_restart(ifr);
+  // vyvalue.read_from_restart(ifr);
+  // vzvalue.read_from_restart(ifr);
+  // type = "sphere";
 }

@@ -282,11 +282,47 @@ void Modify::final_integrate(Solid &solid){
 }
 
 void Modify::prepare(){
+  for (int i = 0; i < list_initial_integrate.size(); i++)
+    fix[list_initial_integrate[i]]->prepare();
+
+  for (int i = 0; i < list_post_particles_to_grid.size(); i++)
+    fix[list_post_particles_to_grid[i]]->prepare();
+
+  for (int i = 0; i < list_post_update_grid_state.size(); i++)
+    fix[list_post_update_grid_state[i]]->prepare();
+
+  for (int i = 0; i < list_post_grid_to_point.size(); i++)
+    fix[list_post_grid_to_point[i]]->prepare();
+
+  for (int i = 0; i < list_post_advance_particles.size(); i++)
+    fix[list_post_advance_particles[i]]->prepare();
+
+  for (int i = 0; i < list_post_velocities_to_grid.size(); i++)
+    fix[list_post_velocities_to_grid[i]]->prepare();
+
   for (int i = 0; i < list_final_integrate.size(); i++)
     fix[list_final_integrate[i]]->prepare();
 }
 
 void Modify::reduce(){
+  for (int i = 0; i < list_initial_integrate.size(); i++)
+    fix[list_initial_integrate[i]]->reduce();
+
+  for (int i = 0; i < list_post_particles_to_grid.size(); i++)
+    fix[list_post_particles_to_grid[i]]->reduce();
+
+  for (int i = 0; i < list_post_update_grid_state.size(); i++)
+    fix[list_post_update_grid_state[i]]->reduce();
+
+  for (int i = 0; i < list_post_grid_to_point.size(); i++)
+    fix[list_post_grid_to_point[i]]->reduce();
+
+  for (int i = 0; i < list_post_advance_particles.size(); i++)
+    fix[list_post_advance_particles[i]]->reduce();
+
+  for (int i = 0; i < list_post_velocities_to_grid.size(); i++)
+    fix[list_post_velocities_to_grid[i]]->reduce();
+
   for (int i = 0; i < list_final_integrate.size(); i++)
     fix[list_final_integrate[i]]->reduce();
 }

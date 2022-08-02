@@ -242,71 +242,29 @@ int Group::find_unused()
 
 float Group::xcm(int igroup, int dir)
 {
-  Kokkos::View<Vector3d*> *x;
-  Kokkos::View<float*> *mass;
-  int nmax;
-  Kokkos::View<int*> *mask;
-  float com = 0;
-  float mass_tot = 0;
-  int groupbit    = group->bitmask[igroup];
+  bool particles = pon[igroup] == "particles" ? true : false;
 
-  if (solid[igroup] == -1)
-  {
-    // Consider all solids
+  float com, mass_tot;
 
-    for (int isolid = 0; isolid < domain->solids.size(); isolid++)
-      {
-	if (pon[igroup] == "particles")
-	  {
-	    x    = &domain->solids[solid[igroup]]->x;
-	    mass = &domain->solids[solid[igroup]]->mass;
-	    nmax = domain->solids[solid[igroup]]->np_local;
-	    mask = &domain->solids[solid[igroup]]->mask;
-	  }
-	else
-	  {
-	    x    = &domain->solids[solid[igroup]]->grid->x;
-	    mass = &domain->solids[solid[igroup]]->grid->mass;
-	    nmax = domain->solids[solid[igroup]]->grid->nnodes_local;
-	    mask = &domain->solids[solid[igroup]]->grid->mask;
-	  }
-    
-	for (int ip = 0; ip < nmax; ip++)
-	  {
-	    if ((*mask)[ip] & groupbit)
-	      {
-		com += (*x)[ip][dir] * (*mass)[ip];
-		mass_tot += (*mass)[ip];
-	      }
-	  }
-      }
-  }
-  else
+  for (Solid *solid: domain->solids) {
+
+    Kokkos::View<Vector3d*> x = particles ? solid->x        : solid->grid->x;
+    Kokkos::View<float*> mass = particles ? solid->mass     : solid->grid->mass;
+    Kokkos::View<int*> mask   = particles ? solid->mask     : solid->grid->mask;
+
+    const int &nmax           = particles ? solid->np_local : solid->grid->nnodes_local;
+
+    int groupbit = group->bitmask[igroup];
+
+    Kokkos::parallel_reduce("compute_group_centre_of_mass", nmax,
+    KOKKOS_LAMBDA(const int &ip, float &lcom, float &lmass_tot)
     {
-	  if (pon[igroup] == "particles")
-	    {
-	      x    = &domain->solids[solid[igroup]]->x;
-	      mass = &domain->solids[solid[igroup]]->mass;
-	      nmax = domain->solids[solid[igroup]]->np_local;
-	      mask = &domain->solids[solid[igroup]]->mask;
-	    }
-	  else
-	    {
-	      x    = &domain->solids[solid[igroup]]->grid->x;
-	      mass = &domain->solids[solid[igroup]]->grid->mass;
-	      nmax = domain->solids[solid[igroup]]->grid->nnodes_local;
-	      mask = &domain->solids[solid[igroup]]->grid->mask;
-	    }
-    
-      for (int ip = 0; ip < nmax; ip++)
-	{
-	  if ((*mask)[ip] & groupbit)
-	    {
-	      com += (*x)[ip][dir] * (*mass)[ip];
-	      mass_tot += (*mass)[ip];
-	    }
-	}
-    }
+      if (mask[ip] & groupbit) {
+	lcom += x[ip][dir] * mass[ip];
+	lmass_tot += mass[ip];
+      }
+    }, com, mass_tot);
+  }
 
   float com_reduced,  mass_tot_reduced;
 
@@ -319,63 +277,26 @@ float Group::xcm(int igroup, int dir)
 
 float Group::internal_force(int igroup, int dir)
 {
-  
-  Kokkos::View<Vector3d*> *f;
-  int nmax;
-  Kokkos::View<int*> *mask;
-  float resulting_force = 0;
-  int groupbit           = group->bitmask[igroup];
+  bool particles = pon[igroup] == "particles" ? true : false;
 
-  if (solid[igroup] == -1)
-  {
-    // Consider all solids
+  float resulting_force;
 
-    for (int isolid = 0; isolid < domain->solids.size(); isolid++)
-      {
-	if (pon[igroup] == "particles")
-	  {
-	    f =    &domain->solids[solid[igroup]]->f;
-	    nmax = domain->solids[solid[igroup]]->np_local;
-	    mask = &domain->solids[solid[igroup]]->mask;
-	  }
-	else
-	  {
-	    f =    &domain->solids[solid[igroup]]->grid->f;
-	    nmax = domain->solids[solid[igroup]]->grid->nnodes_local;
-	    mask = &domain->solids[solid[igroup]]->grid->mask;
-	  }
-    
-	for (int ip = 0; ip < nmax; ip++)
-	  {
-	    if ((*mask)[ip] & groupbit)
-	      {
-		resulting_force += (*f)[ip][dir];
-	      }
+  for (Solid *solid: domain->solids) {
+
+    Kokkos::View<Vector3d*> f = particles ? solid->f        : solid->grid->f;
+    Kokkos::View<int*> mask   = particles ? solid->mask     : solid->grid->mask;
+
+    const int &nmax           = particles ? solid->np_local : solid->grid->nnodes_local;
+
+    int groupbit = group->bitmask[igroup];
+
+    Kokkos::parallel_reduce("compute_group_internal_force", nmax,
+    KOKKOS_LAMBDA(const int &ip, float &lresulting_force)
+    {
+      if (mask[ip] & groupbit) {
+	lresulting_force += f[ip][dir];
       }
-    }
-  }
-  else
-  {
-    if (pon[igroup] == "particles")
-      {
-	f =    &domain->solids[solid[igroup]]->f;
-	nmax = domain->solids[solid[igroup]]->np_local;
-	mask = &domain->solids[solid[igroup]]->mask;
-      }
-    else
-      {
-	f =    &domain->solids[solid[igroup]]->grid->f;
-	nmax = domain->solids[solid[igroup]]->grid->nnodes_local;
-	mask = &domain->solids[solid[igroup]]->grid->mask;
-      }
-    
-    for (int ip = 0; ip < nmax; ip++)
-      {
-	if ((*mask)[ip] & groupbit)
-	  {
-	    resulting_force += (*f)[ip][dir];
-      }
-    }
+    }, resulting_force);
   }
 
   float resulting_force_reduced;
@@ -392,50 +313,32 @@ float Group::external_force(int igroup, int dir)
       error->all(FLERR, "Error: cannot calculate the external forces applied to the node group "
 		 + names[igroup] + ".\n");
     }
-  
-  Kokkos::View<Vector3d*> *f;
-  int nmax;
-  Kokkos::View<int*> *mask;
-  float resulting_force = 0;
-  int groupbit           = group->bitmask[igroup];
 
-  if (solid[igroup] == -1)
-  {
-    // Consider all solids
+  float resulting_force;
 
-    for (int isolid = 0; isolid < domain->solids.size(); isolid++)
-      {
-	f =    &domain->solids[solid[igroup]]->f;
-	nmax = domain->solids[solid[igroup]]->np_local;
-	mask = &domain->solids[solid[igroup]]->mask;
-    
-	for (int ip = 0; ip < nmax; ip++)
-	  {
-	    if ((*mask)[ip] & groupbit)
-	      {
-		resulting_force += (*f)[ip][dir];
-	      }
+  for (Solid *solid: domain->solids) {
+
+    Kokkos::View<Vector3d*> mbp = solid->mbp;
+    Kokkos::View<float*> mass   = solid->mass;
+    Kokkos::View<int*> mask     = solid->mask;
+
+    const int &nmax           = solid->np_local;
+
+    int groupbit = group->bitmask[igroup];
+
+
+    Kokkos::parallel_reduce("compute_group_external_force", nmax,
+    KOKKOS_LAMBDA(const int &ip, float &lresulting_force)
+    {
+      if (mask[ip] & groupbit) {
+	lresulting_force += mbp[ip][dir]/mass[ip];
       }
-    }
-  }
-  else
-  {
-    f =    &domain->solids[solid[igroup]]->f;
-    nmax = domain->solids[solid[igroup]]->np_local;
-    mask = &domain->solids[solid[igroup]]->mask;
-    
-    for (int ip = 0; ip < nmax; ip++)
-      {
-	if ((*mask)[ip] & groupbit)
-	  {
-	    resulting_force += (*f)[ip][dir];
-      }
-    }
+    }, resulting_force);
   }
 
   float resulting_force_reduced;
 
-  MPI_Allreduce(&resulting_force,&resulting_force_reduced,1,MPI_FLOAT,MPI_SUM,universe->uworld);
+  MPI_Allreduce(&resulting_force, &resulting_force_reduced, 1, MPI_FLOAT, MPI_SUM, universe->uworld);
 
   return resulting_force;
 }
