@@ -563,6 +563,8 @@ void Domain::set_axisymmetric(vector<string> args) {
   }
 
   if (args[0] == "true") {
+    if (dimension != 2)
+      error->all(FLERR, "Axisymmetric can be activated only with 2D simulations.\n");
     axisymmetric = true;
   } else if (args[0] == "false") {
     axisymmetric = false;
