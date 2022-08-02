@@ -77,17 +77,17 @@ void Method::compute_grid_weight_functions_and_gradients(Solid &solid)
 
     const Vector3d &xp = x[ip];
     const int &i0 = (xp[0] - boxlo[0])*inv_cellsize + 1 - half_support;
+    const int &j0 = (xp[1] - boxlo[1])*inv_cellsize + 1 - half_support;
+    const int &k0 = (xp[2] - boxlo[2])*inv_cellsize + 1 - half_support;
 
     for (int i = i0; i < i0 + 2*half_support; i++)
     {
       if (ny > 1)
       {
-        const int &j0 = (xp[1] - boxlo[1])*inv_cellsize + 1 - half_support;
         for (int j = j0; j < j0 + 2*half_support; j++)
         {
           if (nz > 1)
           {
-            const int &k0 = (xp[2] - boxlo[2])*inv_cellsize + 1 - half_support;
             for (int k = k0; k < k0 + 2*half_support; k++)
             {
               const int &tag = nz*ny*i + nz*j + k;
@@ -427,8 +427,7 @@ void Method::compute_force_nodes(Solid &solid)
 
 	if (temp)
 	  {
-	    Kokkos::atomic_add(&gQext[in], wf*sgamma[ip]);
-	    Kokkos::atomic_add(&gQint[in], wfd.dot(sq[ip]));
+	    Kokkos::atomic_add(&gQint[in], wf*sgamma[ip] + wfd.dot(sq[ip]));
 	  }
       }
     }
@@ -646,11 +645,11 @@ void Method::compute_rate_deformation_gradient(bool doublemapping, Solid &solid)
 	  for (int k = 0; k < dimension; k++)
 	    gradient(j, k) += vn[in][j]*wfd[k];
 
-        if (dimension == 2 && axisymmetric)
+        if (axisymmetric)
           gradient(2, 2) += vn[in][0]*wf/sv[ip][0];
 
         if (temp)
-          q -= wfd*gT[in]*svol[ip]*kappa_over_cp;
+          q -= swfd(ip, i)*gT[in]*svol[ip]*kappa_over_cp;
       }
     }
 
