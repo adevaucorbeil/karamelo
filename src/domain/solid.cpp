@@ -305,11 +305,11 @@ void Solid::grow(int nparticles)
     q = Kokkos::View<Vector3d*>("q", nparticles);
   }
 
-  size_t neighbor_nodes_per_particle = 64;
+  size_t neighbor_nodes_per_particle = update->shape_function == Update::ShapeFunctions::LINEAR? 8: 64;
 
   neigh_n    = Kokkos::View<int**>     ("neigh_n",   nparticles, neighbor_nodes_per_particle);
-  wf         = Kokkos::View<float**>  ("wf",        nparticles, neighbor_nodes_per_particle);
-  wf_corners = Kokkos::View<float***> ("wfcorners", nparticles, neighbor_nodes_per_particle, nc);
+  wf         = Kokkos::View<float**>   ("wf",        nparticles, neighbor_nodes_per_particle);
+  wf_corners = Kokkos::View<float***>  ("wfcorners", nparticles, neighbor_nodes_per_particle, nc);
   wfd        = Kokkos::View<Vector3d**>("wfd",       nparticles, neighbor_nodes_per_particle);
 
   error_flag = Kokkos::View<int*>      ("error_flag",nparticles);

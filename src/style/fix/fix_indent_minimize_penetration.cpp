@@ -112,6 +112,11 @@ void FixIndentMinimizePenetration::reduce()
   input->parsev(id + "_x", ftot_reduced[0]);
   input->parsev(id + "_y", ftot_reduced[1]);
   input->parsev(id + "_z", ftot_reduced[2]);
+  (*input->vars)[id + "_x"] = Var(id + "_x", ftot_reduced[0]);
+  (*input->vars)[id + "_y"] = Var(id + "_y", ftot_reduced[1]);
+  (*input->vars)[id + "_z"] = Var(id + "_z", ftot_reduced[2]);
+  (*input->vars)[id + "_s"] = Var(id + "_s", A_reduced);
+
 }
 
 void FixIndentMinimizePenetration::initial_integrate(Solid &solid)
@@ -127,6 +132,11 @@ void FixIndentMinimizePenetration::initial_integrate(Solid &solid)
   Kokkos::View<float **> xvalue_ = xvalue->registers;
   Kokkos::View<float **> yvalue_ = yvalue->registers;
   Kokkos::View<float **> zvalue_ = zvalue->registers;
+
+  Kokkos::View<float **>::HostMirror xvalue_Host = create_mirror(xvalue->registers);
+  Kokkos::View<float **>::HostMirror yvalue_Host = create_mirror(yvalue->registers);
+  deep_copy(xvalue_Host, xvalue->registers);
+  deep_copy(yvalue_Host, yvalue->registers);
 
   Kokkos::View<float **> vxvalue_ = vxvalue->registers;
   Kokkos::View<float **> vyvalue_ = vyvalue->registers;
