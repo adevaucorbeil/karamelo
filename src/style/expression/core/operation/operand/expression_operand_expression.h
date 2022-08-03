@@ -8,6 +8,8 @@ class ExpressionOperandExpression:
   string name;
   Kokkos::View<float**> registers;
 
+  friend class Input;
+
 public:
   ExpressionOperandExpression(const string &name):
     name(name)

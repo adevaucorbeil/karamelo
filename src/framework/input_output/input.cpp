@@ -36,6 +36,7 @@
 #include <regex>
 
 #include <expression_function_parenthesis.h>
+#include <expression_function_evaluate.h>
 #include <expression_functions_basic.h>
 #include <expression_functions_error_gamma.h>
 #include <expression_functions_exponential.h>
@@ -113,6 +114,7 @@ Input::Input(MPM *mpm, int argc, char **argv) : Pointers(mpm)
   protected_vars.push_back(s);
   
   operation_factory.register_class<ExpressionFunctionParenthesis>("(");
+  operation_factory.register_class<ExpressionFunctionEvaluate>("evaluate(");
 
   operation_factory.register_class<ExpressionFunctionAbs>("abs(");
   operation_factory.register_class<ExpressionFunctionRemainder>("remainder(");
@@ -614,8 +616,25 @@ Var Input::parsev(string str)
 
             if (after_operand = current_type == CharacterType::CLOSE_PARENTHESIS)
             {
-              expression.operations.push_back(move(operator_stack.back()));
-              operator_stack.pop_back();
+              if (dynamic_cast<const ExpressionFunctionEvaluate *>(operator_stack.back().get()))
+              {
+                if (const ExpressionOperandExpression *operand = dynamic_cast<const ExpressionOperandExpression *>
+                                                                 (expression.operations.back().get()))
+                {
+                  double evaluation = expressions.at(operand->name).getConstant();
+                  expression.operations.pop_back();
+                  expression.operations.emplace_back(new ExpressionOperandLiteral(evaluation));
+
+                  cout << "EVALUATE: " << evaluation << endl;
+                }
+                else
+                  error->all(FLERR, "Argument to evaluate was not an Expression");
+              }
+              else
+              {
+                expression.operations.push_back(move(operator_stack.back()));
+                operator_stack.pop_back();
+              }
 
               after_operand = true;
             }

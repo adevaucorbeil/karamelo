@@ -119,6 +119,42 @@ void Method::compute_grid_weight_functions_and_gradients(Solid &solid)
         neigh_n(ip, count++) = i;
     }
 
+    // not-flat-list grid version
+    /*vector<vector<double>> s(dimension, vector<double>(2*half_support)), sd = s;
+
+    for (int i = 0, power = 1; i < dimension; i++)
+    {
+      for (int j = 0; j < 2*half_support; j++)
+      {
+        const int &in = neigh_n(ip, j*power);
+        
+        const double &r = (xp - x0[in])[i]*inv_cellsize;
+        
+        if (shape_function == Update::ShapeFunctions::LINEAR)
+        {
+          s .at(i).at(j) = BasisFunction::           linear(r);
+          sd.at(i).at(j) = BasisFunction::derivative_linear(r, inv_cellsize);
+        }
+        else if (shape_function == Update::ShapeFunctions::CUBIC_SPLINE)
+        {
+          s .at(i).at(j) = BasisFunction::           cubic_spline(r, ntype[in][j]);
+          sd.at(i).at(j) = BasisFunction::derivative_cubic_spline(r, ntype[in][j], inv_cellsize);
+        }
+        else if (shape_function == Update::ShapeFunctions::QUADRATIC_SPLINE)
+        {
+          s .at(i).at(j) = BasisFunction::           quadratic_spline(r, ntype[in][j]);
+          sd.at(i).at(j) = BasisFunction::derivative_quadratic_spline(r, ntype[in][j], inv_cellsize);
+        }
+        else if (shape_function == Update::ShapeFunctions::BERNSTEIN)
+        {
+          s .at(i).at(j) = BasisFunction::           bernstein_quadratic(r, ntype[in][j]);
+          sd.at(i).at(j) = BasisFunction::derivative_bernstein_quadratic(r, ntype[in][j], inv_cellsize);
+        }
+      }
+
+      power *= 2*half_support;
+    }*/
+
     for (int i = 0; i < count; i++)
     {
       const int &in = neigh_n(ip, i);
