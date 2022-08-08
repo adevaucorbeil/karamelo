@@ -5,16 +5,19 @@
 Expression::~Expression()
 {}
 
-void Expression::evaluate()
+void Expression::evaluate(const Input &input)
 {
   for (Expression *expression_dependency: expression_dependencies)
-    expression_dependency->evaluate();
+    expression_dependency->evaluate(input);
 
   index = 0;
   registers = Kokkos::View<float**>("expression", registers.extent(0), 1);
 
   for (const std::unique_ptr<Operation> &operation: operations)
+  {
+    operation->set(input);
     operation->apply(this);
+  }
 }
 
 void Expression::evaluate(Solid &solid)

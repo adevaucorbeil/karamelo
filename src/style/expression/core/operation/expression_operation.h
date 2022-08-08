@@ -8,6 +8,7 @@ class Expression::Operation
   virtual bool isFunction() const = 0;
   virtual int precedence() const = 0;
   virtual int arity() const = 0;
+  virtual void set(const Input &input) {};
   virtual void set_solid(const Solid &solid) {};
   virtual void set_grid(const Grid &grid) {};
   virtual void apply(Expression *expression) = 0;

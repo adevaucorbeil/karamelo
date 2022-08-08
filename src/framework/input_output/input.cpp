@@ -204,7 +204,7 @@ Input::Input(MPM *mpm, int argc, char **argv) : Pointers(mpm)
       parsev(str);
       cout << "-------- Evaluating --------" << endl;
       Expression &expression = expressions.at(str);
-      expression.evaluate();
+      expression.evaluate(*this);
       cout << str << " = " << expression.registers(0, 0) << endl;
       cout << "----------------------------" << endl << endl;
     }
@@ -621,7 +621,7 @@ Var Input::parsev(string str)
                 if (const ExpressionOperandExpression *operand = dynamic_cast<const ExpressionOperandExpression *>
                                                                  (expression.operations.back().get()))
                 {
-                  double evaluation = expressions.at(operand->name).getConstant();
+                  double evaluation = expressions.at(operand->name).getConstant(*this);
                   expression.operations.pop_back();
                   expression.operations.emplace_back(new ExpressionOperandLiteral(evaluation));
 

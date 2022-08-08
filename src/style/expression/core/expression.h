@@ -28,14 +28,14 @@ public:
 public:
   ~Expression();
 
-  void evaluate();
+  void evaluate(const Input &input);
   void evaluate(Solid &solid);
   void evaluate(Grid &grid);
 
   float
-  getConstant()
+  getConstant(const Input &input)
   {
-    evaluate();
+    evaluate(input);
     auto element_device = Kokkos::subview(registers, 0, 0);
     float element_host;
     Kokkos::deep_copy(element_host, element_device);

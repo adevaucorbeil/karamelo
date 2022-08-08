@@ -28,7 +28,7 @@
  * Its member functions are design in order to be able to generate variables and execute functions present in the input file.
  * This class has Pointers as parent in order to be accessible from anywhere within the MPM class.
  */
-class Input : protected Pointers {
+class Input : public Pointers {
   friend class Error;
 
   static const bool DEBUG_EXPRESSIONS;

@@ -149,7 +149,7 @@ void Log::compute_var(string name)
   if (it != input->vars->end())
     dvalue = it->second.result(mpm);
   else
-    dvalue = input->expressions[name].getConstant();
+    dvalue = input->expressions[name].getConstant(*input);
 }
 
 void Log::modify(vector<string> args)

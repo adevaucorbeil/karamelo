@@ -91,7 +91,7 @@ void FixConvectionParticles::initial_integrate(Solid &solid) {
   // Go through all the particles in the group and set v_update to the right value:
 
 
-  Tinf->evaluate();
+  Tinf->evaluate(*solid.input);
   float h = this->h;
   int groupbit = this->groupbit, dimension = domain->dimension;
   Kokkos::View<int*> mask = solid.mask;

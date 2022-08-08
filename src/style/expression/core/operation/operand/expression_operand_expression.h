@@ -2,6 +2,11 @@
 
 #include <expression_operand.h>
 
+#include <input.h>
+#include <solid.h>
+#include <grid.h>
+#include <error.h>
+
 class ExpressionOperandExpression:
   public ExpressionOperand<ExpressionOperandExpression>
 {
@@ -14,6 +19,15 @@ public:
   ExpressionOperandExpression(const string &name):
     name(name)
   {}
+
+  void
+  set(const Input &input) override
+  {
+    const map<string, Expression>::iterator &it = const_cast<Input &>(input).expressions.find(name);
+    if (it == input.expressions.end())
+      input.error->all(FLERR, name + " is not an expression.\n");
+    registers = const_cast<Input &>(input).expressions[name].registers;
+  };
 
   void
   set_solid(const Solid &solid) override

@@ -104,4 +104,8 @@ class Grid : public Pointers {
   void reduce_ghost_nodes_old(bool only_v = false, bool temp = false);    ///< Deprecated
 };
 
+#ifdef WIN32
+#define __PRETTY_FUNCTION__ __FUNCSIG__
+#endif
+
 #endif
