@@ -188,6 +188,7 @@ void DumpParticleGz::write() {
     bool sxyz = true;
     bool exyz = true;
     bool bxyz = true;
+    bool compute_sigma = false;
 
     deep_copy(ptag[isolid], s->ptag);
 
@@ -218,6 +219,7 @@ void DumpParticleGz::write() {
           deep_copy(R[isolid], s->R);
 
         sxyz = false;
+	compute_sigma = true;
       }
       else if ((v == "e11" || v == "e22" || v == "e33" ||
                 v == "e12" || v == "e13" || v == "e23") && exyz)
@@ -251,11 +253,12 @@ void DumpParticleGz::write() {
     }
 
     for (bigint i = 0; i < s->np_local; i++) {
-      if (update->method_type == "tlmpm" ||
-	        update->method_type == "tlcpdi")
-	      sigma_ = R[isolid][i]*sigma[isolid][i]*R[isolid][i].transpose();
-      else
-	      sigma_ = sigma[isolid][i];
+      if (compute_sigma)
+	if (update->method_type == "tlmpm" ||
+	    update->method_type == "tlcpdi")
+	  sigma_ = R[isolid][i]*sigma[isolid][i]*R[isolid][i].transpose();
+	else
+	  sigma_ = sigma[isolid][i];
       buf.push_back(ptag[isolid][i]);
       buf.push_back(isolid + 1);
       for (const string &v : output_var) {

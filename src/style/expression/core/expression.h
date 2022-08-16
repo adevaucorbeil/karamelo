@@ -10,6 +10,7 @@
 
 class Solid;
 class Grid;
+class Input;
 
 class Expression
 {
