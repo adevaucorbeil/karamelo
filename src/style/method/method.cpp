@@ -318,12 +318,10 @@ void Method::compute_velocity_nodes(Solid &solid)
   bool is_TL = this->is_TL;
   
   Kokkos::View<float*> smass = solid.mass;
-  Kokkos::View<Vector3d*> sx = solid.x;
-  Kokkos::View<Vector3d*> sx0 = solid.x0;
+  Kokkos::View<Vector3d*> sx = is_TL ? solid.x0 : solid.x;
   Kokkos::View<Vector3d*> sv = solid.v;
   Kokkos::View<Vector3d*> sv_update = solid.v_update;
-  Kokkos::View<Matrix3d*> L = solid.L;
-  Kokkos::View<Matrix3d*> Fdot = solid.Fdot;
+  Kokkos::View<Matrix3d*> L = is_TL ? solid.Fdot : solid.L;
   Kokkos::View<float*> sT = solid.T;
   Kokkos::View<float**> swf = solid.wf;
   Kokkos::View<int**> neigh_n = solid.neigh_n;
@@ -349,17 +347,10 @@ void Method::compute_velocity_nodes(Solid &solid)
       if (float node_mass = gmass[in])
       {
         float normalized_wf = wf*smass[ip]/node_mass;
-        const Vector3d &dx = gx0[in] - sx[ip];
     
         Vector3d vtemp = sv[ip];
-
         if (apic)
-        {
-          if (is_TL)
-            vtemp += Fdot[ip]*(gx0[in] - sx0[ip]);
-          else
-            vtemp += L[ip]*(gx0[in] - sx[ip]);
-        }
+	  vtemp += L[ip]*(gx0[in] - sx[ip]);
 
         gv[in].atomic_add(normalized_wf*vtemp);
 
@@ -675,7 +666,7 @@ void Method::compute_rate_deformation_gradient(bool doublemapping, Solid &solid)
       if (float wf = swf(ip, i))
       {
         int in = neigh_n(ip, i);
-        const Vector3d &wfd = apic? wf * (grid.x0[in] - sx [ip]) : swfd(ip, i);
+        const Vector3d &wfd = apic? Di * wf * (grid.x0[in] - sx [ip]) : swfd(ip, i);
 
 	for (int j = 0; j < dimension; j++)
 	  for (int k = 0; k < dimension; k++)
@@ -689,7 +680,7 @@ void Method::compute_rate_deformation_gradient(bool doublemapping, Solid &solid)
       }
     }
 
-    gradients[ip] = apic? gradient*Di: gradient;
+    gradients[ip] = gradient;
 
     if (temp)
       sq[ip] = q;
