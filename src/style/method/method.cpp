@@ -682,7 +682,7 @@ void Method::compute_rate_deformation_gradient(bool doublemapping, Solid &solid)
 	    gradient(j, k) += vn[in][j]*wfd[k];
 
         if (axisymmetric)
-          gradient(2, 2) += vn[in][0]*wf/sv[ip][0];
+          gradient(2, 2) += vn[in][0] * wf / sx[ip][0];
 
         if (temp)
           q -= swfd(ip, i)*gT[in]*svol[ip]*kappa_over_cp;

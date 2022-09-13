@@ -66,8 +66,8 @@ Group::~Group()
 
 void Group::assign(vector<string> args)
 {
-  if (args.size() < 4)
-    error->all(FLERR,"Error: too few arguments for group: requires at least 4 arguments. " + to_string(args.size()) + " received.\n");
+  if (args.size() < 5)
+    error->all(FLERR,"Error: too few arguments for group: requires at least 5 arguments. " + to_string(args.size()) + " received.\n");
 
   // find group in existing list
   // add a new group if igroup = -1
@@ -212,7 +212,7 @@ void Group::assign(vector<string> args)
     }
   }
   else
-    error->all(FLERR, "Error: unknown keyword in group command: " + args[3] + ".\n");
+    error->all(FLERR, "Error: unknown keyword in group command: " + args[4] + ".\n");
 }
 
 /* ----------------------------------------------------------------------
