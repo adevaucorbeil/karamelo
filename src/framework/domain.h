@@ -55,6 +55,7 @@ class Domain : protected Pointers {
   virtual ~Domain();                     ///< Destructor.
 
   void create_domain(vector<string>);    ///< Deprecated function
+  void create_partition(vector<string>); ///< Create partition in the domain (by setting ntypes)
   void set_dimension(vector<string>);    ///< Called when user calls dimension()
   void set_axisymmetric(vector<string>); ///< Called when user calls axisymmetric()
   bool inside_subdomain(float, float, float); ///< Checks if the set of coordinates lies in the simulation domain.

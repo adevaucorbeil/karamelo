@@ -21,6 +21,7 @@
 #include <universe.h>
 #include <update.h>
 #include <matrix.h>
+#include <group.h>
 
 using namespace std;
 
@@ -481,6 +482,88 @@ void Domain::create_domain(vector<string> args) {
   // Set proc grid
   universe->set_proc_grid();
   created = true;
+}
+
+void Domain::create_partition(vector<string> args) {
+  if(args.size() != 1)
+    error->all(FLERR, "partition_domain() takes exactly one argument " + to_string(args.size()) + " given.\n");
+
+  if (update->method->is_TL)
+    error->all(FLERR, "Domain partitioning is not supported with TLMPM.\n");
+
+  if (update->shape_function == Update::ShapeFunctions::LINEAR)
+    error->all(FLERR, "Domain partitioning with linear shape functions is not supported.\n");
+
+  if (update->shape_function == Update::ShapeFunctions::BERNSTEIN)
+    error->all(FLERR, "Domain partitioning with Bernstein shape functions is not supported.\n");
+
+  if (grid->nnodes == 0)
+    error->one(FLERR, "The grid does not have any nodes in it. Domain partitioning can happen only after the grid has been created and initialized which happens after the dimensions have been set using dimension(...).\n");
+
+  int igroup = group->find(args[0]);
+
+  if (igroup == -1)
+    error->all(FLERR, "Group " + args[0] + " unknown.\n");
+  if (group->pon[igroup].compare("nodes") !=0 ) {
+    error->one(FLERR, "partition_domain() needs to be given a group of nodes" + group->pon[igroup] + ", " + args[0] + " is a group of "+ group->pon[igroup] + ".\n");
+  }
+
+  int groupbit = group->bitmask[igroup];
+
+
+  int n[3] = {grid->nx, grid->ny, grid->nz};
+  Kokkos::View<Vector3i*>::HostMirror gntype = create_mirror(grid->ntype);
+  deep_copy(gntype, grid->ntype);
+  Kokkos::View<int*>::HostMirror gmask = create_mirror(grid->mask);
+  deep_copy(gmask, grid->mask);
+
+  // Kokkos::parallel_for(__PRETTY_FUNCTION__, Kokkos::MDRangePolicy<Kokkos::Rank<3>>(
+  //   { 0, 0, 0 }, { (size_t)n[0], (size_t)n[1], (size_t)n[2]}),
+  // KOKKOS_LAMBDA (int i, int j, int k)
+  for(int k=0; k<n[2]; k++)
+    for(int j=0; j<n[1]; j++)
+      for(int i=0; i<n[0]; i++)
+  {
+    int in = i + n[0]*(j + n[1]*k);
+
+    int offset = 1;
+    for (int dim = 0; dim < dimension; dim++) {
+      if ( n[dim] < 7 ) continue;
+
+      if (dim > 0)
+	offset *= n[dim - 1];
+      // Check if nodes in is a bulk node (i.e. gntype[in][dim] == 0):
+      if (gntype[in][dim] == 0) {
+	bool inside = false;
+	if (gmask[in] & groupbit)
+	  inside = true;
+
+	if (inside) {
+	  if (!(gmask[in + 2 * offset] & groupbit)) {
+	    if (!(gmask[in + offset] & groupbit)) {
+	      gntype[in][dim] = 2;
+	    } else {
+	      gntype[in][dim] = 1;
+	    }
+	  } else if (!(gmask[in - 2 * offset] & groupbit)) {
+	    if (!(gmask[in - offset] & groupbit)) {
+	      gntype[in][dim] = 2;	    
+	    } else {
+	      gntype[in][dim] = -1;
+	    }
+	  }
+	} else {
+	  if (gmask[in + offset] & groupbit) {
+	    gntype[in][dim] = 1;
+	  } else if (gmask[in - offset] & groupbit) {
+	    gntype[in][dim] = -1;
+	  }
+	}
+      }
+    }
+  }//);
+
+deep_copy(grid->ntype, gntype);
 }
 
 /*! This function is the C++ equivalent to the dimension() user function.\n

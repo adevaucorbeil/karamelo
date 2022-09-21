@@ -91,12 +91,14 @@ void FixInitialVelocityNodes::prepare()
 
 void FixInitialVelocityNodes::post_update_grid_state(Grid &grid)
 {
+  if (update->ntimestep != 1)
+    return;
   // cout << "In FixInitialVelocityNodes::post_update_grid_state()" << endl;
 
   // Go through all the nodes in the group and set v_update to the right value:
   for (int in = 0; in < grid.nnodes_local + grid.nnodes_ghost; in++)
   {
-    if (update->ntimestep != 1 || !(grid.mask[in] & groupbit))
+    if (!(grid.mask[in] & groupbit))
       continue;
   
     (*input->vars)["x0"] = Var("x0", grid.x0[in][0]);
@@ -115,12 +117,14 @@ void FixInitialVelocityNodes::post_update_grid_state(Grid &grid)
 
 void FixInitialVelocityNodes::post_velocities_to_grid(Grid &grid)
 {
+  if (update->ntimestep != 1)
+    return;
   // cout << "In FixInitialVelocityNodes::post_velocities_to_grid()" << endl;
 
   // Go through all the particles in the group and set v to the right value:
   for (int in = 0; in < grid.nnodes_local + grid.nnodes_ghost; in++)
   {
-    if (update->ntimestep != 1 || !(grid.mask[in] & groupbit))
+    if (!(grid.mask[in] & groupbit))
       continue;
   
     (*input->vars)["x0"] = Var("x0", grid.x0[in][0]);

@@ -95,6 +95,7 @@ private:
   int print(vector<string>);                 ///< Print the details of a user-variable.
   int create_domain(vector<string>);         ///< Deprecated.
   int restart(vector<string>);               ///< Create a restart policy
+  int partition_domain(vector<string>);      ///< Create partitions in the node domain (setting ntypes)
 
   bool protected_variable(string);           ///< Checks if the variables is protected or not.
 

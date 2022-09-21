@@ -51,18 +51,17 @@ namespace BasisFunction
       return ntype == 1? 0: ((-r/6 + 1)*r - 2)*r + 4.0/3;
 
     if (r >= 0 && r < 1)
-      return ntype == -2? (r*r/6 - 1)*r + 1:
-             ntype ==  2? 1:
+      return ntype == -2 || ntype == 2? (r*r/6 - 1)*r + 1:
              ntype ==  1? (r/3 - 1)*r*r + 2.0/3:
                           (r/2 - 1)*r*r + 2.0/3;
     
     if (r >= -1 && r < 0)
-      return ntype ==  2? (-r*r/6 + 1)*r + 1:
+      return ntype ==  -2 || ntype == 2? (-r*r/6 + 1)*r + 1:
              ntype == -1? (-r/3 - 1)*r*r + 2.0/3:
                           (-0.5*r - 1)*r*r + 2.0/3.0;
     
     if (r >= -2 && r < -1)
-      return ((r/6 + 1)*r + 2)*r + 4.0/3;
+      return ntype == -1? 0 :((r/6 + 1)*r + 2)*r + 4.0/3;
 
     return 0;
   }
@@ -71,21 +70,20 @@ namespace BasisFunction
   derivative_cubic_spline(float r, int ntype, float inv_cellsize)
   {
     if (r >= 1 && r < 2)
-      return ntype == 1? -inv_cellsize: inv_cellsize*((-0.5*r + 2)*r - 2);
+      return ntype == 1? 0 : inv_cellsize*((-0.5*r + 2)*r - 2);
     
     if (r >=0 && r < 1)
-      return ntype == -2? inv_cellsize*(r*r/2 - 1):
-             ntype ==  2? inv_cellsize:
+      return ntype == -2 || ntype == 2? inv_cellsize*(r*r/2 - 1):
              ntype ==  1? inv_cellsize*r*(r - 2):
                           inv_cellsize*(r*3/2 - 2)*r;
     
     if (r >= -1 && r < 0)
-      return ntype ==  2? inv_cellsize*(-r*r/2 + 1):
+      return ntype == -2 || ntype == 2? inv_cellsize*(-r*r/2 + 1):
              ntype == -1? inv_cellsize*(-r - 2)*r:
                           inv_cellsize*(-r*3/2 - 2)*r;
     
     if (r >= -2 && r < -1)
-      return inv_cellsize*((r/2 + 2)*r + 2);
+      return ntype == -1? 0 : inv_cellsize*((r/2 + 2)*r + 2);
 
     return 0;
   }
@@ -125,10 +123,12 @@ namespace BasisFunction
                r >= -0.5 && r <  0.5? -r       *r + 0.75:
                r >=  0.5 && r <  1.5? (r - 3)/2*r + 1.125:
                                        0;
-    
+      case  2:
       case -2:
-        return r >= 0   && r < 0.5? -r            + 1:
-               r >= 0.5 && r < 1.5? (r/2 - 1.5)*r + 1.125:
+        return r >= -1.5 && r < -0.5? (0.5 * r + 1.5) * r + 1.125:
+               r >= -0.5 && r < 0   ? 1 + r:
+	       r >= 0    && r < 0.5 ? -r            + 1:
+               r >= 0.5  && r < 1.5 ? (r/2 - 1.5)*r + 1.125:
                                     0;
 
       case -1:
@@ -144,9 +144,7 @@ namespace BasisFunction
                                   0;
 
       default:
-        return r >= -1.5 && r < -0.5? (0.5 * r + 1.5) * r + 1.125:
-               r >= -0.5 && r <= 0? 1 + r:
-                                    0;
+        return 0;
     }
   }
 
@@ -160,10 +158,12 @@ namespace BasisFunction
                r >= -0.5 && r < 0.5? -2*inv_cellsize*r:
                r >= -1.5 && r < 0.5? inv_cellsize*(r + 1.5):
                                      0;
-                                     
+      case  2:
       case -2:
-        return r >= 0 && r < 0.5? -inv_cellsize:
-               r >= 0.5 && r < 1.5? inv_cellsize*(r - 1.5):
+        return r >= -1.5 && r < -0.5? inv_cellsize*(r + 1.5):
+               r >= -0.5 && r < 0   ? inv_cellsize:
+	       r >= 0    && r < 0.5 ? -inv_cellsize:
+               r >= 0.5  && r < 1.5 ? inv_cellsize*(r - 1.5):
                                     0;
       case -1:
         return r >= -1 && r < -0.5? inv_cellsize:
@@ -178,9 +178,7 @@ namespace BasisFunction
                                   0;
 
       default:
-        return r >= -1.5 && r < -0.5? inv_cellsize*(r + 1.5):
-               r >= -0.5 && r <= 0? inv_cellsize:
-                                    0;
+        return 0;
     }
   }
 }

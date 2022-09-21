@@ -461,6 +461,8 @@ Var Input::evaluate_function(string func, string arg){
     return Var(create_domain(args));
   if (func == "save_plot")
     return Var(save_plot(args));
+  if (func == "partition_domain")
+    return Var(partition_domain(args));
 
   // invoke commands added via style_command.h
 
@@ -1263,6 +1265,11 @@ int Input::print(vector<string> args) {
 
 int Input::restart(vector<string> args) {
   output->create_restart(args);
+  return 0;
+}
+
+int Input::partition_domain(vector<string> args) {
+  domain->create_partition(args);
   return 0;
 }
 
