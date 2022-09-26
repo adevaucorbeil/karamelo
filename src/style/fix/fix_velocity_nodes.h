@@ -45,11 +45,13 @@ private:
       {3, "Usage: fix(fix-ID, velocity_nodes, group, vx, vy, vz)\n"}};
   const map<int, int> Nargs = {{1, 4}, {2, 5}, {3, 6}};
 
-  bool xset, yset, zset;                             //< Does the fix set the x, y, and z velocities of the group?
+  //bool set[3];                             //< Does the fix set the x, y, and z velocities of the group?
   Vector3d ftot;
 
   Expression *v[3];
   Expression *v_prev[3];
+
+  bool leq[3], geq[3];
 };
 
 #endif

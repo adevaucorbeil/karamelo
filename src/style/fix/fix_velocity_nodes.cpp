@@ -42,7 +42,7 @@ FixVelocityNodes::FixVelocityNodes(MPM *mpm, vector<string> args):
     }
     groupbit = group->bitmask[igroup];
     
-    xset = yset = zset = false;
+    //set = {false, false, false};
     return;
   }
 
@@ -59,67 +59,46 @@ FixVelocityNodes::FixVelocityNodes(MPM *mpm, vector<string> args):
   }
   id = args[0];
 
-  xset = yset = zset = false;
+  //set = {false, false, false};
+  v_prev[0] = v[0] = nullptr;
+  v_prev[1] = v[1] = nullptr;
+  v_prev[2] = v[2] = nullptr;
 
   string time = "time";
 
-  if (args[3] != "NULL")
-  {
-    // xvalue = input->parsev(args[3]);
-    xset = true;
-    input->parsev(args[3]);
+  for (int dim = 0; dim < domain->dimension; dim++) {
+    if (args[3 + dim] != "NULL") {
+      leq[dim] = geq[dim] = false;
+      if (args[3 + dim].size() > 3) {
+        string s = args[3 + dim].substr(0, 3);
+        if (s == "leq")
+          leq[dim] = true;
+        else if (s == "geq")
+          geq[dim] = true;
+      }
 
-    string previous = args[3];
+      string condition;
 
-    // Replace "time" by "time - dt" in the x argument:
-    while(previous.find(time)!=std::string::npos)
-      previous.replace(previous.find(time),time.length(),"time - dt");
+      if (leq[dim] || geq[dim])
+        condition = args[3 + dim].substr(3, args[3 + dim].size() - 3);
+      else
+        condition = args[3 + dim];
 
-    input->parsev(previous);
+      //set[dim] = true;
+      input->parsev(condition);
 
-    v[0] = &input->expressions[args[3]];
-    v_prev[0] = &input->expressions[previous];
+      string previous = condition;
+
+      // Replace "time" by "time - dt" in the x argument:
+      while (previous.find(time) != std::string::npos)
+        previous.replace(previous.find(time), time.length(), "time - dt");
+
+      input->parsev(previous);
+
+      v[dim] = &input->expressions[condition];
+      v_prev[dim] = &input->expressions[previous];
+    }
   }
-  else
-    v_prev[0] = v[0] = nullptr;
-
-  if (domain->dimension >= 2 && args[4] != "NULL")
-  {
-    input->parsev(args[4]);
-    yset = true;
-
-    string previous = args[4];
-
-    // Replace "time" by "time - dt" in the y argument:
-    while(previous.find(time)!=std::string::npos)
-      previous.replace(previous.find(time),time.length(),"time - dt");
-
-    input->parsev(previous);
-
-    v[1] = &input->expressions[args[4]];
-    v_prev[1] = &input->expressions[previous];
-  }
-  else
-    v_prev[1] = v[1] = nullptr;
-
-  if (domain->dimension == 3 && args[5] != "NULL")
-  {
-    input->parsev(args[5]);
-    zset = true;
-
-    string previous = args[5];
-
-    // Replace "time" by "time - dt" in the z argument:
-    while(previous.find(time)!=std::string::npos)
-      previous.replace(previous.find(time),time.length(),"time - dt");
-
-    input->parsev(previous);
-
-    v[2] = &input->expressions[args[5]];
-    v_prev[2] = &input->expressions[previous];
-  }
-  else
-    v_prev[2] = v[2] = nullptr;
 }
 
 void FixVelocityNodes::prepare()
@@ -168,18 +147,27 @@ void FixVelocityNodes::post_update_grid_state(Grid &grid)
       Kokkos::View<float **> v_i = v[i]->registers;
       Kokkos::View<float **> v_prev_i = v_prev[i]->registers;
 
+      bool ileq = leq[i];
+      bool igeq = geq[i];
+
       Kokkos::parallel_reduce("FixVelocityNodes::post_update_grid_state", grid.nnodes_local + grid.nnodes_ghost,
                               KOKKOS_LAMBDA(const int &in, float &ftot_i)
       {
         if (!(mask[in] & groupbit))
           return;
 
-	gv[in][i] = v_i(0, in);
+	if ((ileq && (gv_update[in][i] <= v_i(0, in))) ||
+	    (igeq && (gv_update[in][i] >= v_i(0, in))))
+	  return;
 
-        ftot_i += mass[in]*(v_i(0, in) - gv_update[in][i])/dt;
+	ftot_i += mass[in]*(v_i(0, in) - gv_update[in][i])/dt;
+	gv_update[in][i] = v_i(0, in);
 
-	gv_update[in][i] = v_prev_i(0, in);
+	if ((ileq && (gv[in][i] <= v_i(0, in))) ||
+	    (igeq && (gv[in][i] >= v_i(0, in))))
+	  return;
 
+	gv[in][i] = v_prev_i(0, in);
       }, ftot[i]);
     }
 }
@@ -203,11 +191,18 @@ void FixVelocityNodes::post_velocities_to_grid(Grid &grid) {
     {
       Kokkos::View<float **> v_i = v[i]->registers;
 
+      bool ileq = leq[i];
+      bool igeq = geq[i];
+
       Kokkos::parallel_for("FixVelocityNodes::post_velocities_to_grid", grid.nnodes_local + grid.nnodes_ghost,
                               KOKKOS_LAMBDA(const int &in)
       {
         if (!(mask[in] & groupbit))
           return;
+
+	if ((ileq && (gv[in][i] <= v_i(0, in))) ||
+	    (igeq && (gv[in][i] >= v_i(0, in))))
+	  return;
 
 	gv[in][i] = v_i(0, in);
       });
@@ -216,9 +211,9 @@ void FixVelocityNodes::post_velocities_to_grid(Grid &grid) {
 }
 
 void FixVelocityNodes::write_restart(ofstream *of) {
-  of->write(reinterpret_cast<const char *>(&xset), sizeof(bool));
-  of->write(reinterpret_cast<const char *>(&yset), sizeof(bool));
-  of->write(reinterpret_cast<const char *>(&zset), sizeof(bool));
+  // of->write(reinterpret_cast<const char *>(&xset), sizeof(bool));
+  // of->write(reinterpret_cast<const char *>(&yset), sizeof(bool));
+  // of->write(reinterpret_cast<const char *>(&zset), sizeof(bool));
 
   //if (xset) {
   //  xvalue.write_to_restart(of);
@@ -235,9 +230,9 @@ void FixVelocityNodes::write_restart(ofstream *of) {
 }
 
 void FixVelocityNodes::read_restart(ifstream *ifr) {
-  ifr->read(reinterpret_cast<char *>(&xset), sizeof(bool));
-   ifr->read(reinterpret_cast<char *>(&yset), sizeof(bool));
-  ifr->read(reinterpret_cast<char *>(&zset), sizeof(bool));
+  // ifr->read(reinterpret_cast<char *>(&xset), sizeof(bool));
+  //  ifr->read(reinterpret_cast<char *>(&yset), sizeof(bool));
+  // ifr->read(reinterpret_cast<char *>(&zset), sizeof(bool));
 
   //if (xset) {
   //  xvalue.read_from_restart(ifr);
