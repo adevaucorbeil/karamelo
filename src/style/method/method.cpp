@@ -46,9 +46,9 @@ void Method::compute_grid_weight_functions_and_gradients(Solid &solid)
   if (update->ntimestep == 0 && rigid)
     rigid_solids = 1;
 
-  Kokkos::View<Vector3d*> &x0 = solid.grid->x0;
-  Kokkos::View<Vector3i*> &ntype = solid.grid->ntype;
-  Kokkos::View<tagint*> &map_ntag = solid.grid->map_ntag;
+  Kokkos::View<Vector3d*> x0 = solid.grid->x0;
+  Kokkos::View<Vector3i*> ntype = solid.grid->ntype;
+  Kokkos::View<tagint*> map_ntag = solid.grid->map_ntag;
   Kokkos::View<bool*> grid_rigid = solid.grid->rigid;
 
   Kokkos::View<Vector3d*> x = solid.x;
@@ -67,6 +67,8 @@ void Method::compute_grid_weight_functions_and_gradients(Solid &solid)
   int dimension = domain->dimension;
 
   Vector3d boxlo(domain->boxlo[0], domain->boxlo[1], domain->boxlo[2]);
+
+  size_t neighbor_nodes_per_particle = solid.neighbor_nodes_per_particle;
 
   Kokkos::parallel_for("compute_grid_weight_functions_and_gradients", solid.np_local,
   KOKKOS_LAMBDA (const int &ip)
@@ -162,16 +164,12 @@ void Method::compute_grid_weight_functions_and_gradients(Solid &solid)
       // Calculate the distance between each pair of particle/node:
       const Vector3d &r = (xp - x0[in])*inv_cellsize;
 
-      Vector3d s, sd;
+      Vector3d s = {1, 1, 1};
+      Vector3d sd = Vector3d();
 
-      for (int j = 0; j < 3; j++)
+      for (int j = 0; j < dimension; j++)
       {
-        if (dimension <= j)
-        {
-          s [j] = 1;
-          sd[j] = 0;
-        }
-        else if (shape_function == Update::ShapeFunctions::LINEAR)
+        if (shape_function == Update::ShapeFunctions::LINEAR)
         {
           s [j] = BasisFunction::           linear(r[j]);
           sd[j] = BasisFunction::derivative_linear(r[j], inv_cellsize);
@@ -200,6 +198,11 @@ void Method::compute_grid_weight_functions_and_gradients(Solid &solid)
       wfd(ip, i)[2] = s [0]*s [1]*sd[2];
 
       grid_rigid[in] = rigid;
+    }
+
+    for (int i = count; i < neighbor_nodes_per_particle; i++) {
+      wf(ip, i) = 0;
+      wfd(ip, i) = Vector3d();
     }
   });
 
