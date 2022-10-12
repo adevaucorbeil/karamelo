@@ -132,6 +132,8 @@ Solid::Solid(MPM *mpm, vector<string> args): Pointers(mpm)
                + usage.find(args[1])->second);
   }
 
+  neighbor_nodes_per_particle = update->shape_function == Update::ShapeFunctions::LINEAR ? pow(2, domain->dimension) : pow(4, domain->dimension);
+
   if (args[1] == "region")
   {
     // Set material, cellsize, and initial temperature:
@@ -159,6 +161,7 @@ Solid::Solid(MPM *mpm, vector<string> args): Pointers(mpm)
     comm_n = 54; // Number of double to pack for particle exchange between CPUs.
   else
     comm_n = 49;
+
 }
 
 Solid::~Solid()
@@ -304,8 +307,6 @@ void Solid::grow(int nparticles)
     T = Kokkos::View<double*>  ("T", nparticles);
     q = Kokkos::View<Vector3d*>("q", nparticles);
   }
-
-  size_t neighbor_nodes_per_particle = 64;
 
   neigh_n    = Kokkos::View<int**>     ("neigh_n",   nparticles, neighbor_nodes_per_particle);
   wf         = Kokkos::View<double**>  ("wf",        nparticles, neighbor_nodes_per_particle);

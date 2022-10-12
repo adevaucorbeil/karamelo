@@ -100,6 +100,7 @@ class Solid : public Pointers {
   Kokkos::View<double**> wf;                ///< Particles' node neighbors' weight functions \f$\Phi\f$
   Kokkos::View<double***> wf_corners;       ///< Particles' node neighbors' weight functions \f$\Phi\f$ evaluated at the corners of the particle's domain (used in CPDI)
   Kokkos::View<Vector3d**> wfd;             ///< Particles' node neighbors' weight function derivatives \f$\partial \Phi/ \partial x\f$
+  size_t neighbor_nodes_per_particle;       ///< Particles' maximum number of neighbors
 
   Kokkos::View<int*> error_flag;            ///< Error codes
 
