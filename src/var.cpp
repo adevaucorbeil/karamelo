@@ -132,6 +132,30 @@ Var Var::operator/(const Var& right)
   } else {
     Var result("(" + this->str() + "/" + right.str() + ")", this->value / right.value, false);
     return result;
+  } 
+}
+
+Var Var::division_without_rest(const Var& right)
+{  
+  int res = (int) (this->value / right.value);
+  if (this->constant && right.constant) {
+    Var result(res);
+    return result;
+  } else {
+    Var result("(" + this->str() + "//" + right.str() + ")", res, false);
+    return result;
+  } 
+}
+
+Var Var::operator%(const Var& right)
+{
+  double res = this->value - this->division_without_rest(right).value * right.value;
+  if (this->constant && right.constant) {
+    Var result(res);
+    return result;
+  } else {
+    Var result("(" + this->str() + "%" + right.str() + ")", res, false);
+    return result;
   }
 }
 

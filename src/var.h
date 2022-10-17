@@ -35,6 +35,8 @@ class Var{
   Var operator-();
   Var operator*(const Var&);
   Var operator/(const Var&);
+  Var operator%(const Var&);
+  Var division_without_rest(const Var&);
   Var operator^(const Var&);
   Var operator>(const Var&);
   Var operator>=(const Var&);
