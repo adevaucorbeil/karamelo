@@ -22,34 +22,32 @@ FixStyle(contact/minimize_penetration, FixContactMinPenetration)
 
 #include "fix.h"
 #include "var.h"
+#include "fix_contact.h"
 #include <vector>
 
-class FixContactMinPenetration : public Fix {
+class FixContactMinPenetration : public FixContact
+{
 public:
   FixContactMinPenetration(class MPM *, vector<string>);
   ~FixContactMinPenetration();
-  void setmask();
-  void init();
-  void setup();
 
   void initial_integrate();
-  void post_particles_to_grid(){};
-  void post_update_grid_state(){};
-  void post_grid_to_point(){};
-  void post_advance_particles() {};
-  void post_velocities_to_grid(){};
-  void final_integrate(){};
+  void force_increment(Eigen::Vector3d &dx, Eigen::Vector3d &f, Eigen::Vector3d &ftot,
+                       Solid *s1, Solid *s2,
+                       const int ip1, const int ip2, 
+                       const double r, const double Rp1, const double Rp2);
 
   void write_restart(ofstream *);
   void read_restart(ifstream *);
 
 private:
-  string usage = "Usage: fix(fix-ID, contact/minimize_penetration, solid1, solid2, mu)\n";
-  int Nargs = 5;
+  const string USAGE = "Usage: fix(fix-ID, contact/minimize_penetration, solid1, solid2, mu)\n";
+  ;
+  const int NARGS = 5;
   int solid1, solid2;
-  double mu;    // Friction coefficient
+  double alpha;
+  double mu; // Friction coefficient
 };
 
 #endif
 #endif
-
