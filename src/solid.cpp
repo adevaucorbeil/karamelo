@@ -29,6 +29,7 @@
 #include <mpi.h>
 #include <string>
 #include <vector>
+#include <algorithm>
 
 using namespace std;
 using namespace Eigen;
@@ -2394,6 +2395,8 @@ void Solid::read_mesh(string fileName)
   if (universe->me == 0)
     cout << "Reading Gmsh mesh file ...\n";
 
+  int l = 0;
+
   while (getline(file, line))
   {
 
@@ -2402,6 +2405,17 @@ void Solid::read_mesh(string fileName)
       // Read mesh format informations:
       double version;
       file >> version;
+      cout << "version=" << version << endl;
+
+      getline(file, line);
+
+      // int file_type;
+      // file >> file_type;
+      // cout << "file_type=" << file_type << endl;
+
+      // int data_size;
+      // file >> data_size;
+      // cout << "data_size=" << data_size << endl;
 
       if (version >= 3.0)
       {
@@ -2410,16 +2424,13 @@ void Solid::read_mesh(string fileName)
       }
 
       getline(file, line);
-      if (line.compare("$EndMeshFormat") == 0)
-      {
-        
-	if (universe->me == 0)
+      if (line.compare("$EndMeshFormat") == 0) {
+	if (universe->me == 0) {
 	  cout << "Reading format...done!\n";
-        break;
+	}
+      } else {
+	error->all(FLERR, "Unexpected line: " + line + ". $EndMeshFormat expected!!\n");
       }
-      else
-	if (universe->me == 0)
-	  cout << "Unexpected line: " << line << ". $EndMeshFormat expected!!\n";
     }
 
     if (line.compare("$Nodes") == 0)
@@ -2428,6 +2439,8 @@ void Solid::read_mesh(string fileName)
 	cout << "Reading nodes...\n";
       // Read mesh node informations:
       file >> nodeCount;
+
+      cout << "nodeCount=" << nodeCount << endl;
 
       nodes.resize(nodeCount);
 
@@ -2472,31 +2485,33 @@ void Solid::read_mesh(string fileName)
       }
 
       getline(file, line);
+      getline(file, line);
       if (line.compare("$EndNodes") == 0)
       {
 	if (universe->me == 0)
 	  cout << "Reading nodes...done!\n";
       }
       else
-	if (universe->me == 0)
-	  cout << "Unexpected line: " << line << ". $EndNodes expected!!\n";
+	error->all(FLERR, "Unexpected line: " + line + ". $EndNodes expected!!\n");
     }
 
     if (line.compare("$Elements") == 0)
     {
       if (universe->me == 0)
 	cout << "Reading elements...\n";
-      file >> np; // Number of elements
+      file >> np_local; // Number of elements
       getline(file, line);
 
       // Allocate the space in the vectors for np particles:
-      grow(np);
+      grow(np_local);
 
-      for (int ie = 0; ie < np; ie++)
+      for (int ie = 0; ie < np_local; ie++)
       {
         getline(file, line);
 
-        splitLine = split(line, "\t ");
+        splitLine = split(line, " ");
+	// Remove all empty elements:
+	splitLine.erase(std::remove(splitLine.begin(), splitLine.end(), ""), splitLine.end());
 
         length = splitLine.size();
 
@@ -2505,22 +2520,28 @@ void Solid::read_mesh(string fileName)
         // elemType == 3: 4-node   quadrangle
         // elemType == 4: 4-node   tetrahedra
 
+	int number_tags = stoi(splitLine[2]);
+
         if (elemType == 1)
         {
-          int no1 = stoi(splitLine[5]) - 1;
-          int no2 = stoi(splitLine[6]) - 1;
+          int no1 = stoi(splitLine[3 + number_tags]) - 1;
+          int no2 = stoi(splitLine[4 + number_tags]) - 1;
 
-          xpc0[nc * ie][0] = xpc[nc * ie][0] = nodes[no1][0];
-          xpc0[nc * ie][1] = xpc[nc * ie][1] = nodes[no1][1];
-          xpc0[nc * ie][2] = xpc[nc * ie][2] = nodes[no1][2];
+          if (method_type.compare("tlcpdi") == 0 ||
+              method_type.compare("ulcpdi") == 0)
+          {
+	    xpc0[nc * l][0] = xpc[nc * l][0] = nodes[no1][0];
+	    xpc0[nc * l][1] = xpc[nc * l][1] = nodes[no1][1];
+	    xpc0[nc * l][2] = xpc[nc * l][2] = nodes[no1][2];
 
-          xpc0[nc * ie + 1][0] = xpc[nc * ie + 1][0] = nodes[no2][0];
-          xpc0[nc * ie + 1][1] = xpc[nc * ie + 1][1] = nodes[no2][1];
-          xpc0[nc * ie + 1][2] = xpc[nc * ie + 1][2] = nodes[no2][2];
+	    xpc0[nc * l + 1][0] = xpc[nc * l + 1][0] = nodes[no2][0];
+	    xpc0[nc * l + 1][1] = xpc[nc * l + 1][1] = nodes[no2][1];
+	    xpc0[nc * l + 1][2] = xpc[nc * l + 1][2] = nodes[no2][2];
+	  }
 
-          x0[ie][0] = x[ie][0] = 0.5 * (nodes[no1][0] + nodes[no2][0]);
-          x0[ie][1] = x[ie][1] = 0.5 * (nodes[no1][1] + nodes[no2][1]);
-          x0[ie][2] = x[ie][2] = 0.5 * (nodes[no1][2] + nodes[no2][2]);
+	  x0[l][0] = x[l][0] = 0.5 * (nodes[no1][0] + nodes[no2][0]);
+          x0[l][1] = x[l][1] = 0.5 * (nodes[no1][1] + nodes[no2][1]);
+          x0[l][2] = x[l][2] = 0.5 * (nodes[no1][2] + nodes[no2][2]);
         }
         else if (elemType == 3)
         {
@@ -2532,49 +2553,48 @@ void Solid::read_mesh(string fileName)
 //           ycplot.resize(5, 0);
 // #endif
 
-          int no1 = stoi(splitLine[5]) - 1;
-          int no2 = stoi(splitLine[6]) - 1;
-          int no3 = stoi(splitLine[7]) - 1;
-          int no4 = stoi(splitLine[8]) - 1;
+          int no1 = stoi(splitLine[3 + number_tags]) - 1;
+          int no2 = stoi(splitLine[4 + number_tags]) - 1;
+          int no3 = stoi(splitLine[5 + number_tags]) - 1;
+          int no4 = stoi(splitLine[6 + number_tags]) - 1;
 
           if (method_type.compare("tlcpdi") == 0 ||
               method_type.compare("ulcpdi") == 0)
           {
+            xpc0[nc * l][0] = xpc[nc * l][0] = nodes[no1][0];
+            xpc0[nc * l][1] = xpc[nc * l][1] = nodes[no1][1];
+            xpc0[nc * l][2] = xpc[nc * l][2] = nodes[no1][2];
 
-            xpc0[nc * ie][0] = xpc[nc * ie][0] = nodes[no1][0];
-            xpc0[nc * ie][1] = xpc[nc * ie][1] = nodes[no1][1];
-            xpc0[nc * ie][2] = xpc[nc * ie][2] = nodes[no1][2];
+            xpc0[nc * l + 1][0] = xpc[nc * l + 1][0] = nodes[no2][0];
+            xpc0[nc * l + 1][1] = xpc[nc * l + 1][1] = nodes[no2][1];
+            xpc0[nc * l + 1][2] = xpc[nc * l + 1][2] = nodes[no2][2];
 
-            xpc0[nc * ie + 1][0] = xpc[nc * ie + 1][0] = nodes[no2][0];
-            xpc0[nc * ie + 1][1] = xpc[nc * ie + 1][1] = nodes[no2][1];
-            xpc0[nc * ie + 1][2] = xpc[nc * ie + 1][2] = nodes[no2][2];
+            xpc0[nc * l + 2][0] = xpc[nc * l + 2][0] = nodes[no3][0];
+            xpc0[nc * l + 2][1] = xpc[nc * l + 2][1] = nodes[no3][1];
+            xpc0[nc * l + 2][2] = xpc[nc * l + 2][2] = nodes[no3][2];
 
-            xpc0[nc * ie + 2][0] = xpc[nc * ie + 2][0] = nodes[no3][0];
-            xpc0[nc * ie + 2][1] = xpc[nc * ie + 2][1] = nodes[no3][1];
-            xpc0[nc * ie + 2][2] = xpc[nc * ie + 2][2] = nodes[no3][2];
-
-            xpc0[nc * ie + 3][0] = xpc[nc * ie + 3][0] = nodes[no4][0];
-            xpc0[nc * ie + 3][1] = xpc[nc * ie + 3][1] = nodes[no4][1];
-            xpc0[nc * ie + 3][2] = xpc[nc * ie + 3][2] = nodes[no4][2];
+            xpc0[nc * l + 3][0] = xpc[nc * l + 3][0] = nodes[no4][0];
+            xpc0[nc * l + 3][1] = xpc[nc * l + 3][1] = nodes[no4][1];
+            xpc0[nc * l + 3][2] = xpc[nc * l + 3][2] = nodes[no4][2];
           }
 
-          x0[ie][0] = x[ie][0] = 0.25 * (nodes[no1][0] + nodes[no2][0] +
+          x0[l][0] = x[l][0] = 0.25 * (nodes[no1][0] + nodes[no2][0] +
                                          nodes[no3][0] + nodes[no4][0]);
-          x0[ie][1] = x[ie][1] = 0.25 * (nodes[no1][1] + nodes[no2][1] +
+          x0[l][1] = x[l][1] = 0.25 * (nodes[no1][1] + nodes[no2][1] +
                                          nodes[no3][1] + nodes[no4][1]);
-          x0[ie][2] = x[ie][2] = 0.25 * (nodes[no1][2] + nodes[no2][2] +
+          x0[l][2] = x[l][2] = 0.25 * (nodes[no1][2] + nodes[no2][2] +
                                          nodes[no3][2] + nodes[no4][2]);
 
-          // vol0[ie] = vol[ie] = 0.5*(xpc[nc*ie+0][0]*xpc[nc*ie+1][1] -
-          // xpc[nc*ie+1][0]*xpc[nc*ie+0][1]
-          // 	    + xpc[nc*ie+1][0]*xpc[nc*ie+2][1] -
-          // xpc[nc*ie+2][0]*xpc[nc*ie+1][1]
-          // 	    + xpc[nc*ie+2][0]*xpc[nc*ie+3][1] -
-          // xpc[nc*ie+3][0]*xpc[nc*ie+2][1]
-          // 	    + xpc[nc*ie+3][0]*xpc[nc*ie+0][1] -
-          // xpc[nc*ie+0][0]*xpc[nc*ie+3][1]);
+          // vol0[l] = vol[l] = 0.5*(xpc[nc*l+0][0]*xpc[nc*l+1][1] -
+          // xpc[nc*l+1][0]*xpc[nc*l+0][1]
+          // 	    + xpc[nc*l+1][0]*xpc[nc*l+2][1] -
+          // xpc[nc*l+2][0]*xpc[nc*l+1][1]
+          // 	    + xpc[nc*l+2][0]*xpc[nc*l+3][1] -
+          // xpc[nc*l+3][0]*xpc[nc*l+2][1]
+          // 	    + xpc[nc*l+3][0]*xpc[nc*l+0][1] -
+          // xpc[nc*l+0][0]*xpc[nc*l+3][1]);
 
-          vol0[ie] = vol[ie] =
+          vol0[l] = vol[l] =
               0.5 *
               (nodes[no1][0] * nodes[no2][1] - nodes[no2][0] * nodes[no1][1] +
                nodes[no2][0] * nodes[no3][1] - nodes[no3][0] * nodes[no2][1] +
@@ -2584,10 +2604,10 @@ void Solid::read_mesh(string fileName)
         else if (elemType == 4)
         {
 
-          int no1 = stoi(splitLine[5]) - 1;
-          int no2 = stoi(splitLine[6]) - 1;
-          int no3 = stoi(splitLine[7]) - 1;
-          int no4 = stoi(splitLine[8]) - 1;
+          int no1 = stoi(splitLine[3 + number_tags]) - 1;
+          int no2 = stoi(splitLine[4 + number_tags]) - 1;
+          int no3 = stoi(splitLine[5 + number_tags]) - 1;
+          int no4 = stoi(splitLine[6 + number_tags]) - 1;
 
           double x1 = nodes[no1][0];
           double y1 = nodes[no1][1];
@@ -2615,11 +2635,11 @@ void Solid::read_mesh(string fileName)
           double z12 = z1 - z2;
           double z42 = z4 - z2;
 
-          x0[ie][0] = x[ie][0] = 0.25 * (x1 + x2 + x3 + x4);
-          x0[ie][1] = x[ie][1] = 0.25 * (y1 + y2 + y3 + y4);
-          x0[ie][2] = x[ie][2] = 0.25 * (z1 + z2 + z3 + z4);
+          x0[l][0] = x[l][0] = 0.25 * (x1 + x2 + x3 + x4);
+          x0[l][1] = x[l][1] = 0.25 * (y1 + y2 + y3 + y4);
+          x0[l][2] = x[l][2] = 0.25 * (z1 + z2 + z3 + z4);
 
-          vol0[ie] = vol[ie] = (1 / 6) * (x21 * (y23 * z34 - y34 * z23) +
+          vol0[l] = vol[l] = (1 / 6) * (x21 * (y23 * z34 - y34 * z23) +
                                           x32 * (y34 * z12 - y12 * z34) +
                                           x43 * (y12 * z23 - y23 * z12));
         }
@@ -2628,6 +2648,11 @@ void Solid::read_mesh(string fileName)
           cout << "Element type " << elemType << " not supported!!\n";
           error->one(FLERR, "");
         }
+
+	// Check if the particle is inside the region:
+	if (domain->inside_subdomain(x0[l][0], x0[l][1], x0[l][2])) {
+	  l++;
+	}
       }
 
       getline(file, line);
@@ -2638,23 +2663,48 @@ void Solid::read_mesh(string fileName)
         break;
       }
       else
-	if (universe->me == 0)
-	  cout << "Unexpected line: " << line << ". $EndElements expected!!\n";
+	error->all(FLERR, "Unexpected line: " + line + ". $EndElements expected!!\n");
     }
   }
 
-  if (universe->me == 0)
-    cout << "np=" << np << endl;
+  if (np_local > l)
+    grow(l);
 
-  for (int i = 0; i < np; i++)
+  np_local = l; // Adjust np_local to account for the particles outside the domain
+
+  if (universe->me == 0)
+    cout << "np_local=" << np_local << endl;
+
+  tagint ptag0 = 0;
+
+  for (int proc=0; proc<universe->nprocs; proc++){
+    int np_local_bcast;
+    if (proc == universe->me) {
+      // Send np_local
+      np_local_bcast = np_local;
+    } else {
+      // Receive np_local
+      np_local_bcast = 0;
+    }
+    MPI_Bcast(&np_local_bcast,1,MPI_INT,proc,universe->uworld);
+    if (universe->me > proc) ptag0 += np_local_bcast;
+  }
+
+  for (int i = 0; i < np_local; i++)
   {
     a[i].setZero();
     v[i].setZero();
     f[i].setZero();
     mbp[i].setZero();
     v_update[i].setZero();
-    rho0[i] = rho[i]           = mat->rho0;
-    mass[i]                    = mat->rho0 * vol0[i];
+    rho0[i] = rho[i] = mat->rho0;
+    mass[i] = mat->rho0 * vol0[i];
+    if (domain->axisymmetric == true) {
+      mass[i] *= x0[i][0];
+      vol0[i] *= x0[i][0];
+    }
+    vol[i] = vol0[i];
+
     eff_plastic_strain[i]      = 0;
     eff_plastic_strain_rate[i] = 0;
     damage[i]                  = 0;
@@ -2675,26 +2725,22 @@ void Solid::read_mesh(string fileName)
     Finv[i].setZero();
     Fdot[i].setZero();
     J[i] = 1;
+    mask[i] = 1;
 
-    if (x0[i][0] < solidlo[0])
-      solidlo[0] = x0[i][0];
-    if (x0[i][1] < solidlo[1])
-      solidlo[1] = x0[i][1];
-    if (x0[i][2] < solidlo[2])
-      solidlo[2] = x0[i][2];
-
-    if (x0[i][0] > solidhi[0])
-      solidhi[0] = x0[i][0];
-    if (x0[i][1] > solidhi[1])
-      solidhi[1] = x0[i][1];
-    if (x0[i][2] > solidhi[2])
-      solidhi[2] = x0[i][2];
+    ptag[i] = ptag0 + i + 1 + domain->np_total;
   }
 
-  if (grid->nnodes == 0)
+  if (l != np_local)
   {
-    grid->init(solidlo, solidhi);
+    cout << "Error l=" << l << " != np_local=" << np_local << endl;
+    error->one(FLERR, "");
   }
+
+  int np_local_reduced;
+  MPI_Allreduce(&np_local, &np_local_reduced, 1, MPI_INT, MPI_SUM, universe->uworld);
+  np += np_local_reduced;
+  domain->np_total += np;
+  domain->np_local += np_local;
 }
 
 
