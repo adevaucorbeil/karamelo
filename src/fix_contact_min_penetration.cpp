@@ -43,18 +43,15 @@ FixContactMinPenetration::FixContactMinPenetration(MPM *mpm, vector<string> args
 FixContactMinPenetration::~FixContactMinPenetration(){};
 
 void FixContactMinPenetration::force_increment(
-    Eigen::Vector3d &dx, Eigen::Vector3d &f, Eigen::Vector3d &ftot,
+    Eigen::Vector3d &dx, Eigen::Vector3d &ftot,
     Solid *s1, Solid *s2,
     const int ip1, const int ip2,
     const double r, const double Rp1, const double Rp2)
 {
   double fmag, ffric, inv_r, vtnorm, gamma;
-  Eigen::Vector3d dv, vt;
+  Eigen::Vector3d dv, vt, f;
   inv_r = 1.0 / r;
-  fmag =
-      s1->mass[ip1] * s2->mass[ip2] /
-      ((s1->mass[ip1] + s2->mass[ip2]) * update->dt * update->dt) *
-      (1 - Rp1 * inv_r);
+  fmag = s1->mass[ip1] * s2->mass[ip2] / ((s1->mass[ip1] + s2->mass[ip2]) * update->dt * update->dt) * (1 - (Rp1 + Rp2) * inv_r);
   f = fmag * dx;
 
   if (mu != 0)
@@ -101,7 +98,6 @@ void FixContactMinPenetration::initial_integrate()
   s1 = domain->solids[solid1];
   s2 = domain->solids[solid2];
 
-  double alpha = s1->mat->kappa / (s1->mat->kappa + s2->mat->kappa);
   FixContact::initial_integrate();
 }
 

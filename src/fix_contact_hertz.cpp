@@ -43,12 +43,13 @@ FixContactHertz::FixContactHertz(MPM *mpm, vector<string> args)
 FixContactHertz::~FixContactHertz(){};
 
 void FixContactHertz::force_increment(
-    Eigen::Vector3d &dx, Eigen::Vector3d &f, Eigen::Vector3d &ftot,
+    Eigen::Vector3d &dx, Eigen::Vector3d &ftot,
     Solid *s1, Solid *s2,
     const int ip1, const int ip2,
     const double r, const double Rp1, const double Rp2)
 {
 
+  Eigen::Vector3d f;
   double fmag, p;
   p = Rp1 + Rp2 - r; // penetration
 
@@ -91,7 +92,5 @@ void FixContactHertz::initial_integrate()
   s1 = domain->solids[solid1];
   s2 = domain->solids[solid2];
 
-  double Estar = 1.0 / ((1 - s1->mat->nu * s1->mat->nu) / s1->mat->E +
-                        (1 - s2->mat->nu * s2->mat->nu) / s2->mat->E);
   FixContact::initial_integrate();
 }

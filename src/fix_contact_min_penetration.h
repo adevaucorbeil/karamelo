@@ -32,7 +32,7 @@ public:
   ~FixContactMinPenetration();
 
   void initial_integrate();
-  void force_increment(Eigen::Vector3d &dx, Eigen::Vector3d &f, Eigen::Vector3d &ftot,
+  void force_increment(Eigen::Vector3d &dx, Eigen::Vector3d &ftot,
                        Solid *s1, Solid *s2,
                        const int ip1, const int ip2, 
                        const double r, const double Rp1, const double Rp2);

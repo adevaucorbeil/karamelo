@@ -97,12 +97,10 @@ void FixContact::initial_integrate()
   // cout << "In FixContact::initial_integrate()\n";
 
   // Go through all the particles in the group and set b to the right value:
-  Eigen::Vector3d f, dx;
-
   Solid *s1, *s2;
-  Eigen::Vector3d ftot, ftot_reduced, vtemp1, vtemp2, dv, vt;
+  Eigen::Vector3d dx, ftot, ftot_reduced, vtemp1, vtemp2, dv, vt;
 
-  double Rp, Rp1, Rp2, r, inv_r, Estar, max_cellsize, vtnorm, fmag, ffric, gamma, alpha;
+  double Rp, Rp1, Rp2, r, max_cellsize;
 
   ftot.setZero();
 
@@ -143,7 +141,7 @@ void FixContact::initial_integrate()
             // Finer screening:
             if (r < Rp)
             {
-              force_increment(dx, f, ftot, s1, s2, ip1, ip2, r, Rp1, Rp2);
+              force_increment(dx, ftot, s1, s2, ip1, ip2, r, Rp1, Rp2);
             }
           }
         }
@@ -173,7 +171,7 @@ void FixContact::initial_integrate()
             // Finer screening:
             if (r < Rp)
             {
-              force_increment(dx, f, ftot, s1, s2, ip1, ip2, r, Rp1, Rp2);
+              force_increment(dx, ftot, s1, s2, ip1, ip2, r, Rp1, Rp2);
             }
           }
         }
