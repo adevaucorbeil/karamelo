@@ -107,6 +107,9 @@ void FixContact::initial_integrate()
   s1 = domain->solids[solid1];
   s2 = domain->solids[solid2];
 
+  int root = 0;
+  s1->compute_surface_particles(root);
+
   max_cellsize = MAX(s1->grid->cellsize, s2->grid->cellsize);
 
   if (domain->dimension == 2)

@@ -47,7 +47,7 @@ public:
   void update_stress(bool);
   void adjust_dt();
   void reset();
-  void exchange_particles(){};
+  void exchange_particles();
 
 private:
   bool update_wf, update_mass_nodes;

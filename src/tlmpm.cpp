@@ -523,3 +523,7 @@ void TLMPM::reset()
     for (int ip = 0; ip < np_local; ip++) domain->solids[isolid]->mbp[ip].setZero();
   }
 }
+
+void TLMPM::exchange_particles(){
+
+}
