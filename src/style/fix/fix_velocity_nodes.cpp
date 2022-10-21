@@ -117,9 +117,9 @@ void FixVelocityNodes::reduce()
   input->parsev(id + "_x", ftot_reduced[0]);
   input->parsev(id + "_y", ftot_reduced[1]);
   input->parsev(id + "_z", ftot_reduced[2]);
-  (*input->vars)[id + "_x"] = Var(id + "_x", ftot_reduced[0]);
-  (*input->vars)[id + "_y"] = Var(id + "_y", ftot_reduced[1]);
-  (*input->vars)[id + "_z"] = Var(id + "_z", ftot_reduced[2]);
+  //(*input->vars)[id + "_x"] = Var(id + "_x", ftot_reduced[0]);
+  //(*input->vars)[id + "_y"] = Var(id + "_y", ftot_reduced[1]);
+  //(*input->vars)[id + "_z"] = Var(id + "_z", ftot_reduced[2]);
 }
 
 void FixVelocityNodes::post_update_grid_state(Grid &grid)
