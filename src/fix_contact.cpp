@@ -81,7 +81,17 @@ FixContact::FixContact(MPM *mpm, vector<string> args)
   requires_ghost_particles = true;
 }
 
-void FixContact::init() {}
+void FixContact::init() {
+  Solid * s1, * s2;
+  s1 = domain->solids[solid1];
+  s2 = domain->solids[solid2];
+  double max_cellsize;
+  max_cellsize = MAX(s1->grid->cellsize, s2->grid->cellsize);
+  // cout << "init solids " << solid1 << " and " << solid2 << endl;
+  s1->surfmask_init(max_cellsize);
+  s2->surfmask_init(max_cellsize);
+  // cout << "init surfmask of solids " << solid1 << " and " << solid2 << endl;
+}
 
 void FixContact::setup() {}
 
@@ -112,12 +122,13 @@ void FixContact::initial_integrate()
   // instead of gathering all on the same
   // s1->gather_particles(root);
   // s2->gather_particles(root);
-  max_cellsize = MAX(s1->grid->cellsize, s2->grid->cellsize);
-  double max_cellsize2 = max_cellsize * 1;
+  // in the future, when there could be more than 2 solids in contact, it will be necessary to update the max cellsize when 
+  // a new fix contact is added
+  max_cellsize = MAX(s1->get_surfcellsize(), s2->get_surfcellsize());
   // cout << "solid: " << solid1 << endl;
-  s1->compute_surface_particles(max_cellsize2);
+  s1->compute_surface_particles();
   // cout << "solid: " << solid2 << endl;
-  s2->compute_surface_particles(max_cellsize2);
+  s2->compute_surface_particles();
 
   if (domain->dimension == 2)
   {

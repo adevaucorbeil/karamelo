@@ -1988,7 +1988,7 @@ void Solid::unpack_particle(int &i, vector<int> list, vector<double> &buf)
 
     J[i] = buf[m++];
 
-    is_surf[i] = buf[m++];
+    is_surf[i] = (int)buf[m++];
     i++;
   }
 }
@@ -3268,37 +3268,112 @@ void Solid::scatter_particles(int &root)
   delete displacement;
 }
 
-void Solid::compute_surface_particles(double &cellsize)
+void Solid::surfmask_init(double cellsize)
+{
+  this->surf_cellsize = cellsize;
+  bigint yinc, zinc, rsize;
+  surfmask_dim[0] = (bigint)((domain->subhi[0] - domain->sublo[0]) / surf_cellsize) + 1;
+  surfmask_dim[1] = (bigint)((domain->subhi[1] - domain->sublo[1]) / surf_cellsize) + 1;
+  surfmask_dim[2] = (bigint)((domain->subhi[2] - domain->sublo[2]) / surf_cellsize) + 1;
+  rsize = surfmask_dim[0] * surfmask_dim[1] * surfmask_dim[2];
+  yinc = surfmask_dim[0];
+  zinc = surfmask_dim[0] * surfmask_dim[1];
+
+  surfmask = vector<int>(rsize, 0);
+  p_in_cell = vector<vector<int>>(rsize);
+
+  if (domain->dimension == 2) // 2D
+  {
+    // top, left, right, bottom cell
+    surfmask_off[0] = +0 - yinc;
+    surfmask_off[1] = -1;
+    surfmask_off[2] = +1;
+    surfmask_off[3] = +0 + yinc;
+#if NEIGH2D == 6
+    // diagonal cells
+    surfmask_off[4] = -1 - yinc;
+    surfmask_off[5] = +1 - yinc;
+    surfmask_off[6] = -1 + yinc;
+    surfmask_off[7] = +1 + yinc;
+#endif
+  }
+  else if (domain->dimension == 3) // 3D
+  {
+    // face center cells
+    surfmask_off[0] = +0 - zinc;
+    surfmask_off[1] = +0 - yinc;
+    surfmask_off[2] = -1;
+    surfmask_off[3] = +1;
+    surfmask_off[4] = +0 + yinc;
+    surfmask_off[5] = +0 + zinc;
+
+#if NEIGH3D >= 18
+    // diagonal cells
+    surfmask_off[6] = +0 - yinc - zinc;
+    surfmask_off[7] = -1 - zinc;
+    surfmask_off[8] = +1 - zinc;
+    surfmask_off[9] = +0 + yinc - zinc;
+
+    surfmask_off[10] = -1 - yinc;
+    surfmask_off[11] = +1 - yinc;
+    surfmask_off[12] = -1 + yinc;
+    surfmask_off[13] = +1 + yinc;
+
+    surfmask_off[14] = +0 - yinc + zinc;
+    surfmask_off[15] = -1 + zinc;
+    surfmask_off[16] = +1 + zinc;
+    surfmask_off[17] = +0 + yinc + zinc;
+
+#if NEIGH3D == 26
+    // corner cells
+    surfmask_off[18] = -1 - yinc - zinc;
+    surfmask_off[19] = +1 - yinc - zinc;
+    surfmask_off[20] = -1 + yinc - zinc;
+    surfmask_off[21] = +1 + yinc - zinc;
+
+    surfmask_off[22] = -1 - yinc + zinc;
+    surfmask_off[23] = +1 - yinc + zinc;
+    surfmask_off[24] = -1 + yinc + zinc;
+    surfmask_off[25] = +1 + yinc + zinc;
+#endif //! NEIGH3D >= 18
+#endif //! NEIGH3D == 26
+  }
+  // cout << "proc " << universe->me << " set up raster\n";
+  // cout << "suf_cellsize " << suf_cellsize << " nx " << nx << " ny " << ny << " nz " << nz << " " << endl;
+  // cout << "domain x: " << domain->subhi[0] - domain->sublo[0] << endl;
+  // cout << "domain y: " << domain->subhi[1] - domain->sublo[1] << endl;
+  // cout << "domain z: " << domain->subhi[2] - domain->sublo[2] << endl;
+}
+
+void Solid::compute_surface_particles()
 {
   if (np_local == 0)
     return;
 
-  fill(is_surf.begin(), is_surf.end(), false);
-  bigint nx, ny, nz, i, rsize, coord;
-  nx = (int)((domain->subhi[0] - domain->sublo[0]) / cellsize) + 1;
-  ny = (int)((domain->subhi[1] - domain->sublo[1]) / cellsize) + 1;
-  nz = (int)((domain->subhi[2] - domain->sublo[2]) / cellsize) + 1;
-  rsize = nx * ny * nz;
-  vector<bool> surfmask(rsize, false);
-  vector<vector<int>> p_in_cell(rsize);
+  fill(is_surf.begin(), is_surf.end(), 0);
+  fill(surfmask.begin(), surfmask.end(), 0);
+  for (auto c : p_in_cell)
+    c.clear();
 
-  // cout << "proc " << universe->me << " set up raster\n";
-  // cout << "cellsize " << cellsize << " nx " << nx << " ny " << ny << " nz " << nz << " " << endl;
-  // cout << "domain x: " << domain->subhi[0] - domain->sublo[0] << endl;
-  // cout << "domain y: " << domain->subhi[1] - domain->sublo[1] << endl;
-  // cout << "domain z: " << domain->subhi[2] - domain->sublo[2] << endl;
-
+  // cout << "proc " << universe->me << " cleared vectors" << endl;
+  bigint i, rsize, coord, yinc, zinc;
+  rsize = surfmask_dim[0] * surfmask_dim[1] * surfmask_dim[2];
+  yinc = surfmask_dim[0];
+  zinc = surfmask_dim[0] * surfmask_dim[1];
+  // cout << "proc " << universe->me << " incs: 1 " << yinc << " "<<zinc << endl;
   // mark all positions where a particle is inside a cell on the grid
   bigint ix, iy, iz;
   for (i = 0; i < np_local; ++i)
   {
     if (domain->inside_subdomain(x[i](0), x[i](1), x[i](2)))
     {
-      ix = (int)((x[i](0) - domain->sublo[0]) / cellsize);
-      iy = (int)((x[i](1) - domain->sublo[1]) / cellsize);
-      iz = (int)((x[i](2) - domain->sublo[2]) / cellsize);
-      coord = ix + iy * nx + iz * nx * ny;
-      surfmask[coord] = true;
+      ix = (bigint)((x[i](0) - domain->sublo[0]) / surf_cellsize);
+      iy = (bigint)((x[i](1) - domain->sublo[1]) / surf_cellsize);
+      iz = (bigint)((x[i](2) - domain->sublo[2]) / surf_cellsize);
+      coord = ix + iy * yinc + iz * zinc;
+      // cout << "proc " << universe->me << " coord: " << coord << " " << ix << " " << iy << " " << iz << endl;
+      // cout << "mask, pic size: " << surfmask.size() << " " << p_in_cell.size() << endl;
+      surfmask[coord] = 1;
       p_in_cell[coord].push_back(i);
     }
   }
@@ -3307,19 +3382,13 @@ void Solid::compute_surface_particles(double &cellsize)
 
   // mark grids as "no surface" if it has nneigh neighbours
   // neighbouring offsets and numbers
-  int nneighmax, n_neigh, nreduced = 0;
-  nneighmax = 4;
-  vector<bigint> neighoff{-1, 1, -nx, nx};
-  if (domain->dimension == 3)
-  {
-    nneighmax = 6;
-    neighoff.push_back(-nx * ny);
-    neighoff.push_back(nx * ny);
-  }
+  int nneighmax, n_neigh, nreduced;
+  bool lob[3], hib[3];
+  if (domain->dimension == 2)
+    nneighmax = NEIGH2D;
+  else if (domain->dimension == 3)
+    nneighmax = NEIGH3D;
 
-  int j = 0;
-  bool lob[3];
-  bool hib[3];
   do
   {
     nreduced = 0;
@@ -3328,22 +3397,22 @@ void Solid::compute_surface_particles(double &cellsize)
       if (p_in_cell[i].empty() == false && surfmask[i])
       {
         n_neigh = 0;
-        iz = i / (nx * ny);
-        iy = i % (nx * ny) / nx;
-        ix = i % nx;
+        iz = i / zinc;
+        iy = i % zinc / yinc;
+        ix = i % yinc;
         // is cell not on border?
         lob[0] = ix <= 0;
         lob[1] = iy <= 0;
         hib[2] = (iz <= 0) && (domain->dimension == 3);
-        hib[0] = ix >= nx - 1;
-        hib[1] = iy >= ny - 1;
-        hib[2] = (iz >= nz - 1) && (domain->dimension == 3);
+        hib[0] = ix >= surfmask_dim[0] - 1;
+        hib[1] = iy >= surfmask_dim[1] - 1;
+        hib[2] = (iz >= surfmask_dim[2] - 1) && (domain->dimension == 3);
         // cout << "y boundarys: " << iy << " <= " << ny-1 << endl;
         if (!(lob[0] || lob[1] || lob[2] || hib[0] || hib[1] || hib[2]))
         {
           for (int neigh = 0; neigh < nneighmax; ++neigh)
           {
-            if (p_in_cell[i + neighoff[neigh]].empty() == false)
+            if (p_in_cell[i + surfmask_off[neigh]].empty() == false)
             {
               ++n_neigh;
             }
@@ -3351,7 +3420,7 @@ void Solid::compute_surface_particles(double &cellsize)
           if (n_neigh == nneighmax)
           {
             // cout << "found surrounded particle: " << i << endl;
-            surfmask[i] = false;
+            surfmask[i] = 0;
             ++nreduced;
           }
         }
@@ -3359,17 +3428,16 @@ void Solid::compute_surface_particles(double &cellsize)
     }
   } while (nreduced > 0);
 
-  // now collect the ids of surface particles
-  // cout << "proc " << universe->me << " builds surfid\n";
+  // cout << "proc " << universe->me << " builds is_surf\n";
   int count = 0;
   for (i = 0; i < rsize; ++i)
   {
-    if (surfmask[i])
+    if (surfmask[i] != 0)
     {
       ++count;
       for (auto pid : p_in_cell[i])
       {
-        is_surf[pid] = true;
+        is_surf[pid] = 1;
       }
     }
   }

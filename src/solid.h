@@ -20,6 +20,13 @@
 #include <vector>
 #include <Eigen/Eigen>
 
+// neighbourhood to detect surface particles
+#define NEIGH2D 6  // can be 4 or 8 neighbourhood
+                   // neighbourhood 8 also includes square corners
+#define NEIGH3D 26 // can be 6, 18 or 26 neighbourhood
+                   // neighbourhood 18 also includes cube diagonals
+                   // neighbourhood 26 also includes cube corners
+
 using namespace Eigen;
 
 /*! This class represents a given solid.
@@ -100,7 +107,7 @@ public:
 
   vector<int> numneigh_pn;      ///< Number of nodes neighbouring a given particle
   vector<int> numneigh_np;      ///< Number of nodes neighbouring a given node
-  vector<bool> is_surf;         ///< marks if particle is on solids surface. Used by fix_contact with tlmpm
+  vector<int> is_surf;          ///< marks if particle is on solids surface. Used by fix_contact with tlmpm
   vector<vector<int>> neigh_pn; ///< List of the nodes neighbouring a given particle
   vector<vector<int>> neigh_np; ///< List of the particles neighbouring a given node
 
@@ -149,11 +156,12 @@ public:
   void compute_deformation_gradient();                            ///< Compute the deformation gradient directly from the grid nodes' positions
   void update_particle_domain();                                  ///< Update the particle domain. Used with CPDI
 
-  int particle_size();                                            ///< return the number of doubles that are copied when using pack_particle
   void gather_particles(int &);                                   ///< Gather all particles of this solid across all cpus. Used with TLMPM and fix_contact
   void scatter_particles(int &);                                  ///< Scatter all particles of this solid to their origin cpu. Used with TLMPM and fix_contact
   void get_particle_counts_and_displacements(int *, int *, const int&);
-  void compute_surface_particles(double &);                       ///< Compute the concave hull to speed up contact detection. Used with TLMPM and fix_contact
+  void surfmask_init(double); ///< set the cellsize of surf detection grid and adapt grid size
+  double get_surfcellsize(){ return surf_cellsize; }
+  void compute_surface_particles();                       ///< Compute the concave hull to speed up contact detection. Used with TLMPM and fix_contact
 
   void copy_particle(int, int);                               ///< Copy particle i attribute and copy it to particle j.
                                                               ///< This function is used to re-order the memory arrangment of particles.
@@ -186,6 +194,12 @@ private:
 
   double T0;        ///< Initial temperature
   bool is_TL, apic; ///< Boolean variables that are true if using total Lagrangian MPM, and APIC, respectively
+
+  bigint surfmask_dim[3];         ///< holds the number of cells in surfmask along each dimension
+  bigint surfmask_off[26];        ///<
+  double surf_cellsize;           ///< 
+  vector<int> surfmask;           ///< grid on which surface detection happens
+  vector<vector<int>> p_in_cell;  ///< when detecting contacts, it lists all particles that lie in the same grid cell
 };
 
 #endif
