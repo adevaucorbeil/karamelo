@@ -108,16 +108,29 @@ void FixContact::initial_integrate()
   s2 = domain->solids[solid2];
 
   int root = 0;
-  s1->compute_surface_particles(root);
-
+  // it could be better to gather every particle to that process in which domain it is at the moment
+  // instead of gathering all on the same
+  // s1->gather_particles(root);
+  // s2->gather_particles(root);
   max_cellsize = MAX(s1->grid->cellsize, s2->grid->cellsize);
+  double max_cellsize2 = max_cellsize * 1;
+  // cout << "solid: " << solid1 << endl;
+  s1->compute_surface_particles(max_cellsize2);
+  // cout << "solid: " << solid2 << endl;
+  s2->compute_surface_particles(max_cellsize2);
 
   if (domain->dimension == 2)
   {
     for (int ip1 = 0; ip1 < s1->np_local; ip1++)
     {
+      if (!s1->is_surf[ip1])
+        continue;
+
       for (int ip2 = 0; ip2 < s2->np_local; ip2++)
       {
+        if (!s2->is_surf[ip2])
+          continue;
+
         dx = s2->x[ip2] - s1->x[ip1];
 
         // Extremely gross screening:
@@ -181,6 +194,9 @@ void FixContact::initial_integrate()
       }
     }
   }
+
+  // s1->scatter_particles(root);
+  // s2->scatter_particles(root);
 
   // Reduce ftot:
   MPI_Allreduce(ftot.data(), ftot_reduced.data(), 3, MPI_DOUBLE, MPI_SUM,

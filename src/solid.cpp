@@ -115,7 +115,7 @@ Solid::Solid(MPM *mpm, vector<string> args) : Pointers(mpm)
   max_p_wave_speed = 0;
   vtot = 0;
   mtot = 0;
-  comm_n = 50; // Number of double to pack for particle exchange between CPUs.
+  comm_n = 51; // Number of double to pack for particle exchange between CPUs.
 
   if (args[1].compare("restart") == 0)
   {
@@ -161,9 +161,9 @@ Solid::Solid(MPM *mpm, vector<string> args) : Pointers(mpm)
   }
 
   if (update->method->temp)
-    comm_n = 54; // Number of double to pack for particle exchange between CPUs.
+    comm_n = 55; // Number of double to pack for particle exchange between CPUs.
   else
-    comm_n = 49;
+    comm_n = 50;
 }
 
 Solid::~Solid()
@@ -306,6 +306,8 @@ void Solid::grow(int nparticles)
   if (nc != 0)
     wf_pn_corners.resize(nc * nparticles);
   wfd_pn.resize(nparticles);
+
+  is_surf.resize(nparticles);
 
   bigint nnodes = grid->nnodes_local + grid->nnodes_ghost;
 
@@ -1875,6 +1877,8 @@ void Solid::pack_particle(int i, vector<double> &buf)
   buf.push_back(F[i](2, 2));
 
   buf.push_back(J[i]);
+
+  buf.push_back(is_surf[i]);
 }
 
 void Solid::unpack_particle(int &i, vector<int> list, vector<double> &buf)
@@ -1983,6 +1987,8 @@ void Solid::unpack_particle(int &i, vector<int> list, vector<double> &buf)
     F[i](2, 2) = buf[m++];
 
     J[i] = buf[m++];
+
+    is_surf[i] = buf[m++];
     i++;
   }
 }
@@ -3180,6 +3186,8 @@ void Solid::get_particle_counts_and_displacements(int *counts, int *displacement
 
 void Solid::gather_particles(int &root)
 {
+  if (universe->nprocs == 1)
+    return;
   auto counts_recv = new int[universe->nprocs];
   auto displacement = new int[universe->nprocs];
 
@@ -3219,6 +3227,8 @@ void Solid::gather_particles(int &root)
 
 void Solid::scatter_particles(int &root)
 {
+  if (universe->nprocs == 1)
+    return;
   auto counts_send = new int[universe->nprocs];
   auto displacement = new int[universe->nprocs];
 
@@ -3258,33 +3268,110 @@ void Solid::scatter_particles(int &root)
   delete displacement;
 }
 
-void Solid::compute_surface_particles(int &root)
+void Solid::compute_surface_particles(double &cellsize)
 {
-  // if (universe->me != root)
-  // {
-  //   cout << "child original\n";
-  //   for (int i = 0; i < np_local; ++i)
-  //   {
-  //     cout << "i: " << i << ", x: " << x[i][0] << ", " << x[i][1] << ", " << x[i][2] << endl;
-  //   }
-  // }
-  int before_gather = np_local;
-  gather_particles(root);
-  // if (universe->me == root)
-  // {
-  //   cout << "root gathered\n";
-  //   for (int i = before_gather; i < np; ++i)
-  //   {
-  //     cout << "i: " << i << ", x: " << x[i][0] << ", " << x[i][1] << ", " << x[i][2] << endl;
-  //   }
-  // }
-  scatter_particles(root);
-  // if (universe->me != root)
-  // {
-  //   cout << "child scattered\n";
-  //   for (int i = 0; i < np_local; ++i)
-  //   {
-  //     cout << "i: " << i << ", x: " << x[i][0] << ", " << x[i][1] << ", " << x[i][2] << endl;
-  //   }
-  // }
+  if (np_local == 0)
+    return;
+
+  fill(is_surf.begin(), is_surf.end(), false);
+  bigint nx, ny, nz, i, rsize, coord;
+  nx = (int)((domain->subhi[0] - domain->sublo[0]) / cellsize) + 1;
+  ny = (int)((domain->subhi[1] - domain->sublo[1]) / cellsize) + 1;
+  nz = (int)((domain->subhi[2] - domain->sublo[2]) / cellsize) + 1;
+  rsize = nx * ny * nz;
+  vector<bool> surfmask(rsize, false);
+  vector<vector<int>> p_in_cell(rsize);
+
+  // cout << "proc " << universe->me << " set up raster\n";
+  // cout << "cellsize " << cellsize << " nx " << nx << " ny " << ny << " nz " << nz << " " << endl;
+  // cout << "domain x: " << domain->subhi[0] - domain->sublo[0] << endl;
+  // cout << "domain y: " << domain->subhi[1] - domain->sublo[1] << endl;
+  // cout << "domain z: " << domain->subhi[2] - domain->sublo[2] << endl;
+
+  // mark all positions where a particle is inside a cell on the grid
+  bigint ix, iy, iz;
+  for (i = 0; i < np_local; ++i)
+  {
+    if (domain->inside_subdomain(x[i](0), x[i](1), x[i](2)))
+    {
+      ix = (int)((x[i](0) - domain->sublo[0]) / cellsize);
+      iy = (int)((x[i](1) - domain->sublo[1]) / cellsize);
+      iz = (int)((x[i](2) - domain->sublo[2]) / cellsize);
+      coord = ix + iy * nx + iz * nx * ny;
+      surfmask[coord] = true;
+      p_in_cell[coord].push_back(i);
+    }
+  }
+
+  // cout << "proc " << universe->me << " marked cells containing particles\n";
+
+  // mark grids as "no surface" if it has nneigh neighbours
+  // neighbouring offsets and numbers
+  int nneighmax, n_neigh, nreduced = 0;
+  nneighmax = 4;
+  vector<bigint> neighoff{-1, 1, -nx, nx};
+  if (domain->dimension == 3)
+  {
+    nneighmax = 6;
+    neighoff.push_back(-nx * ny);
+    neighoff.push_back(nx * ny);
+  }
+
+  int j = 0;
+  bool lob[3];
+  bool hib[3];
+  do
+  {
+    nreduced = 0;
+    for (i = 0; i < rsize; ++i)
+    {
+      if (p_in_cell[i].empty() == false && surfmask[i])
+      {
+        n_neigh = 0;
+        iz = i / (nx * ny);
+        iy = i % (nx * ny) / nx;
+        ix = i % nx;
+        // is cell not on border?
+        lob[0] = ix <= 0;
+        lob[1] = iy <= 0;
+        hib[2] = (iz <= 0) && (domain->dimension == 3);
+        hib[0] = ix >= nx - 1;
+        hib[1] = iy >= ny - 1;
+        hib[2] = (iz >= nz - 1) && (domain->dimension == 3);
+        // cout << "y boundarys: " << iy << " <= " << ny-1 << endl;
+        if (!(lob[0] || lob[1] || lob[2] || hib[0] || hib[1] || hib[2]))
+        {
+          for (int neigh = 0; neigh < nneighmax; ++neigh)
+          {
+            if (p_in_cell[i + neighoff[neigh]].empty() == false)
+            {
+              ++n_neigh;
+            }
+          }
+          if (n_neigh == nneighmax)
+          {
+            // cout << "found surrounded particle: " << i << endl;
+            surfmask[i] = false;
+            ++nreduced;
+          }
+        }
+      }
+    }
+  } while (nreduced > 0);
+
+  // now collect the ids of surface particles
+  // cout << "proc " << universe->me << " builds surfid\n";
+  int count = 0;
+  for (i = 0; i < rsize; ++i)
+  {
+    if (surfmask[i])
+    {
+      ++count;
+      for (auto pid : p_in_cell[i])
+      {
+        is_surf[pid] = true;
+      }
+    }
+  }
+  // cout << "count: " << count << " np local: " << np_local << " rsize: " << rsize << endl;
 }

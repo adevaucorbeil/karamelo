@@ -100,6 +100,7 @@ public:
 
   vector<int> numneigh_pn;      ///< Number of nodes neighbouring a given particle
   vector<int> numneigh_np;      ///< Number of nodes neighbouring a given node
+  vector<bool> is_surf;         ///< marks if particle is on solids surface. Used by fix_contact with tlmpm
   vector<vector<int>> neigh_pn; ///< List of the nodes neighbouring a given particle
   vector<vector<int>> neigh_np; ///< List of the particles neighbouring a given node
 
@@ -149,10 +150,10 @@ public:
   void update_particle_domain();                                  ///< Update the particle domain. Used with CPDI
 
   int particle_size();                                            ///< return the number of doubles that are copied when using pack_particle
-  void gather_particles(int &);                                        ///< Gather all particles of this solid across all cpus. Used with TLMPM and fix_contact
-  void scatter_particles(int &);                                       ///< Scatter all particles of this solid to their origin cpu. Used with TLMPM and fix_contact
+  void gather_particles(int &);                                   ///< Gather all particles of this solid across all cpus. Used with TLMPM and fix_contact
+  void scatter_particles(int &);                                  ///< Scatter all particles of this solid to their origin cpu. Used with TLMPM and fix_contact
   void get_particle_counts_and_displacements(int *, int *, const int&);
-  void compute_surface_particles(int &); ///< Compute the concave hull to speed up contact detection. Used with TLMPM and fix_contact
+  void compute_surface_particles(double &);                       ///< Compute the concave hull to speed up contact detection. Used with TLMPM and fix_contact
 
   void copy_particle(int, int);                               ///< Copy particle i attribute and copy it to particle j.
                                                               ///< This function is used to re-order the memory arrangment of particles.

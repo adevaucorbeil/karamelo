@@ -149,7 +149,13 @@ void DumpParticle::write()
 	    } else {
 	      dumpstream << "0 ";	      
 	    }
-	  }
+	  } else if (v.compare("surf") == 0) {
+		if (s->is_surf[i]) {
+			dumpstream << "1 ";
+		} else {
+			dumpstream << "0 ";
+		}
+      }
 	}
 	dumpstream << endl;
       }

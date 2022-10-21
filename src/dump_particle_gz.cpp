@@ -178,6 +178,8 @@ void DumpParticleGz::write() {
           } else {
             dumpstream << "0 ";
           }
+        } else if (v.compare("surf") == 0) {
+          dumpstream << (int) s->is_surf[i]<< " ";
         }
       }
       dumpstream << endl;
