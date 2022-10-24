@@ -31,6 +31,7 @@ class DumpGridGz : public Dump {
   
   Kokkos::View<Vector3d*>::HostMirror x;            ///< nodes' current position
   Kokkos::View<Vector3d*>::HostMirror v;            ///< nodes' velocity at time t
+  Kokkos::View<Vector3d*>::HostMirror v_update;     ///< nodes' velocity at time t + dt
   Kokkos::View<Vector3d*>::HostMirror mb;           ///< nodes' external forces times the mass
 
   Kokkos::View<float*>::HostMirror mass;              ///< nodes' current mass
@@ -48,6 +49,7 @@ class DumpGridGz : public Dump {
  protected:
   vector<string> known_var = {"x", "y", "z",
 			      "vx", "vy", "vz",
+			      "vx_update", "vy_update", "vz_update",
 			      "bx", "by", "bz",
 			      "mass", "mask",
 			      "rigid", "T",

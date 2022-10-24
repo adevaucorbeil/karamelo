@@ -42,6 +42,7 @@ DumpGridGz::DumpGridGz(MPM *mpm, vector<string> args) : Dump(mpm, args) {
 
   bool xyz = true;
   bool vxyz = true;
+  bool vxyz_update = true;
   bool bxyz = true;
   bool ntypexyz = true;
 
@@ -60,6 +61,11 @@ DumpGridGz::DumpGridGz(MPM *mpm, vector<string> args) : Dump(mpm, args) {
     {
       this->v = create_mirror(g.v);
       vxyz = false;
+    }
+    else if ((v == "vx_update" || v == "vy_update" || v == "vz_update") && vxyz_update)
+    {
+      this->v_update = create_mirror(g.v_update);
+      vxyz_update = false;
     }
     else if ((v == "bx" || v == "by" || v == "bz") && bxyz)
     {
@@ -159,6 +165,7 @@ void DumpGridGz::write() {
   for (auto g: grids) {
     bool xyz = true;
     bool vxyz = true;
+    bool vxyz_update = true;
     bool bxyz = true;
     bool ntypexyz = true;
 
@@ -175,6 +182,11 @@ void DumpGridGz::write() {
       {
         deep_copy(this->v, g->v);
         vxyz = false;
+      }
+      else if ((v == "vx_update" || v == "vy_update" || v == "vz_update") && vxyz_update)
+      {
+        deep_copy(this->v_update, g->v_update);
+        vxyz_update = false;
       }
       else if ((v == "bx" || v == "by" || v == "bz") && bxyz)
       {
@@ -212,6 +224,12 @@ void DumpGridGz::write() {
           buf.push_back(this->v[i][1]);
         else if (v == "vz")
           buf.push_back(this->v[i][2]);
+        else if (v == "vx_update")
+          buf.push_back(this->v_update[i][0]);
+        else if (v == "vy_update")
+          buf.push_back(this->v_update[i][1]);
+        else if (v == "vz_update")
+          buf.push_back(this->v_update[i][2]);
         else if (v == "bx")
           buf.push_back(mb[i][0]);
         else if (v == "by")

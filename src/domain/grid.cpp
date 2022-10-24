@@ -212,13 +212,13 @@ void Grid::init(float *solidlo, float *solidhi) {
   bool isnt_sublo_boundlo[3] = {true, true, true};
   bool isnt_subhi_boundhi[3] = {true, true, true};
 
-  if (abs(sublo[0] - boundlo[0]) < 1.0e-12) isnt_sublo_boundlo[0] = false;
-  if (abs(sublo[1] - boundlo[1]) < 1.0e-12) isnt_sublo_boundlo[1] = false;
-  if (abs(sublo[2] - boundlo[2]) < 1.0e-12) isnt_sublo_boundlo[2] = false;
+  if (boundlo[0] - sublo[0] > -1.0e-12) isnt_sublo_boundlo[0] = false;
+  if (boundlo[1] - sublo[1] > -1.0e-12) isnt_sublo_boundlo[1] = false;
+  if (boundlo[2] - sublo[2] > -1.0e-12) isnt_sublo_boundlo[2] = false;
 
-  if (abs(subhi[0] - boundhi[0]) < 1.0e-12) isnt_subhi_boundhi[0] = false;
-  if (abs(subhi[1] - boundhi[1]) < 1.0e-12) isnt_subhi_boundhi[1] = false;
-  if (abs(subhi[2] - boundhi[2]) < 1.0e-12) isnt_subhi_boundhi[2] = false;
+  if (subhi[0] - boundhi[0] > -1.0e-12) isnt_subhi_boundhi[0] = false;
+  if (subhi[1] - boundhi[1] > -1.0e-12) isnt_subhi_boundhi[1] = false;
+  if (subhi[2] - boundhi[2] > -1.0e-12) isnt_subhi_boundhi[2] = false;
 
   // For each node, check if it needs to be sent to another proc:
   Kokkos::View<tagint*>::HostMirror ntag_mirror = create_mirror(ntag);
