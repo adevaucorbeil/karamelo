@@ -49,6 +49,7 @@ public:
 
   bigint np;       ///< Total number of particles in the domain
   int np_local;    ///< Number of local particles (in this CPU)
+  int np_ghost;    ///< when distributing particles, count how many originate from other procs
   int np_per_cell; ///< Number of particles per cell (at the beginning)
   int comm_n;      ///< Number of double to pack for particle exchange between CPU
   double vtot;     ///< Total volume
@@ -157,7 +158,10 @@ public:
   void update_particle_domain();                                  ///< Update the particle domain. Used with CPDI
 
   void gather_particles(int &);                                   ///< Gather all particles of this solid across all cpus. Used with TLMPM and fix_contact
+  void distribute_particles(vector<vector<double>> &, vector<int> &, vector<int> &);
+  void distribute_particles_by_domain();                          ///< Redistribute every particle to the process in which domain it belongs. Used with TLMPM and fix_contact
   void scatter_particles(int &);                                  ///< Scatter all particles of this solid to their origin cpu. Used with TLMPM and fix_contact
+  void distribute_particles_by_process();                         ///< Redistribute every particle to the process where it was created. Used with TLMPM and fix_contact
   void get_particle_counts_and_displacements(int *, int *, const int&);
   void surfmask_init(double); ///< set the cellsize of surf detection grid and adapt grid size
   double get_surfcellsize(){ return surf_cellsize; }
@@ -168,6 +172,7 @@ public:
                                                               ///< Usually this is done when particle j is deleted.
   void pack_particle(int, vector<double> &);                  ///< Pack particles attributes into a buffer (used for generating a restart).
   void unpack_particle(int &, vector<int>, vector<double> &); ///< Unpack particles attributes from a buffer (used when reading a restart).
+  inline void unpack_particle(const int, const int, const vector<double> &);
 
   void write_restart(ofstream *); ///< Write solid information in the restart file
   void read_restart(ifstream *);  ///< Read solid information from the restart file
@@ -196,10 +201,11 @@ private:
   bool is_TL, apic; ///< Boolean variables that are true if using total Lagrangian MPM, and APIC, respectively
 
   bigint surfmask_dim[3];         ///< holds the number of cells in surfmask along each dimension
-  bigint surfmask_off[26];        ///<
-  double surf_cellsize;           ///< 
+  bigint surfmask_off[26];        ///< the offsets to the index in surfmask to detect neighbourhood
+  double surf_cellsize;           ///< cellsize along surmask cells dimensions
   vector<int> surfmask;           ///< grid on which surface detection happens
   vector<vector<int>> p_in_cell;  ///< when detecting contacts, it lists all particles that lie in the same grid cell
+  vector<tagint> tagrange;        ///< holds the lowest and highest + 1 tag that particles of the current process can have
 };
 
 #endif

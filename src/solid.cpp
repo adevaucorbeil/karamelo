@@ -1881,114 +1881,116 @@ void Solid::pack_particle(int i, vector<double> &buf)
   buf.push_back(is_surf[i]);
 }
 
+inline void Solid::unpack_particle(const int i, const int offset, const vector<double> &buf)
+{
+  int m = offset;
+
+  ptag[i] = (tagint)buf[m++];
+
+  x[i](0) = buf[m++];
+  x[i](1) = buf[m++];
+  x[i](2) = buf[m++];
+
+  x0[i](0) = buf[m++];
+  x0[i](1) = buf[m++];
+  x0[i](2) = buf[m++];
+
+  v[i](0) = buf[m++];
+  v[i](1) = buf[m++];
+  v[i](2) = buf[m++];
+
+  v_update[i](0) = buf[m++];
+  v_update[i](1) = buf[m++];
+  v_update[i](2) = buf[m++];
+
+  a[i](0) = buf[m++];
+  a[i](1) = buf[m++];
+  a[i](2) = buf[m++];
+
+  mbp[i](0) = buf[m++];
+  mbp[i](1) = buf[m++];
+  mbp[i](2) = buf[m++];
+
+  f[i](0) = buf[m++];
+  f[i](1) = buf[m++];
+  f[i](2) = buf[m++];
+
+  vol0[i] = buf[m++];
+  vol[i] = buf[m++];
+
+  rho0[i] = buf[m++];
+  rho[i] = buf[m++];
+
+  mass[i] = buf[m++];
+  eff_plastic_strain[i] = buf[m++];
+  eff_plastic_strain_rate[i] = buf[m++];
+  damage[i] = buf[m++];
+  damage_init[i] = buf[m++];
+  if (update->method->temp)
+  {
+    T[i] = buf[m++];
+    gamma[i] = buf[m++];
+
+    q[i][0] = buf[m++];
+    q[i][1] = buf[m++];
+    q[i][2] = buf[m++];
+  }
+
+  ienergy[i] = buf[m++];
+  mask[i] = buf[m++];
+
+  sigma[i](0, 0) = buf[m++];
+  sigma[i](1, 1) = buf[m++];
+  sigma[i](2, 2) = buf[m++];
+  sigma[i](0, 1) = buf[m++];
+  sigma[i](0, 2) = buf[m++];
+  sigma[i](1, 2) = buf[m++];
+  sigma[i](1, 0) = sigma[i](0, 1);
+  sigma[i](2, 0) = sigma[i](0, 2);
+  sigma[i](2, 1) = sigma[i](1, 2);
+
+  // vol0PK1[i](0,0) = buf[m++];
+  // vol0PK1[i](0,1) = buf[m++];
+  // vol0PK1[i](0,2) = buf[m++];
+  // vol0PK1[i](1,0) = buf[m++];
+  // vol0PK1[i](1,1) = buf[m++];
+  // vol0PK1[i](1,2) = buf[m++];
+  // vol0PK1[i](2,0) = buf[m++];
+  // vol0PK1[i](2,1) = buf[m++];
+  // vol0PK1[i](2,2) = buf[m++];
+
+  // L[i](0,0) = buf[m++];
+  // L[i](0,1) = buf[m++];
+  // L[i](0,2) = buf[m++];
+  // L[i](1,0) = buf[m++];
+  // L[i](1,1) = buf[m++];
+  // L[i](1,2) = buf[m++];
+  // L[i](2,0) = buf[m++];
+  // L[i](2,1) = buf[m++];
+  // L[i](2,2) = buf[m++];
+
+  F[i](0, 0) = buf[m++];
+  F[i](0, 1) = buf[m++];
+  F[i](0, 2) = buf[m++];
+  F[i](1, 0) = buf[m++];
+  F[i](1, 1) = buf[m++];
+  F[i](1, 2) = buf[m++];
+  F[i](2, 0) = buf[m++];
+  F[i](2, 1) = buf[m++];
+  F[i](2, 2) = buf[m++];
+
+  J[i] = buf[m++];
+
+  is_surf[i] = (int)buf[m++];
+}
+
 void Solid::unpack_particle(int &i, vector<int> list, vector<double> &buf)
 {
   int m;
   for (auto j : list)
   {
     m = j;
-    // cout << "j " << j << endl;
-    // for (int x = m; x < m+49; ++x){
-    //   cout << "i: " << i << ", x: " << x << ", buf: " << buf[x] << endl;
-    // }
-
-    ptag[i] = (tagint)buf[m++];
-
-    x[i](0) = buf[m++];
-    x[i](1) = buf[m++];
-    x[i](2) = buf[m++];
-
-    x0[i](0) = buf[m++];
-    x0[i](1) = buf[m++];
-    x0[i](2) = buf[m++];
-
-    v[i](0) = buf[m++];
-    v[i](1) = buf[m++];
-    v[i](2) = buf[m++];
-
-    v_update[i](0) = buf[m++];
-    v_update[i](1) = buf[m++];
-    v_update[i](2) = buf[m++];
-
-    a[i](0) = buf[m++];
-    a[i](1) = buf[m++];
-    a[i](2) = buf[m++];
-
-    mbp[i](0) = buf[m++];
-    mbp[i](1) = buf[m++];
-    mbp[i](2) = buf[m++];
-
-    f[i](0) = buf[m++];
-    f[i](1) = buf[m++];
-    f[i](2) = buf[m++];
-
-    vol0[i] = buf[m++];
-    vol[i] = buf[m++];
-
-    rho0[i] = buf[m++];
-    rho[i] = buf[m++];
-
-    mass[i] = buf[m++];
-    eff_plastic_strain[i] = buf[m++];
-    eff_plastic_strain_rate[i] = buf[m++];
-    damage[i] = buf[m++];
-    damage_init[i] = buf[m++];
-    if (update->method->temp)
-    {
-      T[i] = buf[m++];
-      gamma[i] = buf[m++];
-
-      q[i][0] = buf[m++];
-      q[i][1] = buf[m++];
-      q[i][2] = buf[m++];
-    }
-
-    ienergy[i] = buf[m++];
-    mask[i] = buf[m++];
-
-    sigma[i](0, 0) = buf[m++];
-    sigma[i](1, 1) = buf[m++];
-    sigma[i](2, 2) = buf[m++];
-    sigma[i](0, 1) = buf[m++];
-    sigma[i](0, 2) = buf[m++];
-    sigma[i](1, 2) = buf[m++];
-    sigma[i](1, 0) = sigma[i](0, 1);
-    sigma[i](2, 0) = sigma[i](0, 2);
-    sigma[i](2, 1) = sigma[i](1, 2);
-
-    // vol0PK1[i](0,0) = buf[m++];
-    // vol0PK1[i](0,1) = buf[m++];
-    // vol0PK1[i](0,2) = buf[m++];
-    // vol0PK1[i](1,0) = buf[m++];
-    // vol0PK1[i](1,1) = buf[m++];
-    // vol0PK1[i](1,2) = buf[m++];
-    // vol0PK1[i](2,0) = buf[m++];
-    // vol0PK1[i](2,1) = buf[m++];
-    // vol0PK1[i](2,2) = buf[m++];
-
-    // L[i](0,0) = buf[m++];
-    // L[i](0,1) = buf[m++];
-    // L[i](0,2) = buf[m++];
-    // L[i](1,0) = buf[m++];
-    // L[i](1,1) = buf[m++];
-    // L[i](1,2) = buf[m++];
-    // L[i](2,0) = buf[m++];
-    // L[i](2,1) = buf[m++];
-    // L[i](2,2) = buf[m++];
-
-    F[i](0, 0) = buf[m++];
-    F[i](0, 1) = buf[m++];
-    F[i](0, 2) = buf[m++];
-    F[i](1, 0) = buf[m++];
-    F[i](1, 1) = buf[m++];
-    F[i](1, 2) = buf[m++];
-    F[i](2, 0) = buf[m++];
-    F[i](2, 1) = buf[m++];
-    F[i](2, 2) = buf[m++];
-
-    J[i] = buf[m++];
-
-    is_surf[i] = (int)buf[m++];
+    unpack_particle(i, j, buf);
     i++;
   }
 }
@@ -3163,6 +3165,155 @@ void Solid::read_restart(ifstream *ifr)
   // cout << x[0](0) << ", " << x[0](1) << ", " << x[0](2) << endl;
 }
 
+void Solid::distribute_particles_by_domain()
+{
+
+  int i, locator;
+  cout << "tagrange " << ptag[0] << " " << np_local << " " << ptag[np_local - 1] << endl;
+  // evaluate the range of tags each proc uses to later determine the owner by particle tag
+  tagrange.resize(universe->nprocs);
+  tagint maxtag = ptag[np_local - 1];
+  MPI_Allgather(&maxtag, 1, MPI_INT, tagrange.data(), 1, MPI_INT, MPI_COMM_WORLD);
+
+  // holds the ids of particles to send for each process
+  vector<vector<double>> send_prtcl(universe->nprocs);
+  vector<int> sendcounts(universe->nprocs, 0);
+  vector<int> displacements(universe->nprocs, 0);
+  for (i = 0; i < np_local; ++i)
+  {
+    locator = domain->which_CPU_owns_me(x[i](0), x[i](1), x[i](2));
+    if (locator != universe->me)
+    {
+      pack_particle(i, send_prtcl[locator]);
+      // counts number of sent doubles
+      sendcounts[locator] += comm_n;
+    }
+  }
+
+  // calculate displacements
+  for (i = 1; i < universe->nprocs; ++i)
+    displacements[i] = displacements[i - 1] + sendcounts[i - 1];
+
+  // every process scatters its particles to every process in which domain the particle is located
+  int recv_count, recv_p_count, start, iprt, i;
+  vector<double> recvbuf;
+  vector<int> unpack_list;
+  for (i = 0; i < universe->nprocs; ++i)
+  {
+    if (i == universe->me)
+    {
+      MPI_Scatter(sendcounts.data(), 1, MPI_INT, &recv_count, 1, MPI_INT, i, MPI_COMM_WORLD);
+      recvbuf.resize(recv_count);
+      MPI_Scatterv(send_prtcl[i].data(), sendcounts.data(), displacements.data(), MPI_DOUBLE, recvbuf.data(), recv_count, MPI_DOUBLE, i, MPI_COMM_WORLD);
+    }
+    else
+    {
+      MPI_Scatter(NULL, NULL, MPI_INT, &recv_count, 1, MPI_INT, i, MPI_COMM_WORLD);
+      recvbuf.resize(recv_count);
+      recv_p_count = recv_count / comm_n;
+      np_local += recv_p_count;
+      MPI_Scatterv(NULL, NULL, NULL, MPI_DOUBLE, recvbuf.data(), recv_count, MPI_DOUBLE, i, MPI_COMM_WORLD);
+      grow(np_local);
+      unpack_list.resize(recv_p_count);
+      for (iprt = unpack_list.size(); iprt < recv_p_count; ++iprt)
+        unpack_list[iprt] = iprt * comm_n;
+      unpack_particle(start, unpack_list, recvbuf);
+    }
+  }
+}
+
+void Solid::distribute_particles_by_process()
+{
+  vector<vector<double>> send_prtcl(universe->nprocs);
+  int i;
+  tagint iproc;
+  vector<int> send_counts(universe->nprocs, 0);
+  vector<int> displacements(universe->nprocs, 0);
+  if (tagrange.size() != universe->nprocs)
+  {
+    error->all(FLERR, "error: you need to call distribute by domain first.\n");
+  }
+  for (i = np_local - 1; i >= 0; --i)
+  {
+    iproc = 0;
+    // find process to which ptag belongs
+    while (ptag[i] < tagrange[iproc])
+      ++iproc;
+
+    // all following ptags will belong to this proc
+    if (iproc == universe->me)
+      break;
+    pack_particle(i, send_prtcl[iproc]);
+    send_counts[iproc] += comm_n;
+  }
+  // grow(np_local - i);
+  for (i = 1; i < universe->nprocs; ++i)
+    displacements[i] = displacements[i - 1] + send_counts[i - 1];
+
+  // every particle is sent to the process where it was created
+  int recv_count, recv_p_count, start, iprt, i;
+  vector<double> recvbuf;
+  // vector<int> unpack_list;
+  for (i = 0; i < universe->nprocs; ++i)
+  {
+    if (i == universe->me)
+    {
+      MPI_Scatter(send_counts.data(), 1, MPI_INT, &recv_count, 1, MPI_INT, i, MPI_COMM_WORLD);
+      recvbuf.resize(recv_count);
+      MPI_Scatterv(send_prtcl[i].data(), send_counts.data(), displacements.data(), MPI_DOUBLE, recvbuf.data(), recv_count, MPI_DOUBLE, i, MPI_COMM_WORLD);
+    }
+    else
+    {
+      MPI_Scatter(NULL, NULL, MPI_INT, &recv_count, 1, MPI_INT, i, MPI_COMM_WORLD);
+      recvbuf.resize(recv_count);
+      recv_p_count = recv_count / comm_n;
+      np_local += recv_p_count;
+      MPI_Scatterv(NULL, NULL, NULL, MPI_DOUBLE, recvbuf.data(), recv_count, MPI_DOUBLE, i, MPI_COMM_WORLD);
+
+      // now copy particles from buffer to matching ptag
+      vector<tagint>::iterator end = ptag.begin();
+      advance(end, np_local);
+      for (i = np_local; i < np_local; ++i)
+      {
+        auto lower = lower_bound(ptag.begin(), end, ptag[i]);
+        if (*lower != ptag[lower - ptag.begin()])
+          error->all(FLERR, "error: could not find tag " + to_string(*lower) + " in proc " + to_string(universe->me) + " \n");
+        unpack_particle(*lower, *lower * comm_n, recvbuf);
+      }
+    }
+  }
+
+  grow(np_local);
+}
+
+// void solid::distribute_particles(vector<vector<double>> &send_prtcl, vector<int> &sendcounts, vector<int> &displacements, vector<int> &unpack_list)
+// {
+//   int recv_count, recv_p_count, start, iprt, i;
+//   vector<double> recvbuf;
+//   // vector<int> unpack_list;
+//   for (i = 0; i < universe->nprocs; ++i)
+//   {
+//     if (i == universe->me)
+//     {
+//       MPI_Scatter(sendcounts.data(), 1, MPI_INT, &recv_count, 1, MPI_INT, i, MPI_COMM_WORLD);
+//       recvbuf.resize(recv_count);
+//       MPI_Scatterv(send_prtcl[i].data(), sendcounts.data(), displacements.data(), MPI_DOUBLE, recvbuf.data(), recv_count, MPI_DOUBLE, i, MPI_COMM_WORLD);
+//     }
+//     else
+//     {
+//       MPI_Scatter(null, null, MPI_INT, &recv_count, 1, MPI_INT, i, MPI_COMM_WORLD);
+//       recvbuf.resize(recv_count);
+//       recv_p_count = recv_count / comm_n;
+//       np_local += recv_p_count;
+//       MPI_Scatterv(null, null, null, MPI_DOUBLE, recvbuf.data(), recv_count, MPI_DOUBLE, i, MPI_COMM_WORLD);
+//       grow(np_local);
+//       unpack_list.resize(recv_p_count);
+//       for (iprt = unpack_list.size(); iprt < recv_p_count; ++iprt)
+//         unpack_list[iprt] = iprt * comm_n;
+//       unpack_particle(start, unpack_list, recvbuf);
+//     }
+//   }
+// }
 void Solid::get_particle_counts_and_displacements(int *counts, int *displacements, const int &root)
 {
   // save counts and displacements of particles that are gathered to root
