@@ -696,14 +696,13 @@ void Method::compute_rate_deformation_gradient(bool doublemapping, Solid &solid)
 #define SQRT_3_OVER_2 1.224744871 // sqrt(3.0/2.0)
 #define FOUR_THIRD 1.333333333333333333333333333333333333333
 
-void Method::update_deformation_gradient_stress(bool doublemapping, Solid &solid)
+void Method::update_deformation_gradient(Solid &solid)
 {
   if (solid.mat->rigid)
     return;
 
   bool is_TL = this->is_TL;
   float dt = update->dt;
-  Grid &grid = *solid.grid;
 
   Kokkos::View<float*> svol = solid.vol;
   Kokkos::View<float*> svol0 = solid.vol0;
@@ -715,7 +714,7 @@ void Method::update_deformation_gradient_stress(bool doublemapping, Solid &solid
   Kokkos::View<float*> srho = solid.rho;
   Kokkos::View<float*> srho0 = solid.rho0;
 
-  Kokkos::parallel_for("update_deformation_gradient_stress0", solid.np_local,
+  Kokkos::parallel_for("update_deformation_gradient", solid.np_local,
   KOKKOS_LAMBDA (const int &ip)
   {
     if (is_TL)
@@ -755,6 +754,27 @@ void Method::update_deformation_gradient_stress(bool doublemapping, Solid &solid
 
     srho[ip] = srho0[ip]/sJ[ip];
   });
+}
+
+void Method::update_stress(Solid &solid)
+{
+  if (solid.mat->rigid)
+    return;
+
+  Grid &grid = *solid.grid;
+
+  bool is_TL = this->is_TL;
+  float dt = update->dt;
+
+  Kokkos::View<float*> svol = solid.vol;
+  Kokkos::View<float*> svol0 = solid.vol0;
+  Kokkos::View<float*> sJ = solid.J;
+  Kokkos::View<Matrix3d*> sL = solid.L;
+  Kokkos::View<Matrix3d*> sF = solid.F;
+  Kokkos::View<Matrix3d*> sFdot = solid.Fdot;
+  Kokkos::View<Matrix3d*> sFinv = solid.Finv;
+  Kokkos::View<float*> srho = solid.rho;
+  Kokkos::View<float*> srho0 = solid.rho0;
 
   if (solid.mat->type != Material::constitutive_model::NEO_HOOKEAN)
   {

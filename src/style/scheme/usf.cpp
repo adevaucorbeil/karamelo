@@ -83,7 +83,8 @@ void USF::run(Var condition){
     for (Solid *solid: domain->solids)
     {
       method.compute_rate_deformation_gradient(true, *solid);
-      method.update_deformation_gradient_stress(true, *solid);
+      method.update_deformation_gradient(*solid);
+      method.update_stress(*solid);
     }
 
     for (Grid *grid: method.grids())

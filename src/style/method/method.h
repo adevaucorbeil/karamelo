@@ -59,7 +59,8 @@ class Method : protected Pointers {
 
   void compute_rate_deformation_gradient(bool doublemapping, Solid &solid);
 
-  void update_deformation_gradient_stress(bool doublemapping, Solid &solid);
+  void update_deformation_gradient(Solid &solid);
+  void update_stress(Solid &solid);
   
   void adjust_dt();
   void reset();

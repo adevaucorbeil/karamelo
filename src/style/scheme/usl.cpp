@@ -109,8 +109,10 @@ void USL::run(Var condition)
       method.update_grid_positions(*grid);
     }
     
-    for (Solid *solid: domain->solids)
-      method.update_deformation_gradient_stress(false, *solid);
+    for (Solid *solid: domain->solids) {
+      method.update_deformation_gradient(*solid);
+      method.update_stress(*solid);
+    }
 
     method.exchange_particles();
     update->update_time();
