@@ -62,6 +62,11 @@ using namespace std;
 
 const bool Input::DEBUG_EXPRESSIONS = false;
 
+extern constexpr float CONSTANT_PI      = Kokkos::Experimental::    pi_v<float>;
+extern constexpr float CONSTANT_E       = Kokkos::Experimental::     e_v<float>;
+extern constexpr float CONSTANT_EGAMMA  = Kokkos::Experimental::egamma_v<float>;
+extern constexpr float CONSTANT_PHI     = Kokkos::Experimental::   phi_v<float>;
+
 Input::Input(MPM *mpm, int argc, char **argv) : Pointers(mpm)
 {
   MPI_Comm_rank(universe->uworld,&me);
@@ -164,10 +169,10 @@ Input::Input(MPM *mpm, int argc, char **argv) : Pointers(mpm)
   infix_factory.register_class<ExpressionQuotient  >("/");
   operation_factory.register_class<ExpressionNegation>("-");
 
-  operation_factory.register_class<ExpressionOperandConstant<Kokkos::Experimental::    pi_v<float>>>("PI"    );
-  operation_factory.register_class<ExpressionOperandConstant<Kokkos::Experimental::     e_v<float>>>("E"     );
-  operation_factory.register_class<ExpressionOperandConstant<Kokkos::Experimental::egamma_v<float>>>("EGAMMA");
-  operation_factory.register_class<ExpressionOperandConstant<Kokkos::Experimental::   phi_v<float>>>("PHI"   );
+  operation_factory.register_class<ExpressionOperandConstant<CONSTANT_PI    >>("PI"    );
+  operation_factory.register_class<ExpressionOperandConstant<CONSTANT_E     >>("E"     );
+  operation_factory.register_class<ExpressionOperandConstant<CONSTANT_EGAMMA>>("EGAMMA");
+  operation_factory.register_class<ExpressionOperandConstant<CONSTANT_PHI   >>("PHI"   );
 
   operation_factory.register_class<ExpressionOperandIndex>("i");
 
