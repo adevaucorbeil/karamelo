@@ -27,6 +27,42 @@
                    // neighbourhood 18 also includes cube diagonals
                    // neighbourhood 26 also includes cube corners
 
+// #define NO_PARTICLE 0
+// #define NO_SURFACE 0
+#define HAS_PARTICLE 0
+#define XLO_BOUND 1
+#define XHI_BOUND 2
+#define YLO_BOUND 3
+#define YHI_BOUND 4
+#define ZLO_BOUND 5
+#define ZHI_BOUND 6
+#define IS_SURF 7
+#define IS_BOUND 1 << XLO_BOUND | 1 << XHI_BOUND | 1 << YLO_BOUND | 1 << YHI_BOUND | 1 << ZLO_BOUND | 1 << ZHI_BOUND
+// edges in z direction
+#define E_XLO_YLO 1 << XLO_BOUND | 1 << YLO_BOUND
+#define E_XHI_YLO 1 << XHI_BOUND | 1 << YLO_BOUND
+#define E_XLO_YHI 1 << XLO_BOUND | 1 << YHI_BOUND
+#define E_XHI_YHI 1 << XHI_BOUND | 1 << YHI_BOUND
+// edges in y direction
+#define E_XLO_ZLO 1 << XLO_BOUND | 1 << ZLO_BOUND
+#define E_XHI_ZLO 1 << XHI_BOUND | 1 << ZLO_BOUND
+#define E_XLO_ZHI 1 << XLO_BOUND | 1 << ZHI_BOUND
+#define E_XHI_ZHI 1 << XHI_BOUND | 1 << ZHI_BOUND
+// edges in x direction
+#define E_YLO_ZLO 1 << YLO_BOUND | 1 << ZLO_BOUND
+#define E_YHI_ZLO 1 << YHI_BOUND | 1 << ZLO_BOUND
+#define E_YLO_ZHI 1 << YLO_BOUND | 1 << ZHI_BOUND
+#define E_YHI_ZHI 1 << YHI_BOUND | 1 << ZHI_BOUND
+// corners
+#define C_LLL 1 << XLO_BOUND | 1 << YLO_BOUND | 1 << ZLO_BOUND
+#define C_HLL 1 << XHI_BOUND | 1 << YLO_BOUND | 1 << ZLO_BOUND
+#define C_LHL 1 << XLO_BOUND | 1 << YHI_BOUND | 1 << ZLO_BOUND
+#define C_HHL 1 << XHI_BOUND | 1 << YHI_BOUND | 1 << ZLO_BOUND
+#define C_LLH 1 << XLO_BOUND | 1 << YLO_BOUND | 1 << ZHI_BOUND
+#define C_HLH 1 << XHI_BOUND | 1 << YLO_BOUND | 1 << ZHI_BOUND
+#define C_LHH 1 << XLO_BOUND | 1 << YHI_BOUND | 1 << ZHI_BOUND
+#define C_HHH 1 << XHI_BOUND | 1 << YHI_BOUND | 1 << ZHI_BOUND
+
 using namespace Eigen;
 
 /*! This class represents a given solid.
@@ -157,15 +193,14 @@ public:
   void compute_deformation_gradient();                            ///< Compute the deformation gradient directly from the grid nodes' positions
   void update_particle_domain();                                  ///< Update the particle domain. Used with CPDI
 
-  void gather_particles(int &);                                   ///< Gather all particles of this solid across all cpus. Used with TLMPM and fix_contact
-  void distribute_particles(vector<vector<double>> &, vector<int> &, vector<int> &);
-  void distribute_particles_by_domain();                          ///< Redistribute every particle to the process in which domain it belongs. Used with TLMPM and fix_contact
-  void scatter_particles(int &);                                  ///< Scatter all particles of this solid to their origin cpu. Used with TLMPM and fix_contact
-  void distribute_particles_by_process();                         ///< Redistribute every particle to the process where it was created. Used with TLMPM and fix_contact
-  void get_particle_counts_and_displacements(int *, int *, const int&);
+  void gather_particles(int &);           ///< Gather all particles of this solid across all cpus. Used with TLMPM and fix_contact
+  void distribute_particles_by_domain();  ///< Redistribute every particle to the process in which domain it belongs. Used with TLMPM and fix_contact
+  void scatter_particles(int &);          ///< Scatter all particles of this solid to their origin cpu. Used with TLMPM and fix_contact
+  void distribute_particles_by_process(); ///< Redistribute every particle to the process where it was created. Used with TLMPM and fix_contact
+  void get_particle_counts_and_displacements(int *, int *, const int &);
   void surfmask_init(double); ///< set the cellsize of surf detection grid and adapt grid size
-  double get_surfcellsize(){ return surf_cellsize; }
-  void compute_surface_particles();                       ///< Compute the concave hull to speed up contact detection. Used with TLMPM and fix_contact
+  double get_surfcellsize() { return surf_cellsize; }
+  void compute_surface_particles(); ///< Compute the concave hull to speed up contact detection. Used with TLMPM and fix_contact
 
   void copy_particle(int, int);                               ///< Copy particle i attribute and copy it to particle j.
                                                               ///< This function is used to re-order the memory arrangment of particles.
@@ -200,12 +235,12 @@ private:
   double T0;        ///< Initial temperature
   bool is_TL, apic; ///< Boolean variables that are true if using total Lagrangian MPM, and APIC, respectively
 
-  bigint surfmask_dim[3];         ///< holds the number of cells in surfmask along each dimension
-  bigint surfmask_off[26];        ///< the offsets to the index in surfmask to detect neighbourhood
-  double surf_cellsize;           ///< cellsize along surmask cells dimensions
-  vector<int> surfmask;           ///< grid on which surface detection happens
-  vector<vector<int>> p_in_cell;  ///< when detecting contacts, it lists all particles that lie in the same grid cell
-  vector<tagint> tagrange;        ///< holds the lowest and highest + 1 tag that particles of the current process can have
+  bigint surfmask_dim[3];        ///< holds the number of cells in surfmask along each dimension
+  bigint surfmask_off[26];       ///< the offsets to the index in surfmask to detect neighbourhood
+  double surf_cellsize;          ///< cellsize along surmask cells dimensions
+  vector<int> surfmask;          ///< grid on which surface detection happens
+  vector<vector<int>> p_in_cell; ///< when detecting contacts, it lists all particles that lie in the same grid cell
+  vector<tagint> tagrange;       ///< holds the lowest and highest + 1 tag that particles of the current process can have
 };
 
 #endif

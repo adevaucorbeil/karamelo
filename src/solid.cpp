@@ -3167,15 +3167,17 @@ void Solid::read_restart(ifstream *ifr)
 
 void Solid::distribute_particles_by_domain()
 {
+  if (universe->nprocs == 1)
+    return;
 
   int i, locator;
-  cout << "tagrange " << ptag[0] << " " << np_local << " " << ptag[np_local - 1] << endl;
+  // cout << "proc " << universe->me << " tagrange dst dom " << ptag[0] << " " << np_local << " " << ptag[np_local - 1] << endl;
   // evaluate the range of tags each proc uses to later determine the owner by particle tag
   tagrange.resize(universe->nprocs);
-  tagint maxtag = ptag[np_local - 1];
-  MPI_Allgather(&maxtag, 1, MPI_INT, tagrange.data(), 1, MPI_INT, MPI_COMM_WORLD);
+  tagint maxtag = ptag[np_local - 1] + 1;
+  MPI_Allgather(&maxtag, 1, MPI_DOUBLE, tagrange.data(), 1, MPI_DOUBLE, MPI_COMM_WORLD);
 
-  // holds the ids of particles to send for each process
+  // holds the data of particles to send for each process
   vector<vector<double>> send_prtcl(universe->nprocs);
   vector<int> sendcounts(universe->nprocs, 0);
   vector<int> displacements(universe->nprocs, 0);
@@ -3193,127 +3195,126 @@ void Solid::distribute_particles_by_domain()
   // calculate displacements
   for (i = 1; i < universe->nprocs; ++i)
     displacements[i] = displacements[i - 1] + sendcounts[i - 1];
+  // stack the single vectors to one big sendbuf
+  vector<double> sendbuf;
+  for (auto v : send_prtcl)
+    sendbuf.insert(sendbuf.begin(), v.begin(), v.end());
 
   // every process scatters its particles to every process in which domain the particle is located
-  int recv_count, recv_p_count, start, iprt, i;
+  int recv_count, recv_p_count, iprt, index;
   vector<double> recvbuf;
-  vector<int> unpack_list;
+  np_ghost = 0;
   for (i = 0; i < universe->nprocs; ++i)
   {
     if (i == universe->me)
     {
       MPI_Scatter(sendcounts.data(), 1, MPI_INT, &recv_count, 1, MPI_INT, i, MPI_COMM_WORLD);
       recvbuf.resize(recv_count);
-      MPI_Scatterv(send_prtcl[i].data(), sendcounts.data(), displacements.data(), MPI_DOUBLE, recvbuf.data(), recv_count, MPI_DOUBLE, i, MPI_COMM_WORLD);
+      // cout << "proc " << universe->me << " iteration " << i << " recv count: "<<  recv_count << " buffsize: " << recvbuf.size() << endl;
+      // for (int c = 0; c < sendcounts.size(); ++c)
+      //   cout << "me: " << universe->me << " sendproc: " <<  i << " sendcounts: " << c << " my buff size: " << recvbuf.size() << "size of send_prtcl " << 0 << endl;
+      MPI_Scatterv(sendbuf.data(), sendcounts.data(), displacements.data(), MPI_DOUBLE, recvbuf.data(), recv_count, MPI_DOUBLE, i, MPI_COMM_WORLD);
+      // cout << "proc " << universe->me << " iteration " << i << " scatterv successfull!" << endl;
     }
     else
     {
-      MPI_Scatter(NULL, NULL, MPI_INT, &recv_count, 1, MPI_INT, i, MPI_COMM_WORLD);
+      MPI_Scatter(NULL, 0, MPI_INT, &recv_count, 1, MPI_INT, i, MPI_COMM_WORLD);
       recvbuf.resize(recv_count);
       recv_p_count = recv_count / comm_n;
-      np_local += recv_p_count;
+      np_ghost += recv_p_count;
       MPI_Scatterv(NULL, NULL, NULL, MPI_DOUBLE, recvbuf.data(), recv_count, MPI_DOUBLE, i, MPI_COMM_WORLD);
-      grow(np_local);
-      unpack_list.resize(recv_p_count);
-      for (iprt = unpack_list.size(); iprt < recv_p_count; ++iprt)
-        unpack_list[iprt] = iprt * comm_n;
-      unpack_particle(start, unpack_list, recvbuf);
+      grow(np_local + np_ghost);
+      // append new particles at the end of each vector
+      for (iprt = 0; iprt < recv_p_count; ++iprt)
+      {
+        index = np_local + np_ghost - recv_p_count + iprt;
+        // tags kommen erfolgreich an... werden aber falsch unpacked
+        unpack_particle(index, iprt * comm_n, recvbuf);
+      }
     }
+    // a better implementation will replace every iterartion over np_local with np_local + np_ghost!
+    np_local += np_ghost;
+    // for (int j = np_local - np_ghost; j < np_local; ++j)
+    //   cout << "proc " << universe->me << " ptag " << ptag[j] << endl;
+    // cout << "proc " << universe->me << " distributed particles to domains! np_ghost: " << np_ghost << endl;
   }
 }
 
 void Solid::distribute_particles_by_process()
 {
-  vector<vector<double>> send_prtcl(universe->nprocs);
+  if (universe->nprocs == 1)
+    return;
+  // vector<vector<double>> send_prtcl(universe->nprocs);
+  vector<double> sendbuf;
   int i;
   tagint iproc;
   vector<int> send_counts(universe->nprocs, 0);
   vector<int> displacements(universe->nprocs, 0);
+  // cout << "proc " << universe->me << " tagrange dst proc " << ptag[0] << " " << np_local << " " << ptag[np_local - 1] << endl;
+
   if (tagrange.size() != universe->nprocs)
-  {
     error->all(FLERR, "error: you need to call distribute by domain first.\n");
-  }
-  for (i = np_local - 1; i >= 0; --i)
+
+  // assuming that ghost particles keep the order of ptags
+  for (i = np_local - np_ghost; i < np_local; ++i)
   {
+    if (ptag[i] > tagrange[universe->nprocs - 1])
+      error->all(FLERR, "Error: proc " + to_string(universe->me) + ": tag " + to_string(ptag[i]) + " out of tag range.");
     iproc = 0;
     // find process to which ptag belongs
-    while (ptag[i] < tagrange[iproc])
+    while (ptag[i] < tagrange[iproc] && iproc < universe->nprocs)
       ++iproc;
-
-    // all following ptags will belong to this proc
-    if (iproc == universe->me)
-      break;
-    pack_particle(i, send_prtcl[iproc]);
     send_counts[iproc] += comm_n;
+    pack_particle(i, sendbuf);
   }
-  // grow(np_local - i);
+
+  // cout << "proc " << universe->me << " packed p by proc\n";
   for (i = 1; i < universe->nprocs; ++i)
     displacements[i] = displacements[i - 1] + send_counts[i - 1];
+  // cout << "proc " << universe->me << " counts " << send_counts[i] << endl;
 
-  // every particle is sent to the process where it was created
-  int recv_count, recv_p_count, start, iprt, i;
+  // every particle is send to the process where it was created
+  int recv_count, recv_p_count, start, ibuf;
   vector<double> recvbuf;
-  // vector<int> unpack_list;
   for (i = 0; i < universe->nprocs; ++i)
   {
     if (i == universe->me)
     {
       MPI_Scatter(send_counts.data(), 1, MPI_INT, &recv_count, 1, MPI_INT, i, MPI_COMM_WORLD);
+      // cout << "proc " << universe->me << " scattered recv_count: " << recv_count << endl;
       recvbuf.resize(recv_count);
-      MPI_Scatterv(send_prtcl[i].data(), send_counts.data(), displacements.data(), MPI_DOUBLE, recvbuf.data(), recv_count, MPI_DOUBLE, i, MPI_COMM_WORLD);
+      MPI_Scatterv(sendbuf.data(), send_counts.data(), displacements.data(), MPI_DOUBLE, recvbuf.data(), recv_count, MPI_DOUBLE, i, MPI_COMM_WORLD);
+      // cout << "proc " << universe->me << " scatterv successfull" << endl;
     }
     else
     {
-      MPI_Scatter(NULL, NULL, MPI_INT, &recv_count, 1, MPI_INT, i, MPI_COMM_WORLD);
+      MPI_Scatter(NULL, 0, MPI_INT, &recv_count, 1, MPI_INT, i, MPI_COMM_WORLD);
       recvbuf.resize(recv_count);
       recv_p_count = recv_count / comm_n;
-      np_local += recv_p_count;
       MPI_Scatterv(NULL, NULL, NULL, MPI_DOUBLE, recvbuf.data(), recv_count, MPI_DOUBLE, i, MPI_COMM_WORLD);
 
-      // now copy particles from buffer to matching ptag
-      vector<tagint>::iterator end = ptag.begin();
-      advance(end, np_local);
-      for (i = np_local; i < np_local; ++i)
+      // now copy particles from buffer to matching ptag position
+      vector<tagint>::iterator lower;
+      tagint tag;
+      // cout << "proc " << universe->me << " ordering tags." << endl;
+      for (ibuf = 0; ibuf < recv_count; ibuf += comm_n)
       {
-        auto lower = lower_bound(ptag.begin(), end, ptag[i]);
-        if (*lower != ptag[lower - ptag.begin()])
-          error->all(FLERR, "error: could not find tag " + to_string(*lower) + " in proc " + to_string(universe->me) + " \n");
-        unpack_particle(*lower, *lower * comm_n, recvbuf);
+        tag = (tagint)recvbuf[ibuf];
+        lower = lower_bound(ptag.begin(), ptag.end(), tag);
+        // if (*lower != tag)
+        // cout << "tag found: " << *lower << " tag searched: " << tag << endl;
+        //   error->all(FLERR, "Error: could not find tag " + to_string(tag) + " in proc " + to_string(universe->me) + " \n");
+        unpack_particle(lower - ptag.begin(), ibuf, recvbuf);
       }
+      // cout << "proc " << universe->me << " copying particles in right order successfull. ibuff: " << ibuf << endl;
     }
   }
-
+  // cout << "proc " << universe->me << " redistributed particles to procs\n";
+  np_local -= np_ghost;
+  np_ghost = 0;
   grow(np_local);
 }
 
-// void solid::distribute_particles(vector<vector<double>> &send_prtcl, vector<int> &sendcounts, vector<int> &displacements, vector<int> &unpack_list)
-// {
-//   int recv_count, recv_p_count, start, iprt, i;
-//   vector<double> recvbuf;
-//   // vector<int> unpack_list;
-//   for (i = 0; i < universe->nprocs; ++i)
-//   {
-//     if (i == universe->me)
-//     {
-//       MPI_Scatter(sendcounts.data(), 1, MPI_INT, &recv_count, 1, MPI_INT, i, MPI_COMM_WORLD);
-//       recvbuf.resize(recv_count);
-//       MPI_Scatterv(send_prtcl[i].data(), sendcounts.data(), displacements.data(), MPI_DOUBLE, recvbuf.data(), recv_count, MPI_DOUBLE, i, MPI_COMM_WORLD);
-//     }
-//     else
-//     {
-//       MPI_Scatter(null, null, MPI_INT, &recv_count, 1, MPI_INT, i, MPI_COMM_WORLD);
-//       recvbuf.resize(recv_count);
-//       recv_p_count = recv_count / comm_n;
-//       np_local += recv_p_count;
-//       MPI_Scatterv(null, null, null, MPI_DOUBLE, recvbuf.data(), recv_count, MPI_DOUBLE, i, MPI_COMM_WORLD);
-//       grow(np_local);
-//       unpack_list.resize(recv_p_count);
-//       for (iprt = unpack_list.size(); iprt < recv_p_count; ++iprt)
-//         unpack_list[iprt] = iprt * comm_n;
-//       unpack_particle(start, unpack_list, recvbuf);
-//     }
-//   }
-// }
 void Solid::get_particle_counts_and_displacements(int *counts, int *displacements, const int &root)
 {
   // save counts and displacements of particles that are gathered to root
@@ -3423,6 +3424,7 @@ void Solid::surfmask_init(double cellsize)
 {
   this->surf_cellsize = cellsize;
   bigint yinc, zinc, rsize;
+  cout << "proc " << universe->me << " access subbounds." << endl;
   surfmask_dim[0] = (bigint)((domain->subhi[0] - domain->sublo[0]) / surf_cellsize) + 1;
   surfmask_dim[1] = (bigint)((domain->subhi[1] - domain->sublo[1]) / surf_cellsize) + 1;
   surfmask_dim[2] = (bigint)((domain->subhi[2] - domain->sublo[2]) / surf_cellsize) + 1;
@@ -3430,9 +3432,11 @@ void Solid::surfmask_init(double cellsize)
   yinc = surfmask_dim[0];
   zinc = surfmask_dim[0] * surfmask_dim[1];
 
+  cout << "proc " << universe->me << " builds surfmask." << endl;
   surfmask = vector<int>(rsize, 0);
   p_in_cell = vector<vector<int>>(rsize);
 
+  cout << "proc " << universe->me << " builds offsets." << endl;
   if (domain->dimension == 2) // 2D
   {
     // top, left, right, bottom cell
@@ -3524,7 +3528,7 @@ void Solid::compute_surface_particles()
       coord = ix + iy * yinc + iz * zinc;
       // cout << "proc " << universe->me << " coord: " << coord << " " << ix << " " << iy << " " << iz << endl;
       // cout << "mask, pic size: " << surfmask.size() << " " << p_in_cell.size() << endl;
-      surfmask[coord] = 1;
+      surfmask[coord] = 1 << IS_SURF | 1 << HAS_PARTICLE;
       p_in_cell[coord].push_back(i);
     }
   }
@@ -3533,8 +3537,7 @@ void Solid::compute_surface_particles()
 
   // mark grids as "no surface" if it has nneigh neighbours
   // neighbouring offsets and numbers
-  int nneighmax, n_neigh, nreduced;
-  bool lob[3], hib[3];
+  int nneighmax, n_neigh, nreduced, flag;
   if (domain->dimension == 2)
     nneighmax = NEIGH2D;
   else if (domain->dimension == 3)
@@ -3545,21 +3548,28 @@ void Solid::compute_surface_particles()
     nreduced = 0;
     for (i = 0; i < rsize; ++i)
     {
-      if (p_in_cell[i].empty() == false && surfmask[i])
+      if (surfmask[i] & 1 << IS_SURF)
       {
         n_neigh = 0;
         iz = i / zinc;
-        iy = i % zinc / yinc;
+        iy = (i % zinc) / yinc;
         ix = i % yinc;
         // is cell not on border?
-        lob[0] = ix <= 0;
-        lob[1] = iy <= 0;
-        hib[2] = (iz <= 0) && (domain->dimension == 3);
-        hib[0] = ix >= surfmask_dim[0] - 1;
-        hib[1] = iy >= surfmask_dim[1] - 1;
-        hib[2] = (iz >= surfmask_dim[2] - 1) && (domain->dimension == 3);
-        // cout << "y boundarys: " << iy << " <= " << ny-1 << endl;
-        if (!(lob[0] || lob[1] || lob[2] || hib[0] || hib[1] || hib[2]))
+        flag = surfmask[i];
+        flag |= (ix <= 0) << XLO_BOUND;
+        flag |= (iy <= 0) << YLO_BOUND;
+        flag |= (iz <= 0 && domain->dimension == 3) << ZLO_BOUND;
+        flag |= (ix >= surfmask_dim[0] - 1) << XHI_BOUND;
+        flag |= (iy >= surfmask_dim[1] - 1) << YHI_BOUND;
+        flag |= ((iz >= surfmask_dim[2] - 1) && (domain->dimension == 3)) << ZHI_BOUND;
+
+        // cout << "flag: " << flag << endl;
+
+        if (flag & IS_BOUND) // particle is on bound
+        {
+          surfmask[i] |= flag; // flag now signals if this is a bound particle
+        }
+        else if (surfmask[i] & IS_SURF)
         {
           for (int neigh = 0; neigh < nneighmax; ++neigh)
           {
@@ -3568,13 +3578,18 @@ void Solid::compute_surface_particles()
               ++n_neigh;
             }
           }
-          if (n_neigh == nneighmax)
+          if (n_neigh >= nneighmax)
           {
             // cout << "found surrounded particle: " << i << endl;
-            surfmask[i] = 0;
+            // is surf bit is inverted
+            surfmask[i] &= ~(1 << IS_SURF);
             ++nreduced;
           }
         }
+        // cout << "y boundarys: " << iy << " <= " << ny-1 << endl;
+        // if (!(lob[0] || lob[1] || lob[2] || hib[0] || hib[1] || hib[2]))
+        // {
+        // }
       }
     }
   } while (nreduced > 0);
@@ -3588,9 +3603,72 @@ void Solid::compute_surface_particles()
       ++count;
       for (auto pid : p_in_cell[i])
       {
-        is_surf[pid] = 1;
+        is_surf[pid] = surfmask[i];
       }
     }
   }
   // cout << "count: " << count << " np local: " << np_local << " rsize: " << rsize << endl;
 }
+
+// switch (flag)
+// {
+// case C_LLL:
+//   break;
+// case C_HLL:
+//   break;
+// case C_LHL:
+//   break;
+// case C_HHL:
+//   break;
+// case C_LLH:
+//   break;
+// case C_HLH:
+//   break;
+// case C_LHH:
+//   break;
+// case C_HHH:
+//   break;
+
+// case E_XLO_YLO:
+//   break;
+// case E_XHI_YLO:
+//   break;
+// case E_XLO_YHI:
+//   break;
+// case E_XHI_YHI:
+//   break;
+
+// case E_XLO_ZLO:
+//   break;
+// case E_XHI_ZLO:
+//   break;
+// case E_XLO_ZHI:
+//   break;
+// case E_XHI_ZHI:
+//   break;
+
+// case E_YLO_ZLO:
+//   break;
+// case E_YHI_ZLO:
+//   break;
+// case E_YLO_ZHI:
+//   break;
+// case E_YHI_ZHI:
+//   break;
+
+// default:
+//   for (int neigh = 0; neigh < nneighmax; ++neigh)
+//   {
+//     if (p_in_cell[i + surfmask_off[neigh]].empty() == false)
+//     {
+//       ++n_neigh;
+//     }
+//   }
+//   if (n_neigh == nneighmax)
+//   {
+//     // cout << "found surrounded particle: " << i << endl;
+//     surfmask[i] = 0;
+//     ++nreduced;
+//   }
+//   break;
+// }

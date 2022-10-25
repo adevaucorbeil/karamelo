@@ -31,16 +31,14 @@ using namespace Eigen;
 #define four_thirds 1.333333333
 
 FixContactHertz::FixContactHertz(MPM *mpm, vector<string> args)
-    : FixContact(mpm, args)
-{
-  Solid *s1, *s2;
-  s1 = domain->solids[solid1];
-  s2 = domain->solids[solid2];
-  this->Estar = 1.0 / ((1 - s1->mat->nu * s1->mat->nu) / s1->mat->E +
-                       (1 - s2->mat->nu * s2->mat->nu) / s2->mat->E);
-}
+    : FixContact(mpm, args){}
 
 FixContactHertz::~FixContactHertz(){};
+
+void FixContactHertz::init()
+{
+  FixContact::init();
+}
 
 void FixContactHertz::force_increment(
     Eigen::Vector3d &dx, Eigen::Vector3d &ftot,
@@ -48,6 +46,8 @@ void FixContactHertz::force_increment(
     const int ip1, const int ip2,
     const double r, const double Rp1, const double Rp2)
 {
+  Estar = 1.0 / ((1 - s1->mat->nu * s1->mat->nu) / s1->mat->E +
+                 (1 - s2->mat->nu * s2->mat->nu) / s2->mat->E);
 
   Eigen::Vector3d f;
   double fmag, p;

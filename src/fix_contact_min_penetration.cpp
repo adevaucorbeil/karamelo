@@ -30,17 +30,15 @@ using namespace FixConst;
 using namespace Eigen;
 
 FixContactMinPenetration::FixContactMinPenetration(MPM *mpm, vector<string> args)
-    : FixContact(mpm, args)
-{
-  Solid *s1, *s2;
-  s1 = domain->solids[solid1];
-  s2 = domain->solids[solid2];
-
-  alpha = s1->mat->kappa / (s1->mat->kappa + s2->mat->kappa);
-  mu = input->parsev(args[4]);
-}
+    : FixContact(mpm, args){}
 
 FixContactMinPenetration::~FixContactMinPenetration(){};
+
+void FixContactMinPenetration::init()
+{
+  FixContact::init();
+  mu = input->parsev(args[4]);
+}
 
 void FixContactMinPenetration::force_increment(
     Eigen::Vector3d &dx, Eigen::Vector3d &ftot,
@@ -50,6 +48,7 @@ void FixContactMinPenetration::force_increment(
 {
   double fmag, ffric, inv_r, vtnorm, gamma;
   Eigen::Vector3d dv, vt, f;
+  alpha = s1->mat->kappa / (s1->mat->kappa + s2->mat->kappa);
   inv_r = 1.0 / r;
   fmag = s1->mass[ip1] * s2->mass[ip2] / ((s1->mass[ip1] + s2->mass[ip2]) * update->dt * update->dt) * (1 - (Rp1 + Rp2) * inv_r);
   f = fmag * dx;

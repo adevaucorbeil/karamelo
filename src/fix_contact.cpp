@@ -81,15 +81,29 @@ FixContact::FixContact(MPM *mpm, vector<string> args)
   requires_ghost_particles = true;
 }
 
-void FixContact::init() {
-  Solid * s1, * s2;
-  s1 = domain->solids[solid1];
-  s2 = domain->solids[solid2];
-  double max_cellsize;
-  max_cellsize = MAX(s1->grid->cellsize, s2->grid->cellsize);
-  // cout << "init solids " << solid1 << " and " << solid2 << endl;
-  s1->surfmask_init(max_cellsize);
-  s2->surfmask_init(max_cellsize);
+void FixContact::init()
+{
+  if (universe == NULL)
+  cout << "Error: universe is NULL\n";
+  for (int ip = 0; ip < universe->nprocs; ip++)
+  {
+    if (ip == universe->me)
+    {
+      Solid *s1, *s2;
+      cout << "proc " << universe->me << " init fix contact." << endl;
+      s1 = domain->solids[solid1];
+      s2 = domain->solids[solid2];
+      cout << "proc " << universe->me << " solid ids: " << solid1 << " " << solid2 << endl;
+      cout << "proc " << universe->me << " assigned solids. np_local: " << s1->np_local << " " << s2->np_local << endl;
+      double max_cellsize;
+      max_cellsize = MAX(s1->grid->cellsize, s2->grid->cellsize);
+      // cout << "init solids " << solid1 << " and " << solid2 << endl;
+      s1->surfmask_init(max_cellsize);
+      s2->surfmask_init(max_cellsize);
+    }
+    MPI_Barrier(MPI_COMM_WORLD);
+  }
+  cout << "proc " << universe->me << " build contact grid." << endl;
   // cout << "init surfmask of solids " << solid1 << " and " << solid2 << endl;
 }
 
@@ -118,11 +132,24 @@ void FixContact::initial_integrate()
   s2 = domain->solids[solid2];
 
   int root = 0;
-  // it could be better to gather every particle to that process in which domain it is at the moment
-  // instead of gathering all on the same
-  // s1->gather_particles(root);
-  // s2->gather_particles(root);
-  // in the future, when there could be more than 2 solids in contact, it will be necessary to update the max cellsize when 
+  if (universe->me != 0)
+  {
+    // cout << "proc " << universe->me << " x before:\n";
+    // for (auto x : s1->x)
+    //   cout << x(0) << " " << x(1) << " " <<x(2) << endl;
+    // cout << "--------------------------------- start ----------------\n";
+  }
+  // s1->distribute_particles_by_domain();
+  // s2->distribute_particles_by_domain();
+  // cout << "proc " << universe->me << " size " << s1->ptag.size() << endl;
+  if (universe->me != 0)
+  {
+    // cout << "proc " << universe->me << " x after:\n";
+    // for (auto x : s1->x)
+    //   cout << x(0) << " " << x(1) << " " <<x(2) << endl;
+    // cout << "--------------------------------- end ------------------\n";
+  }
+  // in the future, when there could be more than 2 solids in contact, it will be necessary to update the max cellsize when
   // a new fix contact is added
   max_cellsize = MAX(s1->get_surfcellsize(), s2->get_surfcellsize());
   // cout << "solid: " << solid1 << endl;
@@ -206,9 +233,8 @@ void FixContact::initial_integrate()
     }
   }
 
-  // s1->scatter_particles(root);
-  // s2->scatter_particles(root);
-
+  // s1->distribute_particles_by_process();
+  // s2->distribute_particles_by_process();
   // Reduce ftot:
   MPI_Allreduce(ftot.data(), ftot_reduced.data(), 3, MPI_DOUBLE, MPI_SUM,
                 universe->uworld);

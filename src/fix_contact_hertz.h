@@ -32,6 +32,7 @@ public:
   ~FixContactHertz();
 
   void initial_integrate();
+  void init();
   void force_increment(Eigen::Vector3d &dx, Eigen::Vector3d &ftot,
                        Solid *s1, Solid *s2,
                        const int ip1, const int ip2, 
