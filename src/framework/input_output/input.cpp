@@ -541,8 +541,9 @@ Var Input::parsev(string str)
 {
   static int depth = -1;
   depth++;
+  static bool not_an_expression = false;
   /////////////////////////////////////////// EXPRESSIONS ///////////////////////////////////////////////////////////
-  if (!str.empty() && !depth)
+  if (!str.empty() && (!depth || not_an_expression))
   {
     smatch match;
     string name, expression_string;
@@ -677,6 +678,7 @@ Var Input::parsev(string str)
             if (!new_operation)
             {
               cout << current_token << " does not appear to be an operation. Aborting." << endl;
+              not_an_expression = true;
               expressions.erase(name);
               goto end_of_expressions;
             }
@@ -959,7 +961,7 @@ Var Input::parsev(string str)
 		(*vars)[returnvar].result();
 	      }
 	    }
-      depth--;
+      depth--; not_an_expression = false;
 	    return -(*vars)[word];
 	  }
 	  else {
@@ -971,7 +973,7 @@ Var Input::parsev(string str)
 		(*vars)[returnvar].result();
 	      }
 	    }
-      depth--;
+      depth--; not_an_expression = false;
 	    return (*vars)[word];
 	  }
 	}
@@ -1077,7 +1079,7 @@ Var Input::parsev(string str)
     if (!returnvar.empty()) {
       (*vars)[returnvar] = -1;
     }
-    depth--;
+    depth--; not_an_expression = false;
     return Var(-1);
   }
   else {
@@ -1089,7 +1091,7 @@ Var Input::parsev(string str)
 	(*vars)[returnvar].result(mpm);
       }
     }
-    depth--;
+    depth--; not_an_expression = false;
     return values.top();
   }
 }
