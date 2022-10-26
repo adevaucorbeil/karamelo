@@ -54,9 +54,6 @@ ComputeMaxPosition::ComputeMaxPosition(MPM *mpm, vector<string> args)
   input->parsev(id + "_y", 0);
   input->parsev(id + "_z", 0);
 
-  (*input->vars)[id + "_x"] = Var(id + "_x", 0);
-  (*input->vars)[id + "_y"] = Var(id + "_y", 0);
-  (*input->vars)[id + "_z"] = Var(id + "_z", 0);
   t = update->ntimestep;
   Xmax[0] = Xmax[1] = Xmax[2] = 0;
 }
@@ -99,7 +96,4 @@ void ComputeMaxPosition::compute_value(Solid &solid) {
   input->parsev(id + "_x", Xmax_reduced[0]);
   input->parsev(id + "_y", Xmax_reduced[1]);
   input->parsev(id + "_z", Xmax_reduced[2]);
-  (*input->vars)[id + "_x"] = Var(id + "_x", Xmax_reduced[0]);
-  (*input->vars)[id + "_y"] = Var(id + "_y", Xmax_reduced[1]);
-  (*input->vars)[id + "_z"] = Var(id + "_z", Xmax_reduced[2]);
 }
