@@ -70,6 +70,7 @@ private:
   string remove_whitespace(string);          ///< Removes white spaces from string
   int dimension(vector<string>);             ///< Sets the dimension of the simulation domain
   int axisymmetric(vector<string>);          ///< Sets the simulation to axisymmetric
+  int anti_volumetric_locking(vector<string>); ///< Turn on/off the use of the anti volumetric locking method
   int region(vector<string>);                ///< Creates a region
   int solid(vector<string>);                 ///< Creates a solid
   int add_EOS(vector<string>);               ///< Adds an Equation of State (EOS)

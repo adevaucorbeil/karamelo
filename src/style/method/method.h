@@ -60,6 +60,7 @@ class Method : protected Pointers {
   void compute_rate_deformation_gradient(bool doublemapping, Solid &solid);
 
   void update_deformation_gradient(Solid &solid);
+  void Fbar_anti_vol_locking(Solid &solid);
   void update_stress(Solid &solid);
   
   void adjust_dt();
@@ -69,6 +70,7 @@ class Method : protected Pointers {
   bool is_TL;         ///< true: the method is total Lagrangian; false: it is updated Lagrangian
   bool is_CPDI;       ///< true if the method is a CPDI-like
   bool temp;          ///< true for thermo-mechanical simulations
+  bool anti_volumetric_locking; ///< true when anti volumetric locking measures are used
   int rigid_solids;
 };
 

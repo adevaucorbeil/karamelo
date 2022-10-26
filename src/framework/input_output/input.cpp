@@ -17,6 +17,7 @@
 #include <group.h>
 #include <log.h>
 #include <material.h>
+#include <method.h>
 #include <modify.h>
 #include <mpi_wrappers.h>
 #include <mpm.h>
@@ -420,6 +421,8 @@ Var Input::evaluate_function(string func, string arg){
     return Var(dimension(args));
   if (func == "axisymmetric")
     return Var(axisymmetric(args));
+  if (func == "anti_volumetric_locking")
+    return Var(anti_volumetric_locking(args));
   if (func == "region")
     return Var(region(args));
   if (func == "solid")
@@ -1110,6 +1113,22 @@ int Input::dimension(vector<string> args) {
 
 int Input::axisymmetric(vector<string> args) {
   domain->set_axisymmetric(args);
+  return 0;
+}
+
+int Input::anti_volumetric_locking(vector<string> args) {
+  if (args.size() < 1) {
+    error->all(FLERR, "Error: too few arguments for command anti_volumetric_locking().\n");
+  } else if (args.size() > 1) {
+    error->all(FLERR, "Error: too many arguments for command anti_volumetric_locking().\n");
+  }
+
+  if (args[0] == "True" || args[0] == "true")
+    update->method->anti_volumetric_locking = true;
+  else if (args[0] == "False" || args[0] == "false")
+    update->method->anti_volumetric_locking = false;
+  else
+    error->all(FLERR, "Error: argument for command anti_volumetric_locking() " + args[0] + " not understood. Expected True of False.\n");
   return 0;
 }
 

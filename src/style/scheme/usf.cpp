@@ -84,6 +84,8 @@ void USF::run(Var condition){
     {
       method.compute_rate_deformation_gradient(true, *solid);
       method.update_deformation_gradient(*solid);
+      if (method.anti_volumetric_locking)
+	method.Fbar_anti_vol_locking(*solid);
       method.update_stress(*solid);
     }
 

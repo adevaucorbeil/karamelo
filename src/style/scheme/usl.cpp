@@ -111,6 +111,8 @@ void USL::run(Var condition)
     
     for (Solid *solid: domain->solids) {
       method.update_deformation_gradient(*solid);
+      if (method.anti_volumetric_locking)
+	method.Fbar_anti_vol_locking(*solid);
       method.update_stress(*solid);
     }
 
