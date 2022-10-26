@@ -49,7 +49,7 @@ ComputeAverageTemperature::ComputeAverageTemperature(MPM *mpm, vector<string> ar
     cout << "Creating new compute ComputeAverageTemperature with ID: " << args[0] << endl;
   id = args[0];
 
-  (*input->vars)[id]=Var(id, 0);
+  input->parsev(id, 0);
 }
 
 ComputeAverageTemperature::~ComputeAverageTemperature() {}
@@ -75,5 +75,5 @@ void ComputeAverageTemperature::compute_value(Solid &solid) {
 
   // Reduce T:
   MPI_Allreduce(&T, &T_reduced, 1, MPI_FLOAT, MPI_SUM, universe->uworld);
-  (*input->vars)[id] = Var(id, T_reduced/group->n_tot(igroup));
+  input->parsev(id, T_reduced/group->n_tot(igroup));
 }
