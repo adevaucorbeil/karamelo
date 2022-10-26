@@ -37,10 +37,10 @@ Fix::Fix(MPM *mpm, const vector<string> &args, int mask):
 
   groupbit = group->bitmask[igroup];
 
-  (*input->vars)[id + "_x"] = Var(id + "_x", 0);
-  (*input->vars)[id + "_y"] = Var(id + "_y", 0);
-  (*input->vars)[id + "_z"] = Var(id + "_z", 0);
-  (*input->vars)[id + "_s"] = Var(id + "_s", 0);
+  // (*input->vars)[id + "_x"] = Var(id + "_x", 0);
+  // (*input->vars)[id + "_y"] = Var(id + "_y", 0);
+  // (*input->vars)[id + "_z"] = Var(id + "_z", 0);
+  // (*input->vars)[id + "_s"] = Var(id + "_s", 0);
 
   input->parsev(id + "_x", 0);
   input->parsev(id + "_y", 0);
