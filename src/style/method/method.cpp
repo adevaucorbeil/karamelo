@@ -328,7 +328,7 @@ void Method::compute_velocity_nodes(Solid &solid)
   Kokkos::View<Vector3d*> sv_update = solid.v_update;
   Kokkos::View<Matrix3d*> L = is_TL ? solid.Fdot : solid.L;
   Kokkos::View<float*> sT = solid.T;
-  Kokkos::View<float**> swf = solid.wf;
+  const Kokkos::View<float**> swf = solid.wf;
   Kokkos::View<int**> neigh_n = solid.neigh_n;
   bool srigid = solid.mat->rigid;
   
@@ -390,7 +390,7 @@ void Method::compute_force_nodes(Solid &solid)
 {
   bool temp = this->temp;
   bool is_TL = this->is_TL;
-  Grid &grid = *solid.grid;
+
   Update::SubMethodType sub_method_type = update->sub_method_type;
   bool axisymmetric = domain->axisymmetric;
 
@@ -433,7 +433,7 @@ void Method::compute_force_nodes(Solid &solid)
 	    const Vector3d &x0 = sx0[ip];
 
 	    if (sub_method_type == Update::SubMethodType::MLS)
-	      f.atomic_add(-vol0PK1*wf*Di*(grid.x0[in] - x0));
+	      f.atomic_add(-vol0PK1*wf*Di*(gx0[in] - x0));
 	    else
 	      f.atomic_add(-vol0PK1*wfd);
 
@@ -471,23 +471,33 @@ void Method::update_grid_velocities(Grid &grid)
   float dt = update->dt;
   bool temp = this->temp;
 
+  Kokkos::View<float*> gmass = grid.mass;
+  Kokkos::View<Vector3d*> gv = grid.v;
+  Kokkos::View<Vector3d*> gv_update = grid.v_update;
+  Kokkos::View<Vector3d*> gf = grid.f;
+  Kokkos::View<Vector3d*> gmb = grid.mb;
+  Kokkos::View<float*> gT = grid.T;
+  Kokkos::View<float*> gT_update = grid.T_update;
+  Kokkos::View<float*> gQint = grid.Qint;
+  Kokkos::View<float*> gQext = grid.Qext;
+
   Kokkos::parallel_for("update_grid_velocities", grid.nnodes_local + grid.nnodes_ghost,
   KOKKOS_LAMBDA (const int &in)
   {
     float T_update;
   
-    Vector3d &v_update = grid.v_update[in] = grid.v[in];
+    Vector3d &v_update = gv_update[in] = gv[in];
     if (temp)
-      T_update = grid.T_update[in] = grid.T[in];
+      T_update = gT_update[in] = gT[in];
 
-    if (float mass = grid.mass[in])
+    if (float mass = gmass[in])
     {
       if (!grid.rigid[in])
-        v_update += dt*(grid.f[in] + grid.mb[in])/mass;
+        v_update += dt*(gf[in] + gmb[in])/mass;
 
       if (temp) {
-        T_update += dt*(grid.Qint[in] + grid.Qext[in])/mass;
-	grid.T_update[in] = T_update;
+        T_update += dt*(gQint[in] + gQext[in])/mass;
+	gT_update[in] = T_update;
       }
     }
   });
@@ -507,7 +517,12 @@ void Method::compute_velocity_acceleration(Solid &solid)
   Kokkos::View<Vector3d*> sf = solid.f;
   Kokkos::View<float*> sT = solid.T;
   Kokkos::View<float*> smass = solid.mass;
-  
+
+  Kokkos::View<Vector3d*> gv = grid.v;
+  Kokkos::View<Vector3d*> gv_update = grid.v_update;
+  Kokkos::View<float*> gT = grid.T;
+  Kokkos::View<float*> gT_update = grid.T_update;
+
   Kokkos::parallel_for("compute_velocity_acceleration", solid.np_local,
   KOKKOS_LAMBDA (const int &ip)
   {
@@ -524,17 +539,17 @@ void Method::compute_velocity_acceleration(Solid &solid)
       {
         int in = neigh_n(ip, i);
 
-        v_update += wf*grid.v_update[in];
+        v_update += wf*gv_update[in];
 
         if (rigid)
           continue;
 
-        const Vector3d &delta_a = wf*(grid.v_update[in] - grid.v[in])/dt;
+        const Vector3d &delta_a = wf*(gv_update[in] - gv[in])/dt;
         a += delta_a;
         f += delta_a*smass[ip];
 
         if (temp)
-          T += wf*(grid.T_update[in] - grid.T[in]);
+          T += wf*(gT_update[in] - gT[in]);
       }
     }
 
@@ -597,6 +612,7 @@ void Method::update_position(Solid &solid)
     {
       sx[ip] += dt*sv_update[ip];
     });
+
   }
 }
 
@@ -637,8 +653,8 @@ void Method::compute_rate_deformation_gradient(bool doublemapping, Solid &solid)
   if (solid.mat->rigid)
     return;
 
-  Kokkos::View<Matrix3d*> &gradients = is_TL? solid.Fdot: solid.L;
-  const Kokkos::View<Vector3d*> &vn = doublemapping? solid.grid->v: solid.grid->v_update;
+  Kokkos::View<Matrix3d*> gradients = is_TL? solid.Fdot: solid.L;
+  const Kokkos::View<Vector3d*> vn = doublemapping? solid.grid->v: solid.grid->v_update;
 
   bool temp = this->temp;
   Update::SubMethodType sub_method_type = update->sub_method_type;
@@ -760,9 +776,11 @@ void Method::update_deformation_gradient_stress(bool doublemapping, Solid &solid
   {
     Kokkos::View<Matrix3d*> sD = solid.D;
     Kokkos::View<Matrix3d*> sR = solid.R;
+    Kokkos::View<int*> serror_flag = solid.error_flag;
 
-    Kokkos::parallel_for("update_deformation_gradient_stress1", solid.np_local,
-    KOKKOS_LAMBDA (const int &ip)
+    int error_sum;
+    Kokkos::parallel_reduce("update_deformation_gradient_stress1", solid.np_local,
+			    KOKKOS_LAMBDA (const int &ip, int &error_)
     {
       if (is_TL)
       {
@@ -773,15 +791,34 @@ void Method::update_deformation_gradient_stress(bool doublemapping, Solid &solid
           cout << "F:" << endl << sF[ip] << endl;
           cout << "timestep:" << endl << update->ntimestep << endl;
           error->one(FLERR, "");*/
-        }
-
+	  serror_flag[ip] = 1;
+        } else {
+	  serror_flag[ip] = 0;
+	}
+	error_ += serror_flag[ip];
         // In TLMPM. L is computed from Fdot:
         sL[ip] = sFdot[ip]*sFinv[ip];
         sD[ip] = 0.5*(sR[ip].transpose()*(sL[ip] + sL[ip].transpose())*sR[ip]);
       }
       else
         sD[ip] = 0.5*(sL[ip] + sL[ip].transpose());
-    });
+    }, error_sum);
+
+    if (error_sum) {
+      Kokkos::View<int*>::HostMirror serror_flagm = create_mirror(solid.error_flag);
+      deep_copy(serror_flagm, solid.error_flag);
+      Kokkos::View<Matrix3d*>::HostMirror  sFm = create_mirror(solid.F);
+      deep_copy(sFm, solid.F);
+
+      for (int ip=0; ip<solid.np_local; ip++) {
+	if (serror_flagm[ip]) {
+	  cout << "Polar decomposition of deformation gradient failed for particle " << ip << ".\n";
+          cout << "F:" << endl << sFm[ip] << endl;
+	}
+      }
+      cout << "timestep:" << endl << update->ntimestep << endl;
+      error->one(FLERR, "");
+    }
   }
 
   float G = solid.mat->G;
