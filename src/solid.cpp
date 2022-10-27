@@ -3424,19 +3424,24 @@ void Solid::surfmask_init(double cellsize)
 {
   this->surf_cellsize = cellsize;
   bigint yinc, zinc, rsize;
-  cout << "proc " << universe->me << " access subbounds." << endl;
-  surfmask_dim[0] = (bigint)((domain->subhi[0] - domain->sublo[0]) / surf_cellsize) + 1;
-  surfmask_dim[1] = (bigint)((domain->subhi[1] - domain->sublo[1]) / surf_cellsize) + 1;
-  surfmask_dim[2] = (bigint)((domain->subhi[2] - domain->sublo[2]) / surf_cellsize) + 1;
+  surfmask_dim[0] = (bigint)((domain->subhi[0] - domain->sublo[0]) / surf_cellsize);
+  surfmask_dim[1] = (bigint)((domain->subhi[1] - domain->sublo[1]) / surf_cellsize);
+  surfmask_dim[2] = (bigint)((domain->subhi[2] - domain->sublo[2]) / surf_cellsize);
+
+  // if (domain->subhi[0] - domain->sublo[0] - surfmask_dim[0] * cellsize == 0)
+  //   surfmask_dim[0]++;
+  // if (domain->subhi[1] - domain->sublo[1] - surfmask_dim[1] * cellsize == 0)
+  //   surfmask_dim[1]++;
+  // if (domain->subhi[2] - domain->sublo[2] - surfmask_dim[2] * cellsize == 0)
+  //   surfmask_dim[2]++;
+
   rsize = surfmask_dim[0] * surfmask_dim[1] * surfmask_dim[2];
   yinc = surfmask_dim[0];
   zinc = surfmask_dim[0] * surfmask_dim[1];
 
-  cout << "proc " << universe->me << " builds surfmask." << endl;
   surfmask = vector<int>(rsize, 0);
   p_in_cell = vector<vector<int>>(rsize);
 
-  cout << "proc " << universe->me << " builds offsets." << endl;
   if (domain->dimension == 2) // 2D
   {
     // top, left, right, bottom cell
@@ -3493,11 +3498,6 @@ void Solid::surfmask_init(double cellsize)
 #endif //! NEIGH3D >= 18
 #endif //! NEIGH3D == 26
   }
-  // cout << "proc " << universe->me << " set up raster\n";
-  // cout << "suf_cellsize " << suf_cellsize << " nx " << nx << " ny " << ny << " nz " << nz << " " << endl;
-  // cout << "domain x: " << domain->subhi[0] - domain->sublo[0] << endl;
-  // cout << "domain y: " << domain->subhi[1] - domain->sublo[1] << endl;
-  // cout << "domain z: " << domain->subhi[2] - domain->sublo[2] << endl;
 }
 
 void Solid::compute_surface_particles()
@@ -3523,17 +3523,19 @@ void Solid::compute_surface_particles()
     if (domain->inside_subdomain(x[i](0), x[i](1), x[i](2)))
     {
       ix = (bigint)((x[i](0) - domain->sublo[0]) / surf_cellsize);
+      if (ix == surfmask_dim[0])  // 
+        --ix;
       iy = (bigint)((x[i](1) - domain->sublo[1]) / surf_cellsize);
+      if (iy == surfmask_dim[1])
+        --iy;
       iz = (bigint)((x[i](2) - domain->sublo[2]) / surf_cellsize);
+      if (iz == surfmask_dim[2])
+        --iz;
       coord = ix + iy * yinc + iz * zinc;
-      // cout << "proc " << universe->me << " coord: " << coord << " " << ix << " " << iy << " " << iz << endl;
-      // cout << "mask, pic size: " << surfmask.size() << " " << p_in_cell.size() << endl;
       surfmask[coord] = 1 << IS_SURF | 1 << HAS_PARTICLE;
       p_in_cell[coord].push_back(i);
     }
   }
-
-  // cout << "proc " << universe->me << " marked cells containing particles\n";
 
   // mark grids as "no surface" if it has nneigh neighbours
   // neighbouring offsets and numbers
@@ -3555,21 +3557,107 @@ void Solid::compute_surface_particles()
         iy = (i % zinc) / yinc;
         ix = i % yinc;
         // is cell not on border?
-        flag = surfmask[i];
-        flag |= (ix <= 0) << XLO_BOUND;
-        flag |= (iy <= 0) << YLO_BOUND;
-        flag |= (iz <= 0 && domain->dimension == 3) << ZLO_BOUND;
+        flag = (ix < 1) << XLO_BOUND;
+        flag |= (iy < 1) << YLO_BOUND;
+        flag |= (iz < 1 && domain->dimension == 3) << ZLO_BOUND;
         flag |= (ix >= surfmask_dim[0] - 1) << XHI_BOUND;
         flag |= (iy >= surfmask_dim[1] - 1) << YHI_BOUND;
         flag |= ((iz >= surfmask_dim[2] - 1) && (domain->dimension == 3)) << ZHI_BOUND;
 
-        // cout << "flag: " << flag << endl;
+        // switch (flag & IS_BOUND)
+        // {
+        // case C_LLL:
+        //   surfmask[i] = 1;
+        //   break;
+        // case C_HLL:
+        //   surfmask[i] = 2;
+        //   break;
+        // case C_LHL:
+        //   surfmask[i] = 3;
+        //   break;
+        // case C_HHL:
+        //   surfmask[i] = 4;
+        //   break;
+        // case C_LLH:
+        //   surfmask[i] = 5;
+        //   break;
+        // case C_HLH:
+        //   surfmask[i] = 6;
+        //   break;
+        // case C_LHH:
+        //   surfmask[i] = 7;
+        //   break;
+        // case C_HHH:
+        //   surfmask[i] = 8;
+        //   break;
+
+        // case E_XLO_YLO:
+        //   surfmask[i] = 9;
+        //   break;
+        // case E_XHI_YLO:
+        //   surfmask[i] = 10;
+        //   break;
+        // case E_XLO_YHI:
+        //   surfmask[i] = 11;
+        //   break;
+        // case E_XHI_YHI:
+        //   surfmask[i] = 12;
+        //   break;
+
+        // case E_XLO_ZLO:
+        //   surfmask[i] = 13;
+        //   break;
+        // case E_XHI_ZLO:
+        //   surfmask[i] = 14;
+        //   break;
+        // case E_XLO_ZHI:
+        //   surfmask[i] = 15;
+        //   break;
+        // case E_XHI_ZHI:
+        //   surfmask[i] = 16;
+        //   break;
+
+        // case E_YLO_ZLO:
+        //   surfmask[i] = 17;
+        //   break;
+        // case E_YHI_ZLO:
+        //   surfmask[i] = 18;
+        //   break;
+        // case E_YLO_ZHI:
+        //   surfmask[i] = 19;
+        //   break;
+        // case E_YHI_ZHI:
+        //   surfmask[i] = 20;
+        //   break;
+        // case 1 << XLO_BOUND:
+        //   surfmask[i] = 21;
+        //   break;
+        // case 1 << XHI_BOUND:
+        //   surfmask[i] = 22;
+        //   break;
+        // case 1 << YLO_BOUND:
+        //   surfmask[i] = 23;
+        //   break;
+        // case 1 << YHI_BOUND:
+        //   surfmask[i] = 24;
+        //   break;
+        // case 1 << ZLO_BOUND:
+        //   surfmask[i] = 25;
+        //   break;
+        // case 1 << ZHI_BOUND:
+        //   surfmask[i] = 26;
+        //   break;
+        // default:
+        //   surfmask[i] = 0;
+        //   break;
+        // }
 
         if (flag & IS_BOUND) // particle is on bound
         {
-          surfmask[i] |= flag; // flag now signals if this is a bound particle
+          surfmask[i] |= flag; // surfmask now signals if this is a bound particle
         }
-        else if (surfmask[i] & IS_SURF)
+
+        if (surfmask[i] & IS_SURF)
         {
           for (int neigh = 0; neigh < nneighmax; ++neigh)
           {
@@ -3580,34 +3668,25 @@ void Solid::compute_surface_particles()
           }
           if (n_neigh >= nneighmax)
           {
-            // cout << "found surrounded particle: " << i << endl;
-            // is surf bit is inverted
+            // is surf bit is set to zero
             surfmask[i] &= ~(1 << IS_SURF);
             ++nreduced;
           }
         }
-        // cout << "y boundarys: " << iy << " <= " << ny-1 << endl;
-        // if (!(lob[0] || lob[1] || lob[2] || hib[0] || hib[1] || hib[2]))
-        // {
-        // }
       }
     }
   } while (nreduced > 0);
 
-  // cout << "proc " << universe->me << " builds is_surf\n";
-  int count = 0;
   for (i = 0; i < rsize; ++i)
   {
-    if (surfmask[i] != 0)
+    if (surfmask[i] & 1 << HAS_PARTICLE)
     {
-      ++count;
       for (auto pid : p_in_cell[i])
       {
         is_surf[pid] = surfmask[i];
       }
     }
   }
-  // cout << "count: " << count << " np local: " << np_local << " rsize: " << rsize << endl;
 }
 
 // switch (flag)
