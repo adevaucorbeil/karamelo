@@ -336,7 +336,7 @@ void Grid::init(float *solidlo, float *solidhi) {
   Kokkos::View<Vector3d*> f = this->f;
 
   Kokkos::View<float*> mass = this->mass;
-  Kokkos::View<float*> J = this->J;
+  Kokkos::View<float*> vol = this->vol;
   Kokkos::View<bool*> rigid = this->rigid;
   Kokkos::View<Vector3i*> ntype = this->ntype;
 
@@ -375,7 +375,7 @@ void Grid::init(float *solidlo, float *solidhi) {
     mb[l] = Vector3d();
     mass[l] = 0;
     if (anti_volumetric_locking)
-      J[l] = 0;
+      vol[l] = 0;
     rigid[l] = false;
     // R[l].setIdentity();
 
@@ -419,7 +419,7 @@ void Grid::init(float *solidlo, float *solidhi) {
     mb[i] = Vector3d();
     mass[i] = 0;
     if (update->method->anti_volumetric_locking)
-      J[i] = 0;
+      vol[i] = 0;
   }
 }
 
@@ -445,7 +445,7 @@ void Grid::grow(int nn){
 
   mass = Kokkos::View<float*>("mass", nn);
   if (update->method->anti_volumetric_locking)
-    J = Kokkos::View<float*>("J", nn);
+    vol = Kokkos::View<float*>("vol", nn);
   mask = Kokkos::View<int*>   ("mask", nn);
 
   Kokkos::View<int*> mask = this->mask;

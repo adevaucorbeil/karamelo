@@ -76,8 +76,8 @@ DumpGridGz::DumpGridGz(MPM *mpm, vector<string> args) : Dump(mpm, args) {
       mass = create_mirror(g.mass);
     else if (v.compare("mask")==0)
       mask = create_mirror(g.mask);
-    else if (v.compare("J")==0)
-      J = create_mirror(g.J);
+    else if (v.compare("vol")==0)
+      vol = create_mirror(g.vol);
     else if ((v == "ntypex" || v == "ntypey" || v == "ntypez") && ntypexyz)
     {
       ntype = create_mirror(g.ntype);
@@ -199,8 +199,8 @@ void DumpGridGz::write() {
         deep_copy(mass, g->mass);
       else if (v.compare("mask")==0)
         deep_copy(mask, g->mask);
-      else if (v.compare("J")==0)
-        deep_copy(J, g->J);
+      else if (v.compare("vol")==0)
+        deep_copy(vol, g->vol);
       else if ((v == "ntypex" || v == "ntypey" || v == "ntypez") && ntypexyz)
       {
         deep_copy(ntype, g->ntype);
@@ -244,8 +244,8 @@ void DumpGridGz::write() {
           buf.push_back(mass[i]);
 	else if (v.compare("mask")==0)
 	  buf.push_back(mask[i]);
-	else if (v.compare("J")==0)
-	  buf.push_back(J[i]);
+	else if (v.compare("vol")==0)
+	  buf.push_back(vol[i]);
         else if (v == "ntypex")
           buf.push_back(ntype[i][0]);
         else if (v == "ntypey")

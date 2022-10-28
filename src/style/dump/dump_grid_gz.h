@@ -36,7 +36,7 @@ class DumpGridGz : public Dump {
 
   Kokkos::View<float*>::HostMirror mass;            ///< nodes' current mass
   Kokkos::View<int*>::HostMirror mask;              ///< nodes' group mask
-  Kokkos::View<float*>::HostMirror J;               ///< nodes' current Jacobian
+  Kokkos::View<float*>::HostMirror vol;             ///< nodes' current volume
   Kokkos::View<bool*>::HostMirror rigid;            ///< are the nodes in the area of influence of a rigid body?
   Kokkos::View<Vector3i*>::HostMirror ntype;        ///< node type in x, y, and z directions (False for an edge, True otherwise)
 
@@ -52,7 +52,7 @@ class DumpGridGz : public Dump {
 			      "vx", "vy", "vz",
 			      "vx_update", "vy_update", "vz_update",
 			      "bx", "by", "bz",
-			      "mass", "mask", "J",
+			      "mass", "mask", "vol",
 			      "rigid", "T",
 			      "ntypex", "ntypey", "ntypez"};
 private:

@@ -83,7 +83,7 @@ class Grid : public Pointers {
   Kokkos::View<Vector3d*> f;            ///< nodes' internal forces
 
   Kokkos::View<float*> mass;              ///< nodes' current mass
-  Kokkos::View<float*> J;                 ///< nodes' current Jacobian
+  Kokkos::View<float*> vol;               ///< nodes' current volume
   Kokkos::View<int*> mask;                 ///< nodes' group mask
   Kokkos::View<bool*> rigid;               ///< are the nodes in the area of influence of a rigid body?
   Kokkos::View<Vector3i*> ntype;      ///< node type in x, y, and z directions (False for an edge, True otherwise)

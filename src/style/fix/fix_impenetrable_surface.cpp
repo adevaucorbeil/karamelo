@@ -14,6 +14,7 @@
 #include <fix_impenetrable_surface.h>
 #include <domain.h>
 #include <error.h>
+#include <expression_operation.h>
 #include <group.h>
 #include <input.h>
 #include <solid.h>
@@ -47,17 +48,6 @@ FixImpenetrableSurface::FixImpenetrableSurface(MPM *mpm, vector<string> args)
     error->all(FLERR, "Error: not enough arguments.\n" + usage);
   }
 
-  int k = 2;
-
-  K = input->parsev(args[++k]).result(mpm);
-
-  xs_x = input->parsev(args[++k]);
-  xs_y = input->parsev(args[++k]);
-  xs_z = input->parsev(args[++k]);
-  nx = input->parsev(args[++k]);
-  ny = input->parsev(args[++k]);
-  nz = input->parsev(args[++k]);
-
   if (group->pon[igroup] != "particles" &&
       group->pon[igroup] != "all") {
     error->all(FLERR,
@@ -70,17 +60,26 @@ FixImpenetrableSurface::FixImpenetrableSurface(MPM *mpm, vector<string> args)
      << endl;
   }
   id = args[0];
+
+  int k = 2;
+
+  K = input->parsev(args[++k]).result(mpm);
+
+  for (int dim = 0; dim < 3; dim++) {
+    k++;
+    input->parsev(args[k]);
+    xs[dim] = &input->expressions[args[k]];
+  }
+  for (int dim = 0; dim < 3; dim++) {
+    k++;
+    input->parsev(args[k]);
+    normal[dim] = &input->expressions[args[k]];
+    cout << "normal[" << dim << "]=" << args[k] << endl;
+  }
 }
 
 void FixImpenetrableSurface::prepare()
 {
-  xs_x.result(mpm);
-  xs_y.result(mpm);
-  xs_z.result(mpm);
-  nx  .result(mpm);
-  ny  .result(mpm);
-  nz  .result(mpm);
-
   ftot = Vector3d();
 }
 
@@ -92,75 +91,91 @@ void FixImpenetrableSurface::reduce()
   MPI_Allreduce(ftot.elements, ftot_reduced.elements, 3, MPI_FLOAT, MPI_SUM,
                 universe->uworld);
 
-  (*input->vars)[id + "_x"] = Var(id + "_x", ftot_reduced[0]);
-  (*input->vars)[id + "_y"] = Var(id + "_y", ftot_reduced[1]);
-  (*input->vars)[id + "_z"] = Var(id + "_z", ftot_reduced[2]);
+  // (*input->vars)[id + "_x"] = Var(id + "_x", ftot_reduced[0]);
+  // (*input->vars)[id + "_y"] = Var(id + "_y", ftot_reduced[1]);
+  // (*input->vars)[id + "_z"] = Var(id + "_z", ftot_reduced[2]);
+  input->parsev(id + "_x", ftot_reduced[0]);
+  input->parsev(id + "_y", ftot_reduced[1]);
+  input->parsev(id + "_z", ftot_reduced[2]);
 }
 
 void FixImpenetrableSurface::initial_integrate(Solid &solid) {
   // cout << "In FixImpenetrableSurface::initial_integrate()\n";
 
   // Go through all the particles in the group and set b to the right value:
-  Vector3d xs(xs_x.result(mpm, true),
-              xs_y.result(mpm, true),
-              xs_z.result(mpm, true));
-  Vector3d n(nx.result(mpm, true),
-             ny.result(mpm, true),
-             nz.result(mpm, true)); // Outgoing normal
-  n.normalize();
+  for (int i = 0; i < 3; i++) {
+    if (xs[i])
+      xs[i]->evaluate(solid);
+    if (normal[i])
+      normal[i]->evaluate(solid);
+  }
 
-  // cout << "line 1: " << line1[0] << "x + " << line1[1] << "y + " << line1[2]
-  // << endl; cout << "line 2: " << line2[0] << "x + " << line2[1] << "y + " <<
-  // line2[2] << endl;
+  int K = this->K;
+  int groupbit = this->groupbit;
+  Kokkos::View<int*> mask = solid.mask;
+  Kokkos::View<float*> smass = solid.mass;
+  Kokkos::View<Vector3d*> sx = solid.x;
+  Kokkos::View<Vector3d*> smbp = solid.mbp;
+  Kokkos::View<float*> sdamage = solid.damage;
 
-  for (int ip = 0; ip < solid.np_local; ip++)
+  float G = solid.mat->G;
+
+  Kokkos::View<float **> xs0_i = xs[0]->registers;
+  Kokkos::View<float **> xs1_i = xs[1]->registers;
+  Kokkos::View<float **> xs2_i = xs[2]->registers;
+
+  Kokkos::View<float **> normal0_i = normal[0]->registers;
+  Kokkos::View<float **> normal1_i = normal[1]->registers;
+  Kokkos::View<float **> normal2_i = normal[2]->registers;
+
+  float ftot_0, ftot_1, ftot_2;
+
+  Kokkos::parallel_reduce("FixImpenetrableSurface::initial_integrate", solid.np_local,
+  KOKKOS_LAMBDA(const int &ip, float &lftot_0, float &lftot_1, float &lftot_2)
   {
-    if (!solid.mass[ip] || !(solid.mask[ip] & groupbit))
-      continue;
+    if (!smass[ip] || !(mask[ip] & groupbit))
+      return;
 
-    float p = n.dot(solid.x[ip] - xs);
-    // if (s->ptag[ip] == 1) {
-    //   cout << id << "- Particle " << s->ptag[ip] << "\t";
-    //   cout << "p = " << p << "\t";
-    //   cout << "xp = [" << s->x[ip][0] << "," << s->x[ip][1] << ","
-    //        << s->x[ip][2] << "]\t" << endl;
-    //   cout << "xs = [" << xs[0] << "," << xs[1] << "," << xs[2] << "]\t"
-    //        << endl;
-    //   cout << "n = [" << n[0] << "," << n[1] << "," << n[2] << "]"
-    //        << endl;
-    // }
+    Vector3d xs_ = Vector3d(xs0_i(0, ip), xs1_i(0, ip), xs2_i(0, ip));
+    Vector3d normal_ = Vector3d(normal0_i(0, ip), normal1_i(0, ip), normal2_i(0, ip));
+    normal_.normalize();
+
+    float p = normal_.dot(xs_ - sx[ip]);
 
     if (p < 0)
-      continue;
+      return;
 
-      // cout << "Particle " << s->ptag[ip] << " is inside\n";
+    const Vector3d &f = K*G*p*(1 - sdamage[ip])*normal_;
 
-    const Vector3d &f = K*solid.mat->G*p*(1 - solid.damage[ip])*n;
-    solid.mbp[ip] += f;
-    ftot += f;
-  }
+    smbp[ip] += f;
+    lftot_0 += f[0];
+    lftot_1 += f[1];
+    lftot_2 += f[2];
+  }, ftot_0, ftot_1, ftot_2);
+
+  ftot = Vector3d(ftot_0, ftot_1, ftot_2);
 }
 
 void FixImpenetrableSurface::write_restart(ofstream *of) {
-  of->write(reinterpret_cast<const char *>(&K), sizeof(float));
+  // of->write(reinterpret_cast<const char *>(&K), sizeof(float));
 
-  xs_x.write_to_restart(of);
-  xs_y.write_to_restart(of);
-  xs_z.write_to_restart(of);
+  // xs_x.write_to_restart(of);
+  // xs_y.write_to_restart(of);
+  // xs_z.write_to_restart(of);
 
-  nx.write_to_restart(of);
-  ny.write_to_restart(of);
-  nz.write_to_restart(of);
+  // nx.write_to_restart(of);
+  // ny.write_to_restart(of);
+  // nz.write_to_restart(of);
 }
 
 void FixImpenetrableSurface::read_restart(ifstream *ifr) {
-  ifr->read(reinterpret_cast<char *>(&K), sizeof(float));
+  // ifr->read(reinterpret_cast<char *>(&K), sizeof(float));
 
-  xs_x.read_from_restart(ifr);
-  xs_y.read_from_restart(ifr);
-  xs_z.read_from_restart(ifr);
+  // xs_x.read_from_restart(ifr);
+  // xs_y.read_from_restart(ifr);
+  // xs_z.read_from_restart(ifr);
 
-  nx.read_from_restart(ifr);
-  ny.read_from_restart(ifr);
-  nz.read_from_restart(ifr);
+  // nx.read_from_restart(ifr);
+  // ny.read_from_restart(ifr);
+  // nz.read_from_restart(ifr);
 }

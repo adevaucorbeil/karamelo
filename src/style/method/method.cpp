@@ -786,49 +786,67 @@ void Method::update_deformation_gradient(Solid &solid)
 
 void Method::Fbar_anti_vol_locking(Solid &solid) {
   Kokkos::View<float*> gmass = solid.grid->mass;
-  Kokkos::View<float*> gJ = solid.grid->J;
+  Kokkos::View<float*> gvol = solid.grid->vol;
 
   Kokkos::View<float*> smass = solid.mass;
   Kokkos::View<float*> sJ = solid.J;
+  Kokkos::View<float*> svol = solid.vol;
+  Kokkos::View<float*> svol0 = solid.vol0;
   Kokkos::View<float**> swf = solid.wf;
   Kokkos::View<int**> neigh_n = solid.neigh_n;
   Kokkos::View<Matrix3d*> sF = solid.F;
 
-  Kokkos::parallel_for("reset_J_nodes", solid.grid->nnodes_local + solid.grid->nnodes_ghost,
+  int dimension = domain->dimension;
+
+  Kokkos::parallel_for("reset_vol_nodes", solid.grid->nnodes_local + solid.grid->nnodes_ghost,
   KOKKOS_LAMBDA (const int &in)
   {
-    gJ[in] = 0;
+    gvol[in] = 0;
   });
 
-  Kokkos::parallel_for("compute_J_nodes", solid.neigh_policy,
+  Kokkos::parallel_for("compute_vol_nodes", solid.neigh_policy,
   KOKKOS_LAMBDA (int ip, int i)
   {
     if (float wf = swf(ip, i))
       {
         int in = neigh_n(ip, i);
 
-	Kokkos::atomic_add(&gJ[in], wf*sJ[ip]);
+	Kokkos::atomic_add(&gvol[in], wf*svol[ip]);
       }
   });
 
-  Kokkos::parallel_for("compute_J0", solid.np_local,
+  Kokkos::parallel_for("compute_vol_bar", solid.np_local,
   KOKKOS_LAMBDA (const int &ip)
   {
-    float J0 = 0;
+    float vol_ = 0;
 
     for (int i = 0; i < neigh_n.extent(1); i++)
       {
 	if (float wf = swf(ip, i))
 	  {
 	    int in = neigh_n(ip, i);
-	    J0 += wf*gJ[in]/gmass[in];
+	    vol_ += wf*gvol[in]/gmass[in];
 	  }
       }
 
-    J0 *= smass[ip];
-
-    sF[ip] *= Kokkos::Experimental::cbrt(J0 / sJ[ip]);
-    sJ[ip] = J0;
+    vol_ *= smass[ip];
+    svol[ip] = vol_;
+    float J_ = vol_ / svol0[ip];
+    if (dimension == 1) {
+      sF[ip](0,0) *= J_ / sJ[ip];
+    } else if (dimension == 2) {
+      Matrix3d F_ = sF[ip];
+      float ratio = Kokkos::Experimental::sqrt(J_ / sJ[ip]);
+      F_(0,0) *= ratio;
+      F_(0,1) *= ratio;
+      F_(1,0) *= ratio;
+      F_(1,1) *= ratio;
+      F_(2,2) = 1;
+      sF[ip] = F_;
+    } else
+      sF[ip] *= Kokkos::Experimental::cbrt(J_ / sJ[ip]);
+    
+    sJ[ip] = J_;
   });
 }
 

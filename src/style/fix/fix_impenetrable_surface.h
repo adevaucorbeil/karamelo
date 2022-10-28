@@ -21,8 +21,9 @@ FixStyle(impenetrablesurface, FixImpenetrableSurface)
 #define MPM_FIX_IMPENETRABLE_SURFACE_H
 
 #include <fix.h>
-#include <var.h>
 #include <matrix.h>
+
+class Expression;
 
 class FixImpenetrableSurface : public Fix {
 public:
@@ -41,9 +42,9 @@ private:
                  "zs, nx, ny, nz)\n";
   int Nargs = 10;
 
-  Var xs_x, xs_y, xs_z;                  //< Position of a point on the surface
-  Var nx, ny, nz;                        //< Normal to the plane
-  float K;                                    //< Contact stiffness
+  Expression *xs[3];                     //< Position of a point on the surface
+  Expression *normal[3];                 //< Normal to the plane pointing outwards
+  float K;                               //< Contact stiffness
   Vector3d ftot;
 };
 
