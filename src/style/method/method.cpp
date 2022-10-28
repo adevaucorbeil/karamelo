@@ -797,6 +797,7 @@ void Method::Fbar_anti_vol_locking(Solid &solid) {
   Kokkos::View<Matrix3d*> sF = solid.F;
 
   int dimension = domain->dimension;
+  bool axisymmetric = domain->axisymmetric;
 
   Kokkos::parallel_for("reset_vol_nodes", solid.grid->nnodes_local + solid.grid->nnodes_ghost,
   KOKKOS_LAMBDA (const int &in)
@@ -834,7 +835,7 @@ void Method::Fbar_anti_vol_locking(Solid &solid) {
     float J_ = vol_ / svol0[ip];
     if (dimension == 1) {
       sF[ip](0,0) *= J_ / sJ[ip];
-    } else if (dimension == 2) {
+    } else if (dimension == 2 && !axisymmetric) {
       Matrix3d F_ = sF[ip];
       float ratio = Kokkos::Experimental::sqrt(J_ / sJ[ip]);
       F_(0,0) *= ratio;
@@ -1068,9 +1069,12 @@ void Method::update_stress(Solid &solid)
   Kokkos::View<float*> sdtCFL = solid.dtCFL;
   Kokkos::View<float*> sdamage = solid.damage;
 
-  Kokkos::parallel_for("update_deformation_gradient_stress2", solid.np_local,
-  KOKKOS_LAMBDA (const int &ip)
+  int err = 0;
+
+  Kokkos::parallel_reduce("update_deformation_gradient_stress2", solid.np_local,
+			  KOKKOS_LAMBDA (const int &ip, int &lerr)
   {
+    lerr += 0;
     if (sdamage[ip] >= 1)
       return;
       
@@ -1099,15 +1103,14 @@ void Method::update_stress(Solid &solid)
 
     if (is_TL)
     {
-      Matrix3d eigenvalues = sF[ip];
+      Matrix3d eigenvalues = sF[ip].transpose() * sF[ip];
+      // Check the eigenvalues of C (F^T F):
       eigendecompose(eigenvalues);
-      // EB: revisit
-      /*if (esF.info()== Successfalse)
-      {
-        h_ratio = MIN(h_ratio, fabs(eigenvalues(0, 0)));
-        h_ratio = MIN(h_ratio, fabs(eigenvalues(1, 1)));
-        h_ratio = MIN(h_ratio, fabs(eigenvalues(2, 2)));
-      }*/
+      for (int dim = 0; dim < 3; dim++) {
+	if (eigenvalues(dim, dim) < 0)
+	  lerr += 1;
+	h_ratio = MIN(h_ratio, Kokkos::Experimental::sqrt(eigenvalues(dim, dim)));
+      }
 
       /*if (h_ratio == 0)
       {
@@ -1132,7 +1135,10 @@ void Method::update_stress(Solid &solid)
         << ", grid->cellsize=" << solid.grid->cellsize << endl;
       error->one(FLERR, "");
     }*/
-  });
+  }, err);
+
+  if (err > 0)
+    error->one(FLERR, "At least one eigenvalue was found negative\n");
 }
 
 void Method::adjust_dt()
