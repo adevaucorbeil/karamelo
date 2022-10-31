@@ -65,8 +65,8 @@ void USF::run(Var condition){
       method.compute_mass_nodes(*solid);
     }
 
-    for (Grid *grid: method.grids())
-      grid->reduce_mass_ghost_nodes();
+    // for (Grid *grid: method.grids())
+    //   grid->reduce_mass_ghost_nodes();
 
     for (Solid *solid: domain->solids)
       method.compute_velocity_nodes(*solid);
@@ -74,7 +74,7 @@ void USF::run(Var condition){
     // grid update 1
     for (Grid *grid: method.grids())
     {
-      grid->reduce_ghost_nodes(true, false, method.temp);
+      //grid->reduce_ghost_nodes(true, false, method.temp);
       
       modify->post_update_grid_state(*grid);
     }
@@ -99,7 +99,7 @@ void USF::run(Var condition){
     // grid update 2
     for (Grid *grid: method.grids())
     {
-      grid->reduce_ghost_nodes(false, true, method.temp);
+      //grid->reduce_ghost_nodes(false, true, method.temp);
       modify->post_particles_to_grid(*grid);
       method.update_grid_velocities(*grid);
       modify->post_update_grid_state(*grid);
@@ -115,12 +115,11 @@ void USF::run(Var condition){
     }
 
     // grid update
-    for (Grid *grid: method.grids())
-    {
-      grid->reduce_ghost_nodes(true, false, update->temp);
-      modify->post_velocities_to_grid(*grid);
-      method.update_grid_positions(*grid);
-    }
+    // for (Grid *grid: method.grids())
+    // {
+      //grid->reduce_ghost_nodes(true, false, update->temp);
+      //method.update_grid_positions(*grid);
+    // }
 
     method.exchange_particles();
     update->update_time();

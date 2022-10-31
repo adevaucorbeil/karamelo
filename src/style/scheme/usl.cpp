@@ -70,8 +70,8 @@ void USL::run(Var condition)
       method.compute_mass_nodes(*solid);
     }
 
-    for (Grid *grid: method.grids())
-      grid->reduce_mass_ghost_nodes();
+    // for (Grid *grid: method.grids())
+    //   grid->reduce_mass_ghost_nodes();
 
     for (Solid *solid: domain->solids)
     {
@@ -82,7 +82,7 @@ void USL::run(Var condition)
     // grid update
     for (Grid *grid: method.grids())
     {
-      grid->reduce_ghost_nodes(true, true, method.temp);
+      //grid->reduce_ghost_nodes(true, true, method.temp);
 
       modify->post_particles_to_grid(*grid);
       method.update_grid_velocities(*grid);
@@ -102,12 +102,12 @@ void USL::run(Var condition)
     }
 
     // grid update
-    for (Grid *grid: method.grids())
-    {
-      grid->reduce_ghost_nodes(true, false, update->temp);
+    // for (Grid *grid: method.grids())
+    // {
+    //   grid->reduce_ghost_nodes(true, false, update->temp);
       
-      method.update_grid_positions(*grid);
-    }
+    //   method.update_grid_positions(*grid);
+    // }
     
     for (Solid *solid: domain->solids) {
       method.update_deformation_gradient(*solid);

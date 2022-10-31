@@ -238,7 +238,7 @@ void Method::reset_mass_nodes(Grid &grid)
     Kokkos::View<float**> gmass = grid.mass;
 
     Kokkos::parallel_for("reset_mass_nodes", Kokkos::MDRangePolicy<Kokkos::Rank<2>>(
-       {0, 0}, {(size_t)grid.nsolids, (size_t)(grid.nnodes_local + grid.nnodes_ghost)},
+      {0, 0}, {(size_t)grid.nsolids, (size_t)(grid.nnodes_local + grid.nnodes_ghost)}),
      KOKKOS_LAMBDA (const int &is, const int &in)
     {
       gmass(is, in) = 0;
@@ -279,8 +279,8 @@ void Method::reset_velocity_nodes(Grid &grid)
   Kokkos::View<float**> gT = grid.T;
 
   Kokkos::parallel_for("reset_velocity_nodes", Kokkos::MDRangePolicy<Kokkos::Rank<2>>(
-    {0, 0}, {(size_t)grid.nsolids, (size_t)(grid.nnodes_local + grid.nnodes_ghost)},
-    KOKKOS_LAMBDA (const int &is, const int &in)
+    {0, 0}, {(size_t)grid.nsolids, (size_t)(grid.nnodes_local + grid.nnodes_ghost)}),
+  KOKKOS_LAMBDA (const int &is, const int &in)
   {
     gv(is, in) = Vector3d();
     gmb(is, in) = Vector3d();
@@ -352,7 +352,7 @@ void Method::reset_force_nodes(Grid &grid)
   Kokkos::View<float**> gQint = grid.Qint;
 
   Kokkos::parallel_for("reset_force_nodes", Kokkos::MDRangePolicy<Kokkos::Rank<2>>(
-     {0, 0}, {(size_t)grid.nsolids, (size_t)(grid.nnodes_local + grid.nnodes_ghost)}
+    {0, 0}, {(size_t)grid.nsolids, (size_t)(grid.nnodes_local + grid.nnodes_ghost)}),
   KOKKOS_LAMBDA (const int &is, const int &in)
   {
     gf(is, in) = Vector3d();
@@ -413,7 +413,7 @@ void Method::compute_force_nodes(Solid &solid)
 	    const Vector3d &x0 = sx0[ip];
 
 	    if (sub_method_type == Update::SubMethodType::MLS)
-	      f.atomic_add(-vol0PK1*wf*Di*(gx0(gpos, in) - x0));
+	      f.atomic_add(-vol0PK1*wf*Di*(gx0[in] - x0));
 	    else
 	      f.atomic_add(-vol0PK1*wfd);
 
@@ -426,7 +426,7 @@ void Method::compute_force_nodes(Solid &solid)
 	    const Vector3d &x = sx[ip];
 
 	    if (sub_method_type == Update::SubMethodType::MLS)
-	      f.atomic_add(-vol_sigma*wf*Di*(gx0(gpos, in) - x));
+	      f.atomic_add(-vol_sigma*wf*Di*(gx0[in] - x));
 	    else
 	      f.atomic_add(-vol_sigma*wfd);
 
@@ -463,7 +463,7 @@ void Method::update_grid_velocities(Grid &grid)
   Kokkos::View<bool**> grigid =  grid.rigid;
 
   Kokkos::parallel_for("update_grid_velocities", Kokkos::MDRangePolicy<Kokkos::Rank<2>>(
-     {0, 0}, {(size_t)grid.nsolids, (size_t)(grid.nnodes_local + grid.nnodes_ghost)},
+    {0, 0}, {(size_t)grid.nsolids, (size_t)(grid.nnodes_local + grid.nnodes_ghost)}),
   KOKKOS_LAMBDA (const int &is, const int &in)
   {
     float T_update;
@@ -501,10 +501,10 @@ void Method::compute_velocity_acceleration(Solid &solid)
   Kokkos::View<float*> smass = solid.mass;
   const int gpos = solid.gpos;
 
-  Kokkos::View<Vector3d*> gv = grid.v;
-  Kokkos::View<Vector3d*> gv_update = grid.v_update;
-  Kokkos::View<float*> gT = grid.T;
-  Kokkos::View<float*> gT_update = grid.T_update;
+  Kokkos::View<Vector3d**> gv = grid.v;
+  Kokkos::View<Vector3d**> gv_update = grid.v_update;
+  Kokkos::View<float**> gT = grid.T;
+  Kokkos::View<float**> gT_update = grid.T_update;
 
   Kokkos::parallel_for("compute_velocity_acceleration", solid.np_local,
   KOKKOS_LAMBDA (const int &ip)
@@ -639,7 +639,7 @@ void Method::compute_rate_deformation_gradient(bool doublemapping, Solid &solid)
   Kokkos::View<Vector3d*> sv = solid.v;
   Kokkos::View<float*> svol = is_TL? solid.vol0: solid.vol;
   Kokkos::View<Vector3d*> sq = solid.q;
-  Kokkos::View<float**> gT = doublemapping? solid->grid.T: solid.grid->T_update;
+  Kokkos::View<float**> gT = doublemapping? solid.grid->T: solid.grid->T_update;
   Kokkos::View<Vector3d*> gx0 = solid.grid->x0;
   float &Di = solid.Di;
   const int gpos = solid.gpos;
@@ -759,7 +759,7 @@ void Method::Fbar_anti_vol_locking(Solid &solid) {
   bool axisymmetric = domain->axisymmetric;
 
   Kokkos::parallel_for("reset_vol_nodes", Kokkos::MDRangePolicy<Kokkos::Rank<2>>(
-    {0, 0}, {(size_t)grid.nsolids, (size_t)(solid.grid->nnodes_local + solid.grid->nnodes_ghost)}),
+    {0, 0}, {(size_t)solid.grid->nsolids, (size_t)(solid.grid->nnodes_local + solid.grid->nnodes_ghost)}),
   KOKKOS_LAMBDA (const int &is, const int &in)
   {
     gvol(is, in) = 0;

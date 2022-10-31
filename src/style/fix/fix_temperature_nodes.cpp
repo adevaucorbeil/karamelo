@@ -62,8 +62,9 @@ void FixTemperatureNodes::post_update_grid_state(Grid &grid)
   Tprevvalue->evaluate(grid);
 
   int groupbit = this->groupbit;
+  int solid_gpos = this->solid_gpos;
   Kokkos::View<int*> mask = grid.mask;
-  Kokkos::View<float*> T = grid.T, T_update = grid.T_update;
+  Kokkos::View<float**> T = grid.T, T_update = grid.T_update;
 
   Kokkos::View<float **> Tv = Tvalue->registers;
   Kokkos::View<float **> Tpv = Tprevvalue->registers;
@@ -74,8 +75,8 @@ void FixTemperatureNodes::post_update_grid_state(Grid &grid)
         if (!(mask[in] & groupbit))
           return;
 
-        T_update[in] = Tv(0, in);
-        T[in]        = Tpv(0, in);
+        T_update(solid_gpos, in) = Tv(0, in);
+        T(solid_gpos, in)        = Tpv(0, in);
       });
 }
 
@@ -85,8 +86,9 @@ void FixTemperatureNodes::post_velocities_to_grid(Grid &grid)
   Tvalue->evaluate(grid);
 
   int groupbit = this->groupbit;
+  int solid_gpos = this->solid_gpos;
   Kokkos::View<int*> mask = grid.mask;
-  Kokkos::View<float*> T = grid.T;
+  Kokkos::View<float**> T = grid.T;
 
   Kokkos::View<float **> Tv = Tvalue->registers;
 
@@ -96,7 +98,7 @@ void FixTemperatureNodes::post_velocities_to_grid(Grid &grid)
         if (!(mask[in] & groupbit))
           return;
 
-        T[in] = Tv(0, in);
+        T(solid_gpos, in) = Tv(0, in);
       });
 }
 

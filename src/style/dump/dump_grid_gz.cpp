@@ -155,7 +155,7 @@ void DumpGridGz::write() {
   // Now loop over the grids to find how many elements there are in total:
   bigint total_nn = 0;
   for (auto g : grids) {
-    total_nn += g->nnodes_local;
+    total_nn += g->nnodes_local * g->nsolids;
   }
 
   int size_one = output_var.size() + 2;
@@ -212,50 +212,52 @@ void DumpGridGz::write() {
         deep_copy(rigid, g->rigid);
     }
 
-    for (bigint i = 0; i < g->nnodes_local; i++) {
-      buf.push_back(ntag[i]);
-      buf.push_back(igrid + 1);
-      for (auto v : output_var) {
-        if (v == "x")
-          buf.push_back(x[i][0]);
-        else if (v == "y")
-          buf.push_back(x[i][1]);
-        else if (v == "z")
-          buf.push_back(x[i][2]);
-        else if (v == "vx")
-          buf.push_back(this->v[i][0]);
-        else if (v == "vy")
-          buf.push_back(this->v[i][1]);
-        else if (v == "vz")
-          buf.push_back(this->v[i][2]);
-        else if (v == "vx_update")
-          buf.push_back(this->v_update[i][0]);
-        else if (v == "vy_update")
-          buf.push_back(this->v_update[i][1]);
-        else if (v == "vz_update")
-          buf.push_back(this->v_update[i][2]);
-        else if (v == "bx")
-          buf.push_back(mb[i][0]);
-        else if (v == "by")
-          buf.push_back(mb[i][1]);
-        else if (v == "bz")
-          buf.push_back(mb[i][2]);
-        else if (v == "mass")
-          buf.push_back(mass[i]);
-	else if (v.compare("mask")==0)
-	  buf.push_back(mask[i]);
-	else if (v.compare("vol")==0)
-	  buf.push_back(vol[i]);
-        else if (v == "ntypex")
-          buf.push_back(ntype[i][0]);
-        else if (v == "ntypey")
-          buf.push_back(ntype[i][1]);
-        else if (v == "ntypez")
-          buf.push_back(ntype[i][2]);
-        else if (v == "T")
-          buf.push_back(T[i]);
-        else if (v == "rigid")
-          buf.push_back(rigid[i]);
+    for (int is = 0; is < g->nsolids; is++) {
+      for (bigint i = 0; i < g->nnodes_local; i++) {
+	buf.push_back(ntag[i]);
+	buf.push_back(igrid + 1 + is);
+	for (auto v : output_var) {
+	  if (v == "x")
+	    buf.push_back(x[i][0]);
+	  else if (v == "y")
+	    buf.push_back(x[i][1]);
+	  else if (v == "z")
+	    buf.push_back(x[i][2]);
+	  else if (v == "vx")
+	    buf.push_back(this->v(is, i)[0]);
+	  else if (v == "vy")
+	    buf.push_back(this->v(is, i)[1]);
+	  else if (v == "vz")
+	    buf.push_back(this->v(is, i)[2]);
+	  else if (v == "vx_update")
+	    buf.push_back(this->v_update(is, i)[0]);
+	  else if (v == "vy_update")
+	    buf.push_back(this->v_update(is, i)[1]);
+	  else if (v == "vz_update")
+	    buf.push_back(this->v_update(is, i)[2]);
+	  else if (v == "bx")
+	    buf.push_back(mb(is, i)[0]);
+	  else if (v == "by")
+	    buf.push_back(mb(is, i)[1]);
+	  else if (v == "bz")
+	    buf.push_back(mb(is, i)[2]);
+	  else if (v == "mass")
+	    buf.push_back(mass(is, i));
+	  else if (v.compare("mask")==0)
+	    buf.push_back(mask[i]);
+	  else if (v.compare("vol")==0)
+	    buf.push_back(vol(is, i));
+	  else if (v == "ntypex")
+	    buf.push_back(ntype[i][0]);
+	  else if (v == "ntypey")
+	    buf.push_back(ntype[i][1]);
+	  else if (v == "ntypez")
+	    buf.push_back(ntype[i][2]);
+	  else if (v == "T")
+	    buf.push_back(T(is, i));
+	  else if (v == "rigid")
+	    buf.push_back(rigid(is, i));
+	}
       }
     }
   }
