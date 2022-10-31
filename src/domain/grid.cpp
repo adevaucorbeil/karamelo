@@ -462,4 +462,6 @@ void Grid::grow(int nn){
   T_update = Kokkos::View<float**>("T_update", nsolids, nn);
   Qext     = Kokkos::View<float**>("Qext",     nsolids, nn);
   Qint     = Kokkos::View<float**>("Qint",     nsolids, nn);
+
+  normal   = Kokkos::View<Vector3d**>("normal", nsolids, nn);
 }

@@ -94,6 +94,8 @@ class Grid : public Pointers {
   Kokkos::View<float**> Qext;             ///< nodes' external thermal driving force
   Kokkos::View<float**> Qint;             ///< nodes' internal thermal driving force
 
+  Kokkos::View<Vector3d**> normal;        ///< nodes' normal (for contact purposes)
+
   Grid(class MPM *);
   void grow(int);              ///< Allocate memory for the vectors used for local nodes or resize them  
   void setup(string);
