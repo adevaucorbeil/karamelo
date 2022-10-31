@@ -244,15 +244,18 @@ float Group::xcm(int igroup, int dir)
 {
   bool particles = pon[igroup] == "particles" ? true : false;
 
+  if (!particles)
+    error->all(FLERR, "xcm does not support nodes!\n");
+
   float com, mass_tot;
 
   for (Solid *solid: domain->solids) {
 
-    Kokkos::View<Vector3d*> x = particles ? solid->x        : solid->grid->x;
-    Kokkos::View<float*> mass = particles ? solid->mass     : solid->grid->mass;
-    Kokkos::View<int*> mask   = particles ? solid->mask     : solid->grid->mask;
+    Kokkos::View<Vector3d*> x = solid->x;
+    Kokkos::View<float*> mass = solid->mass;
+    Kokkos::View<int*> mask   = solid->mask;
 
-    const int &nmax           = particles ? solid->np_local : solid->grid->nnodes_local;
+    const int &nmax           = solid->np_local;
 
     int groupbit = group->bitmask[igroup];
 
@@ -279,14 +282,16 @@ float Group::internal_force(int igroup, int dir)
 {
   bool particles = pon[igroup] == "particles" ? true : false;
 
+  if (!particles)
+    error->all(FLERR, "internal_force does not support nodes!\n");
   float resulting_force;
 
   for (Solid *solid: domain->solids) {
 
-    Kokkos::View<Vector3d*> f = particles ? solid->f        : solid->grid->f;
-    Kokkos::View<int*> mask   = particles ? solid->mask     : solid->grid->mask;
+    Kokkos::View<Vector3d*> f = solid->f;
+    Kokkos::View<int*> mask   = solid->mask;
 
-    const int &nmax           = particles ? solid->np_local : solid->grid->nnodes_local;
+    const int &nmax           = solid->np_local;
 
     int groupbit = group->bitmask[igroup];
 

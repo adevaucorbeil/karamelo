@@ -55,8 +55,6 @@ class Method : protected Pointers {
   void update_position(Solid &solid);
   void advance_particles(Solid &solid);
 
-  void update_grid_positions(Grid &grid);
-
   void compute_rate_deformation_gradient(bool doublemapping, Solid &solid);
 
   void update_deformation_gradient(Solid &solid);

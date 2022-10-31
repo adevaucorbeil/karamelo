@@ -51,6 +51,7 @@ struct Point {
  */
 class Grid : public Pointers {
  public:
+  int nsolids;           ///< number of solids sharing the same grid
   int ncells;            ///< number of cells
   bigint nnodes;         ///< total number of nodes in the domain
   bigint nnodes_local;   ///< number of nodes (in this CPU)
@@ -77,32 +78,26 @@ class Grid : public Pointers {
 
   Kokkos::View<Vector3d*> x;            ///< nodes' current position
   Kokkos::View<Vector3d*> x0;           ///< nodes' position in the reference coordinate system
-  Kokkos::View<Vector3d*> v;            ///< nodes' velocity at time t
-  Kokkos::View<Vector3d*> v_update;     ///< nodes' velocity at time t+dt
-  Kokkos::View<Vector3d*> mb;           ///< nodes' external forces times the mass
-  Kokkos::View<Vector3d*> f;            ///< nodes' internal forces
+  Kokkos::View<Vector3d**> v;           ///< nodes' velocity at time t
+  Kokkos::View<Vector3d**> v_update;    ///< nodes' velocity at time t+dt
+  Kokkos::View<Vector3d**> mb;          ///< nodes' external forces times the mass
+  Kokkos::View<Vector3d**> f;           ///< nodes' internal forces
 
-  Kokkos::View<float*> mass;              ///< nodes' current mass
-  Kokkos::View<float*> vol;               ///< nodes' current volume
-  Kokkos::View<int*> mask;                 ///< nodes' group mask
-  Kokkos::View<bool*> rigid;               ///< are the nodes in the area of influence of a rigid body?
-  Kokkos::View<Vector3i*> ntype;      ///< node type in x, y, and z directions (False for an edge, True otherwise)
+  Kokkos::View<float**> mass;           ///< nodes' current mass
+  Kokkos::View<float**> vol;            ///< nodes' current volume
+  Kokkos::View<int*> mask;              ///< nodes' group mask
+  Kokkos::View<bool**> rigid;           ///< are the nodes in the area of influence of a rigid body?
+  Kokkos::View<Vector3i*> ntype;        ///< node type in x, y, and z directions (False for an edge, True otherwise)
 
-  Kokkos::View<float*> T;                 ///< nodes' temperature at time t
-  Kokkos::View<float*> T_update;          ///< nodes' temperature at time t+dt
-  Kokkos::View<float*> Qext;              ///< nodes' external thermal driving force
-  Kokkos::View<float*> Qint;              ///< nodes' internal thermal driving force
+  Kokkos::View<float**> T;                ///< nodes' temperature at time t
+  Kokkos::View<float**> T_update;         ///< nodes' temperature at time t+dt
+  Kokkos::View<float**> Qext;             ///< nodes' external thermal driving force
+  Kokkos::View<float**> Qint;             ///< nodes' internal thermal driving force
 
   Grid(class MPM *);
   void grow(int);              ///< Allocate memory for the vectors used for local nodes or resize them  
   void setup(string);
   void init(float*, float*); ///< Create the array of nodes. Give them their position, tag, and type
-
-  void reduce_mass_ghost_nodes();                  ///< Reduce the mass of all the ghost nodes from that computed on each CPU.
-  void reduce_mass_ghost_nodes_old();              ///< Deprecated
-  void reduce_rigid_ghost_nodes();                 ///< Reduce the rigid bool of all the ghost nodes from that computed on each CPU.
-  void reduce_ghost_nodes(bool reduce_v, bool reduce_forces, bool temp = false);    ///< Reduce the force and velocities of all the ghost nodes from that computed on each CPU.
-  void reduce_ghost_nodes_old(bool only_v = false, bool temp = false);    ///< Deprecated
 };
 
 #ifdef WIN32
