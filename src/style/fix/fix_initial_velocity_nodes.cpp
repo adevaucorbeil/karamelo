@@ -14,6 +14,7 @@
 #include <fix_initial_velocity_nodes.h>
 #include <domain.h>
 #include <error.h>
+#include <expression_operation.h>
 #include <grid.h>
 #include <group.h>
 #include <input.h>
@@ -44,12 +45,9 @@ FixInitialVelocityNodes::FixInitialVelocityNodes(MPM *mpm, vector<string> args):
     return;
   }
 
-  if (domain->dimension == 3 && args.size()<6) {
-    error->all(FLERR,"Error: too few arguments for fix_initial_velocity_nodes: requires at least 6 arguments. " + to_string(args.size()) + " received.\n");
-  } else if (domain->dimension == 2 && args.size()<5) {
-    error->all(FLERR,"Error: too few arguments for fix_initial_velocity_nodes: requires at least 5 arguments. " + to_string(args.size()) + " received.\n");
-  } else if (domain->dimension == 1 && args.size()<4) {
-    error->all(FLERR,"Error: too few arguments for fix_initial_velocity_nodes: requires at least 4 arguments. " + to_string(args.size()) + " received.\n");
+  if (args.size() < Nargs.find(domain->dimension)->second) {
+    error->all(FLERR, "Error: too few arguments for fix_initial_velocity_nodes.\n" +
+                          usage.find(domain->dimension)->second);
   }
 
   if (group->pon[igroup].compare("nodes") !=0 && group->pon[igroup].compare("all") !=0) {
@@ -60,59 +58,51 @@ FixInitialVelocityNodes::FixInitialVelocityNodes(MPM *mpm, vector<string> args):
   }
   id = args[0];
 
-  xset = yset = zset = false;
+  v[0] = nullptr;
+  v[1] = nullptr;
+  v[2] = nullptr;
 
-  if (args[3] != "NULL") {
-    xvalue = input->parsev(args[3]);
-    xset = true;
-  }
-
-  if (domain->dimension >= 2) {
-    if (args[4] != "NULL") {
-      yvalue = input->parsev(args[4]);
-      yset = true;
-    }
-  }
-
-  if (domain->dimension == 3) {
-    if (args[5] != "NULL") {
-      zvalue = input->parsev(args[5]);
-      zset = true;
+  
+  for (int dim = 0; dim < domain->dimension; dim++) {
+    if (args[3 + dim] != "NULL") {
+      input->parsev(args[3 + dim]);
+      v[dim] = &input->expressions[args[3 + dim]];
     }
   }
 }
 
 void FixInitialVelocityNodes::prepare()
 {
-  xvalue.result(mpm);
-  yvalue.result(mpm);
-  zvalue.result(mpm);
 }
 
 void FixInitialVelocityNodes::post_update_grid_state(Grid &grid)
 {
   if (update->ntimestep != 1)
     return;
-  // cout << "In FixInitialVelocityNodes::post_update_grid_state()" << endl;
 
   // Go through all the nodes in the group and set v_update to the right value:
-  for (int in = 0; in < grid.nnodes_local + grid.nnodes_ghost; in++)
-  {
-    if (!(grid.mask[in] & groupbit))
-      continue;
-  
-    (*input->vars)["x0"] = Var("x0", grid.x0[in][0]);
-    (*input->vars)["y0"] = Var("y0", grid.x0[in][1]);
-    (*input->vars)["z0"] = Var("z0", grid.x0[in][2]);
-
-    if (xset)
-      grid.v_update[in][0] = xvalue.result(mpm, true);
-    if (yset)
-      grid.v_update[in][1] = yvalue.result(mpm, true);
-    if (zset)
-      grid.v_update[in][2] = zvalue.result(mpm, true);
-    // cout << "grid.v_update for " << n << " nodes from solid " << domain->solids[solid]->id << " set." << endl;
+  for (int i = 0; i < 3; i++) {
+    if (v[i])
+      v[i]->evaluate(grid);
   }
+
+  int groupbit = this->groupbit;
+  Kokkos::View<int*> mask = grid.mask;
+  Kokkos::View<Vector3d*> gv_update = grid.v_update;
+
+  for (int i = 0; i < 3; i++)
+    if (v[i])
+    {
+      Kokkos::View<float **> v_i = v[i]->registers;
+
+      Kokkos::parallel_for("FixInitialVelocityNodes::post_update_grid_state", grid.nnodes_local + grid.nnodes_ghost,
+      KOKKOS_LAMBDA(const int &in)
+      {
+        if (!(mask[in] & groupbit))
+          return;
+	gv_update[in][i] = v_i(0, in);
+      });
+    }
 }
 
 void FixInitialVelocityNodes::post_velocities_to_grid(Grid &grid)
@@ -122,21 +112,26 @@ void FixInitialVelocityNodes::post_velocities_to_grid(Grid &grid)
   // cout << "In FixInitialVelocityNodes::post_velocities_to_grid()" << endl;
 
   // Go through all the particles in the group and set v to the right value:
-  for (int in = 0; in < grid.nnodes_local + grid.nnodes_ghost; in++)
-  {
-    if (!(grid.mask[in] & groupbit))
-      continue;
-  
-    (*input->vars)["x0"] = Var("x0", grid.x0[in][0]);
-    (*input->vars)["y0"] = Var("y0", grid.x0[in][1]);
-    (*input->vars)["z0"] = Var("z0", grid.x0[in][2]);
-
-    if (xset)
-      grid.v[in][0] = xvalue.result(mpm, true);
-    if (yset)
-      grid.v[in][1] = yvalue.result(mpm, true);
-    if (zset)
-      grid.v[in][2] = zvalue.result(mpm, true);
-    // cout << "v for " << n << " nodes from solid " << domain->solids[solid]->id << " set." << endl;
+  for (int i = 0; i < 3; i++) {
+    if (v[i])
+      v[i]->evaluate(grid);
   }
+
+  int groupbit = this->groupbit;
+  Kokkos::View<int*> mask = grid.mask;
+  Kokkos::View<Vector3d*> gv = grid.v;
+
+  for (int i = 0; i < 3; i++)
+    if (v[i])
+    {
+      Kokkos::View<float **> v_i = v[i]->registers;
+
+      Kokkos::parallel_for("FixInitialVelocityNodes::post_update_grid_state", grid.nnodes_local + grid.nnodes_ghost,
+      KOKKOS_LAMBDA(const int &in)
+      {
+        if (!(mask[in] & groupbit))
+          return;
+	gv[in][i] = v_i(0, in);
+      });
+    }
 }
