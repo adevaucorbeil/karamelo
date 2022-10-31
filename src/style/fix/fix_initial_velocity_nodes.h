@@ -21,8 +21,9 @@ FixStyle(initial_velocity_nodes,FixInitialVelocityNodes)
 #define MPM_FIX_INITIAL_VELOCITY_NODES_H
 
 #include <fix.h>
-#include <var.h>
 #include <matrix.h>
+
+class Expression;
 
 class FixInitialVelocityNodes : public Fix {
  public:
@@ -37,8 +38,13 @@ class FixInitialVelocityNodes : public Fix {
   void read_restart(ifstream *) {};
 
 private:
-  Var xvalue, yvalue, zvalue;    // Set velocities in x, y, and z directions.
-  bool xset, yset, zset;               // Does the fix set the x, y, and z velocities of the group?
+  const map<int, string> usage = {
+      {1, "Usage: fix(fix-ID, initial_velocity_nodes, group, vx)\n"},
+      {2, "Usage: fix(fix-ID, initial_velocity_nodes, group, vx, vy)\n"},
+      {3, "Usage: fix(fix-ID, initial_velocity_nodes, group, vx, vy, vz)\n"}};
+  const map<int, int> Nargs = {{1, 4}, {2, 5}, {3, 6}};
+
+  Expression *v[3];
 };
 
 #endif
