@@ -132,12 +132,12 @@ void FixContact::initial_integrate()
   {
     for (int ip1 = 0; ip1 < s1->np_local; ip1++)
     {
-      if (!s1->is_surf[ip1])
+      if (!(s1->is_surf[ip1] & IS_SURF))
         continue;
 
       for (int ip2 = 0; ip2 < s2->np_local; ip2++)
       {
-        if (!s2->is_surf[ip2])
+        if (!(s2->is_surf[ip2] & IS_SURF))
           continue;
 
         dx = s2->x[ip2] - s1->x[ip1];
