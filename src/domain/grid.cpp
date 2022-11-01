@@ -332,17 +332,8 @@ void Grid::init(float *solidlo, float *solidhi) {
 
   Kokkos::View<Vector3d*> x = this->x;
   Kokkos::View<Vector3d*> x0 = this->x0;
-  Kokkos::View<Vector3d**> v = this->v;
-  Kokkos::View<Vector3d**> v_update = this->v_update;
-  Kokkos::View<Vector3d**> mb = this->mb;
-  Kokkos::View<Vector3d**> f = this->f;
 
-  Kokkos::View<float**> mass = this->mass;
-  Kokkos::View<float**> vol = this->vol;
-  Kokkos::View<bool**> rigid = this->rigid;
   Kokkos::View<Vector3i*> ntype = this->ntype;
-
-  bool anti_volumetric_locking = update->method->anti_volumetric_locking;
 
   Kokkos::parallel_for(__PRETTY_FUNCTION__, Kokkos::MDRangePolicy<Kokkos::Rank<3>>(
     { 0, 0, 0 }, { (size_t)nx, (size_t)ny, (size_t)nz }),
@@ -371,16 +362,6 @@ void Grid::init(float *solidlo, float *solidhi) {
     }
 
     x[l] = x0[l];
-    for (int is = 0; is < nsolids; is++) {
-      v(is, l) = Vector3d();
-      v_update(is, l) = Vector3d();
-      f(is, l) = Vector3d();
-      mb(is, l) = Vector3d();
-      mass(is, l) = 0;
-      if (anti_volumetric_locking)
-	vol(is, l) = 0;
-      rigid(is, l) = false;
-    }
 
     ntag[l] = nz_global*ny_global*(i+noffsetlo_0) + nz_global*(j+noffsetlo_1) + k+noffsetlo_2;
     map_ntag[ntag[l]] = l;
@@ -409,16 +390,6 @@ void Grid::init(float *solidlo, float *solidhi) {
     ntype[i][0] = gnodes[in].ntype[0];
     ntype[i][1] = gnodes[in].ntype[1];
     ntype[i][2] = gnodes[in].ntype[2];
-
-    for (int is = 0; is < nsolids; is++) {
-      v(is, i) = Vector3d();
-      v_update(is, i) = Vector3d();
-      f(is, i) = Vector3d();
-      mb(is, i) = Vector3d();
-      mass(is, i) = 0;
-      if (update->method->anti_volumetric_locking)
-	vol(is, i) = 0;
-    }
   }
 }
 
@@ -426,6 +397,34 @@ void Grid::setup(string cs){
   cellsize = input->parsev(cs);
   if (universe->me == 0) {
     cout << "Set grid cellsize to " << cellsize << endl;
+  }
+
+  // Check if the size of the non-shared views (mass, v, v_update, ...)
+  // is appropriate for the number of solids present:
+
+  if (mass.extent(0) < nsolids) {
+    int nn = mass.extent(1);
+    Kokkos::resize(v,        nsolids, nn);
+    Kokkos::resize(v_update, nsolids, nn);
+    Kokkos::resize(mb,       nsolids, nn);
+    Kokkos::resize(f,        nsolids, nn);
+    Kokkos::resize(mass,     nsolids, nn);
+    if (update->method->anti_volumetric_locking)
+      Kokkos::resize(vol,    nsolids, nn);
+
+    Kokkos::resize(rigid,    nsolids, nn);
+    Kokkos::parallel_for(__PRETTY_FUNCTION__,
+     Kokkos::MDRangePolicy<Kokkos::Rank<2>>({0, 0}, {nsolids, nn}),
+    KOKKOS_LAMBDA (const int &is, const int &in)
+    {
+      rigid(is, in) = false;
+    });
+
+    Kokkos::resize(T,        nsolids, nn);
+    Kokkos::resize(T_update, nsolids, nn);
+    Kokkos::resize(Qext,     nsolids, nn);
+    Kokkos::resize(Qint,     nsolids, nn);
+    Kokkos::resize(normal,   nsolids, nn);
   }
 }
 
@@ -437,14 +436,17 @@ void Grid::grow(int nn){
 
   x0       = Kokkos::View<Vector3d*>("x0",       nn);
   x        = Kokkos::View<Vector3d*>("x",        nn);
-  v        = Kokkos::View<Vector3d**>("v",        nsolids, nn);
-  v_update = Kokkos::View<Vector3d**>("v_update", nsolids, nn);
-  mb       = Kokkos::View<Vector3d**>("mb",       nsolids, nn);
-  f        = Kokkos::View<Vector3d**>("f",        nsolids, nn);
 
-  mass = Kokkos::View<float**>("mass", nsolids, nn);
+  int ns = nsolids >= 1? nsolids: 1;
+
+  v        = Kokkos::View<Vector3d**>("v",        ns, nn);
+  v_update = Kokkos::View<Vector3d**>("v_update", ns, nn);
+  mb       = Kokkos::View<Vector3d**>("mb",       ns, nn);
+  f        = Kokkos::View<Vector3d**>("f",        ns, nn);
+
+  mass = Kokkos::View<float**>("mass", ns, nn);
   if (update->method->anti_volumetric_locking)
-    vol = Kokkos::View<float**>("vol", nsolids, nn);
+    vol = Kokkos::View<float**>("vol", ns, nn);
   mask = Kokkos::View<int*>   ("mask", nn);
 
   Kokkos::View<int*> mask = this->mask;
@@ -456,12 +458,18 @@ void Grid::grow(int nn){
   });
 
   ntype = Kokkos::View<Vector3i*>("ntype", nn);
-  rigid = Kokkos::View<bool**>    ("rigid", nsolids, nn);
+  rigid = Kokkos::View<bool**>   ("rigid", ns, nn);
+  Kokkos::parallel_for(__PRETTY_FUNCTION__,
+     Kokkos::MDRangePolicy<Kokkos::Rank<2>>({0, 0}, {ns, nn}),
+  KOKKOS_LAMBDA (const int &is, const int &in)
+  {
+    rigid(is, in) = false;
+  });
 
-  T        = Kokkos::View<float**>("T",        nsolids, nn);
-  T_update = Kokkos::View<float**>("T_update", nsolids, nn);
-  Qext     = Kokkos::View<float**>("Qext",     nsolids, nn);
-  Qint     = Kokkos::View<float**>("Qint",     nsolids, nn);
+  T        = Kokkos::View<float**>("T",        ns, nn);
+  T_update = Kokkos::View<float**>("T_update", ns, nn);
+  Qext     = Kokkos::View<float**>("Qext",     ns, nn);
+  Qint     = Kokkos::View<float**>("Qint",     ns, nn);
 
-  normal   = Kokkos::View<Vector3d**>("normal", nsolids, nn);
+  normal   = Kokkos::View<Vector3d**>("normal", ns, nn);
 }

@@ -50,7 +50,7 @@ void Method::compute_grid_weight_functions_and_gradients(Solid &solid)
   Kokkos::View<Vector3d*> x0 = solid.grid->x0;
   Kokkos::View<Vector3i*> ntype = solid.grid->ntype;
   Kokkos::View<tagint*> map_ntag = solid.grid->map_ntag;
-  Kokkos::View<bool**> grid_rigid = solid.grid->rigid;
+  Kokkos::View<bool**> grigid = solid.grid->rigid;
 
   Kokkos::View<Vector3d*> x = is_TL ? solid.x0: solid.x;
   Kokkos::View<int**> neigh_n = solid.neigh_n;
@@ -166,7 +166,7 @@ void Method::compute_grid_weight_functions_and_gradients(Solid &solid)
       wfd(ip, i)[1] = s [0]*sd[1]*s [2];
       wfd(ip, i)[2] = s [0]*s [1]*sd[2];
 
-      grid_rigid(gpos, in) = rigid;
+      grigid(gpos, in) = rigid;
     }
 
     for (int i = count; i < neighbor_nodes_per_particle; i++) {
