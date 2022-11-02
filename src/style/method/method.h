@@ -70,6 +70,7 @@ class Method : protected Pointers {
   bool temp;          ///< true for thermo-mechanical simulations
   bool anti_volumetric_locking; ///< true when anti volumetric locking measures are used
   int rigid_solids;
+  bool slip_contacts; ///< true when slip contacts are activated, false otherwise
 };
 
 #endif

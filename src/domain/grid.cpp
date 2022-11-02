@@ -402,7 +402,7 @@ void Grid::setup(string cs){
   // Check if the size of the non-shared views (mass, v, v_update, ...)
   // is appropriate for the number of solids present:
 
-  if (mass.extent(0) < nsolids) {
+  if (update->method->slip_contacts && mass.extent(0) < nsolids) {
     int nn = mass.extent(1);
     Kokkos::resize(v,        nsolids, nn);
     Kokkos::resize(v_update, nsolids, nn);
@@ -437,7 +437,7 @@ void Grid::grow(int nn){
   x0       = Kokkos::View<Vector3d*>("x0",       nn);
   x        = Kokkos::View<Vector3d*>("x",        nn);
 
-  int ns = nsolids >= 1? nsolids: 1;
+  int ns = nsolids >= 1 && update->method->slip_contacts? nsolids: 1;
 
   v        = Kokkos::View<Vector3d**>("v",        ns, nn);
   v_update = Kokkos::View<Vector3d**>("v_update", ns, nn);
