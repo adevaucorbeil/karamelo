@@ -66,8 +66,8 @@ void MUSL::run(Var condition)
       method.compute_mass_nodes(*solid);
     }
     
-    for (Grid *grid: method.grids())
-      grid->reduce_mass_ghost_nodes();
+    // for (Grid *grid: method.grids())
+    //   grid->reduce_mass_ghost_nodes();
     
     for (Solid *solid: domain->solids)
     {
@@ -78,7 +78,7 @@ void MUSL::run(Var condition)
     // grid update
     for (Grid *grid: method.grids())
     {
-      grid->reduce_ghost_nodes(true, true, method.temp);
+      //grid->reduce_ghost_nodes(true, true, method.temp);
 
       modify->post_particles_to_grid(*grid);
       method.update_grid_velocities(*grid);
@@ -107,10 +107,10 @@ void MUSL::run(Var condition)
     // grid update
     for (Grid *grid: method.grids())
     {
-      grid->reduce_ghost_nodes(true, false, update->temp);
+      //grid->reduce_ghost_nodes(true, false, update->temp);
       
       modify->post_velocities_to_grid(*grid);
-      method.update_grid_positions(*grid);
+      //method.update_grid_positions(*grid);
     }
 
     for (Solid *solid: domain->solids)

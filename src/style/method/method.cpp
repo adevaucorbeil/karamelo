@@ -33,6 +33,7 @@ Method::Method(MPM *mpm):
   is_CPDI = false;
   temp = false;
   anti_volumetric_locking = false;
+  slip_contacts = false;
 }
 
 void Method::compute_grid_weight_functions_and_gradients(Solid &solid)
@@ -50,12 +51,14 @@ void Method::compute_grid_weight_functions_and_gradients(Solid &solid)
   Kokkos::View<Vector3d*> x0 = solid.grid->x0;
   Kokkos::View<Vector3i*> ntype = solid.grid->ntype;
   Kokkos::View<tagint*> map_ntag = solid.grid->map_ntag;
-  Kokkos::View<bool*> grid_rigid = solid.grid->rigid;
+  Kokkos::View<bool**> grigid = solid.grid->rigid;
 
   Kokkos::View<Vector3d*> x = is_TL ? solid.x0: solid.x;
   Kokkos::View<int**> neigh_n = solid.neigh_n;
   Kokkos::View<float**> wf = solid.wf;
   Kokkos::View<Vector3d**> wfd = solid.wfd;
+
+  const int gpos = slip_contacts ? solid.gpos : 0;
 
   const float &inv_cellsize = 1/solid.grid->cellsize;
     
@@ -124,42 +127,6 @@ void Method::compute_grid_weight_functions_and_gradients(Solid &solid)
         neigh_n(ip, count++) = i;
     }
 
-    // not-flat-list grid version
-    /*vector<vector<double>> s(dimension, vector<double>(2*half_support)), sd = s;
-
-    for (int i = 0, power = 1; i < dimension; i++)
-    {
-      for (int j = 0; j < 2*half_support; j++)
-      {
-        const int &in = neigh_n(ip, j*power);
-        
-        const double &r = (xp - x0[in])[i]*inv_cellsize;
-        
-        if (shape_function == Update::ShapeFunctions::LINEAR)
-        {
-          s .at(i).at(j) = BasisFunction::           linear(r);
-          sd.at(i).at(j) = BasisFunction::derivative_linear(r, inv_cellsize);
-        }
-        else if (shape_function == Update::ShapeFunctions::CUBIC_SPLINE)
-        {
-          s .at(i).at(j) = BasisFunction::           cubic_spline(r, ntype[in][j]);
-          sd.at(i).at(j) = BasisFunction::derivative_cubic_spline(r, ntype[in][j], inv_cellsize);
-        }
-        else if (shape_function == Update::ShapeFunctions::QUADRATIC_SPLINE)
-        {
-          s .at(i).at(j) = BasisFunction::           quadratic_spline(r, ntype[in][j]);
-          sd.at(i).at(j) = BasisFunction::derivative_quadratic_spline(r, ntype[in][j], inv_cellsize);
-        }
-        else if (shape_function == Update::ShapeFunctions::BERNSTEIN)
-        {
-          s .at(i).at(j) = BasisFunction::           bernstein_quadratic(r, ntype[in][j]);
-          sd.at(i).at(j) = BasisFunction::derivative_bernstein_quadratic(r, ntype[in][j], inv_cellsize);
-        }
-      }
-
-      power *= 2*half_support;
-    }*/
-
     for (int i = 0; i < count; i++)
     {
       const int &in = neigh_n(ip, i);
@@ -200,7 +167,7 @@ void Method::compute_grid_weight_functions_and_gradients(Solid &solid)
       wfd(ip, i)[1] = s [0]*sd[1]*s [2];
       wfd(ip, i)[2] = s [0]*s [1]*sd[2];
 
-      grid_rigid[in] = rigid;
+      grigid(gpos, in) = rigid;
     }
 
     for (int i = count; i < neighbor_nodes_per_particle; i++) {
@@ -223,8 +190,8 @@ void Method::compute_grid_weight_functions_and_gradients(Solid &solid)
     rigid_solids = rigid_solids_reduced;
   }
 
-  if (rigid_solids)
-    domain->grid->reduce_rigid_ghost_nodes();
+  // if (rigid_solids)
+  //   domain->grid->reduce_rigid_ghost_nodes();
 
 }
 
@@ -269,12 +236,15 @@ vector<Grid *> Method::grids()
 void Method::reset_mass_nodes(Grid &grid)
 {
   if (!is_TL || !update->atimestep) {
-    Kokkos::View<float*> gmass = grid.mass;
+    Kokkos::View<float**> gmass = grid.mass;
 
-    Kokkos::parallel_for("reset_mass_nodes", grid.nnodes_local + grid.nnodes_ghost,
-    KOKKOS_LAMBDA (const int &in)
+    int gnsolids = slip_contacts ? grid.nsolids : 1;
+
+    Kokkos::parallel_for("reset_mass_nodes", Kokkos::MDRangePolicy<Kokkos::Rank<2>>(
+	{0, 0}, {(size_t)gnsolids, (size_t)(grid.nnodes_local + grid.nnodes_ghost)}),
+     KOKKOS_LAMBDA (const int &is, const int &in)
     {
-      gmass[in] = 0;
+      gmass(is, in) = 0;
     });
   }
 }
@@ -285,9 +255,10 @@ void Method::compute_mass_nodes(Solid &solid)
   Kokkos::View<float**> swf = solid.wf;
   Kokkos::View<int**> neigh_n = solid.neigh_n;
   bool srigid = solid.mat->rigid;
+  const int gpos = slip_contacts? solid.gpos: 0;
 
-  Kokkos::View<float*> gmass = solid.grid->mass;
-  Kokkos::View<bool*> grigid =  solid.grid->rigid;
+  Kokkos::View<float**> gmass = solid.grid->mass;
+  Kokkos::View<bool**> grigid =  solid.grid->rigid;
 
   if (!is_TL || !update->atimestep)
     Kokkos::parallel_for("compute_mass_nodes", solid.neigh_policy,
@@ -297,8 +268,8 @@ void Method::compute_mass_nodes(Solid &solid)
       {
         int in = neigh_n(ip, i);
 
-        if (!grigid[in] || srigid)
-          Kokkos::atomic_add(&gmass[in], wf*smass[ip]);
+        if (!grigid(gpos, in) || srigid)
+          Kokkos::atomic_add(&gmass(gpos, in), wf*smass(ip));
       }
     });
 }
@@ -306,17 +277,20 @@ void Method::compute_mass_nodes(Solid &solid)
 void Method::reset_velocity_nodes(Grid &grid)
 {
   bool temp = this->temp;
-  Kokkos::View<Vector3d*> gv = grid.v;
-  Kokkos::View<Vector3d*> gmb = grid.mb;
-  Kokkos::View<float*> gT = grid.T;
+  Kokkos::View<Vector3d**> gv = grid.v;
+  Kokkos::View<Vector3d**> gmb = grid.mb;
+  Kokkos::View<float**> gT = grid.T;
 
-  Kokkos::parallel_for("reset_velocity_nodes", grid.nnodes_local + grid.nnodes_ghost,
-  KOKKOS_LAMBDA (const int &in)
+  int gnsolids = slip_contacts ? grid.nsolids : 1;
+
+  Kokkos::parallel_for("reset_velocity_nodes", Kokkos::MDRangePolicy<Kokkos::Rank<2>>(
+	{0, 0}, {(size_t)gnsolids, (size_t)(grid.nnodes_local + grid.nnodes_ghost)}),
+  KOKKOS_LAMBDA (const int &is, const int &in)
   {
-    gv[in] = Vector3d();
-    gmb[in] = Vector3d();
+    gv(is, in) = Vector3d();
+    gmb(is, in) = Vector3d();
     if (temp)
-      gT[in] = 0;
+      gT(is, in) = 0;
   });
 }
 
@@ -335,13 +309,14 @@ void Method::compute_velocity_nodes(Solid &solid)
   const Kokkos::View<float**> swf = solid.wf;
   Kokkos::View<int**> neigh_n = solid.neigh_n;
   bool srigid = solid.mat->rigid;
+  const int gpos = slip_contacts ? solid.gpos: 0;
   
-  Kokkos::View<float*> gmass = solid.grid->mass;
-  Kokkos::View<bool*> grigid =  solid.grid->rigid;
+  Kokkos::View<float**> gmass = solid.grid->mass;
+  Kokkos::View<bool**> grigid =  solid.grid->rigid;
   Kokkos::View<Vector3d*> gx0 = solid.grid->x0;
-  Kokkos::View<Vector3d*> gv = solid.grid->v;
-  Kokkos::View<Vector3d*> gmb = solid.grid->mb;
-  Kokkos::View<float*> gT = solid.grid->T;
+  Kokkos::View<Vector3d**> gv = solid.grid->v;
+  Kokkos::View<Vector3d**> gmb = solid.grid->mb;
+  Kokkos::View<float**> gT = solid.grid->T;
 
   Kokkos::parallel_for("compute_velocity_nodes", solid.neigh_policy,
   KOKKOS_LAMBDA (int ip, int i)
@@ -350,10 +325,10 @@ void Method::compute_velocity_nodes(Solid &solid)
     {
       int in = neigh_n(ip, i);
 
-      if (grigid[in] && !srigid)
+      if (grigid(gpos, in) && !srigid)
         return;
 
-      if (float node_mass = gmass[in])
+      if (float node_mass = gmass(gpos, in))
       {
         float normalized_wf = wf*smass[ip]/node_mass;
     
@@ -361,13 +336,13 @@ void Method::compute_velocity_nodes(Solid &solid)
         if (apic)
 	  vtemp += L[ip]*(gx0[in] - sx[ip]);
 
-        gv[in].atomic_add(normalized_wf*vtemp);
+        gv(gpos, in).atomic_add(normalized_wf*vtemp);
 
-        if (grigid[in])
-          gmb[in].atomic_add(normalized_wf*sv_update[ip]);
+        if (grigid(gpos, in))
+          gmb(gpos, in).atomic_add(normalized_wf*sv_update[ip]);
 
         if (temp)
-          Kokkos::atomic_add(&gT[in],  normalized_wf*sT[ip]);
+          Kokkos::atomic_add(&gT(gpos, in),  normalized_wf*sT[ip]);
       }
     }
   });
@@ -376,21 +351,26 @@ void Method::compute_velocity_nodes(Solid &solid)
 void Method::reset_force_nodes(Grid &grid)
 {
   bool temp = this->temp;
-  Kokkos::View<Vector3d*> gf = grid.f;
-  Kokkos::View<Vector3d*> gmb = grid.mb;
-  Kokkos::View<float*> gQext = grid.Qext;
-  Kokkos::View<float*> gQint = grid.Qint;
+  Kokkos::View<Vector3d**> gf = grid.f;
+  Kokkos::View<Vector3d**> gmb = grid.mb;
+  Kokkos::View<float**> gQext = grid.Qext;
+  Kokkos::View<float**> gQint = grid.Qint;
+  Kokkos::View<Vector3d**> gnormal = grid.normal;
 
-  Kokkos::parallel_for("reset_force_nodes", grid.nnodes_local + grid.nnodes_ghost,
-  KOKKOS_LAMBDA (const int &in)
+  int gnsolids = slip_contacts ? grid.nsolids : 1;
+
+  Kokkos::parallel_for("reset_force_nodes", Kokkos::MDRangePolicy<Kokkos::Rank<2>>(
+	{0, 0}, {(size_t)gnsolids, (size_t)(grid.nnodes_local + grid.nnodes_ghost)}),
+  KOKKOS_LAMBDA (const int &is, const int &in)
   {
-    gf[in] = Vector3d();
-    gmb[in] = Vector3d();
+    gf(is, in) = Vector3d();
+    gmb(is, in) = Vector3d();
     if (temp)
     {
-      gQint[in] = 0;
-      gQext[in] = 0;
+      gQint(is, in) = 0;
+      gQext(is, in) = 0;
     }
+    gnormal(is, in) = Vector3d();
   });
 }
 
@@ -402,6 +382,7 @@ void Method::compute_force_nodes(Solid &solid)
   Update::SubMethodType sub_method_type = update->sub_method_type;
   bool axisymmetric = domain->axisymmetric;
 
+  Kokkos::View<float*> smass = solid.mass;
   Kokkos::View<float**> swf = solid.wf;
   Kokkos::View<Vector3d**> swfd = solid.wfd;
   Kokkos::View<int**> neigh_n = solid.neigh_n;
@@ -413,16 +394,18 @@ void Method::compute_force_nodes(Solid &solid)
   Kokkos::View<Vector3d*> sq = solid.q;
   Kokkos::View<float*> svol = solid.vol;
   Kokkos::View<Matrix3d*> ssigma = solid.sigma;
+  const int gpos = slip_contacts ? solid.gpos: 0;
 
   float &Di = solid.Di;
 
-  Kokkos::View<float*> gmass = solid.grid->mass;
+  Kokkos::View<float**> gmass = solid.grid->mass;
   Kokkos::View<Vector3d*> gx0 = solid.grid->x0;
-  Kokkos::View<Vector3d*> gf = solid.grid->f;
-  Kokkos::View<Vector3d*> gmb = solid.grid->mb;
-  Kokkos::View<bool*> grigid =  solid.grid->rigid;
-  Kokkos::View<float*> gQext = solid.grid->Qext;
-  Kokkos::View<float*> gQint = solid.grid->Qint;
+  Kokkos::View<Vector3d**> gf = solid.grid->f;
+  Kokkos::View<Vector3d**> gmb = solid.grid->mb;
+  Kokkos::View<bool**> grigid =  solid.grid->rigid;
+  Kokkos::View<float**> gQext = solid.grid->Qext;
+  Kokkos::View<float**> gQint = solid.grid->Qint;
+  Kokkos::View<Vector3d**> gnormal = solid.grid->normal;
 
   Kokkos::parallel_for("compute_force_nodes", solid.neigh_policy,
   KOKKOS_LAMBDA (int ip, int i)
@@ -430,10 +413,10 @@ void Method::compute_force_nodes(Solid &solid)
     if (float wf = swf(ip, i))
     {
       int in = neigh_n(ip, i);
-      if (gmass[in]) {
+      if (gmass(gpos, in)) {
 	const Vector3d &wfd = swfd(ip, i);
     
-	Vector3d &f = gf[in];
+	Vector3d &f = gf(gpos, in);
 
 	if (is_TL)
 	  {
@@ -462,13 +445,15 @@ void Method::compute_force_nodes(Solid &solid)
 	      Kokkos::atomic_add(&f[0], -vol_sigma(2, 2)*wf/x[0]);
 	  }
 
-	if (!grigid[in])
-	  gmb[in].atomic_add(wf*smbp[ip]);
+	if (!grigid(gpos, in))
+	  gmb(gpos, in).atomic_add(wf*smbp[ip]);
 
 	if (temp)
 	  {
-	    Kokkos::atomic_add(&gQint[in], wf*sgamma[ip] + wfd.dot(sq[ip]));
+	    Kokkos::atomic_add(&gQint(gpos, in), wf*sgamma[ip] + wfd.dot(sq[ip]));
 	  }
+
+	gnormal(gpos, in).atomic_add(wfd * smass[ip]);
       }
     }
   });
@@ -478,38 +463,80 @@ void Method::update_grid_velocities(Grid &grid)
 {
   float dt = update->dt;
   bool temp = this->temp;
+  bool slip_contacts = this->slip_contacts;
 
-  Kokkos::View<float*> gmass = grid.mass;
-  Kokkos::View<Vector3d*> gv = grid.v;
-  Kokkos::View<Vector3d*> gv_update = grid.v_update;
-  Kokkos::View<Vector3d*> gf = grid.f;
-  Kokkos::View<Vector3d*> gmb = grid.mb;
-  Kokkos::View<float*> gT = grid.T;
-  Kokkos::View<float*> gT_update = grid.T_update;
-  Kokkos::View<float*> gQint = grid.Qint;
-  Kokkos::View<float*> gQext = grid.Qext;
-  Kokkos::View<bool*> grigid =  grid.rigid;
+  Kokkos::View<float**> gmass = grid.mass;
+  Kokkos::View<Vector3d**> gv = grid.v;
+  Kokkos::View<Vector3d**> gv_update = grid.v_update;
+  Kokkos::View<Vector3d**> gf = grid.f;
+  Kokkos::View<Vector3d**> gmb = grid.mb;
+  Kokkos::View<float**> gT = grid.T;
+  Kokkos::View<float**> gT_update = grid.T_update;
+  Kokkos::View<float**> gQint = grid.Qint;
+  Kokkos::View<float**> gQext = grid.Qext;
+  Kokkos::View<bool**> grigid =  grid.rigid;
+  Kokkos::View<Vector3d**> gnormal = grid.normal;
 
-  Kokkos::parallel_for("update_grid_velocities", grid.nnodes_local + grid.nnodes_ghost,
-  KOKKOS_LAMBDA (const int &in)
+  int gnsolids = slip_contacts ? grid.nsolids : 1;
+
+  Kokkos::parallel_for("update_grid_velocities", Kokkos::MDRangePolicy<Kokkos::Rank<2>>(
+    {0, 0}, {(size_t)gnsolids, (size_t)(grid.nnodes_local + grid.nnodes_ghost)}),
+  KOKKOS_LAMBDA (const int &is, const int &in)
   {
     float T_update;
   
-    Vector3d &v_update = gv_update[in] = gv[in];
+    Vector3d &v_update = gv_update(is, in) = gv(is, in);
     if (temp)
-      T_update = gT_update[in] = gT[in];
+      T_update = gT_update(is, in) = gT(is, in);
 
-    if (float mass = gmass[in])
+    if (float mass = gmass(is, in))
     {
-      if (!grigid[in])
-        v_update += dt*(gf[in] + gmb[in])/mass;
+      if (!grigid(is, in))
+        v_update += dt*(gf(is, in) + gmb(is, in))/mass;
 
       if (temp) {
-        T_update += dt*(gQint[in] + gQext[in])/mass;
-	gT_update[in] = T_update;
+        T_update += dt*(gQint(is, in) + gQext(is, in))/mass;
+	gT_update(is, in) = T_update;
       }
+
+      // Normalize normal:
+      if (slip_contacts)
+	gnormal(is, in) /= gnormal(is, in).norm();
     }
   });
+
+
+  if (slip_contacts) {
+    Kokkos::parallel_for("correct_grid_velocities", grid.nnodes_local + grid.nnodes_ghost,
+    KOKKOS_LAMBDA (const int &in)
+    {
+      int nsolids_in_contact = 0;
+      float mcm = 0;
+      Vector3d vcm;
+
+      for(int is = 0; is < gnsolids; is++) {
+	if (float mass_in = gmass(is, in)) {
+	  mcm += mass_in;
+	  vcm += mass_in * gv_update(is, in);
+	  nsolids_in_contact++;
+	}
+      }
+      if (mcm)
+	vcm /= mcm;
+
+      if (nsolids_in_contact > 1) {
+	for(int is = 0; is < gnsolids; is++) {
+	  if (gmass(is, in)) {
+	    Vector3d normal_in = gnormal(is, in);
+	    float alpha = normal_in.dot(gv_update(is, in) - vcm);
+	    if (alpha >= 0) {
+	      gv_update(is, in) -= alpha * normal_in;
+	    }
+	  }
+	}
+      }
+    });
+  }
 }
 
 void Method::compute_velocity_acceleration(Solid &solid)
@@ -526,11 +553,12 @@ void Method::compute_velocity_acceleration(Solid &solid)
   Kokkos::View<Vector3d*> sf = solid.f;
   Kokkos::View<float*> sT = solid.T;
   Kokkos::View<float*> smass = solid.mass;
+  const int gpos = slip_contacts ? solid.gpos: 0;
 
-  Kokkos::View<Vector3d*> gv = grid.v;
-  Kokkos::View<Vector3d*> gv_update = grid.v_update;
-  Kokkos::View<float*> gT = grid.T;
-  Kokkos::View<float*> gT_update = grid.T_update;
+  Kokkos::View<Vector3d**> gv = grid.v;
+  Kokkos::View<Vector3d**> gv_update = grid.v_update;
+  Kokkos::View<float**> gT = grid.T;
+  Kokkos::View<float**> gT_update = grid.T_update;
 
   Kokkos::parallel_for("compute_velocity_acceleration", solid.np_local,
   KOKKOS_LAMBDA (const int &ip)
@@ -548,17 +576,17 @@ void Method::compute_velocity_acceleration(Solid &solid)
       {
         int in = neigh_n(ip, i);
 
-        v_update += wf*gv_update[in];
+        v_update += wf*gv_update(gpos, in);
 
         if (rigid)
           continue;
 
-        const Vector3d &delta_a = wf*(gv_update[in] - gv[in])/dt;
+        const Vector3d &delta_a = wf*(gv_update(gpos, in) - gv(gpos, in))/dt;
         a += delta_a;
         f += delta_a*smass[ip];
 
         if (temp)
-          T += wf*(gT_update[in] - gT[in]);
+          T += wf*(gT_update(gpos, in) - gT(gpos, in));
       }
     }
 
@@ -643,36 +671,19 @@ void Method::advance_particles(Solid &solid)
   });
 }
 
-void Method::update_grid_positions(Grid &grid)
-{
-  if (is_TL)
-  {
-    float dt = update->dt;
-
-    Kokkos::View<Vector3d*> gx = grid.x;
-    Kokkos::View<Vector3d*> gv = grid.v;
-    Kokkos::parallel_for("update_grid_positions", grid.nnodes_local + grid.nnodes_ghost,
-    KOKKOS_LAMBDA (const int &in)
-    {
-      gx[in] += dt*gv[in];
-    });
-  }
-}
-
 void Method::compute_rate_deformation_gradient(bool doublemapping, Solid &solid)
 {
   if (solid.mat->rigid)
     return;
 
   Kokkos::View<Matrix3d*> gradients = is_TL? solid.Fdot: solid.L;
-  const Kokkos::View<Vector3d*> vn = doublemapping? solid.grid->v: solid.grid->v_update;
+  const Kokkos::View<Vector3d**> vn = doublemapping? solid.grid->v: solid.grid->v_update;
 
   bool temp = this->temp;
   Update::SubMethodType sub_method_type = update->sub_method_type;
   int dimension = domain->dimension;
   bool axisymmetric = domain->axisymmetric;
   bool is_TL = this->is_TL;
-  Grid &grid = *solid.grid;
   float kappa_over_cp = solid.mat->kappa * solid.mat->invcp;
 
   Kokkos::View<float**> swf = solid.wf;
@@ -682,9 +693,10 @@ void Method::compute_rate_deformation_gradient(bool doublemapping, Solid &solid)
   Kokkos::View<Vector3d*> sv = solid.v;
   Kokkos::View<float*> svol = is_TL? solid.vol0: solid.vol;
   Kokkos::View<Vector3d*> sq = solid.q;
-  Kokkos::View<float*> gT = doublemapping? grid.T: grid.T_update;
-  Kokkos::View<Vector3d*> gx0 = grid.x0;
+  Kokkos::View<float**> gT = doublemapping? solid.grid->T: solid.grid->T_update;
+  Kokkos::View<Vector3d*> gx0 = solid.grid->x0;
   float &Di = solid.Di;
+  const int gpos = slip_contacts ? solid.gpos: 0;
 
   bool apic = sub_method_type == Update::SubMethodType::APIC? true: false;
 
@@ -699,17 +711,17 @@ void Method::compute_rate_deformation_gradient(bool doublemapping, Solid &solid)
       if (float wf = swf(ip, i))
       {
         int in = neigh_n(ip, i);
-        const Vector3d &wfd = apic? Di * wf * (gx0[in] - sx [ip]) : swfd(ip, i);
+        const Vector3d &wfd = apic? Di * wf * (gx0[in] - sx[ip]) : swfd(ip, i);
 
 	for (int j = 0; j < dimension; j++)
 	  for (int k = 0; k < dimension; k++)
-	    gradient(j, k) += vn[in][j]*wfd[k];
+	    gradient(j, k) += vn(gpos, in)[j]*wfd[k];
 
         if (axisymmetric)
-          gradient(2, 2) += vn[in][0] * wf / sx[ip][0];
+          gradient(2, 2) += vn(gpos, in)[0] * wf / sx[ip][0];
 
         if (temp)
-          q -= swfd(ip, i)*gT[in]*svol[ip]*kappa_over_cp;
+          q -= swfd(ip, i)*gT(gpos, in)*svol[ip]*kappa_over_cp;
       }
     }
 
@@ -785,8 +797,8 @@ void Method::update_deformation_gradient(Solid &solid)
 }
 
 void Method::Fbar_anti_vol_locking(Solid &solid) {
-  Kokkos::View<float*> gmass = solid.grid->mass;
-  Kokkos::View<float*> gvol = solid.grid->vol;
+  Kokkos::View<float**> gmass = solid.grid->mass;
+  Kokkos::View<float**> gvol = solid.grid->vol;
 
   Kokkos::View<float*> smass = solid.mass;
   Kokkos::View<float*> sJ = solid.J;
@@ -795,14 +807,16 @@ void Method::Fbar_anti_vol_locking(Solid &solid) {
   Kokkos::View<float**> swf = solid.wf;
   Kokkos::View<int**> neigh_n = solid.neigh_n;
   Kokkos::View<Matrix3d*> sF = solid.F;
+  const int gpos = slip_contacts ? solid.gpos: 0;
 
   int dimension = domain->dimension;
   bool axisymmetric = domain->axisymmetric;
 
-  Kokkos::parallel_for("reset_vol_nodes", solid.grid->nnodes_local + solid.grid->nnodes_ghost,
-  KOKKOS_LAMBDA (const int &in)
+  Kokkos::parallel_for("reset_vol_nodes", Kokkos::MDRangePolicy<Kokkos::Rank<2>>(
+    {0, 0}, {(size_t)solid.grid->nsolids, (size_t)(solid.grid->nnodes_local + solid.grid->nnodes_ghost)}),
+  KOKKOS_LAMBDA (const int &is, const int &in)
   {
-    gvol[in] = 0;
+    gvol(is, in) = 0;
   });
 
   Kokkos::parallel_for("compute_vol_nodes", solid.neigh_policy,
@@ -812,7 +826,7 @@ void Method::Fbar_anti_vol_locking(Solid &solid) {
       {
         int in = neigh_n(ip, i);
 
-	Kokkos::atomic_add(&gvol[in], wf*svol[ip]);
+	Kokkos::atomic_add(&gvol(gpos, in), wf*svol[ip]);
       }
   });
 
@@ -826,7 +840,7 @@ void Method::Fbar_anti_vol_locking(Solid &solid) {
 	if (float wf = swf(ip, i))
 	  {
 	    int in = neigh_n(ip, i);
-	    vol_ += wf*gvol[in]/gmass[in];
+	    vol_ += wf*gvol(gpos, in)/gmass(gpos, in);
 	  }
       }
 
@@ -856,11 +870,9 @@ void Method::update_stress(Solid &solid)
   if (solid.mat->rigid)
     return;
 
-  Grid &grid = *solid.grid;
-
   bool is_TL = this->is_TL;
   float dt = update->dt;
-  float cellsize = grid.cellsize;
+  float cellsize = solid.grid->cellsize;
 
   Kokkos::View<float*> svol = solid.vol;
   Kokkos::View<float*> svol0 = solid.vol0;

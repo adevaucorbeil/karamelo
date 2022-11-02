@@ -12,6 +12,7 @@
  * ----------------------------------------------------------------------- */
 
 #include <fix.h>
+#include <domain.h>
 #include <group.h>
 #include <input.h>
 #include <universe.h>
@@ -36,6 +37,7 @@ Fix::Fix(MPM *mpm, const vector<string> &args, int mask):
   }
 
   groupbit = group->bitmask[igroup];
+  solid_gpos = domain->solids[group->solid[igroup]]->gpos;
 
   // (*input->vars)[id + "_x"] = Var(id + "_x", 0);
   // (*input->vars)[id + "_y"] = Var(id + "_y", 0);

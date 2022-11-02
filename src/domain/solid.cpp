@@ -94,6 +94,8 @@ Solid::Solid(MPM *mpm, vector<string> args): Pointers(mpm)
     is_TL = false;
     grid = domain->grid;
   }
+  gpos = grid->nsolids;
+  grid->nsolids++;
 
   if (update->sub_method_type == Update::SubMethodType::APIC)
   {

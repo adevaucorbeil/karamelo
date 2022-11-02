@@ -55,8 +55,6 @@ class Method : protected Pointers {
   void update_position(Solid &solid);
   void advance_particles(Solid &solid);
 
-  void update_grid_positions(Grid &grid);
-
   void compute_rate_deformation_gradient(bool doublemapping, Solid &solid);
 
   void update_deformation_gradient(Solid &solid);
@@ -72,6 +70,7 @@ class Method : protected Pointers {
   bool temp;          ///< true for thermo-mechanical simulations
   bool anti_volumetric_locking; ///< true when anti volumetric locking measures are used
   int rigid_solids;
+  bool slip_contacts; ///< true when slip contacts are activated, false otherwise
 };
 
 #endif

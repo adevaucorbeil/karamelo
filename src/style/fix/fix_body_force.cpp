@@ -18,7 +18,9 @@
 #include <grid.h>
 #include <group.h>
 #include <input.h>
+#include <method.h>
 #include <universe.h>
+#include <update.h>
 
 using namespace std;
 using namespace FixConst;
@@ -109,9 +111,10 @@ void FixBodyForce::post_particles_to_grid(Grid &grid)
       fb[i]->evaluate(grid);
 
   int groupbit = this->groupbit;
-  Kokkos::View<float*> mass = grid.mass;
+  int solid_gpos = update->method->slip_contacts ? this->solid_gpos : 0;
+  Kokkos::View<float**> mass = grid.mass;
   Kokkos::View<int*> mask = grid.mask;
-  Kokkos::View<Vector3d*> mb = grid.mb;
+  Kokkos::View<Vector3d**> mb = grid.mb;
 
   for (int i = 0; i < 3; i++)
     if (fb[i])
@@ -121,10 +124,10 @@ void FixBodyForce::post_particles_to_grid(Grid &grid)
       Kokkos::parallel_reduce("FixBodyForce::post_particles_to_grid", grid.nnodes_local + grid.nnodes_ghost,
                               KOKKOS_LAMBDA(const int &in, float &ftot_i)
       {
-	if (!mass[in] || !(mask[in] & groupbit))
+	if (!mass(solid_gpos, in) || !(mask[in] & groupbit))
           return;
 
-	mb[in][i] += mass[in]*fb_i(0, in);
+	mb(solid_gpos, in)[i] += mass(solid_gpos, in)*fb_i(0, in);
 
         ftot_i += fb_i(0, in);
       }, ftot[i]);

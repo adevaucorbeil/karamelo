@@ -19,6 +19,7 @@
 #include <grid.h>
 #include <error.h>
 #include <update.h>
+#include <method.h>
 #include <universe.h>
 #include <expression_operation.h>
 
@@ -136,10 +137,11 @@ void FixVelocityNodes::post_update_grid_state(Grid &grid)
   }
 
   int groupbit = this->groupbit;
+  int solid_gpos = update->method->slip_contacts ? this->solid_gpos : 0;
   float dt = update->dt;
-  Kokkos::View<float*> mass = grid.mass;
+  Kokkos::View<float**> mass = grid.mass;
   Kokkos::View<int*> mask = grid.mask;
-  Kokkos::View<Vector3d*> gv = grid.v, gv_update = grid.v_update;
+  Kokkos::View<Vector3d**> gv = grid.v, gv_update = grid.v_update;
 
   for (int i = 0; i < 3; i++)
     if (v[i])
@@ -156,18 +158,18 @@ void FixVelocityNodes::post_update_grid_state(Grid &grid)
         if (!(mask[in] & groupbit))
           return;
 
-	if ((ileq && (gv_update[in][i] <= v_i(0, in))) ||
-	    (igeq && (gv_update[in][i] >= v_i(0, in))))
+	if ((ileq && (gv_update(solid_gpos, in)[i] <= v_i(0, in))) ||
+	    (igeq && (gv_update(solid_gpos, in)[i] >= v_i(0, in))))
 	  return;
 
-	ftot_i += mass[in]*(v_i(0, in) - gv_update[in][i])/dt;
-	gv_update[in][i] = v_i(0, in);
+	ftot_i += mass(solid_gpos, in)*(v_i(0, in) - gv_update(solid_gpos, in)[i])/dt;
+	gv_update(solid_gpos, in)[i] = v_i(0, in);
 
-	if ((ileq && (gv[in][i] <= v_i(0, in))) ||
-	    (igeq && (gv[in][i] >= v_i(0, in))))
+	if ((ileq && (gv(solid_gpos, in)[i] <= v_i(0, in))) ||
+	    (igeq && (gv(solid_gpos, in)[i] >= v_i(0, in))))
 	  return;
 
-	gv[in][i] = v_prev_i(0, in);
+	gv(solid_gpos, in)[i] = v_prev_i(0, in);
       }, ftot[i]);
     }
 }
@@ -183,8 +185,9 @@ void FixVelocityNodes::post_velocities_to_grid(Grid &grid) {
   }
 
   int groupbit = this->groupbit;
+  int solid_gpos = update->method->slip_contacts ? this->solid_gpos : 0;
   Kokkos::View<int*> mask = grid.mask;
-  Kokkos::View<Vector3d*> gv = grid.v;
+  Kokkos::View<Vector3d**> gv = grid.v;
 
   for (int i = 0; i < 3; i++)
     if (v[i])
@@ -200,11 +203,11 @@ void FixVelocityNodes::post_velocities_to_grid(Grid &grid) {
         if (!(mask[in] & groupbit))
           return;
 
-	if ((ileq && (gv[in][i] <= v_i(0, in))) ||
-	    (igeq && (gv[in][i] >= v_i(0, in))))
+	if ((ileq && (gv(solid_gpos, in)[i] <= v_i(0, in))) ||
+	    (igeq && (gv(solid_gpos, in)[i] >= v_i(0, in))))
 	  return;
 
-	gv[in][i] = v_i(0, in);
+	gv(solid_gpos, in)[i] = v_i(0, in);
       });
     }
 

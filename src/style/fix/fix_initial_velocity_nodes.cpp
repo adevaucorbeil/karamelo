@@ -18,6 +18,7 @@
 #include <grid.h>
 #include <group.h>
 #include <input.h>
+#include <method.h>
 #include <universe.h>
 #include <update.h>
 
@@ -87,8 +88,9 @@ void FixInitialVelocityNodes::post_update_grid_state(Grid &grid)
   }
 
   int groupbit = this->groupbit;
+  int solid_gpos = update->method->slip_contacts ? this->solid_gpos : 0;
   Kokkos::View<int*> mask = grid.mask;
-  Kokkos::View<Vector3d*> gv_update = grid.v_update;
+  Kokkos::View<Vector3d**> gv_update = grid.v_update;
 
   for (int i = 0; i < 3; i++)
     if (v[i])
@@ -100,7 +102,7 @@ void FixInitialVelocityNodes::post_update_grid_state(Grid &grid)
       {
         if (!(mask[in] & groupbit))
           return;
-	gv_update[in][i] = v_i(0, in);
+	gv_update(solid_gpos, in)[i] = v_i(0, in);
       });
     }
 }
@@ -118,8 +120,9 @@ void FixInitialVelocityNodes::post_velocities_to_grid(Grid &grid)
   }
 
   int groupbit = this->groupbit;
+  int solid_gpos = update->method->slip_contacts ? this->solid_gpos : 0;
   Kokkos::View<int*> mask = grid.mask;
-  Kokkos::View<Vector3d*> gv = grid.v;
+  Kokkos::View<Vector3d**> gv = grid.v;
 
   for (int i = 0; i < 3; i++)
     if (v[i])
@@ -131,7 +134,7 @@ void FixInitialVelocityNodes::post_velocities_to_grid(Grid &grid)
       {
         if (!(mask[in] & groupbit))
           return;
-	gv[in][i] = v_i(0, in);
+	gv(solid_gpos, in)[i] = v_i(0, in);
       });
     }
 }

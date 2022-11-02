@@ -30,17 +30,17 @@ class DumpGridGz : public Dump {
   Kokkos::View<tagint*>::HostMirror ntag;   ///< unique identifier for nodes in the system.
   
   Kokkos::View<Vector3d*>::HostMirror x;            ///< nodes' current position
-  Kokkos::View<Vector3d*>::HostMirror v;            ///< nodes' velocity at time t
-  Kokkos::View<Vector3d*>::HostMirror v_update;     ///< nodes' velocity at time t + dt
-  Kokkos::View<Vector3d*>::HostMirror mb;           ///< nodes' external forces times the mass
+  Kokkos::View<Vector3d**>::HostMirror v;           ///< nodes' velocity at time t
+  Kokkos::View<Vector3d**>::HostMirror v_update;    ///< nodes' velocity at time t + dt
+  Kokkos::View<Vector3d**>::HostMirror mb;          ///< nodes' external forces times the mass
 
-  Kokkos::View<float*>::HostMirror mass;            ///< nodes' current mass
+  Kokkos::View<float**>::HostMirror mass;           ///< nodes' current mass
   Kokkos::View<int*>::HostMirror mask;              ///< nodes' group mask
-  Kokkos::View<float*>::HostMirror vol;             ///< nodes' current volume
-  Kokkos::View<bool*>::HostMirror rigid;            ///< are the nodes in the area of influence of a rigid body?
+  Kokkos::View<float**>::HostMirror vol;            ///< nodes' current volume
+  Kokkos::View<bool**>::HostMirror rigid;           ///< are the nodes in the area of influence of a rigid body?
   Kokkos::View<Vector3i*>::HostMirror ntype;        ///< node type in x, y, and z directions (False for an edge, True otherwise)
 
-  Kokkos::View<float*>::HostMirror T;               ///< nodes' temperature at time t
+  Kokkos::View<float**>::HostMirror T;              ///< nodes' temperature at time t
 
  public:
   DumpGridGz(MPM *, vector<string>);

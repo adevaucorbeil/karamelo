@@ -33,7 +33,8 @@
  */
 class Solid : public Pointers {
  public:
-  string id;                                ///< Solid id
+  string id;                               ///< Solid id
+  int gpos;                                ///< Solid position number in grid.
 
   float solidlo[3], solidhi[3];            ///< Solid global bounds
   float solidsublo[3], solidsubhi[3];      ///< Solid local bounds

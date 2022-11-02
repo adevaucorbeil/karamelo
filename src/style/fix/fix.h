@@ -30,7 +30,7 @@ class Fix : protected Pointers {
  public:
   string id, style;
   int igroup, groupbit;
-  int mask;
+  int mask, solid_gpos;
 
   bool requires_ghost_particles = false;
 
