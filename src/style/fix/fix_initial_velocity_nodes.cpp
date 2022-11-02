@@ -18,6 +18,7 @@
 #include <grid.h>
 #include <group.h>
 #include <input.h>
+#include <method.h>
 #include <universe.h>
 #include <update.h>
 
@@ -87,7 +88,7 @@ void FixInitialVelocityNodes::post_update_grid_state(Grid &grid)
   }
 
   int groupbit = this->groupbit;
-  int solid_gpos = this->solid_gpos;
+  int solid_gpos = update->method->slip_contacts ? this->solid_gpos : 0;
   Kokkos::View<int*> mask = grid.mask;
   Kokkos::View<Vector3d**> gv_update = grid.v_update;
 
@@ -119,7 +120,7 @@ void FixInitialVelocityNodes::post_velocities_to_grid(Grid &grid)
   }
 
   int groupbit = this->groupbit;
-  int solid_gpos = this->solid_gpos;
+  int solid_gpos = update->method->slip_contacts ? this->solid_gpos : 0;
   Kokkos::View<int*> mask = grid.mask;
   Kokkos::View<Vector3d**> gv = grid.v;
 
