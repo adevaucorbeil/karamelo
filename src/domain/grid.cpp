@@ -325,7 +325,6 @@ void Grid::init(float *solidlo, float *solidhi) {
   int dimension = domain->dimension;
   int nx = this->nx, ny = this->ny, nz = this->nz;
   int nx_global = this->nx_global, ny_global = this->ny_global, nz_global = this->nz_global;
-  int nsolids = this->nsolids;
 
   Kokkos::View<tagint*> ntag = this->ntag;
   Kokkos::View<int*> nowner = this->nowner;
@@ -413,12 +412,6 @@ void Grid::setup(string cs){
       Kokkos::resize(vol,    nsolids, nn);
 
     Kokkos::resize(rigid,    nsolids, nn);
-    Kokkos::parallel_for(__PRETTY_FUNCTION__,
-     Kokkos::MDRangePolicy<Kokkos::Rank<2>>({0, 0}, {nsolids, nn}),
-    KOKKOS_LAMBDA (const int &is, const int &in)
-    {
-      rigid(is, in) = false;
-    });
 
     Kokkos::resize(T,        nsolids, nn);
     Kokkos::resize(T_update, nsolids, nn);
@@ -457,15 +450,8 @@ void Grid::grow(int nn){
     mask[i] = 1;
   });
 
-  ntype = Kokkos::View<Vector3i*>("ntype", nn);
-  rigid = Kokkos::View<bool**>   ("rigid", ns, nn);
-  Kokkos::parallel_for(__PRETTY_FUNCTION__,
-     Kokkos::MDRangePolicy<Kokkos::Rank<2>>({0, 0}, {ns, nn}),
-  KOKKOS_LAMBDA (const int &is, const int &in)
-  {
-    rigid(is, in) = false;
-  });
-
+  ntype    = Kokkos::View<Vector3i*>("ntype",  nn);
+  rigid    = Kokkos::View<bool**>   ("rigid",  ns, nn);
   T        = Kokkos::View<float**>("T",        ns, nn);
   T_update = Kokkos::View<float**>("T_update", ns, nn);
   Qext     = Kokkos::View<float**>("Qext",     ns, nn);
