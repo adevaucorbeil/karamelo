@@ -167,7 +167,8 @@ void Method::compute_grid_weight_functions_and_gradients(Solid &solid)
       wfd(ip, i)[1] = s [0]*sd[1]*s [2];
       wfd(ip, i)[2] = s [0]*s [1]*sd[2];
 
-      grigid(gpos, in) = rigid;
+      if (grigid(gpos, in) != rigid)
+	grigid(gpos, in) = rigid;
     }
 
     for (int i = count; i < neighbor_nodes_per_particle; i++) {
@@ -486,6 +487,7 @@ void Method::update_grid_velocities(Grid &grid)
     float T_update;
   
     Vector3d &v_update = gv_update(is, in) = gv(is, in);
+
     if (temp)
       T_update = gT_update(is, in) = gT(is, in);
 
@@ -493,6 +495,9 @@ void Method::update_grid_velocities(Grid &grid)
     {
       if (!grigid(is, in))
         v_update += dt*(gf(is, in) + gmb(is, in))/mass;
+      else {
+	v_update = gmb(is, in); // This is just a numerical trick.
+      }
 
       if (temp) {
         T_update += dt*(gQint(is, in) + gQext(is, in))/mass;
@@ -512,26 +517,35 @@ void Method::update_grid_velocities(Grid &grid)
     {
       int nsolids_in_contact = 0;
       float mcm = 0;
+      bool rigid_in = false;
       Vector3d vcm;
 
       for(int is = 0; is < gnsolids; is++) {
 	if (float mass_in = gmass(is, in)) {
-	  mcm += mass_in;
-	  vcm += mass_in * gv_update(is, in);
+	  if (grigid(is, in)) {
+	    rigid_in = true;
+	    mcm = 1.0;
+	    vcm = gv_update(is, in);
+	  }
+
+	  if (!rigid_in) {
+	    mcm += mass_in;
+	    vcm += mass_in * gv_update(is, in);
+	  }
 	  nsolids_in_contact++;
 	}
       }
-      if (mcm)
+
+      if (mcm && !rigid_in)
 	vcm /= mcm;
 
       if (nsolids_in_contact > 1) {
 	for(int is = 0; is < gnsolids; is++) {
-	  if (gmass(is, in)) {
+	  if (gmass(is, in) && !grigid(is, in)) {
 	    Vector3d normal_in = gnormal(is, in);
 	    float alpha = normal_in.dot(gv_update(is, in) - vcm);
-	    if (alpha >= 0) {
+	    if (alpha >= 0)
 	      gv_update(is, in) -= alpha * normal_in;
-	    }
 	  }
 	}
       }
@@ -544,7 +558,6 @@ void Method::compute_velocity_acceleration(Solid &solid)
   bool temp = this->temp;
   float dt = update->dt;
   Grid &grid = *solid.grid;
-  bool rigid = solid.mat->rigid;
 
   Kokkos::View<float**> swf = solid.wf;
   Kokkos::View<int**> neigh_n = solid.neigh_n;
@@ -577,9 +590,6 @@ void Method::compute_velocity_acceleration(Solid &solid)
         int in = neigh_n(ip, i);
 
         v_update += wf*gv_update(gpos, in);
-
-        if (rigid)
-          continue;
 
         const Vector3d &delta_a = wf*(gv_update(gpos, in) - gv(gpos, in))/dt;
         a += delta_a;
