@@ -512,13 +512,15 @@ void Method::update_grid_velocities(Grid &grid)
 
 
   if (slip_contacts) {
+    Kokkos::View<Vector3d*> fcontact ("fcontacts", gnsolids);
+    
     Kokkos::parallel_for("correct_grid_velocities", grid.nnodes_local + grid.nnodes_ghost,
     KOKKOS_LAMBDA (const int &in)
     {
       int nsolids_in_contact = 0;
       float mcm = 0;
       bool rigid_in = false;
-      Vector3d vcm;
+      Vector3d vcm, n;
 
       for(int is = 0; is < gnsolids; is++) {
 	if (float mass_in = gmass(is, in)) {
@@ -526,6 +528,7 @@ void Method::update_grid_velocities(Grid &grid)
 	    rigid_in = true;
 	    mcm = 1.0;
 	    vcm = gv_update(is, in);
+	    n   = gnormal(is, in);
 	  }
 
 	  if (!rigid_in) {
@@ -542,14 +545,24 @@ void Method::update_grid_velocities(Grid &grid)
       if (nsolids_in_contact > 1) {
 	for(int is = 0; is < gnsolids; is++) {
 	  if (gmass(is, in) && !grigid(is, in)) {
-	    Vector3d normal_in = gnormal(is, in);
+	    Vector3d normal_in = rigid_in ? -n : gnormal(is, in);
 	    float alpha = normal_in.dot(gv_update(is, in) - vcm);
-	    if (alpha >= 0)
-	      gv_update(is, in) -= alpha * normal_in;
+	    if (alpha >= 0) {
+	      const Vector3d &delta_v = -alpha * normal_in;
+	      gv_update(is, in) = delta_v;
+	      fcontact(is) += delta_v * gmass(is, in) / dt;
+	    }
 	  }
 	}
       }
     });
+
+    
+    for(int is = 0; is < gnsolids; is++) {
+      input->parsev("ContactForce_" + grid.sID[is] + "_x", fcontact(is)[0]);
+      input->parsev("ContactForce_" + grid.sID[is] + "_y", fcontact(is)[1]);
+      input->parsev("ContactForce_" + grid.sID[is] + "_z", fcontact(is)[2]);
+    }
   }
 }
 

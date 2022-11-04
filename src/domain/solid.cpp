@@ -96,7 +96,15 @@ Solid::Solid(MPM *mpm, vector<string> args): Pointers(mpm)
   }
   gpos = grid->nsolids;
   grid->nsolids++;
+  grid->sID.push_back(id);
 
+  if (update->method->slip_contacts) {
+    // Create variables where the contact forces will be stored.
+    input->parsev("ContactForce_" + id + "_x", 0);
+    input->parsev("ContactForce_" + id + "_y", 0);
+    input->parsev("ContactForce_" + id + "_z", 0);
+  }
+  
   if (update->sub_method_type == Update::SubMethodType::APIC)
   {
     apic = true;
