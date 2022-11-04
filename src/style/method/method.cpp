@@ -549,7 +549,7 @@ void Method::update_grid_velocities(Grid &grid)
 	    float alpha = normal_in.dot(gv_update(is, in) - vcm);
 	    if (alpha >= 0) {
 	      const Vector3d &delta_v = -alpha * normal_in;
-	      gv_update(is, in) = delta_v;
+	      gv_update(is, in) += delta_v;
 	      fcontact(is) += delta_v * gmass(is, in) / dt;
 	    }
 	  }
