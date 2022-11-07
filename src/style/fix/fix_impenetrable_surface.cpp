@@ -153,7 +153,7 @@ void FixImpenetrableSurface::initial_integrate(Solid &solid) {
     lftot_2 += f[2];
   }, ftot_0, ftot_1, ftot_2);
 
-  ftot = Vector3d(ftot_0, ftot_1, ftot_2);
+  ftot += Vector3d(ftot_0, ftot_1, ftot_2);
 }
 
 void FixImpenetrableSurface::write_restart(ofstream *of) {

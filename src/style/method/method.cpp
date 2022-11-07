@@ -558,10 +558,13 @@ void Method::update_grid_velocities(Grid &grid)
     });
 
     
+    Kokkos::View<Vector3d*>::HostMirror fcontact_host = create_mirror(fcontact);
+    deep_copy(fcontact_host, fcontact);
+
     for(int is = 0; is < gnsolids; is++) {
-      input->parsev("ContactForce_" + grid.sID[is] + "_x", fcontact(is)[0]);
-      input->parsev("ContactForce_" + grid.sID[is] + "_y", fcontact(is)[1]);
-      input->parsev("ContactForce_" + grid.sID[is] + "_z", fcontact(is)[2]);
+      input->parsev("ContactForce_" + grid.sID[is] + "_x", fcontact_host(is)[0]);
+      input->parsev("ContactForce_" + grid.sID[is] + "_y", fcontact_host(is)[1]);
+      input->parsev("ContactForce_" + grid.sID[is] + "_z", fcontact_host(is)[2]);
     }
   }
 }
@@ -1186,22 +1189,25 @@ void Method::adjust_dt()
 
   for (Solid *solid: domain->solids)
   {
+    if (solid->mat->rigid)
+      continue;
+
     Kokkos::View<float*> solid_dtCFL = solid->dtCFL;
 
     Kokkos::parallel_reduce("update_deformation_gradient_stress2", solid->np_local,
     KOKKOS_LAMBDA (const int &ip, float &dtCFL1)
     {
       dtCFL1 = MIN(dtCFL1, solid_dtCFL[ip]);
-      /*if (!dtCFL)
+      /*if (!dtCFL1)
       {
         cout << "Error: dtCFL == 0\n";
-        cout << "domain->solids[" << isolid << "]->dtCFL == 0\n";
+        cout << "domain->solids[" << solid->id << "]->dtCFL == 0\n";
         error->one(FLERR, "");
       }
-      else if (std::isnan(dtCFL))
+      else if (std::isnan(dtCFL1))
       {
         cout << "Error: dtCFL = " << dtCFL << "\n";
-        cout << "domain->solids[" << isolid << "]->dtCFL == " << domain->solids[isolid]->dtCFL[ip] << "\n";
+        cout << "domain->solids[" << solid << "]->dtCFL == " << solid->dtCFL[ip] << "\n";
         error->one(FLERR, "");
       }*/
     }, Kokkos::Min<float>(dtCFL));
