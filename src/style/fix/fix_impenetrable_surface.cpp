@@ -61,20 +61,20 @@ FixImpenetrableSurface::FixImpenetrableSurface(MPM *mpm, vector<string> args)
   }
   id = args[0];
 
-  int k = 2;
+  int j = 2;
 
-  K = input->parsev(args[++k]).result(mpm);
+  K = input->parsev(args[++j]).result(mpm);
 
   for (int dim = 0; dim < 3; dim++) {
-    k++;
-    input->parsev(args[k]);
-    xs[dim] = &input->expressions[args[k]];
+    j++;
+    input->parsev(args[j]);
+    xs[dim] = &input->expressions[args[j]];
   }
   for (int dim = 0; dim < 3; dim++) {
-    k++;
-    input->parsev(args[k]);
-    normal[dim] = &input->expressions[args[k]];
-    cout << "normal[" << dim << "]=" << args[k] << endl;
+    j++;
+    input->parsev(args[j]);
+    normal[dim] = &input->expressions[args[j]];
+    cout << "normal[" << dim << "]=" << args[j] << endl;
   }
 }
 
@@ -110,10 +110,11 @@ void FixImpenetrableSurface::initial_integrate(Solid &solid) {
       normal[i]->evaluate(solid);
   }
 
-  int K = this->K;
+  float K = this->K;
   int groupbit = this->groupbit;
   Kokkos::View<int*> mask = solid.mask;
   Kokkos::View<float*> smass = solid.mass;
+  Kokkos::View<float*> svol = solid.vol;
   Kokkos::View<Vector3d*> sx = solid.x;
   Kokkos::View<Vector3d*> smbp = solid.mbp;
   Kokkos::View<float*> sdamage = solid.damage;
@@ -130,6 +131,8 @@ void FixImpenetrableSurface::initial_integrate(Solid &solid) {
 
   float ftot_0, ftot_1, ftot_2;
 
+  int dimension = domain->dimension;
+
   Kokkos::parallel_reduce("FixImpenetrableSurface::initial_integrate", solid.np_local,
   KOKKOS_LAMBDA(const int &ip, float &lftot_0, float &lftot_1, float &lftot_2)
   {
@@ -145,7 +148,15 @@ void FixImpenetrableSurface::initial_integrate(Solid &solid) {
     if (p < 0)
       return;
 
-    const Vector3d &f = K*G*p*(1 - sdamage[ip])*normal_;
+    float R;
+    if (dimension == 1)
+      R = svol[ip];
+    else if (dimension == 2)
+      R = Kokkos::Experimental::sqrt(svol[ip]);
+    else
+      R = Kokkos::Experimental::cbrt(svol[ip]);
+
+    const Vector3d &f = K*G*p*R*(1 - sdamage[ip])*normal_;
 
     smbp[ip] += f;
     lftot_0 += f[0];
