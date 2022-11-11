@@ -650,15 +650,20 @@ void Method::update_position(Solid &solid)
 	  sx[ip][2] < boxlo[2] ||
 	  sx[ip][2] > boxhi[2])
 	serror_flag[ip] = 1;
+      if (isnan(sx[ip][0]) || isnan(sx[ip][1]) || isnan(sx[ip][2])) {
+	serror_flag[ip] = 10;
+      }
       error_ += serror_flag[ip];
     }, error_sum);
 
     if (error_sum) {
       Kokkos::View<Vector3d*>::HostMirror xp = create_mirror(solid.x);
       deep_copy(xp, solid.x);
+      Kokkos::View<int*>::HostMirror serror_flag_m = create_mirror(solid.error_flag);
+      deep_copy(serror_flag_m, solid.error_flag);
 
       for (int ip = 0; ip < solid.np_local; ip++) {
-        if (!domain->inside(xp[ip])) {
+	if (serror_flag_m[ip] == 1) {
 	  string msg = "Error: Particle " + to_string(ip) + " left the domain ("
 	    + to_string(boxlo[0]) + "," + to_string(boxhi[0]) + ","
 	    + to_string(boxlo[1]) + "," + to_string(boxhi[1]) + ","
@@ -668,6 +673,13 @@ void Method::update_position(Solid &solid)
 
 	  error->one(FLERR, msg);
 	}
+	else if (serror_flag_m[ip] == 10) {
+	  string msg = "Error: NaN x[" + to_string(ip) + "]=[" + to_string(xp[ip][0])
+	    + ", " + to_string(xp[ip][1]) + ", "+ to_string(xp[ip][2]) + "]\n";
+
+	  error->one(FLERR, msg);
+	}
+
       }
     }
   } else {
@@ -676,7 +688,6 @@ void Method::update_position(Solid &solid)
     {
       sx[ip] += dt*sv_update[ip];
     });
-
   }
 }
 
@@ -839,11 +850,14 @@ void Method::Fbar_anti_vol_locking(Solid &solid) {
   int dimension = domain->dimension;
   bool axisymmetric = domain->axisymmetric;
 
-  Kokkos::parallel_for("reset_vol_nodes", Kokkos::MDRangePolicy<Kokkos::Rank<2>>(
-    {0, 0}, {(size_t)solid.grid->nsolids, (size_t)(solid.grid->nnodes_local + solid.grid->nnodes_ghost)}),
-  KOKKOS_LAMBDA (const int &is, const int &in)
+  bool gshared = solid.grid->sShared[gpos];
+
+  Kokkos::parallel_for("reset_vol_nodes", solid.grid->nnodes_local + solid.grid->nnodes_ghost,
+  KOKKOS_LAMBDA (const int &in)
   {
-    gvol(is, in) = 0;
+    gvol(gpos, in) = 0;
+    if (gshared)
+      gmass(gpos, in) = 0;
   });
 
   Kokkos::parallel_for("compute_vol_nodes", solid.neigh_policy,
@@ -854,6 +868,8 @@ void Method::Fbar_anti_vol_locking(Solid &solid) {
         int in = neigh_n(ip, i);
 
 	Kokkos::atomic_add(&gvol(gpos, in), wf*svol[ip]);
+	if (gshared)
+          Kokkos::atomic_add(&gmass(gpos, in), wf*smass(ip));
       }
   });
 

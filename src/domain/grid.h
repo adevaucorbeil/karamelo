@@ -53,6 +53,7 @@ class Grid : public Pointers {
  public:
   int nsolids;           ///< number of solids sharing the same grid
   vector<string> sID;    ///< list of the IDs of solids connected to the grid.
+  vector<bool> sShared;   ///< True when two solids share the same position (i.e., in no-slip contact)
   int ncells;            ///< number of cells
   bigint nnodes;         ///< total number of nodes in the domain
   bigint nnodes_local;   ///< number of nodes (in this CPU)

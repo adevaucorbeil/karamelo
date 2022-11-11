@@ -183,8 +183,10 @@ Solid::Solid(MPM *mpm, vector<string> args): Pointers(mpm)
 
       if (isolid == -1)
         error->all(FLERR, "Error: cannot find solid with ID " + (*it).substr(12) + ".\n");
-      else
+      else {
 	gpos = domain->solids[isolid]->gpos;
+	grid->sShared[gpos] = true;
+      }
     } else {
       error->all(FLERR, "Error: I don't understand " + *it + " at this position.\n");
     }
@@ -201,6 +203,7 @@ Solid::Solid(MPM *mpm, vector<string> args): Pointers(mpm)
     gpos = grid->nsolids;
     grid->nsolids++;
     grid->sID.push_back(id);
+    grid->sShared.push_back(false);
   }
 }
 
