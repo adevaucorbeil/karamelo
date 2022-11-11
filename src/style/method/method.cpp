@@ -61,7 +61,8 @@ void Method::compute_grid_weight_functions_and_gradients(Solid &solid)
   const int gpos = slip_contacts ? solid.gpos : 0;
 
   const float &inv_cellsize = 1/solid.grid->cellsize;
-    
+
+  int nx = solid.grid->nx_global;
   int ny = solid.grid->ny_global;
   int nz = solid.grid->nz_global;
 
@@ -88,15 +89,15 @@ void Method::compute_grid_weight_functions_and_gradients(Solid &solid)
     const int &j0 = (xp[1] - boxlo[1])*inv_cellsize + 1 - half_support;
     const int &k0 = (xp[2] - boxlo[2])*inv_cellsize + 1 - half_support;
 
-    for (int i = i0; i < i0 + 2*half_support; i++)
+    for (int i = i0; i < i0 + 2*half_support && i < nx; i++)
     {
       if (ny > 1)
       {
-        for (int j = j0; j < j0 + 2*half_support; j++)
+        for (int j = j0; j < j0 + 2*half_support && j < ny; j++)
         {
           if (nz > 1)
           {
-            for (int k = k0; k < k0 + 2*half_support; k++)
+            for (int k = k0; k < k0 + 2*half_support && k < nz; k++)
             {
               const int &tag = nz*ny*i + nz*j + k;
 
