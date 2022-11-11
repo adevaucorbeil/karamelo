@@ -94,9 +94,6 @@ Solid::Solid(MPM *mpm, vector<string> args): Pointers(mpm)
     is_TL = false;
     grid = domain->grid;
   }
-  gpos = grid->nsolids;
-  grid->nsolids++;
-  grid->sID.push_back(id);
 
   if (update->method->slip_contacts) {
     // Create variables where the contact forces will be stored.
@@ -144,10 +141,14 @@ Solid::Solid(MPM *mpm, vector<string> args): Pointers(mpm)
 
   neighbor_nodes_per_particle = update->shape_function == Update::ShapeFunctions::LINEAR ? pow(2, domain->dimension) : pow(4, domain->dimension);
 
+  gpos = -1;
+
+  vector<string>::iterator it = args.begin();
   if (args[1] == "region")
   {
     // Set material, cellsize, and initial temperature:
-    options(&args, args.begin() + 4);
+    it += 4;
+    options(&args, it);
 
     // Create particles:
     populate(args);
@@ -155,14 +156,16 @@ Solid::Solid(MPM *mpm, vector<string> args): Pointers(mpm)
   else if (args[1] == "mesh")
   {
     // Set material and cellsize and initial temperature:
-    options(&args, args.begin() + 3);
+    it += 3;
+    options(&args, it);
 
     read_mesh(args[2]);
   }
   else if (args[1] == "file")
   {
     // Set material and cellsize and initial temperature:
-    options(&args, args.begin() + 3);
+    it += 3;
+    options(&args, it);
 
     read_file(args[2]);
   }
@@ -172,6 +175,33 @@ Solid::Solid(MPM *mpm, vector<string> args): Pointers(mpm)
   else
     comm_n = 49;
 
+
+  // Check if the solid needs to share a grid with another one:
+  if (args.end() > it) {
+    if ((*it).substr(0,12) == "GlueToSolid=") {
+      int isolid = domain->find_solid((*it).substr(12));
+
+      if (isolid == -1)
+        error->all(FLERR, "Error: cannot find solid with ID " + (*it).substr(12) + ".\n");
+      else
+	gpos = domain->solids[isolid]->gpos;
+    } else {
+      error->all(FLERR, "Error: I don't understand " + *it + " at this position.\n");
+    }
+    it++;
+  }
+
+  if (it != args.end()) {
+    string error_str = "Error: too many arguments\n";
+    for (auto &x : usage)
+      error_str += x.second;
+  }
+
+  if (gpos < 0) {
+    gpos = grid->nsolids;
+    grid->nsolids++;
+    grid->sID.push_back(id);
+  }
 }
 
 Solid::~Solid()
@@ -219,7 +249,7 @@ void Solid::init()
   }
 }
 
-void Solid::options(vector<string> *args, vector<string>::iterator it)
+void Solid::options(vector<string> *args, vector<string>::iterator &it)
 {
   // cout << "In solid::options()" << endl;
   if (args->end() < it + 3)
@@ -246,13 +276,6 @@ void Solid::options(vector<string> *args, vector<string>::iterator it)
     T0 = input->parsev(*it); // set initial temperature
 
     it++;
-
-    if (it != args->end())
-    {
-      string error_str = "Error: too many arguments\n";
-      for (auto &x : usage)
-        error_str += x.second;
-    }
   }
 }
 
@@ -953,10 +976,7 @@ void Solid::populate(vector<string> args)
     vol_ = delta*delta*delta;
 
   float mass_;
-  if (mat->rigid)
-    mass_ = 1;
-  else
-    mass_ = mat->rho0*vol_;
+  mass_ = mat->rho0*vol_;
 
   np_per_cell = (int)input->parsev(args[3]);
   float xi = 0.5;
@@ -1267,7 +1287,7 @@ void Solid::populate(vector<string> args)
     if (axisymmetric == true)
     {
       mass[i] = mass_*x0[i][0];
-      vol0[i] = vol[i] = mass[i]/rho0[i];
+      vol0[i] = vol[i] = vol_*x0[i][0];
     }
     else
     {

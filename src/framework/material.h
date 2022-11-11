@@ -44,14 +44,14 @@
  */
 class Mat {
 public:
-  string id;                                         ///< Identification name of the material
-  int type;                                          ///< Either RIGID, LINEAR, NEO_HOOKEAN, or SHOCK with values from  Material::constitutive_model
-  bool rigid = false;                                ///< True if the material is rigid, false otherwise
-  class EOS *eos = nullptr;                          ///< Pointer to the EOS
-  class Strength *strength = nullptr;                ///< Pointer to the Strength (flow stress rule)
-  class Damage *damage = nullptr;                    ///< Pointer to the Damage law
-  class Temperature *temp = nullptr;                 ///< Pointer to the Temperature law
-  float rho0;                                       ///< Density in the reference state \f$\rho_0\f$
+  string id;                                        ///< Identification name of the material
+  int type;                                         ///< Either RIGID, LINEAR, NEO_HOOKEAN, or SHOCK with values from  Material::constitutive_model
+  bool rigid = false;                               ///< True if the material is rigid, false otherwise
+  class EOS *eos = nullptr;                         ///< Pointer to the EOS
+  class Strength *strength = nullptr;               ///< Pointer to the Strength (flow stress rule)
+  class Damage *damage = nullptr;                   ///< Pointer to the Damage law
+  class Temperature *temp = nullptr;                ///< Pointer to the Temperature law
+  float rho0 = 1;                                   ///< Density in the reference state \f$\rho_0\f$
   float E;                                          ///< Young's modulus
   float nu;                                         ///< Poisson's ratio \f$\nu\f$
   float G;                                          ///< Shear modulus
@@ -63,9 +63,9 @@ public:
   float kappa = 0;                                  ///< Thermal conductivity
   float alpha = 0;                                  ///< Coefficient of thermal expansion
   Mat(string, int, class EOS *, class Strength *, class Damage *,
-      class Temperature *);                          ///< Creates an elasto-plastic material
+      class Temperature *);                         ///< Creates an elasto-plastic material
   Mat(string, int, float, float, float, float, float, float); ///< Creates a linear or Neo-Hookean material
-  Mat(string, int);                                  ///< Creates a rigid material
+  Mat(string, int, float);                          ///< Creates a rigid material
 };
 
 /*! Stores all the user defined Equations of State, elasto-plastic, damage, and temperature
@@ -125,11 +125,11 @@ private:
   template <typename T> static Damage *damage_creator(MPM *,vector<string>);
   template <typename T> static Temperature *temperature_creator(MPM *,vector<string>);
 
-  const map<string, string> usage = {{"rigid",        "Usage: material(material-ID, \033[1;32mrigid\033[0m)\n"},
+  const map<string, string> usage = {{"rigid",        "Usage: material(material-ID, \033[1;32mrigid\033[0m, rho)\n"},
 				     {"linear",       "Usage: material(material-ID, \033[1;32mlinear\033[0m, rho, E, nu, optional: cp, optional: kappa, optional: damage-ID)\n"},
 				     {"neo-hookean",  "Usage: material(material-ID, \033[1;32mneo-hookean\033[0m, rho, E, nu, optional: cp, optional: kappa, optional: damage-ID)\n"},
 				     {"eos-strength", "Usage: material(material-ID, \033[1;32meos-strength\033[0m, eos-ID, strength-ID, optional: damage-ID, optional: temperature-ID)\n"}};
-  const map<string, int>    Nargs = {{"rigid",        2},
+  const map<string, int>    Nargs = {{"rigid",        3},
 				     {"linear",       5},
 				     {"neo-hookean",  5},
 				     {"eos-strength", 4}};

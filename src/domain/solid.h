@@ -117,7 +117,7 @@ class Solid : public Pointers {
   virtual ~Solid();
 
   void init();                              ///< Launch the initialization of the grid.
-  void options(vector<string> *, vector<string>::iterator); ///< Determines the material and temperature schemes used.
+  void options(vector<string> *, vector<string>::iterator&); ///< Determines the material and temperature schemes used.
   void grow(int);                           ///< Allocate memory for the vectors used for particles or resize them.
   
   void compute_position_corners();
