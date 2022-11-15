@@ -392,12 +392,7 @@ void Grid::init(float *solidlo, float *solidhi) {
   }
 }
 
-void Grid::setup(string cs){
-  cellsize = input->parsev(cs);
-  if (universe->me == 0) {
-    cout << "Set grid cellsize to " << cellsize << endl;
-  }
-
+void Grid::setup(){
   // Check if the size of the non-shared views (mass, v, v_update, ...)
   // is appropriate for the number of solids present:
 

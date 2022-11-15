@@ -205,6 +205,8 @@ Solid::Solid(MPM *mpm, vector<string> args): Pointers(mpm)
     grid->sID.push_back(id);
     grid->sShared.push_back(false);
   }
+
+  grid->setup();
 }
 
 Solid::~Solid()
@@ -273,7 +275,10 @@ void Solid::options(vector<string> *args, vector<string>::iterator &it)
 
     it++;
 
-    grid->setup(*it); // set the grid cellsize
+    grid->cellsize = input->parsev(*it);
+    if (universe->me == 0) {
+      cout << "Set grid cellsize to " << grid->cellsize << endl;
+    }
 
     it++;
     T0 = input->parsev(*it); // set initial temperature

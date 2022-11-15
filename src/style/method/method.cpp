@@ -551,7 +551,7 @@ void Method::update_grid_velocities(Grid &grid)
 	    if (alpha >= 0) {
 	      const Vector3d &delta_v = -alpha * normal_in;
 	      gv_update(is, in) += delta_v;
-	      fcontact(is) += delta_v * gmass(is, in) / dt;
+	      Kokkos::atomic_add(&fcontact(is), delta_v * gmass(is, in) / dt);
 	    }
 	  }
 	}

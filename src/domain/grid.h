@@ -100,7 +100,7 @@ class Grid : public Pointers {
 
   Grid(class MPM *);
   void grow(int);              ///< Allocate memory for the vectors used for local nodes or resize them  
-  void setup(string);
+  void setup();
   void init(float*, float*); ///< Create the array of nodes. Give them their position, tag, and type
 };
 
