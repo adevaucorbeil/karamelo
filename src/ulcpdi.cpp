@@ -551,6 +551,6 @@ void ULCPDI::reset()
 
 void ULCPDI::exchange_particles()
 {
-  cout << "Error: ULCPDI::exchange_particles() not coded\n";
-  error->all(FLERR, "");
+  if (universe->nprocs > 1)
+    error->all(FLERR, "Error: ULCPDI::exchange_particles() not coded. It works only with single CPUs.\n");
 }
