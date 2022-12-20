@@ -54,6 +54,7 @@ public:
 
   void setup();
   void write(bigint);                  ///< output for current timestep
+  void write_dumps();                  ///< write dump files
 
   void set_log(vector<string>);        ///< set log output frequency
 

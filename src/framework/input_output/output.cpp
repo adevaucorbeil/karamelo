@@ -197,6 +197,11 @@ void Output::write(bigint ntimestep){
   if (next_plot_any!=0) next = MIN(next,next_plot_any);
 }
 
+void Output::write_dumps(){
+  for (int idump = 0; idump < ndumps; idump++) {
+      dumps[idump]->write();
+}
+
 void Output::set_log(vector<string> args){
   if (args.size()!=1) {
     error->all(FLERR, "Illegal log command: too many variables.\n");
