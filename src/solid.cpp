@@ -2882,7 +2882,9 @@ void Solid::write_restart(ofstream *of) {
     of->write(reinterpret_cast<const char *>(&eff_plastic_strain_rate[ip]), sizeof(double));
     of->write(reinterpret_cast<const char *>(&damage[ip]), sizeof(double));
     of->write(reinterpret_cast<const char *>(&damage_init[ip]), sizeof(double));
-    of->write(reinterpret_cast<const char *>(&T[ip]), sizeof(double));
+    if (update->method->temp) {
+      of->write(reinterpret_cast<const char *>(&T[ip]), sizeof(double));
+    }
     of->write(reinterpret_cast<const char *>(&ienergy[ip]), sizeof(double));
     of->write(reinterpret_cast<const char *>(&mask[ip]), sizeof(int));
   }
@@ -2949,7 +2951,9 @@ void Solid::read_restart(ifstream *ifr) {
     ifr->read(reinterpret_cast<char *>(&eff_plastic_strain_rate[ip]), sizeof(double));
     ifr->read(reinterpret_cast<char *>(&damage[ip]), sizeof(double));
     ifr->read(reinterpret_cast<char *>(&damage_init[ip]), sizeof(double));
-    ifr->read(reinterpret_cast<char *>(&T[ip]), sizeof(double));
+    if (update->method->temp) {
+      ifr->read(reinterpret_cast<char *>(&T[ip]), sizeof(double));
+    }
     ifr->read(reinterpret_cast<char *>(&ienergy[ip]), sizeof(double));
     ifr->read(reinterpret_cast<char *>(&mask[ip]), sizeof(int));
   }
