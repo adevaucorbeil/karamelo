@@ -4,6 +4,7 @@ Karamelo is a parallel simulator for the Material Point Method (MPM).
 
 
 ### News
+- Mar 2024:   Karamelo now supports GPUs through the use of Kokkos. Please use the dedicated branch kokkos if you want to use it.
 - April 2021: Karamelo now supports restarts
 - October 2019: It is now possible to model contacts with TLMPM: https://www.researchgate.net/publication/344552510_Modelling_contacts_with_a_total_Lagrangian_material_point_method
 - October 2019: Karamelo has been used extensively for the simulations featured in our MPM review: https://www.researchgate.net/publication/343096803_Material_point_method_after_25_years_theory_implementation_and_applications
