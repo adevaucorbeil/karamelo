@@ -9,7 +9,7 @@ public:
   KOKKOS_INLINE_FUNCTION float
   evaluate(int i) const
   {
-    return Kokkos::Experimental::erf(get_value(0, i));
+    return Kokkos::erf(get_value(0, i));
   }
 };
 
@@ -20,7 +20,7 @@ public:
   KOKKOS_INLINE_FUNCTION float
   evaluate(int i) const
   {
-    return Kokkos::Experimental::erfc(get_value(0, i));
+    return Kokkos::erfc(get_value(0, i));
   }
 };
 
@@ -31,7 +31,7 @@ public:
   KOKKOS_INLINE_FUNCTION float
   evaluate(int i) const
   {
-    return Kokkos::Experimental::tgamma(get_value(0, i));
+    return Kokkos::tgamma(get_value(0, i));
   }
 };
 
@@ -42,6 +42,6 @@ public:
   KOKKOS_INLINE_FUNCTION float
   evaluate(int i) const
   {
-    return Kokkos::Experimental::lgamma(get_value(0, i));
+    return Kokkos::lgamma(get_value(0, i));
   }
 };

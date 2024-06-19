@@ -104,7 +104,7 @@ StrengthSwift::update_deviatoric_stress(Solid &solid,
     float J2, Gd, yieldStress;
 
     if (seff_plastic_strain[ip] > 1.0e-10 && seff_plastic_strain[ip] > C)
-      yieldStress = A + B*Kokkos::Experimental::pow(seff_plastic_strain[ip] - C, n);
+      yieldStress = A + B*Kokkos::pow(seff_plastic_strain[ip] - C, n);
     else
       yieldStress = A;
 

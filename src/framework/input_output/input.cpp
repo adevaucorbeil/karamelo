@@ -63,10 +63,10 @@ using namespace std;
 
 const bool Input::DEBUG_EXPRESSIONS = false;
 
-extern constexpr float CONSTANT_PI      = Kokkos::Experimental::    pi_v<float>;
-extern constexpr float CONSTANT_E       = Kokkos::Experimental::     e_v<float>;
-extern constexpr float CONSTANT_EGAMMA  = Kokkos::Experimental::egamma_v<float>;
-extern constexpr float CONSTANT_PHI     = Kokkos::Experimental::   phi_v<float>;
+extern constexpr float CONSTANT_PI      = Kokkos::numbers::    pi_v<float>;
+extern constexpr float CONSTANT_E       = Kokkos::numbers::     e_v<float>;
+extern constexpr float CONSTANT_EGAMMA  = Kokkos::numbers::egamma_v<float>;
+extern constexpr float CONSTANT_PHI     = Kokkos::numbers::   phi_v<float>;
 
 Input::Input(MPM *mpm, int argc, char **argv) : Pointers(mpm)
 {

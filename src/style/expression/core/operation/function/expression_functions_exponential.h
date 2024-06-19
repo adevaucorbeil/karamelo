@@ -9,7 +9,7 @@ public:
   KOKKOS_INLINE_FUNCTION float
   evaluate(int i) const
   {
-    return Kokkos::Experimental::exp(get_value(0, i));
+    return Kokkos::exp(get_value(0, i));
   }
 };
 
@@ -20,7 +20,7 @@ public:
   KOKKOS_INLINE_FUNCTION float
   evaluate(int i) const
   {
-    return Kokkos::Experimental::exp2(get_value(0, i));
+    return Kokkos::exp2(get_value(0, i));
   }
 };
 
@@ -31,7 +31,7 @@ public:
   KOKKOS_INLINE_FUNCTION float
   evaluate(int i) const
   {
-    return Kokkos::Experimental::expm1(get_value(0, i));
+    return Kokkos::expm1(get_value(0, i));
   }
 };
 
@@ -42,7 +42,7 @@ public:
   KOKKOS_INLINE_FUNCTION float
   evaluate(int i) const
   {
-    return Kokkos::Experimental::log(get_value(0, i));
+    return Kokkos::log(get_value(0, i));
   }
 };
 
@@ -53,7 +53,7 @@ public:
   KOKKOS_INLINE_FUNCTION float
   evaluate(int i) const
   {
-    return Kokkos::Experimental::log10(get_value(0, i));
+    return Kokkos::log10(get_value(0, i));
   }
 };
 
@@ -64,7 +64,7 @@ public:
   KOKKOS_INLINE_FUNCTION float
   evaluate(int i) const
   {
-    return Kokkos::Experimental::log2(get_value(0, i));
+    return Kokkos::log2(get_value(0, i));
   }
 };
 
@@ -75,6 +75,6 @@ public:
   KOKKOS_INLINE_FUNCTION float
   evaluate(int i) const
   {
-    return Kokkos::Experimental::log1p(get_value(0, i));
+    return Kokkos::log1p(get_value(0, i));
   }
 };

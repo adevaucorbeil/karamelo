@@ -9,7 +9,7 @@ public:
   KOKKOS_INLINE_FUNCTION float
   evaluate(int i) const
   {
-    return Kokkos::Experimental::sin(get_value(0, i));
+    return Kokkos::sin(get_value(0, i));
   }
 };
 
@@ -20,7 +20,7 @@ public:
   KOKKOS_INLINE_FUNCTION float
   evaluate(int i) const
   {
-    return Kokkos::Experimental::cos(get_value(0, i));
+    return Kokkos::cos(get_value(0, i));
   }
 };
 
@@ -31,7 +31,7 @@ public:
   KOKKOS_INLINE_FUNCTION float
   evaluate(int i) const
   {
-    return Kokkos::Experimental::tan(get_value(0, i));
+    return Kokkos::tan(get_value(0, i));
   }
 };
 
@@ -42,7 +42,7 @@ public:
   KOKKOS_INLINE_FUNCTION float
   evaluate(int i) const
   {
-    return Kokkos::Experimental::asin(get_value(0, i));
+    return Kokkos::asin(get_value(0, i));
   }
 };
 
@@ -53,7 +53,7 @@ public:
   KOKKOS_INLINE_FUNCTION float
   evaluate(int i) const
   {
-    return Kokkos::Experimental::acos(get_value(0, i));
+    return Kokkos::acos(get_value(0, i));
   }
 };
 
@@ -64,7 +64,7 @@ public:
   KOKKOS_INLINE_FUNCTION float
   evaluate(int i) const
   {
-    return Kokkos::Experimental::atan(get_value(0, i));
+    return Kokkos::atan(get_value(0, i));
   }
 };
 
@@ -75,6 +75,6 @@ public:
   KOKKOS_INLINE_FUNCTION float
   evaluate(int i) const
   {
-    return Kokkos::Experimental::atan2(get_value(0, i), get_value(1, i));
+    return Kokkos::atan2(get_value(0, i), get_value(1, i));
   }
 };

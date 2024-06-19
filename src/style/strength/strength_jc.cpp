@@ -142,10 +142,10 @@ StrengthJohnsonCook::update_deviatoric_stress(Solid &solid,
     if (seff_plastic_strain[ip] < 1.0e-10)
       yieldStress = A;
     else
-      yieldStress = A + B * Kokkos::Experimental::pow(seff_plastic_strain[ip], n);
+      yieldStress = A + B * Kokkos::pow(seff_plastic_strain[ip], n);
 
     if (C != 0) {
-      yieldStress *= Kokkos::Experimental::pow(1.0 + epsdot_ratio, C);
+      yieldStress *= Kokkos::pow(1.0 + epsdot_ratio, C);
     }
 
     if (cp)
@@ -153,7 +153,7 @@ StrengthJohnsonCook::update_deviatoric_stress(Solid &solid,
       if (sT[ip] >= Tm)
         yieldStress = 0;
       else if (m != 0 && sT[ip] >= Tr)
-        yieldStress *= 1.0 - Kokkos::Experimental::pow((sT[ip] - Tr)/Tmr, m);
+        yieldStress *= 1.0 - Kokkos::pow((sT[ip] - Tr)/Tmr, m);
     }
 
     /*

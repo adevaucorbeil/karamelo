@@ -9,7 +9,6 @@
 #include <limits>
 
 using namespace std;
-using namespace Kokkos;
 using namespace std::chrono;
 
 using FloatingType = float;
@@ -33,30 +32,30 @@ void mls_mpm(int quality) {
   constexpr FloatingType mu_0 = E/(2*(1 + nu)); // Lame mu
   constexpr FloatingType lambda_0 = E*nu/((1 + nu)*(1 - 2*nu)); // Lame lambda
 
-  View<FloatingType*> xx("x", n_particles);
-  View<FloatingType*> xy("x", n_particles);
-  View<FloatingType*> vx("v", n_particles);
-  View<FloatingType*> vy("v", n_particles);
-  View<FloatingType*> C00("C", n_particles);
-  View<FloatingType*> C01("C", n_particles);
-  View<FloatingType*> C10("C", n_particles);
-  View<FloatingType*> C11("C", n_particles);
-  View<FloatingType*> F00("F", n_particles);
-  View<FloatingType*> F01("F", n_particles);
-  View<FloatingType*> F10("F", n_particles);
-  View<FloatingType*> F11("F", n_particles);
-  View<int*> material("material", n_particles);
-  View<FloatingType*> Jp("Jp", n_particles);
+  Kokkos::View<FloatingType*> xx("x", n_particles);
+  Kokkos::View<FloatingType*> xy("x", n_particles);
+  Kokkos::View<FloatingType*> vx("v", n_particles);
+  Kokkos::View<FloatingType*> vy("v", n_particles);
+  Kokkos::View<FloatingType*> C00("C", n_particles);
+  Kokkos::View<FloatingType*> C01("C", n_particles);
+  Kokkos::View<FloatingType*> C10("C", n_particles);
+  Kokkos::View<FloatingType*> C11("C", n_particles);
+  Kokkos::View<FloatingType*> F00("F", n_particles);
+  Kokkos::View<FloatingType*> F01("F", n_particles);
+  Kokkos::View<FloatingType*> F10("F", n_particles);
+  Kokkos::View<FloatingType*> F11("F", n_particles);
+  Kokkos::View<int*> material("material", n_particles);
+  Kokkos::View<FloatingType*> Jp("Jp", n_particles);
 
-  View<FloatingType**> grid_vx("grid_v", n_grid, n_grid);
-  View<FloatingType**> grid_vy("grid_v", n_grid, n_grid);
-  View<FloatingType**> grid_m("grid_m", n_grid, n_grid);
+  Kokkos::View<FloatingType**> grid_vx("grid_v", n_grid, n_grid);
+  Kokkos::View<FloatingType**> grid_vy("grid_v", n_grid, n_grid);
+  Kokkos::View<FloatingType**> grid_m("grid_m", n_grid, n_grid);
 
   Vector2 gravity(0, -1);
 
   auto reset = [&]() {
     int group_size = n_particles/3;
-    parallel_for(n_particles, KOKKOS_LAMBDA(int i) {
+    Kokkos::parallel_for(n_particles, KOKKOS_LAMBDA(int i) {
       int i_in_group = i%group_size;
       int dim_size = 4*quality;
       FloatingType row = i_in_group%dim_size;
@@ -81,14 +80,14 @@ void mls_mpm(int quality) {
 
   auto substep = [&]() {
     // reset node
-    parallel_for(MDRangePolicy<Rank<2>>({ 0, 0 }, { n_grid, n_grid }), KOKKOS_LAMBDA(int i, int j) {
+    Kokkos::parallel_for(Kokkos::MDRangePolicy<Kokkos::Rank<2>>({ 0, 0 }, { n_grid, n_grid }), KOKKOS_LAMBDA(int i, int j) {
       grid_vx(i, j) = 0;
       grid_vy(i, j) = 0;
       grid_m(i, j) = 0;
     });
 
     // P2G
-    parallel_for(n_particles, KOKKOS_LAMBDA(int i) {
+    Kokkos::parallel_for(n_particles, KOKKOS_LAMBDA(int i) {
       LazyVector2 x(&xx(i), &xy(i));
       LazyVector2 v(&vx(i), &vy(i));
       LazyMatrix2 C(&C00(i), &C01(i), &C10(i), &C11(i));
@@ -104,7 +103,7 @@ void mls_mpm(int quality) {
         0.5*(fx - Vector2(0.5, 0.5)).square() };
 
       F = (Matrix2(1, 0, 0, 1) + dt*C)*F; // deformation gradient update
-      FloatingType h = max((FloatingType)0.1, min((FloatingType)5.0, exp(10*(1 - jp)))); // Hardening coefficient: snow gets harder when compressed
+      FloatingType h = max((FloatingType)0.1, min((FloatingType)5.0, Kokkos::exp(10*(1 - jp)))); // Hardening coefficient: snow gets harder when compressed
       if (mat == 1) // jelly, make it softer
         h = 0.3;
       FloatingType mu = mu_0*h, la = lambda_0*h;
@@ -123,7 +122,7 @@ void mls_mpm(int quality) {
         J *= new_sig;
       }
       if (mat == 0) // Reset deformation gradient to avoid numerical instability
-        F = Matrix2(1, 0, 0, 1)*sqrt(J);
+        F = Matrix2(1, 0, 0, 1)*Kokkos::sqrt(J);
       else if (mat == 2)
         F = U*sig*V.transpose(); // Reconstruct elastic deformation gradient after plasticity
       Matrix2 stress = 2*mu*(F - U*V.transpose())*F.transpose() + Matrix2(1, 0, 0, 1)*la*J*(J - 1);
@@ -140,17 +139,17 @@ void mls_mpm(int quality) {
           weight = w[i].x()*w[j].y();
           index = base + offset;
 
-          atomic_add(&grid_m((int)index.x(), (int)index.y()), weight*p_mass);
+          Kokkos::atomic_add(&grid_m((int)index.x(), (int)index.y()), weight*p_mass);
 
           dpos = (offset - fx)*dx;
           const Vector2 &dv = weight*(p_mass*v + affine*dpos);
-          atomic_add(&grid_vx(index.x(), index.y()), dv.x());
-          atomic_add(&grid_vy(index.x(), index.y()), dv.y());
+          Kokkos::atomic_add(&grid_vx(index.x(), index.y()), dv.x());
+          Kokkos::atomic_add(&grid_vy(index.x(), index.y()), dv.y());
         }
     });
 
     // node update
-    parallel_for(MDRangePolicy<Rank<2>>({ 0, 0 }, { n_grid, n_grid }), KOKKOS_LAMBDA(int i, int j) {
+    Kokkos::parallel_for(Kokkos::MDRangePolicy<Kokkos::Rank<2>>({ 0, 0 }, { n_grid, n_grid }), KOKKOS_LAMBDA(int i, int j) {
       LazyVector2 v(&grid_vx(i, j), &grid_vy(i, j));
       FloatingType m = grid_m(i, j); // make lazy, but need to replace std::is_arithmetic
 
@@ -169,7 +168,7 @@ void mls_mpm(int quality) {
     });
 
     // G2P
-    parallel_for(n_particles, KOKKOS_LAMBDA(int i) {
+    Kokkos::parallel_for(n_particles, KOKKOS_LAMBDA(int i) {
       LazyVector2 x(&xx(i), &xy(i));
       LazyVector2 v(&vx(i), &vy(i));
       LazyMatrix2 C(&C00(i), &C01(i), &C10(i), &C11(i));
@@ -200,7 +199,7 @@ void mls_mpm(int quality) {
     });
   };
 
-#if 1
+#if 0
   time_point<steady_clock> start_time = steady_clock::now();
 
   reset();
@@ -209,14 +208,14 @@ void mls_mpm(int quality) {
     substep();
   }
 
-  fence();
+  Kokkos::fence();
 
   cout //<< n_particles << " " << n_grid << " "
        << duration_cast<milliseconds>(steady_clock::now() - start_time).count() << endl;
 #else
-  View<FloatingType*>::HostMirror xx_host = create_mirror_view(xx);
-  View<FloatingType*>::HostMirror xy_host = create_mirror_view(xy);
-  View<int*>::HostMirror material_host = create_mirror_view(material);
+  Kokkos::View<FloatingType*>::HostMirror xx_host = create_mirror_view(xx);
+  Kokkos::View<FloatingType*>::HostMirror xy_host = create_mirror_view(xy);
+  Kokkos::View<int*>::HostMirror material_host = create_mirror_view(material);
 
   vector<float> vertices(5*n_particles);
 

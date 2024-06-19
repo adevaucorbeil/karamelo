@@ -138,7 +138,7 @@ DamageJohnsonCook::compute_damage(Solid &solid,
     float triax = 0.0;
     if (pH[ip] != 0.0 && vm != 0.0)
     {
-      triax = -pH[ip] / (vm + 0.001 * Kokkos::Experimental::fabs(pH[ip])); // have softening in denominator to
+      triax = -pH[ip] / (vm + 0.001 * Kokkos::fabs(pH[ip])); // have softening in denominator to
                                              // avoid divison by zero
     }
 
@@ -148,14 +148,14 @@ DamageJohnsonCook::compute_damage(Solid &solid,
     }
 
     // Johnson-Cook failure strain, dependence on stress triaxiality
-    float jc_failure_strain = d1 + d2 * Kokkos::Experimental::exp(d3 * triax);
+    float jc_failure_strain = d1 + d2 * Kokkos::exp(d3 * triax);
 
     // include strain rate dependency if parameter d4 is defined and current
     // plastic strain rate exceeds reference strain rate
     if (d4 > 0.0) {
       if (seff_plastic_strain_rate[ip] > epsdot0) {
         float epdot_ratio = seff_plastic_strain_rate[ip]/epsdot0;
-        jc_failure_strain *= (1.0 + d4 * Kokkos::Experimental::log(epdot_ratio));
+        jc_failure_strain *= (1.0 + d4 * Kokkos::log(epdot_ratio));
       }
     }
 

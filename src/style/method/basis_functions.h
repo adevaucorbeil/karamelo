@@ -24,8 +24,8 @@ namespace Kokkos
     copysign(float mag, float sign)
     {
       return sign == 0? 0:
-             sign >  0?  Kokkos::Experimental::abs(mag):
-                        -Kokkos::Experimental::abs(mag);
+             sign >  0?  Kokkos::abs(mag):
+                        -Kokkos::abs(mag);
     }
   }
 }
@@ -35,13 +35,13 @@ namespace BasisFunction
   KOKKOS_INLINE_FUNCTION float
   linear(float r)
   {
-    return r >= 1 || r <= -1? 0: 1 - Kokkos::Experimental::abs(r);
+    return r >= 1 || r <= -1? 0: 1 - Kokkos::abs(r);
   }
 
   KOKKOS_INLINE_FUNCTION float
   derivative_linear(float r, float inv_cellsize)
   {
-    return r >= 1 || r <= -1 || r == 0? 0: -Kokkos::Experimental::copysign(inv_cellsize, r);
+    return r >= 1 || r <= -1 || r == 0? 0: -Kokkos::copysign(inv_cellsize, r);
   }
 
   KOKKOS_INLINE_FUNCTION float
@@ -97,7 +97,7 @@ namespace BasisFunction
     if (ntype==1)
       return r > 0.5 || r < -0.5? 0: 0.5 - 2*r*r;
 
-    r = Kokkos::Experimental::abs(r);
+    r = Kokkos::abs(r);
     return (1 - r)*(1-r);
   }
 
@@ -110,7 +110,7 @@ namespace BasisFunction
     if (ntype == 1)
       return r > 0.5 || r < -0.5? 0: -4*r*inv_cellsize;
     
-	  return 2*(r - Kokkos::Experimental::copysign(1, r))*inv_cellsize;
+	  return 2*(r - Kokkos::copysign(1, r))*inv_cellsize;
   }
 
   KOKKOS_INLINE_FUNCTION float

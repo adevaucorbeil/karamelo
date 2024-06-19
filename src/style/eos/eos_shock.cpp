@@ -156,7 +156,7 @@ void EOSShock::compute_pressure(Solid &solid, Kokkos::View<float*> &pH) const
       float tr_eps = sD[ip].trace();
 
       if (tr_eps < 0)
-        pH[ip] += srho[ip]*cellsize*tr_eps*(Q1*cellsize*tr_eps - Q2*c0*Kokkos::Experimental::sqrt(sJ[ip]));
+        pH[ip] += srho[ip]*cellsize*tr_eps*(Q1*cellsize*tr_eps - Q2*c0*Kokkos::sqrt(sJ[ip]));
     }
   });
 }

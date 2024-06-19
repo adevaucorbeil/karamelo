@@ -150,8 +150,8 @@ void FixMeldTool::initial_integrate(Solid &solid)
     if (!mass[ip] || !(mask[ip] & groupbit))
       return;
 
-    const float &c = Kokkos::Experimental::cos(theta_(0, ip));
-    const float &s = Kokkos::Experimental::sin(theta_(0, ip));
+    const float &c = Kokkos::cos(theta_(0, ip));
+    const float &s = Kokkos::sin(theta_(0, ip));
 
     Vector3d xprime, xtool;
     Matrix3d R;
@@ -197,7 +197,7 @@ void FixMeldTool::initial_integrate(Solid &solid)
       return;
 
     xprime = R*xprime;
-    const float &pext = Rmax - Kokkos::Experimental::sqrt(rSq);
+    const float &pext = Rmax - Kokkos::sqrt(rSq);
 
     Vector3d f;
 
@@ -215,7 +215,7 @@ void FixMeldTool::initial_integrate(Solid &solid)
 
     if (pext > 0 && pext < f.norm()) {
       f = Vector3d();
-      const float &r = Kokkos::Experimental::sqrt(rSq);
+      const float &r = Kokkos::sqrt(rSq);
       f[axis0] = pext * xprime[axis0] / r;
       f[axis1] = pext * xprime[axis1] / r;
     }

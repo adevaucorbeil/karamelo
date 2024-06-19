@@ -152,9 +152,9 @@ void FixImpenetrableSurface::initial_integrate(Solid &solid) {
     if (dimension == 1)
       R = svol[ip];
     else if (dimension == 2)
-      R = Kokkos::Experimental::sqrt(svol[ip]);
+      R = Kokkos::sqrt(svol[ip]);
     else
-      R = Kokkos::Experimental::cbrt(svol[ip]);
+      R = Kokkos::cbrt(svol[ip]);
 
     const Vector3d &f = K*G*p*R*(1 - sdamage[ip])*normal_;
 

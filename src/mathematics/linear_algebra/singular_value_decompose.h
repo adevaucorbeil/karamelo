@@ -20,9 +20,9 @@ singular_value_decompose(Matrix<T, M, N> &matrix, Matrix<V, M, M> &u, Matrix<V, 
     {
       if (i == j)
       {
-        matrix(i, i) = Kokkos::Experimental::sqrt(eigenvalues(i, i));
+        matrix(i, i) = Kokkos::sqrt(eigenvalues(i, i));
 
-        inverse(i, i) = Kokkos::Experimental::abs(matrix(i, i)) < 1e-10? 0: 1/matrix(i, i);
+        inverse(i, i) = Kokkos::abs(matrix(i, i)) < 1e-10? 0: 1/matrix(i, i);
       }
       else
       {

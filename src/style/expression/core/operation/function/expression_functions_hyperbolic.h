@@ -9,7 +9,7 @@ public:
   KOKKOS_INLINE_FUNCTION float
   evaluate(int i) const
   {
-    return Kokkos::Experimental::sinh(get_value(0, i));
+    return Kokkos::sinh(get_value(0, i));
   }
 };
 
@@ -20,7 +20,7 @@ public:
   KOKKOS_INLINE_FUNCTION float
   evaluate(int i) const
   {
-    return Kokkos::Experimental::cosh(get_value(0, i));
+    return Kokkos::cosh(get_value(0, i));
   }
 };
 
@@ -31,7 +31,7 @@ public:
   KOKKOS_INLINE_FUNCTION float
   evaluate(int i) const
   {
-    return Kokkos::Experimental::tanh(get_value(0, i));
+    return Kokkos::tanh(get_value(0, i));
   }
 };
 
@@ -42,7 +42,7 @@ public:
   KOKKOS_INLINE_FUNCTION float
   evaluate(int i) const
   {
-    return Kokkos::Experimental::asinh(get_value(0, i));
+    return Kokkos::asinh(get_value(0, i));
   }
 };
 
@@ -53,7 +53,7 @@ public:
   KOKKOS_INLINE_FUNCTION float
   evaluate(int i) const
   {
-    return Kokkos::Experimental::acosh(get_value(0, i));
+    return Kokkos::acosh(get_value(0, i));
   }
 };
 
@@ -64,6 +64,6 @@ public:
   KOKKOS_INLINE_FUNCTION float
   evaluate(int i) const
   {
-    return Kokkos::Experimental::atanh(get_value(0, i));
+    return Kokkos::atanh(get_value(0, i));
   }
 };

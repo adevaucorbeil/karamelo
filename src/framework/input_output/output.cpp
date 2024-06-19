@@ -198,7 +198,7 @@ void Output::write(bigint ntimestep){
 }
 
 void Output::write_dumps(){
-  for (int idump = 0; idump < ndumps; idump++) {
+  for (int idump = 0; idump < ndumps; idump++)
       dumps[idump]->write();
 }
 

@@ -111,9 +111,9 @@ void FixHeatFluxParticles::initial_integrate(Solid &solid)
 	if (dimension == 1)
 	  Ap = 1;
 	else if (dimension == 2)
-	  Ap = Kokkos::Experimental::sqrt(vol[ip]);
+	  Ap = Kokkos::sqrt(vol[ip]);
 	else         
-	  Ap = Kokkos::Experimental::pow(vol[ip], 2/3);
+	  Ap = Kokkos::pow(vol[ip], 2/3);
 
 	gamma[ip] += Ap * q_i(0,ip) * invcp;
 	lqtot += q_i(0,ip);

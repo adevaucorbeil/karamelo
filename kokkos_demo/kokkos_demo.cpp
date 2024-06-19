@@ -5,7 +5,6 @@
 #include <cstdio>
 
 using namespace std;
-using namespace Kokkos;
 using namespace std::chrono;
 
 class garbage {
@@ -22,10 +21,10 @@ class garbage {
 
 int main(int argc,
          char *argv[]) {
-  initialize(argc, argv);
+  Kokkos::initialize(argc, argv);
 
   for (int i = 0; i < 55; i++)
     mls_mpm(i + 1);
 
-  finalize();
+  Kokkos::finalize();
 }

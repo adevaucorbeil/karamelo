@@ -9,7 +9,7 @@ public:
   KOKKOS_INLINE_FUNCTION float
   evaluate(int i) const
   {
-    return Kokkos::Experimental::pow(get_value(0, i), get_value(1, i));
+    return Kokkos::pow(get_value(0, i), get_value(1, i));
   }
 };
 
@@ -20,7 +20,7 @@ public:
   KOKKOS_INLINE_FUNCTION float
   evaluate(int i) const
   {
-    return Kokkos::Experimental::sqrt(get_value(0, i));
+    return Kokkos::sqrt(get_value(0, i));
   }
 };
 
@@ -31,7 +31,7 @@ public:
   KOKKOS_INLINE_FUNCTION float
   evaluate(int i) const
   {
-    return Kokkos::Experimental::cbrt(get_value(0, i));
+    return Kokkos::cbrt(get_value(0, i));
   }
 };
 
@@ -42,7 +42,7 @@ public:
   KOKKOS_INLINE_FUNCTION float
   evaluate(int i) const
   {
-    return Kokkos::Experimental::hypot(get_value(0, i), get_value(1, i));
+    return Kokkos::hypot(get_value(0, i), get_value(1, i));
   }
 };
 

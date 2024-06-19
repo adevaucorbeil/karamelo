@@ -24,16 +24,16 @@ givens_rotation(const Matrix<T, M, N> &matrix, std::size_t i, std::size_t j)
     c = 0;
     s = sign(ij);
   }
-  else if (Kokkos::Experimental::abs(jj) > Kokkos::Experimental::abs(ij))
+  else if (Kokkos::abs(jj) > Kokkos::abs(ij))
   {
     V t = ij/jj;
-    c = sign(jj)/Kokkos::Experimental::sqrt(1 + t*t);
+    c = sign(jj)/Kokkos::sqrt(1 + t*t);
     s = c*t;
   }
   else
   {
     V t = jj/ij;
-    s = sign(ij)/Kokkos::Experimental::sqrt(1 + t*t);
+    s = sign(ij)/Kokkos::sqrt(1 + t*t);
     c = s*t;
   }
 

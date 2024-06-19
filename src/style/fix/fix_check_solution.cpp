@@ -152,7 +152,7 @@ void FixCheckSolution::final_integrate(Solid &solid)
               return;
 
             error_vec_i += vol0[ip] *
-	      Kokkos::Experimental::pow(u_i(0, ip) - (x[ip][i] - x0[ip][i]), 2);
+	      Kokkos::pow(u_i(0, ip) - (x[ip][i] - x0[ip][i]), 2);
 
             u_th_i += vol0[ip] * u_i(0, ip) * u_i(0, ip);
           }, error_vec[i], u_th[i]);

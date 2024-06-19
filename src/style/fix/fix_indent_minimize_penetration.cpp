@@ -180,15 +180,15 @@ void FixIndentMinimizePenetration::initial_integrate(Solid &solid)
     float Rs = 0;
     if (dimension == 2) {
       if (axisymmetric)
-        Rs = 0.5 * Kokkos::Experimental::sqrt(svol[ip] / sx0[ip][0]);
+        Rs = 0.5 * Kokkos::sqrt(svol[ip] / sx0[ip][0]);
       else
-        Rs = 0.5 * Kokkos::Experimental::sqrt(svol[ip]);
+        Rs = 0.5 * Kokkos::sqrt(svol[ip]);
       Rs += R;
 
       if (xsp[0] >= Rs || xsp[1] >= Rs || xsp[0] <= -Rs || xsp[1] <= -Rs)
         return;
     } else if (dimension == 3) {
-      Rs = R + 0.5 * Kokkos::Experimental::cbrt(svol[ip]);
+      Rs = R + 0.5 * Kokkos::cbrt(svol[ip]);
 
       if (xsp[0] >= Rs || xsp[1] >= Rs || xsp[2] >= Rs || xsp[0] <= -Rs ||
           xsp[1] <= -Rs || xsp[2] <= -Rs)

@@ -95,7 +95,7 @@ StrengthPlastic::update_deviatoric_stress(Solid &solid,
     /*
      * check yield condition
      */
-    J2 = Kokkos::Experimental::sqrt(1.5)*sigmaTrial_dev.norm();
+    J2 = Kokkos::sqrt(1.5)*sigmaTrial_dev.norm();
     sigmaFinal_dev = sigmaTrial_dev;
 
     if (J2 < yieldStressD) {

@@ -13,7 +13,7 @@ class ExpressionFunctionInverseNormal:
   static KOKKOS_INLINE_FUNCTION float
   normalCDF(float x)
   {
-    return Kokkos::Experimental::erfc(-x/Kokkos::Experimental::sqrt(2))/2;
+    return Kokkos::erfc(-x/Kokkos::sqrt(2))/2;
   }
 
 public:
@@ -25,7 +25,7 @@ public:
     float value = get_value(0, i);
 
     if (value < eps || value > 1 - eps)
-      return Kokkos::Experimental::nan("");
+      return Kokkos::nan("");
 
     float x_min = -1, x_max = 1;
 

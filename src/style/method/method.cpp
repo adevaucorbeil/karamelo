@@ -894,7 +894,7 @@ void Method::Fbar_anti_vol_locking(Solid &solid) {
       sF[ip](0,0) *= J_ / sJ[ip];
     } else if (dimension == 2 && !axisymmetric) {
       Matrix3d F_ = sF[ip];
-      float ratio = Kokkos::Experimental::sqrt(J_ / sJ[ip]);
+      float ratio = Kokkos::sqrt(J_ / sJ[ip]);
       F_(0,0) *= ratio;
       F_(0,1) *= ratio;
       F_(1,0) *= ratio;
@@ -902,7 +902,7 @@ void Method::Fbar_anti_vol_locking(Solid &solid) {
       F_(2,2) = 1;
       sF[ip] = F_;
     } else
-      sF[ip] *= Kokkos::Experimental::cbrt(J_ / sJ[ip]);
+      sF[ip] *= Kokkos::cbrt(J_ / sJ[ip]);
     
     sJ[ip] = J_;
   });
@@ -1017,7 +1017,7 @@ void Method::update_stress(Solid &solid)
     KOKKOS_LAMBDA (const int &ip)
     {
       const Matrix3d &FinvT = sFinv[ip].transpose();
-      const Matrix3d &PK1 = G*(sF[ip] - FinvT) + lambda*Kokkos::Experimental::log(sJ[ip])*FinvT;
+      const Matrix3d &PK1 = G*(sF[ip] - FinvT) + lambda*Kokkos::log(sJ[ip])*FinvT;
       svol0PK1[ip] = svol0[ip]*PK1;
       ssigma[ip] = 1/sJ[ip]*sF[ip]*PK1.transpose();
 
@@ -1133,10 +1133,10 @@ void Method::update_stress(Solid &solid)
     if (sdamage[ip] >= 1)
       return;
       
-    float p_wave_speed = Kokkos::Experimental::sqrt((K + G*4/3)/srho[ip]) +
-                          MAX(MAX(Kokkos::Experimental::abs(sv[ip](0)),
-                                  Kokkos::Experimental::abs(sv[ip](1))),
-                                  Kokkos::Experimental::abs(sv[ip](2)));
+    float p_wave_speed = Kokkos::sqrt((K + G*4/3)/srho[ip]) +
+                          MAX(MAX(Kokkos::abs(sv[ip](0)),
+                                  Kokkos::abs(sv[ip](1))),
+                                  Kokkos::abs(sv[ip](2)));
 
     /*if (std::isnan(p_wave_speed))
     {
@@ -1164,7 +1164,7 @@ void Method::update_stress(Solid &solid)
       for (int dim = 0; dim < 3; dim++) {
 	if (eigenvalues(dim, dim) < 0)
 	  lerr += 1;
-	h_ratio = MIN(h_ratio, Kokkos::Experimental::sqrt(eigenvalues(dim, dim)));
+	h_ratio = MIN(h_ratio, Kokkos::sqrt(eigenvalues(dim, dim)));
       }
 
       /*if (h_ratio == 0)
