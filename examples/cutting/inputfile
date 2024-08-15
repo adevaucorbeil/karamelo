@@ -1,7 +1,7 @@
 #####################################################
 #               UNITS: GPa, mm, ms, oC              #
 #####################################################
-# Metal cutting from Ambati et all
+# Material parameters from Metal cutting from Ambati et al.
 # Application of material point methods for cutting process simulations
 
 # material properties for the steel plate
@@ -49,16 +49,17 @@ H = 4
 S = 1.5
 c0 = 5030
 Gamma = 0
-
 chi = 0.9
 cp = 510
 cv = 510
+alpha = 0
+kappa = 44e-06
 Tr = 25
 Tm = 1300
 
 FLIP=0.99
 
-method(ulmpm, FLIP, linear, FLIP)
+method(ulmpm, FLIP, cubic-spline, FLIP)
 
 N = 50
 cellsize = L/N
@@ -78,7 +79,7 @@ eos(eoss, shock,  rho, K, c0, S, Gamma, cv, Tr, 0, 0)
 
 strength(strengthl, linear, Gp)
 strength(strengthjc, johnson_cook, G, sigmay, B, n, epsdot0, C, m, Tr, Tm)
-temperature(tpw, plastic_work, chi, rho, cp)
+temperature(tpw, plastic_work, chi, cp, kappa, alpha, Tr, Tm)
 
 damage(damagejc, damage_johnson_cook, d1, d2, d3, d4, d5, epsdot0, Tr, Tm)
 
