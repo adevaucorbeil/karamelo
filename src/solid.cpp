@@ -2022,11 +2022,7 @@ void Solid::populate(vector<string> args)
   else
     vol_ = delta * delta * delta;
 
-  double mass_;
-  if (mat->rigid)
-    mass_ = 1;
-  else
-    mass_ = mat->rho0 * vol_;
+  double mass_ = mat->rho0 * vol_;
 
   np_per_cell = (int) input->parsev(args[3]);
   double xi = 0.5;

@@ -64,7 +64,7 @@ public:
   Mat(string, int, class EOS *, class Strength *, class Damage *,
       class Temperature *);                          ///< Creates an elasto-plastic material
   Mat(string, int, double, double, double, double, double); ///< Creates a linear or Neo-Hookean material
-  Mat(string, int);                                  ///< Creates a rigid material
+  Mat(string, int, double);                                 ///< Creates a rigid material
 };
 
 /*! Stores all the user defined Equations of State, elasto-plastic, damage, and temperature
@@ -124,11 +124,11 @@ private:
   template <typename T> static Damage *damage_creator(MPM *,vector<string>);
   template <typename T> static Temperature *temperature_creator(MPM *,vector<string>);
 
-  const map<string, string> usage = {{"rigid",        "Usage: material(material-ID, \033[1;32mrigid\033[0m)\n"},
+  const map<string, string> usage = {{"rigid",        "Usage: material(material-ID, \033[1;32mrigid\033[0m, rho)\n"},
 				     {"linear",       "Usage: material(material-ID, \033[1;32mlinear\033[0m, rho, E, nu, optional: cp, optional: kappa, optional: damage-ID)\n"},
 				     {"neo-hookean",  "Usage: material(material-ID, \033[1;32mneo-hookean\033[0m, rho, E, nu, optional: cp, optional: kappa, optional: damage-ID)\n"},
 				     {"eos-strength", "Usage: material(material-ID, \033[1;32meos-strength\033[0m, eos-ID, strength-ID, optional: damage-ID, optional: temperature-ID)\n"}};
-  const map<string, int>    Nargs = {{"rigid",        2},
+  const map<string, int>    Nargs = {{"rigid",        3},
 				     {"linear",       5},
 				     {"neo-hookean",  5},
 				     {"eos-strength", 4}};

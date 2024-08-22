@@ -291,7 +291,7 @@ void Material::add_material(vector<string> args) {
 			    cp, kappa});
 
   } else if (args[1].compare("rigid") == 0) {
-    materials.push_back(Mat{args[0], RIGID});
+    materials.push_back(Mat{args[0], RIGID, input->parsev(args[2])});
   } else {
     // create the Material
     int iEOS = material->find_EOS(args[2]);
@@ -656,7 +656,9 @@ void Material::read_restart(ifstream *ifr) {
 
       materials.push_back(Mat{id, type, rho0, E, nu, cp, kappa});
     } else if (type == RIGID) {
-      materials.push_back(Mat{id, RIGID});
+      double rho0;
+      ifr->read(reinterpret_cast<char *>(&rho0), sizeof(double));
+      materials.push_back(Mat{id, RIGID, rho0});
     } else {
       error->one(FLERR, "Error: unkown material type" + to_string(type) + ".\n");
     }
@@ -768,8 +770,9 @@ Mat::Mat(string id_, int type_, double rho0_, double E_, double nu_, double cp_,
 
 /*! The arguments are: material ID, material type (see Material::constitutive_model)
  */
-Mat::Mat(string id_, int type_) {
+Mat::Mat(string id_, int type_, double rho0_) {
   type = type_;
   id = id_;
   rigid = true;
+  rho0 = rho0_;
 }
