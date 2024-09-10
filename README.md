@@ -2,6 +2,8 @@
 
 Karamelo is a parallel simulator for the Material Point Method (MPM). It supports both multiple CPUs (master branch) and single GPUs (kokkos branch).
 
+### Stay updated:
+If you would like to stay updated about Karamelo and also help me understand who uses Karamelo, and for what purposes, please fill up this form: https://forms.gle/aHZ9s5Pc4aTQLZ2b8
 
 ### News
 - Mar 2024:   Karamelo now supports GPUs through the use of Kokkos. Please use the dedicated branch kokkos if you want to use it.
