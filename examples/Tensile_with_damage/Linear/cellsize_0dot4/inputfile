@@ -21,32 +21,42 @@ c0 = 5030
 
 FLIP=0.99
 
-dimension(3)
+cellsize = 0.4
+
 method(tlmpm, FLIP, linear, FLIP)
+dimension(3, -2*hLx, 2*hLx, -2*hLy, 2*hLy, -2*hLz, 2*hLz, cellsize)
 
 region(box, block, -hLx, hLx, -hLy, hLy, -hLz, hLz)
 eos(eosl, linear, rho, K)
-eos(eoss, shock, rho, K, c0, 0, S, 0)
+Q1 = 0
+Q2 = 0
+Tr = 0
+Tm = 1000
+cv = 0
+Gamma = 0
+eos(eoss,   shock, rho, K, c0, S, Gamma, cv, Tr, Q1, Q2)
 
 strength(strengthl, linear, G)
 strength(strengthp, plastic, G, sigmay)
-strength(strengthjc, johnson_cook, G, sigmay, B, n, 0, 0)
+strength(strengthjc, johnson_cook, G, sigmay, B, n, 0,       0, 0, Tr, Tm)
+
 
 d1 = 0.636
 d2 = 1.936
 d3 = -2.969
 d4 = 0
+d5 = 0
 epsdot0 = 1
 
-damage(damagejc, damage_johnson_cook, d1, d2, d3, d4, epsdot0)
+damage(damagejc, damage_johnson_cook, d1, d2, d3, d4, d5, epsdot0, Tr, Tm)
 
-material(mat1, eosl, strengthl)
-material(mat2, eoss, strengthp)
-material(mat3, eoss, strengthjc)
-material(mat4, eoss, strengthjc, damagejc)
+material(mat1, eos-strength, eosl, strengthl)
+material(mat2, eos-strength, eoss, strengthp)
+material(mat3, eos-strength, eoss, strengthjc)
+material(mat4, eos-strength, eoss, strengthjc, damagejc)
 
-cellsize = 0.4
-solid(solid1, rectangle, box, 1, mat4, cellsize)
+ppc = 1
+solid(solid1, region, box, 1, mat4, cellsize, Tr)
 
 xBC = 9.7 - cellsize
 
