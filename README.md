@@ -26,7 +26,7 @@ If you would like to stay updated about Karamelo and also help me understand who
 # Cite Karamelo:
 When you publish data obtained with the help of Karamelo, please cite: A. de Vaucorbeil, V. P. Nguyen, and C. Nguyen-Thanh, “Karamelo: an open source parallel c++ package for the material point method,” Computational Particle Mechanics, oct 2020.
 
-This paper is availble only at https://www.researchgate.net/publication/343096803_Material_point_method_after_25_years_theory_implementation_and_applications or on the cite of the editor: https://link.springer.com/article/10.1007/s40571-020-00369-8
+This paper is availble only at https://www.researchgate.net/publication/344346650_Karamelo_an_open_source_parallel_C_package_for_the_material_point_method or on the site of the editor: https://link.springer.com/article/10.1007/s40571-020-00369-8
 
 # Documentation:
 Please find Karamelo's documentation here:  https://adevaucorbeil.github.io/karamelo/html/index.html
